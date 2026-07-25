@@ -43,10 +43,23 @@ public class BeltItemView : MonoBehaviour
         int n = seg.BeltCount;
         if (n == 0) return;
 
+        // 심은 틱(기본 10Hz) 단위로만 pos를 갱신한다 — 그대로 그리면 계단식.
+        // 마지막 틱 이후 흐른 시간만큼 외삽하되, 틱과 같은 규칙(간격·출구·역주행)로 클램프해
+        // 다음 틱 결과와 어긋나지 않게 한다.
+        float extra = seg.SpeedTilesPerSec * boot.Sim.TickLeftover;
+
+        float prevVisual = float.MaxValue;   // index 0 = 출구 쪽 — 앞 아이템의 시각 위치
         foreach (var (item, pos) in seg.Items)
         {
             if (item == null) continue;
-            if (!TryGetWorldPos(seg, pos, boot, out var world)) continue;
+
+            float vpos = pos + extra;
+            vpos = Mathf.Min(vpos, prevVisual - BeltSegment.Spacing);   // 앞 아이템과 간격 유지
+            vpos = Mathf.Min(vpos, n - 0.01f);                          // 출구 대기 클램프
+            vpos = Mathf.Max(vpos, pos);                                // 역주행 방지
+            prevVisual = vpos;
+
+            if (!TryGetWorldPos(seg, vpos, boot, out var world)) continue;
 
             var slot = Rent();
             ApplyVisual(slot, item);
