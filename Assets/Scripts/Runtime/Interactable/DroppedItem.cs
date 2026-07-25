@@ -80,6 +80,24 @@ public class DroppedItem : Interactable
         return dropped;
     }
 
+    /// <summary>
+    /// 같은 아이템 스택 병합. 양쪽 모두 서로의 OnTriggerEnter를 받으므로
+    /// InstanceID가 작은 쪽만 수행해 중복 병합을 막는다. 합계가 스택 상한을 넘으면 각자 유지.
+    /// </summary>
+    private void TryMergeWith(DroppedItem other)
+    {
+        if (other == null || other == this) return;
+        if (item == null || other.item != item) return;
+        if (amount <= 0 || other.amount <= 0) return;          // 이미 병합/줍기로 소멸 예정인 상대
+        if (GetInstanceID() > other.GetInstanceID()) return;   // 한쪽만 수행
+        if (amount + other.amount > new ItemStack(item, 1).maxStackSize) return;
+
+        amount += other.amount;
+        other.amount = 0;                                      // 상대의 후속 병합/줍기 차단
+        Destroy(other.gameObject);
+        Setup(item, amount);                                   // 프롬프트("xN 줍기") 갱신
+    }
+
     // [방법 1] 조준 후 직접 상호작용 키를 눌러서 줍기
     public override void OnInteract(PlayerController player)
     {
@@ -105,6 +123,9 @@ public class DroppedItem : Interactable
     // [방법 2] 발로 밟거나 근처 센서 구역에 들어가면 자동으로 줍기 (자석 루팅)
     private void OnTriggerEnter(Collider other)
     {
+        // 마크식 스택 병합 — 같은 아이템끼리 센서에 닿으면 하나로 (플레이어 판정보다 먼저)
+        TryMergeWith(other.GetComponentInParent<DroppedItem>());
+
         // 충돌한 대상이 플레이어인지 태그 검사
         if (other.CompareTag("Player"))
         {
