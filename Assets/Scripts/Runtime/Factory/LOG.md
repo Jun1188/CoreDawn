@@ -251,3 +251,15 @@
   한국어로 생성됐던 레시피 id 2건은 비움 (경고 뜨는 상태 — 담당자가 영문으로 지정)
 - 비어 있으면 OnValidate가 경고. id 중복 검사는 유지
 - id 소비자는 아직 없음(세이브 예정) — 형식 변경 무해 확인
+
+---
+
+## 2026-07-25 — ItemDatabaseSO 레지스트리 (건물 DB 패턴 재사용)
+
+- **ItemDatabaseSO** (Resources/ItemDatabase) — 전체 아이템 SO 자동 수집 (타입 → 표시명 정렬).
+  `FindById`(세이브용 id↔SO 해석), `GroupedByType` 제공
+- 스캐너 통합: BuildingDatabaseScanner가 건물/아이템 DB를 함께 재수집
+  (메뉴: Tools/Factory/Rebuild Data Databases). 커스텀 인스펙터도 동일 패턴(타입 그룹, 읽기 전용)
+- Inventory.Awake의 죽은 테스트 코드(Resources.Load "TestItemName") 제거
+- 예정 소비자: 자원 배치(광석 목록), 레시피 UI(재료 표시), 세이브. RecipeImporter의
+  아이템 자동 생성 확장은 팀 논의 후 (id 부여 방식 포함)

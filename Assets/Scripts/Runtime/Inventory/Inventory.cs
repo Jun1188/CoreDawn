@@ -62,14 +62,9 @@ public class Inventory : MonoBehaviour
 
     private void Awake()
     {
-        _ = Container; // 조기 생성
-
-        // 기존 테스트용 코드 (필요 없다면 지우셔도 됩니다)
-        ItemDataSO testItem = Resources.Load<ItemDataSO>("TestItemName");
-        if (testItem != null)
-        {
-            AddItem(testItem, 10);
-        }
+        _ = Container; // 조기 생성 (시작 아이템 주입 포함)
+        // (구 Resources.Load("TestItemName") 테스트 코드 제거 — 해당 에셋이 존재한 적 없음.
+        //  시작 아이템은 인스펙터의 slots 배열로 지정)
     }
 
     /// <summary>다른 컨테이너(건물 보관함 등)를 이 인벤토리의 뒷단으로 연결 — UI가 실시간으로 그 컨테이너를 본다.</summary>
