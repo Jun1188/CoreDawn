@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48936e0cc3d3477f855f2c57d104e68e, type: 3}
   m_Name: Assembler
   m_EditorClassIdentifier: Assembly-CSharp::AssemblerDataSO
-  id: Buildings::Assembler
+  id: Buildings:Assembler
   displayName: Assembler
   description: 
   icon: {fileID: 0}

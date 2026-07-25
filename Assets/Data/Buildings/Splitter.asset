@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a63633ad3b4c39ae63992eaa703838, type: 3}
   m_Name: Splitter
   m_EditorClassIdentifier: Assembly-CSharp::SplitterDataSO
-  id: Buildings::Splitter
+  id: Buildings:Splitter
   displayName: Splitter
   description: 
   icon: {fileID: 0}

@@ -1,6 +1,4 @@
-using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 /// <summary>
 /// 모든 데이터 SO(아이템/건물/레시피 등)의 공통 베이스.
@@ -8,14 +6,16 @@ using UnityEngine.Serialization;
 ///
 /// 식별 원칙:
 ///   런타임 구분 = SO 참조 비교 (에셋 = 유일 객체, id 불필요)
-///   세이브/조회 = Id ("폴더 경로::displayName" 자동 생성, 수동 지정 가능)
+///   세이브/조회 = Id — **수동 지정** ("분류:이름" 관례, 예: "Item:IronOre").
+///     자동 생성은 폐기 — 한국어 displayName이 id로 굳는 사고를 막고,
+///     id는 사람이 의도적으로 정하는 안정 키로 취급한다. 비어 있으면 에디터 경고.
 ///   표시        = displayName / description / icon
 /// </summary>
 public abstract class GameDataSO : ScriptableObject
 {
     [Header("식별")]
-    [Tooltip("세이브/조회용 안정 ID. 비워두면 에셋 파일명이 자동 입력된다.\n" +
-             "규칙: 세이브 데이터가 존재하는 id는 절대 변경 금지. 프로젝트 전체에서 유일해야 함.")]
+    [Tooltip("세이브/조회용 안정 ID — 직접 지정 (관례: \"분류:이름\", 예: Item:IronOre).\n" +
+             "영문·숫자 권장. 세이브 데이터가 존재하는 id는 절대 변경 금지. 프로젝트 전체에서 유일해야 함.")]
     [SerializeField] string id;
 
     [Header("표시")]
@@ -29,36 +29,14 @@ public abstract class GameDataSO : ScriptableObject
     protected virtual void OnValidate()
     {
 #if UNITY_EDITOR
-        // displayName이 채워진 뒤에만 id를 생성한다 — 새 에셋이 "NewItem" 상태로
-        // id가 굳어버리는 것을 방지. 한번 생성된 id는 폴더 이동/개명해도 유지된다(세이브 안정성).
-        if (string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(displayName))
-            id = GenerateDefaultId();
+        if (string.IsNullOrEmpty(id))
+            Debug.LogWarning($"[GameDataSO] id가 비어 있습니다: {name} — \"분류:이름\" 형식으로 지정하세요 (예: Item:IronOre)", this);
 
         WarnOnDuplicateId();
 #endif
     }
 
 #if UNITY_EDITOR
-    /// <summary>
-    /// 기본 id = "Data 폴더 기준 상대 폴더 경로::displayName".
-    /// 예: Assets/Data/Item/IronOre.asset (displayName "IronOre") → "Item::IronOre"
-    ///     Assets/Data/Item/Ores/… 처럼 중첩되면 "Item/Ores::…"
-    /// Data 폴더 밖의 에셋은 displayName만 사용.
-    /// </summary>
-    string GenerateDefaultId()
-    {
-        string assetPath = UnityEditor.AssetDatabase.GetAssetPath(this);
-        if (!string.IsNullOrEmpty(assetPath))
-        {
-            var parts   = assetPath.Split('/');
-            int dataIdx = Array.IndexOf(parts, "Data");
-            int folderCount = parts.Length - dataIdx - 2;   // Data 다음부터 파일명 전까지
-            if (dataIdx >= 0 && folderCount > 0)
-                return $"{string.Join("/", parts, dataIdx + 1, folderCount)}::{displayName}";
-        }
-        return displayName;
-    }
-
     void WarnOnDuplicateId()
     {
         if (string.IsNullOrEmpty(id)) return;

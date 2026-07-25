@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
   m_Name: Recipe_IronIngot
   m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
-  id: "Recipe::\uCCA0 \uC8FC\uAD34 \uC81C\uB828"
+  id: 
   displayName: "\uCCA0 \uC8FC\uAD34 \uC81C\uB828"
   description: 
   icon: {fileID: 0}

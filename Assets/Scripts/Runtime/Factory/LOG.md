@@ -240,3 +240,14 @@
 - 프리팹/씬 참조 없음(런타임 부착 전용)이라 에셋 수정 불필요.
   프리팹에 Entities.Building을 미리 붙이면(타워 canAttack 등) PlacementBridge가 그대로 사용
 - 이는 건물 상호작용(E키) 작업의 선행 정리 — 다음: Interactable 어댑터가 Entities.Building을 직접 참조
+
+---
+
+## 2026-07-25 — GameDataSO id 정책 변경: 자동 생성 폐기, 수동 지정
+
+- **자동 생성 제거** — RecipeImporter가 만든 한국어 displayName이 그대로 id로 굳는 사고
+  ("Recipe::철 기어 제작") 발견. id는 사람이 의도적으로 정하는 안정 키로 전환
+- **형식: 콜론 1개** ("분류:이름", 예: Item:IronOre). 기존 에셋 12종 일괄 마이그레이션,
+  한국어로 생성됐던 레시피 id 2건은 비움 (경고 뜨는 상태 — 담당자가 영문으로 지정)
+- 비어 있으면 OnValidate가 경고. id 중복 검사는 유지
+- id 소비자는 아직 없음(세이브 예정) — 형식 변경 무해 확인
