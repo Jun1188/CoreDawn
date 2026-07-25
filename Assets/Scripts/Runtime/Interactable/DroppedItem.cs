@@ -98,7 +98,7 @@ public class DroppedItem : Interactable
         Setup(item, amount);                                   // 프롬프트("xN 줍기") 갱신
     }
 
-    // [방법 1] 조준 후 직접 상호작용 키를 눌러서 줍기
+    // 줍기 — 조준 후 E (유일한 줍기 경로)
     public override void OnInteract(PlayerController player)
     {
         if (item == null || amount <= 0) return;
@@ -120,34 +120,11 @@ public class DroppedItem : Interactable
         }
     }
 
-    // [방법 2] 발로 밟거나 근처 센서 구역에 들어가면 자동으로 줍기 (자석 루팅)
+    // 줍기는 E(OnInteract) 전용 — 플레이어 접촉 자동 줍기는 제거됨.
+    // 트리거 센서는 스택 병합에만 쓴다.
     private void OnTriggerEnter(Collider other)
     {
-        // 마크식 스택 병합 — 같은 아이템끼리 센서에 닿으면 하나로 (플레이어 판정보다 먼저)
+        // 마크식 스택 병합 — 같은 아이템끼리 센서에 닿으면 하나로
         TryMergeWith(other.GetComponentInParent<DroppedItem>());
-
-        // 충돌한 대상이 플레이어인지 태그 검사
-        if (other.CompareTag("Player"))
-        {
-            PlayerController player = other.GetComponent<PlayerController>();
-            if (player != null && player.playerInventory != null)
-            {
-                // 백엔드 가방에 아이템 데이터 추가 시도
-                bool isSuccess = player.playerInventory.AddItem(this.item, this.amount);
-
-                if (isSuccess)
-                {
-                    if (InventoryManager.Instance != null)
-                    {
-                        Debug.Log($"[루팅 성공] {item.name} {amount}개를 자동으로 주웠습니다.");
-                        // 핫바를 포함한 모든 인벤토리 UI 실시간 새로고침 강제 호출!
-                        InventoryManager.Instance.RefreshAllGameUIs(player.playerInventory);
-                    }
-
-                    // 바닥 오브젝트 깔끔하게 파괴
-                    Destroy(gameObject);
-                }
-            }
-        }
     }
 }
