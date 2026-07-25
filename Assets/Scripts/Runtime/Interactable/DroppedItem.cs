@@ -1,28 +1,51 @@
 using UnityEngine;
 
-
 public class DroppedItem : Interactable
 {
     public ItemDataSO item;
     public int amount;
 
-    public void Setup(ItemDataSO itemData, int count, SpriteRenderer sr)
+    [Tooltip("아이템 아이콘을 표시할 렌더러 — 공용 프리팹에서 연결 (폴백 조립 시 런타임 주입)")]
+    [SerializeField] private SpriteRenderer visual;
+
+    public void Setup(ItemDataSO itemData, int count)
     {
         item = itemData;
         amount = count;
 
         // 조준했을 때 화면에 뜰 메시지 세팅
         promptMessage = $"{item.name} x{amount} 줍기";
+
+        // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
+        if (visual != null) visual.sprite = itemData.icon;
     }
 
     /// <summary>
-    /// 월드 드롭 아이템을 코드로 조립해 스폰한다 — 핫바 Q드롭, 인벤 닫을 때 캐리지 드롭 등 공용.
-    /// (프리팹화 전 임시 팩토리. 프리팹으로 전환하면 이 함수 내부만 바꾸면 된다)
+    /// 월드 드롭 아이템 스폰 — 핫바 Q드롭, 인벤 캐리지 드롭, (예정) 몬스터 루팅 공용.
+    /// 마크처럼 정형화: ItemDatabase의 공용 프리팹 하나를 모든 아이템이 쓴다 (아이콘만 교체).
+    /// 프리팹 미지정 시 코드 조립 폴백 — 테스트 씬 안전.
     /// </summary>
     public static DroppedItem Spawn(ItemDataSO item, int amount, Vector3 position, Vector3 throwDirection)
     {
+        var db = ItemDatabaseSO.LoadDefault();
+        var prefab = db != null ? db.droppedItemPrefab : null;
+
+        DroppedItem dropped = prefab != null
+            ? Instantiate(prefab, position, Quaternion.identity)
+            : BuildFallback(position);
+
+        dropped.Setup(item, amount);
+
+        var rb = dropped.GetComponent<Rigidbody>();
+        if (rb != null) rb.AddForce(throwDirection * 3.5f, ForceMode.Impulse);
+        return dropped;
+    }
+
+    /// <summary>공용 프리팹이 없을 때의 코드 조립 (구 방식). 프리팹과 같은 구조를 만든다.</summary>
+    static DroppedItem BuildFallback(Vector3 position)
+    {
         // 1. 루트 오브젝트 + 레이어
-        GameObject dropObj = new($"Dropped_{item.name}");
+        GameObject dropObj = new("Dropped(Fallback)");
         dropObj.transform.position = position;
 
         int layer = LayerMask.NameToLayer("Interactable");
@@ -49,14 +72,11 @@ public class DroppedItem : Interactable
         visualObj.transform.localPosition = Vector3.zero;
         visualObj.layer = dropObj.layer;
 
-        SpriteRenderer sr = visualObj.AddComponent<SpriteRenderer>();
-        sr.sprite = item.icon;
+        var sr = visualObj.AddComponent<SpriteRenderer>();
         visualObj.AddComponent<ItemRotator>();
 
-        // 5. 데이터 주입 + 전방 투척
-        DroppedItem dropped = dropObj.AddComponent<DroppedItem>();
-        dropped.Setup(item, amount, sr);
-        rb.AddForce(throwDirection * 3.5f, ForceMode.Impulse);
+        var dropped = dropObj.AddComponent<DroppedItem>();
+        dropped.visual = sr;
         return dropped;
     }
 
@@ -67,7 +87,7 @@ public class DroppedItem : Interactable
 
         // 플레이어 가방 백엔드에 아이템 주워담기 시도
         bool success = player.playerInventory.AddItem(item, amount);
-        
+
         if (success)
         {
             if (InventoryManager.Instance != null)
@@ -108,14 +128,5 @@ public class DroppedItem : Interactable
                 }
             }
         }
-    }
-}
-
-// 💡 마인크래프트처럼 아이템이 제자리에서 빙글빙글 돌게 만드는 컴포넌트
-public class ItemRotator : MonoBehaviour
-{
-    void Update()
-    {
-        transform.Rotate(90f * Time.deltaTime * Vector3.up, Space.World);
     }
 }

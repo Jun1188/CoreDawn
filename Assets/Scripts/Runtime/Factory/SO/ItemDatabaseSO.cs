@@ -14,6 +14,10 @@ public class ItemDatabaseSO : ScriptableObject
     [Tooltip("자동 수집됨 — 직접 편집하지 말 것 (Tools/Factory/Rebuild Data Databases로 재수집)")]
     public ItemDataSO[] items;
 
+    [Header("공용 설정")]
+    [Tooltip("모든 월드 드롭 아이템이 쓰는 공용 프리팹 (마크식 정형화 — 아이콘만 교체).\n비우면 코드 조립 폴백.")]
+    public DroppedItem droppedItemPrefab;
+
     /// <summary>Resources의 기본 데이터베이스. 씬 연결 없이도 어디서든 접근 가능.</summary>
     public static ItemDatabaseSO LoadDefault()
         => Resources.Load<ItemDatabaseSO>("ItemDatabase");

@@ -263,3 +263,15 @@
 - Inventory.Awake의 죽은 테스트 코드(Resources.Load "TestItemName") 제거
 - 예정 소비자: 자원 배치(광석 목록), 레시피 UI(재료 표시), 세이브. RecipeImporter의
   아이템 자동 생성 확장은 팀 논의 후 (id 부여 방식 포함)
+
+---
+
+## 2026-07-25 — 월드 드롭 아이템 정형화 (마크식 공용 프리팹)
+
+- **공용 DroppedItem.prefab** (Prefabs/Item/) — 모든 아이템이 같은 프리팹, 아이콘만 교체.
+  참조는 ItemDatabaseSO.droppedItemPrefab (아이템 시스템 전역 설정 자리)
+- DroppedItem.Spawn: 프리팹 Instantiate + Setup(아이콘 주입). 프리팹 미지정 시
+  기존 코드 조립 폴백 — 호출자(Q드롭·캐리지 드롭) 무수정
+- ItemRotator를 별도 파일로 분리 (파일명 불일치 클래스는 프리팹에 못 붙음)
+- 아이템별 프리팹(worldPrefab) 안은 기각 — 표현 차이는 아이콘으로 충분, 정형화가 관리 우위.
+  디자이너는 공용 프리팹 하나만 다듬으면 전 아이템 반영

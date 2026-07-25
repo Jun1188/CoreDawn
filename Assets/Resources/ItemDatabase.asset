@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4d1627d0b9445e69827d2715b0c4919, type: 3}
   m_Name: ItemDatabase
   m_EditorClassIdentifier: 
+  droppedItemPrefab: {fileID: 5100000000000000006, guid: 4800f66116cf4329885747041f5ece99, type: 3}
   items:
   - {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
   - {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
