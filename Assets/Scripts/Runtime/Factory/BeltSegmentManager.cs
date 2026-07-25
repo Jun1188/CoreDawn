@@ -10,6 +10,13 @@ public class BeltSegmentManager
 {
     readonly FactorySim _sim;
 
+    /// <summary>
+    /// 벨트 철거로 세그먼트에서 밀려난(폐기될) 아이템 통지 — (제거된 벨트, 아이템).
+    /// 심은 월드를 모르므로 여기서 버리기만 하고, 드라이버(FactoryBootstrap)가
+    /// 구독해 월드 드롭으로 되살린다.
+    /// </summary>
+    public event System.Action<Building, ItemDataSO> ItemDiscarded;
+
     readonly Dictionary<Building, BeltSegment> _map = new();
     readonly List<BeltSegment> _segs = new();
 
@@ -106,7 +113,9 @@ public class BeltSegmentManager
             if (u.HasItems) _sim.MarkDirty(u.Belts[^1]); // 대표만 깨움
         }
 
-        // (n-1-k ≤ pos < n-k) 구간 = 제거 벨트 위 아이템 → 복사 안 함 = 폐기
-        // 추가: 벨트 제거 시 아이템 폐기 이벤트 발생시키기
+        // (n-1-k ≤ pos < n-k) 구간 = 제거 벨트 위 아이템 → 세그먼트에서는 폐기, 드라이버에 통지
+        foreach (var (item, pos) in seg.Items)
+            if (pos >= n - 1 - k && pos < n - k)
+                ItemDiscarded?.Invoke(b, item);
     }
 }

@@ -30,6 +30,13 @@ public class FactoryBootstrap : MonoBehaviour
         Instance = this;
         Sim = new FactorySim(_tps, _maxCatchUpTicks);
         DontDestroyOnLoad(gameObject);
+
+        // 벨트 철거로 세그먼트에서 밀려난 아이템 → 월드 드롭 (통지 시점엔 벨트 뷰가 아직 살아있음)
+        Sim.Belts.ItemDiscarded += (belt, item) =>
+        {
+            var view = GetView(belt);
+            if (view != null) PlacementBridge.DropAt(item, 1, view.transform.position);
+        };
     }
 
     void Update() => Sim.Advance(Time.deltaTime);
