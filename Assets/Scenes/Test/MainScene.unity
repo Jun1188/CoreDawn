@@ -692,6 +692,10 @@ PrefabInstance:
       propertyPath: defaultFov
       value: 103
       objectReference: {fileID: 0}
+    - target: {fileID: 4194839770221869346, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4917694170790257521, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_RendererIndex
       value: -1
@@ -760,6 +764,10 @@ PrefabInstance:
       propertyPath: inventoryUIPanel
       value: 
       objectReference: {fileID: 1266478036}
+    - target: {fileID: 6471358141459538805, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6970727277692511041, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_Layer
       value: 12
@@ -3578,13 +3586,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1024
-  buildingDataList:
-  - {fileID: 11400000, guid: 4c9101522ec57d445bfffcd9c4ed0114, type: 2}
-  - {fileID: 11400000, guid: e5bbfc689bf99f84cb0cbfdd9024da42, type: 2}
-  - {fileID: 11400000, guid: a90ef4f8699ce3c4a8ae99ff21f5e5fd, type: 2}
-  - {fileID: 11400000, guid: cc4d406cc123d52498c836aec7f284d2, type: 2}
-  - {fileID: 11400000, guid: 095f6990c5d97754cb75452a1f8c4346, type: 2}
-  - {fileID: 11400000, guid: 7b3edeef119789547941e8b566e75ee3, type: 2}
+  database: {fileID: 0}
   cellSize: 1
   gridOrigin: {x: 0, y: 0, z: 0}
   raycastStartHeight: 100

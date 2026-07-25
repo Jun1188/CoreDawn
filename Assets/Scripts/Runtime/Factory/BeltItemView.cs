@@ -1,0 +1,123 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 벨트 위 아이템 시각화 — 심 데이터(BeltSegment.Items)를 매 프레임 그리는 immediate-mode 뷰.
+/// FactoryBootstrap이 자기 GO에 자동 부착한다 (씬 배선 불필요).
+///
+/// 원칙:
+///  - 벨트 아이템은 "존재"가 아니라 "그림" — 물리·콜라이더·상호작용 없음 (성능 핵심)
+///  - 아이템 정체성 추적 없음 — 매 프레임 풀에서 꺼내 통째로 다시 배치 (동기화 버그 원천 차단)
+///  - 규모가 수천 개로 커지면 같은 위치 계산 위에 Graphics.RenderMeshInstanced로 교체 (v2)
+///
+/// FBX 전환 예정: 비주얼 적용은 ApplyVisual() 한 곳 — 스프라이트 → 메시로 바꿀 때 여기만 수정.
+/// </summary>
+public class BeltItemView : MonoBehaviour
+{
+    [Tooltip("벨트 표면 위 아이템 표시 높이")]
+    [SerializeField] private float itemHeight = 0.35f;
+
+    [Tooltip("아이템 표시 크기 배율")]
+    [SerializeField] private float itemScale = 0.5f;
+
+    private readonly List<SpriteRenderer> pool = new();
+    private int used;
+
+    private void LateUpdate()   // 심 Advance(Update) 이후의 최신 상태를 그린다
+    {
+        used = 0;
+        var boot = FactoryBootstrap.Instance;
+        if (boot != null && boot.Sim != null)
+        {
+            foreach (var seg in boot.Sim.Belts.Segments)
+                DrawSegment(seg, boot);
+        }
+
+        // 이번 프레임에 안 쓴 슬롯은 끈다
+        for (int i = used; i < pool.Count; i++)
+            if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
+    }
+
+    private void DrawSegment(BeltSegment seg, FactoryBootstrap boot)
+    {
+        int n = seg.BeltCount;
+        if (n == 0) return;
+
+        foreach (var (item, pos) in seg.Items)
+        {
+            if (item == null) continue;
+            if (!TryGetWorldPos(seg, pos, boot, out var world)) continue;
+
+            var slot = Rent();
+            ApplyVisual(slot, item);
+            slot.transform.position = world + Vector3.up * itemHeight;
+        }
+    }
+
+    /// <summary>
+    /// 세그먼트 진행도(pos: 0=입구, n=출구)를 월드 좌표로.
+    /// 벨트 타일 중심들을 폴리라인으로 보고 선형 보간 — 커브 벨트는 모서리를 살짝 가로지른다 (v1 타협).
+    /// </summary>
+    private bool TryGetWorldPos(BeltSegment seg, float pos, FactoryBootstrap boot, out Vector3 world)
+    {
+        world = default;
+        int n = seg.BeltCount;
+
+        // 입구 기준 타일 인덱스 j의 중심 (Belts는 출구=0 순서라 뒤집어 조회)
+        Vector3? CenterOf(int j)
+        {
+            if (j < 0 || j >= n) return null;
+            var view = boot.GetView(seg.Belts[n - 1 - j]);
+            return view != null ? view.transform.position : (Vector3?)null;
+        }
+
+        // 폴리라인 파라미터: s = pos. 타일 j의 중심은 s = j + 0.5 지점.
+        float s = Mathf.Clamp(pos, 0f, n);
+        int j = Mathf.Clamp(Mathf.FloorToInt(s - 0.5f), 0, n - 1);       // 보간 시작 중심
+        Vector3? a = CenterOf(j);
+        if (a == null) return false;
+
+        Vector3? b = CenterOf(j + 1);
+        Vector3 dir;
+        if (b != null) dir = b.Value - a.Value;
+        else
+        {
+            // 마지막(출구) 중심 이후 — 이전 타일에서 방향 추정, 단일 벨트면 뷰의 forward 사용
+            Vector3? prev = CenterOf(j - 1);
+            dir = prev != null ? a.Value - prev.Value
+                               : boot.GetView(seg.Belts[0]) is { } v ? v.transform.forward : Vector3.forward;
+        }
+
+        world = a.Value + dir * (s - (j + 0.5f));
+        return true;
+    }
+
+    // ───────────────────── 풀 / 비주얼 ─────────────────────
+
+    private SpriteRenderer Rent()
+    {
+        if (used < pool.Count)
+        {
+            var r = pool[used++];
+            if (!r.gameObject.activeSelf) r.gameObject.SetActive(true);
+            return r;
+        }
+
+        var go = new GameObject("BeltItem(Pooled)");   // 물리·콜라이더 없음 — 순수 그리기용
+        go.transform.SetParent(transform, false);
+        go.transform.localScale = Vector3.one * itemScale;
+        var sr = go.AddComponent<SpriteRenderer>();
+        pool.Add(sr);
+        used++;
+        return sr;
+    }
+
+    /// <summary>
+    /// 아이템 → 비주얼 적용. ★ FBX(메시) 전환 시 이 메서드만 수정:
+    /// ItemDataSO에 메시 필드를 추가하고, 슬롯을 MeshFilter/MeshRenderer로 바꾸면 된다.
+    /// </summary>
+    private static void ApplyVisual(SpriteRenderer slot, ItemDataSO item)
+    {
+        if (slot.sprite != item.icon) slot.sprite = item.icon;
+    }
+}

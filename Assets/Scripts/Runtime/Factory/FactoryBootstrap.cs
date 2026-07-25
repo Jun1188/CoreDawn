@@ -37,6 +37,9 @@ public class FactoryBootstrap : MonoBehaviour
             var view = GetView(belt);
             if (view != null) PlacementBridge.DropAt(item, 1, view.transform.position);
         };
+
+        // 벨트 위 아이템 시각화 뷰 — 씬 배선 없이 드라이버가 직접 부착
+        if (GetComponent<BeltItemView>() == null) gameObject.AddComponent<BeltItemView>();
     }
 
     void Update() => Sim.Advance(Time.deltaTime);

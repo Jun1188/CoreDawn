@@ -286,3 +286,15 @@
   BeltSegmentManager.ItemDiscarded 이벤트로 통지 (기존 TODO 해소) —
   심은 버리기만 하고, FactoryBootstrap(드라이버)이 구독해 월드 드롭. 심/뷰 분리 유지
 - 순수 심 테스트는 이벤트 미구독 — 기존 시나리오 무영향
+
+---
+
+## 2026-07-26 — 벨트 위 아이템 시각화 (BeltItemView, immediate-mode 풀)
+
+- 심 데이터(BeltSegment.Items의 (item, pos))를 매 프레임 그리는 순수 뷰 —
+  물리·콜라이더·상호작용 없음, 아이템 정체성 추적 없음 (동기화 버그 원천 차단)
+- pos(0=입구, n=출구) → 월드: 벨트 타일 중심 폴리라인 선형 보간.
+  커브 벨트는 모서리를 살짝 가로지름 (v1 타협 — 어색하면 포트 방향 베지어)
+- FactoryBootstrap이 자기 GO에 자동 부착 — 씬 배선 불필요
+- **FBX 전환 대비**: 비주얼 적용은 ApplyVisual() 한 곳 — 메시 전환 시 여기만 수정.
+  수천 개 규모가 되면 같은 위치 계산 위에 Graphics.RenderMeshInstanced(v2)로 교체
