@@ -15,10 +15,10 @@ using UnityEngine;
 public class BeltItemView : MonoBehaviour
 {
     [Tooltip("벨트 표면 위 아이템 표시 높이")]
-    [SerializeField] private float itemHeight = 0.35f;
+    [SerializeField] private float itemHeight = 1;
 
     [Tooltip("아이템 표시 크기 배율")]
-    [SerializeField] private float itemScale = 0.5f;
+    [SerializeField] private float itemScale = 1;
 
     private readonly List<SpriteRenderer> pool = new();
     private int used;
@@ -69,39 +69,38 @@ public class BeltItemView : MonoBehaviour
 
     /// <summary>
     /// 세그먼트 진행도(pos: 0=입구, n=출구)를 월드 좌표로.
-    /// 벨트 타일 중심들을 폴리라인으로 보고 선형 보간 — 커브 벨트는 모서리를 살짝 가로지른다 (v1 타협).
+    /// 아이템이 올라탄 벨트 타일의 **실제 포트 방향**(심 데이터, 회전·커브 오버라이드 반영)으로
+    /// 진입 에지 → 중심 → 진출 에지 경로를 만든다:
+    ///   - 직선 벨트: 세 점이 일직선 → 정확한 선형 이동
+    ///   - 커브 벨트: 2차 베지어 → 부드러운 90° 호
+    /// 이웃 타일 추정이 없으므로 싱글 벨트·세그먼트 양끝 커브에서도 정확하다.
     /// </summary>
     private bool TryGetWorldPos(BeltSegment seg, float pos, FactoryBootstrap boot, out Vector3 world)
     {
         world = default;
         int n = seg.BeltCount;
 
-        // 입구 기준 타일 인덱스 j의 중심 (Belts는 출구=0 순서라 뒤집어 조회)
-        Vector3? CenterOf(int j)
+        float s = Mathf.Clamp(pos, 0f, n - 0.0001f);
+        int j = Mathf.Min((int)s, n - 1);   // 입구 기준 타일 인덱스
+        float t = s - j;                     // 타일 내 진행도 0..1
+
+        var belt = seg.Belts[n - 1 - j];     // Belts는 출구=0 순서
+        var view = boot.GetView(belt);
+        if (view == null) return false;
+        Vector3 center = view.transform.position;
+
+        // 포트 → 타일 에지 (그리드 y = 월드 z, 셀 크기 1 기준)
+        Vector3 entry = center, exit = center;
+        foreach (var p in belt.GetEffectivePorts())
         {
-            if (j < 0 || j >= n) return null;
-            var view = boot.GetView(seg.Belts[n - 1 - j]);
-            return view != null ? view.transform.position : (Vector3?)null;
+            var v = Dir.ToVec(p.Direction);
+            var edge = center + new Vector3(v.x, 0f, v.y) * 0.5f;
+            if (p.IsInput) entry = edge;
+            else exit = edge;
         }
 
-        // 폴리라인 파라미터: s = pos. 타일 j의 중심은 s = j + 0.5 지점.
-        float s = Mathf.Clamp(pos, 0f, n);
-        int j = Mathf.Clamp(Mathf.FloorToInt(s - 0.5f), 0, n - 1);       // 보간 시작 중심
-        Vector3? a = CenterOf(j);
-        if (a == null) return false;
-
-        Vector3? b = CenterOf(j + 1);
-        Vector3 dir;
-        if (b != null) dir = b.Value - a.Value;
-        else
-        {
-            // 마지막(출구) 중심 이후 — 이전 타일에서 방향 추정, 단일 벨트면 뷰의 forward 사용
-            Vector3? prev = CenterOf(j - 1);
-            dir = prev != null ? a.Value - prev.Value
-                               : boot.GetView(seg.Belts[0]) is { } v ? v.transform.forward : Vector3.forward;
-        }
-
-        world = a.Value + dir * (s - (j + 0.5f));
+        float u = 1f - t;
+        world = u * u * entry + 2f * u * t * center + t * t * exit;
         return true;
     }
 

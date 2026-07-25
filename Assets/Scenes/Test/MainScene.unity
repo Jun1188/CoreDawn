@@ -1009,6 +1009,7 @@ GameObject:
   - component: {fileID: 479437657}
   - component: {fileID: 479437656}
   - component: {fileID: 479437655}
+  - component: {fileID: 479437658}
   m_Layer: 0
   m_Name: FactorySystem
   m_TagString: Untagged
@@ -1058,6 +1059,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 522699269}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &479437658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 479437654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb219762334e4f509c87686bcc6531e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeltItemView
+  itemHeight: 1
+  itemScale: 1
 --- !u!1 &497282996
 GameObject:
   m_ObjectHideFlags: 0
