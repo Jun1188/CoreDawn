@@ -146,6 +146,12 @@ public class FactorySim
     /// 실시간 dt만큼 시뮬레이션을 진행한다 (고정 틱 + 따라잡기 상한).
     /// 드라이버(FactoryBootstrap)가 매 프레임 호출하거나, 테스트가 직접 호출한다.
     /// </summary>
+    /// <summary>
+    /// 마지막 틱 이후 흐른 시간(초) — 뷰가 틱 사이를 외삽해 부드럽게 그릴 때 사용.
+    /// 틱 지연(캐치업 한도 초과) 시에도 한 틱 분량을 넘지 않게 클램프.
+    /// </summary>
+    public float TickLeftover => Mathf.Min(_timer, _interval);
+
     public void Advance(float dt)
     {
         _timer += dt;

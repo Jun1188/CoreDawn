@@ -1,28 +1,51 @@
 using UnityEngine;
 
-
 public class DroppedItem : Interactable
 {
     public ItemDataSO item;
     public int amount;
 
-    public void Setup(ItemDataSO itemData, int count, SpriteRenderer sr)
+    [Tooltip("아이템 아이콘을 표시할 렌더러 — 공용 프리팹에서 연결 (폴백 조립 시 런타임 주입)")]
+    [SerializeField] private SpriteRenderer visual;
+
+    public void Setup(ItemDataSO itemData, int count)
     {
         item = itemData;
         amount = count;
 
         // 조준했을 때 화면에 뜰 메시지 세팅
         promptMessage = $"{item.name} x{amount} 줍기";
+
+        // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
+        if (visual != null) visual.sprite = itemData.icon;
     }
 
     /// <summary>
-    /// 월드 드롭 아이템을 코드로 조립해 스폰한다 — 핫바 Q드롭, 인벤 닫을 때 캐리지 드롭 등 공용.
-    /// (프리팹화 전 임시 팩토리. 프리팹으로 전환하면 이 함수 내부만 바꾸면 된다)
+    /// 월드 드롭 아이템 스폰 — 핫바 Q드롭, 인벤 캐리지 드롭, (예정) 몬스터 루팅 공용.
+    /// 마크처럼 정형화: ItemDatabase의 공용 프리팹 하나를 모든 아이템이 쓴다 (아이콘만 교체).
+    /// 프리팹 미지정 시 코드 조립 폴백 — 테스트 씬 안전.
     /// </summary>
     public static DroppedItem Spawn(ItemDataSO item, int amount, Vector3 position, Vector3 throwDirection)
     {
+        var db = ItemDatabaseSO.LoadDefault();
+        var prefab = db != null ? db.droppedItemPrefab : null;
+
+        DroppedItem dropped = prefab != null
+            ? Instantiate(prefab, position, Quaternion.identity)
+            : BuildFallback(position);
+
+        dropped.Setup(item, amount);
+
+        var rb = dropped.GetComponent<Rigidbody>();
+        if (rb != null) rb.AddForce(throwDirection * 3.5f, ForceMode.Impulse);
+        return dropped;
+    }
+
+    /// <summary>공용 프리팹이 없을 때의 코드 조립 (구 방식). 프리팹과 같은 구조를 만든다.</summary>
+    static DroppedItem BuildFallback(Vector3 position)
+    {
         // 1. 루트 오브젝트 + 레이어
-        GameObject dropObj = new($"Dropped_{item.name}");
+        GameObject dropObj = new("Dropped(Fallback)");
         dropObj.transform.position = position;
 
         int layer = LayerMask.NameToLayer("Interactable");
@@ -49,25 +72,40 @@ public class DroppedItem : Interactable
         visualObj.transform.localPosition = Vector3.zero;
         visualObj.layer = dropObj.layer;
 
-        SpriteRenderer sr = visualObj.AddComponent<SpriteRenderer>();
-        sr.sprite = item.icon;
+        var sr = visualObj.AddComponent<SpriteRenderer>();
         visualObj.AddComponent<ItemRotator>();
 
-        // 5. 데이터 주입 + 전방 투척
-        DroppedItem dropped = dropObj.AddComponent<DroppedItem>();
-        dropped.Setup(item, amount, sr);
-        rb.AddForce(throwDirection * 3.5f, ForceMode.Impulse);
+        var dropped = dropObj.AddComponent<DroppedItem>();
+        dropped.visual = sr;
         return dropped;
     }
 
-    // [방법 1] 조준 후 직접 상호작용 키를 눌러서 줍기
+    /// <summary>
+    /// 같은 아이템 스택 병합. 양쪽 모두 서로의 OnTriggerEnter를 받으므로
+    /// InstanceID가 작은 쪽만 수행해 중복 병합을 막는다. 합계가 스택 상한을 넘으면 각자 유지.
+    /// </summary>
+    private void TryMergeWith(DroppedItem other)
+    {
+        if (other == null || other == this) return;
+        if (item == null || other.item != item) return;
+        if (amount <= 0 || other.amount <= 0) return;          // 이미 병합/줍기로 소멸 예정인 상대
+        if (GetInstanceID() > other.GetInstanceID()) return;   // 한쪽만 수행
+        if (amount + other.amount > new ItemStack(item, 1).maxStackSize) return;
+
+        amount += other.amount;
+        other.amount = 0;                                      // 상대의 후속 병합/줍기 차단
+        Destroy(other.gameObject);
+        Setup(item, amount);                                   // 프롬프트("xN 줍기") 갱신
+    }
+
+    // 줍기 — 조준 후 E (유일한 줍기 경로)
     public override void OnInteract(PlayerController player)
     {
         if (item == null || amount <= 0) return;
 
         // 플레이어 가방 백엔드에 아이템 주워담기 시도
         bool success = player.playerInventory.AddItem(item, amount);
-        
+
         if (success)
         {
             if (InventoryManager.Instance != null)
@@ -82,40 +120,11 @@ public class DroppedItem : Interactable
         }
     }
 
-    // [방법 2] 발로 밟거나 근처 센서 구역에 들어가면 자동으로 줍기 (자석 루팅)
+    // 줍기는 E(OnInteract) 전용 — 플레이어 접촉 자동 줍기는 제거됨.
+    // 트리거 센서는 스택 병합에만 쓴다.
     private void OnTriggerEnter(Collider other)
     {
-        // 충돌한 대상이 플레이어인지 태그 검사
-        if (other.CompareTag("Player"))
-        {
-            PlayerController player = other.GetComponent<PlayerController>();
-            if (player != null && player.playerInventory != null)
-            {
-                // 백엔드 가방에 아이템 데이터 추가 시도
-                bool isSuccess = player.playerInventory.AddItem(this.item, this.amount);
-
-                if (isSuccess)
-                {
-                    if (InventoryManager.Instance != null)
-                    {
-                        Debug.Log($"[루팅 성공] {item.name} {amount}개를 자동으로 주웠습니다.");
-                        // 핫바를 포함한 모든 인벤토리 UI 실시간 새로고침 강제 호출!
-                        InventoryManager.Instance.RefreshAllGameUIs(player.playerInventory);
-                    }
-
-                    // 바닥 오브젝트 깔끔하게 파괴
-                    Destroy(gameObject);
-                }
-            }
-        }
-    }
-}
-
-// 💡 마인크래프트처럼 아이템이 제자리에서 빙글빙글 돌게 만드는 컴포넌트
-public class ItemRotator : MonoBehaviour
-{
-    void Update()
-    {
-        transform.Rotate(90f * Time.deltaTime * Vector3.up, Space.World);
+        // 마크식 스택 병합 — 같은 아이템끼리 센서에 닿으면 하나로
+        TryMergeWith(other.GetComponentInParent<DroppedItem>());
     }
 }

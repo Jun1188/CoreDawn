@@ -34,10 +34,40 @@ public static class PlacementBridge
         if (b == null || b.IsRemoved) return;
         var boot = FactoryBootstrap.Instance;
 
-        boot.Sim.Remove(b);
-
+        // 버퍼 내용물은 파괴 전에 월드로 — 건물이 사라져도 아이템은 보존 (철거·전투 파괴 공통 관문)
         var view = boot.GetView(b);
+        if (view != null)
+        {
+            DropContainer(b.Input, view.transform.position);
+            DropContainer(b.Output, view.transform.position);
+        }
+
+        boot.Sim.Remove(b);   // 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지 (뷰 파괴 전이라 위치 조회 가능)
+
         boot.UnregisterView(b);
         if (view != null) Object.Destroy(view.gameObject);
+    }
+
+    /// <summary>컨테이너 내용물 전체를 위치 주변에 드롭. 스택 상한(64) 단위로 쪼갠다.</summary>
+    static void DropContainer(ItemContainer container, Vector3 position)
+    {
+        foreach (var (item, total) in container.Snapshot())
+        {
+            int remain = total;
+            while (remain > 0)
+            {
+                int n = Mathf.Min(remain, 64);
+                remain -= n;
+                DropAt(item, n, position);
+            }
+        }
+    }
+
+    /// <summary>파괴 지점 주변으로 흩뿌리는 드롭 (벨트 폐기 통지도 이 헬퍼 사용).</summary>
+    public static void DropAt(ItemDataSO item, int amount, Vector3 position)
+    {
+        var scatter = Random.insideUnitCircle * 0.4f;
+        var dir = new Vector3(scatter.x, 0.6f, scatter.y).normalized;   // 위로 톡 튀며 흩어짐
+        DroppedItem.Spawn(item, amount, position + Vector3.up * 0.6f, dir);
     }
 }

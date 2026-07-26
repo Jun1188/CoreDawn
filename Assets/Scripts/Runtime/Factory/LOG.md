@@ -240,3 +240,61 @@
 - 프리팹/씬 참조 없음(런타임 부착 전용)이라 에셋 수정 불필요.
   프리팹에 Entities.Building을 미리 붙이면(타워 canAttack 등) PlacementBridge가 그대로 사용
 - 이는 건물 상호작용(E키) 작업의 선행 정리 — 다음: Interactable 어댑터가 Entities.Building을 직접 참조
+
+---
+
+## 2026-07-25 — GameDataSO id 정책 변경: 자동 생성 폐기, 수동 지정
+
+- **자동 생성 제거** — RecipeImporter가 만든 한국어 displayName이 그대로 id로 굳는 사고
+  ("Recipe::철 기어 제작") 발견. id는 사람이 의도적으로 정하는 안정 키로 전환
+- **형식: 콜론 1개** ("분류:이름", 예: Item:IronOre). 기존 에셋 12종 일괄 마이그레이션,
+  한국어로 생성됐던 레시피 id 2건은 비움 (경고 뜨는 상태 — 담당자가 영문으로 지정)
+- 비어 있으면 OnValidate가 경고. id 중복 검사는 유지
+- id 소비자는 아직 없음(세이브 예정) — 형식 변경 무해 확인
+
+---
+
+## 2026-07-25 — ItemDatabaseSO 레지스트리 (건물 DB 패턴 재사용)
+
+- **ItemDatabaseSO** (Resources/ItemDatabase) — 전체 아이템 SO 자동 수집 (타입 → 표시명 정렬).
+  `FindById`(세이브용 id↔SO 해석), `GroupedByType` 제공
+- 스캐너 통합: BuildingDatabaseScanner가 건물/아이템 DB를 함께 재수집
+  (메뉴: Tools/Factory/Rebuild Data Databases). 커스텀 인스펙터도 동일 패턴(타입 그룹, 읽기 전용)
+- Inventory.Awake의 죽은 테스트 코드(Resources.Load "TestItemName") 제거
+- 예정 소비자: 자원 배치(광석 목록), 레시피 UI(재료 표시), 세이브. RecipeImporter의
+  아이템 자동 생성 확장은 팀 논의 후 (id 부여 방식 포함)
+
+---
+
+## 2026-07-25 — 월드 드롭 아이템 정형화 (마크식 공용 프리팹)
+
+- **공용 DroppedItem.prefab** (Prefabs/Item/) — 모든 아이템이 같은 프리팹, 아이콘만 교체.
+  참조는 ItemDatabaseSO.droppedItemPrefab (아이템 시스템 전역 설정 자리)
+- DroppedItem.Spawn: 프리팹 Instantiate + Setup(아이콘 주입). 프리팹 미지정 시
+  기존 코드 조립 폴백 — 호출자(Q드롭·캐리지 드롭) 무수정
+- ItemRotator를 별도 파일로 분리 (파일명 불일치 클래스는 프리팹에 못 붙음)
+- 아이템별 프리팹(worldPrefab) 안은 기각 — 표현 차이는 아이콘으로 충분, 정형화가 관리 우위.
+  디자이너는 공용 프리팹 하나만 다듬으면 전 아이템 반영
+
+---
+
+## 2026-07-25 — 건물 파괴 시 아이템 드롭 (버퍼 + 벨트 위 아이템)
+
+- **PlacementBridge.Remove가 단일 관문** (철거·전투 파괴 공통): 심 제거 전에
+  Input/Output 버퍼 내용물을 파괴 지점 주변에 드롭 (스택 64 단위, 흩뿌림)
+- **벨트 위 아이템**: 세그먼트 분할 시 폐기되던 제거-벨트 구간 아이템을
+  BeltSegmentManager.ItemDiscarded 이벤트로 통지 (기존 TODO 해소) —
+  심은 버리기만 하고, FactoryBootstrap(드라이버)이 구독해 월드 드롭. 심/뷰 분리 유지
+- 순수 심 테스트는 이벤트 미구독 — 기존 시나리오 무영향
+
+---
+
+## 2026-07-26 — 벨트 위 아이템 시각화 (BeltItemView, immediate-mode 풀)
+
+- 심 데이터(BeltSegment.Items의 (item, pos))를 매 프레임 그리는 순수 뷰 —
+  물리·콜라이더·상호작용 없음, 아이템 정체성 추적 없음 (동기화 버그 원천 차단)
+- pos(0=입구, n=출구) → 월드: 벨트 타일 중심 폴리라인 선형 보간.
+  커브 벨트는 모서리를 살짝 가로지름 (v1 타협 — 어색하면 포트 방향 베지어)
+- FactoryBootstrap이 자기 GO에 자동 부착 — 씬 배선 불필요
+- **FBX 전환 대비**: 비주얼 적용은 ApplyVisual() 한 곳 — 메시 전환 시 여기만 수정.
+  수천 개 규모가 되면 같은 위치 계산 위에 Graphics.RenderMeshInstanced(v2)로 교체

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c278536f4a3d434caf061c1cb5741cb3, type: 3}
   m_Name: Minor
   m_EditorClassIdentifier: Assembly-CSharp::MinerDataSO
-  id: Buildings::Minor
+  id: Buildings:Minor
   displayName: Minor
   description: 
   icon: {fileID: 0}

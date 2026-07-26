@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56d4fa73653b4aebaf7e65c522fde0c1, type: 3}
   m_Name: Belt
   m_EditorClassIdentifier: Assembly-CSharp::BeltDataSO
-  id: Buildings::Belt
+  id: Buildings:Belt
   displayName: Belt
   description: 
   icon: {fileID: 0}

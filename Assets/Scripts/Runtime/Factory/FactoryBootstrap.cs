@@ -10,6 +10,7 @@ using UnityEngine;
 ///   2. 심 Building ↔ Entities.Building(GameObject) 매핑 관리
 /// 시뮬레이션 로직은 전부 FactorySim(plain C#)에 있다.
 /// </summary>
+[RequireComponent(typeof(BeltItemView))]
 public class FactoryBootstrap : MonoBehaviour
 {
     public static FactoryBootstrap Instance { get; private set; }
@@ -30,6 +31,16 @@ public class FactoryBootstrap : MonoBehaviour
         Instance = this;
         Sim = new FactorySim(_tps, _maxCatchUpTicks);
         DontDestroyOnLoad(gameObject);
+
+        // 벨트 철거로 세그먼트에서 밀려난 아이템 → 월드 드롭 (통지 시점엔 벨트 뷰가 아직 살아있음)
+        Sim.Belts.ItemDiscarded += (belt, item) =>
+        {
+            var view = GetView(belt);
+            if (view != null) PlacementBridge.DropAt(item, 1, view.transform.position);
+        };
+
+        // 벨트 위 아이템 시각화 뷰 — 씬 배선 없이 드라이버가 직접 부착
+        if (GetComponent<BeltItemView>() == null) Debug.LogWarning("No Belt Item Renderer");
     }
 
     void Update() => Sim.Advance(Time.deltaTime);

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d20a6012c634eb6a64a385934adbfd3, type: 3}
   m_Name: Storage
   m_EditorClassIdentifier: Assembly-CSharp::StorageDataSO
-  id: Buildings::Storage
+  id: Buildings:Storage
   displayName: Storage
   description: 
   icon: {fileID: 0}

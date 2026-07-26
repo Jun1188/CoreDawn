@@ -19,7 +19,7 @@ public class BeltSegment
     public readonly List<Building> Belts = new();
     public float SpeedTilesPerSec = 2f;
 
-    const float Spacing = 0.5f;
+    public const float Spacing = 0.5f;   // 아이템 간 최소 간격 (뷰의 외삽 클램프도 사용)
 
     readonly FactorySim _sim;
 

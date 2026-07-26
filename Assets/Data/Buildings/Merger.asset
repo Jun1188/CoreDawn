@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd30ca4b6f3d43a58d1584a8d27f2746, type: 3}
   m_Name: Merger
   m_EditorClassIdentifier: Assembly-CSharp::MergerDataSO
-  id: Buildings::Merger
+  id: Buildings:Merger
   displayName: Merger
   description: 
   icon: {fileID: 0}

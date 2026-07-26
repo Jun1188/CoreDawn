@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
   m_Name: IronIngot
   m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
-  id: Item::IronIngot
+  id: Item:IronIngot
   displayName: IronIngot
   description: 
   icon: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
