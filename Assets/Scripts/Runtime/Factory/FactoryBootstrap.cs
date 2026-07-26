@@ -10,6 +10,7 @@ using UnityEngine;
 ///   2. 심 Building ↔ Entities.Building(GameObject) 매핑 관리
 /// 시뮬레이션 로직은 전부 FactorySim(plain C#)에 있다.
 /// </summary>
+[RequireComponent(typeof(BeltItemView))]
 public class FactoryBootstrap : MonoBehaviour
 {
     public static FactoryBootstrap Instance { get; private set; }
