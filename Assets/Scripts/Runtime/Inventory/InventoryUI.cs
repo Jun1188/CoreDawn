@@ -2,84 +2,56 @@ using UnityEngine;
 
 public class InventoryUI : MonoBehaviour
 {
-    [Header("References")]
-    public Inventory inventory;             
-    public GameObject itemSocketPrefab;     
-    public Transform slotGridParent;        
+    [Header("UI Prefab & Parent")]
+    public GameObject itemSocketPrefab;
+    public Transform slotGridParent;
 
-    [Header("★화면 자동 연동 옵션")]
-    public bool isPlayerMainInventory = false; // 체크하면 플레이어 핫바를 제외한 가방 칸만 자동 계산
+    public ItemContainer TargetContainer { get; private set; }
+    private ItemSocket[] uiSlots;
 
-    // ❌ 무의미한 startSlotIndex, endSlotIndex, useSlotRange 변수 전부 삭제!!
-    private ItemSocket[] uiSlots;          
-
-    private void Start()
+    public void Bind(ItemContainer container)
     {
-        if (inventory == null) return;
+        TargetContainer = container;
         InitUISlots();
-        RefreshAllUI();
+        RefreshUI();
     }
 
     private void OnEnable()
     {
-        if (inventory != null) RefreshAllUI();
+        if (TargetContainer != null) RefreshUI();
     }
 
     public void InitUISlots()
     {
+        if (TargetContainer == null || slotGridParent == null) return;
+
         foreach (Transform child in slotGridParent) Destroy(child.gameObject);
 
-        // 🔥 [대폭 최적화] 기본값은 인벤토리의 처음(0)부터 끝(slotCount - 1)까지입니다.
-        int start = 0;
-        int end = inventory.SlotCount - 1;   // 실제 컨테이너 크기 (Bind된 건물 보관함은 slotCount 필드와 다름)
-
-        // 오직 '플레이어 메인 가방 UI'일 때만 자동으로 앞부분(핫바)을 건너뜁니다!
-        if (isPlayerMainInventory && HotbarController.Instance != null)
-        {
-            start = HotbarController.Instance.hotbarSlotCount;
-        }
-
-        int count = Mathf.Max(0, end - start + 1);
+        int count = TargetContainer.SlotCount;
         uiSlots = new ItemSocket[count];
 
         for (int i = 0; i < count; i++)
         {
-            int slotIdx = start + i; 
             GameObject go = Instantiate(itemSocketPrefab, slotGridParent);
-            
-            InventorySlotUI slotLink = go.GetComponent<InventorySlotUI>();
-            if (slotLink == null) slotLink = go.AddComponent<InventorySlotUI>();
-            
-            slotLink.Init(slotIdx, this);
+            InventorySlotUI slotLink = go.GetComponent<InventorySlotUI>() ?? go.AddComponent<InventorySlotUI>();
+            slotLink.Init(i, this);
             uiSlots[i] = go.GetComponent<ItemSocket>();
         }
     }
 
-    public void RefreshAllUI()
+    public void RefreshUI()
     {
-        if (inventory == null || uiSlots == null) return;
+        if (TargetContainer == null || uiSlots == null) return;
 
-        // 🔥 새로고침할 때도 동일하게 범위를 자동 계산합니다.
-        int start = 0;
-        int end = inventory.SlotCount - 1;   // 실제 컨테이너 크기 (Bind된 건물 보관함은 slotCount 필드와 다름)
-
-        if (isPlayerMainInventory && HotbarController.Instance != null)
-        {
-            start = HotbarController.Instance.hotbarSlotCount;
-        }
-
-        int count = Mathf.Max(0, end - start + 1);
-
-        if (uiSlots.Length != count)
+        if (uiSlots.Length != TargetContainer.SlotCount)
         {
             InitUISlots();
             return;
         }
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < uiSlots.Length; i++)
         {
-            int slotIdx = start + i;
-            ItemStack itemStack = inventory.GetAt(slotIdx);
+            ItemStack itemStack = TargetContainer.PeekAt(i);
             if (itemStack != null && itemStack.item != null && itemStack.amount > 0)
             {
                 uiSlots[i].SetItem(itemStack.item, itemStack.amount);
@@ -93,11 +65,13 @@ public class InventoryUI : MonoBehaviour
 
     public void OnSlotLeftClicked(int clickedIndex)
     {
-        InventoryManager.Instance.HandleSlotLeftClick(inventory, clickedIndex, this);
+        if (TargetContainer != null)
+            InventoryManager.Instance?.HandleSlotLeftClick(TargetContainer, clickedIndex, this);
     }
 
     public void OnSlotRightClicked(int clickedIndex)
     {
-        InventoryManager.Instance.HandleSlotRightClick(inventory, clickedIndex, this);
+        if (TargetContainer != null)
+            InventoryManager.Instance?.HandleSlotRightClick(TargetContainer, clickedIndex, this);
     }
 }

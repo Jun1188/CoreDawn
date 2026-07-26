@@ -103,7 +103,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver
 
         if (InventoryManager.Instance != null && playerInventory != null)
         {
-            InventoryManager.Instance.CheckWeaponEquip(playerInventory);
+            InventoryManager.Instance.CheckWeaponEquip(PlayerInventoryHolder.Instance.HotbarContainer);
         }
     }
 

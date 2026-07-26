@@ -52,7 +52,7 @@ public class TestCombatBootstrap : MonoBehaviour
 
         // 핫바 0번(기본 선택 슬롯)에 들어간 무기를 즉시 장착
         if (InventoryManager.Instance != null)
-            InventoryManager.Instance.CheckWeaponEquip(controller.playerInventory, 0);
+            InventoryManager.Instance.CheckWeaponEquip(PlayerInventoryHolder.Instance.HotbarContainer);
 
         Debug.Log($"[TestCombatBootstrap] 시작 무기 지급: {startingWeapon.name}");
     }

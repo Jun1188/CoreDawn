@@ -1,20 +1,22 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Inventory))] // 이 스크립트를 붙이면 Inventory 컴포넌트도 자동으로 함께 붙습니다.
+[RequireComponent(typeof(Inventory))] // 상자 오브젝트에 Inventory 컴포넌트 자동 부착
 public class Chest : Interactable
 {
-    private Inventory chestInventory;
+    private Inventory inventory;
 
     private void Awake()
     {
-        chestInventory = GetComponent<Inventory>();
-        promptMessage = "상자 열기"; // 조준점을 갖다 대면 뜰 메시지
+        inventory = GetComponent<Inventory>();
+        promptMessage = "상자 열기";
     }
 
     public override void OnInteract(PlayerController player)
     {
-        // 인벤 화면 시스템에 이 상자의 컨테이너를 함께 열어달라고 요청 (플레이어는 중개하지 않음)
-        if (InventoryManager.Instance != null)
-            InventoryManager.Instance.OpenContainerScreen(chestInventory);
+        // Inventory 컴포넌트가 쥐고 있는 Container를 그대로 넘겨줌!
+        if (InventoryManager.Instance != null && inventory != null)
+        {
+            InventoryManager.Instance.OpenContainerScreen(inventory.Container);
+        }
     }
 }

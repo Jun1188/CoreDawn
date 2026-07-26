@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-// JSON 파싱용 구조
 [Serializable]
 public class RecipeJsonData
 {
     public string fileName;
     public string displayName;
-    public float craftTime;
+    public int tier;           // 0: 손제작, 1 이상: 공장 기계 전용
+    public float craftTime;    // 제작 소요 시간 (초)
     public SlotJsonData[] inputs;
     public SlotJsonData[] outputs;
 }
@@ -23,7 +23,6 @@ public class SlotJsonData
     public int amount;
 }
 
-// JSON 배열 읽기 래퍼
 public static class JsonHelper
 {
     public static T[] FromJson<T>(string json)
@@ -39,32 +38,24 @@ public static class JsonHelper
 
 public class RecipeImporter : EditorWindow
 {
-    // 유니티 메뉴바 [Tools] -> [Generate Recipe SOs from JSON]
     [MenuItem("Tools/Generate Recipe SOs from JSON")]
     public static void GenerateRecipes()
     {
-        // 1. JSON 위치: Assets/Datas/Recipe/Recipes.json 경로로 지정!
         string jsonPath = Path.Combine(Application.dataPath, "Data/Recipe/Recipes.json");
 
         if (!File.Exists(jsonPath))
         {
-            Debug.LogError($"[RecipeImporter] {jsonPath} 경로에 JSON 파일이 존재하지 않습니다! 파일명을 확인해주세요.");
+            Debug.LogError($"[RecipeImporter] {jsonPath} 경로에 JSON 파일이 존재하지 않습니다!");
             return;
         }
 
         string jsonContent = File.ReadAllText(jsonPath);
         RecipeJsonData[] recipeList = JsonHelper.FromJson<RecipeJsonData>(jsonContent);
 
-        // 2. SO 에셋을 생성/저장할 폴더 경로
         string saveFolderPath = "Assets/Data/Recipe";
-        if (!Directory.Exists(saveFolderPath))
-        {
-            Directory.CreateDirectory(saveFolderPath);
-        }
+        if (!Directory.Exists(saveFolderPath)) Directory.CreateDirectory(saveFolderPath);
 
-        // 3. 프로젝트의 아이템 SO 데이터베이스 구축
         Dictionary<string, ItemDataSO> itemDatabase = BuildItemDatabase();
-
         int createdCount = 0;
 
         foreach (var recipeData in recipeList)
@@ -79,6 +70,7 @@ public class RecipeImporter : EditorWindow
             }
 
             recipeSO.displayName = recipeData.displayName;
+            recipeSO.tier = recipeData.tier;
             recipeSO.craftTime = recipeData.craftTime;
 
             recipeSO.inputs = ConvertSlots(recipeData.inputs, itemDatabase);
@@ -91,7 +83,7 @@ public class RecipeImporter : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"<color=green>[RecipeImporter] 성공! 총 {createdCount}개의 RecipeDataSO가 '{saveFolderPath}'에 생성/갱신되었습니다.</color>");
+        Debug.Log($"<color=green>[RecipeImporter] 총 {createdCount}개의 RecipeDataSO 생성/갱신 완료!</color>");
     }
 
     private static Dictionary<string, ItemDataSO> BuildItemDatabase()
@@ -123,10 +115,6 @@ public class RecipeImporter : EditorWindow
             if (itemDb.TryGetValue(jSlot.itemId, out ItemDataSO itemSO))
             {
                 slotList.Add(new RecipeDataSO.Slot { item = itemSO, amount = jSlot.amount });
-            }
-            else
-            {
-                Debug.LogWarning($"[RecipeImporter] 아이템 '{jSlot.itemId}'을(를) 에셋에서 찾을 수 없습니다.");
             }
         }
         return slotList.ToArray();

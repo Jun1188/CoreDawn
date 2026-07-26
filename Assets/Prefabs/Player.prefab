@@ -2466,6 +2466,8 @@ GameObject:
   - component: {fileID: 1341143159957256118}
   - component: {fileID: 4783920156234871905}
   - component: {fileID: 307732148233776431}
+  - component: {fileID: 8415338401495421512}
+  - component: {fileID: 711201946653970601}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -2589,7 +2591,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 019ef05594285c34ba46ece5a5998d40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HotbarController
-  hotbarSlotCount: 9
   player: {fileID: 6442160254612740854}
 --- !u!114 &307732148233776431
 MonoBehaviour:
@@ -2608,6 +2609,33 @@ MonoBehaviour:
   interactableLayers:
     serializedVersion: 2
     m_Bits: 8960
+  interactRange: 4
+--- !u!114 &8415338401495421512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7498640336194902235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7672c0d6c9c0a554e8d61e413118ea5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryHolder
+  inventoryProcessor: {fileID: 711201946653970601}
+--- !u!114 &711201946653970601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7498640336194902235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87597f0bd1a8e7445a91529db8ccaead, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryProcessor
+  currentRecipe: {fileID: 0}
 --- !u!1 &7920431637011069521
 GameObject:
   m_ObjectHideFlags: 0

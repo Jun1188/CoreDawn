@@ -12,7 +12,7 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
     public Vector3 PositionOffset { get; private set; }
     public Quaternion RotationOffset { get; private set; } = Quaternion.identity;
 
-    public Camera camera;
+    public new Camera camera;
     public float defaultFov;
     public float targetFov;
     // ★ 수정됨: WeaponManager에서 무기를 스왑할 때 호출하여 새 무기의 sightPoint 등록

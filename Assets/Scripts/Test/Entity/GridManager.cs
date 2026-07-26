@@ -83,7 +83,7 @@ public class GridManager : MonoBehaviour
 
     void Start()
     {
-        var placement = FindObjectOfType<PlacementSystem>();
+        var placement = FindFirstObjectByType<PlacementSystem>();
         if (placement != null)
         {
             simGridSystem = new GridSystem(placement.CellSize, placement.GridOrigin);

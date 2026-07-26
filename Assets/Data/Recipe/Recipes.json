@@ -2,6 +2,7 @@
   {
     "fileName": "Recipe_IronIngot",
     "displayName": "철 주괴 제련",
+    "tier": 0,
     "craftTime": 2.0,
     "inputs": [
       { "itemId": "IronOre", "amount": 2 },
@@ -14,6 +15,7 @@
   {
     "fileName": "Recipe_IronGear",
     "displayName": "철 기어 제작",
+    "tier": 1,
     "craftTime": 3.0,
     "inputs": [
       { "itemId": "IronIngot", "amount": 2 }

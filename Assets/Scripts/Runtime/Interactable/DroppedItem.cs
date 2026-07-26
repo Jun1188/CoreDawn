@@ -103,16 +103,14 @@ public class DroppedItem : Interactable
     {
         if (item == null || amount <= 0) return;
 
-        // 플레이어 가방 백엔드에 아이템 주워담기 시도
-        bool success = player.playerInventory.AddItem(item, amount);
+        // 핫바 -> 가방 순으로 자동 적재[cite: 24]
+        bool success = PlayerInventoryHolder.Instance != null &&
+                    PlayerInventoryHolder.Instance.AddItemToPlayer(item, amount);
 
         if (success)
         {
-            if (InventoryManager.Instance != null)
-            {
-                InventoryManager.Instance.RefreshAllGameUIs(player.playerInventory);
-            }
-            Destroy(gameObject); // 바닥에 있던 오브젝트 삭제
+            InventoryManager.Instance?.RefreshAllGameUIs();
+            Destroy(gameObject);
         }
         else
         {

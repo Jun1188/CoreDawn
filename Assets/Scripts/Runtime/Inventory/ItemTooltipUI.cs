@@ -35,7 +35,7 @@ public class ItemTooltipUI : MonoBehaviour
     {
         if (item == null) return;
 
-        nameText.text = item.Name;
+        nameText.text = item.displayName;
         typeText.text = $"유형: {item.type}"; // 예: 유형: Weapon, 유형: Ore
 
         // 💡 무기 아이템일 경우 추가 정보 출력 확장성 제공
