@@ -25,6 +25,9 @@ public class TimeManager : MonoBehaviour
     public DayPhase Phase     => Cycle.Phase;
     public int      DayNumber => Cycle.DayNumber;
 
+    public float RemainingPhaseTime => Cycle != null ? Cycle.PhaseRemaining : 0f;
+    public float PhaseProgress      => Cycle != null ? Cycle.PhaseProgress01 : 0f;
+
     /// <summary>건축 가능한 타이밍(낮)인지 체크.</summary>
     public bool IsBuildingAllowed => Cycle.Phase == DayPhase.Day;
 
