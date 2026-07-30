@@ -27,6 +27,9 @@ public class FactoryTest : MonoBehaviour
 
     void Update()
     {
+        // 헤드리스(배치모드)에는 입력 장치가 없어 Mouse.current가 null이다 — 프레임마다 NRE 방지
+        if (Mouse.current == null) return;
+
         if (Mouse.current.leftButton.wasPressedThisFrame)
             DetectAndDisplayBuilding();
     }
@@ -77,6 +80,9 @@ public class FactoryTest : MonoBehaviour
 
     void OnGUI()
     {
+        // 건물을 클릭하기 전에는 내용이 없다 — 그때 그리면 빈 반투명 검정 박스가 게임 화면을 가린다.
+        if (string.IsNullOrWhiteSpace(currentBuildingInfo)) return;
+
         GUI.TextArea(new Rect(20, 200, 400, 300), currentBuildingInfo);
     }
 

@@ -204,12 +204,14 @@ public class PlacementSystem : MonoBehaviour
         bool heightOk = TryGetFootprintHeight(origin, size, out float groundY);
 
         Vector3 pos = grid.GetFootprintCenter(origin, size);
-        pos.y = groundY;
+        pos.y = groundY + SurfaceLift(current, origin);
         preview.transform.position = pos;
         preview.transform.rotation = Quaternion.Euler(0, rotation * 90, 0);
 
         // 설치 판정 캐시 — OnInput(Attack)이 사용
-        lastCanPlace = heightOk && CanPlace(origin, size);
+        // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
+        lastCanPlace = heightOk && CanPlace(origin, size)
+                    && ResourceNodeRegistry.CanPlace(current, origin, size);
         lastOrigin   = origin;
         lastPos      = pos;
         SetPreviewColor(lastCanPlace);
@@ -294,7 +296,7 @@ public class PlacementSystem : MonoBehaviour
         if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, 1000f))
         {
             var view = bodyHit.collider.GetComponentInParent<Entities.Building>();
-            if (view != null && view.Sim != null)   // Sim 없는 건물(코어 등)은 철거 대상 아님
+            if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
             {
                 building = view.Sim;
                 return true;
@@ -333,6 +335,60 @@ public class PlacementSystem : MonoBehaviour
         }
         height = 0f;
         return false;
+    }
+
+    // ===================== 표면 위 올려놓기 =====================
+
+    // 프리팹 → "피벗에서 밑면까지 거리". 프리팹마다 고정이라 처음 한 번만 재고 캐시한다.
+    private static readonly Dictionary<BuildingDataSO, float> pivotLiftCache = new();
+
+    /// <summary>
+    /// 채굴기를 광맥 위에 지을 때만 건물을 표면 위로 들어올린다.
+    ///
+    /// 왜 필요한가: 건물 프리팹은 피벗이 큐브 중앙이라(Minor = 1x1x1이 localPos y=0)
+    /// 표면 높이에 그대로 놓으면 절반이 표면 아래로 들어간다. 광맥은 지면 위로 솟은
+    /// 슬래브라서, 그 위에 놓이는 채굴기만큼은 밑면이 광맥 윗면에 닿아야 한다.
+    ///
+    /// 비용: 광맥 판정은 O(1) 셀 조회 하나이고, 들어올릴 거리는 프리팹마다 상수라 캐시된다.
+    /// 이 함수가 도는 UpdatePreview는 어차피 매 프레임 지면 레이캐스트를 던지고 있으므로
+    /// 추가 레이캐스트나 센서는 필요 없다.
+    /// </summary>
+    public static float SurfaceLift(BuildingDataSO so, Vector2Int origin)
+    {
+        if (so is not MinerDataSO)                     return 0f;
+        if (ResourceNodeRegistry.NodeAt(origin) == null) return 0f;
+
+        return PivotLift(so);
+    }
+
+    /// <summary>프리팹 피벗에서 렌더러 밑면까지의 거리 (프리팹 로컬 기준, 회전 0 가정).</summary>
+    private static float PivotLift(BuildingDataSO so)
+    {
+        if (so == null || so.prefab == null) return 0f;
+        if (pivotLiftCache.TryGetValue(so, out float cached)) return cached;
+
+        float min = float.MaxValue;
+        Transform root = so.prefab.transform;
+
+        foreach (var mf in so.prefab.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (mf.sharedMesh == null) continue;
+
+            // 메시 바운즈 8개 꼭짓점을 프리팹 루트 기준으로 변환해 최저점을 찾는다
+            Matrix4x4 m = root.worldToLocalMatrix * mf.transform.localToWorldMatrix;
+            Bounds mb = mf.sharedMesh.bounds;
+
+            for (int i = 0; i < 8; i++)
+            {
+                var corner = mb.center + Vector3.Scale(mb.extents, new Vector3(
+                    (i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+                min = Mathf.Min(min, m.MultiplyPoint3x4(corner).y);
+            }
+        }
+
+        float lift = min == float.MaxValue ? 0f : -min;
+        pivotLiftCache[so] = lift;
+        return lift;
     }
 
     private bool TryGetFootprintHeight(Vector2Int origin, Vector2Int size, out float y)

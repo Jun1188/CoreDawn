@@ -90,7 +90,7 @@ public class FlowFieldManager : MonoBehaviour
         foreach (var building in Entities.Building.All)
         {
             if (!building.IsValidTarget()) continue;
-            if (building.Sim != null && building.Sim.Data is BeltDataSO) continue; // 벨트만 목표 제외
+            if (building.Data is BeltDataSO) continue; // 벨트만 목표 제외
             int seedCost = building.IsCore ? 0 : towerGoalCost;
 
             var col = building.GetComponentInChildren<Collider>();

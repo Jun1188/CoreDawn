@@ -39,6 +39,15 @@ public class FactoryBootstrap : MonoBehaviour
             if (view != null) PlacementBridge.DropAt(item, 1, view.transform.position);
         };
 
+        // 심에서 건물이 사라지면 그 씬 표현도 함께 정리 — 매핑 소유자가 한 곳에서 책임진다.
+        // (전투 파괴·철거·테스트의 Sim.Remove 직접 호출까지 전부 이 경로로 모인다)
+        Sim.Removed += b =>
+        {
+            var view = GetView(b);
+            _views.Remove(b);
+            if (view != null) Destroy(view.gameObject);
+        };
+
         // 벨트 위 아이템 시각화 뷰 — 씬 배선 없이 드라이버가 직접 부착
         if (GetComponent<BeltItemView>() == null) Debug.LogWarning("No Belt Item Renderer");
     }

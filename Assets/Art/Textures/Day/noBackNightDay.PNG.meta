@@ -1,7 +1,13 @@
 fileFormatVersion: 2
 guid: c8bb362480c67724681eb84458608438
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: -2323845701886880878
+    second: DayIcon
+  - first:
+      213: 8920004102730603819
+    second: NightIcon
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -106,49 +112,62 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Day
+      name: DayIcon
       rect:
         serializedVersion: 2
-        x: 26
-        y: 55
-        width: 580
-        height: 601
+        x: 0
+        y: 0
+        width: 674.5
+        height: 736
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: b2c7d3867e4199b4a90a82b50e1a4232
-      internalID: -2003002518
+      spriteID: 293d63a75aa00cfd0800000000000000
+      internalID: -2323845701886880878
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Night
+      name: NightIcon
       rect:
         serializedVersion: 2
-        x: 676
-        y: 59
-        width: 597
-        height: 595
+        x: 674.5
+        y: 0
+        width: 674.5
+        height: 736
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 825aee23f337f57499e1ae131e7d803f
-      internalID: -787964085
+      spriteID: b2dd842a8783acb70800000000000000
+      internalID: 8920004102730603819
       vertices: []
       indices: 
       edges: []
@@ -170,7 +189,9 @@ TextureImporter:
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":600.0,"y":600.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       Day: -2003002518
+      DayIcon: -2323845701886880878
       Night: -787964085
+      NightIcon: 8920004102730603819
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
