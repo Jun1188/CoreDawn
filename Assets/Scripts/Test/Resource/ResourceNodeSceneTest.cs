@@ -179,12 +179,19 @@ public class ResourceNodeSceneTest : MonoBehaviour
         // 전투 파괴 경로 — 몬스터 피격과 같은 흐름(Entity.Die → HandleDeath → PlacementBridge.Remove)
         int stockAtDeath = nodeA.CurrentStock;
         var view = FactoryBootstrap.Instance.GetView(_miner);
+        var viewGO = view != null ? view.gameObject : null;
         if (view != null) view.Die();
         yield return null; yield return null;
 
         Case("N3 밤에 채굴기가 파괴되면 심에서도 제거된다",
              _miner.IsRemoved && Sim.Grid.GetAt(nodeA.Origin) == null,
              $"IsRemoved={_miner.IsRemoved}, 셀 점유={(Sim.Grid.GetAt(nodeA.Origin) != null)}");
+
+        // 작업3의 생명주기 계약 ①: 심이 제거되면 씬 껍데기도 사라진다 (FactorySim.Removed → Bootstrap)
+        Case("N3b 심이 제거되면 씬 껍데기와 매핑도 사라진다",
+             viewGO == null && FactoryBootstrap.Instance.GetView(_miner) == null,
+             $"뷰 GameObject={(viewGO == null ? "파괴됨" : "남아 있음")}, " +
+             $"매핑={(FactoryBootstrap.Instance.GetView(_miner) == null ? "해제됨" : "남아 있음")}");
 
         Case("N4 채굴기가 부서져도 광맥과 재고는 남는다",
              ResourceNodeRegistry.NodeAt(nodeA.Origin) == nodeA && nodeA.CurrentStock >= stockAtDeath,
@@ -220,6 +227,19 @@ public class ResourceNodeSceneTest : MonoBehaviour
         Case("M3 재설치 후 채굴이 재개된다",
              Stored() > before,
              $"저장고 {before} → {Stored()}개");
+
+        // 작업3의 생명주기 계약 ②: 껍데기만 사라져도 심이 그리드에 유령으로 남지 않는다.
+        // (전투·철거를 거치지 않고 GameObject가 직접 파괴되는 경로)
+        var orphanCell = nodeB.Origin;
+        var orphan = Place(_minerSO, orphanCell);
+        yield return null;
+        var orphanView = FactoryBootstrap.Instance.GetView(orphan);
+        if (orphanView != null) Destroy(orphanView.gameObject);
+        yield return null; yield return null;
+
+        Case("M4 껍데기가 직접 파괴되면 심도 함께 정리된다 (유령 방지)",
+             orphan.IsRemoved && Sim.Grid.GetAt(orphanCell) == null,
+             $"IsRemoved={orphan.IsRemoved}, 셀 {orphanCell} 점유={(Sim.Grid.GetAt(orphanCell) != null)}");
     }
 
     // ─── 2일차 밤 ───────────────────────────────────────────────

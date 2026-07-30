@@ -295,7 +295,7 @@ public class PlacementSystem : MonoBehaviour
         if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, 1000f))
         {
             var view = bodyHit.collider.GetComponentInParent<Entities.Building>();
-            if (view != null && view.Sim != null)   // Sim 없는 건물(코어 등)은 철거 대상 아님
+            if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
             {
                 building = view.Sim;
                 return true;

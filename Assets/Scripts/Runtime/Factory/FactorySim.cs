@@ -91,6 +91,13 @@ public class FactorySim
         return b;
     }
 
+    /// <summary>
+    /// 건물이 심에서 제거된 직후 1회. 씬 표현(뷰)은 이 통지를 받아 스스로 정리한다 —
+    /// 심이 원본이고 뷰가 따라오는 방향을 코드로 고정하는 지점.
+    /// 벨트 폐기 통지(Belts.ItemDiscarded)보다 항상 뒤에 온다(그때는 뷰가 아직 살아 있어야 하므로).
+    /// </summary>
+    public event Action<Building> Removed;
+
     public void Remove(Building b)
     {
         if (b == null || b.IsRemoved) return;
@@ -104,6 +111,8 @@ public class FactorySim
                 Grid.Remove(b.Origin + new Vector2Int(x, y));
 
         _inQ.Remove(b);
+
+        Removed?.Invoke(b);
     }
 
     // ── 깨우기

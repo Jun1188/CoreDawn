@@ -4,7 +4,12 @@ using UnityEngine;
 /// <summary>
 /// 배치된 건물의 심(시뮬레이션) 엔티티 — plain C#, MonoBehaviour 아님.
 /// BuildingDataSO = 설계도 (공유됨), Building = 실물 (각자 독립적 상태).
-/// 씬 표현(GameObject)은 Entities.Building이 담당하고 FactoryBootstrap이 매핑한다.
+///
+/// 이 클래스가 건물 데이터의 원본(source of truth)이다 — Data/Origin/회전/버퍼/연결/행동/IsRemoved.
+/// 씬 표현은 Entities.Building(MonoBehaviour)이 껍데기로 맡고, HP·피격 같은 전투 상태만 그쪽이 원본이다.
+/// 매핑은 FactoryBootstrap이 들고, 이 건물이 제거되면 FactorySim.Removed를 타고 껍데기도 함께 정리된다.
+/// (같은 이름의 두 클래스를 물리적으로 합치지 않는 이유: 순수 C#이라 씬에 못 붙고,
+///  MonoBehaviour로 만들면 씬·프레임 없이 돌리는 헤드리스 시뮬레이션·테스트가 불가능해진다)
 ///
 /// 연결 목록(InputConnections/OutputConnections)은 BuildingGraph가 채우고,
 /// 행동(IBuildingBehavior)은 SO의 CreateBehavior()가 결정한다.

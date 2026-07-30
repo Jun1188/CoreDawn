@@ -27,6 +27,9 @@ public class FactoryTest : MonoBehaviour
 
     void Update()
     {
+        // 헤드리스(배치모드)에는 입력 장치가 없어 Mouse.current가 null이다 — 프레임마다 NRE 방지
+        if (Mouse.current == null) return;
+
         if (Mouse.current.leftButton.wasPressedThisFrame)
             DetectAndDisplayBuilding();
     }
