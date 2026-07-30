@@ -80,6 +80,9 @@ public class FactoryTest : MonoBehaviour
 
     void OnGUI()
     {
+        // 건물을 클릭하기 전에는 내용이 없다 — 그때 그리면 빈 반투명 검정 박스가 게임 화면을 가린다.
+        if (string.IsNullOrWhiteSpace(currentBuildingInfo)) return;
+
         GUI.TextArea(new Rect(20, 200, 400, 300), currentBuildingInfo);
     }
 

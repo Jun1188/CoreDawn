@@ -152,9 +152,16 @@ public class ResourceNode : MonoBehaviour
         taken = Mathf.Min(Mathf.Max(0, amount), currentStock);
         if (taken <= 0) { taken = 0; return false; }
 
-        currentStock -= taken;
+        currentStock   -= taken;
+        TotalExtracted += taken;
         return true;
     }
+
+    /// <summary>
+    /// 이 광맥에서 지금까지 실제로 캐 간 총량. 재고는 생산이 채굴보다 빠르면 늘 상한에 붙어 있어
+    /// "도는지 멈췄는지"를 구분해주지 못한다 — 채굴 진행 여부는 이 값의 증가로 판단한다.
+    /// </summary>
+    public int TotalExtracted { get; private set; }
 
     /// <summary>재고를 꺼내가고 꺼낸 개수만 돌려주는 간편형 (0 = 재고 없음).</summary>
     public int Extract(int amount) => TryExtract(amount, out int taken) ? taken : 0;
@@ -386,8 +393,24 @@ public static class ResourceNodeRegistry
     public static bool CanPlace(BuildingDataSO so, Vector2Int origin, Vector2Int size, out string reason)
     {
         reason = null;
-        if (so is not MinerDataSO) return true;          // 광맥 규칙은 채굴기에만 적용
-        return CanPlaceMiner(origin, size, out _, out reason);
+
+        // 채굴기 — 반드시 광맥 위여야 한다 (그리고 한 광맥 안에 들어와야 한다)
+        if (so is MinerDataSO) return CanPlaceMiner(origin, size, out _, out reason);
+
+        // 그 외 건물 — 광맥을 덮으면 안 된다.
+        // 광맥은 채굴기 자리다. 저장고·벨트 따위로 덮어버리면 그 광맥을 영영 못 쓰게 된다.
+        int w = Mathf.Max(1, size.x), h = Mathf.Max(1, size.y);
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+            {
+                Vector2Int cell = origin + new Vector2Int(x, y);
+                if (NodeAt(cell) == null) continue;
+
+                reason = $"광맥 위에는 채굴기만 지을 수 있습니다 (셀 {cell}).";
+                return false;
+            }
+
+        return true;
     }
 
     /// <summary>

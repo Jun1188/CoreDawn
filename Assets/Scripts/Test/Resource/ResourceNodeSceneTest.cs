@@ -9,7 +9,7 @@ using UnityEngine;
 /// 심 로직만 본다면, 이쪽은 씬의 실제 배선(FactoryBootstrap·PlacementBridge·뷰·TimeManager)까지 본다.
 ///
 /// 실행:
-///   에디터 — ResourceNodeTest 씬을 열고 플레이 (결과는 콘솔 + 화면 좌상단 OnGUI)
+///   에디터 — ResourceNodeTest 씬을 열고 플레이 (결과는 콘솔 로그로만 나온다 — 게임 화면을 가리지 않게)
 ///   CLI    — Tools 메뉴/CLI 진입점이 씬 생성부터 플레이까지 자동 (ResourceNodeSceneSetup)
 ///
 /// 검증 순서 (1일차 낮 → 1일차 밤 → 2일차 낮 → 2일차 밤):
@@ -271,10 +271,28 @@ public class ResourceNodeSceneTest : MonoBehaviour
 
     void ForceDay() => TimeManager.Instance.EndNightEarly();
 
+    /// <summary>
+    /// 건물을 셀에 세운다. 높이는 마우스 배치와 같은 규약을 쓴다 —
+    /// 그 자리의 표면(지면, 광맥 위라면 광맥 슬래브 윗면) + PlacementSystem.SurfaceLift.
+    /// 덕분에 채굴기를 광맥에 지으면 하네스로 지어도 광맥 윗면에 올라앉는다.
+    /// </summary>
     Building Place(BuildingDataSO so, Vector2Int cell)
     {
-        Vector3 pos = Grid.GetFootprintCenter(cell, so.GetRotatedSize(0));
+        Vector2Int size = so.GetRotatedSize(0);
+        Vector3 pos = Grid.GetFootprintCenter(cell, size);
+        pos.y = SurfaceTopAt(pos) + PlacementSystem.SurfaceLift(so, cell);
+
         return PlacementBridge.Place(so, cell, pos);
+    }
+
+    /// <summary>표면 y — Ground 레이어를 위에서 훑는다. 광맥 슬래브도 Ground라 광맥 위면 그 윗면이 나온다.</summary>
+    static float SurfaceTopAt(Vector3 at)
+    {
+        int mask = LayerMask.GetMask("Ground");
+        if (mask != 0 && Physics.Raycast(at + Vector3.up * 50f, Vector3.down,
+                                         out RaycastHit hit, 100f, mask))
+            return hit.point.y;
+        return at.y;   // 지면 밖(광맥 밖 강행 설치 케이스 등) — 어차피 안전망이 철거한다
     }
 
     int Stored()
@@ -318,7 +336,29 @@ public class ResourceNodeSceneTest : MonoBehaviour
 
         if (Passed) Debug.Log(Report);
         else        Debug.LogError(Report);
+
+        CleanUpPlacedBuildings();
     }
 
-    void OnGUI() => GUI.TextArea(new Rect(20, 20, 720, 520), Report);
+    /// <summary>
+    /// 검증이 세운 건물을 전부 걷어낸다.
+    /// 테스트가 끝난 뒤에도 채굴기가 서 있으면 "짓지도 않았는데 자동으로 설치된" 것처럼 보인다 —
+    /// 플레이어가 B키 빌드 메뉴로 직접 지을 때까지 광맥 위는 비어 있어야 한다.
+    /// 채굴 진행 관찰은 ResourceNodeStatusLog가 씬 전체를 훑어 콘솔로 알려준다.
+    /// </summary>
+    void CleanUpPlacedBuildings()
+    {
+        int removed = 0;
+
+        foreach (var b in new[] { _miner, _storage })
+        {
+            if (b == null || b.IsRemoved) continue;
+            PlacementBridge.Remove(b);
+            removed++;
+        }
+
+        _miner = _storage = null;
+        Debug.Log($"[씬테스트] 검증 종료 — 테스트가 세운 건물 {removed}개를 철거했습니다. " +
+                  "광맥은 비어 있습니다 (B키 빌드 메뉴에서 채굴기를 광맥 위에 지어 보세요).");
+    }
 }

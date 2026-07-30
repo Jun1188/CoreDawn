@@ -28,6 +28,7 @@ public static class ResourceNodeSceneSetup
     static readonly Vector2Int NodeACell = new(10, 10);
     static readonly Vector2Int NodeBCell = new(14, 10);
 
+
     [MenuItem("Tools/ResourceNodeTest 씬 만들기")]
     public static void BuildSceneMenu()
     {
@@ -69,6 +70,7 @@ public static class ResourceNodeSceneSetup
                                interval: 2f, amount: 1, max: 10, grid: grid);
 
         EnsureTimeManager();
+        ResourceNodeAuthoring.FixDayHud();   // 밤 아이콘이 격자 밖 조각이라 깨져 보이던 것 보정
 
         // 테스트 하네스 — 광맥 참조를 직렬화로 꽂아 둔다
         var harnessGO = new GameObject("ResourceNodeSceneTest");
@@ -83,35 +85,10 @@ public static class ResourceNodeSceneSetup
         AssetDatabase.Refresh();
     }
 
-    /// <summary>광맥 하나 = 빈 오브젝트 + ResourceNode + 눈에 보이는 얇은 판(콜라이더 없음).</summary>
+    /// <summary>광맥 하나 — 저작은 ResourceNodeAuthoring이 담당한다 (PlayLoopTest와 공유).</summary>
     static ResourceNode CreateNode(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
                                    float interval, int amount, int max, GridSystem grid)
-    {
-        var go = new GameObject(name);
-        go.transform.position = grid.GetFootprintCenter(cell, size);
-
-        var node = go.AddComponent<ResourceNode>();
-        var so = new SerializedObject(node);
-        so.FindProperty("resource").objectReferenceValue = ore;
-        so.FindProperty("size").vector2IntValue          = size;
-        so.FindProperty("productionInterval").floatValue = interval;
-        so.FindProperty("amountPerCycle").intValue       = amount;
-        so.FindProperty("maxStock").intValue             = max;
-        so.FindProperty("initialStock").intValue         = 0;
-        so.FindProperty("snapToGrid").boolValue          = true;
-        so.ApplyModifiedPropertiesWithoutUndo();
-
-        // 시각 표시 — 바닥에 깔리는 얇은 판. 콜라이더는 지우다(설치 레이캐스트를 방해하지 않게).
-        var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        visual.name = "Visual";
-        Object.DestroyImmediate(visual.GetComponent<Collider>());
-        visual.transform.SetParent(go.transform, false);
-        visual.transform.localPosition = new Vector3(0f, 0.03f, 0f);
-        visual.transform.localScale = new Vector3(size.x * grid.CellSize * 0.95f, 0.06f,
-                                                  size.y * grid.CellSize * 0.95f);
-
-        return node;
-    }
+        => ResourceNodeAuthoring.Create(name, ore, cell, size, interval, amount, max, grid);
 
     /// <summary>MainScene에는 TimeManager가 없다 — 낮/밤 케이스를 위해 추가한다.</summary>
     static void EnsureTimeManager()
