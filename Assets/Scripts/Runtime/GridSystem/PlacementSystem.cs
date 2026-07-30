@@ -148,6 +148,7 @@ public class PlacementSystem : MonoBehaviour
     public void SelectBuilding(BuildingDataSO data)
     {
         if (data == null) return;
+        if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(data.requiredCoreTier)) return;
         ExitMode();
         mode = BuildMode.Placing;
         current = data;

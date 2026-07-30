@@ -48,6 +48,8 @@ public class CraftingUI : MonoBehaviour
             processor.OnProductionStopped += OnCraftStopped;
         }
 
+        if (GameManager.Instance != null) GameManager.Instance.TierUnlocked += OnTierUnlocked;
+
         GenerateRecipeList();
     }
 
@@ -59,7 +61,11 @@ public class CraftingUI : MonoBehaviour
             processor.OnProductionCompleted -= OnCraftCompleted;
             processor.OnProductionStopped -= OnCraftStopped;
         }
+
+        if (GameManager.Instance != null) GameManager.Instance.TierUnlocked -= OnTierUnlocked;
     }
+
+    private void OnTierUnlocked(int _) => GenerateRecipeList();
 
     private void Update()
     {
@@ -82,6 +88,7 @@ public class CraftingUI : MonoBehaviour
         foreach (var recipe in availableRecipes)
         {
             if (recipe == null || recipe.tier > 0) continue;
+            if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(recipe.requiredCoreTier)) continue;
 
             RecipeSlotUI slot = Instantiate(recipeSlotPrefab, recipeListContent);
             slot.Init(recipe, OnSelectRecipe);

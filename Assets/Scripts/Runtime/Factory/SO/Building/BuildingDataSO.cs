@@ -158,6 +158,12 @@ public abstract class BuildingDataSO : GameDataSO
     [Tooltip("버퍼 스택 상한. 0 = 아이템 기본값(64). 기계는 5~10 권장 — 과잉 보관 방지.")]
     public int bufferStackCap = 0;
 
+    [Header("진행도 게이트 — 코어 티어")]
+    [Tooltip("이 값보다 GameManager.UnlockedTier가 낮으면 빌드 메뉴에서 숨겨진다.")]
+    public int requiredCoreTier = 0;
+    [Tooltip("코어처럼 씬에 직접 배치되는 단일 건물 — 빌드 메뉴에 항상 숨김.")]
+    public bool hideFromBuildMenu = false;
+
     /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
     public abstract IBuildingBehavior CreateBehavior(Building building);
 

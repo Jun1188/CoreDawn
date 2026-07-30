@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91453a62ff4d36f4886c7c7c5845c7ed, type: 3}
+  m_Name: Core
+  m_EditorClassIdentifier: Assembly-CSharp::CoreDataSO
+  id: Buildings:Core
+  displayName: "\uCF54\uC5B4"
+  description: "\uC790\uC6D0\uC744 \uB0A9\uD488\uD574 \uC9C4\uD654\uC2DC\uD0A4\uB294
+    \uD329\uD1A0\uB9AC \uCF54\uC5B4"
+  icon: {fileID: 0}
+  category: 0
+  prefab: {fileID: 435658575221242036, guid: 87ccd477b828f0c458048e4c6e68d8c2, type: 3}
+  size: {x: 1, y: 1}
+  ports:
+  - LocalOffset: {x: 0, y: 0}
+    Direction: 3
+    IsInput: 1
+  inputSlots: 2
+  outputSlots: 0
+  bufferStackCap: 9999
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0
+  tiers:
+  - tierLabel: Tier 1
+    requirements:
+    - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
+      amount: 5
+    - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+      amount: 3

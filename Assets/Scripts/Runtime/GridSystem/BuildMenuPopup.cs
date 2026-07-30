@@ -113,7 +113,12 @@ public class BuildMenuPopup : UIPopup
             grid.cellSize = new Vector2(96, 108);
             grid.spacing = new Vector2(8, 8);
 
-            foreach (var so in items) MakeButton(grid.transform, so);
+            foreach (var so in items)
+            {
+                if (so.hideFromBuildMenu) continue;
+                if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(so.requiredCoreTier)) continue;
+                MakeButton(grid.transform, so);
+            }
         }
     }
 

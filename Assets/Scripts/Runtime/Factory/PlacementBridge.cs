@@ -29,6 +29,22 @@ public static class PlacementBridge
         return b;
     }
 
+    /// <summary>
+    /// 씬에 이미 있는 뷰(코어 같은 싱글턴)를 심에 연결한다 — 새 프리팹을 Instantiate하지 않는다.
+    /// 배치 자체(Grid/Graph 등록)는 Place와 동일하게 FactorySim이 담당한다.
+    /// </summary>
+    public static Building PlaceExisting(BuildingDataSO so, Vector2Int origin, int rotSteps,
+        Entities.Building existingView, PortDefinition[] portOverride = null)
+    {
+        var boot = FactoryBootstrap.Instance;
+        var b = boot.Sim.Place(so, origin, rotSteps, portOverride);
+
+        existingView.Sim = b;
+        boot.RegisterView(b, existingView);
+
+        return b;
+    }
+
     public static void Remove(Building b)
     {
         if (b == null || b.IsRemoved) return;

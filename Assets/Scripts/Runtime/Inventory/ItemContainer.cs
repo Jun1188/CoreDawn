@@ -93,7 +93,11 @@ public class ItemContainer
     // ───────────────────────────────────────────────────────────
 
     public int Version { get; private set; }
-    public void Touch() => Version++;
+
+    /// <summary>컨테이너 내용이 바뀔 때마다 발화 — 벨트 Tick이든 UI 드래그드롭이든 모든 변경 경로를 통일해 통지한다.</summary>
+    public event Action Changed;
+
+    public void Touch() { Version++; Changed?.Invoke(); }
 
     // ───────────────────────────────────────────────────────────
     //  위치(슬롯 인덱스) 연산 — 인벤토리 UI(드래그·분할·교환)용.
