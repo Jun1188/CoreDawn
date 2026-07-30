@@ -59,8 +59,13 @@ public class MinerBehavior : IBuildingBehavior
         if (_readyAt >= 0f && sim.Now >= _readyAt)
         {
             _readyAt = -1f;
+
+            // 광맥 재고에서 1개를 꺼내온다. 소켓이 비어 있으면(테스트 등) 기존처럼 무한 채굴.
+            // 재고가 없으면(0) 이번 주기는 공치고, 아래 3번에서 다시 예약해 대기한다.
+            int taken = sim.TryExtractResourceAt?.Invoke(_b.Origin, 1) ?? 1;
+
             // 예약 시점에 버퍼 여유를 확인했으므로 여기서 유실될 수 없다
-            if (!_b.TryPushOutput(_target))
+            if (taken > 0 && !_b.TryPushOutput(_target))
                 _b.Output.TryAdd(_target);
         }
 

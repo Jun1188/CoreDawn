@@ -208,7 +208,9 @@ public class PlacementSystem : MonoBehaviour
         preview.transform.rotation = Quaternion.Euler(0, rotation * 90, 0);
 
         // 설치 판정 캐시 — OnInput(Attack)이 사용
-        lastCanPlace = heightOk && CanPlace(origin, size);
+        // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
+        lastCanPlace = heightOk && CanPlace(origin, size)
+                    && ResourceNodeRegistry.CanPlace(current, origin, size);
         lastOrigin   = origin;
         lastPos      = pos;
         SetPreviewColor(lastCanPlace);

@@ -48,6 +48,13 @@ public class FactorySim
     /// <summary>마이너가 채굴 대상을 결정하는 서비스 포인트 (ResourceGrid 등에서 주입).</summary>
     public Func<Vector2Int, ItemDataSO> GetResourceAt;
 
+    /// <summary>
+    /// 마이너가 채굴 1회분을 실제로 꺼내가는 서비스 포인트 (셀, 요청 개수) → 실제로 꺼낸 개수.
+    /// 0이면 광맥 재고가 비었다는 뜻 — 마이너는 생산하지 않고 다음 주기에 재시도한다.
+    /// 주입하지 않으면(null) 재고 개념 없이 무한 채굴 — 기존 동작 그대로.
+    /// </summary>
+    public Func<Vector2Int, int, int> TryExtractResourceAt;
+
     readonly Queue<Building>   _queue = new();
     readonly HashSet<Building> _inQ   = new(); // 중복 등록 방지 O(1)
 
