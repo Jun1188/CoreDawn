@@ -48,12 +48,11 @@ public static class ResourceNodeSceneSetup
         if (!File.Exists(SourceScene))
             throw new FileNotFoundException($"원본 씬을 찾을 수 없습니다: {SourceScene}");
 
-        if (File.Exists(TargetScene)) AssetDatabase.DeleteAsset(TargetScene);
-        if (!AssetDatabase.CopyAsset(SourceScene, TargetScene))
+        // 원본을 열어 대상 경로로 "다른 이름으로 저장" — 삭제 후 복사하면 .meta가 새로 발급되어
+        // 재생성할 때마다 씬 GUID가 바뀐다(빌드 설정·참조가 깨지는 경로). 경로의 .meta를 살려 둔다.
+        var scene = EditorSceneManager.OpenScene(SourceScene, OpenSceneMode.Single);
+        if (!EditorSceneManager.SaveScene(scene, TargetScene))
             throw new IOException($"씬 복사 실패: {SourceScene} → {TargetScene}");
-        AssetDatabase.Refresh();
-
-        var scene = EditorSceneManager.OpenScene(TargetScene, OpenSceneMode.Single);
 
         var ore = AssetDatabase.LoadAssetAtPath<ItemDataSO>(OrePath);
         if (ore == null) throw new FileNotFoundException($"광석 아이템을 찾을 수 없습니다: {OrePath}");
