@@ -3,12 +3,19 @@ using UnityEngine;
 
 namespace Entities
 {
-    // 건물 엔티티 — 심 건물의 씬 표현이자 피격 주체 (구 BuildingDamageable/BuildingView 통합·대체).
-    // 이동은 없고, 몬스터에게 피격되는 HP를 가진다. 자동 공격은 BattleTower(상속)가 담당.
-    // HP 0 → die: 심 제거(PlacementBridge.Remove) + GameObject 소멸 + 플로우필드 갱신.
+    // 건물 엔티티 — 심 건물의 "씬 위 껍데기(View)". 데이터 원본은 팩토리 심의 global::Building이다.
     //
-    // 이름 충돌 주의: 팩토리 심의 plain C# Building(전역 네임스페이스)과 구분하기 위해
-    // Entities 네임스페이스에 있다. 심 건물 참조는 global::Building(Sim 프로퍼티).
+    // 역할 분담 (합치지 않고 나눈다 — MonoBehaviour 제약 때문에 상속으로는 못 합침):
+    //   global::Building (순수 C#)  = 데이터 원본. Data/Origin/회전/버퍼/연결/행동/IsRemoved.
+    //   Entities.Building (여기)    = 씬 표현 + 전투. HP·피격·사망, 코어 여부, 상호작용 창구,
+    //                                 그리고 심 데이터는 아래 위임 프로퍼티로만 노출한다.
+    // 그래서 소비자는 view.Sim.Data처럼 심 내부로 두 단계 들어가지 말고 view.Data를 쓰면 된다.
+    //
+    // 생명주기는 양방향으로 맞춘다 (한쪽만 사라진 유령 방지):
+    //   심 제거 → FactorySim.Removed → FactoryBootstrap이 이 GameObject를 파괴
+    //   뷰 파괴 → OnDestroy에서 심도 제거 (씬 언로드/종료 중에는 건너뜀)
+    //
+    // 이름 충돌 주의: 심의 plain C# Building(전역 네임스페이스)과 구분하려고 Entities 네임스페이스에 있다.
     // 코어처럼 심 없이 씬에 직접 배치하는 건물은 Sim이 null이어도 된다.
     public class Building : Entity, IInteractable
     {
@@ -21,6 +28,22 @@ namespace Entities
 
         public bool IsCore => isCore;
         public override bool IsDead => base.IsDead || (Sim != null && Sim.IsRemoved);
+
+        // ── 심 데이터 위임 — 소비자가 Sim 내부로 두 단계 들어가지 않게 하는 창구.
+        //    심이 없는 씬 직접 배치 건물(코어 등)에서도 안전하게 null/기본값을 돌려준다.
+
+        /// <summary>이 건물의 설계도(SO). 심이 없으면 null.</summary>
+        public BuildingDataSO Data => Sim?.Data;
+
+        /// <summary>점유 풋프린트의 왼쪽 아래 셀. 심이 없으면 기본값.</summary>
+        public Vector2Int Origin => Sim != null ? Sim.Origin : default;
+
+        /// <summary>회전이 반영된 점유 크기(타일). 심이 없으면 1x1.</summary>
+        public Vector2Int Size =>
+            Sim != null ? Sim.Data.GetRotatedSize(Sim.RotationSteps) : Vector2Int.one;
+
+        /// <summary>살아 있는 심에 연결돼 있는가 (철거·파괴된 심은 false).</summary>
+        public bool HasSim => Sim != null && !Sim.IsRemoved;
 
         // ── 플레이어 상호작용(E) — 행동이 IInteractiveBehavior를 구현한 건물만 반응 (opt-in)
         public string Prompt => Sim?.Behavior is IInteractiveBehavior i ? i.InteractPrompt : null;
@@ -48,6 +71,22 @@ namespace Entities
         {
             all.Remove(this);
             if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+        }
+
+        // 게임 종료/씬 언로드 중에는 정리에 손대지 않는다 — 그 시점의 Sim.Remove는
+        // 벨트 아이템 드롭 같은 새 오브젝트 생성을 유발해 에러가 난다.
+        private static bool quitting;
+        private void OnApplicationQuit() => quitting = true;
+
+        // 뷰가 다른 경로로 파괴돼도(부모 파괴·직접 Destroy) 심이 그리드를 계속 점유하지 않게.
+        // 정상 경로(철거·전투 파괴)는 이미 심이 먼저 지워져 있어 여기서는 아무 일도 하지 않는다.
+        private void OnDestroy()
+        {
+            if (quitting || !gameObject.scene.isLoaded) return;
+            if (Sim == null || Sim.IsRemoved) return;
+
+            var boot = FactoryBootstrap.Instance;
+            if (boot != null && boot.Sim != null) boot.Sim.Remove(Sim);
         }
 
         // HP 0 → 몬스터의 사망 연출 지연 없이 즉시 소멸

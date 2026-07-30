@@ -42,10 +42,9 @@ public static class PlacementBridge
             DropContainer(b.Output, view.transform.position);
         }
 
-        boot.Sim.Remove(b);   // 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지 (뷰 파괴 전이라 위치 조회 가능)
-
-        boot.UnregisterView(b);
-        if (view != null) Object.Destroy(view.gameObject);
+        // 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지(뷰 파괴 전이라 위치 조회 가능),
+        // 마지막에 Sim.Removed가 발화해 FactoryBootstrap이 뷰 정리까지 끝낸다.
+        boot.Sim.Remove(b);
     }
 
     /// <summary>컨테이너 내용물 전체를 위치 주변에 드롭. 스택 상한(64) 단위로 쪼갠다.</summary>

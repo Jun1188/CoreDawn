@@ -48,6 +48,13 @@ public class FactorySim
     /// <summary>마이너가 채굴 대상을 결정하는 서비스 포인트 (ResourceGrid 등에서 주입).</summary>
     public Func<Vector2Int, ItemDataSO> GetResourceAt;
 
+    /// <summary>
+    /// 마이너가 채굴 1회분을 실제로 꺼내가는 서비스 포인트 (셀, 요청 개수) → 실제로 꺼낸 개수.
+    /// 0이면 광맥 재고가 비었다는 뜻 — 마이너는 생산하지 않고 다음 주기에 재시도한다.
+    /// 주입하지 않으면(null) 재고 개념 없이 무한 채굴 — 기존 동작 그대로.
+    /// </summary>
+    public Func<Vector2Int, int, int> TryExtractResourceAt;
+
     readonly Queue<Building>   _queue = new();
     readonly HashSet<Building> _inQ   = new(); // 중복 등록 방지 O(1)
 
@@ -84,6 +91,13 @@ public class FactorySim
         return b;
     }
 
+    /// <summary>
+    /// 건물이 심에서 제거된 직후 1회. 씬 표현(뷰)은 이 통지를 받아 스스로 정리한다 —
+    /// 심이 원본이고 뷰가 따라오는 방향을 코드로 고정하는 지점.
+    /// 벨트 폐기 통지(Belts.ItemDiscarded)보다 항상 뒤에 온다(그때는 뷰가 아직 살아 있어야 하므로).
+    /// </summary>
+    public event Action<Building> Removed;
+
     public void Remove(Building b)
     {
         if (b == null || b.IsRemoved) return;
@@ -97,6 +111,8 @@ public class FactorySim
                 Grid.Remove(b.Origin + new Vector2Int(x, y));
 
         _inQ.Remove(b);
+
+        Removed?.Invoke(b);
     }
 
     // ── 깨우기

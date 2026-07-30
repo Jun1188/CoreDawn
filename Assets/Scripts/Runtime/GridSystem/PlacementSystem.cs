@@ -208,7 +208,9 @@ public class PlacementSystem : MonoBehaviour
         preview.transform.rotation = Quaternion.Euler(0, rotation * 90, 0);
 
         // 설치 판정 캐시 — OnInput(Attack)이 사용
-        lastCanPlace = heightOk && CanPlace(origin, size);
+        // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
+        lastCanPlace = heightOk && CanPlace(origin, size)
+                    && ResourceNodeRegistry.CanPlace(current, origin, size);
         lastOrigin   = origin;
         lastPos      = pos;
         SetPreviewColor(lastCanPlace);
@@ -293,7 +295,7 @@ public class PlacementSystem : MonoBehaviour
         if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, 1000f))
         {
             var view = bodyHit.collider.GetComponentInParent<Entities.Building>();
-            if (view != null && view.Sim != null)   // Sim 없는 건물(코어 등)은 철거 대상 아님
+            if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
             {
                 building = view.Sim;
                 return true;
