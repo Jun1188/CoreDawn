@@ -45,6 +45,7 @@ public static class ResourceNodeTests
         Run("7. 재고 0이면 대기, 회복되면 재개",      S7_MinerWaitsAndResumes);
         Run("8. 광맥 밖 채굴기는 아무것도 캐지 않음",  S8_MinerOffNode);
         Run("9. 소켓 미주입이면 기존 무한 채굴 (회귀)", S9_NoHookIsLegacyBehavior);
+        Run("10. 한 광맥의 채굴기 여러 대가 재고를 나눠 씀", S10_MultipleMinersShareStock);
 
         Cleanup();
 
@@ -261,6 +262,29 @@ public static class ResourceNodeTests
         RunSim(3f);
         Expect(Stored(store, _ore) >= 10,
                $"소켓이 없으면 시간에 비례해 계속 생산돼야 함 (3초/0.2초 ≈ 15개, 실제 {Stored(store, _ore)}개)");
+    }
+
+    /// <summary>
+    /// 멀티타일 광맥 위에 채굴기 두 대를 올리면 재고 하나를 나눠 쓴다 —
+    /// 둘이 합쳐 재고 총량을 넘길 수 없어야 한다 (칸마다 재고가 따로 생기면 안 됨).
+    /// </summary>
+    static void S10_MultipleMinersShareStock()
+    {
+        var node = Node(_ore, new Vector2Int(0, 0), size: new Vector2Int(2, 2),
+                        interval: 999f, max: 100, stock: 4);
+
+        _sim.Place(Miner(ptime: 0.2f), new Vector2Int(0, 0));
+        var storeA = _sim.Place(Storage(), new Vector2Int(1, 0));
+        _sim.Place(Miner(ptime: 0.2f), new Vector2Int(0, 1));
+        var storeB = _sim.Place(Storage(), new Vector2Int(1, 1));
+
+        RunSim(5f);   // 재생산 없음 → 초기 재고 4개가 둘의 총 한계
+
+        int total = Stored(storeA, _ore) + Stored(storeB, _ore);
+        Expect(total == 4, $"두 채굴기의 산출 합이 광맥 재고와 같아야 함 (실제 {total}개)");
+        Expect(node.CurrentStock == 0, $"광맥 재고가 소진돼야 함 (실제 {node.CurrentStock})");
+        Expect(Stored(storeA, _ore) > 0 && Stored(storeB, _ore) > 0,
+               $"둘 다 조금씩은 캐야 함 (A:{Stored(storeA, _ore)}, B:{Stored(storeB, _ore)})");
     }
 
     // ─── 헬퍼 ──────────────────────────────────────────────────
