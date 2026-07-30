@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
@@ -5,17 +6,24 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager Instance { get; private set; }
 
     [Header("Global Mouse Carriage")]
-    public ItemSocket mouseCarriageSlot;     
-    private ItemStack mouseCarriageItem = null; 
+    public ItemSocket mouseCarriageSlot;
+    private ItemStack mouseCarriageItem = null;
 
     [Header("Player References")]
     public PlayerController playerController;
+
+    [Header("Core Deposit Panel")]
+    [SerializeField] private GameObject coreRequirementPanel;
+    [SerializeField] private CoreRequirementRowUI rowPrefab;
+    [SerializeField] private Transform rowContainer;
 
     public bool IsScreenOpen { get; private set; }
 
 
     private ItemContainer boundContainer;
+    private CoreBehavior boundCore;
     private int lastSeenVersion;
+    private readonly List<CoreRequirementRowUI> spawnedRows = new();
 
     private void Awake()
     {
@@ -38,6 +46,38 @@ public class InventoryManager : MonoBehaviour
         boundContainer = container;
         lastSeenVersion = container.Version;
         OpenScreen(container);
+    }
+
+    /// <summary>코어 전용 열기 — 일반 컨테이너 화면(드래그드롭)에 진행률 패널을 얹는다.</summary>
+    public void OpenCoreScreen(CoreBehavior core)
+    {
+        if (core == null || playerController == null || IsScreenOpen) return;
+
+        boundCore = core;
+        OpenContainerScreen(core.Container);
+        if (coreRequirementPanel != null) coreRequirementPanel.SetActive(true);
+        RefreshCoreRows();
+    }
+
+    private void RefreshCoreRows()
+    {
+        if (boundCore == null || rowContainer == null || rowPrefab == null) return;
+
+        var progress = boundCore.GetProgress();
+
+        while (spawnedRows.Count < progress.Count)
+        {
+            var row = Instantiate(rowPrefab, rowContainer);
+            spawnedRows.Add(row);
+        }
+        for (int i = 0; i < spawnedRows.Count; i++)
+            spawnedRows[i].gameObject.SetActive(i < progress.Count);
+
+        for (int i = 0; i < progress.Count; i++)
+        {
+            var (item, required, current) = progress[i];
+            spawnedRows[i].Set(item, current, required);
+        }
     }
 
     private void OpenScreen(ItemContainer container)
@@ -68,6 +108,8 @@ public class InventoryManager : MonoBehaviour
         DropMouseCarriageItem();
 
         boundContainer = null;
+        boundCore = null;
+        if (coreRequirementPanel != null) coreRequirementPanel.SetActive(false);
         IsScreenOpen = false;
 
         if (playerController == null) return;
@@ -82,6 +124,7 @@ public class InventoryManager : MonoBehaviour
             lastSeenVersion = boundContainer.Version;
             if (playerController != null && playerController.chestInventoryUI != null)
                 playerController.chestInventoryUI.RefreshUI();
+            if (boundCore != null) RefreshCoreRows();
         }
 
         if (mouseCarriageItem != null && mouseCarriageItem.item != null && mouseCarriageItem.amount > 0)

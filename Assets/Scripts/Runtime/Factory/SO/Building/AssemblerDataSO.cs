@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -44,6 +45,7 @@ public class AssemblerDataSO : BuildingDataSO
 public class AssemblerBehavior : IBuildingBehavior
 {
     readonly Building _b;
+    readonly AssemblerDataSO _data;
     RecipeDataSO _recipe;
     float        _readyAt;   // 조합 완료 예정 시각
     bool         _crafting;
@@ -51,6 +53,7 @@ public class AssemblerBehavior : IBuildingBehavior
     public AssemblerBehavior(Building b, AssemblerDataSO data)
     {
         _b = b;
+        _data = data;
         // 한 재료가 입력 슬롯 전부를 독점해 다른 재료가 못 들어오는 데드락 방지
         _b.Input.SingleStackPerType = true;
         // 입력 버퍼는 현재 레시피의 재료만 받는다 (포트 필터 AcceptedTypes 대체)
@@ -68,8 +71,18 @@ public class AssemblerBehavior : IBuildingBehavior
                              $"입력 슬롯({_b.Input.SlotCount})보다 많아 거부됨");
             return;
         }
+        if (r != null && GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(r.requiredCoreTier))
+        {
+            Debug.LogWarning($"[Assembler] 레시피 '{r.displayName}'는 아직 해금되지 않음 (요구 Tier {r.requiredCoreTier})");
+            return;
+        }
         _recipe = r;
     }
+
+    /// <summary>현재 해금된 레시피만 — 향후 레시피 선택 UI가 이걸로 목록을 채우면 게이팅이 자동 반영된다.</summary>
+    public IEnumerable<RecipeDataSO> GetUnlockedRecipes() =>
+        _data.availableRecipes.Where(r => r != null &&
+            (GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.requiredCoreTier)));
 
     bool IsIngredient(ItemDataSO item)
     {

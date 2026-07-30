@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -7,6 +8,20 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+
+    // ── 코어 진행도(티어) — CoreBehavior가 요구량 충족 시 AdvanceTier를 호출한다.
+    public int UnlockedTier { get; private set; } = 0;
+    public event Action<int> TierUnlocked;
+
+    public bool IsTierUnlocked(int requiredTier) => requiredTier <= UnlockedTier;
+
+    public void AdvanceTier(int newTier)
+    {
+        if (newTier <= UnlockedTier) return;
+        UnlockedTier = newTier;
+        Debug.Log($"====== 🚀 코어 진화 — Tier {UnlockedTier} 해금 ======");
+        TierUnlocked?.Invoke(UnlockedTier);
+    }
 
     private void Awake()
     {
