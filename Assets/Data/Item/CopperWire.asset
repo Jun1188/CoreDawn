@@ -10,11 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
-  m_Name: IronOre
+  m_Name: CopperWire
   m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
-  id: Item:IronOre
-  displayName: "\uCCA0\uAD11\uC11D"
-  description: "\uAD6C\uC870\uC7AC\uC758 \uC6D0\uAD11. Ring 1 \uAD11\uB9E5\uC5D0\uC11C
-    \uCC44\uAD74."
-  icon: {fileID: -17470339, guid: 6cc7b23bf440b764893f0618ca3b9932, type: 3}
-  type: 0
+  id: Item:CopperWire
+  displayName: "\uAD6C\uB9AC \uC804\uC120"
+  description: "\uBC30\uC120\uACFC \uD68C\uB85C\uC758 \uAE30\uCD08 \uBD80\uD488."
+  icon: {fileID: 0}
+  type: 2

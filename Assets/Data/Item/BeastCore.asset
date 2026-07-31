@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
-  m_Name: IronOre
+  m_Name: BeastCore
   m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
-  id: Item:IronOre
-  displayName: "\uCCA0\uAD11\uC11D"
-  description: "\uAD6C\uC870\uC7AC\uC758 \uC6D0\uAD11. Ring 1 \uAD11\uB9E5\uC5D0\uC11C
-    \uCC44\uAD74."
-  icon: {fileID: -17470339, guid: 6cc7b23bf440b764893f0618ca3b9932, type: 3}
-  type: 0
+  id: Item:BeastCore
+  displayName: "\uAD34\uC218 \uD575"
+  description: "\uCF54\uC5B4\uC640 \uB3D9\uC77C \uACC4\uC5F4\uC758 \uC751\uCD95 \uC5D0\uB108\uC9C0.
+    \uB0AE \uB465\uC9C0 \uB808\uC774\uB4DC\uB85C \uD68D\uB4DD, \uAC8C\uC774\uD2B8
+    \uB0A9\uD488 \uC804\uC6A9."
+  icon: {fileID: 0}
+  type: 2

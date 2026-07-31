@@ -2468,6 +2468,7 @@ GameObject:
   - component: {fileID: 307732148233776431}
   - component: {fileID: 8415338401495421512}
   - component: {fileID: 711201946653970601}
+  - component: {fileID: 3702532305778674119}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -2622,7 +2623,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7672c0d6c9c0a554e8d61e413118ea5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryHolder
+  hotbarSize: 9
+  mainInventorySize: 27
+  craftingInputSize: 4
+  craftingOutputSize: 4
+  startingItems:
+  - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
+    amount: 50
+    maxStackSize: 50
   inventoryProcessor: {fileID: 711201946653970601}
+  playerController: {fileID: 6442160254612740854}
 --- !u!114 &711201946653970601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2636,6 +2646,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryProcessor
   currentRecipe: {fileID: 0}
+--- !u!114 &3702532305778674119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7498640336194902235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e6cb1c9f13a58e4e95b61d455d7cad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Entity
+  moveSpeed: 5
+  deathDelay: 2
+  destroyOnDeath: 1
+  health:
+    maxHealth: 100
 --- !u!1 &7920431637011069521
 GameObject:
   m_ObjectHideFlags: 0

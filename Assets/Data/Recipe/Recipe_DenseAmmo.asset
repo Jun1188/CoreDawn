@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
+  m_Name: Recipe_DenseAmmo
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
+  id: Recipe:Recipe_DenseAmmo
+  displayName: "\uACE0\uBC00\uB3C4 \uD0C4\uC57D \uC870\uB9BD"
+  description: "\uC870\uB9BD\uAE30 2\uC785\uB825. \uAD6C\uB9AC \uCF54\uD305 \uAC15\uD654
+    \uD0C4\uC57D."
+  icon: {fileID: 0}
+  tier: 2
+  requiredCoreTier: 1
+  inputs:
+  - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: e6d363c6268ef084a8673efd71844861, type: 2}
+    amount: 1
+  outputs:
+  - item: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
+    amount: 2
+  craftTime: 3

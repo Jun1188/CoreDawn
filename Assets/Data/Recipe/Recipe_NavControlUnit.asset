@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
+  m_Name: Recipe_NavControlUnit
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
+  id: Recipe:Recipe_NavControlUnit
+  displayName: "\uD56D\uBC95 \uC81C\uC5B4 \uC720\uB2DB \uC870\uB9BD"
+  description: "\uAC8C\uC774\uD2B8 \u2461 \uB0A9\uD488 \uBD80\uD488. \uC870\uB9BD\uAE30
+    2\uC785\uB825 \u2014 \uAC8C\uC774\uD2B8\u2460 \uBD80\uD488(\uC120\uCCB4 \uD328\uB110)
+    \uC7AC\uC18C\uBE44."
+  icon: {fileID: 0}
+  tier: 2
+  requiredCoreTier: 1
+  inputs:
+  - item: {fileID: 11400000, guid: a1135b33ec184ee49b0aa1c217acda9e, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}
+    amount: 1
+  outputs:
+  - item: {fileID: 11400000, guid: 953f117f3aca51d429084219427bec02, type: 2}
+    amount: 1
+  craftTime: 6
