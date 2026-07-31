@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4f7621f5177bca045b60258f54f1c1af
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322177
+  packageName: Dynamic Stylized Skybox
+  packageVersion: 1.4.2
+  assetPath: Assets/Plugins/Evets/Dynamic Stylized Skybox/README_TipsForCreatingTextures.md
+  uploadId: 871216

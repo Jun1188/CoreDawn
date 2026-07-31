@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8798d5fe0bf3b70449928412dd3caee0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Runtime/Internal/Constants.cs
+  uploadId: 867902

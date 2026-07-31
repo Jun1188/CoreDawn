@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ea830551ab9940144a30cd55dbfe5167
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Demo/Textures/Green/texture_09.mat
+  uploadId: 867902

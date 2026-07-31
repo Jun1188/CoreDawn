@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 782462ea3baa2ff46b6b3cfd0c8e32f8
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Resources/Shaders/ArtisticTiltShift_URP.shader
+  uploadId: 867902

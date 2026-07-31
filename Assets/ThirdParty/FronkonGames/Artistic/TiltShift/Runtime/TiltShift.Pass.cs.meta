@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 9d0231c41abddcf499beeedb2b3684e1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Runtime/TiltShift.Pass.cs
+  uploadId: 867902

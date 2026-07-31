@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 90fa4a3ed77d5a947969b3a9def3e0ec
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322177
+  packageName: Dynamic Stylized Skybox
+  packageVersion: 1.4.2
+  assetPath: Assets/Plugins/Evets/Dynamic Stylized Skybox/Textures/ThirdPartyNotices.txt
+  uploadId: 871216

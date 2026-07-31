@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f5c75fddb436cc84289e176d3bcd4d1e
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Runtime/Internal/VolumeParameters.cs
+  uploadId: 867902

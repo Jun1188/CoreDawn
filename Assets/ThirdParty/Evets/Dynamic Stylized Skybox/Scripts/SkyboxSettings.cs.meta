@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 2dd482329fc4123459201cbca573c521
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322177
+  packageName: Dynamic Stylized Skybox
+  packageVersion: 1.4.2
+  assetPath: Assets/Plugins/Evets/Dynamic Stylized Skybox/Scripts/SkyboxSettings.cs
+  uploadId: 871216

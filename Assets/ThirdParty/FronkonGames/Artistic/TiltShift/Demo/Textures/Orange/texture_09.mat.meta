@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 230ff6e4ae9264c44a56d90d400a24cb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Demo/Textures/Orange/texture_09.mat
+  uploadId: 867902

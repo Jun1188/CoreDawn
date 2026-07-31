@@ -1,0 +1,16 @@
+{
+  "name": "com.fronkongames.artistic.tiltshift",
+  "version": "3.0.1",
+  "displayName": "Artistic: Tilt Shift",
+  "description": "Used to simulate a miniature scene.",
+  "unity": "6000.0",
+  "unityRelease": "58f1",
+  "dependencies":  {  },
+  "keywords": [ "unity", "fps", "vr", "tilt", "shift", "tilt shift", "zelda", "miniature", "zoom" ],
+  "author":
+  {
+    "name": "Fronkon Games",
+    "email": "fronkongames@gmail.com",
+    "url": "https://fronkongames.github.io/store/artistic/"
+  }
+}

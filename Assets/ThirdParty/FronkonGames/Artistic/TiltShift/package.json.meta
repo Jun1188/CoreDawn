@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d916c2bebf6dd4d448a644849f19091e
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/package.json
+  uploadId: 867902

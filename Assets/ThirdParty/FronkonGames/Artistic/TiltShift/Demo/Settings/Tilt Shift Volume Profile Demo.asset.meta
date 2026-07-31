@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 43c7111985d96ca448902c3ff18a52c3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Demo/Settings/Tilt Shift Volume
+    Profile Demo.asset
+  uploadId: 867902

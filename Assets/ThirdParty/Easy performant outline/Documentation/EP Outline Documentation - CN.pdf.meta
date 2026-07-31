@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a453fcb15cce379448344267af546b94
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 157187
+  packageName: Easy Performant Outline 2D | 3D (URP / HDRP)
+  packageVersion: 3.7
+  assetPath: Assets/Plugins/Easy performant outline/Documentation/EP Outline Documentation
+    - CN.pdf
+  uploadId: 902386

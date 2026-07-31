@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cc8b35a3b526595408141164afb9440f
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Runtime/FronkonGames.Artistic.TiltShift.asmdef
+  uploadId: 867902

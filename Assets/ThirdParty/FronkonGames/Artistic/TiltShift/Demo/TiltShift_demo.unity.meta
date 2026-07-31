@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4394e164da8b97d4e9aa3c846a4daa25
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Demo/TiltShift_demo.unity
+  uploadId: 867902

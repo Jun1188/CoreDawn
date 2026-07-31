@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 026f103c4377279459e751e651a1f6d3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 322177
+  packageName: Dynamic Stylized Skybox
+  packageVersion: 1.4.2
+  assetPath: Assets/Plugins/Evets/Dynamic Stylized Skybox/SampleScene/Skybox_SampleSceneProfile.asset
+  uploadId: 871216

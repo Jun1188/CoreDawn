@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bcc6ec94bb232fa46a8334f9803fb0fe
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Demo/Textures/Dark/texture_02.mat
+  uploadId: 867902

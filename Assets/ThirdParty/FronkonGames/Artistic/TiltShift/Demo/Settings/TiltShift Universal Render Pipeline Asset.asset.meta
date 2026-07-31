@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 53c543fb33b387d4f9065b8e1d48fa95
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 265465
+  packageName: 'Artistic: Tilt Shift'
+  packageVersion: 3.0.1
+  assetPath: Assets/FronkonGames/Artistic/TiltShift/Demo/Settings/TiltShift Universal
+    Render Pipeline Asset.asset
+  uploadId: 867902
