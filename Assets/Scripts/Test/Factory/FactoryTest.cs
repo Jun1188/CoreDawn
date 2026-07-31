@@ -42,7 +42,7 @@ public class FactoryTest : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.value);
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
         {
-            var view = hit.collider.GetComponentInParent<Entities.Building>();
+            var view = hit.collider.GetComponentInParent<BuildingEntity>();
             if (view != null && view.Sim != null)
                 PrintBuildingData(view.Sim);
         }
@@ -152,7 +152,7 @@ public class FactoryTest : MonoBehaviour
 
         // 1. 모든 건물 연결선 시각화 (초록)
         Gizmos.color = Color.green;
-        foreach (var view in FindObjectsByType<Entities.Building>(FindObjectsSortMode.None))
+        foreach (var view in FindObjectsByType<BuildingEntity>(FindObjectsSortMode.None))
         {
             var b = view.Sim;
             if (b == null || b.OutputConnections == null) continue;

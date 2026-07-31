@@ -22,8 +22,19 @@ public class BuildingDatabaseScanner : AssetPostprocessor
             if (typeof(ItemDataSO).IsAssignableFrom(type) || type == typeof(ItemDatabaseSO)) item = true;
         }
 
-        if (building) RebuildBuildings();
-        if (item) RebuildItems();
+        if (!building && !item) return;
+
+        // 재수집은 Refresh가 끝난 뒤로 미룬다.
+        // OnPostprocessAllAssets는 임포트 파이프라인 안이라, 여기서 FindAssets로 프로젝트를 훑으면
+        // 같은 배치의 아직 임포트 안 된 에셋까지 강제 로드된다 → "scheduled for reimport ...
+        // returning two versions of the same asset" 경고. 건물 SO는 프리팹을 참조하므로
+        // Assembler.prefab / Minor.prefab 같은 프리팹이 딸려 들어온다.
+        bool rebuildBuildings = building, rebuildItems = item;
+        EditorApplication.delayCall += () =>
+        {
+            if (rebuildBuildings) RebuildBuildings();
+            if (rebuildItems)     RebuildItems();
+        };
     }
 
     [MenuItem("Tools/Factory/Rebuild Data Databases")]

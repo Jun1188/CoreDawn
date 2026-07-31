@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// 역할:
 ///   1. 심 생성·매 프레임 Advance() 호출
-///   2. 심 Building ↔ Entities.Building(GameObject) 매핑 관리
+///   2. 심 Building ↔ BuildingEntity(GameObject) 매핑 관리
 /// 시뮬레이션 로직은 전부 FactorySim(plain C#)에 있다.
 /// </summary>
 [RequireComponent(typeof(BeltItemView))]
@@ -23,7 +23,7 @@ public class FactoryBootstrap : MonoBehaviour
 
     public FactorySim Sim { get; private set; }
 
-    readonly Dictionary<Building, Entities.Building> _views = new();
+    readonly Dictionary<Building, BuildingEntity> _views = new();
 
     void Awake()
     {
@@ -56,8 +56,8 @@ public class FactoryBootstrap : MonoBehaviour
 
     // ── Building ↔ View 매핑 (PlacementBridge가 등록/해제)
 
-    public void RegisterView(Building b, Entities.Building v) => _views[b] = v;
+    public void RegisterView(Building b, BuildingEntity v) => _views[b] = v;
     public void UnregisterView(Building b) => _views.Remove(b);
-    public Entities.Building GetView(Building b) =>
+    public BuildingEntity GetView(Building b) =>
         b != null && _views.TryGetValue(b, out var v) ? v : null;
 }

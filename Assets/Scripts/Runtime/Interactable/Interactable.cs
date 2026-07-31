@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 단독 상호작용 오브젝트(상자·드롭 아이템)용 IInteractable 편의 베이스.
-/// 상속이 이미 차 있는 클래스(Entities.Building 등)는 IInteractable을 직접 구현할 것.
+/// 상속이 이미 차 있는 클래스(BuildingEntity 등)는 IInteractable을 직접 구현할 것.
 /// </summary>
 public abstract class Interactable : MonoBehaviour, IInteractable
 {

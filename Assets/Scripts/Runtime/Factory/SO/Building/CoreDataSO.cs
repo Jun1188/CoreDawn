@@ -6,7 +6,7 @@ using UnityEngine;
 /// 티어별로 정해진 아이템을 정해진 개수만큼 모으면 다음 티어로 진화하며,
 /// 그 결과(GameManager.UnlockedTier 증가)로 상위 레시피/건물이 해금된다.
 ///
-/// 디펜스 코어(Entities.Building.isCore)와 같은 오브젝트에 합체돼 배치된다 —
+/// 디펜스 코어(BuildingEntity.isCore)와 같은 오브젝트에 합체돼 배치된다 —
 /// 낮에는 이 SO의 행동(CoreBehavior)으로 자원을 납품받고, 밤에는 몬스터의 공격 대상이 된다.
 /// 씬에 미리 배치된 싱글턴이므로 빌드 메뉴에는 노출하지 않는다(hideFromBuildMenu = true 권장).
 /// </summary>

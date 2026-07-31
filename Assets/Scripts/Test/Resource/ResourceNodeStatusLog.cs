@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 광맥·채굴기가 실제로 돌고 있는지를 콘솔에 찍는 관찰용 컴포넌트.
@@ -21,8 +22,10 @@ public class ResourceNodeStatusLog : MonoBehaviour
     [Tooltip("상태를 확인하는 주기(초). 변화가 없으면 로그는 나가지 않는다.")]
     [SerializeField] private float period = 2f;
 
+    // 이름을 'tag'로 두면 Component.tag를 가려 CS0108이 난다 (씬에 저장된 값은 FormerlySerializedAs로 승계)
     [Tooltip("로그 앞에 붙는 머리말.")]
-    [SerializeField] private string tag = "[광맥]";
+    [FormerlySerializedAs("tag")]
+    [SerializeField] private string logPrefix = "[광맥]";
 
     int  _lastTotal = -1;
     int  _quietRounds;
@@ -44,7 +47,7 @@ public class ResourceNodeStatusLog : MonoBehaviour
 
             if (total != _lastTotal)
             {
-                Debug.Log($"{tag} 채굴 진행 (+{total - _lastTotal}/{period:0}초) — {StatusLine()}");
+                Debug.Log($"{logPrefix} 채굴 진행 (+{total - _lastTotal}/{period:0}초) — {StatusLine()}");
                 _lastTotal   = total;
                 _quietRounds = 0;
                 _warned      = false;
@@ -53,7 +56,7 @@ public class ResourceNodeStatusLog : MonoBehaviour
 
             if (++_quietRounds < 3 || _warned) continue;
 
-            Debug.Log($"{tag} 채굴 없음 — {StatusLine()}. {StallReason()}");
+            Debug.Log($"{logPrefix} 채굴 없음 — {StatusLine()}. {StallReason()}");
             _warned = true;
         }
     }

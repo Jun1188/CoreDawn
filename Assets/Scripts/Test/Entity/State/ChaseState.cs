@@ -89,7 +89,7 @@ public class ChaseState : IEntityState
         // 길이 완전히 막힘 → 경로를 막는 건물을 새 타겟으로 삼아 부순다.
         // 심(POCO) 건물을 뷰 GameObject의 Building 엔티티로 변환해 타겟으로 쓴다
         Building blocker = PathFinder.FindBlockingBuilding(stateMachine.Transform.position, target.GetPosition());
-        Entities.Building buildingEntity = Entities.Building.GetOrAttach(blocker);
+        BuildingEntity buildingEntity = BuildingEntity.GetOrAttach(blocker);
 
         if (buildingEntity != null && !ReferenceEquals(buildingEntity, target))
         {
