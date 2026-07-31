@@ -1096,37 +1096,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: playerController
-      value: 
-      objectReference: {fileID: 331194381}
-    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: craftingOutputSize
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: startingItems.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: startingItems.Array.data[0].item
-      value: 
-      objectReference: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
-    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: startingItems.Array.data[0].amount
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: startingItems.Array.data[0].maxStackSize
-      value: 50
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7498640336194902235, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 331194383}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
 --- !u!4 &331194380 stripped
 Transform:
@@ -1138,34 +1111,23 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6442160254612740854, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
   m_PrefabInstance: {fileID: 331194379}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 331194382}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9bf1eeacb865c9a498ad35769cfce5dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
---- !u!1 &331194382 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7498640336194902235, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+--- !u!114 &331194383 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3702532305778674119, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
   m_PrefabInstance: {fileID: 331194379}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &331194383
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 331194382}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e6cb1c9f13a58e4e95b61d455d7cad1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Entity
-  moveSpeed: 5
-  deathDelay: 2
-  destroyOnDeath: 1
-  health:
-    maxHealth: 100
 --- !u!20 &331194384 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 2516082347585424752, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
@@ -1297,8 +1259,8 @@ MonoBehaviour:
   timeText: {fileID: 886098101}
   timeIconImage: {fileID: 1003453223}
   timeProgressFill: {fileID: 453441663}
-  morningSprite: {fileID: -2003002518, guid: c8bb362480c67724681eb84458608438, type: 3}
-  nightSprite: {fileID: -787964085, guid: c8bb362480c67724681eb84458608438, type: 3}
+  morningSprite: {fileID: -2323845701886880878, guid: c8bb362480c67724681eb84458608438, type: 3}
+  nightSprite: {fileID: 8920004102730603819, guid: c8bb362480c67724681eb84458608438, type: 3}
   playerEntity: {fileID: 331194383}
   healthSlider: {fileID: 418322809}
   healthText: {fileID: 1281651777}
@@ -5467,6 +5429,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryManager
   mouseCarriageSlot: {fileID: 1853441164}
   playerController: {fileID: 331194381}
+  coreRequirementPanel: {fileID: 0}
+  rowPrefab: {fileID: 0}
+  rowContainer: {fileID: 0}
 --- !u!1 &1410216973
 GameObject:
   m_ObjectHideFlags: 0

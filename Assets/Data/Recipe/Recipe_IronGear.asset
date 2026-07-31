@@ -15,8 +15,9 @@ MonoBehaviour:
   id: Recipe:Recipe_IronGear
   displayName: "\uCCA0 \uAE30\uC5B4 \uC81C\uC791"
   description: 
-  icon: {fileID: -2003002518, guid: c8bb362480c67724681eb84458608438, type: 3}
+  icon: {fileID: 0}
   tier: 1
+  requiredCoreTier: 0
   inputs:
   - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
     amount: 2
