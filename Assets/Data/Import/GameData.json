@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "id": "Item:IronOre",
+      "displayName": "IronOre",
+      "description": "",
+      "type": "Ore",
+      "icon": ""
+    },
+    {
+      "id": "Item:IronIngot",
+      "displayName": "IronIngot",
+      "description": "",
+      "type": "Ingot",
+      "icon": ""
+    }
+  ],
+  "recipes": [
+    {
+      "id": "Recipe:SmeltIron",
+      "displayName": "SmeltIron",
+      "description": "",
+      "tier": 1,
+      "requiredCoreTier": 0,
+      "craftTime": 2,
+      "inputs":  [ { "item": "Item:IronOre",   "amount": 1 } ],
+      "outputs": [ { "item": "Item:IronIngot", "amount": 1 } ]
+    }
+  ]
+}
