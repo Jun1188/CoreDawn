@@ -30,4 +30,4 @@ MonoBehaviour:
   outputSlots: 1
   bufferStackCap: 0
   availableRecipes:
-  - {fileID: 11400000, guid: ca292011fbddbce4891086f482dc8171, type: 2}
+  - {fileID: 11400000, guid: 02e2bc24d99c06a4faaee0b2d7e5cd9d, type: 2}

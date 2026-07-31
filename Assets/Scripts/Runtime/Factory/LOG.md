@@ -298,3 +298,17 @@
 - FactoryBootstrap이 자기 GO에 자동 부착 — 씬 배선 불필요
 - **FBX 전환 대비**: 비주얼 적용은 ApplyVisual() 한 곳 — 메시 전환 시 여기만 수정.
   수천 개 규모가 되면 같은 위치 계산 위에 Graphics.RenderMeshInstanced(v2)로 교체
+
+---
+
+## 2026-07-26 — GameDataImporter: 외부 툴용 통합 JSON 임포터
+
+- **Assets/Data/Import/*.json → GameDataSO 일괄 생성/갱신** (Tools/Factory/Import Game Data)
+- 공통 파이프라인: id("분류:이름")가 기본 키 — 있으면 갱신·없으면 생성 (멱등 재임포트, guid 보존).
+  아이템 → 레시피 순서로 처리해 레시피가 새 아이템 참조 가능. 완료 시 DB 자동 재수집
+- 타입별 매핑: 아이템(type enum·아이콘 이름 검색), 레시피(재료/결과 id 해석 — 미해석 시
+  레시피 단위 스킵). 새 타입 추가 = DTO + Import 함수 한 쌍
+- **완전 범용(리플렉션) 기각**: 에셋 참조(프리팹·gunData)가 JSON에 못 들어가는 본질 한계 +
+  오류 메시지 품질. 건물 등 에디터 저작물은 인스펙터 유지
+- GameData.json 샘플 = 스키마 문서 겸 (기존 실데이터와 일치 — 재임포트 무해)
+- 기존 RecipeImporter(팀원)와 역할 중복 — 통합 여부 팀 논의 필요
