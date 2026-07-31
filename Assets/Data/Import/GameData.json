@@ -13,6 +13,13 @@
       "description": "",
       "type": "Ingot",
       "icon": ""
+    },
+    {
+      "id": "Item:IronGear",
+      "displayName": "철 기어",
+      "description": "",
+      "type": "Component",
+      "icon": ""
     }
   ],
   "recipes": [
@@ -25,6 +32,26 @@
       "craftTime": 2,
       "inputs":  [ { "item": "Item:IronOre",   "amount": 1 } ],
       "outputs": [ { "item": "Item:IronIngot", "amount": 1 } ]
+    },
+    {
+      "id": "Recipe:Recipe_IronIngot",
+      "displayName": "철 주괴 제련",
+      "description": "",
+      "tier": 0,
+      "requiredCoreTier": 0,
+      "craftTime": 2.0,
+      "inputs":  [ { "item": "Item:IronOre",   "amount": 2 } ],
+      "outputs": [ { "item": "Item:IronIngot", "amount": 1 } ]
+    },
+    {
+      "id": "Recipe:Recipe_IronGear",
+      "displayName": "철 기어 제작",
+      "description": "",
+      "tier": 1,
+      "requiredCoreTier": 0,
+      "craftTime": 3.0,
+      "inputs":  [ { "item": "Item:IronIngot", "amount": 2 } ],
+      "outputs": [ { "item": "Item:IronGear",  "amount": 1 } ]
     }
   ]
 }
