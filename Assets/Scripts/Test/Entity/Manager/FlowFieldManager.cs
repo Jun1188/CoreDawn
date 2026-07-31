@@ -5,7 +5,7 @@ using UnityEngine;
 // 갱신 조건 (기획):
 //   1. 밤 시작 시 최초 1회 (TimeManager.Cycle.NightStarted)
 //   2. 이후 rebuildInterval(1~3초)마다 1회
-//   3. 건물 배치/파괴 시 즉시 (Entities.Building의 OnEnable/OnDisable → MarkDirty)
+//   3. 건물 배치/파괴 시 즉시 (BuildingEntity의 OnEnable/OnDisable → MarkDirty)
 // 낮에는 몬스터가 없으므로 주기 갱신을 쉰다. TimeManager가 없는 테스트 씬은 항상 갱신.
 public class FlowFieldManager : MonoBehaviour
 {
@@ -79,7 +79,7 @@ public class FlowFieldManager : MonoBehaviour
 
     // 살아있는 건물이 차지한 셀을 목표로 수집. 단 벨트는 제외 —
     // 운송로(벨트)와 그 위의 아이템은 몬스터의 "진격 목표"가 아니다
-    // (아이템/DroppedItem은 애초에 Entities.Building이 아니라 목표 대상이 될 수 없다).
+    // (아이템/DroppedItem은 애초에 BuildingEntity이 아니라 목표 대상이 될 수 없다).
     // 경로를 막는 벨트는 기존대로 FlowFieldState의 사거리 판정으로 부술 수 있다.
     // 멀티타일 건물은 콜라이더 바운즈가 걸친 모든 셀을 시드로 넣는다.
     private void CollectGoals()
@@ -87,7 +87,7 @@ public class FlowFieldManager : MonoBehaviour
         goalBuffer.Clear();
         var grid = GridManager.Instance;
 
-        foreach (var building in Entities.Building.All)
+        foreach (var building in BuildingEntity.All)
         {
             if (!building.IsValidTarget()) continue;
             if (building.Data is BeltDataSO) continue; // 벨트만 목표 제외

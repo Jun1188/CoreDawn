@@ -10,7 +10,7 @@ using UnityEngine;
 //    FactorySim — 시계 + Dirty Queue + Wake 예약 + 배치/제거 진입점
 //    GridIndex  — 좌표 → Building O(1) 조회
 //
-//  Unity와의 접점은 FactoryBootstrap(드라이버)과 Entities.Building(씬 표현)뿐.
+//  Unity와의 접점은 FactoryBootstrap(드라이버)과 BuildingEntity(씬 표현)뿐.
 //  씬 없이 생성해 Advance()를 직접 호출하면 헤드리스로 돌릴 수 있다 (테스트용).
 // ================================================================
 

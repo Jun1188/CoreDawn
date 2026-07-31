@@ -20,7 +20,7 @@ public class FlowFieldState : IEntityState
         // 목표 건물(코어/타워)이 사거리에 들어오면 공격
         if (stateMachine.Combat != null)
         {
-            var building = Entities.Building.FindClosestInRange(
+            var building = BuildingEntity.FindClosestInRange(
                 stateMachine.Transform.position, stateMachine.Combat.AttackRange);
             if (building.IsValidTarget())
             {

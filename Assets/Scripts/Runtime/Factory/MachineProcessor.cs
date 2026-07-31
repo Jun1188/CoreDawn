@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Entities.Building))]
+[RequireComponent(typeof(BuildingEntity))]
 public class MachineProcessor : BaseProcessor
 {
     private Building _building;   
@@ -10,7 +10,7 @@ public class MachineProcessor : BaseProcessor
 
     private void Start()
     {
-        var entity = GetComponentInParent<Entities.Building>();
+        var entity = GetComponentInParent<BuildingEntity>();
         _building = entity != null ? entity.Sim : null;
         if (_building == null)
             Debug.LogWarning("[MachineProcessor] 심 건물(Sim) 연결을 찾지 못했습니다.", this);

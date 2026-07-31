@@ -49,7 +49,7 @@ public class BattleManager : MonoBehaviour
     private void Start()
     {
         EnsurePlayerEntity();
-        Entities.Building.CoreDestroyed += OnCoreDestroyed;
+        BuildingEntity.CoreDestroyed += OnCoreDestroyed;
 
         spawnManager.Initialize(gridManager, transform);
 
@@ -69,7 +69,7 @@ public class BattleManager : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        Entities.Building.CoreDestroyed -= OnCoreDestroyed;
+        BuildingEntity.CoreDestroyed -= OnCoreDestroyed;
         if (TimeManager.Instance != null)
         {
             TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
@@ -97,7 +97,7 @@ public class BattleManager : MonoBehaviour
         Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
     }
 
-    private void OnCoreDestroyed(Entities.Building core)
+    private void OnCoreDestroyed(BuildingEntity core)
     {
         if (IsGameOver) return;
         IsGameOver = true;
