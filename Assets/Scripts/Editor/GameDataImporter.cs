@@ -47,7 +47,7 @@ public static class GameDataImporter
 
     [Serializable] class RecipeDto
     {
-        public string id;            // 필수. 예: "Recipe:SmeltIron"
+        public string id;            // 필수. 예: "Recipe:Recipe_IronIngot"
         public string displayName;   // 필수
         public string description;
         public int    tier;

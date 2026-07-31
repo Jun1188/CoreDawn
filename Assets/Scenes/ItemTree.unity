@@ -1254,7 +1254,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProcessorTester
   inventoryProcessor: {fileID: 1015263975}
-  testRecipe: {fileID: 11400000, guid: ca292011fbddbce4891086f482dc8171, type: 2}
+  testRecipe: {fileID: 11400000, guid: 02e2bc24d99c06a4faaee0b2d7e5cd9d, type: 2}
   player: {fileID: 1359956094}
 --- !u!65 &1015263977
 BoxCollider:
