@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
   id: Recipe:Recipe_IronIngot
   displayName: "\uCCA0 \uC8FC\uAD34 \uC81C\uB828"
-  description: 
+  description: "\uC81C\uB828\uB85C 1\uC785\uB825."
   icon: {fileID: 0}
   tier: 0
   requiredCoreTier: 0

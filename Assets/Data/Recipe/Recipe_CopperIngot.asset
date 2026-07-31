@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
-  m_Name: Recipe_IronGear
+  m_Name: Recipe_CopperIngot
   m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
-  id: Recipe:Recipe_IronGear
-  displayName: "\uCCA0 \uAE30\uC5B4 \uC81C\uC791"
-  description: "\uC81C\uC791\uAE30 1\uC785\uB825."
+  id: Recipe:Recipe_CopperIngot
+  displayName: "\uAD6C\uB9AC \uC8FC\uAD34 \uC81C\uB828"
+  description: "\uC81C\uB828\uB85C 1\uC785\uB825. \uAD6C\uB9AC \uB77C\uC778 \uAC1C\uBC29."
   icon: {fileID: 0}
-  tier: 1
-  requiredCoreTier: 0
+  tier: 2
+  requiredCoreTier: 1
   inputs:
-  - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+  - item: {fileID: 11400000, guid: 76c129ed246f87d45a2874fe0f76a4c3, type: 2}
     amount: 2
   outputs:
-  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+  - item: {fileID: 11400000, guid: e6d363c6268ef084a8673efd71844861, type: 2}
     amount: 1
-  craftTime: 3
+  craftTime: 2

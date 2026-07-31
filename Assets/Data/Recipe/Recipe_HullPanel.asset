@@ -10,18 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
-  m_Name: Recipe_IronGear
+  m_Name: Recipe_HullPanel
   m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
-  id: Recipe:Recipe_IronGear
-  displayName: "\uCCA0 \uAE30\uC5B4 \uC81C\uC791"
-  description: "\uC81C\uC791\uAE30 1\uC785\uB825."
+  id: Recipe:Recipe_HullPanel
+  displayName: "\uC120\uCCB4 \uD328\uB110 \uC870\uB9BD"
+  description: "\uAC8C\uC774\uD2B8 \u2460 \uB0A9\uD488 \uBD80\uD488. \uD2F0\uC5B4
+    1\uC5D0\uC11C\uB294 \uC791\uC5C5\uB300 \uC218\uB3D9 \uC870\uB9BD."
   icon: {fileID: 0}
   tier: 1
   requiredCoreTier: 0
   inputs:
-  - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
     amount: 2
-  outputs:
   - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
     amount: 1
-  craftTime: 3
+  outputs:
+  - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}
+    amount: 1
+  craftTime: 4

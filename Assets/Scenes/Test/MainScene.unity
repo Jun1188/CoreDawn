@@ -826,17 +826,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bf1eeacb865c9a498ad35769cfce5dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
---- !u!114 &331194382 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1341143159957256118, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-  m_PrefabInstance: {fileID: 331194379}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b4b2931dea724a48acbd057dc96eef8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Inventory
 --- !u!20 &331194384 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 2516082347585424752, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
@@ -1679,10 +1668,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ddd657caf5a43347be06442dcef70fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryUI
-  inventory: {fileID: 152612381}
   itemSocketPrefab: {fileID: 8219301102851577290, guid: 9856b207c0cfb094fb37b743ff1e9f73, type: 3}
   slotGridParent: {fileID: 682741162}
-  isPlayerMainInventory: 0
 --- !u!224 &762098485
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2290,6 +2277,7 @@ GameObject:
   m_Component:
   - component: {fileID: 973391662}
   - component: {fileID: 973391663}
+  - component: {fileID: 973391664}
   m_Layer: 5
   m_Name: HotbarPanel
   m_TagString: Untagged
@@ -2329,14 +2317,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 077a1f4d0dd5da647bb94fbb599bf8fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HotbarUI
-  playerInventory: {fileID: 331194382}
-  itemSocketPrefab: {fileID: 8219301102851577290, guid: 9856b207c0cfb094fb37b743ff1e9f73, type: 3}
   hotbarGridParent: {fileID: 1905700790}
-  mainInventoryUI: {fileID: 1266478037}
-  defaultSlotColor: {r: 1, g: 1, b: 1, a: 0.3}
-  equipmentSlotColor: {r: 0.2, g: 0.5, b: 1, a: 0.5}
   activeBorderColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   defaultBorderColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+--- !u!114 &973391664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 973391661}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ddd657caf5a43347be06442dcef70fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryUI
+  itemSocketPrefab: {fileID: 8219301102851577290, guid: 9856b207c0cfb094fb37b743ff1e9f73, type: 3}
+  slotGridParent: {fileID: 1905700790}
 --- !u!1 &1003453222
 GameObject:
   m_ObjectHideFlags: 0
@@ -3178,10 +3175,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ddd657caf5a43347be06442dcef70fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryUI
-  inventory: {fileID: 331194382}
   itemSocketPrefab: {fileID: 8219301102851577290, guid: 9856b207c0cfb094fb37b743ff1e9f73, type: 3}
   slotGridParent: {fileID: 1837543241}
-  isPlayerMainInventory: 1
 --- !u!224 &1266478038
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3493,6 +3488,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryManager
   mouseCarriageSlot: {fileID: 1853441164}
   playerController: {fileID: 331194381}
+  coreRequirementPanel: {fileID: 0}
+  rowPrefab: {fileID: 0}
+  rowContainer: {fileID: 0}
 --- !u!1 &1455200877
 GameObject:
   m_ObjectHideFlags: 0

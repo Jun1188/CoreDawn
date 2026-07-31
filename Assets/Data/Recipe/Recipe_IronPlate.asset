@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
-  m_Name: Recipe_IronGear
+  m_Name: Recipe_IronPlate
   m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
-  id: Recipe:Recipe_IronGear
-  displayName: "\uCCA0 \uAE30\uC5B4 \uC81C\uC791"
+  id: Recipe:Recipe_IronPlate
+  displayName: "\uCCA0\uD310 \uC81C\uC791"
   description: "\uC81C\uC791\uAE30 1\uC785\uB825."
   icon: {fileID: 0}
   tier: 1
@@ -22,6 +22,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
     amount: 2
   outputs:
-  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
     amount: 1
   craftTime: 3

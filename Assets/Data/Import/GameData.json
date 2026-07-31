@@ -1,23 +1,149 @@
 {
   "items": [
     {
+      "id": "Item:ShipDebris",
+      "displayName": "우주선 잔해",
+      "description": "추락하며 흩어진 파편. 게이트 ⓪ 납품 및 초반 수동 제작 재료.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
       "id": "Item:IronOre",
-      "displayName": "IronOre",
-      "description": "",
+      "displayName": "철광석",
+      "description": "구조재의 원광. Ring 1 광맥에서 채굴.",
       "type": "Ore",
       "icon": ""
     },
     {
       "id": "Item:IronIngot",
-      "displayName": "IronIngot",
-      "description": "",
+      "displayName": "철 주괴",
+      "description": "철광석을 제련한 기본 소재.",
       "type": "Ingot",
+      "icon": ""
+    },
+    {
+      "id": "Item:IronPlate",
+      "displayName": "철판",
+      "description": "선체 봉합과 회로 함체에 쓰이는 판재.",
+      "type": "Component",
       "icon": ""
     },
     {
       "id": "Item:IronGear",
       "displayName": "철 기어",
-      "description": "",
+      "description": "체결용 부품. 선체 패널 조립에 사용.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:BasicAmmo",
+      "displayName": "기본 탄약",
+      "description": "권총·라이플·기본 포탑 공용 탄약.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:CopperOre",
+      "displayName": "구리광석",
+      "description": "전자 계통의 원광. Ring 1 외곽~Ring 2.",
+      "type": "Ore",
+      "icon": ""
+    },
+    {
+      "id": "Item:CopperIngot",
+      "displayName": "구리 주괴",
+      "description": "구리광석을 제련한 소재.",
+      "type": "Ingot",
+      "icon": ""
+    },
+    {
+      "id": "Item:CopperWire",
+      "displayName": "구리 전선",
+      "description": "배선과 회로의 기초 부품.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:CrystalOre",
+      "displayName": "크리스탈 광석",
+      "description": "동력 계통의 원광. Ring 2~3 위험 지역.",
+      "type": "Ore",
+      "icon": ""
+    },
+    {
+      "id": "Item:RefinedCrystal",
+      "displayName": "정제 크리스탈",
+      "description": "에너지를 담는 매질.",
+      "type": "Ingot",
+      "icon": ""
+    },
+    {
+      "id": "Item:HullPanel",
+      "displayName": "선체 패널",
+      "description": "게이트 ① 납품 부품. 동체를 물리적으로 봉합한다.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:CircuitBoard",
+      "displayName": "회로 기판",
+      "description": "배전반·제어 유닛의 기초 회로.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:Grenade",
+      "displayName": "유탄",
+      "description": "유탄 발사기와 박격포 타워가 공유하는 폭발물.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:DenseAmmo",
+      "displayName": "고밀도 탄약",
+      "description": "구리 코팅 강화 탄약. 상위 총기·중기관 포탑용.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:EnergyCell",
+      "displayName": "에너지 셀",
+      "description": "에너지 그릇. 동력 모듈과 T3 방어 시설이 소비.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:EnergyCellAmmo",
+      "displayName": "에너지 셀 탄",
+      "description": "에너지 소총·레이저 타워용 탄.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:NavControlUnit",
+      "displayName": "항법 제어 유닛",
+      "description": "게이트 ② 납품 부품. 패널로 차폐된 함체에 장착된 제어 모듈.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:BeastCore",
+      "displayName": "괴수 핵",
+      "description": "코어와 동일 계열의 응축 에너지. 낮 둥지 레이드로 획득, 게이트 납품 전용.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:PowerModule",
+      "displayName": "동력 모듈",
+      "description": "게이트 ③ 납품 부품. 엔진에 꽂는 완성형 연료·제어 통합 모듈.",
+      "type": "Component",
+      "icon": ""
+    },
+    {
+      "id": "Item:CrystalAmmo",
+      "displayName": "크리스탈 탄약",
+      "description": "크리스탈 첨두 관통탄. T3 물리 계열 최상위 탄약 — 저격소총·중기관 포탑 상위 호환.",
       "type": "Component",
       "icon": ""
     }
@@ -26,10 +152,10 @@
     {
       "id": "Recipe:Recipe_IronIngot",
       "displayName": "철 주괴 제련",
-      "description": "",
+      "description": "제련로 1입력.",
       "tier": 0,
       "requiredCoreTier": 0,
-      "craftTime": 2.0,
+      "craftTime": 2,
       "inputs": [
         {
           "item": "Item:IronOre",
@@ -44,12 +170,32 @@
       ]
     },
     {
-      "id": "Recipe:Recipe_IronGear",
-      "displayName": "철 기어 제작",
-      "description": "",
+      "id": "Recipe:Recipe_IronPlate",
+      "displayName": "철판 제작",
+      "description": "제작기 1입력.",
       "tier": 1,
       "requiredCoreTier": 0,
-      "craftTime": 3.0,
+      "craftTime": 3,
+      "inputs": [
+        {
+          "item": "Item:IronIngot",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:IronPlate",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_IronGear",
+      "displayName": "철 기어 제작",
+      "description": "제작기 1입력.",
+      "tier": 1,
+      "requiredCoreTier": 0,
+      "craftTime": 3,
       "inputs": [
         {
           "item": "Item:IronIngot",
@@ -60,6 +206,306 @@
         {
           "item": "Item:IronGear",
           "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_BasicAmmo",
+      "displayName": "기본 탄약 제작",
+      "description": "제작기 1입력. 총기·기본 포탑 공용.",
+      "tier": 1,
+      "requiredCoreTier": 0,
+      "craftTime": 2,
+      "inputs": [
+        {
+          "item": "Item:IronIngot",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:BasicAmmo",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_HullPanel",
+      "displayName": "선체 패널 조립",
+      "description": "게이트 ① 납품 부품. 티어 1에서는 작업대 수동 조립.",
+      "tier": 1,
+      "requiredCoreTier": 0,
+      "craftTime": 4,
+      "inputs": [
+        {
+          "item": "Item:IronPlate",
+          "amount": 2
+        },
+        {
+          "item": "Item:IronGear",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:HullPanel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_CopperIngot",
+      "displayName": "구리 주괴 제련",
+      "description": "제련로 1입력. 구리 라인 개방.",
+      "tier": 2,
+      "requiredCoreTier": 1,
+      "craftTime": 2,
+      "inputs": [
+        {
+          "item": "Item:CopperOre",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:CopperIngot",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_CopperWire",
+      "displayName": "구리 전선 제작",
+      "description": "제작기 1입력.",
+      "tier": 2,
+      "requiredCoreTier": 1,
+      "craftTime": 2,
+      "inputs": [
+        {
+          "item": "Item:CopperIngot",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:CopperWire",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_CircuitBoard",
+      "displayName": "회로 기판 조립",
+      "description": "조립기 2입력.",
+      "tier": 2,
+      "requiredCoreTier": 1,
+      "craftTime": 4,
+      "inputs": [
+        {
+          "item": "Item:CopperWire",
+          "amount": 3
+        },
+        {
+          "item": "Item:IronPlate",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:CircuitBoard",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_Grenade",
+      "displayName": "유탄 조립",
+      "description": "조립기 2입력. 유탄 발사기·박격포 타워 공용.",
+      "tier": 2,
+      "requiredCoreTier": 1,
+      "craftTime": 3,
+      "inputs": [
+        {
+          "item": "Item:BasicAmmo",
+          "amount": 2
+        },
+        {
+          "item": "Item:IronPlate",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:Grenade",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_NavControlUnit",
+      "displayName": "항법 제어 유닛 조립",
+      "description": "게이트 ② 납품 부품. 조립기 2입력 — 게이트① 부품(선체 패널) 재소비.",
+      "tier": 2,
+      "requiredCoreTier": 1,
+      "craftTime": 6,
+      "inputs": [
+        {
+          "item": "Item:CircuitBoard",
+          "amount": 1
+        },
+        {
+          "item": "Item:HullPanel",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:NavControlUnit",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_RefinedCrystal",
+      "displayName": "크리스탈 정제",
+      "description": "제련로 1입력. Ring 2~3 원정 자원.",
+      "tier": 3,
+      "requiredCoreTier": 2,
+      "craftTime": 3,
+      "inputs": [
+        {
+          "item": "Item:CrystalOre",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:RefinedCrystal",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_DenseAmmo",
+      "displayName": "고밀도 탄약 조립",
+      "description": "조립기 2입력. 구리 코팅 강화 탄약.",
+      "tier": 2,
+      "requiredCoreTier": 1,
+      "craftTime": 3,
+      "inputs": [
+        {
+          "item": "Item:BasicAmmo",
+          "amount": 2
+        },
+        {
+          "item": "Item:CopperIngot",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:DenseAmmo",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_EnergyCell",
+      "displayName": "에너지 셀 조립",
+      "description": "조립기 2입력.",
+      "tier": 3,
+      "requiredCoreTier": 2,
+      "craftTime": 4,
+      "inputs": [
+        {
+          "item": "Item:RefinedCrystal",
+          "amount": 1
+        },
+        {
+          "item": "Item:CopperWire",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:EnergyCell",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_EnergyCellAmmo",
+      "displayName": "에너지 셀 탄 제작",
+      "description": "제작기 1입력.",
+      "tier": 3,
+      "requiredCoreTier": 2,
+      "craftTime": 2,
+      "inputs": [
+        {
+          "item": "Item:EnergyCell",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:EnergyCellAmmo",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_PowerModule",
+      "displayName": "동력 모듈 제조",
+      "description": "게이트 ③ 납품 부품. 제조기 4입력 — 괴수 핵이 공장 라인에 합류하는 유일한 지점.",
+      "tier": 3,
+      "requiredCoreTier": 2,
+      "craftTime": 10,
+      "inputs": [
+        {
+          "item": "Item:NavControlUnit",
+          "amount": 1
+        },
+        {
+          "item": "Item:HullPanel",
+          "amount": 1
+        },
+        {
+          "item": "Item:EnergyCell",
+          "amount": 2
+        },
+        {
+          "item": "Item:BeastCore",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:PowerModule",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_CrystalAmmo",
+      "displayName": "크리스탈 탄약 조립",
+      "description": "조립기 2입력. 고밀도 탄약에 크리스탈 첨두를 결합.",
+      "tier": 3,
+      "requiredCoreTier": 2,
+      "craftTime": 3,
+      "inputs": [
+        {
+          "item": "Item:DenseAmmo",
+          "amount": 2
+        },
+        {
+          "item": "Item:RefinedCrystal",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:CrystalAmmo",
+          "amount": 2
         }
       ]
     }

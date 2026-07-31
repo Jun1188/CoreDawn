@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
-  m_Name: IronOre
+  m_Name: ShipDebris
   m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
-  id: Item:IronOre
-  displayName: "\uCCA0\uAD11\uC11D"
-  description: "\uAD6C\uC870\uC7AC\uC758 \uC6D0\uAD11. Ring 1 \uAD11\uB9E5\uC5D0\uC11C
-    \uCC44\uAD74."
-  icon: {fileID: -17470339, guid: 6cc7b23bf440b764893f0618ca3b9932, type: 3}
-  type: 0
+  id: Item:ShipDebris
+  displayName: "\uC6B0\uC8FC\uC120 \uC794\uD574"
+  description: "\uCD94\uB77D\uD558\uBA70 \uD769\uC5B4\uC9C4 \uD30C\uD3B8. \uAC8C\uC774\uD2B8
+    \u24EA \uB0A9\uD488 \uBC0F \uCD08\uBC18 \uC218\uB3D9 \uC81C\uC791 \uC7AC\uB8CC."
+  icon: {fileID: 0}
+  type: 2

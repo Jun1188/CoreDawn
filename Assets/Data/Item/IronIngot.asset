@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: IronIngot
   m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
   id: Item:IronIngot
-  displayName: IronIngot
-  description: 
+  displayName: "\uCCA0 \uC8FC\uAD34"
+  description: "\uCCA0\uAD11\uC11D\uC744 \uC81C\uB828\uD55C \uAE30\uBCF8 \uC18C\uC7AC."
   icon: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
   type: 1
