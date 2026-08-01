@@ -19,10 +19,17 @@ public class SplitterDataSO : BuildingDataSO
 
 // ─── 행동 ──────────────────────────────────────────────────────
 
-public class SplitterBehavior : IBuildingBehavior
+public class SplitterBehavior : IBuildingBehavior, IInteractiveBehavior
 {
     readonly Building _b;
     int _next;   // 라운드로빈 커서 — 다음에 밀어볼 출력 연결 인덱스
+
+    /// <summary>필터 UI가 출력 포트 방향을 조회할 때 사용.</summary>
+    public Building Building => _b;
+
+    // E 상호작용 — 필터 설정 팝업 (Storage 보관함과 같은 opt-in 패턴)
+    public string InteractPrompt => "필터 설정";
+    public void Interact(PlayerController player) => SplitterFilterPopup.Open(this);
 
     // 필터 — 출구 "방향" 기준 저장: 이웃 설치/철거로 연결 목록이 재구축돼도 유지된다.
     // 방향당 아이템 여러 종 허용, 아이템당 방향은 1개(결정적 라우팅).

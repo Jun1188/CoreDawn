@@ -25,10 +25,14 @@ public class FactoryScenarioTests : MonoBehaviour
 
     // ─── 실행 루프 ──────────────────────────────────────────────
 
+    int count;
+
     void Start()
     {
         _ore   = MakeItem("TestOre",   ItemType.Ore);
         _ingot = MakeItem("TestIngot", ItemType.Ingot);
+
+        count = 0;
 
         Run("1. 기본 체인 운반",              S1_BasicChain);
         Run("2. 설치 순서 무관 (stall 데드락)", S2_OrderIndependence);
@@ -55,6 +59,8 @@ public class FactoryScenarioTests : MonoBehaviour
     /// <summary>시나리오 1개를 격리 실행. 예외도 실패로 기록하고 다음으로 넘어간다.</summary>
     void Run(string name, Action scenario)
     {
+        count++;
+
         // 시나리오마다 새 심 — plain C#이라 싱글톤 정리·프레임 대기가 필요 없다
         _sim = new FactorySim(tps: 10f);
         _sim.GetResourceAt = _ => _ore;
@@ -397,7 +403,7 @@ public class FactoryScenarioTests : MonoBehaviour
     void OnGUI()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Factory 특성화 테스트  ({_results.Count}/9)");
+        sb.AppendLine($"Factory 특성화 테스트  ({_results.Count}/{count})");
         foreach (var (name, pass, detail) in _results)
         {
             sb.AppendLine($"{(pass ? "PASS" : "FAIL")}  {name}");
