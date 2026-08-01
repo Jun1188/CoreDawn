@@ -6,25 +6,22 @@ using TMPro;
 public class CraftingUI : MonoBehaviour
 {
     [Header("=== Crafting Panel Toggle ===")]
-    [SerializeField] private GameObject craftingPanel;      // 제작 UI 전체 패널 (재료4칸 + 결과물4칸 + 버튼)
-    [SerializeField] private Button toggleCraftingButton;   // 인벤토리 옆에 붙일 [제작] 버튼
+    [SerializeField] private GameObject craftingPanel;      
+    [SerializeField] private Button toggleCraftingButton;   
     
-    [Header("Recipe Database")]
-    [SerializeField] private List<RecipeDataSO> availableRecipes = new List<RecipeDataSO>();
-
     [Header("Recipe List UI")]
     [SerializeField] private Transform recipeListContent;
     [SerializeField] private RecipeSlotUI recipeSlotPrefab;
 
     [Header("Recipe Panel Toggle")]
-    [SerializeField] private GameObject recipeSidePanel; // RecipeList_ScrollView와 InfoDisplay를 포함한 부모 패널
-    [SerializeField] private Button recipeListButton; //  버튼
+    [SerializeField] private GameObject recipeSidePanel; 
+    [SerializeField] private Button recipeListButton; 
 
     private bool isRecipePanelOpen = false;
 
     [Header("UI Inventory Grids")]
-    public InventoryUI inputInventoryUI;   // 재료 4칸 Grid
-    public InventoryUI outputInventoryUI;  // 결과 1칸 Grid
+    public InventoryUI inputInventoryUI;   
+    public InventoryUI outputInventoryUI;  
 
     [Header("Selected Recipe Info Display")]
     [SerializeField] private TextMeshProUGUI selectedRecipeNameText;
@@ -32,7 +29,11 @@ public class CraftingUI : MonoBehaviour
 
     [Header("Crafting Controls")]
     public Button craftButton;
-    public Slider progressBarSlider; // ★ Image 대신 Slider 컴포넌트를 연결!
+    public Slider progressBarSlider; 
+
+    [Header("Crafting Display Policy")]
+    [Tooltip("체크 시 0티어(손제작) 외 고티어 레시피는 아예 스크롤뷰 목록에서 숨깁니다.")]
+    [SerializeField] private bool hideNonHandCraftableRecipes = false;
 
     private RecipeDataSO selectedRecipe;
     private readonly List<RecipeSlotUI> spawnedRecipeSlots = new();
@@ -58,7 +59,11 @@ public class CraftingUI : MonoBehaviour
             processor.OnProductionStopped += OnCraftStopped;
         }
 
-        if (GameManager.Instance != null) GameManager.Instance.TierUnlocked += OnTierUnlocked;
+        // RecipeManager 이벤트 구독
+        if (RecipeManager.Instance != null)
+        {
+            RecipeManager.Instance.OnTierUnlocked += OnTierUnlocked;
+        }
 
         GenerateRecipeList();
     }
@@ -72,14 +77,16 @@ public class CraftingUI : MonoBehaviour
             processor.OnProductionStopped -= OnCraftStopped;
         }
 
-        if (GameManager.Instance != null) GameManager.Instance.TierUnlocked -= OnTierUnlocked;
+        if (RecipeManager.Instance != null)
+        {
+            RecipeManager.Instance.OnTierUnlocked -= OnTierUnlocked;
+        }
     }
 
     private void OnTierUnlocked(int _) => GenerateRecipeList();
 
     private void Update()
     {
-        // Slider value (0.0 ~ 1.0) 갱신
         if (processor != null && processor.IsProcessing())
         {
             if (progressBarSlider != null)
@@ -95,40 +102,61 @@ public class CraftingUI : MonoBehaviour
             Destroy(child.gameObject);
         spawnedRecipeSlots.Clear();
 
-        foreach (var recipe in availableRecipes)
+        if (RecipeManager.Instance == null) return;
+
+        var allRecipes = RecipeManager.Instance.GetAllRecipes();
+
+        foreach (var recipe in allRecipes)
         {
-            if (recipe == null || recipe.tier > 0) continue;
-            if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(recipe.requiredCoreTier)) continue;
+            if (recipe == null) continue;
+
+            bool isHandCraftable = (recipe.tier == 0);
+            bool isTierUnlocked = RecipeManager.Instance.IsTierUnlocked(recipe);
+
+            if (hideNonHandCraftableRecipes && !isHandCraftable) continue;
+
+            bool isSelectable = isHandCraftable && isTierUnlocked;
 
             RecipeSlotUI slot = Instantiate(recipeSlotPrefab, recipeListContent);
-            slot.Init(recipe, OnSelectRecipe);
+            slot.Init(recipe, isSelectable, OnSelectRecipe);
             spawnedRecipeSlots.Add(slot);
         }
 
-        if (availableRecipes.Count > 0 && availableRecipes[0].tier == 0)
+        ClearSelection();
+    }
+
+    public void ClearSelection()
+    {
+        selectedRecipe = null;
+
+        if (selectedRecipeNameText != null) selectedRecipeNameText.text = "";
+        if (selectedRecipeDescText != null) selectedRecipeDescText.text = "";
+
+        // 생성된 모든 레시피 슬롯의 하이라이트 끄기
+        foreach (var slot in spawnedRecipeSlots)
         {
-            OnSelectRecipe(availableRecipes[0]);
+            if (slot != null)
+                slot.SetHighlight(false);
         }
     }
 
-    /// <summary> 레시피 목록 패널을 켜고 끄는 토글 함수 </summary>
     public void ToggleRecipePanel()
     {
         isRecipePanelOpen = !isRecipePanelOpen;
-
-        if (recipeSidePanel != null)
-        {
-            recipeSidePanel.SetActive(isRecipePanelOpen);
-        }
+        if (recipeSidePanel != null) recipeSidePanel.SetActive(isRecipePanelOpen);
     }
 
-    /// <summary> [제작] 버튼 누르면 제작창 켜지고 꺼지는 토글 함수 </summary>
     public void ToggleCraftingUI()
     {
         if (craftingPanel != null)
         {
             bool isCurrentActive = craftingPanel.activeInHierarchy;
-            craftingPanel.SetActive(!isCurrentActive);
+            bool nextActive = !isCurrentActive;
+            
+            craftingPanel.SetActive(nextActive);
+
+            // 창을 다시 열거나 닫을 때 선택 상태 초기화
+            ClearSelection();
         }
     }
 
@@ -139,7 +167,6 @@ public class CraftingUI : MonoBehaviour
         if (selectedRecipeNameText != null) selectedRecipeNameText.text = recipe != null ? recipe.displayName : "";
         if (selectedRecipeDescText != null) selectedRecipeDescText.text = recipe != null ? recipe.description : "";
 
-        // ★ 내가 클릭한 레시피만 하이라이트 켜기
         foreach (var slot in spawnedRecipeSlots)
         {
             slot.SetHighlight(slot.TargetRecipe == recipe);
@@ -148,11 +175,8 @@ public class CraftingUI : MonoBehaviour
 
     private void OnClickCraftButton()
     {
-        if (selectedRecipe == null) 
-        {
-            Debug.LogWarning("[CraftingUI] 선택된 레시피가 없습니다.", this);
-            return;
-        }
+        if (selectedRecipe == null) return;
+
         if (PlayerInventoryHolder.Instance != null)
         {
             PlayerInventoryHolder.Instance.StartHandCrafting(selectedRecipe);
@@ -178,17 +202,10 @@ public class CraftingUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // 제작창이 열릴 때는 항상 레시피 목록을 닫은 채로 시작
         isRecipePanelOpen = false; 
-        if (recipeSidePanel != null)
-        {
-            recipeSidePanel.SetActive(isRecipePanelOpen);
-        }
+        if (recipeSidePanel != null) recipeSidePanel.SetActive(false);
+        if (craftingPanel != null) craftingPanel.SetActive(false);
 
-        // 처음 인벤토리를 열 때는 무조건 제작창을 끈 상태로 시작!
-        if (craftingPanel != null)
-        {
-            craftingPanel.SetActive(false);
-        }
+        ClearSelection();
     }
 }

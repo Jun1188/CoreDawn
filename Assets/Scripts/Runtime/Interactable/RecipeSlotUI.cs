@@ -1,46 +1,76 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public class RecipeSlotUI : MonoBehaviour
 {
-    [Header("UI Components")]
-    [SerializeField] private Image recipeIcon;
-    [SerializeField] private TextMeshProUGUI recipeNameText;
+    [SerializeField] private Image iconImage;
+    [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private Button button;
-    [SerializeField] private GameObject selectHighlight; // ★ 프리팹 전체가 아닌 '자식 하이라이트 이미지'를 할당해야 함!
+    [SerializeField] private GameObject highlightOverlay;
+    [SerializeField] private GameObject lockOverlay; // 잠금/손제작불가 아이콘 또는 레이어
+    [SerializeField] private CanvasGroup canvasGroup; // 옅은 회색(투명도) 조절용
 
-    public RecipeDataSO TargetRecipe { get; private set; } // 외부에서 어떤 레시피인지 확인용
-    private System.Action<RecipeDataSO> onSelectCallback;
+    public RecipeDataSO TargetRecipe { get; private set; }
 
-    public void Init(RecipeDataSO recipe, System.Action<RecipeDataSO> callback)
+    public void Init(RecipeDataSO recipe, bool isSelectable, Action<RecipeDataSO> onSelect)
     {
         TargetRecipe = recipe;
-        onSelectCallback = callback;
 
-        if (recipeIcon != null && recipe.icon != null) recipeIcon.sprite = recipe.icon;
-        if (recipeNameText != null) recipeNameText.text = recipe.displayName;
+        if (nameText != null) 
+            nameText.text = recipe != null ? recipe.displayName : "";
 
+        // ★ 아이콘 적용 로직 강화
+        if (iconImage != null && recipe != null)
+        {
+            // 1. 레시피 자체 아이콘 확인
+            Sprite displaySprite = recipe.icon;
+
+            // 2. 레시피 아이콘이 없다면 첫 번째 결과물(Output) 아이템의 아이콘을 가져옴
+            if (displaySprite == null && recipe.outputs != null && recipe.outputs.Length > 0)
+            {
+                if (recipe.outputs[0].item != null)
+                {
+                    displaySprite = recipe.outputs[0].item.icon;
+                }
+            }
+
+            // 3. 스프라이트 할당 및 이미지 활성화
+            if (displaySprite != null)
+            {
+                iconImage.sprite = displaySprite;
+                iconImage.enabled = true;
+            }
+            else
+            {
+                // 아이콘이 전혀 없을 때는 투명하게 숨김 처리
+                iconImage.enabled = false; 
+            }
+        }
+        // 버튼 클릭 이벤트 세팅
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(OnClicked);
+            button.onClick.AddListener(() => onSelect?.Invoke(recipe));
+            button.interactable = isSelectable; // 제작 불가능하면 클릭 불가!
         }
 
-        SetHighlight(false);
-    }
+        // 시각적 비활성화 (옅은 회색 / 잠금 레이어)
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = isSelectable ? 1.0f : 0.4f; // 손제작 불가는 옅게 처리
+        }
 
-    private void OnClicked()
-    {
-        onSelectCallback?.Invoke(TargetRecipe);
+        if (lockOverlay != null)
+        {
+            lockOverlay.SetActive(!isSelectable);
+        }
     }
 
     public void SetHighlight(bool isSelected)
     {
-        // ★ 실수로 자기 자신(this.gameObject)을 넣었을 때 꺼지는 현상 방지 안전장치
-        if (selectHighlight != null && selectHighlight != this.gameObject)
-        {
-            selectHighlight.SetActive(isSelected);
-        }
+        if (highlightOverlay != null)
+            highlightOverlay.SetActive(isSelected);
     }
 }
