@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Recipe:Recipe_IronIngot
   displayName: "\uCCA0 \uC8FC\uAD34 \uC81C\uB828"
   description: "\uC81C\uB828\uB85C 1\uC785\uB825."
-  icon: {fileID: 0}
+  icon: {fileID: -17470339, guid: 6cc7b23bf440b764893f0618ca3b9932, type: 3}
   tier: 0
   requiredCoreTier: 0
   inputs:
