@@ -25,10 +25,14 @@ public class FactoryScenarioTests : MonoBehaviour
 
     // ─── 실행 루프 ──────────────────────────────────────────────
 
+    int count;
+
     void Start()
     {
         _ore   = MakeItem("TestOre",   ItemType.Ore);
         _ingot = MakeItem("TestIngot", ItemType.Ingot);
+
+        count = 0;
 
         Run("1. 기본 체인 운반",              S1_BasicChain);
         Run("2. 설치 순서 무관 (stall 데드락)", S2_OrderIndependence);
@@ -39,6 +43,8 @@ public class FactoryScenarioTests : MonoBehaviour
         Run("7. 커브 벨트 코너 체인",          S7_CurvedChain);
         Run("8. 분배기 라운드로빈",            S8_SplitterRoundRobin);
         Run("9. 합류기 두 소스 합류",          S9_MergerTwoSources);
+        Run("10. 분배기 필터 분배",            S10_SplitterFilter);
+        Run("11. 분배기 필터 다중 아이템",      S11_SplitterMultiItemFilter);
 
         foreach (var so in _createdSOs) DestroyImmediate(so);
         _createdSOs.Clear();
@@ -53,6 +59,8 @@ public class FactoryScenarioTests : MonoBehaviour
     /// <summary>시나리오 1개를 격리 실행. 예외도 실패로 기록하고 다음으로 넘어간다.</summary>
     void Run(string name, Action scenario)
     {
+        count++;
+
         // 시나리오마다 새 심 — plain C#이라 싱글톤 정리·프레임 대기가 필요 없다
         _sim = new FactorySim(tps: 10f);
         _sim.GetResourceAt = _ => _ore;
@@ -217,6 +225,68 @@ public class FactoryScenarioTests : MonoBehaviour
             $"두 소스 모두 합류기를 통과해야 함 (광석:{StoredCount(store, _ore)}, 주괴:{StoredCount(store, _ingot)})");
     }
 
+    /// <summary>
+    /// 분배기 필터: 주괴는 북쪽 전용 출구로만 가고, 광석은 필터 출구에 못 들어간다.
+    /// 혼합 라인(광석+주괴) → 분배기(북쪽=주괴 필터) → 동쪽/북쪽 저장소 순수성 검증.
+    /// </summary>
+    void S10_SplitterFilter()
+    {
+        // 위치별 자원: (1,1)의 마이너만 주괴를 캔다 (S9와 동일한 혼합 라인 구성)
+        _sim.GetResourceAt = pos => pos == new Vector2Int(1, 1) ? _ingot : _ore;
+
+        Place(Miner(), 0, 0);                          // 서쪽에서 광석
+        Place(Miner(), 1, 1, rot: 1);                  // 북쪽에서 주괴 (출력 South)
+        Place(Merger(), 1, 0);
+        var splitter = Place(Splitter(), 2, 0);
+        var storeA = Place(Storage(), 3, 0);           // 동쪽 출구 (무필터)
+        var storeB = Place(Storage(), 2, 1, rot: 3);   // 북쪽 출구 (주괴 전용)
+
+        ((SplitterBehavior)splitter.Behavior).AddFilter(Direction.North, _ingot);
+
+        RunSim(8f);
+        int aOre = StoredCount(storeA, _ore),  aIngot = StoredCount(storeA, _ingot);
+        int bOre = StoredCount(storeB, _ore),  bIngot = StoredCount(storeB, _ingot);
+
+        Expect(bIngot >= 1, $"주괴는 필터 출구(북쪽)로 흘러야 함 (실제: {bIngot}개)");
+        Expect(bOre == 0,   $"무필터 아이템(광석)은 전용 출구에 못 들어가야 함 (북쪽 광석: {bOre}개)");
+        Expect(aOre >= 1,   $"광석은 무필터 출구(동쪽)로 흘러야 함 (실제: {aOre}개)");
+        Expect(aIngot == 0, $"필터 아이템(주괴)은 지정 출구로만 가야 함 (동쪽 주괴: {aIngot}개)");
+    }
+
+    /// <summary>
+    /// 분배기 필터 다중 아이템: 한 출구(북쪽)에 광석·주괴 둘 다 지정 —
+    /// 두 종류 모두 북쪽으로만 가고 무필터 출구(동쪽)는 비어 있어야 한다.
+    /// 아이템은 심에 직접 주입 (마이너 체인 없이 분배기 단독 검증).
+    /// </summary>
+    void S11_SplitterMultiItemFilter()
+    {
+        var splitter = Place(Splitter(), 1, 0);
+        var storeA = Place(Storage(), 2, 0);                    // 동쪽 출구 (무필터)
+        var storeB = Place(Storage(slots: 2), 1, 1, rot: 3);    // 북쪽 출구 — 두 종류를 담으므로 2슬롯
+
+        var behavior = (SplitterBehavior)splitter.Behavior;
+        behavior.AddFilter(Direction.North, _ore);
+        behavior.AddFilter(Direction.North, _ingot);
+
+        // 입력 버퍼가 작아(1슬롯) 번갈아 주입하며 흘려보낸다
+        for (int i = 0; i < 3; i++)
+        {
+            splitter.Input.TryAdd(_ore);
+            _sim.MarkDirty(splitter);
+            RunSim(0.5f);
+            splitter.Input.TryAdd(_ingot);
+            _sim.MarkDirty(splitter);
+            RunSim(0.5f);
+        }
+
+        int bOre = StoredCount(storeB, _ore), bIngot = StoredCount(storeB, _ingot);
+        int aTotal = StoredCount(storeA, _ore) + StoredCount(storeA, _ingot);
+
+        Expect(bOre >= 2 && bIngot >= 2,
+            $"두 필터 아이템 모두 북쪽 전용 출구로 가야 함 (광석:{bOre}, 주괴:{bIngot})");
+        Expect(aTotal == 0, $"무필터 출구(동쪽)에는 아무것도 없어야 함 (실제: {aTotal}개)");
+    }
+
     // ─── 검증/구동 헬퍼 ─────────────────────────────────────────
 
     void Expect(bool condition, string message)
@@ -268,9 +338,10 @@ public class FactoryScenarioTests : MonoBehaviour
             MakeBuilding<BeltDataSO>("TestBelt",
                 new[] { Port(true, Direction.West), Port(false, Direction.East) }, stackCap: 10);
 
-    BuildingDataSO Storage() =>
+    /// <param name="slots">담을 아이템 종류 수만큼 필요 (종류당 1슬롯). 기본 1종.</param>
+    BuildingDataSO Storage(int slots = 1) =>
         MakeBuilding<StorageDataSO>("TestStorage",
-            new[] { Port(true, Direction.West) }, stackCap: 50);
+            new[] { Port(true, Direction.West) }, stackCap: 50, slots: slots);
 
     BuildingDataSO Splitter() =>
         MakeBuilding<SplitterDataSO>("TestSplitter",
@@ -293,16 +364,16 @@ public class FactoryScenarioTests : MonoBehaviour
     static PortDefinition Port(bool isInput, Direction dir) =>
         new() { IsInput = isInput, Direction = dir, LocalOffset = Vector2Int.zero };
 
-    T MakeBuilding<T>(string name, PortDefinition[] ports, int stackCap = 10)
+    T MakeBuilding<T>(string name, PortDefinition[] ports, int stackCap = 10, int slots = 1)
         where T : BuildingDataSO
     {
         var so = ScriptableObject.CreateInstance<T>();
         so.name           = name;
         so.size           = Vector2Int.one;
         so.ports          = ports;
-        so.inputSlots     = 1;
-        so.outputSlots    = 1;
-        so.bufferStackCap = stackCap;   // 1칸 × stackCap = "최대 n개" 의미
+        so.inputSlots     = slots;
+        so.outputSlots    = slots;      // 여러 종류를 담는 시나리오는 slots를 늘릴 것 (종류당 1슬롯)
+        so.bufferStackCap = stackCap;   // 슬롯당 stackCap = "최대 n개" 의미
         _createdSOs.Add(so);
         return so;
     }
@@ -332,7 +403,7 @@ public class FactoryScenarioTests : MonoBehaviour
     void OnGUI()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Factory 특성화 테스트  ({_results.Count}/9)");
+        sb.AppendLine($"Factory 특성화 테스트  ({_results.Count}/{count})");
         foreach (var (name, pass, detail) in _results)
         {
             sb.AppendLine($"{(pass ? "PASS" : "FAIL")}  {name}");
