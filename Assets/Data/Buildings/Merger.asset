@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Merger
   m_EditorClassIdentifier: Assembly-CSharp::MergerDataSO
   id: Buildings:Merger
-  displayName: Merger
-  description: 
+  displayName: "\uD569\uB958\uAE30"
+  description: "\uC5EC\uB7EC \uBCA8\uD2B8\uB97C \uD558\uB098\uB85C \uD569\uCE69\uB2C8\uB2E4."
   icon: {fileID: 0}
   category: 1
   prefab: {fileID: 7962463567319494330, guid: 326f8420de63f324fbe1a0df87f16c51, type: 3}
@@ -35,3 +35,5 @@ MonoBehaviour:
   inputSlots: 1
   outputSlots: 1
   bufferStackCap: 1
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0

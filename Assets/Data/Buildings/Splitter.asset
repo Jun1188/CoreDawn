@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Splitter
   m_EditorClassIdentifier: Assembly-CSharp::SplitterDataSO
   id: Buildings:Splitter
-  displayName: Splitter
-  description: 
+  displayName: "\uBD84\uBC30\uAE30"
+  description: "\uB4E4\uC5B4\uC628 \uC544\uC774\uD15C\uC744 \uC5EC\uB7EC \uCD9C\uAD6C\uB85C
+    \uB098\uB215\uB2C8\uB2E4. \uCD9C\uAD6C\uB9C8\uB2E4 \uC544\uC774\uD15C\uC744 \uC9C0\uC815\uD560
+    \uC218 \uC788\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 0}
   category: 1
   prefab: {fileID: 7962463567319494330, guid: ec8176281d9d0a540b8a96c88a550a42, type: 3}
@@ -35,3 +37,5 @@ MonoBehaviour:
   inputSlots: 1
   outputSlots: 1
   bufferStackCap: 1
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0

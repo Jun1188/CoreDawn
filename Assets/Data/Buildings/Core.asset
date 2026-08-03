@@ -37,7 +37,7 @@ MonoBehaviour:
   outputSlots: 0
   bufferStackCap: 9999
   requiredCoreTier: 0
-  hideFromBuildMenu: 0
+  hideFromBuildMenu: 1
   tiers:
   - tierLabel: Tier 1
     requirements:

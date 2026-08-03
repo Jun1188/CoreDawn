@@ -13,14 +13,11 @@ MonoBehaviour:
   m_Name: Belt
   m_EditorClassIdentifier: Assembly-CSharp::BeltDataSO
   id: Buildings:Belt
-  displayName: Belt
-  description: 
+  displayName: "\uCEE8\uBCA0\uC774\uC5B4 \uBCA8\uD2B8"
+  description: "\uC544\uC774\uD15C\uC744 \uD55C \uBC29\uD5A5\uC73C\uB85C \uC62E\uAE41\uB2C8\uB2E4."
   icon: {fileID: 0}
-  tags: []
   category: 1
   prefab: {fileID: 7962463567319494330, guid: 0bf1db28421cbd541a35566362273cfa, type: 3}
-  curveLPrefab: {fileID: 7962463567319494330, guid: 7a9640f62bc6f404fa1b9ade84cf47f8, type: 3}
-  curveRPrefab: {fileID: 7962463567319494330, guid: 6514f9f08f82db64e8d5ca4c2c8a0dfb, type: 3}
   size: {x: 1, y: 1}
   ports:
   - LocalOffset: {x: 0, y: 0}
@@ -32,4 +29,8 @@ MonoBehaviour:
   inputSlots: 1
   outputSlots: 1
   bufferStackCap: 1
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0
   speedTilesPerSec: 2
+  curveLPrefab: {fileID: 7962463567319494330, guid: 7a9640f62bc6f404fa1b9ade84cf47f8, type: 3}
+  curveRPrefab: {fileID: 7962463567319494330, guid: 6514f9f08f82db64e8d5ca4c2c8a0dfb, type: 3}

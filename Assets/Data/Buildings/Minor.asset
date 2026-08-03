@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: Minor
   m_EditorClassIdentifier: Assembly-CSharp::MinerDataSO
   id: Buildings:Minor
-  displayName: Minor
-  description: 
+  displayName: "\uCC44\uAD74\uAE30"
+  description: "\uAD11\uB9E5 \uC704\uC5D0 \uB193\uC544 \uC6D0\uAD11\uC744 \uCEA1\uB2C8\uB2E4."
   icon: {fileID: 0}
-  tags: []
   category: 0
   prefab: {fileID: 8416679944086038086, guid: 687143ae40f3c5041a38fa275fc61709, type: 3}
   size: {x: 1, y: 1}
@@ -27,4 +26,6 @@ MonoBehaviour:
   inputSlots: 1
   outputSlots: 1
   bufferStackCap: 5
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0
   processingTime: 1

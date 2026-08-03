@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Storage
   m_EditorClassIdentifier: Assembly-CSharp::StorageDataSO
   id: Buildings:Storage
-  displayName: Storage
-  description: 
+  displayName: "\uBCF4\uAD00\uC18C"
+  description: "\uC544\uC774\uD15C\uC744 \uBAA8\uC544 \uB461\uB2C8\uB2E4."
   icon: {fileID: 0}
   category: 2
   prefab: {fileID: 5279508996628763662, guid: 935e9bd1c205c7044b36b398d51ffa2e, type: 3}
@@ -29,3 +29,5 @@ MonoBehaviour:
   inputSlots: 1
   outputSlots: 8
   bufferStackCap: 0
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0

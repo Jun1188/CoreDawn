@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Assembler
   m_EditorClassIdentifier: Assembly-CSharp::AssemblerDataSO
   id: Buildings:Assembler
-  displayName: Assembler
-  description: 
+  displayName: "\uC870\uB9BD\uAE30"
+  description: "\uC7AC\uB8CC 2\uC885\uC744 \uD569\uCCD0 \uBD80\uD488\uC744 \uB9CC\uB4ED\uB2C8\uB2E4."
   icon: {fileID: 0}
   category: 0
   prefab: {fileID: 5279508996628763662, guid: f21554090b8662041865fae8ac84acf4, type: 3}
@@ -29,5 +29,7 @@ MonoBehaviour:
   inputSlots: 1
   outputSlots: 1
   bufferStackCap: 0
+  requiredCoreTier: 0
+  hideFromBuildMenu: 0
   availableRecipes:
   - {fileID: 11400000, guid: 02e2bc24d99c06a4faaee0b2d7e5cd9d, type: 2}

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- SCR-03 건설 메뉴.
+         탭과 목록은 BuildingDatabase에 달려 있으므로 BuildMenuView가 만든다.
+         목록에는 이름만 남기고 수치는 커서 옆 툴팁으로 — 한 줄에 스펙까지 적으면
+         여섯 개만 놓여도 화면이 빽빽해지고 정작 고르는 일이 느려진다 (문서 SCR-03). -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="build-panel" class="ui-panel build-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="BUILD" class="ui-panel__tag" />
+                <ui:Label text="건설" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body build-panel__body">
+                <ui:VisualElement name="tabs" class="ui-tabs build-panel__tabs" />
+
+                <ui:VisualElement name="grid" class="build-grid" />
+
+                <ui:Label name="empty-note" text="이 분류에 지을 수 있는 건물이 없습니다."
+                          class="build-empty ui-hidden" />
+
+                <!-- 조작 힌트는 배치 버튼 바로 옆 — 별도 줄을 만들면 시선이 한 번 더 움직인다 -->
+                <ui:VisualElement class="build-actions">
+                    <ui:VisualElement name="hints" class="build-hints" />
+                    <ui:Button name="btn-place" text="배치 시작" class="ui-btn ui-btn--primary" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 커서를 따라다니는 툴팁. 화면 밖으로 나가면 반대편으로 뒤집는다 -->
+        <ui:VisualElement name="tooltip" class="ui-tooltip build-tooltip ui-hidden">
+            <ui:Label name="tip-name" class="ui-tooltip__name build-tooltip__name" />
+            <ui:Label name="tip-type" class="ui-tooltip__type" />
+            <ui:Label name="tip-desc" class="ui-tooltip__desc" />
+            <ui:VisualElement name="tip-sep-stats" class="ui-tooltip__sep" />
+            <ui:VisualElement name="tip-stats" />
+            <ui:VisualElement name="tip-sep-cost" class="ui-tooltip__sep" />
+            <!-- 라벨과 칩이 한 줄에서 같이 흐른다 (레퍼런스 SCR-03 툴팁) -->
+            <ui:VisualElement name="tip-cost" class="build-tooltip__cost" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

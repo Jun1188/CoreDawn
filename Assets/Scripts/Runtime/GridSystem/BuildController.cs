@@ -70,7 +70,9 @@ public class BuildController : MonoBehaviour, IInputReceiver
                 if (e.Id == InputActionId.ToggleBuild)
                 {
                     placement.ExitMode();               // 진행 중 모드 정리 후
-                    BuildMenuPopup.Toggle(placement);   // 카테고리별 빌드 메뉴 (선택 시 배치 모드 진입)
+                    // 씬에 UITK 건설 메뉴가 있으면 그쪽, 없으면 기존 uGUI 메뉴로
+                    if (!BuildMenuView.TryToggle(placement))
+                        BuildMenuPopup.Toggle(placement);
                 }
                 else placement.ToggleDemolishMode();
                 return true;

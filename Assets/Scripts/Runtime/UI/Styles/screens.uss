@@ -15,6 +15,91 @@
     background-color: rgba(6, 10, 20, 0.55);
 }
 
+/* ───────────────── SCR-03 건설 메뉴 ───────────────── */
+
+.build-panel { width: 620px; }
+
+.build-panel__body { padding-top: 0; }
+
+/* 탭이 패널 안쪽 여백을 넘어 양끝까지 닿게 한다 */
+.build-panel__tabs {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+/* 2열. USS에 grid가 없으므로 50% 셀을 flex-wrap으로 흘린다 */
+.build-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.build-cell {
+    width: 50%;
+    padding-right: var(--space-1);
+    padding-bottom: var(--space-2);
+}
+
+/* 셀이 폭을 정하므로 행의 최소폭 규칙은 여기서 푼다 */
+.build-cell .ui-row { min-width: 0; }
+
+.build-empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-5) 0;
+    -unity-text-align: middle-center;
+}
+
+.build-actions {
+    flex-direction: row;
+    align-items: center;
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top-width: 1px;
+    border-top-color: var(--line);
+}
+
+.build-hints {
+    flex-direction: row;
+    align-items: center;
+    margin-left: auto;
+    margin-right: -12px;
+}
+
+.build-hints > * { margin-right: var(--space-3); }
+
+/* 툴팁은 패널 위에 뜨는 절대 배치 — 위치는 코드가 정한다.
+   min-width가 없으면 내용이 짧을 때(설명 없는 건물 등) 세로로 길쭉하게 쪼그라든다. */
+.build-tooltip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    min-width: 210px;
+    max-width: 290px;
+}
+
+.build-tooltip__name { color: var(--copper); }
+
+/* "건설 비용" 라벨과 칩이 같은 줄에서 흐르고 넘치면 접힌다 */
+.build-tooltip__cost {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-right: -8px;
+}
+
+.build-tooltip__cost > * {
+    margin-right: var(--space-2);
+    margin-bottom: var(--space-1);
+}
+
+.build-tooltip__cost-label {
+    font-size: 11px;
+    color: var(--text-faint);
+}
+
 /* ───────────────── SCR-01 코어 패널 ───────────────── */
 
 .core-panel { width: 880px; }
