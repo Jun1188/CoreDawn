@@ -39,7 +39,8 @@ public static class GameDataImporter
         public string id;            // 필수. 예: "Item:IronOre"
         public string displayName;   // 필수
         public string description;
-        public string type;          // ItemType 이름 (Ore/Ingot/Component/Fuel/Misc/...)
+        public string type;          // ItemType 이름 — 용도 축 (Ore/Ingot/Part/RepairPart/Ammo/Weapon/Armor/Placeable/Salvage)
+        public string line;          // ItemLine 이름 — 계통 축 (Iron/Copper/Crystal/Beast). 생략 시 기존 값 유지
         public string icon;          // 스프라이트 이름 (선택 — 프로젝트에서 이름으로 검색)
     }
 
@@ -125,6 +126,12 @@ public static class GameDataImporter
         {
             if (Enum.TryParse(dto.type, true, out ItemType t)) item.type = t;
             else { Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': 알 수 없는 type '{dto.type}'"); errors++; }
+        }
+
+        if (!string.IsNullOrEmpty(dto.line))
+        {
+            if (Enum.TryParse(dto.line, true, out ItemLine l)) item.line = l;
+            else { Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': 알 수 없는 line '{dto.line}'"); errors++; }
         }
 
         if (!string.IsNullOrEmpty(dto.icon))

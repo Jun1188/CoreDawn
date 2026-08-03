@@ -17,4 +17,5 @@ MonoBehaviour:
   description: "\uCD94\uB77D\uD558\uBA70 \uD769\uC5B4\uC9C4 \uD30C\uD3B8. \uAC8C\uC774\uD2B8
     \u24EA \uB0A9\uD488 \uBC0F \uCD08\uBC18 \uC218\uB3D9 \uC81C\uC791 \uC7AC\uB8CC."
   icon: {fileID: 0}
-  type: 2
+  type: 8
+  line: 0

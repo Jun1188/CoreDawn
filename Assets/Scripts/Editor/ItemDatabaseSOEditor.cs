@@ -10,15 +10,15 @@ public class ItemDatabaseSOEditor : Editor
 {
     private static string TypeName(ItemType t) => t switch
     {
-        ItemType.Ore        => "광석",
-        ItemType.Ingot      => "주괴",
-        ItemType.Component  => "부품",
-        ItemType.Fuel       => "연료",
-        ItemType.Misc       => "기타",
+        ItemType.Ore        => "원광",
+        ItemType.Ingot      => "소재",
+        ItemType.Part       => "부품",
+        ItemType.RepairPart => "수리 부품",
+        ItemType.Ammo       => "탄약",
         ItemType.Weapon     => "무기",
-        ItemType.Helmet     => "투구",
-        ItemType.Chestplate => "흉갑",
-        ItemType.Boots      => "신발",
+        ItemType.Armor      => "방어구",
+        ItemType.Placeable  => "설치물",
+        ItemType.Salvage    => "회수물",
         _ => t.ToString(),
     };
 
