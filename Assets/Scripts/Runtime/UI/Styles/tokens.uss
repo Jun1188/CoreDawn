@@ -75,20 +75,14 @@
     --fs-sub: 16px;
     --fs-title: 20px;
 
-    /* ── 폰트 ────────────────────────────────────────────────────────────
-       TODO(폰트 에셋 미도입): 설계가 요구하는 세 폰트가 프로젝트에 없다.
-       현재 프로젝트의 유일한 폰트는 LiberationSans(한글 글리프 없음)이므로
-       지정하지 않고 비워 둔다 — 지정하면 한글이 전부 깨진다.
+    /* ── 폰트 (Assets/Art/Fonts, 전부 SIL OFL 1.1 — 라이선스 원문 동봉) ──
+       세 폰트가 각자 다른 일을 한다. 한글에 display를 쓰지 않는다 (§02).
 
-       도입 절차:
-         1) Assets/Fonts/ 에 아래 3종을 넣는다 (SIL OFL, 상용 배포 가능)
-              Chakra Petch      → --font-display (영문 라벨·시스템 문구)
-              IBM Plex Sans KR  → --font-body    (한글 본문)
-              IBM Plex Mono     → --font-data    (수량·시간·좌표)
-         2) 아래 3줄의 주석을 풀고 경로를 맞춘다
-         3) components.uss 맨 아래 "폰트 적용" 블록의 주석을 푼다
-       ─────────────────────────────────────────────────────────────────── */
-    /* --font-display: url("project://database/Assets/Fonts/ChakraPetch-SemiBold.ttf"); */
-    /* --font-body:    url("project://database/Assets/Fonts/IBMPlexSansKR-Regular.ttf"); */
-    /* --font-data:    url("project://database/Assets/Fonts/IBMPlexMono-Medium.ttf"); */
+       굵기는 Regular/SemiBold 한 벌만 넣고 -unity-font-style: bold일 때는
+       유니티 합성에 맡긴다 — IBM Plex Sans KR은 한글 글리프 때문에 한 벌이
+       2.8MB라, 쓰이는 곳(제목·수량)에 비해 Bold를 따로 받는 값이 크다.
+       합성 굵기가 눈에 걸리면 IBMPlexSansKR-Bold.ttf를 받아 여기에 추가할 것. */
+    --font-display: url("project://database/Assets/Art/Fonts/ChakraPetch-SemiBold.ttf?fileID=12800000&guid=eaae7239078207447bb36fd083f71734&type=3#ChakraPetch-SemiBold");
+    --font-body: url("project://database/Assets/Art/Fonts/IBMPlexSansKR-Regular.ttf?fileID=12800000&guid=1e57cd717b9148d4392587aa6471ea00&type=3#IBMPlexSansKR-Regular");
+    --font-data: url("project://database/Assets/Art/Fonts/IBMPlexMono-Medium.ttf?fileID=12800000&guid=52a35306637613e4f8efa501d1afb0e8&type=3#IBMPlexMono-Medium");
 }

@@ -845,11 +845,15 @@
 .ui-hidden { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   폰트 적용 — tokens.uss의 --font-* 주석을 푼 뒤 아래도 함께 푼다.
-   지금은 프로젝트에 한글 폰트가 없어 비활성 상태다 (tokens.uss TODO 참조).
+   폰트 적용 — 세 폰트가 각자 다른 일을 한다 (문서 §02).
+     body    : 모든 한글 본문
+     display : 영문 시스템 문구·라벨 전용. 한글에 쓰지 않는다
+     data    : 수량·시간·좌표. 폭이 고정돼 숫자가 흔들리지 않는다
+   ═══════════════════════════════════════════════════════════════════════ */
 
-.ui-panel, .ui-btn, .ui-row__name, .ui-chip, .ui-tooltip__desc,
-.ui-mat__name, .ui-rail__label {
+/* 패널 루트에 본문 폰트를 걸어 상속시키고, 아래에서 예외만 덮어쓴다 */
+.ui-panel,
+.screen-root {
     -unity-font-definition: var(--font-body);
 }
 
@@ -863,4 +867,3 @@
 .ui-btn__key, .ui-mat__n, .ui-tooltip__stat-value {
     -unity-font-definition: var(--font-data);
 }
-   ═══════════════════════════════════════════════════════════════════════ */
