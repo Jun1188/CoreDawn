@@ -44,7 +44,17 @@ public class PlacementSystem : MonoBehaviour
     [Tooltip("철거 모드에서 대상 건물에 입힐 하이라이트 머티리얼 (빨강 반투명 추천).")]
     [SerializeField] private Material demolishHighlightMat;
 
+    [Header("포트 흐름 표시")]
+    [Tooltip("배치 모드가 아닐 때, 조준한 건물의 포트 흐름을 보여준다.")]
+    [SerializeField] private bool showPortsOnAim = true;
+
     private GridSystem grid;
+    private PortFlowOverlay portFlow;
+
+    // 프리뷰 포트를 다시 만들어야 하는지 판정하는 키 — 위치만 바뀌면 루트만 옮긴다
+    private BuildingDataSO flowSo;
+    private int flowRot = -1;
+    private BeltShape flowShape;
     private BuildMode mode = BuildMode.None;
 
     // 배치 모드 상태
@@ -77,6 +87,11 @@ public class PlacementSystem : MonoBehaviour
         grid = new GridSystem(cellSize, gridOrigin);
         if (cam == null) cam = Camera.main;
 
+        // 미리 붙여두면 인스펙터로 색·반경을 조절할 수 있고, 없으면 알아서 붙는다 (씬 배선 불필요)
+        portFlow = GetComponent<PortFlowOverlay>();
+        if (portFlow == null) portFlow = gameObject.AddComponent<PortFlowOverlay>();
+        portFlow.Configure(cellSize, gridOrigin);
+
         if (database == null) database = BuildingDatabaseSO.LoadDefault();
         if (database == null) Debug.LogError("[PlacementSystem] BuildingDatabase가 없습니다 (Resources/BuildingDatabase).", this);
     }
@@ -88,6 +103,11 @@ public class PlacementSystem : MonoBehaviour
         {
             case BuildMode.Placing: UpdatePlacing(); break;
             case BuildMode.Demolishing: UpdateDemolishing(); break;
+            default:
+                // 조준한 건물의 포트 흐름 — 배치 중이 아닐 때만 (배치 중엔 열린 포트 표시가 우선)
+                if (showPortsOnAim)
+                    portFlow.ShowFocus(TryGetAimedBuilding(out Building aimed) ? aimed : null);
+                break;
         }
     }
 
@@ -156,6 +176,7 @@ public class PlacementSystem : MonoBehaviour
         beltShape = BeltShape.Straight;
         lastCanPlace = false;   // 첫 Update가 판정을 채우기 전 Attack 방지
         SpawnPreview();
+        portFlow.EnterPlacement();
     }
 
     /// <summary>데이터베이스 인덱스로 선택 — 단축키용 (메뉴 UI는 SelectBuilding을 직접 호출).</summary>
@@ -181,6 +202,9 @@ public class PlacementSystem : MonoBehaviour
         current = null;
 
         ClearHovered();
+        if (portFlow != null) portFlow.Exit();
+        flowSo = null;
+        flowRot = -1;
 
         mode = BuildMode.None;
     }
@@ -193,6 +217,7 @@ public class PlacementSystem : MonoBehaviour
         if (!TryGetGroundPoint(out Vector3 cursorPoint))
         {
             if (preview != null) preview.SetActive(false);
+            portFlow.HidePreview();
             lastCanPlace = false;
             return;
         }
@@ -217,7 +242,18 @@ public class PlacementSystem : MonoBehaviour
         lastOrigin   = origin;
         lastPos      = pos;
         SetPreviewColor(lastCanPlace);
+
+        // 포트 흐름은 지면에 눕는 표시라 건물을 들어올린 만큼(SurfaceLift)은 빼고 지면 높이에 둔다
+        bool shapeChanged = flowSo != current || flowRot != rotation || flowShape != beltShape;
+        flowSo = current; flowRot = rotation; flowShape = beltShape;
+        portFlow.UpdatePreview(PreviewPorts(), origin, groundY, shapeChanged);
     }
+
+    /// <summary>프리뷰 건물의 회전 반영 포트 — 벨트는 모양(직선/L/R)에 따라 달라진다.</summary>
+    private PortDefinition[] PreviewPorts()
+        => current is BeltDataSO
+            ? BeltDataSO.BuildPorts(beltShape, rotation)
+            : current.GetRotatedPorts(rotation);
 
     private void Place(Vector2Int origin, Vector3 pos)
     {
@@ -234,6 +270,8 @@ public class PlacementSystem : MonoBehaviour
                 BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape));
         else
             PlacementBridge.Place(current, origin, pos, rotation);
+
+        portFlow.NotifyGridChanged();   // 새 건물이 이웃 포트를 막았을 수 있다
     }
 
     // ===================== 철거 모드 =====================
@@ -263,6 +301,8 @@ public class PlacementSystem : MonoBehaviour
 
         PlacementBridge.Remove(b);
         BuildCost.Refund(data, dropAt);   // 전액 환급
+
+        if (portFlow != null) portFlow.NotifyGridChanged();   // 막혀 있던 이웃 포트가 열린다
     }
 
     /// <summary>칸 좌표로 철거 (외부 호출용 편의 오버로드).</summary>
@@ -319,11 +359,13 @@ public class PlacementSystem : MonoBehaviour
             }
         }
 
-        // ② 바닥 칸 폴백
-        if (TryGetGroundPoint(out Vector3 cursorPoint))
+        // ② 바닥 칸 폴백 — 심이 없는 씬(UI 테스트 등)에서도 안전해야 한다.
+        //    포트 흐름 표시가 붙으면서 이 쿼리가 대기 모드에서도 매 프레임 돌기 때문.
+        var boot = FactoryBootstrap.Instance;
+        if (boot != null && boot.Sim != null && TryGetGroundPoint(out Vector3 cursorPoint))
         {
             Vector2Int cell = grid.WorldToGrid(cursorPoint);
-            building = FactoryBootstrap.Instance.Sim.Grid.GetAt(cell);
+            building = boot.Sim.Grid.GetAt(cell);
         }
         return building != null;
     }
