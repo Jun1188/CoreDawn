@@ -210,8 +210,10 @@ public class PlacementSystem : MonoBehaviour
 
         // 설치 판정 캐시 — OnInput(Attack)이 사용
         // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
+        // 재료가 모자라면 프리뷰가 빨갛게 떠서 누르기 전에 알 수 있다
         lastCanPlace = heightOk && CanPlace(origin, size)
-                    && ResourceNodeRegistry.CanPlace(current, origin, size);
+                    && ResourceNodeRegistry.CanPlace(current, origin, size)
+                    && BuildCost.CanAfford(current);
         lastOrigin   = origin;
         lastPos      = pos;
         SetPreviewColor(lastCanPlace);
@@ -219,6 +221,14 @@ public class PlacementSystem : MonoBehaviour
 
     private void Place(Vector2Int origin, Vector3 pos)
     {
+        // 재료를 먼저 깎는다. 실패하면 배치도 하지 않는다 —
+        // 프리뷰 판정과 실제 클릭 사이에 인벤토리가 바뀌었을 수 있다.
+        if (!BuildCost.TryCharge(current))
+        {
+            Debug.Log($"[Placement] 재료가 부족해 '{current.name}' 을 지을 수 없습니다.");
+            return;
+        }
+
         if (current is BeltDataSO belt)
             PlacementBridge.Place(current, origin, pos, rotation,
                 BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape));
@@ -246,7 +256,13 @@ public class PlacementSystem : MonoBehaviour
             savedMats.Clear();
         }
 
+        // 환급 위치는 뷰가 파괴되기 전에 잡아둔다 — Remove가 GameObject를 없앤다
+        var view = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.GetView(b) : null;
+        Vector3 dropAt = view != null ? view.transform.position : Vector3.zero;
+        var data = b.Data;
+
         PlacementBridge.Remove(b);
+        BuildCost.Refund(data, dropAt);   // 전액 환급
     }
 
     /// <summary>칸 좌표로 철거 (외부 호출용 편의 오버로드).</summary>

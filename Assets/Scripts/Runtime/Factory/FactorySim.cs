@@ -55,6 +55,13 @@ public class FactorySim
     /// </summary>
     public Func<Vector2Int, int, int> TryExtractResourceAt;
 
+    /// <summary>
+    /// 이 칸의 광맥에서 1개를 캐는 데 걸리는 기준 시간(초) — 배율 1인 채굴기 기준.
+    /// 실제 시간 = 이 값 ÷ MinerDataSO.speedMultiplier.
+    /// 주입하지 않으면(null) 1초 — 광맥마다 난이도가 없던 기존 동작.
+    /// </summary>
+    public Func<Vector2Int, float> GetExtractIntervalAt;
+
     readonly Queue<Building>   _queue = new();
     readonly HashSet<Building> _inQ   = new(); // 중복 등록 방지 O(1)
 

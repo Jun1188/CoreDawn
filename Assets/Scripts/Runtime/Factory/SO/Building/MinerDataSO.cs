@@ -5,8 +5,10 @@ using UnityEngine;
 public class MinerDataSO : BuildingDataSO
 {
     [Header("채굴")]
-    [Tooltip("아이템 1개 채굴에 걸리는 시간(초).")]
-    public float processingTime = 1f;
+    [Tooltip("채굴 속도 배율. Mk.1 = 1, Mk.2 = 2.\n" +
+             "실제 시간 = 광맥의 extractInterval ÷ 이 값.\n" +
+             "\"얼마나 좋은 채굴기인가\"는 건물이, \"얼마나 캐기 어려운 광맥인가\"는 땅이 갖는다.")]
+    public float speedMultiplier = 1f;
 
     public override IBuildingBehavior CreateBehavior(Building building)
         => new MinerBehavior(building, this);
@@ -73,8 +75,12 @@ public class MinerBehavior : IBuildingBehavior
         //    자리가 없으면 정지(stall); 하류의 NotifyUpstream이 다시 깨운다.
         if (_readyAt < 0f && _b.Output.HasRoomFor(_target))
         {
-            _readyAt = sim.Now + _data.processingTime;
-            sim.ScheduleWake(_b, _data.processingTime);
+            // 광맥 난이도 ÷ 채굴기 배율 — 같은 채굴기라도 크리스탈 광맥에서는 느리다
+            float baseInterval = sim.GetExtractIntervalAt?.Invoke(_b.Origin) ?? 1f;
+            float interval = baseInterval / Mathf.Max(0.01f, _data.speedMultiplier);
+
+            _readyAt = sim.Now + interval;
+            sim.ScheduleWake(_b, interval);
         }
     }
 }

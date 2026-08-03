@@ -327,7 +327,8 @@ public class FactoryScenarioTests : MonoBehaviour
         // stackCap = outBuf → 출력 버퍼가 정확히 outBuf개에서 가득 참 (stall 시나리오용)
         var so = MakeBuilding<MinerDataSO>("TestMiner",
             new[] { Port(false, Direction.East) }, stackCap: outBuf);
-        so.processingTime = ptime;
+        // 채굴 시간 = 광맥 기준(훅 없으면 1초) ÷ 배율 → ptime초를 원하면 배율은 1/ptime
+        so.speedMultiplier = 1f / Mathf.Max(0.01f, ptime);
         return so;
     }
 

@@ -124,9 +124,14 @@ public class BuildMenuPopup : UIPopup
 
     private void MakeButton(Transform parent, BuildingDataSO so)
     {
+        // 재료가 모자라면 옅게 — 왜 못 짓는지는 이름 아래 줄이 말해준다
+        bool affordable = BuildCost.CanAfford(so);
+
         var go = new GameObject(so.name, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(parent, false);
-        go.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.26f, 1f);
+        go.GetComponent<Image>().color = affordable
+            ? new Color(0.22f, 0.22f, 0.26f, 1f)
+            : new Color(0.22f, 0.22f, 0.26f, 0.45f);
 
         // 아이콘 (SO에 지정돼 있을 때만)
         if (so.icon != null)
@@ -142,8 +147,15 @@ public class BuildMenuPopup : UIPopup
             img.preserveAspect = true;
         }
 
-        // 이름 (하단)
-        var text = MakeLabel(go.transform, string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName, 13, FontStyles.Normal);
+        // 이름 (하단) — 못 짓는 이유가 있으면 이름 대신 그것을 말한다
+        string label = string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName;
+        if (!affordable && BuildCost.TryGetMissing(so, out var missing, out int shortBy))
+        {
+            string mName = string.IsNullOrEmpty(missing.displayName) ? missing.name : missing.displayName;
+            label += $"\n<size=11>{mName} {shortBy} 부족</size>";
+        }
+
+        var text = MakeLabel(go.transform, label, 13, FontStyles.Normal);
         var trt = (RectTransform)text.transform;
         trt.anchorMin = new Vector2(0, 0);
         trt.anchorMax = new Vector2(1, 0.28f);

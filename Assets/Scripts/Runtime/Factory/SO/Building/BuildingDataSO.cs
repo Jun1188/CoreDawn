@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -164,6 +165,14 @@ public abstract class BuildingDataSO : GameDataSO
     [Tooltip("코어처럼 씬에 직접 배치되는 단일 건물 — 빌드 메뉴에 항상 숨김.")]
     public bool hideFromBuildMenu = false;
 
+    [Header("건설 비용 — 배치 시 차감, 철거 시 전액 환급")]
+    [Tooltip("레시피의 슬롯 타입을 그대로 쓴다 — 임포터의 아이템 해석 코드와 UI의 재료 표시를 재사용하기 위함.")]
+    public RecipeDataSO.Slot[] buildCost;
+
+    [Header("전투")]
+    [Tooltip("밤 웨이브의 몬스터가 때릴 때 버티는 내구도. 프리팹의 Entity에 주입된다.")]
+    public int maxHp = 200;
+
     /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
     public abstract IBuildingBehavior CreateBehavior(Building building);
 
@@ -205,6 +214,36 @@ public abstract class BuildingDataSO : GameDataSO
     {
         base.OnValidate();        // id 자동 부여 (GameDataSO)
         _portsByRotation = null;  // 인스펙터에서 포트 수정 시 캐시 무효화
+        ValidatePorts();
+    }
+
+    /// <summary>
+    /// 포트 배치 검사. 에디터 툴이 잡아주는 규칙이지만 인스펙터에서 직접 만질 때도 필요하다.
+    ///
+    /// 특히 "안쪽을 향한 포트"가 위험하다 — 2×1 조립기의 (0,0) East는 바로 옆 칸 (1,0)이
+    /// 자기 자신이라 아무와도 연결되지 않는데, 런타임에는 조용히 stall만 난다.
+    /// </summary>
+    void ValidatePorts()
+    {
+        if (ports == null) return;
+
+        var seen = new HashSet<(Vector2Int, Direction)>();
+        foreach (var p in ports)
+        {
+            if (p == null) continue;
+
+            if (p.LocalOffset.x < 0 || p.LocalOffset.y < 0 ||
+                p.LocalOffset.x >= size.x || p.LocalOffset.y >= size.y)
+                Debug.LogError($"[{name}] 포트 LocalOffset {p.LocalOffset} 가 풋프린트 {size} 밖입니다.", this);
+
+            var n = p.LocalOffset + Dir.ToVec(p.Direction);
+            if (n.x >= 0 && n.y >= 0 && n.x < size.x && n.y < size.y)
+                Debug.LogError($"[{name}] 포트 {p.LocalOffset}/{p.Direction} 가 건물 안쪽을 향합니다 — " +
+                               "이웃 칸이 자기 자신이라 연결되지 않습니다.", this);
+
+            if (!seen.Add((p.LocalOffset, p.Direction)))
+                Debug.LogError($"[{name}] 포트 {p.LocalOffset}/{p.Direction} 가 중복됩니다.", this);
+        }
     }
 }
 

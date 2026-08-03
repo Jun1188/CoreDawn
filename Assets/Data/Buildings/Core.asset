@@ -12,32 +12,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91453a62ff4d36f4886c7c7c5845c7ed, type: 3}
   m_Name: Core
   m_EditorClassIdentifier: Assembly-CSharp::CoreDataSO
-  id: Buildings:Core
+  id: Building:Core
   displayName: "\uCF54\uC5B4"
-  description: "\uC790\uC6D0\uC744 \uB0A9\uD488\uD574 \uC9C4\uD654\uC2DC\uD0A4\uB294
-    \uD329\uD1A0\uB9AC \uCF54\uC5B4"
+  description: "\uBD88\uC2DC\uCC29\uD55C \uC6B0\uC8FC\uC120. \uC5B4\uB290 \uBA74\uC73C\uB85C\uB4E0
+    \uBD80\uD488\uC744 \uBC1B\uC544 \uC218\uB9AC\uD55C\uB2E4."
   icon: {fileID: 0}
   category: 0
-  prefab: {fileID: 435658575221242036, guid: 87ccd477b828f0c458048e4c6e68d8c2, type: 3}
-  size: {x: 1, y: 1}
+  prefab: {fileID: 7185148387470958661, guid: 87ccd477b828f0c458048e4c6e68d8c2, type: 3}
+  size: {x: 3, y: 3}
   ports:
-  - LocalOffset: {x: 0, y: 0}
+  - LocalOffset: {x: 0, y: 2}
     Direction: 0
     IsInput: 1
   - LocalOffset: {x: 0, y: 0}
-    Direction: 1
+    Direction: 2
     IsInput: 1
-  - LocalOffset: {x: 0, y: 0}
+  - LocalOffset: {x: 1, y: 2}
+    Direction: 0
+    IsInput: 1
+  - LocalOffset: {x: 1, y: 0}
+    Direction: 2
+    IsInput: 1
+  - LocalOffset: {x: 2, y: 2}
+    Direction: 0
+    IsInput: 1
+  - LocalOffset: {x: 2, y: 0}
     Direction: 2
     IsInput: 1
   - LocalOffset: {x: 0, y: 0}
     Direction: 3
     IsInput: 1
-  inputSlots: 2
+  - LocalOffset: {x: 2, y: 0}
+    Direction: 1
+    IsInput: 1
+  - LocalOffset: {x: 0, y: 1}
+    Direction: 3
+    IsInput: 1
+  - LocalOffset: {x: 2, y: 1}
+    Direction: 1
+    IsInput: 1
+  - LocalOffset: {x: 0, y: 2}
+    Direction: 3
+    IsInput: 1
+  - LocalOffset: {x: 2, y: 2}
+    Direction: 1
+    IsInput: 1
+  inputSlots: 6
   outputSlots: 0
-  bufferStackCap: 9999
+  bufferStackCap: 0
   requiredCoreTier: 0
-  hideFromBuildMenu: 0
+  hideFromBuildMenu: 1
+  buildCost: []
+  maxHp: 5000
   tiers:
   - tierLabel: Tier 1
     requirements:
