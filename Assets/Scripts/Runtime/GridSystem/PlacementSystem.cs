@@ -226,6 +226,37 @@ public class PlacementSystem : MonoBehaviour
             PlacementBridge.Place(current, origin, pos, rotation);
     }
 
+    /// <summary>
+    /// 조준 없이 좌표를 지정해 배치한다 — 부트스트랩·세이브 로드·테스트용 표면.
+    /// 프리뷰만 건너뛸 뿐 지형 높이·겹침·광맥 판정은 조준 배치와 완전히 같은 규칙을 쓴다
+    /// (그리드 수학이 두 벌로 갈라지지 않게 여기 한 곳에 둔다).
+    /// </summary>
+    /// <returns>배치 성공 여부. 실패 사유는 reason으로 돌려준다.</returns>
+    public bool TryPlaceAt(BuildingDataSO so, Vector2Int origin, int rotSteps,
+        out Building placed, out string reason)
+    {
+        placed = null;
+        reason = null;
+
+        if (so == null) { reason = "BuildingDataSO가 null"; return false; }
+
+        Vector2Int size = so.GetRotatedSize(rotSteps);
+
+        if (!TryGetFootprintHeight(origin, size, out float groundY))
+        {
+            reason = $"지형 높이 판정 실패 (바닥이 없거나 경사가 {maxSlopeHeightDiff}를 넘음)";
+            return false;
+        }
+        if (!CanPlace(origin, size)) { reason = "이미 점유된 칸"; return false; }
+        if (!ResourceNodeRegistry.CanPlace(so, origin, size)) { reason = "광맥 조건 불충족"; return false; }
+
+        Vector3 pos = grid.GetFootprintCenter(origin, size);
+        pos.y = groundY + SurfaceLift(so, origin);
+
+        placed = PlacementBridge.Place(so, origin, pos, rotSteps);
+        return placed != null;
+    }
+
     // ===================== 철거 모드 =====================
 
     private void UpdateDemolishing()

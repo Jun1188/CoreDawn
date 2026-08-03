@@ -10,6 +10,13 @@ using UnityEngine;
 ///   2. 심 Building ↔ BuildingEntity(GameObject) 매핑 관리
 /// 시뮬레이션 로직은 전부 FactorySim(plain C#)에 있다.
 /// </summary>
+/// <remarks>
+/// 실행 순서를 뒤로 민 이유: 코어 자동 설치가 씬에 미리 놓인
+/// <see cref="CoreBootstrap"/>보다 나중에 판정돼야 코어가 둘로 늘지 않는다.
+/// Awake는 실행 순서와 무관하게 모든 Start보다 먼저 끝나므로
+/// CoreBootstrap.Start가 쓰는 <see cref="Instance"/>는 여전히 준비돼 있다.
+/// </remarks>
+[DefaultExecutionOrder(200)]
 [RequireComponent(typeof(BeltItemView))]
 public class FactoryBootstrap : MonoBehaviour
 {
@@ -20,6 +27,19 @@ public class FactoryBootstrap : MonoBehaviour
 
     [Tooltip("프레임 드랍 후 한 프레임에 몰아서 따라잡을 수 있는 최대 틱 수.")]
     [SerializeField] int _maxCatchUpTicks = 5;
+
+    [Header("코어 자동 설치")]
+    [Tooltip("게임 시작 시 코어가 하나도 없으면 자동으로 세운다. " +
+             "씬에 CoreBootstrap으로 미리 배치해 뒀다면 그쪽이 우선이고 여기서는 아무것도 하지 않는다.")]
+    [SerializeField] bool _autoPlaceCore = true;
+
+    [Tooltip("세울 코어 데이터. 비워두면 BuildingDatabase에서 CoreDataSO를 찾아 쓴다.")]
+    [SerializeField] CoreDataSO _coreData;
+
+    [Tooltip("코어를 세울 그리드 좌표.")]
+    [SerializeField] Vector2Int _coreOrigin = Vector2Int.zero;
+
+    [SerializeField] int _coreRotationSteps = 0;
 
     public FactorySim Sim { get; private set; }
 
@@ -52,7 +72,61 @@ public class FactoryBootstrap : MonoBehaviour
         if (GetComponent<BeltItemView>() == null) Debug.LogWarning("No Belt Item Renderer");
     }
 
+    void Start()
+    {
+        if (_autoPlaceCore) AutoPlaceCore();
+    }
+
     void Update() => Sim.Advance(Time.deltaTime);
+
+    // ── 코어 자동 설치 ───────────────────────────────────────────
+
+    /// <summary>
+    /// 씬에 코어가 없으면 하나 세운다. 이미 있으면(=CoreBootstrap이 심에 연결해 둔 코어,
+    /// 혹은 씬 전환 전에 세워 둔 코어) 아무것도 하지 않는다 — 코어는 맵에 하나뿐이다.
+    /// </summary>
+    void AutoPlaceCore()
+    {
+        if (HasCore()) return;
+
+        var data = _coreData != null ? _coreData : FindCoreData();
+        if (data == null)
+        {
+            Debug.LogWarning("[FactoryBootstrap] 코어를 세울 CoreDataSO를 찾지 못했습니다 — " +
+                             "인스펙터에 지정하거나 BuildingDatabase에 넣으세요.", this);
+            return;
+        }
+
+        var placement = FindFirstObjectByType<PlacementSystem>();
+        if (placement == null)
+        {
+            Debug.LogWarning("[FactoryBootstrap] 씬에 PlacementSystem이 없어 코어를 세우지 못했습니다 " +
+                             "(그리드·지형 판정이 거기 있습니다).", this);
+            return;
+        }
+
+        if (placement.TryPlaceAt(data, _coreOrigin, _coreRotationSteps, out _, out string reason))
+            Debug.Log($"[FactoryBootstrap] 코어 자동 설치 — {data.name} @ {_coreOrigin}");
+        else
+            Debug.LogWarning($"[FactoryBootstrap] 코어 자동 설치 실패 @ {_coreOrigin}: {reason}", this);
+    }
+
+    static bool HasCore()
+    {
+        foreach (var e in BuildingEntity.All)
+            if (e != null && e.IsCore) return true;
+        return false;
+    }
+
+    static CoreDataSO FindCoreData()
+    {
+        var db = BuildingDatabaseSO.LoadDefault();
+        if (db == null || db.buildings == null) return null;
+
+        foreach (var b in db.buildings)
+            if (b is CoreDataSO core) return core;
+        return null;
+    }
 
     // ── Building ↔ View 매핑 (PlacementBridge가 등록/해제)
 
