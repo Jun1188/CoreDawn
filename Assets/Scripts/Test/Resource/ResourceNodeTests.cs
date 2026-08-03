@@ -368,7 +368,8 @@ public static class ResourceNodeTests
     {
         var so = MakeBuilding<MinerDataSO>("TestMiner",
             new[] { Port(false, Direction.East) }, stackCap: outBuf);
-        so.processingTime = ptime;
+        // 채굴 시간 = 광맥 기준 ÷ 배율 → ptime초를 원하면 배율은 1/ptime
+        so.speedMultiplier = 1f / Mathf.Max(0.01f, ptime);
         return so;
     }
 

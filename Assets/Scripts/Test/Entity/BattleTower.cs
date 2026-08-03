@@ -33,20 +33,52 @@ public class BattleTower : BuildingEntity
         monsterMask = LayerMask.GetMask("Monster");
     }
 
+    // 심에 연결된 타워의 보급 담당 (TowerDataSO 건물일 때만). 씬에 직접 놓인
+    // 구 타워는 null이고, 그때는 예전처럼 탄약 없이 무한 사격한다.
+    private TowerBehavior supply;
+    private bool statsApplied;
+
+    /// <summary>
+    /// 배치된 뒤 한 번, SO의 사거리·연사를 전투 컴포넌트에 주입한다.
+    /// Sim은 PlacementBridge가 배치 시점에 꽂아주므로 Awake에서는 아직 없다.
+    /// </summary>
+    private void ApplyDataStats()
+    {
+        if (statsApplied || Sim?.Data is not TowerDataSO data) return;
+        statsApplied = true;
+
+        supply = Sim.Behavior as TowerBehavior;
+        combat.Configure(data.range, data.fireRate > 0f ? 1f / data.fireRate : 1f);
+        sensor.SetDetectionRange(data.range);
+    }
+
     protected override void Update()
     {
         base.Update();
         if (IsDead) return;
 
+        ApplyDataStats();
+
+        // 공격하지 않는 건물(인펜스·감속 필드)은 여기서 끝
+        if (Sim?.Data is TowerDataSO td && td.IsPassive) return;
+
         // 쿨다운이 준비됐을 때만 스캔해 OverlapSphere 낭비를 줄인다
         if (!combat.CanAttack()) return;
+
+        // 탄약이 떨어졌으면 사격하지 않는다. 벨트가 채워주면 다음 프레임에 재개된다.
+        if (supply != null && !supply.HasAmmo) return;
+
         Entity target = sensor.GetClosestTarget(combat.AttackRange);
         if (!target.IsValidTarget()) return;
 
+        // 쏘기 직전에 한 발 소비 — 피해량은 장전된 탄약이 정한다
+        float damage = combat.AttackDamage;
+        if (supply != null && !supply.TryConsumeRound(out damage)) return;
+
         if (bulletPrefab != null)
         {
-            FireBullet(target);
-            combat.MarkAttackPerformed(); // 데미지는 총알이 전달, 여기선 쿨다운만 소비
+            FireBullet(target, damage);
+            combat.MarkAttackPerformed(); // 데미지는 총알이 전달, 여긴 쿨다운만 소비
         }
         else
         {
@@ -54,7 +86,7 @@ public class BattleTower : BuildingEntity
         }
     }
 
-    private void FireBullet(Entity target)
+    private void FireBullet(Entity target, float damage)
     {
         // 조준점: 대상 콜라이더 중심 (없으면 트랜스폼 위치)
         var targetCol = target.GetComponentInChildren<Collider>();
@@ -77,7 +109,7 @@ public class BattleTower : BuildingEntity
 
         var bullet = go.GetComponent<Bullet>();
         if (bullet != null)
-            bullet.Setup(bulletSpeed, bulletLifetime, combat.AttackDamage, monsterMask);
+            bullet.Setup(bulletSpeed, bulletLifetime, damage, monsterMask);
         else
             Debug.LogWarning($"[BattleTower] bulletPrefab에 Bullet 컴포넌트가 없습니다: {bulletPrefab.name}", this);
     }

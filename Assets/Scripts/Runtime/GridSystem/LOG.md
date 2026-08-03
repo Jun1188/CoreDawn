@@ -36,3 +36,28 @@
   UI는 런타임 코드 조립 (씬 저작 0) — UI 담당이 프리팹로 교체 가능하게 표면 분리
 - Addressables는 보류 — 로컬 소량 데이터라 async·빌드 단계 비용만 생김.
   DLC/스트리밍 필요 시 데이터베이스 인터페이스 뒤에서 교체 (소비자 무수정)
+
+---
+
+## 2026-08-04 — 건설 비용: 배치 시 차감, 철거 시 전액 환급
+
+`BuildingDataSO.buildCost`(Factory/LOG.md 2026-08-04 참조)의 소비자.
+
+- **전액 환급** — 부분 환급은 배치 실험을 망설이게 만들어 공장 게임의 재미를 깎음
+- **`BuildCost` 정적 헬퍼 신설** — 판정(프리뷰 색)·차감·환급·건설 메뉴 표시가 전부 같은 규칙을
+  써야 하므로 "얼마가 드는가"를 여기 한 곳에만 둔다.
+  `CanAfford` / `TryGetMissing` / `TryCharge` / `Refund` / `PlayerCountOf`
+- 소지품이 **핫바 + 가방** 두 컨테이너에 나뉘어 있으므로 셀 때는 항상 합산,
+  차감은 **가방부터** (핫바를 최대한 유지)
+- **차감은 전량 아니면 무효** — 반쯤 깎인 채 배치가 실패하면 아이템만 사라짐
+- **인벤토리가 없으면 통과** — 비용 때문에 심 시나리오 테스트가 막히면 안 됨
+- 환급 시 가방에 자리가 없으면 바닥에 드롭 (`PlacementBridge.DropAt`) — 조용히 증발 금지
+
+### 배선 지점
+
+| 위치 | 내용 |
+|---|---|
+| `PlacementSystem.lastCanPlace` | `&& BuildCost.CanAfford(current)` — 재료가 모자라면 프리뷰가 빨갛게 |
+| `PlacementSystem.Place` | `TryCharge` 먼저, 실패 시 로그 남기고 조기 반환 |
+| `PlacementSystem.Demolish` | **`PlacementBridge.Remove` 전에** 뷰 위치와 `b.Data`를 캡처 — 제거 후엔 읽을 수 없음 |
+| `BuildMenuPopup` | 못 지으면 버튼을 옅게 + 이름 아래 "{재료} {N} 부족" |
