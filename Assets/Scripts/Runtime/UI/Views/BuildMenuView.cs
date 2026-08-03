@@ -22,12 +22,10 @@ public class BuildMenuView : UITKPopup
 
     PlacementSystem placement;
     BuildingCategory category = BuildingCategory.Production;
-    BuildingDataSO selected;
 
-    VisualElement tabs, grid, hints, actionsTooltip;
-    Label emptyNote, tipName, tipType, tipDesc;
-    VisualElement tipStats, tipCost, tipSepStats, tipSepCost;
-    Button btnClose, btnPlace;
+    VisualElement tabs, grid, hints, detMeta, detCost;
+    Label emptyNote, detName, detType, detDesc, detSize, detCostLabel, detEmpty;
+    Button btnClose;
 
     readonly List<Button> tabButtons = new();
 
@@ -73,22 +71,19 @@ public class BuildMenuView : UITKPopup
         emptyNote = r.Q<Label>("empty-note");
 
         btnClose = r.Q<Button>("btn-close");
-        btnPlace = r.Q<Button>("btn-place");
 
-        actionsTooltip = r.Q("tooltip");
-        tipName = r.Q<Label>("tip-name");
-        tipType = r.Q<Label>("tip-type");
-        tipDesc = r.Q<Label>("tip-desc");
-        tipStats = r.Q("tip-stats");
-        tipCost = r.Q("tip-cost");
-        tipSepStats = r.Q("tip-sep-stats");
-        tipSepCost = r.Q("tip-sep-cost");
+        detName = r.Q<Label>("det-name");
+        detType = r.Q<Label>("det-type");
+        detDesc = r.Q<Label>("det-desc");
+        detSize = r.Q<Label>("det-size");
+        detCostLabel = r.Q<Label>("det-cost-label");
+        detCost = r.Q("det-cost");
+        detMeta = r.Q("det-meta");
+        detEmpty = r.Q<Label>("det-empty");
 
         btnClose.clicked += Close;
-        btnPlace.clicked += StartPlacing;
 
-        selected = null;
-        HideTooltip();
+        ClearDetails();
         RebuildTabs();
         RebuildGrid();
     }
@@ -96,8 +91,6 @@ public class BuildMenuView : UITKPopup
     protected override void Unbind()
     {
         if (btnClose != null) btnClose.clicked -= Close;
-        if (btnPlace != null) btnPlace.clicked -= StartPlacing;
-        selected = null;
     }
 
     // ───────────────────────── 목록 ─────────────────────────
@@ -155,7 +148,6 @@ public class BuildMenuView : UITKPopup
     void RebuildGrid()
     {
         grid.Clear();
-        selected = null;
 
         var db = Database;
         int shown = 0;
@@ -176,7 +168,7 @@ public class BuildMenuView : UITKPopup
         }
 
         Show(emptyNote, shown == 0);
-        RefreshActions();
+        ClearDetails();
     }
 
     VisualElement MakeCell(BuildingDataSO so)
@@ -208,52 +200,28 @@ public class BuildMenuView : UITKPopup
             row.Add(meta);
         }
 
-        row.RegisterCallback<PointerEnterEvent>(_ => ShowTooltip(so));
-        row.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());
-        row.RegisterCallback<PointerMoveEvent>(e => MoveTooltip(e.position));
+        row.RegisterCallback<PointerEnterEvent>(_ => ShowDetails(so, unlocked));
+        row.RegisterCallback<PointerLeaveEvent>(_ => ClearDetails());
 
+        // 고르는 즉시 배치 모드로 — 한 번 더 누르게 하지 않는다
         if (unlocked)
-            row.RegisterCallback<ClickEvent>(_ => Select(so, row));
+            row.RegisterCallback<ClickEvent>(_ => StartPlacing(so));
 
         cell.Add(row);
         return cell;
     }
 
-    void Select(BuildingDataSO so, VisualElement row)
+    void StartPlacing(BuildingDataSO so)
     {
-        selected = so;
-
-        foreach (var cell in grid.Children())
-            foreach (var child in cell.Children())
-                ToggleClass(child, "ui-row--selected", child == row);
-
-        RefreshActions();
+        if (so == null || placement == null) return;
+        placement.SelectBuilding(so);
+        Close();
     }
 
     static bool IsUnlocked(BuildingDataSO so) =>
         GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(so.requiredCoreTier);
 
     // ───────────────────── 하단 힌트·버튼 ─────────────────────
-
-    /// <summary>
-    /// 조작 힌트는 선택한 건물에 따라 바뀐다 — 벨트를 고르면 T(모양 변경)가 나타나고,
-    /// 아무것도 안 골랐으면 배치 관련 힌트를 보여줄 이유가 없다.
-    /// </summary>
-    void RefreshActions()
-    {
-        hints.Clear();
-
-        if (selected != null)
-        {
-            hints.Add(KeyHint("R", "회전"));
-            if (selected is BeltDataSO) hints.Add(KeyHint("T", "모양 변경"));
-            hints.Add(KeyHint("LMB", "배치"));
-            hints.Add(KeyHint("RMB", "취소"));
-        }
-
-        btnPlace.SetEnabled(selected != null);
-        btnPlace.text = selected != null ? "배치 시작" : "건물을 고르세요";
-    }
 
     static VisualElement KeyHint(string cap, string label)
     {
@@ -267,33 +235,27 @@ public class BuildMenuView : UITKPopup
         return e;
     }
 
-    void StartPlacing()
+    // ───────────────────── 하단 상세 (hover) ─────────────────────
+
+    /// <summary>커서를 올린 건물의 정보를 하단 고정 자리에 채운다.</summary>
+    void ShowDetails(BuildingDataSO so, bool unlocked)
     {
-        if (selected == null || placement == null) return;
-        placement.SelectBuilding(selected);
-        Close();   // 선택 즉시 배치 모드로 — 기존 동작 유지
-    }
+        Show(detEmpty, false);
+        Show(detName, true);
+        Show(detType, true);
+        Show(detMeta, true);
 
-    // ───────────────────────── 툴팁 ─────────────────────────
+        detName.text = DisplayNameOf(so);
+        detType.text = unlocked
+            ? $"TIER {so.requiredCoreTier} · {BuildingCategoryNames.Korean(so.category)}"
+            : $"TIER {so.requiredCoreTier} · {BuildingCategoryNames.Korean(so.category)} · 게이트 {so.requiredCoreTier} 필요";
 
-    void ShowTooltip(BuildingDataSO so)
-    {
-        tipName.text = DisplayNameOf(so);
-        tipType.text = $"TIER {so.requiredCoreTier} · {BuildingCategoryNames.Korean(so.category)}";
+        detDesc.text = so.description ?? "";
+        Show(detDesc, !string.IsNullOrEmpty(so.description));
 
-        tipDesc.text = so.description ?? "";
-        Show(tipDesc, !string.IsNullOrEmpty(so.description));
+        detSize.text = $"크기 {so.size.x} × {so.size.y}";
 
-        // 구분선 위는 정체성, 아래는 수치 — 순서를 섞지 않으면 눈이 위치를 학습한다
-        tipStats.Clear();
-        tipStats.Add(TooltipStat("크기", $"{so.size.x} × {so.size.y}"));
-
-        // 라벨과 칩을 같은 줄에 흘린다
-        tipCost.Clear();
-        var costLabel = new Label("건설 비용");
-        costLabel.AddToClassList("build-tooltip__cost-label");
-        tipCost.Add(costLabel);
-
+        detCost.Clear();
         int chips = 0;
         foreach (var e in BuildCostDummyData.For(so))
         {
@@ -306,50 +268,30 @@ public class BuildMenuView : UITKPopup
             var n = new Label(e.Amount.ToString());
             n.AddToClassList("ui-chip__n");
             chip.Add(n);
-            tipCost.Add(chip);
+            detCost.Add(chip);
             chips++;
         }
+        Show(detCostLabel, chips > 0);
 
-        Show(tipSepStats, true);
-        Show(tipCost, chips > 0);
-        Show(tipSepCost, chips > 0);
-
-        actionsTooltip.RemoveFromClassList("ui-hidden");
+        // 조작 힌트는 이 건물에 실제로 쓰이는 것만 — 벨트에서만 T(모양 변경)가 뜬다
+        hints.Clear();
+        if (unlocked)
+        {
+            hints.Add(KeyHint("R", "회전"));
+            if (so is BeltDataSO) hints.Add(KeyHint("T", "모양 변경"));
+            hints.Add(KeyHint("LMB", "배치"));
+            hints.Add(KeyHint("RMB", "취소"));
+        }
     }
 
-    static VisualElement TooltipStat(string label, string value)
+    void ClearDetails()
     {
-        var row = new VisualElement();
-        row.AddToClassList("ui-tooltip__stat");
-        row.Add(new Label(label));
-
-        var v = new Label(value);
-        v.AddToClassList("ui-tooltip__stat-value");
-        row.Add(v);
-        return row;
-    }
-
-    void HideTooltip() => actionsTooltip?.AddToClassList("ui-hidden");
-
-    /// <summary>커서 우하단 12px에 붙이고, 화면 밖으로 나가면 반대편으로 뒤집는다.</summary>
-    void MoveTooltip(Vector2 pointer)
-    {
-        if (actionsTooltip == null || Root == null) return;
-
-        const float Gap = 12f;
-        float w = actionsTooltip.resolvedStyle.width;
-        float h = actionsTooltip.resolvedStyle.height;
-        float rootW = Root.resolvedStyle.width;
-        float rootH = Root.resolvedStyle.height;
-
-        float x = pointer.x + Gap;
-        float y = pointer.y + Gap;
-
-        if (!float.IsNaN(w) && x + w > rootW) x = pointer.x - Gap - w;
-        if (!float.IsNaN(h) && y + h > rootH) y = pointer.y - Gap - h;
-
-        actionsTooltip.style.left = Mathf.Max(0f, x);
-        actionsTooltip.style.top = Mathf.Max(0f, y);
+        Show(detEmpty, true);
+        Show(detName, false);
+        Show(detType, false);
+        Show(detDesc, false);
+        Show(detMeta, false);
+        hints?.Clear();
     }
 
     // ───────────────────────── 잡동사니 ─────────────────────────

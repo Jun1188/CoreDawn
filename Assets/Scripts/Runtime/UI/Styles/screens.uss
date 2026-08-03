@@ -20,7 +20,7 @@
 /* 코어 패널과 같은 규칙 — 크기 고정, 넘치면 스크롤 */
 .build-panel {
     width: 620px;
-    height: 460px;
+    height: 500px;
 }
 
 .build-panel__body {
@@ -67,13 +67,78 @@
     -unity-text-align: middle-center;
 }
 
-.build-actions {
-    flex-direction: row;
-    align-items: center;
-    margin-top: var(--space-4);
+/* 하단 상세 — 높이 고정. 설명 길이에 따라 창이 흔들리면 안 된다.
+   설명이 두 줄인 건물(분배기 등)까지 담기게 잡고, 아래 여백을 둬서
+   비용 칩이 경계에 딱 붙지 않게 한다. */
+.build-details {
+    height: 136px;
+    flex-shrink: 0;
+    margin-top: var(--space-3);
     padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
     border-top-width: 1px;
     border-top-color: var(--line);
+    overflow: hidden;
+}
+
+.build-details__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.build-details__name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: var(--copper);
+    margin-right: var(--space-3);
+}
+
+.build-details__type {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: var(--text-faint);
+}
+
+.build-details__desc {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+    white-space: normal;
+    margin-bottom: var(--space-2);
+}
+
+.build-details__meta {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-right: -8px;
+}
+
+.build-details__meta > * { margin-right: var(--space-2); }
+
+.build-details__size {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+}
+
+.build-details__cost-label {
+    font-size: 11px;
+    color: var(--text-faint);
+}
+
+.build-details__cost {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-right: -8px;
+}
+
+.build-details__cost > * { margin-right: var(--space-2); }
+
+/* 커서를 아무 데도 올리지 않았을 때 자리를 지키는 안내 */
+.build-details__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
 }
 
 .build-hints {
@@ -84,36 +149,6 @@
 }
 
 .build-hints > * { margin-right: var(--space-3); }
-
-/* 툴팁은 패널 위에 뜨는 절대 배치 — 위치는 코드가 정한다.
-   min-width가 없으면 내용이 짧을 때(설명 없는 건물 등) 세로로 길쭉하게 쪼그라든다. */
-.build-tooltip {
-    position: absolute;
-    left: 0;
-    top: 0;
-    min-width: 210px;
-    max-width: 290px;
-}
-
-.build-tooltip__name { color: var(--copper); }
-
-/* "건설 비용" 라벨과 칩이 같은 줄에서 흐르고 넘치면 접힌다 */
-.build-tooltip__cost {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-right: -8px;
-}
-
-.build-tooltip__cost > * {
-    margin-right: var(--space-2);
-    margin-bottom: var(--space-1);
-}
-
-.build-tooltip__cost-label {
-    font-size: 11px;
-    color: var(--text-faint);
-}
 
 /* ───────────────── SCR-01 코어 패널 ───────────────── */
 
@@ -263,9 +298,12 @@
 /* 레이더가 꺼져 있어 모르는 값 — 색으로 강조하지 않는다 */
 .core-wave__unknown { color: var(--text-faint); }
 
-/* 레이더 스코프가 들어갈 자리 — 좌우에 지시선 라벨 여백을 항상 확보해 둔다 */
+/* 레이더 스코프가 들어갈 자리 — 탭에 남는 세로 공간을 전부 먹는다.
+   스코프 반지름은 이 상자 크기에서 계산되므로 상자가 커지면 스코프도 커진다. */
 .core-radar-slot {
-    height: 240px;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
     background-color: var(--bg-inset);
     border-width: 1px;
     border-color: var(--line-strong);
@@ -292,8 +330,9 @@
     color: var(--text-dim);
 }
 
+/* 설계 viewBox(440x300) 폭에 맞춘다 — 좌우 지시선 라벨 자리를 여기서 확보한다 */
 .core-info__radar {
-    width: 400px;
+    width: 440px;
     flex-shrink: 0;
     margin-left: var(--space-5);
 }

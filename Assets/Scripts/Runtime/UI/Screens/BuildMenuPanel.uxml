@@ -27,24 +27,28 @@
                               class="build-empty ui-hidden" />
                 </ui:ScrollView>
 
-                <!-- 조작 힌트는 배치 버튼 바로 옆 — 별도 줄을 만들면 시선이 한 번 더 움직인다 -->
-                <ui:VisualElement class="build-actions">
-                    <ui:VisualElement name="hints" class="build-hints" />
-                    <ui:Button name="btn-place" text="배치 시작" class="ui-btn ui-btn--primary" />
+                <!-- 커서를 올린 건물의 정보가 여기 뜬다. 목록 위를 떠다니는 툴팁이
+                     아니라 고정된 자리라, 시선이 목록과 설명 사이만 오간다.
+                     높이를 못박아 두어 건물마다 설명 길이가 달라도 창이 흔들리지 않는다. -->
+                <ui:VisualElement name="details" class="build-details">
+                    <ui:VisualElement class="build-details__head">
+                        <ui:Label name="det-name" text="" class="build-details__name" />
+                        <ui:Label name="det-type" text="" class="build-details__type" />
+                        <ui:VisualElement name="hints" class="build-hints" />
+                    </ui:VisualElement>
+
+                    <ui:Label name="det-desc" text="" class="build-details__desc" />
+
+                    <ui:VisualElement name="det-meta" class="build-details__meta">
+                        <ui:Label name="det-size" text="" class="build-details__size" />
+                        <ui:Label name="det-cost-label" text="건설 비용" class="build-details__cost-label" />
+                        <ui:VisualElement name="det-cost" class="build-details__cost" />
+                    </ui:VisualElement>
+
+                    <ui:Label name="det-empty" text="건물에 커서를 올리면 정보가 표시됩니다. 클릭하면 바로 배치가 시작됩니다."
+                              class="build-details__empty" />
                 </ui:VisualElement>
             </ui:VisualElement>
-        </ui:VisualElement>
-
-        <!-- 커서를 따라다니는 툴팁. 화면 밖으로 나가면 반대편으로 뒤집는다 -->
-        <ui:VisualElement name="tooltip" class="ui-tooltip build-tooltip ui-hidden">
-            <ui:Label name="tip-name" class="ui-tooltip__name build-tooltip__name" />
-            <ui:Label name="tip-type" class="ui-tooltip__type" />
-            <ui:Label name="tip-desc" class="ui-tooltip__desc" />
-            <ui:VisualElement name="tip-sep-stats" class="ui-tooltip__sep" />
-            <ui:VisualElement name="tip-stats" />
-            <ui:VisualElement name="tip-sep-cost" class="ui-tooltip__sep" />
-            <!-- 라벨과 칩이 한 줄에서 같이 흐른다 (레퍼런스 SCR-03 툴팁) -->
-            <ui:VisualElement name="tip-cost" class="build-tooltip__cost" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

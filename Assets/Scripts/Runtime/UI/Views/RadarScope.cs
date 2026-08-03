@@ -136,10 +136,10 @@ public class RadarScope : VisualElement
     Vector2 Center => new(contentRect.width * 0.5f, contentRect.height * 0.5f);
 
     /// <summary>
-    /// 바깥 링 반지름. 좌우에 지시선 라벨 자리를 항상 확보해야 하므로(설계 SCR-01c)
-    /// 너비 비율은 설계 viewBox의 112/440 ≈ 0.255를 따른다.
+    /// 바깥 링 반지름. 좌우에는 지시선 라벨 자리를 반드시 남겨야 한다(설계 SCR-01c) —
+    /// 진입 지점 라벨은 점에서 약 39px 뻗어나가므로 그만큼은 확보된 채로 키운다.
     /// </summary>
-    float Radius => Mathf.Max(10f, Mathf.Min(contentRect.width * 0.255f, contentRect.height * 0.42f));
+    float Radius => Mathf.Max(10f, Mathf.Min(contentRect.width * 0.29f, contentRect.height * 0.44f));
 
     /// <summary>설계 SVG 길이를 현재 반지름으로 옮기는 배율.</summary>
     float Unit => Radius / DesignRadius;
