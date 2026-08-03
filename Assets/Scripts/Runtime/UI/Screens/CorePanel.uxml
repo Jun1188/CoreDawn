@@ -48,6 +48,7 @@
 
                     <!-- 아래 표 — "어느 부품이 모자란가"에 답한다.
                          둘은 다른 질문이라 같이 둔다 (문서 SCR-01) -->
+                    <!-- 머리글은 고정, 행만 스크롤 — 부품이 늘어도 창 크기는 그대로다 -->
                     <ui:VisualElement name="table" class="ui-table">
                         <ui:VisualElement class="ui-table__head">
                             <ui:Label text="부품" class="ui-col-part" />
@@ -56,7 +57,9 @@
                             <ui:Label text="부족" class="ui-col-num" />
                             <ui:Label text="이번 납품" class="ui-col-act" />
                         </ui:VisualElement>
-                        <ui:VisualElement name="rows" />
+                        <ui:ScrollView name="rows-scroll" class="ui-scroll core-rows-scroll">
+                            <ui:VisualElement name="rows" />
+                        </ui:ScrollView>
                     </ui:VisualElement>
 
                     <!-- 최고 티어 도달 시 표 대신 보여준다 -->
@@ -92,7 +95,11 @@
                     <ui:VisualElement class="core-stat">
                         <ui:VisualElement class="core-stat__head">
                             <ui:Label text="코어 내구도" class="core-stat__name" />
-                            <ui:Label name="hp-text" text="—" class="ui-num" />
+                            <!-- 현재값은 본색, "/ 최대"는 흐리게 — 설계 SCR-01c -->
+                            <ui:VisualElement class="core-stat__value">
+                                <ui:Label name="hp-text" text="—" class="ui-num" />
+                                <ui:Label name="hp-max" text="" class="ui-num ui-num--dim" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
                         <ui:VisualElement class="ui-bar ui-bar--thick ui-bar--ok">
                             <ui:VisualElement name="hp-fill" class="ui-bar__fill" />
@@ -102,7 +109,10 @@
                     <ui:VisualElement class="core-stat">
                         <ui:VisualElement class="core-stat__head">
                             <ui:Label text="수리 진행" class="core-stat__name" />
-                            <ui:Label name="repair-text" text="—" class="ui-num" />
+                            <ui:VisualElement class="core-stat__value">
+                                <ui:Label name="repair-text" text="—" class="ui-num" />
+                                <ui:Label name="repair-max" text="" class="ui-num ui-num--dim" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
                         <ui:VisualElement class="ui-bar ui-bar--thick ui-bar--crystal">
                             <ui:VisualElement name="repair-fill" class="ui-bar__fill" />

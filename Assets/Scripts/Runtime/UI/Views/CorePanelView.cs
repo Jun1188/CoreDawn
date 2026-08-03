@@ -26,7 +26,7 @@ public class CorePanelView : UITKPopup
 
     // 코어 정보 탭
     VisualElement viewDeliver, viewInfo, hpFill, repairFill, radarSlot, radarChip;
-    Label hpText, repairText, radarChipText;
+    Label hpText, hpMax, repairText, repairMax, radarChipText;
     Label waveNext, waveNumber, waveIncoming, waveNests;
     RadarScope radar;
     BuildingEntity coreEntity;   // 내구도 원본 — 심(Building)이 아니라 씬 껍데기가 갖고 있다
@@ -170,7 +170,9 @@ public class CorePanelView : UITKPopup
         hpFill = r.Q("hp-fill");
         repairFill = r.Q("repair-fill");
         hpText = r.Q<Label>("hp-text");
+        hpMax = r.Q<Label>("hp-max");
         repairText = r.Q<Label>("repair-text");
+        repairMax = r.Q<Label>("repair-max");
 
         radarSlot = r.Q("radar-slot");
         radarChip = r.Q("radar-chip");
@@ -210,20 +212,23 @@ public class CorePanelView : UITKPopup
         {
             int cur = Mathf.CeilToInt(health.CurrentHealth);
             int max = Mathf.CeilToInt(health.MaxHealth);
-            hpText.text = $"{cur:N0} / {max:N0}";
+            hpText.text = cur.ToString("N0");
+            hpMax.text = $"/ {max:N0}";
             SetBarFill(hpFill, health.CurrentHealth / health.MaxHealth);
         }
         else
         {
             // 코어가 씬에 없거나 아직 배치 전 — 0으로 속이지 않고 모름을 표시한다
             hpText.text = "—";
+            hpMax.text = "";
             SetBarFill(hpFill, 0f);
         }
 
         // 수리 진행
         int done = target.CurrentTierIndex;
         int total = target.TierCount;
-        repairText.text = total > 0 ? $"{done}단계 / {total}" : "—";
+        repairText.text = total > 0 ? $"{done}단계" : "—";
+        repairMax.text = total > 0 ? $"/ {total}" : "";
         SetBarFill(repairFill, total > 0 ? (float)done / total : 0f);
 
         bool radarUnlocked = done >= RadarUnlockTier || debugForceRadarUnlocked;

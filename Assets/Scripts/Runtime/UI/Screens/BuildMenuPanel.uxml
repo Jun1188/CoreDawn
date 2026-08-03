@@ -20,10 +20,12 @@
             <ui:VisualElement class="ui-panel__body build-panel__body">
                 <ui:VisualElement name="tabs" class="ui-tabs build-panel__tabs" />
 
-                <ui:VisualElement name="grid" class="build-grid" />
-
-                <ui:Label name="empty-note" text="이 분류에 지을 수 있는 건물이 없습니다."
-                          class="build-empty ui-hidden" />
+                <!-- 건물이 몇 개든 창 크기는 그대로. 넘치면 스크롤한다 -->
+                <ui:ScrollView name="grid-scroll" class="ui-scroll build-grid-scroll">
+                    <ui:VisualElement name="grid" class="build-grid" />
+                    <ui:Label name="empty-note" text="이 분류에 지을 수 있는 건물이 없습니다."
+                              class="build-empty ui-hidden" />
+                </ui:ScrollView>
 
                 <!-- 조작 힌트는 배치 버튼 바로 옆 — 별도 줄을 만들면 시선이 한 번 더 움직인다 -->
                 <ui:VisualElement class="build-actions">

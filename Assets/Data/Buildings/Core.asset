@@ -33,15 +33,35 @@ MonoBehaviour:
   - LocalOffset: {x: 0, y: 0}
     Direction: 3
     IsInput: 1
-  inputSlots: 2
+  inputSlots: 4
   outputSlots: 0
   bufferStackCap: 9999
   requiredCoreTier: 0
   hideFromBuildMenu: 1
   tiers:
-  - tierLabel: Tier 1
+  - tierLabel: "\uC794\uD574 \uD68C\uC218"
     requirements:
-    - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
+    - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
+      amount: 10
+  - tierLabel: "\uC120\uCCB4 \uBD09\uD569"
+    requirements:
+    - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}
+      amount: 20
+    - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+      amount: 30
+  - tierLabel: "\uD56D\uBC95\xB7\uC81C\uC5B4 \uBCF5\uAD6C"
+    requirements:
+    - item: {fileID: 11400000, guid: 953f117f3aca51d429084219427bec02, type: 2}
       amount: 5
-    - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+    - item: {fileID: 11400000, guid: a1135b33ec184ee49b0aa1c217acda9e, type: 2}
+      amount: 20
+  - tierLabel: "\uB3D9\uB825 \uC7AC\uC810\uD654"
+    requirements:
+    - item: {fileID: 11400000, guid: 7270e26119604fb43a25dd6efb055137, type: 2}
       amount: 3
+    - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
+      amount: 30
+    - item: {fileID: 11400000, guid: d98dc4dd6a76b4d428c80cade8daad06, type: 2}
+      amount: 15
+    - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}
+      amount: 10

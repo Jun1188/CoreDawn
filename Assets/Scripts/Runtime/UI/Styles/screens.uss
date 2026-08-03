@@ -17,9 +17,24 @@
 
 /* ───────────────── SCR-03 건설 메뉴 ───────────────── */
 
-.build-panel { width: 620px; }
+/* 코어 패널과 같은 규칙 — 크기 고정, 넘치면 스크롤 */
+.build-panel {
+    width: 620px;
+    height: 460px;
+}
 
-.build-panel__body { padding-top: 0; }
+.build-panel__body {
+    padding-top: 0;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.build-grid-scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
 
 /* 탭이 패널 안쪽 여백을 넘어 양끝까지 닿게 한다 */
 .build-panel__tabs {
@@ -102,13 +117,29 @@
 
 /* ───────────────── SCR-01 코어 패널 ───────────────── */
 
-.core-panel { width: 880px; }
+/* 크기는 고정. 부품이 몇 종이든 창이 커졌다 작아졌다 하면 안 된다 —
+   넘치는 것은 스크롤로 처리한다. */
+.core-panel {
+    width: 880px;
+    height: 520px;
+}
 
 .core-panel__tabs { padding: 0 var(--space-4); }
 
+/* 제목·탭은 고정 높이, 본문이 남은 공간을 먹는다 */
+.core-panel > .ui-panel__body {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
 .core-panel__body {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
 }
 
 .core-panel__rail {
@@ -116,6 +147,27 @@
     flex-shrink: 0;
     margin-right: var(--space-5);
 }
+
+/* 표: 머리글은 제자리, 행 영역만 남은 높이를 먹고 스크롤한다 */
+.core-panel__body .ui-table {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.core-rows-scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+/* 값과 "/ 최대"를 한 줄에 붙인다 */
+.core-stat__value {
+    flex-direction: row;
+    align-items: center;
+}
+
+.core-stat__value > * { margin-left: 4px; }
 
 /* 게이트 요약 — 이 게이트 전체가 얼마나 찼는지 */
 .core-gate {
