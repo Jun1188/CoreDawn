@@ -496,9 +496,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
     amount: 1
     maxStackSize: 5
-  - item: {fileID: 11400000, guid: 7b5c61a2aef310e418c5575492c5a35d, type: 2}
-    amount: 3
-    maxStackSize: 64
 --- !u!114 &152612382
 MonoBehaviour:
   m_ObjectHideFlags: 0

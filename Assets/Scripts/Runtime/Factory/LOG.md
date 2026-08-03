@@ -444,3 +444,24 @@
 - 기존 `RecipeImporter`(팀원)와 역할 중복 — 통합 여부 팀 논의 (07-26부터 이월)
 - **`Mine`은 절대 발사하지 못한다** — `TowerDataSO`인데 포트 0개이면서 `IsPassive`도 아니라
   탄약이 들어올 입구가 없다. 지뢰라면 탄약 없이 터지는 별도 행동이 필요하다 (기획 판단 대기)
+
+---
+
+## 2026-08-04 — BuildingItemSO 삭제 (건물 배치 경로 단일화)
+
+- **배경**: 건물을 인벤토리 아이템으로 들고 다니다 광맥 앞에서 E로 세우는 경로가 있었다
+  (`BuildingItemSO` → `ResourceNodeInstaller`). 그런데 `ResourceNodeAuthoring`이 이미
+  *"설치는 B키 빌드 메뉴로 통일한다 — 광맥은 '채굴기만 지을 수 있는 자리'일 뿐,
+  자체 상호작용(E)은 두지 않는다"*로 결론을 내려둔 상태였고, 배치 규칙은
+  `ResourceNodeRegistry.CanPlace`가 담당하게 바뀌어 있었다
+- **확인**: `ResourceNodeInstaller`는 씬·프리팹 어디에도 붙어 있지 않고 `AddComponent`하는
+  코드도 없었다 — 결정 이후 남은 껍데기. 그것만을 위해 존재하던 `BuildingItemSO`와
+  `MinerItem.asset`도 함께 죽은 선언이 됐다
+- **삭제**: `BuildingItemSO.cs` · `ResourceNodeInstaller.cs` · `MinerItem.asset`.
+  `PlayLoopTestSetup`의 아이템 생성·상자 투입 코드(55줄)와 `ResourceNodeAuthoring.MinerItemPath`,
+  `PlayLoopTest.unity` 상자의 시작 아이템 항목도 함께 정리
+- 08-04 건설 비용(GridSystem/LOG.md)이 들어오면서 **건물을 얻는 방법이 "재료를 모아 짓는다"
+  하나로 통일**됐다. 아이템으로 들고 다니는 경로가 남아 있으면 비용 규칙이 두 벌로 갈라진다
+- **재도입 조건**: 완성된 건물을 아이템으로 주고받는 기획(청사진·이동식 건물 등)이 확정될 때.
+  그때는 `ItemType.Placeable`이 이미 있으니 `building` 참조 필드 하나만 붙이면 된다
+- 검수: 잔존 참조 0, ItemDatabase 24종 끊긴 항목 0, 컴파일 에러 0, 시나리오 11/11 통과

@@ -1,6 +1,4 @@
 using System.IO;
-using System.Linq;
-using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -20,7 +18,7 @@ using UnityEngine.UI;
 ///
 /// 얹는 것:
 ///   · 광맥 2개 (지형지물 — 장애물 콜라이더 O, HP·피격 X)
-///   · 채굴기 아이템을 상자에 (E로 열어 꺼내고, 광맥 앞에서 E로 설치)
+///   · 채굴기는 상자가 아니라 B키 빌드 메뉴로 짓는다 (광맥은 "채굴기만 지을 수 있는 자리")
 ///   · ResourceNodeStatusLog (채굴 진행을 콘솔로만 보고)
 ///   · Day HUD 아이콘 비율 보정 (원본 스프라이트가 64x64·29x26으로 제각각이라 늘어나 깨져 보였다)
 /// </summary>
@@ -29,7 +27,6 @@ public static class PlayLoopTestSetup
     const string SourceScene = "Assets/Scenes/Test/TestCombat/TestCombat1.0.unity";
     const string TargetScene = "Assets/Scenes/Test/PlayLoopTest.unity";
     const string OrePath     = "Assets/Data/Item/IronOre.asset";
-    const string MinerItem   = ResourceNodeAuthoring.MinerItemPath;
     const string VolumeProfile = "Assets/Scenes/Test/MainScene/Global Volume Profile.asset";
 
     // 광맥 자리 — 코어/타워와 겹치지 않게 원점에서 떨어뜨린다
@@ -41,7 +38,7 @@ public static class PlayLoopTestSetup
     {
         BuildScene();
         Debug.Log($"[PlayLoopTest] 씬 생성 완료: {TargetScene}\n" +
-                  "플레이 → E로 상자에서 채굴기를 꺼내고 → 광맥 앞에서 E로 설치 → 밤이 오면 전투.");
+                  "플레이 → B키 빌드 메뉴로 광맥 위에 채굴기 배치 → 밤이 오면 전투.");
     }
 
     [MenuItem("Tools/PlayLoopTest 씬 실행")]
@@ -70,9 +67,6 @@ public static class PlayLoopTestSetup
             ? new GridSystem(placement.CellSize, placement.GridOrigin)
             : new GridSystem(1f, Vector3.zero);
 
-        // 아이템을 먼저 만든다 — 광맥 저작이 이 에셋을 인스펙터에 꽂아야 회수까지 된다
-        var minerItem = EnsureMinerItem();
-
         ResourceNodeAuthoring.Create("ResourceNode_IronOre_A", ore, NodeACell, Vector2Int.one,
                                      interval: 0.5f, amount: 1, max: 5, grid: grid);
         ResourceNodeAuthoring.Create("ResourceNode_IronOre_B", ore, NodeBCell, new Vector2Int(2, 2),
@@ -80,68 +74,12 @@ public static class PlayLoopTestSetup
 
         new GameObject("ResourceNodeStatusLog").AddComponent<ResourceNodeStatusLog>();
 
-        PutMinerInChest(minerItem);
         ResourceNodeAuthoring.FixDayHud();
         EnsureGlobalVolume();
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, TargetScene);
         AssetDatabase.Refresh();
-    }
-
-    // ─── 채굴기 아이템 ─────────────────────────────────────────
-
-    /// <summary>채굴기 아이템 에셋 — 없으면 만든다 (Resources 안에 둬야 회수 시 되찾을 수 있다).</summary>
-    static BuildingItemSO EnsureMinerItem()
-    {
-        var item = AssetDatabase.LoadAssetAtPath<BuildingItemSO>(MinerItem);
-        if (item != null) return item;
-
-        var db = BuildingDatabaseSO.LoadDefault();
-        var miner = db != null ? db.buildings.FirstOrDefault(b => b is MinerDataSO) : null;
-        if (miner == null) throw new FileNotFoundException("BuildingDatabase에서 채굴기 SO를 찾지 못했습니다.");
-
-        item = ScriptableObject.CreateInstance<BuildingItemSO>();
-        item.displayName = "채굴기";
-        item.description = "광맥 위에 설치해 자원을 캐낸다. 광맥 앞에서 E로 설치·회수.";
-        item.building    = miner;
-        item.icon        = miner.icon;
-
-        var so = new SerializedObject(item);
-        so.FindProperty("id").stringValue = "Item:Miner";
-        so.ApplyModifiedPropertiesWithoutUndo();
-
-        Directory.CreateDirectory(Path.GetDirectoryName(MinerItem));
-        AssetDatabase.CreateAsset(item, MinerItem);
-        AssetDatabase.SaveAssets();
-        Debug.Log($"[PlayLoopTest] 채굴기 아이템 생성: {MinerItem}");
-        return item;
-    }
-
-    /// <summary>상자(TestChest)의 시작 아이템에 채굴기를 넣는다.</summary>
-    static void PutMinerInChest(BuildingItemSO item)
-    {
-        var chest = Object.FindObjectsByType<Chest>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
-        if (chest == null) { Debug.LogWarning("[PlayLoopTest] 씬에 상자가 없어 채굴기를 넣지 못했습니다."); return; }
-
-        var inv = chest.GetComponent<Inventory>();
-        var so  = new SerializedObject(inv);
-        var slots = so.FindProperty("slots");
-
-        // 빈 칸을 찾아 넣는다 — 원본 상자에는 무기가 들어 있으므로 덮어쓰면 안 된다
-        int target = -1;
-        for (int i = 0; i < slots.arraySize; i++)
-            if (slots.GetArrayElementAtIndex(i).FindPropertyRelative("item").objectReferenceValue == null) { target = i; break; }
-
-        if (target < 0) { target = slots.arraySize; slots.arraySize++; }   // 없으면 뒤에 덧붙인다
-
-        var slot = slots.GetArrayElementAtIndex(target);
-        slot.FindPropertyRelative("item").objectReferenceValue = item;
-        slot.FindPropertyRelative("amount").intValue           = 3;
-        slot.FindPropertyRelative("maxStackSize").intValue     = 64;
-        so.ApplyModifiedPropertiesWithoutUndo();
-
-        Debug.Log($"[PlayLoopTest] 상자 '{chest.name}' 슬롯 {target}에 채굴기 3개를 넣었습니다 (기존 내용물 유지).");
     }
 
     /// <summary>

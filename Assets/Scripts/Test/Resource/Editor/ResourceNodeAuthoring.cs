@@ -21,9 +21,6 @@ public static class ResourceNodeAuthoring
     /// <summary>광맥 슬래브 두께(m). 지면 위로 이만큼 솟고, 그 윗면이 채굴기의 바닥이 된다.</summary>
     public const float SlabThickness = 0.2f;
 
-    /// <summary>채굴기 아이템 에셋 — 있으면 설치·회수에 쓰이도록 광맥에 꽂아 준다.</summary>
-    public const string MinerItemPath = "Assets/Data/Item/MinerItem.asset";
-
     /// <summary>현재 HUD가 쓰는 임시 아이콘 시트 (인벤토리 슬롯 테두리, 64px 격자).</summary>
     public const string IconSheet = "Assets/Art/Textures/Inventory/testetstsets.png";
 
