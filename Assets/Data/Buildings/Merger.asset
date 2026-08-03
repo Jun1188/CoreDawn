@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd30ca4b6f3d43a58d1584a8d27f2746, type: 3}
   m_Name: Merger
   m_EditorClassIdentifier: Assembly-CSharp::MergerDataSO
-  id: Buildings:Merger
+  id: Building:Merger
   displayName: "\uD569\uB958\uAE30"
-  description: "\uC5EC\uB7EC \uBCA8\uD2B8\uB97C \uD558\uB098\uB85C \uD569\uCE69\uB2C8\uB2E4."
+  description: "\uC5EC\uB7EC \uC785\uB825\uC744 \uD558\uB098\uB85C \uBAA8\uC740\uB2E4."
   icon: {fileID: 0}
   category: 1
   prefab: {fileID: 7962463567319494330, guid: 326f8420de63f324fbe1a0df87f16c51, type: 3}
@@ -34,6 +34,12 @@ MonoBehaviour:
     IsInput: 0
   inputSlots: 1
   outputSlots: 1
-  bufferStackCap: 1
+  bufferStackCap: 4
   requiredCoreTier: 0
   hideFromBuildMenu: 0
+  buildCost:
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 3
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 2
+  maxHp: 80

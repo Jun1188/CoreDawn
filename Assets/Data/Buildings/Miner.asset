@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c278536f4a3d434caf061c1cb5741cb3, type: 3}
-  m_Name: Minor
+  m_Name: Miner
   m_EditorClassIdentifier: Assembly-CSharp::MinerDataSO
-  id: Buildings:Minor
+  id: Building:Miner
   displayName: "\uCC44\uAD74\uAE30"
-  description: "\uAD11\uB9E5 \uC704\uC5D0 \uB193\uC544 \uC6D0\uAD11\uC744 \uCEA1\uB2C8\uB2E4."
+  description: "\uAD11\uB9E5 \uC704\uC5D0 \uB193\uC544 \uC790\uC6D0\uC744 \uCE94\uB2E4.
+    \uAD11\uB9E5\uC774 \uC5B4\uB824\uC6B8\uC218\uB85D \uB290\uB9AC\uB2E4."
   icon: {fileID: 0}
   category: 0
   prefab: {fileID: 8416679944086038086, guid: 687143ae40f3c5041a38fa275fc61709, type: 3}
@@ -23,9 +24,15 @@ MonoBehaviour:
   - LocalOffset: {x: 0, y: 0}
     Direction: 1
     IsInput: 0
-  inputSlots: 1
+  inputSlots: 0
   outputSlots: 1
-  bufferStackCap: 5
+  bufferStackCap: 10
   requiredCoreTier: 0
   hideFromBuildMenu: 0
-  processingTime: 1
+  buildCost:
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 6
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 4
+  maxHp: 150
+  speedMultiplier: 1

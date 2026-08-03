@@ -12,24 +12,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48936e0cc3d3477f855f2c57d104e68e, type: 3}
   m_Name: Assembler
   m_EditorClassIdentifier: Assembly-CSharp::AssemblerDataSO
-  id: Buildings:Assembler
+  id: Building:Assembler
   displayName: "\uC870\uB9BD\uAE30"
-  description: "\uC7AC\uB8CC 2\uC885\uC744 \uD569\uCCD0 \uBD80\uD488\uC744 \uB9CC\uB4ED\uB2C8\uB2E4."
+  description: "\uBD80\uD488 \uB450 \uC885\uC744 \uD569\uCCD0 \uC870\uB9BD \uBD80\uD488\uC744
+    \uB9CC\uB4E0\uB2E4."
   icon: {fileID: 0}
   category: 0
-  prefab: {fileID: 5279508996628763662, guid: f21554090b8662041865fae8ac84acf4, type: 3}
-  size: {x: 1, y: 1}
+  prefab: {fileID: 2807618140420393409, guid: f21554090b8662041865fae8ac84acf4, type: 3}
+  size: {x: 2, y: 2}
   ports:
   - LocalOffset: {x: 0, y: 0}
     Direction: 3
     IsInput: 1
-  - LocalOffset: {x: 0, y: 0}
+  - LocalOffset: {x: 0, y: 1}
+    Direction: 3
+    IsInput: 1
+  - LocalOffset: {x: 1, y: 0}
     Direction: 1
     IsInput: 0
-  inputSlots: 1
+  inputSlots: 2
   outputSlots: 1
-  bufferStackCap: 0
-  requiredCoreTier: 0
+  bufferStackCap: 10
+  requiredCoreTier: 1
   hideFromBuildMenu: 0
+  buildCost:
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 10
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 6
+  - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
+    amount: 8
+  maxHp: 250
   availableRecipes:
-  - {fileID: 11400000, guid: 02e2bc24d99c06a4faaee0b2d7e5cd9d, type: 2}
+  - {fileID: 11400000, guid: b1d193290d2f9a04ba055ee96dd755cc, type: 2}
+  - {fileID: 11400000, guid: 1f4309e7d1892ad49b242e4e1ece7aa3, type: 2}
+  - {fileID: 11400000, guid: b1d7e79feecfe4b48860c52a17e19e2e, type: 2}
+  - {fileID: 11400000, guid: 1b17519fe78e4ed40b14c375bcb1b68f, type: 2}
+  - {fileID: 11400000, guid: 0556b0cf44dc1174b932c938326a914f, type: 2}
+  - {fileID: 11400000, guid: 81f36f2327698b3459b4a2480d636959, type: 2}
+  - {fileID: 11400000, guid: 35fd2bc19a68b774391297d2adc48878, type: 2}

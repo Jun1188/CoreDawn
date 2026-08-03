@@ -367,3 +367,80 @@
 - 씬 전환 유지가 아직 필요 없는데 붙어 있어, 씬을 다시 로드하면 심이 둘이 됨
 - 씬 전환 간 공장 상태 유지가 필요해지면 세이브/로드로 푸는 편이 맞다
   (심 상태는 전부 plain 데이터 — 2026-07-07 심/뷰 분리 참조)
+
+---
+
+## 2026-08-04 — GameDataImporter 2차: 건물까지 JSON 임포트 + 프리팹 자동 생성
+
+07-26에 아이템·레시피만 받던 임포터를 `buildings` 섹션까지 확장. 브라우저 에디터가
+뽑은 GameData.json 하나로 **아이템 21 · 레시피 16 · 건물 19**가 전부 에셋이 된다
+(그동안 건물은 인스펙터 수작업이 유일한 경로였음).
+
+### 데이터 모델
+
+- **ItemType 9종 · ItemLine** — 위 2026-08-03 항목 참조. 이 임포터가 그 값을 JSON에서 읽는다
+- **AmmoItemSO** (`Runtime/Inventory/`) — `damage` 보유. **발당 피해는 탄약이, 배율은 포탑이**.
+  반대로 하면 새 탄약을 넣을 때마다 포탑 전부를 다시 만져야 함
+- **BuildingDataSO에 `buildCost`(레시피 슬롯 타입 재사용) + `maxHp`**
+- **OnValidate 포트 검증 3종** — 풋프린트 밖 / 중복 (offset,dir) / **안쪽을 향한 포트**.
+  마지막이 위험: 2×1 조립기의 (0,0) East는 이웃 칸이 자기 자신이라 아무와도 연결되지
+  않는데 런타임에는 조용한 stall로만 나타남
+
+### TowerDataSO — 심/씬 분리 (지시서와 다른 선택)
+
+지시서는 `TowerBehavior.Tick`이 조준·발사까지 하도록 돼 있었으나, `IBuildingBehavior`는
+씬 좌표도 몬스터도 모르는 헤드리스 심(테스트가 씬 없이 동기 실행)이라 심에서 타깃을 찾을 수 없음.
+
+| | 담당 |
+|---|---|
+| `TowerBehavior` (심) | 받을 탄약(`AcceptFilter`), 한 발 소비, 막힌 상류 깨우기 |
+| `BattleTower` (씬) | 언제 누구를 쏠지 — 기존 `SensorComponent`/`CombatComponent` 재사용 |
+
+- 포탑이 입력 포트를 갖는 성질은 유지 — 벨트를 이으면 `Building.Input`이 탄창이 되어
+  공장 배관이 그대로 보급선이 됨
+- `damageMultiplier <= 0`이면 `IsPassive` (Fence 같은 무장 없는 벽)
+- `CombatComponent.Configure(range, cooldown, damage?)` 추가 — SO 값이 인스펙터 값을 덮어씀.
+  `Sim`이 Awake 이후 PlacementBridge에서 주입되므로 `ApplyDataStats()`는 지연 적용
+
+### 채굴 속도 2축 분리
+
+`MinerDataSO.processingTime` → **`speedMultiplier`**(얼마나 좋은 채굴기인가) ×
+**`ResourceNode.extractInterval`**(얼마나 캐기 어려운 광맥인가).
+같은 채굴기로도 크리스탈 광맥이 느려야 하는데 전에는 표현할 방법이 없었음.
+`FactorySim.GetExtractIntervalAt`은 기존 `GetResourceAt`/`TryExtractResourceAt`과 같은 델리게이트 패턴.
+
+### 임포터
+
+- **처리 순서 아이템 → 레시피 → 건물** — 조립기의 `availableRecipes`가 레시피를,
+  레시피가 아이템을 참조하므로
+- `kind`로 서브클래스 선택 (Miner/Belt/Assembler/Splitter/Merger/Storage/Core/Tower)
+- **프리팹은 JSON에 모델 파일명만** 넣고 임포터가 만든다 — 프리팹 이름을 손으로 적으면
+  오타 하나가 조용한 null 참조가 됨
+- **기존 프리팹은 갈아엎지 않고 계약만 채운다** (`EnsureContract`: Entity · 풋프린트 콜라이더 ·
+  maxHp) — 모델·이펙트를 손으로 붙였을 수 있으므로. 07-26의 "이미 있으면 스킵"에서 바뀐 점
+- 모델이 없으면 풋프린트 크기 큐브로 대체 — 아트가 늦어도 배치·시뮬레이션이 먼저 굴러감
+- **클래스가 바뀐 에셋은 같은 id로 재생성** (ItemDataSO였던 탄약 5종 → AmmoItemSO).
+  뒤 패스가 id로 참조를 재해석하므로 레시피·건물 참조는 스스로 복구됨
+
+### 사전 정리 (임포트 전 필수였던 것)
+
+- 기존 건물 SO id가 `Buildings:`(복수)라 JSON의 `Building:`(단수)과 어긋나 **갱신 대신 중복 7건**이
+  생길 상황. id 정정 + 오타 `Minor` → `Miner`. `AssetDatabase.RenameAsset`이라 guid 보존 →
+  BuildingDatabase·씬 3개·MinerItem 참조 무손상
+- 새 JSON에서 1×1이 아닌 기존 프리팹(Assembler 2×2 · Storage 2×2 · Core 3×3)은 콜라이더가
+  풋프린트와 어긋나므로 삭제 후 재생성 (각자의 SO에서만 참조돼 씬 영향 없음)
+
+### 검수
+
+- 임포트 오류 0 / 재임포트 시 생성 0 · 갱신 56 — 개수·guid 모두 유지(멱등)
+- 탄약 5/5 AmmoItemSO, 조립기 4종의 레시피 16개 전부 연결, 프리팹 19종 콜라이더 = 풋프린트
+- 포트 검증이 의도한 3건을 정확히 검출
+
+### TODO
+
+- **포탑 프리팹에 `bulletPrefab` 미지정** — 지금은 `combat.TryAttack`의 즉시 피해로 폴백.
+  탄약 소비·피해 계산은 정상이라 밸런스는 맞지만 발사체가 안 보임.
+  JSON에 총알 프리팹 필드를 추가해 임포터가 연결하는 쪽이 정석
+- 기존 `RecipeImporter`(팀원)와 역할 중복 — 통합 여부 팀 논의 (07-26부터 이월)
+- **`Mine`은 절대 발사하지 못한다** — `TowerDataSO`인데 포트 0개이면서 `IsPassive`도 아니라
+  탄약이 들어올 입구가 없다. 지뢰라면 탄약 없이 터지는 별도 행동이 필요하다 (기획 판단 대기)

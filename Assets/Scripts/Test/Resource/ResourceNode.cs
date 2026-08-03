@@ -39,6 +39,12 @@ public class ResourceNode : MonoBehaviour
     [Tooltip("광맥이 덮는 칸 수 (가로, 세로). 오브젝트 위치가 풋프린트 중앙이다.")]
     [SerializeField] private Vector2Int size = Vector2Int.one;
 
+    [Header("채굴")]
+    [Tooltip("이 광맥에서 1개를 캐는 기준 시간(초). 배율 1인 채굴기 기준.\n" +
+             "재고 생성(productionInterval)과는 별개 축이다 — 이건 채굴 1회에 걸리는 시간이고, " +
+             "저건 재고가 차오르는 속도다. 둘 다 있으면 \"빨리 캘 순 있지만 재고가 금방 바닥나는 광맥\"도 표현된다.")]
+    [SerializeField] private float extractInterval = 1f;
+
     [Header("생산")]
     [Tooltip("몇 초마다 생산하는가. 심(FactorySim)의 시간 기준이라 일시정지·배속을 따른다.")]
     [SerializeField] private float productionInterval = 1f;
@@ -77,6 +83,9 @@ public class ResourceNode : MonoBehaviour
 
     /// <summary>한 주기의 길이(초). 0 이하 입력은 방어적으로 클램프한다.</summary>
     public float ProductionInterval => Mathf.Max(0.01f, productionInterval);
+
+    /// <summary>1개를 캐는 기준 시간(초) — 배율 1인 채굴기 기준.</summary>
+    public float ExtractInterval => Mathf.Max(0.01f, extractInterval);
 
     /// <summary>풋프린트 크기(타일). 항상 1 이상.</summary>
     public Vector2Int Size => new(Mathf.Max(1, size.x), Mathf.Max(1, size.y));
@@ -448,8 +457,13 @@ public static class ResourceNodeRegistry
     // ── 심 주입 — 채굴기는 이 두 함수를 통해서만 광맥을 만난다
 
     // 소켓에 꽂는 델리게이트는 한 번만 만들어 둔다 — 매 프레임 동일성 비교에 쓰기 위함
-    static readonly System.Func<Vector2Int, ItemDataSO> _resolveHook = ResolveMinerTarget;
-    static readonly System.Func<Vector2Int, int, int>   _extractHook = ExtractForMiner;
+    static readonly System.Func<Vector2Int, ItemDataSO> _resolveHook  = ResolveMinerTarget;
+    static readonly System.Func<Vector2Int, int, int>   _extractHook  = ExtractForMiner;
+    static readonly System.Func<Vector2Int, float>      _intervalHook = ExtractIntervalAt;
+
+    /// <summary>이 칸을 덮는 광맥의 채굴 기준 시간. 광맥이 없으면 1초(기존 동작).</summary>
+    static float ExtractIntervalAt(Vector2Int cell)
+        => _byCell.TryGetValue(cell, out var node) && node != null ? node.ExtractInterval : 1f;
 
     /// <summary>
     /// 씬의 심(FactoryBootstrap)에 자원 소켓을 연결한다. 멱등.
@@ -464,7 +478,8 @@ public static class ResourceNodeRegistry
         var sim = boot.Sim;
         if (ReferenceEquals(_hookedSim, sim) &&
             ReferenceEquals(sim.GetResourceAt, _resolveHook) &&
-            ReferenceEquals(sim.TryExtractResourceAt, _extractHook)) return;
+            ReferenceEquals(sim.TryExtractResourceAt, _extractHook) &&
+            ReferenceEquals(sim.GetExtractIntervalAt, _intervalHook)) return;
 
         HookSim(sim);
         _hookedSim = sim;
@@ -476,6 +491,7 @@ public static class ResourceNodeRegistry
         if (sim == null) return;
         sim.GetResourceAt        = _resolveHook;
         sim.TryExtractResourceAt = _extractHook;
+        sim.GetExtractIntervalAt = _intervalHook;
     }
 
     /// <summary>

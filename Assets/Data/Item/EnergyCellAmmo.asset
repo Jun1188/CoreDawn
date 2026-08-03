@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
+  m_Script: {fileID: 11500000, guid: b0e07f66bd29af546bfd695364c0f610, type: 3}
   m_Name: EnergyCellAmmo
-  m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoItemSO
   id: Item:EnergyCellAmmo
   displayName: "\uC5D0\uB108\uC9C0 \uC140 \uD0C4"
   description: "\uC5D0\uB108\uC9C0 \uC18C\uCD1D\xB7\uB808\uC774\uC800 \uD0C0\uC6CC\uC6A9
@@ -19,3 +19,4 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 3
+  damage: 10

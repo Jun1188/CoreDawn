@@ -12,11 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a63633ad3b4c39ae63992eaa703838, type: 3}
   m_Name: Splitter
   m_EditorClassIdentifier: Assembly-CSharp::SplitterDataSO
-  id: Buildings:Splitter
+  id: Building:Splitter
   displayName: "\uBD84\uBC30\uAE30"
-  description: "\uB4E4\uC5B4\uC628 \uC544\uC774\uD15C\uC744 \uC5EC\uB7EC \uCD9C\uAD6C\uB85C
-    \uB098\uB215\uB2C8\uB2E4. \uCD9C\uAD6C\uB9C8\uB2E4 \uC544\uC774\uD15C\uC744 \uC9C0\uC815\uD560
-    \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  description: "\uC785\uB825 \uD558\uB098\uB97C \uC5EC\uB7EC \uCD9C\uAD6C\uB85C \uB098\uB208\uB2E4.
+    \uCD9C\uAD6C\uBCC4 \uD544\uD130\uB97C \uAC78 \uC218 \uC788\uB2E4."
   icon: {fileID: 0}
   category: 1
   prefab: {fileID: 7962463567319494330, guid: ec8176281d9d0a540b8a96c88a550a42, type: 3}
@@ -26,16 +25,22 @@ MonoBehaviour:
     Direction: 3
     IsInput: 1
   - LocalOffset: {x: 0, y: 0}
-    Direction: 1
+    Direction: 0
     IsInput: 0
   - LocalOffset: {x: 0, y: 0}
-    Direction: 0
+    Direction: 1
     IsInput: 0
   - LocalOffset: {x: 0, y: 0}
     Direction: 2
     IsInput: 0
   inputSlots: 1
-  outputSlots: 1
-  bufferStackCap: 1
+  outputSlots: 0
+  bufferStackCap: 4
   requiredCoreTier: 0
   hideFromBuildMenu: 0
+  buildCost:
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 3
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 2
+  maxHp: 80

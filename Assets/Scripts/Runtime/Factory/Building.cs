@@ -55,6 +55,27 @@ public class Building
     /// <summary>회전/모양이 적용된 실제 포트 목록. BuildingGraph가 이걸 사용한다.</summary>
     public PortDefinition[] GetEffectivePorts() => PortOverride ?? Data.GetRotatedPorts(RotationSteps);
 
+    /// <summary>
+    /// 이 건물이 지정한 월드 칸에서 지정 방향을 향하는 포트를 갖고 있는가.
+    /// 순수 기하 질의다 — 연결 성립 규칙(입출력 짝) 자체는 BuildingGraph가 소유하므로
+    /// 여기에 다시 짓지 말 것. 포트 시각화가 "이미 맞물린 자리"를 걸러낼 때 쓴다.
+    /// </summary>
+    /// <param name="isInput">null이면 입출력을 가리지 않는다.</param>
+    public bool HasPortAt(Vector2Int cell, Direction dir, bool? isInput = null)
+    {
+        var ports = GetEffectivePorts();
+        if (ports == null) return false;
+
+        foreach (var p in ports)
+        {
+            if (p == null || p.Direction != dir) continue;
+            if (Origin + p.LocalOffset != cell) continue;
+            if (isInput.HasValue && p.IsInput != isInput.Value) continue;
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>BuildingGraph.OnPlaced() 완료 후 호출 — 연결이 확정된 뒤 초기화.</summary>
     public void OnAfterConnected() => _behavior?.OnAfterPlaced();
 
