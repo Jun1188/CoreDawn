@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LevelUpProj26 — UI 디자인 시스템 레퍼런스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   토큰 — 이 :root 블록이 곧 USS 변수 원본이다.
+   ui- 접두 클래스 = 게임 UI 컴포넌트 (USS로 1:1 이식 대상)
+   doc- 접두 클래스 = 이 문서 전용 (이식 대상 아님)
+   ═══════════════════════════════════════════════════════════ */
+:root{
+  /* 배경 계층 */
+  --bg-void:#0B1220;      /* 화면 최하단 */
+  --bg-panel:#111B2E;     /* 패널 본체 */
+  --bg-inset:#0E1727;     /* 패널 안에 파인 영역 (슬롯, 입력칸) */
+  --bg-raised:#16243C;    /* 호버·선택된 행 */
+
+  /* 선 */
+  --line:#223350;
+  --line-strong:#2E4266;
+
+  /* 글자 */
+  --text:#D9E4F5;
+  --text-dim:#8FA3C0;
+  --text-faint:#5C6E8C;
+
+  /* 계통색 — 자원·부품의 소속을 나타낸다 */
+  --iron:#E8A54B;      /* 구조 계통 (철) */
+  --copper:#4FD8E0;    /* 전자 계통 (구리) */
+  --crystal:#B48CFF;   /* 동력 계통 (크리스탈) */
+  --beast:#FF5D73;     /* 괴수 소재 */
+
+  /* 상태색 */
+  --ok:#5DD39E;
+  --warn:#E8A54B;      /* = iron. 문맥이 달라 충돌하지 않는다 (§1 참고) */
+  --danger:#FF5D73;    /* = beast. 둘 다 "적대·주의"를 뜻한다 */
+
+  /* 간격 — 4의 배수만 사용 */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
+
+  /* 모서리 */
+  --r-sm:4px; --r-md:6px; --r-lg:9px; --r-pill:999px;
+
+  /* 글자 크기 */
+  --fs-micro:11px;   /* 라벨, 키 힌트 */
+  --fs-cap:12.5px;   /* 보조 설명 */
+  --fs-body:14px;
+  --fs-sub:16px;
+  --fs-title:20px;
+
+  /* 폰트 역할 */
+  --font-display:'Chakra Petch',sans-serif;  /* 영문 라벨, 시스템 문구 */
+  --font-body:'IBM Plex Sans KR',sans-serif; /* 한글 본문 */
+  --font-data:'IBM Plex Mono',monospace;     /* 수량, 좌표, 시간 */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *{animation:none!important;transition:none!important}}
+body{background:var(--bg-void);color:var(--text);font-family:var(--font-body);font-size:var(--fs-body);line-height:1.6}
+.doc-wrap{max-width:1120px;margin:0 auto;padding:0 var(--space-5) 120px}
+
+/* ── 문서 헤더 ── */
+.doc-head{padding:56px 0 var(--space-5);border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.doc-head::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(79,216,224,.03) 0 1px,transparent 1px 3px)}
+.doc-eyebrow{font-family:var(--font-display);font-size:var(--fs-micro);letter-spacing:.16em;color:var(--copper);
+  display:flex;align-items:center;gap:var(--space-2)}
+.doc-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.doc-head h1{font-size:32px;font-weight:700;margin:var(--space-3) 0 var(--space-2);letter-spacing:-.01em}
+.doc-head p{color:var(--text-dim);max-width:66ch}
+.doc-meta{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-4)}
+.doc-meta span{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-dim);
+  border:1px solid var(--line);border-radius:var(--r-sm);padding:3px 9px;background:var(--bg-inset)}
+
+/* ── 섹션 ── */
+.doc-sec{margin-top:72px}
+.doc-sec-head{display:flex;align-items:baseline;gap:var(--space-3);padding-bottom:var(--space-2);
+  border-bottom:1px solid var(--line);margin-bottom:var(--space-5)}
+.doc-sec-head .n{font-family:var(--font-data);font-size:var(--fs-cap);color:var(--copper)}
+.doc-sec-head h2{font-size:var(--fs-title);font-weight:600}
+.doc-sec-head .aside{margin-left:auto;font-size:var(--fs-cap);color:var(--text-faint)}
+.doc-lead{color:var(--text-dim);font-size:13.5px;max-width:78ch;margin-bottom:var(--space-5)}
+.doc-lead b{color:var(--text)}
+.doc-note{color:var(--text-dim);font-size:13px;max-width:78ch;margin-top:var(--space-4);
+  border-left:2px solid var(--line-strong);padding-left:var(--space-3)}
+.doc-note b{color:var(--text)}
+code{font-family:var(--font-data);font-size:12px;color:var(--copper);
+  background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--r-sm);padding:1px 5px}
+
+/* ── 스와치 ── */
+.doc-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--space-3)}
+.doc-swatch{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--bg-panel)}
+.doc-swatch .chip{height:56px;position:relative}
+.doc-swatch .meta{padding:var(--space-2) var(--space-3) var(--space-3)}
+.doc-swatch .var{font-family:var(--font-data);font-size:12px;color:var(--text)}
+.doc-swatch .hex{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-faint);float:right}
+.doc-swatch .use{font-size:var(--fs-micro);color:var(--text-dim);display:block;margin-top:var(--space-1);line-height:1.5}
+
+/* ── 스케일 표 ── */
+.doc-scale{display:grid;gap:var(--space-2)}
+.doc-scale .row{display:grid;grid-template-columns:120px 68px 1fr;gap:var(--space-3);align-items:center;
+  border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-panel);padding:var(--space-2) var(--space-3)}
+.doc-scale .k{font-family:var(--font-data);font-size:12px;color:var(--copper)}
+.doc-scale .v{font-family:var(--font-data);font-size:12px;color:var(--text-faint)}
+.doc-scale .bar{height:12px;background:var(--copper);border-radius:2px;opacity:.55}
+.doc-type-row{display:grid;grid-template-columns:120px 68px 1fr;gap:var(--space-3);align-items:baseline;
+  border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-panel);padding:var(--space-2) var(--space-3)}
+
+/* ── 컴포넌트 카드: 좌 실물 / 우 스펙 ── */
+.doc-part{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg-panel);
+  margin-bottom:var(--space-4);position:relative}
+.doc-part::before,.doc-part::after{content:"";position:absolute;width:10px;height:10px;border-color:var(--line-strong);border-style:solid;pointer-events:none}
+.doc-part::before{top:-1px;left:-1px;border-width:1.5px 0 0 1.5px;border-radius:var(--r-lg) 0 0 0}
+.doc-part::after{bottom:-1px;right:-1px;border-width:0 1.5px 1.5px 0;border-radius:0 0 var(--r-lg) 0}
+.doc-part-head{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);
+  border-bottom:1px solid var(--line)}
+.doc-part-head .code{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--crystal);
+  border:1px solid rgba(180,140,255,.4);border-radius:var(--r-sm);padding:2px 7px}
+.doc-part-head h3{font-size:15px;font-weight:600}
+.doc-part-head .cls{margin-left:auto;font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-faint)}
+.doc-part-body{display:grid;grid-template-columns:1fr 320px}
+@media(max-width:900px){.doc-part-body{grid-template-columns:1fr}}
+.doc-demo{padding:var(--space-5);background:
+  radial-gradient(circle at 1px 1px, rgba(79,216,224,.06) 1px, transparent 1px) 0 0/24px 24px, var(--bg-void);
+  display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-start;border-radius:0 0 0 var(--r-lg)}
+.doc-demo.col{flex-direction:column}
+.doc-spec{border-left:1px solid var(--line);padding:var(--space-4);font-size:var(--fs-cap);color:var(--text-dim)}
+@media(max-width:900px){.doc-spec{border-left:none;border-top:1px solid var(--line)}}
+.doc-spec dl{display:grid;grid-template-columns:auto 1fr;gap:var(--space-1) var(--space-3);margin-bottom:var(--space-3)}
+.doc-spec dt{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-faint);white-space:nowrap}
+.doc-spec dd{font-size:12px}
+.doc-spec .usage{border-top:1px dashed var(--line);padding-top:var(--space-2);line-height:1.6;font-size:12px}
+.doc-spec .usage b{color:var(--text)}
+
+/* ── 코드 블록 ── */
+.doc-code{background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:var(--space-3) var(--space-4);overflow-x:auto;font-family:var(--font-data);font-size:12px;
+  line-height:1.7;color:var(--text-dim);white-space:pre}
+.doc-code .c{color:var(--text-faint)}      /* 주석 */
+.doc-code .s{color:var(--copper)}          /* 선택자/키 */
+.doc-code .v{color:var(--iron)}            /* 값 */
+
+/* ═══════════════════════════════════════════════════════════
+   ui- : 게임 UI 컴포넌트. 아래 규칙이 USS로 그대로 옮겨진다.
+   ═══════════════════════════════════════════════════════════ */
+
+/* 패널 */
+.ui-panel{background:var(--bg-panel);border:1px solid var(--line-strong);border-radius:var(--r-lg);
+  min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.45)}
+.ui-panel__title{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);
+  border-bottom:1px solid var(--line);font-size:var(--fs-cap);font-weight:600;letter-spacing:.04em;color:var(--text)}
+.ui-panel__title .tag{font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--copper);
+  border:1px solid rgba(79,216,224,.35);border-radius:var(--r-sm);padding:1px 6px}
+.ui-panel__x{width:22px;height:22px;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--text-faint);
+  font-family:var(--font-data);font-size:12px;line-height:1;cursor:pointer;flex-shrink:0}
+.ui-panel__x:hover{border-color:var(--danger);color:var(--danger);background:rgba(255,93,115,.08)}
+.ui-panel__body{padding:var(--space-4)}
+.ui-panel--inset{background:var(--bg-inset);border-color:var(--line)}
+
+/* 버튼 */
+.ui-btn{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text);
+  background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:var(--r-md);
+  padding:var(--space-2) var(--space-4);cursor:pointer;display:inline-flex;align-items:center;gap:var(--space-2);
+  transition:border-color .12s,background .12s}
+.ui-btn:hover{border-color:var(--copper);background:#1B2C48}
+.ui-btn--primary{color:var(--copper);border-color:rgba(79,216,224,.55);background:rgba(79,216,224,.08)}
+.ui-btn--primary:hover{background:rgba(79,216,224,.16)}
+.ui-btn--danger{color:var(--danger);border-color:rgba(255,93,115,.5);background:rgba(255,93,115,.07)}
+.ui-btn--danger:hover{background:rgba(255,93,115,.15)}
+.ui-btn--ghost{background:transparent;border-color:var(--line);color:var(--text-dim)}
+.ui-btn:disabled,.ui-btn--disabled{opacity:.4;cursor:not-allowed;border-color:var(--line);background:var(--bg-inset);color:var(--text-faint)}
+.ui-btn__key{font-family:var(--font-data);font-size:10px;color:var(--text-faint);
+  border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:var(--space-1)}
+
+/* 진행바 — 연속형 */
+.ui-bar{height:8px;background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden;min-width:120px}
+.ui-bar__fill{height:100%;background:var(--copper);border-radius:var(--r-pill)}
+.ui-bar--iron .ui-bar__fill{background:var(--iron)}
+.ui-bar--crystal .ui-bar__fill{background:var(--crystal)}
+.ui-bar--danger .ui-bar__fill{background:var(--danger)}
+.ui-bar--thick{height:14px}
+
+/* 진행바 — 분할형 (탄창, 웨이브 잔여 등 셀 수 있는 것) */
+.ui-seg{display:flex;gap:3px}
+.ui-seg i{width:9px;height:14px;border-radius:2px;background:var(--iron);opacity:.9}
+.ui-seg i.empty{background:transparent;border:1px solid var(--line-strong);opacity:.6}
+
+/* 칩 — 부품 수량 */
+.ui-chip{display:inline-flex;align-items:center;gap:var(--space-2);font-size:12px;color:var(--text-dim);
+  background:var(--bg-inset);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:3px 9px}
+.ui-chip__n{font-family:var(--font-data);font-weight:600}
+.ui-chip--iron{border-color:rgba(232,165,75,.5)} .ui-chip--iron .ui-chip__n{color:var(--iron)}
+.ui-chip--copper{border-color:rgba(79,216,224,.5)} .ui-chip--copper .ui-chip__n{color:var(--copper)}
+.ui-chip--crystal{border-color:rgba(180,140,255,.5)} .ui-chip--crystal .ui-chip__n{color:var(--crystal)}
+.ui-chip--beast{border-color:rgba(255,93,115,.5)} .ui-chip--beast .ui-chip__n{color:var(--beast)}
+.ui-chip--done{border-color:rgba(93,211,158,.5)} .ui-chip--done .ui-chip__n{color:var(--ok)}
+
+/* 아이템 슬롯 */
+.ui-slot{width:52px;height:52px;background:var(--bg-inset);border:1px solid var(--line-strong);
+  border-radius:var(--r-md);position:relative;display:flex;align-items:center;justify-content:center}
+.ui-slot__icon{width:26px;height:26px;border-radius:3px;background:var(--line-strong)}
+.ui-slot__n{position:absolute;right:4px;bottom:3px;line-height:1;font-family:var(--font-data);font-size:var(--fs-micro);
+  font-weight:600;color:#fff;
+  text-shadow:0 0 2px #000, 1px 0 1px #000, -1px 0 1px #000, 0 1px 1px #000, 0 -1px 1px #000;
+  -webkit-text-stroke:.4px rgba(0,0,0,.9);paint-order:stroke fill}
+.ui-slot--active{border-color:var(--copper);box-shadow:0 0 0 1px rgba(79,216,224,.35)}
+.ui-slot--empty .ui-slot__icon{background:transparent;border:1px dashed var(--line)}
+.ui-slot__key{position:absolute;left:4px;top:3px;line-height:1;font-family:var(--font-data);font-size:9px;color:var(--text-faint)}
+
+/* 리스트 행 */
+.ui-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);
+  border-radius:var(--r-md);border:1px solid transparent;cursor:pointer;min-width:280px}
+.ui-row:hover{background:var(--bg-raised)}
+.ui-row--selected{background:var(--bg-raised);border-color:var(--copper)}
+.ui-row__name{font-size:13px}
+.ui-row__meta{margin-left:auto;font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-faint)}
+.ui-row--locked{opacity:.45;cursor:not-allowed}
+
+/* 탭 */
+.ui-tabs{display:flex;gap:var(--space-1);border-bottom:1px solid var(--line)}
+.ui-tab{font-size:12.5px;color:var(--text-faint);padding:var(--space-2) var(--space-3);
+  border-bottom:2px solid transparent;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none}
+.ui-tab--active{color:var(--copper);border-bottom-color:var(--copper)}
+
+/* 툴팁 */
+.ui-tooltip{background:var(--bg-panel);border:1px solid var(--line-strong);border-radius:var(--r-md);
+  padding:var(--space-3);max-width:260px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.ui-tooltip__name{font-size:13px;font-weight:600;margin-bottom:2px}
+.ui-tooltip__type{font-family:var(--font-display);font-size:10px;letter-spacing:.1em;color:var(--text-faint);margin-bottom:var(--space-2)}
+.ui-tooltip__desc{font-size:12px;color:var(--text-dim);line-height:1.55}
+.ui-tooltip__sep{height:1px;background:var(--line);margin:var(--space-2) 0}
+.ui-tooltip__stat{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim)}
+.ui-tooltip__stat b{font-family:var(--font-data);color:var(--text);font-weight:500}
+
+/* 키 힌트 */
+.ui-key{display:inline-flex;align-items:center;gap:var(--space-2);font-size:12px;color:var(--text-dim)}
+.ui-key__cap{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text);
+  background:var(--bg-inset);border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:var(--r-sm);padding:1px 6px}
+
+/* 라벨 + 수치 (HUD 공용) */
+.ui-stat{display:flex;flex-direction:column;gap:2px}
+.ui-stat__label{font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)}
+.ui-stat__value{font-family:var(--font-data);font-size:var(--fs-sub);color:var(--text)}
+
+/* 수량 스테퍼 */
+.ui-stepper{display:inline-flex;align-items:center;gap:1px;background:var(--bg-inset);
+  border:1px solid var(--line-strong);border-radius:var(--r-md);overflow:hidden}
+.ui-stepper__btn{width:24px;height:26px;background:transparent;border:none;color:var(--text-dim);
+  font-family:var(--font-data);font-size:13px;cursor:pointer;line-height:1}
+.ui-stepper__btn:hover{background:var(--bg-raised);color:var(--copper)}
+.ui-stepper__n{width:40px;text-align:center;font-family:var(--font-data);font-size:12.5px;color:var(--text);
+  border-left:1px solid var(--line);border-right:1px solid var(--line);line-height:26px}
+.ui-stepper__max{height:26px;padding:0 8px;background:transparent;border:none;border-left:1px solid var(--line);
+  font-family:var(--font-display);font-size:10px;letter-spacing:.08em;color:var(--text-faint);cursor:pointer}
+.ui-stepper__max:hover{color:var(--copper)}
+.ui-stepper--off{opacity:.35;pointer-events:none}
+
+/* 데이터 표 (납품·재료 목록) */
+.ui-table{display:grid;gap:2px}
+.ui-table__head,.ui-table__row{display:grid;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3)}
+.ui-table__head>*,.ui-table__row>*{min-width:0}
+.ui-table .ui-bar{min-width:0}
+.ui-table .ui-chip{min-width:0;overflow:hidden}
+.ui-table__head{font-family:var(--font-display);font-size:10px;letter-spacing:.1em;color:var(--text-faint);
+  border-bottom:1px solid var(--line);padding-bottom:var(--space-2)}
+.ui-table__row{background:var(--bg-inset);border:1px solid transparent;border-radius:var(--r-md)}
+.ui-table__row:hover{border-color:var(--line-strong)}
+.ui-table__row--done{opacity:.62}
+.ui-num{font-family:var(--font-data);font-size:12.5px;color:var(--text)}
+.ui-num--dim{color:var(--text-faint)}
+.ui-num--short{color:var(--danger)}
+.ui-num--ok{color:var(--ok)}
+
+/* 수리 단계 레일 (패널 좌측) */
+.ui-rail{display:flex;flex-direction:column;gap:0;padding-right:var(--space-4);border-right:1px solid var(--line)}
+.ui-rail__step{display:flex;gap:var(--space-3);align-items:flex-start;padding-bottom:var(--space-4);position:relative}
+.ui-rail__step::after{content:"";position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--line)}
+.ui-rail__step:last-child{padding-bottom:0}
+.ui-rail__step:last-child::after{display:none}
+.ui-rail__dot{width:23px;height:23px;border-radius:50%;border:1.5px solid var(--line-strong);background:var(--bg-panel);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:11px;
+  color:var(--text-faint);flex-shrink:0;z-index:1}
+.ui-rail__step--done .ui-rail__dot{border-color:var(--ok);color:var(--ok)}
+.ui-rail__step--active .ui-rail__dot{border-color:var(--crystal);color:var(--crystal);box-shadow:0 0 0 3px rgba(180,140,255,.15)}
+.ui-rail__label{font-size:12.5px;color:var(--text-faint);line-height:1.35;padding-top:3px}
+.ui-rail__step--active .ui-rail__label{color:var(--text)}
+.ui-rail__sub{display:block;font-size:10.5px;color:var(--text-faint);margin-top:1px}
+
+/* 제작 결과 미리보기 */
+.ui-yield{display:flex;align-items:center;gap:var(--space-3);background:var(--bg-inset);
+  border:1px solid var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)}
+.ui-yield__arrow{color:var(--text-faint);font-family:var(--font-data);font-size:14px}
+.ui-btn--hold{position:relative;overflow:hidden;justify-content:center}
+.ui-btn--hold .ui-btn__fill{position:absolute;left:0;top:0;bottom:0;background:rgba(79,216,224,.22);pointer-events:none}
+.ui-btn--hold .ui-btn__label{position:relative;display:flex;align-items:center;gap:var(--space-2)}
+.ui-mat{display:flex;align-items:center;gap:var(--space-2);padding:5px var(--space-2);
+  background:var(--bg-inset);border:1px solid transparent;border-left-width:2px;border-radius:var(--r-sm)}
+.ui-mat__name{font-size:12px;color:var(--text-dim)}
+.ui-mat__n{margin-left:auto;font-family:var(--font-data);font-size:12px;color:var(--text)}
+.ui-mat--iron{border-left-color:var(--iron)} .ui-mat--copper{border-left-color:var(--copper)}
+.ui-mat--crystal{border-left-color:var(--crystal)} .ui-mat--beast{border-left-color:var(--beast)}
+.ui-mat--short{border-left-color:var(--danger)} .ui-mat--short .ui-mat__n{color:var(--danger)}
+/* 나침반 (HUD 상단) */
+.ui-compass{position:relative;height:34px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.ui-compass__tick{position:absolute;bottom:0;width:1px;background:var(--line-strong)}
+.ui-compass__label{position:absolute;bottom:11px;transform:translateX(-50%);
+  font-family:var(--font-display);font-size:10px;letter-spacing:.06em;color:var(--text-dim)}
+.ui-compass__label--card{color:var(--text);font-size:11.5px;font-weight:600}
+.ui-compass__mark{position:absolute;bottom:2px;transform:translateX(-50%)}
+.ui-compass__center{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(217,228,245,.35);transform:translateX(-50%)}
+
+/* 잠긴 영역 */
+.ui-locked{border:1px dashed var(--line-strong);border-radius:var(--r-md);background:var(--bg-inset);
+  padding:var(--space-4);text-align:center;color:var(--text-faint)}
+.ui-locked__title{font-family:var(--font-display);font-size:11px;letter-spacing:.12em;margin-bottom:var(--space-1)}
+.ui-locked__desc{font-size:11.5px;line-height:1.55}
+/* 검색 입력 */
+.ui-search{display:flex;align-items:center;gap:var(--space-2);background:var(--bg-inset);
+  border:1px solid var(--line-strong);border-radius:var(--r-md);padding:0 var(--space-2);height:30px}
+.ui-search:focus-within{border-color:var(--copper)}
+.ui-search__icon{flex-shrink:0;opacity:.65}
+.ui-search__input{flex:1;min-width:0;background:none;border:none;color:var(--text);font-size:12.5px;
+  font-family:var(--font-body);padding:0;height:100%}
+.ui-search__input::placeholder{color:var(--text-faint)}
+.ui-search__input:focus{outline:none}
+.ui-search__clear{flex-shrink:0;background:none;border:none;color:var(--text-faint);cursor:pointer;
+  font-family:var(--font-data);font-size:12px;line-height:1;padding:2px 4px}
+.ui-search__clear:hover{color:var(--text)}
+
+/* 스크롤 목록 */
+.ui-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+  scrollbar-color:var(--line-strong) transparent;padding-right:4px}
+.ui-scroll::-webkit-scrollbar{width:6px}
+.ui-scroll::-webkit-scrollbar-track{background:transparent}
+.ui-scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+.ui-scroll::-webkit-scrollbar-thumb:hover{background:var(--text-faint)}
+.ui-timepill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-data);font-size:11.5px;
+  color:var(--text-dim);background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--r-pill);padding:2px 9px}
+</style>
+</head>
+<body>
+<div class="doc-wrap">
+
+<header class="doc-head">
+  <div class="doc-eyebrow"><span class="dot"></span>UI DESIGN SYSTEM · REFERENCE BUILD</div>
+  <h1>LevelUpProj26 — UI 규격 레퍼런스</h1>
+  <p>UI Toolkit 이식용 원본 명세. 이 문서에 보이는 컴포넌트는 전부 실제로 렌더링된 것이고,
+     여기 쓰인 CSS 변수와 클래스 이름이 그대로 USS 변수·클래스가 된다. 왼쪽은 실물, 오른쪽은 스펙.</p>
+  <div class="doc-meta">
+    <span>UI Toolkit (UXML + USS)</span>
+    <span>Unity 6.3 LTS</span>
+    <span>1920×1080 기준</span>
+    <span>ui- 접두 = 이식 대상</span>
+    <span>doc- 접두 = 문서 전용</span>
+  </div>
+</header>
+
+<!-- ══════════ 1. 색상 ══════════ -->
+<section class="doc-sec" id="color">
+  <div class="doc-sec-head"><span class="n">01</span><h2>색상 토큰</h2><span class="aside">USS: <code>--변수명</code> 그대로</span></div>
+  <p class="doc-lead">색은 세 갈래로만 쓴다. <b>배경 계층</b>은 깊이를, <b>계통색</b>은 자원·부품의 소속을, <b>상태색</b>은 지금 무슨 일이 일어났는지를 말한다.
+     계통색은 테크트리 문서와 같은 값이라 기획서와 게임 화면이 자동으로 일치한다.</p>
+
+  <h3 style="font-size:13px;color:var(--text-faint);margin:0 0 var(--space-3);font-family:var(--font-display);letter-spacing:.1em">배경 · 선 · 글자</h3>
+  <div class="doc-swatches" style="margin-bottom:var(--space-5)">
+    <div class="doc-swatch"><div class="chip" style="background:#0B1220"></div><div class="meta"><span class="var">--bg-void</span><span class="hex">#0B1220</span><span class="use">화면 최하단. 3D 위에 덮이는 반투명 배경도 이 색 기준</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#111B2E"></div><div class="meta"><span class="var">--bg-panel</span><span class="hex">#111B2E</span><span class="use">패널 본체. 창·팝업의 기본 바닥</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#0E1727"></div><div class="meta"><span class="var">--bg-inset</span><span class="hex">#0E1727</span><span class="use">패널 안에 파인 영역 — 슬롯, 입력칸, 진행바 트랙</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#16243C"></div><div class="meta"><span class="var">--bg-raised</span><span class="hex">#16243C</span><span class="use">호버·선택된 행. 버튼 기본 바닥</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#223350"></div><div class="meta"><span class="var">--line</span><span class="hex">#223350</span><span class="use">구분선, 비활성 테두리</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#2E4266"></div><div class="meta"><span class="var">--line-strong</span><span class="hex">#2E4266</span><span class="use">패널 외곽선, 슬롯 테두리</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#D9E4F5"></div><div class="meta"><span class="var">--text</span><span class="hex">#D9E4F5</span><span class="use">본문·수치. 순백은 쓰지 않는다</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#8FA3C0"></div><div class="meta"><span class="var">--text-dim</span><span class="hex">#8FA3C0</span><span class="use">보조 설명, 비강조 항목</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#5C6E8C"></div><div class="meta"><span class="var">--text-faint</span><span class="hex">#5C6E8C</span><span class="use">라벨, 단위, 키 힌트</span></div></div>
+  </div>
+
+  <h3 style="font-size:13px;color:var(--text-faint);margin:0 0 var(--space-3);font-family:var(--font-display);letter-spacing:.1em">계통색 — 소속을 말한다</h3>
+  <div class="doc-swatches" style="margin-bottom:var(--space-5)">
+    <div class="doc-swatch"><div class="chip" style="background:#E8A54B"></div><div class="meta"><span class="var">--iron</span><span class="hex">#E8A54B</span><span class="use">구조 계통. 철광석·철판·선체 패널·물리 탄약</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#4FD8E0"></div><div class="meta"><span class="var">--copper</span><span class="hex">#4FD8E0</span><span class="use">전자 계통. 구리·회로·제어 유닛. UI 기본 강조색 겸용</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#B48CFF"></div><div class="meta"><span class="var">--crystal</span><span class="hex">#B48CFF</span><span class="use">동력 계통. 크리스탈·에너지 셀·동력 모듈</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#FF5D73"></div><div class="meta"><span class="var">--beast</span><span class="hex">#FF5D73</span><span class="use">괴수 소재·둥지·적대 요소</span></div></div>
+  </div>
+
+  <h3 style="font-size:13px;color:var(--text-faint);margin:0 0 var(--space-3);font-family:var(--font-display);letter-spacing:.1em">상태색 — 일어난 일을 말한다</h3>
+  <div class="doc-swatches">
+    <div class="doc-swatch"><div class="chip" style="background:#5DD39E"></div><div class="meta"><span class="var">--ok</span><span class="hex">#5DD39E</span><span class="use">완료, 충족, 가동 중</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#E8A54B"></div><div class="meta"><span class="var">--warn</span><span class="hex">#E8A54B</span><span class="use">부족, 대기, 곧 시작 (= --iron)</span></div></div>
+    <div class="doc-swatch"><div class="chip" style="background:#FF5D73"></div><div class="meta"><span class="var">--danger</span><span class="hex">#FF5D73</span><span class="use">피해, 파괴, 되돌릴 수 없는 조작 (= --beast)</span></div></div>
+  </div>
+
+  <p class="doc-note"><b>상태색이 계통색과 값을 공유한다.</b> 의도된 것이다 — 괴수와 위험은 둘 다 "적대", 철과 경고는 둘 다 "주의해서 다룰 것"을 뜻한다.
+    다만 USS 변수는 반드시 분리해서 선언할 것. 나중에 밸런스나 아트 방향이 바뀌어 둘을 갈라야 할 때, 변수만 다른 값으로 바꾸면 끝난다.</p>
+</section>
+
+<!-- ══════════ 2. 간격·모서리·타이포 ══════════ -->
+<section class="doc-sec" id="scale">
+  <div class="doc-sec-head"><span class="n">02</span><h2>간격 · 모서리 · 타이포</h2><span class="aside">4의 배수 외 값 금지</span></div>
+  <p class="doc-lead">임의의 픽셀값을 쓰기 시작하면 규격이 무너진다. <b>여백은 여섯 단계, 모서리는 네 단계, 글자는 다섯 단계</b>가 전부다.
+     이 표에 없는 값이 필요하면 그건 대개 레이아웃을 잘못 짠 것이다.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)">
+    <div>
+      <h3 style="font-size:13px;color:var(--text-faint);margin:0 0 var(--space-3);font-family:var(--font-display);letter-spacing:.1em">간격</h3>
+      <div class="doc-scale">
+        <div class="row"><span class="k">--space-1</span><span class="v">4px</span><div class="bar" style="width:4px"></div></div>
+        <div class="row"><span class="k">--space-2</span><span class="v">8px</span><div class="bar" style="width:8px"></div></div>
+        <div class="row"><span class="k">--space-3</span><span class="v">12px</span><div class="bar" style="width:12px"></div></div>
+        <div class="row"><span class="k">--space-4</span><span class="v">16px</span><div class="bar" style="width:16px"></div></div>
+        <div class="row"><span class="k">--space-5</span><span class="v">24px</span><div class="bar" style="width:24px"></div></div>
+        <div class="row"><span class="k">--space-6</span><span class="v">32px</span><div class="bar" style="width:32px"></div></div>
+      </div>
+      <p class="doc-note" style="font-size:12px">패널 안쪽 여백 <code>--space-4</code>, 항목 사이 <code>--space-2</code>,
+        섹션 사이 <code>--space-5</code>가 기본값이다.</p>
+    </div>
+    <div>
+      <h3 style="font-size:13px;color:var(--text-faint);margin:0 0 var(--space-3);font-family:var(--font-display);letter-spacing:.1em">모서리</h3>
+      <div class="doc-scale">
+        <div class="row"><span class="k">--r-sm</span><span class="v">4px</span><div style="width:34px;height:20px;background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:4px"></div></div>
+        <div class="row"><span class="k">--r-md</span><span class="v">6px</span><div style="width:34px;height:20px;background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:6px"></div></div>
+        <div class="row"><span class="k">--r-lg</span><span class="v">9px</span><div style="width:34px;height:20px;background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:9px"></div></div>
+        <div class="row"><span class="k">--r-pill</span><span class="v">999px</span><div style="width:34px;height:20px;background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:999px"></div></div>
+      </div>
+      <p class="doc-note" style="font-size:12px">칩·태그 <code>--r-sm</code>, 버튼·슬롯 <code>--r-md</code>,
+        패널 <code>--r-lg</code>, 진행바 <code>--r-pill</code>.</p>
+    </div>
+  </div>
+
+  <h3 style="font-size:13px;color:var(--text-faint);margin:var(--space-5) 0 var(--space-3);font-family:var(--font-display);letter-spacing:.1em">글자 — 세 가지 폰트가 각자 다른 일을 한다</h3>
+  <div class="doc-scale">
+    <div class="doc-type-row"><span class="k">--fs-title</span><span class="v">20px</span><span style="font-size:20px;font-weight:600">패널 제목 · 화면 이름</span></div>
+    <div class="doc-type-row"><span class="k">--fs-sub</span><span class="v">16px</span><span style="font-size:16px">강조 수치 · 부제</span></div>
+    <div class="doc-type-row"><span class="k">--fs-body</span><span class="v">14px</span><span style="font-size:14px">본문. 대부분의 글자는 이 크기다</span></div>
+    <div class="doc-type-row"><span class="k">--fs-cap</span><span class="v">12.5px</span><span style="font-size:12.5px;color:var(--text-dim)">보조 설명 · 리스트 항목</span></div>
+    <div class="doc-type-row"><span class="k">--fs-micro</span><span class="v">11px</span><span style="font-size:11px;color:var(--text-faint)">라벨 · 단위 · 키 힌트. 이보다 작게 쓰지 않는다</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-top:var(--space-3)">
+    <div class="doc-swatch"><div class="meta"><span class="var">--font-display</span><br>
+      <span style="font-family:var(--font-display);font-size:16px;letter-spacing:.06em;color:var(--copper)">CORE INTEGRITY 62%</span>
+      <span class="use">Chakra Petch. 영문 시스템 문구·라벨 전용. 한글에 쓰지 않는다</span></div></div>
+    <div class="doc-swatch"><div class="meta"><span class="var">--font-body</span><br>
+      <span style="font-size:15px">선체 패널이 부족합니다</span>
+      <span class="use">IBM Plex Sans KR. 모든 한글 본문</span></div></div>
+    <div class="doc-swatch"><div class="meta"><span class="var">--font-data</span><br>
+      <span style="font-family:var(--font-data);font-size:16px">20 / 40 · 02:15</span>
+      <span class="use">IBM Plex Mono. 수량·시간·좌표. 폭이 고정돼 숫자가 흔들리지 않는다</span></div></div>
+  </div>
+</section>
+
+<!-- ══════════ 3. 컴포넌트 카탈로그 ══════════ -->
+<section class="doc-sec" id="parts">
+  <div class="doc-sec-head"><span class="n">03</span><h2>컴포넌트 카탈로그</h2><span class="aside">부품 코드 = USS 클래스 1:1</span></div>
+  <p class="doc-lead">화면은 전부 아래 열두 개 부품의 조합이다. <b>변형은 새 클래스가 아니라 수식 클래스</b>(<code>--primary</code>, <code>--iron</code>)로 만든다.
+     새 컴포넌트를 만들기 전에 여기 있는 것으로 조립 가능한지 먼저 확인할 것.</p>
+
+  <!-- BTN -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">BTN</span><h3>버튼</h3><span class="cls">.ui-btn</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <button class="ui-btn ui-btn--primary">납품하기</button>
+        <button class="ui-btn">취소</button>
+        <button class="ui-btn ui-btn--danger">철거</button>
+        <button class="ui-btn ui-btn--ghost">건너뛰기</button>
+        <button class="ui-btn ui-btn--disabled" disabled>재료 부족</button>
+        <button class="ui-btn">건설 메뉴 <span class="ui-btn__key">B</span></button>
+        <button class="ui-btn ui-btn--primary ui-btn--hold" style="min-width:220px">
+          <span class="ui-btn__fill" style="width:42%"></span>
+          <span class="ui-btn__label">누르고 있는 동안 제작 <span class="ui-btn__key">HOLD</span></span>
+        </button>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>--primary</dt><dd>화면의 주 행동. 한 패널에 하나만</dd>
+          <dt>--danger</dt><dd>되돌릴 수 없는 조작(철거·삭제)</dd>
+          <dt>--ghost</dt><dd>보조 행동. 시선을 끌지 않는다</dd>
+          <dt>--disabled</dt><dd>조건 미충족. 라벨에 <b>이유</b>를 쓴다</dd>
+          <dt>--hold</dt><dd>누르는 동안 반복 실행. 안쪽 채움이 현재 1회분 진행</dd>
+        </dl>
+        <p class="usage">비활성 버튼은 "확인"이 아니라 <b>"재료 부족"</b>처럼 왜 못 누르는지 말한다.
+          단축키가 있으면 <code>.ui-btn__key</code>를 라벨 뒤에 붙인다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PNL -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">PNL</span><h3>패널</h3><span class="cls">.ui-panel</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <div class="ui-panel" style="width:300px">
+          <div class="ui-panel__title"><span class="tag">CORE</span>코어 수리<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body" style="font-size:12.5px;color:var(--text-dim)">패널 본문. 안쪽 여백은 항상 --space-4.</div>
+        </div>
+        <div class="ui-panel ui-panel--inset" style="width:220px">
+          <div class="ui-panel__body" style="font-size:12.5px;color:var(--text-dim)">--inset: 패널 안에 중첩되는 하위 영역</div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>제목줄</dt><dd>태그(영문 계통) + 이름(한글) + ✕</dd>
+          <dt>--inset</dt><dd>패널 안의 패널. 그림자 없음</dd>
+          <dt>그림자</dt><dd>0 8px 32px rgba(0,0,0,.45) 고정</dd>
+        </dl>
+        <p class="usage">닫기는 <b>연 키를 다시 누르거나 ESC</b> — 모든 패널이 같으므로 제목줄에 키를 적지 않는다. 규칙이 일정하면 한 번 배우고 끝이다. ✕는 마우스로 닫으려는 사람을 위해 남긴다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">BAR</span><h3>진행바</h3><span class="cls">.ui-bar / .ui-seg</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo col">
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <span style="font-size:12px;color:var(--text-dim);width:76px">제작 진행</span>
+          <div class="ui-bar"><div class="ui-bar__fill" style="width:64%"></div></div>
+          <span style="font-family:var(--font-data);font-size:12px;color:var(--text-faint)">64%</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <span style="font-size:12px;color:var(--text-dim);width:76px">선체 패널</span>
+          <div class="ui-bar ui-bar--iron"><div class="ui-bar__fill" style="width:50%"></div></div>
+          <span style="font-family:var(--font-data);font-size:12px;color:var(--iron)">20 / 40</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <span style="font-size:12px;color:var(--text-dim);width:76px">코어 HP</span>
+          <div class="ui-bar ui-bar--thick ui-bar--danger" style="min-width:220px"><div class="ui-bar__fill" style="width:31%"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-2)">
+          <span style="font-size:12px;color:var(--text-dim);width:76px">탄창</span>
+          <div class="ui-seg"><i></i><i></i><i></i><i></i><i></i><i></i><i class="empty"></i><i class="empty"></i></div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>.ui-bar</dt><dd>연속량 — 시간, 체력, 비율</dd>
+          <dt>.ui-seg</dt><dd>셀 수 있는 것 — 탄창, 남은 웨이브</dd>
+          <dt>--iron 등</dt><dd>계통색 지정. 무엇에 대한 진행인지 색으로 먼저 읽힌다</dd>
+        </dl>
+        <p class="usage">수량을 <b>비율(%)이 아니라 절대값(20 / 40)</b>으로 적는다. 플레이어는 "몇 개 더 필요한가"를 계산해야 한다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHP -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">CHP</span><h3>부품 칩</h3><span class="cls">.ui-chip</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <span class="ui-chip ui-chip--iron">선체 패널<span class="ui-chip__n">20/20</span></span>
+        <span class="ui-chip ui-chip--iron">철판<span class="ui-chip__n">12/40</span></span>
+        <span class="ui-chip ui-chip--copper">구리 전선<span class="ui-chip__n">50/50</span></span>
+        <span class="ui-chip ui-chip--crystal">에너지 셀<span class="ui-chip__n">3/15</span></span>
+        <span class="ui-chip ui-chip--beast">괴수 핵<span class="ui-chip__n">1/3</span></span>
+        <span class="ui-chip ui-chip--done">동력 모듈<span class="ui-chip__n">3/3</span></span>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>계통 수식</dt><dd>--iron / --copper / --crystal / --beast</dd>
+          <dt>--done</dt><dd>요구량 충족 시 초록으로 전환</dd>
+          <dt>수량</dt><dd>--font-data 고정폭. 자릿수가 늘어도 안 흔들린다</dd>
+        </dl>
+        <p class="usage">게이트 납품이 여러 부품의 BOM이라 <b>칩이 곧 진행 상황</b>이다. 충족된 칩만 초록으로 바뀌면 남은 게 무엇인지 한눈에 보인다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLT -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SLT</span><h3>아이템 슬롯</h3><span class="cls">.ui-slot</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <div class="ui-slot ui-slot--active"><span class="ui-slot__key">1</span><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">64</span></div>
+        <div class="ui-slot"><span class="ui-slot__key">2</span><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">12</span></div>
+        <div class="ui-slot"><span class="ui-slot__key">3</span><div class="ui-slot__icon" style="background:var(--crystal)"></div><span class="ui-slot__n">7</span></div>
+        <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">4</span><div class="ui-slot__icon"></div></div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>크기</dt><dd>52×52 고정. 인벤토리·핫바·제작 입출력 전부 동일</dd>
+          <dt>--active</dt><dd>핫바 현재 선택. 테두리 색 + 외곽 링</dd>
+          <dt>--empty</dt><dd>빈 슬롯. 점선 아이콘 자리</dd>
+          <dt>수량</dt><dd>흰 글자 + 검은 외곽선. 아이콘 색이 밝든 어둡든 읽힌다</dd>
+          <dt>모서리 글자</dt><dd>수량·키 모두 <code>line-height:1</code> + 4px 안쪽 여백. 미지정 시 줄높이만큼 밀려 테두리를 넘는다</dd>
+        </dl>
+        <p class="usage">슬롯 크기를 화면마다 다르게 하지 않는다. 같은 크기여야 드래그로 옮길 때 손이 기억한다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">ROW</span><h3>리스트 행</h3><span class="cls">.ui-row</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo col">
+        <div class="ui-row ui-row--selected"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-row__name">선체 패널</span><span class="ui-row__meta">4.0s</span></div>
+        <div class="ui-row"><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-row__name">회로 기판</span><span class="ui-row__meta">4.0s</span></div>
+        <div class="ui-row ui-row--locked"><div class="ui-slot__icon" style="background:var(--crystal)"></div><span class="ui-row__name">동력 모듈</span><span class="ui-row__meta">제조기 필요</span></div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>--selected</dt><dd>현재 선택. 테두리 + 배경</dd>
+          <dt>--locked</dt><dd>미해금. 투명도 45%</dd>
+          <dt>meta</dt><dd>오른쪽 끝 정렬. 제작 시간 또는 잠긴 이유</dd>
+        </dl>
+        <p class="usage">화면에 따라 다르다. <b>건설 메뉴</b>는 잠긴 항목을 이유와 함께 보여준다 — 다음 테크 목표가 자연스럽게 노출되기 때문.
+          <b>제작 목록</b>은 해금된 것만 띄운다 — 해금되면 전부 수동 제작이 가능하므로 잠긴 줄을 보여줄 이유가 없다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIP -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">TIP</span><h3>툴팁</h3><span class="cls">.ui-tooltip</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <div class="ui-tooltip">
+          <div class="ui-tooltip__name" style="color:var(--crystal)">동력 모듈</div>
+          <div class="ui-tooltip__type">COMPONENT · 제조기 4입력</div>
+          <div class="ui-tooltip__desc">엔진에 꽂는 완성형 연료·제어 통합 모듈. 게이트 ③ 납품 부품.</div>
+          <div class="ui-tooltip__sep"></div>
+          <div class="ui-tooltip__stat"><span>제작 시간</span><b>10.0s</b></div>
+          <div class="ui-tooltip__stat"><span>보유</span><b>1 / 3</b></div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>이름</dt><dd>계통색으로 표시</dd>
+          <dt>타입줄</dt><dd>--font-display, 영문 대문자</dd>
+          <dt>최대 폭</dt><dd>260px. 넘으면 줄바꿈</dd>
+        </dl>
+        <p class="usage">구분선 위는 <b>정체성</b>(이름·설명), 아래는 <b>수치</b>. 순서를 섞지 않으면 눈이 위치를 학습한다.
+          툴팁은 <b>커서를 따라간다</b> — 커서 우하단에 12px 띄워 붙이고, 화면 밖으로 나가면 반대편으로 뒤집는다. 패널 하단에 고정하지 않는다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB / KEY -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">TAB</span><h3>탭 · 키 힌트 · HUD 수치</h3><span class="cls">.ui-tabs / .ui-key / .ui-stat</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo col">
+        <div class="ui-tabs" style="min-width:320px">
+          <button class="ui-tab ui-tab--active">공장</button>
+          <button class="ui-tab">방어</button>
+          <button class="ui-tab">운송</button>
+        </div>
+        <div style="display:flex;gap:var(--space-4);margin-top:var(--space-2)">
+          <span class="ui-key"><span class="ui-key__cap">E</span>상호작용</span>
+          <span class="ui-key"><span class="ui-key__cap">R</span>회전</span>
+          <span class="ui-key"><span class="ui-key__cap">ESC</span>닫기</span>
+        </div>
+        <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
+          <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
+          <div class="ui-stat"><span class="ui-stat__label">TIME LEFT</span><span class="ui-stat__value">02:15</span></div>
+          <div class="ui-stat"><span class="ui-stat__label">AMMO</span><span class="ui-stat__value">24 / 120</span></div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>.ui-tab</dt><dd>3~5개까지. 그 이상이면 리스트로</dd>
+          <dt>.ui-key__cap</dt><dd>아래 테두리 2px — 키캡의 물리적 두께</dd>
+          <dt>.ui-stat</dt><dd>영문 라벨(작게) 위, 수치(크게) 아래</dd>
+        </dl>
+        <p class="usage">HUD 수치는 <b>라벨이 위, 값이 아래</b>다. 값의 크기가 일정해 흘깃 봐도 위치로 구분된다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- STP -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">STP</span><h3>수량 스테퍼</h3><span class="cls">.ui-stepper</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <div class="ui-stepper"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">5</span>
+          <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div>
+        <div class="ui-stepper ui-stepper--off"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">0</span>
+          <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>MAX</dt><dd>보유량 또는 남은 요구량 중 작은 값</dd>
+          <dt>--off</dt><dd>조절할 여지가 없을 때(이미 충족·보유 0)</dd>
+          <dt>숫자칸</dt><dd>40px 고정. 자릿수가 늘어도 버튼이 안 밀린다</dd>
+        </dl>
+        <p class="usage">한 번에 다 내는 조작이 위험하거나, <b>나눠 쓰는 판단이 필요한 자원</b>에만 쓴다. 제작처럼 반복이 중요한 곳은 홀드 버튼(BTN)을 쓴다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TBL -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">TBL</span><h3>데이터 표</h3><span class="cls">.ui-table</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo col" style="min-width:0">
+        <div class="ui-table" style="width:100%">
+          <div class="ui-table__head" style="grid-template-columns:120px minmax(0,1fr) 52px 52px">
+            <span>부품</span><span>진행</span><span style="text-align:right">보유</span><span style="text-align:right">부족</span>
+          </div>
+          <div class="ui-table__row" style="grid-template-columns:120px minmax(0,1fr) 52px 52px">
+            <span class="ui-chip ui-chip--copper" style="justify-content:space-between">구리 전선<span class="ui-chip__n">22/30</span></span>
+            <div class="ui-bar"><div class="ui-bar__fill" style="width:73%"></div></div>
+            <span class="ui-num" style="text-align:right">5</span>
+            <span class="ui-num ui-num--short" style="text-align:right">3</span>
+          </div>
+          <div class="ui-table__row ui-table__row--done" style="grid-template-columns:120px minmax(0,1fr) 52px 52px">
+            <span class="ui-chip ui-chip--done" style="justify-content:space-between">에너지 셀<span class="ui-chip__n">15/15</span></span>
+            <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
+            <span class="ui-num ui-num--dim" style="text-align:right">4</span>
+            <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
+          </div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>컬럼</dt><dd>가변 폭은 <code>minmax(0,1fr)</code>. <code>1fr</code>만 쓰면 안쪽 최소폭에 밀려 표가 넘친다</dd>
+          <dt>--done</dt><dd>처리 끝난 행. 투명도 62%로 시선에서 뺀다</dd>
+          <dt>.ui-num</dt><dd>--dim(비활성) / --short(부족·빨강) / --ok(충족·초록)</dd>
+        </dl>
+        <p class="usage">숫자 컬럼은 <b>오른쪽 정렬</b>. 자릿수가 달라도 일의 자리가 세로로 맞아 비교가 된다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAL -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">RAL</span><h3>단계 레일</h3><span class="cls">.ui-rail</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo">
+        <div class="ui-rail" style="border-right:none;padding-right:0;min-width:190px">
+          <div class="ui-rail__step ui-rail__step--done"><span class="ui-rail__dot">①</span>
+            <span class="ui-rail__label">선체 봉합<span class="ui-rail__sub">정비 구역 개방</span></span></div>
+          <div class="ui-rail__step ui-rail__step--active"><span class="ui-rail__dot">②</span>
+            <span class="ui-rail__label">항법·제어 복구<span class="ui-rail__sub">진행 중</span></span></div>
+          <div class="ui-rail__step"><span class="ui-rail__dot">③</span>
+            <span class="ui-rail__label">동력 재점화<span class="ui-rail__sub">잠김</span></span></div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>--done</dt><dd>완료. 점 테두리 --ok</dd>
+          <dt>--active</dt><dd>현재 단계. --crystal + 외곽 글로우</dd>
+          <dt>기본</dt><dd>미도달. --text-faint</dd>
+        </dl>
+        <p class="usage">되돌릴 수 없는 <b>일방향 진행</b>에만 쓴다. 이게 붙어 있으면 그 화면은 팝업이 아니라 진행 화면으로 읽힌다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- INP -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">INP</span><h3>검색 입력 · 스크롤 목록</h3><span class="cls">.ui-search / .ui-scroll</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo col" style="min-width:0">
+        <div class="ui-search" style="width:260px">
+          <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
+            <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <input class="ui-search__input" type="text" placeholder="레시피 검색">
+        </div>
+        <div class="ui-scroll" style="width:260px;max-height:104px;display:flex;flex-direction:column;gap:2px;
+                                      border:1px solid var(--line);border-radius:var(--r-md);padding:var(--space-2)">
+          <div class="ui-row ui-row--selected" style="min-width:0;padding:5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+            <span class="ui-row__name" style="font-size:12.5px">선체 패널</span><span class="ui-row__meta">4.0s</span></div>
+          <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+            <span class="ui-row__name" style="font-size:12.5px">철판</span><span class="ui-row__meta">3.0s</span></div>
+          <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+            <span class="ui-row__name" style="font-size:12.5px">철 기어</span><span class="ui-row__meta">3.0s</span></div>
+          <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
+            <span class="ui-row__name" style="font-size:12.5px">회로 기판</span><span class="ui-row__meta">4.0s</span></div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>높이</dt><dd>입력 30px 고정. 포커스 시 테두리 --copper</dd>
+          <dt>지우기</dt><dd>입력값이 있을 때만 ✕ 표시</dd>
+          <dt>스크롤바</dt><dd>6px, --line-strong. 항상 보이게 두어 <b>더 있다</b>는 사실을 숨기지 않는다</dd>
+          <dt>UITK</dt><dd><code>ScrollView</code> + <code>TextField</code>. 목록은 <code>ListView</code>로 가상화</dd>
+        </dl>
+        <p class="usage">항목이 <b>여덟 개를 넘길 가능성</b>이 있으면 검색과 스크롤을 같이 넣는다. 레시피는 티어가 오를수록 계속 늘어나므로 처음부터 넣어둔다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 4. 화면 목업 ══════════ -->
+<section class="doc-sec" id="screens">
+  <div class="doc-sec-head"><span class="n">04</span><h2>화면 목업</h2><span class="aside">위 부품만으로 조립됨</span></div>
+  <p class="doc-lead">아래 네 화면에 새 컴포넌트는 하나도 없다. 전부 §03의 부품 조합이다.
+     <b>게이트 납품 패널을 먼저 구현</b>하면 칩·진행바·버튼·패널이 한 번에 검증된다.</p>
+
+  <!-- 게이트 납품 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-01</span><h3>코어 패널 — 납품 탭</h3><span class="cls">CorePanel.uxml</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
+        <div class="ui-panel" style="width:880px">
+          <div class="ui-panel__title"><span class="tag">CORE</span>코어<button class="ui-panel__x">✕</button></div>
+          <div class="ui-tabs" style="padding:0 var(--space-4)">
+            <button class="ui-tab ui-tab--active">납품</button>
+            <button class="ui-tab">코어 정보</button>
+          </div>
+
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:176px minmax(0,1fr);gap:var(--space-5)">
+            <!-- 좌: 수리 단계 레일 -->
+            <div class="ui-rail">
+              <div class="ui-rail__step ui-rail__step--done"><span class="ui-rail__dot">⓪</span>
+                <span class="ui-rail__label">잔해 회수<span class="ui-rail__sub">작업대 전개</span></span></div>
+              <div class="ui-rail__step ui-rail__step--done"><span class="ui-rail__dot">①</span>
+                <span class="ui-rail__label">선체 봉합<span class="ui-rail__sub">정비 구역 개방</span></span></div>
+              <div class="ui-rail__step ui-rail__step--done"><span class="ui-rail__dot">②</span>
+                <span class="ui-rail__label">항법·제어 복구<span class="ui-rail__sub">엔진 제어 복구</span></span></div>
+              <div class="ui-rail__step ui-rail__step--active"><span class="ui-rail__dot">③</span>
+                <span class="ui-rail__label">동력 재점화<span class="ui-rail__sub">납품 후 예열 시작</span></span></div>
+            </div>
+
+            <!-- 우: 납품 -->
+            <div>
+              <div style="margin-bottom:var(--space-4)">
+                <div style="display:flex;align-items:baseline;gap:var(--space-3);margin-bottom:var(--space-2)">
+                  <span style="font-size:15px;font-weight:600">동력 재점화</span>
+                  <span class="ui-num ui-num--dim" style="margin-left:auto">2 / 4 부품 충족</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:var(--space-3)">
+                  <div class="ui-bar ui-bar--thick ui-bar--crystal" style="flex:1"><div class="ui-bar__fill" style="width:64%"></div></div>
+                  <span class="ui-num" style="color:var(--crystal)">64%</span>
+                </div>
+              </div>
+
+              <div class="ui-table">
+                <div class="ui-table__head" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                  <span>부품</span><span>납품 진행</span><span style="text-align:right">보유</span>
+                  <span style="text-align:right">부족</span><span style="text-align:right">이번 납품</span>
+                </div>
+                <div class="ui-table__row" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                  <span class="ui-chip ui-chip--crystal" style="justify-content:space-between">동력 모듈<span class="ui-chip__n">1/3</span></span>
+                  <div class="ui-bar ui-bar--crystal"><div class="ui-bar__fill" style="width:33%"></div></div>
+                  <span class="ui-num" style="text-align:right">2</span>
+                  <span class="ui-num ui-num--dim" style="text-align:right">—</span>
+                  <div style="display:flex;justify-content:flex-end">
+                    <div class="ui-stepper"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">2</span>
+                      <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
+                </div>
+                <div class="ui-table__row" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                  <span class="ui-chip ui-chip--copper" style="justify-content:space-between">구리 전선<span class="ui-chip__n">22/30</span></span>
+                  <div class="ui-bar"><div class="ui-bar__fill" style="width:73%"></div></div>
+                  <span class="ui-num" style="text-align:right">5</span>
+                  <span class="ui-num ui-num--short" style="text-align:right">3</span>
+                  <div style="display:flex;justify-content:flex-end">
+                    <div class="ui-stepper"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">5</span>
+                      <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
+                </div>
+                <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                  <span class="ui-chip ui-chip--done" style="justify-content:space-between">에너지 셀<span class="ui-chip__n">15/15</span></span>
+                  <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
+                  <span class="ui-num ui-num--dim" style="text-align:right">4</span>
+                  <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
+                  <div style="display:flex;justify-content:flex-end">
+                    <div class="ui-stepper ui-stepper--off"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">0</span>
+                      <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
+                </div>
+                <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                  <span class="ui-chip ui-chip--done" style="justify-content:space-between">선체 패널<span class="ui-chip__n">10/10</span></span>
+                  <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
+                  <span class="ui-num ui-num--dim" style="text-align:right">31</span>
+                  <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
+                  <div style="display:flex;justify-content:flex-end">
+                    <div class="ui-stepper ui-stepper--off"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">0</span>
+                      <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);
+                          border-top:1px solid var(--line);padding-top:var(--space-3)">
+                <span style="font-size:12px;color:var(--text-faint)">이번에 납품</span>
+                <span class="ui-chip ui-chip--crystal">동력 모듈<span class="ui-chip__n">2</span></span>
+                <span class="ui-chip ui-chip--copper">구리 전선<span class="ui-chip__n">5</span></span>
+                <button class="ui-btn ui-btn--ghost" style="margin-left:auto">전부 선택 <span class="ui-btn__key">A</span></button>
+                <button class="ui-btn ui-btn--primary">납품 <span class="ui-btn__key">F</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+      납품 탭에는 <b style="color:var(--text)">납품에 필요한 것만</b> 둔다. 체력·웨이브·레이더는 지금 손이 하는 일과 무관하므로 옆 탭으로 뺐다.
+      상단 진행바는 <b style="color:var(--text)">이 게이트 전체가 얼마나 찼는지</b>를, 아래 표는 <b style="color:var(--text)">어느 부품이 모자란지</b>를 말한다.
+      둘은 다른 질문에 답하므로 같이 둔다. 부족분은 표의 <b style="color:var(--danger)">붉은 숫자</b>가 이미 말해주니 문장으로 반복하지 않는다.
+    </div>
+  </div>
+
+  <!-- 납품 완료 → 수리 시작 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-01b</span><h3>납품 완료 → 수리 확인</h3><span class="cls">CorePanel.uxml · repair</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo col" style="align-items:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
+
+        <!-- 요구 충족 시 하단 바 -->
+        <div class="ui-panel" style="width:640px">
+          <div class="ui-panel__body" style="padding:var(--space-3) var(--space-4)">
+            <div class="ui-table">
+              <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 60px">
+                <span class="ui-chip ui-chip--done" style="justify-content:space-between">동력 모듈<span class="ui-chip__n">3/3</span></span>
+                <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
+                <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
+              </div>
+              <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 60px">
+                <span class="ui-chip ui-chip--done" style="justify-content:space-between">구리 전선<span class="ui-chip__n">30/30</span></span>
+                <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
+                <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-3);
+                        border-top:1px solid var(--line);padding-top:var(--space-3)">
+              <span style="font-size:13px;color:var(--ok)">모든 부품이 준비됐습니다</span>
+              <button class="ui-btn ui-btn--primary" style="margin-left:auto;padding:var(--space-2) var(--space-5)">
+                수리 시작 <span class="ui-btn__key">F</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 확인 모달 -->
+        <div class="ui-panel" style="width:460px;margin-top:var(--space-4)">
+          <div class="ui-panel__title"><span class="tag" style="color:var(--crystal);border-color:rgba(180,140,255,.4)">GATE 03</span>동력 재점화<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body">
+            <div style="font-size:13px;color:var(--text);margin-bottom:var(--space-4)">엔진에 동력 모듈을 장착합니다.</div>
+
+            <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-2)">해금</div>
+            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-4)">
+              <div class="ui-mat ui-mat--crystal"><span class="ui-mat__name">엔진 예열 개시</span></div>
+              <div class="ui-mat ui-mat--crystal"><span class="ui-mat__name">이륙 시퀀스</span></div>
+            </div>
+
+            <div style="border:1px solid rgba(255,93,115,.45);background:rgba(255,93,115,.07);
+                        border-radius:var(--r-md);padding:var(--space-3);margin-bottom:var(--space-4)">
+              <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)">
+                <span style="color:var(--danger);font-size:13px">⚠</span>
+                <span style="font-size:12.5px;color:var(--danger);font-weight:600">예열이 시작되면 멈출 수 없습니다</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-dim);line-height:1.6">
+                예열 동안 행성의 모든 무리가 코어로 몰려옵니다. 끝까지 지켜내면 이륙합니다.</div>
+              <div style="display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-3);
+                          border-top:1px solid rgba(255,93,115,.25);padding-top:var(--space-2)">
+                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)">예열 시간</span>
+                <span style="font-family:var(--font-data);font-size:16px;color:var(--danger);margin-left:auto">05:00</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="ui-btn" style="flex:1;justify-content:center">돌아가기</button>
+              <button class="ui-btn ui-btn--danger" style="flex:1.4;justify-content:center">예열 시작</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 게이트② 확인 창 — 되돌릴 수 없는 단계가 아니므로 경고 없음 -->
+        <div class="ui-panel" style="width:460px;margin-top:var(--space-4)">
+          <div class="ui-panel__title"><span class="tag">GATE 02</span>항법·제어 복구<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body">
+            <div style="font-size:13px;color:var(--text);margin-bottom:var(--space-4)">조종 콘솔과 선내 배선을 되살립니다.</div>
+
+            <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-2)">해금</div>
+            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-4)">
+              <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">레이더 — 웨이브 진입 방위와 규모</span></div>
+            </div>
+
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="ui-btn" style="flex:1;justify-content:center">돌아가기</button>
+              <button class="ui-btn ui-btn--primary" style="flex:1.4;justify-content:center">수리 시작</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+      부품이 다 모이면 납품 버튼이 <b style="color:var(--text)">수리 시작</b>으로 바뀐다 — 마지막 부품을 넣자마자 수리가 시작되면
+      플레이어가 준비할 틈이 없다. 확인 창은 <b style="color:var(--text)">해금되는 것</b>을 먼저 보여주고, 되돌릴 수 없는 단계에서만 경고를 얹는다.
+      두 창의 차이는 <b style="color:var(--text)">경고 블록의 유무</b>뿐이다. ①②처럼 되돌릴 수 있는 단계는 해금 목록만 보여주고 버튼도
+      <b style="color:var(--copper)">--primary "수리 시작"</b>. ③은 예열 카운트다운이 곧 최종 방어전이라 경고를 얹고 버튼을
+      <b style="color:var(--danger)">--danger "예열 시작"</b>으로 바꿔 무슨 일이 일어날지 버튼 자체가 말하게 한다.
+      경고를 모든 단계에 붙이면 정작 위험한 ③에서 눈에 띄지 않는다.
+    </div>
+  </div>
+
+  <!-- 코어 정보 탭 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-01c</span><h3>코어 패널 — 코어 정보 탭</h3><span class="cls">CorePanel.uxml</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
+        <div class="ui-panel" style="width:880px">
+          <div class="ui-panel__title"><span class="tag">CORE</span>코어<button class="ui-panel__x">✕</button></div>
+          <div class="ui-tabs" style="padding:0 var(--space-4)">
+            <button class="ui-tab">납품</button>
+            <button class="ui-tab ui-tab--active">코어 정보</button>
+          </div>
+
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--space-5)">
+            <!-- 좌: 상태 + 웨이브 -->
+            <div>
+              <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-3)">CORE STATUS</div>
+              <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-bottom:var(--space-5)">
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                    <span style="font-size:12.5px;color:var(--text-dim)">코어 내구도</span>
+                    <span class="ui-num">4,400 <span class="ui-num--dim">/ 5,000</span></span>
+                  </div>
+                  <div class="ui-bar ui-bar--thick"><div class="ui-bar__fill" style="width:88%;background:var(--ok)"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                    <span style="font-size:12.5px;color:var(--text-dim)">수리 진행</span>
+                    <span class="ui-num">3단계 <span class="ui-num--dim">/ 4</span></span>
+                  </div>
+                  <div class="ui-bar ui-bar--thick ui-bar--crystal"><div class="ui-bar__fill" style="width:75%"></div></div>
+                </div>
+              </div>
+
+              <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-3)">WAVE</div>
+              <div style="display:flex;flex-wrap:wrap;gap:var(--space-5)">
+                <div class="ui-stat"><span class="ui-stat__label">NEXT WAVE IN</span><span class="ui-stat__value">02:15</span></div>
+                <div class="ui-stat"><span class="ui-stat__label">WAVE</span><span class="ui-stat__value">7</span></div>
+                <div class="ui-stat"><span class="ui-stat__label">INCOMING</span><span class="ui-stat__value" style="color:var(--beast)">24</span></div>
+                <div class="ui-stat"><span class="ui-stat__label">DESTROYED NESTS</span><span class="ui-stat__value">2 <span style="color:var(--text-faint);font-size:12px">/ 6</span></span></div>
+              </div>
+            </div>
+
+            <!-- 우: 레이더 스코프 -->
+            <div>
+              <div style="display:flex;align-items:center;margin-bottom:var(--space-3)">
+                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)">RADAR</span>
+                <span class="ui-chip ui-chip--done" style="margin-left:auto">가동 중</span>
+              </div>
+
+              <div style="background:var(--bg-inset);border:1px solid var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)">
+                <svg viewBox="0 0 440 300" style="display:block;width:100%;height:auto">
+                  <defs>
+                    <radialGradient id="scopeBg" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#12233A"/><stop offset="100%" stop-color="#0A1120"/>
+                    </radialGradient>
+                    <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#5DD39E" stop-opacity="0"/>
+                      <stop offset="100%" stop-color="#5DD39E" stop-opacity=".42"/>
+                    </linearGradient>
+                  </defs>
+
+                  <circle cx="220" cy="150" r="112" fill="url(#scopeBg)" stroke="#2E4266"/>
+                  <circle cx="220" cy="150" r="38" fill="none" stroke="#223350" stroke-dasharray="2 4"/>
+                  <circle cx="220" cy="150" r="75" fill="none" stroke="#223350" stroke-dasharray="2 4"/>
+                  <text x="226" y="116" fill="#5C6E8C" font-family="IBM Plex Mono" font-size="8">RING 1</text>
+                  <text x="226" y="79" fill="#5C6E8C" font-family="IBM Plex Mono" font-size="8">RING 2</text>
+                  <text x="226" y="42" fill="#5C6E8C" font-family="IBM Plex Mono" font-size="8">RING 3</text>
+
+                  <line x1="220" y1="38" x2="220" y2="262" stroke="#223350"/>
+                  <line x1="108" y1="150" x2="332" y2="150" stroke="#223350"/>
+                  <g stroke="#2E4266">
+                    <line x1="220" y1="38" x2="220" y2="48"/><line x1="332" y1="150" x2="322" y2="150"/>
+                    <line x1="220" y1="262" x2="220" y2="252"/><line x1="108" y1="150" x2="118" y2="150"/>
+                    <line x1="299" y1="71" x2="293" y2="77"/><line x1="299" y1="229" x2="293" y2="223"/>
+                    <line x1="141" y1="229" x2="147" y2="223"/><line x1="141" y1="71" x2="147" y2="77"/>
+                  </g>
+                  <g fill="#8FA3C0" font-family="Chakra Petch" font-size="11" text-anchor="middle">
+                    <text x="220" y="30">N</text><text x="344" y="154">E</text>
+                    <text x="220" y="280">S</text><text x="96" y="154">W</text>
+                  </g>
+
+                  <!-- 스윕 -->
+                  <g>
+                    <path d="M220 150 L220 38 A112 112 0 0 1 299 71 Z" fill="url(#sweep)"/>
+                    <line x1="220" y1="150" x2="299" y2="71" stroke="#5DD39E" stroke-width="1.2" opacity=".75"/>
+                    <animateTransform attributeName="transform" type="rotate" from="0 220 150" to="360 220 150" dur="4s" repeatCount="indefinite"/>
+                  </g>
+
+                  <!-- 광맥 (계통색 다이아몬드) -->
+                  <g opacity=".9">
+                    <polygon points="188,124 193,131 188,138 183,131" fill="#E8A54B"/>
+                    <polygon points="252,168 257,175 252,182 247,175" fill="#E8A54B"/>
+                    <polygon points="164,168 169,175 164,182 159,175" fill="#4FD8E0"/>
+                    <polygon points="276,196 281,203 276,210 271,203" fill="#4FD8E0"/>
+                    <polygon points="200,74 205,81 200,88 195,81" fill="#B48CFF"/>
+                    <polygon points="146,232 151,239 146,246 141,239" fill="#B48CFF"/>
+                  </g>
+                  <!-- 둥지 -->
+                  <g fill="#FF5D73" opacity=".85">
+                    <polygon points="160,208 167,220 153,220"/>
+                    <polygon points="288,112 295,124 281,124"/>
+                    <polygon points="262,226 269,238 255,238"/>
+                  </g>
+                  <!-- 파괴된 둥지 -->
+                  <g stroke="#5C6E8C" stroke-width="1.4">
+                    <line x1="170" y1="96" x2="178" y2="104"/><line x1="178" y1="96" x2="170" y2="104"/>
+                    <line x1="146" y1="164" x2="154" y2="172"/><line x1="154" y1="164" x2="146" y2="172"/>
+                  </g>
+
+                  <!-- 진입 지점 068° — 오른쪽에 있으므로 라벨도 오른쪽 -->
+                  <path d="M324 108 L293 120" stroke="#E8A54B" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/>
+                  <g transform="translate(293,120) rotate(248)"><polygon points="0,-7 5,4 -5,4" fill="#E8A54B"/></g>
+                  <circle cx="324" cy="108" r="3.5" fill="#E8A54B"/>
+                  <polyline points="324,108 346,90 358,90" fill="none" stroke="#E8A54B" stroke-width="1" opacity=".55"/>
+                  <text x="364" y="86" fill="#D9E4F5" font-family="IBM Plex Mono" font-size="12">068°</text>
+                  <text x="364" y="100" fill="#8FA3C0" font-family="IBM Plex Sans KR" font-size="10">14기</text>
+
+                  <!-- 진입 지점 295° — 왼쪽에 있으므로 라벨도 왼쪽(우측 정렬) -->
+                  <path d="M118 103 L148 117" stroke="#E8A54B" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/>
+                  <g transform="translate(148,117) rotate(115)"><polygon points="0,-7 5,4 -5,4" fill="#E8A54B"/></g>
+                  <circle cx="118" cy="103" r="3.5" fill="#E8A54B"/>
+                  <polyline points="118,103 96,86 84,86" fill="none" stroke="#E8A54B" stroke-width="1" opacity=".55"/>
+                  <text x="78" y="82" fill="#D9E4F5" font-family="IBM Plex Mono" font-size="12" text-anchor="end">295°</text>
+                  <text x="78" y="96" fill="#8FA3C0" font-family="IBM Plex Sans KR" font-size="10" text-anchor="end">10기</text>
+
+                  <!-- 코어 + 플레이어 -->
+                  <circle cx="220" cy="150" r="6" fill="none" stroke="#5DD39E" stroke-width="1.5"/>
+                  <circle cx="220" cy="150" r="2.4" fill="#5DD39E"/>
+                </svg>
+
+                            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+      레이더는 목록이 아니라 <b style="color:var(--text)">스코프</b>다 — 코어가 중심, 동심원이 곧 맵의 Ring 1~3이라 미니맵 역할을 겸한다.
+      진입 방위와 규모는 표에 적지 않고 <b style="color:var(--text)">스코프 위에 지시선으로</b> 붙인다: 붉은 점이 진입 지점, 점선 화살표가 진행 방향,
+      바깥 라벨이 방위각과 규모다. 지시선은 <b style="color:var(--text)">진입 지점이 있는 쪽으로 뻗는다</b> — 오른쪽 지점은 오른쪽 라벨, 왼쪽 지점은 왼쪽 라벨(우측 정렬). 스코프 좌우에 라벨용 여백을 항상 확보해 두면 방위가 어디든 같은 규칙으로 그려진다.
+      개별 적도, 플레이어 자신도 표시하지 않는다 — <b style="color:var(--text)">코어에 설치된 장비를 들여다보는 화면</b>이므로 중심은 언제나 코어다. 밤새 움직이는 점을 쫓는 화면이 아니라 어디를 막을지 정하는 화면이기도 하고.
+      기호는 형태로 구분한다 — <b style="color:var(--beast)">삼각=둥지</b>, <b style="color:var(--warn)">원=진입 지점</b>, <b style="color:var(--iron)">마름모=광맥</b>.
+      형태가 다르면 범례 없이도 몇 번 보면 외워지므로 스코프 아래 설명줄은 두지 않는다.
+      광맥은 <b style="color:var(--text)">계통색 다이아몬드</b>로 찍는다 — 낮에 어느 쪽으로 채굴을 나갈지 정하는 화면이기도 하므로,
+      "북동쪽 Ring 2에 크리스탈"을 둥지 위치와 함께 보고 판단하게 된다.
+      색으로 성격을 가른다: <b style="color:var(--beast)">붉은 삼각 = 둥지</b>(늘 거기 있는 스폰원, 낮에 칠 대상),
+      <b style="color:var(--warn)">주황 점 = 이번 웨이브 진입 지점</b>(오늘 밤 막을 곳). 하나는 장기 목표, 하나는 당장의 위협이라 절대 같은 색을 쓰지 않는다.
+    </div>
+  </div>
+
+  <!-- 레이더 미해금 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-01d</span><h3>레이더 — 해금 전 상태</h3><span class="cls">RadarView.uxml · locked</span></div>
+    <div class="doc-part-body">
+      <div class="doc-demo" style="justify-content:center">
+        <div style="width:400px">
+          <div style="display:flex;align-items:center;margin-bottom:var(--space-3)">
+            <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)">RADAR</span>
+            <span class="ui-chip" style="margin-left:auto">신호 없음</span>
+          </div>
+          <div style="background:var(--bg-inset);border:1px dashed var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)">
+            <svg viewBox="0 0 440 300" style="display:block;width:100%;height:auto">
+              <circle cx="220" cy="150" r="112" fill="#0A1120" stroke="#223350" stroke-dasharray="3 5"/>
+              <circle cx="220" cy="150" r="38" fill="none" stroke="#1A2740" stroke-dasharray="2 5"/>
+              <circle cx="220" cy="150" r="75" fill="none" stroke="#1A2740" stroke-dasharray="2 5"/>
+              <line x1="220" y1="38" x2="220" y2="262" stroke="#1A2740"/>
+              <line x1="108" y1="150" x2="332" y2="150" stroke="#1A2740"/>
+              <g fill="#3B4B66" font-family="Chakra Petch" font-size="11" text-anchor="middle">
+                <text x="220" y="30">N</text><text x="344" y="154">E</text>
+                <text x="220" y="280">S</text><text x="96" y="154">W</text>
+              </g>
+              <!-- 잡음 -->
+              <g fill="#2E4266" opacity=".55">
+                <circle cx="176" cy="118" r="1.6"/><circle cx="262" cy="196" r="1.2"/><circle cx="204" cy="212" r="1.4"/>
+                <circle cx="286" cy="132" r="1.2"/><circle cx="150" cy="176" r="1.3"/><circle cx="242" cy="88" r="1.5"/>
+              </g>
+              <!-- 코어만 보인다 -->
+              <circle cx="220" cy="150" r="6" fill="none" stroke="#3F6B58" stroke-width="1.5"/>
+              <circle cx="220" cy="150" r="2.4" fill="#3F6B58"/>
+              <text x="220" y="140" fill="#5C6E8C" font-family="Chakra Petch" font-size="13" letter-spacing="2" text-anchor="middle">NO SIGNAL</text>
+              <text x="220" y="176" fill="#3B4B66" font-family="IBM Plex Sans KR" font-size="10.5" text-anchor="middle">항법 계통 오프라인</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="doc-spec">
+        <dl>
+          <dt>스코프</dt><dd>격자는 남기고 데이터만 비운다. 무엇이 채워질 자리인지 보인다</dd>
+          <dt>NO SIGNAL</dt><dd>파손이 아니라 <b>아직 켜지지 않았음</b>을 뜻한다</dd>
+          <dt>코어</dt><dd>중심점만 흐리게 표시 — 레이더 없이도 아는 정보</dd>
+        </dl>
+        <p class="usage">잠긴 기능은 <b>비활성 버튼 하나로 처리하지 않는다</b>. 스코프 껍데기를 그대로 보여주고 무엇이 채워질 자리인지 알려주는 편이
+          게이트②를 향한 동기로 훨씬 강하게 작동한다. 설명은 화면 안의 두 줄 — <b>신호 없음 · 항법 계통 오프라인</b> — 이면 충분하다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-02</span><h3>전투 HUD</h3><span class="cls">GameplayHUD.uxml</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo" style="padding:0;border-radius:0 0 var(--r-lg) var(--r-lg)">
+        <div style="width:100%;aspect-ratio:16/7;position:relative;background:
+            linear-gradient(180deg,#132038 0%,#0B1220 55%,#0E1A2E 100%);border-radius:0 0 var(--r-lg) var(--r-lg);overflow:hidden">
+          <div style="position:absolute;left:0;right:0;top:52%;height:1px;background:rgba(79,216,224,.12)"></div>
+
+          <!-- ── 상단 바 ── -->
+          <div style="position:absolute;left:0;right:0;top:0;padding:14px 24px 0">
+            <!-- 나침반 -->
+            <div class="ui-compass" style="width:min(620px,72%);margin:0 auto">
+              <div class="ui-compass__center"></div>
+              <span class="ui-compass__tick" style="left:2%;height:5px"></span>
+              <span class="ui-compass__label" style="left:2%">30</span>
+              <span class="ui-compass__tick" style="left:14.4%;height:5px"></span>
+              <span class="ui-compass__label" style="left:14.4%">45</span>
+              <span class="ui-compass__tick" style="left:26.8%;height:8px"></span>
+              <span class="ui-compass__label ui-compass__label--card" style="left:26.8%">NE</span>
+              <span class="ui-compass__tick" style="left:39.2%;height:5px"></span>
+              <span class="ui-compass__label" style="left:39.2%">75</span>
+              <span class="ui-compass__tick" style="left:51.6%;height:8px"></span>
+              <span class="ui-compass__label ui-compass__label--card" style="left:51.6%">E</span>
+              <span class="ui-compass__tick" style="left:64%;height:5px"></span>
+              <span class="ui-compass__label" style="left:64%">105</span>
+              <span class="ui-compass__tick" style="left:76.4%;height:5px"></span>
+              <span class="ui-compass__label" style="left:76.4%">120</span>
+              <span class="ui-compass__tick" style="left:88.8%;height:8px"></span>
+              <span class="ui-compass__label ui-compass__label--card" style="left:88.8%">SE</span>
+              <!-- 위협 마커 -->
+              <span class="ui-compass__mark" style="left:35%">
+                <span style="display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--beast)"></span></span>
+              <span class="ui-compass__mark" style="left:72%">
+                <span style="display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--beast)"></span></span>
+              <!-- 코어 방향 -->
+              <span class="ui-compass__mark" style="left:18%">
+                <span style="display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--ok)"></span></span>
+            </div>
+
+            <!-- 웨이브 정보 줄 -->
+            <div style="display:flex;justify-content:center;align-items:center;gap:var(--space-4);margin-top:6px">
+              <span style="font-family:var(--font-display);font-size:11px;letter-spacing:.1em;color:var(--beast);
+                           border:1px solid rgba(255,93,115,.45);border-radius:var(--r-sm);padding:1px 8px">WAVE 7</span>
+              <div class="ui-seg"><i style="background:var(--beast)"></i><i style="background:var(--beast)"></i>
+                <i style="background:var(--beast)"></i><i style="background:var(--beast)"></i><i class="empty"></i><i class="empty"></i></div>
+              <span style="display:inline-flex;align-items:center;gap:5px">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:block">
+                  <path d="M8 1.6 C5.4 1.6 3.4 3.7 3.4 6.3 L2 9.2 L4 9.2 L4.6 11 L6.4 11 L6.4 13.6 L9.6 13.6 L9.6 11 L11.4 11 L12 9.2 L14 9.2 L12.6 6.3 C12.6 3.7 10.6 1.6 8 1.6 Z"
+                        fill="var(--beast)" opacity=".9"/>
+                  <circle cx="6.1" cy="6.4" r="1.15" fill="#0B1220"/><circle cx="9.9" cy="6.4" r="1.15" fill="#0B1220"/>
+                </svg>
+                <span style="font-family:var(--font-data);font-size:14px;color:var(--text)">23</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 좌상단: 일차 + 남은 시간 -->
+          <div style="position:absolute;left:24px;top:20px;display:flex;gap:var(--space-5)">
+            <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
+            <div class="ui-stat"><span class="ui-stat__label">NIGHT ENDS</span><span class="ui-stat__value" style="color:var(--beast)">01:32</span></div>
+          </div>
+
+          <!-- 중앙 크로스헤어 -->
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px">
+            <div style="position:absolute;left:8px;top:0;width:2px;height:6px;background:var(--text-dim)"></div>
+            <div style="position:absolute;left:8px;bottom:0;width:2px;height:6px;background:var(--text-dim)"></div>
+            <div style="position:absolute;top:8px;left:0;height:2px;width:6px;background:var(--text-dim)"></div>
+            <div style="position:absolute;top:8px;right:0;height:2px;width:6px;background:var(--text-dim)"></div>
+          </div>
+
+          <!-- 좌하단: 체력 + 코어 -->
+          <div style="position:absolute;left:24px;bottom:20px;width:292px">
+            <!-- 플레이어 체력 -->
+            <div style="margin-bottom:10px">
+              <div style="display:flex;align-items:flex-end;gap:var(--space-2);margin-bottom:5px">
+                <span style="font-family:var(--font-data);font-size:26px;line-height:1;color:var(--text)">72</span>
+                <span style="font-family:var(--font-data);font-size:12px;color:var(--text-faint);padding-bottom:2px">/ 100</span>
+                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.14em;color:var(--text-faint);
+                             margin-left:auto;padding-bottom:3px">VITALS</span>
+              </div>
+              <div style="height:5px;background:rgba(255,93,115,.14);border-radius:2px;overflow:hidden">
+                <div style="width:72%;height:100%;background:var(--danger);
+                            box-shadow:0 0 10px rgba(255,93,115,.55);border-radius:2px"></div>
+              </div>
+            </div>
+            <!-- 코어 -->
+            <div style="display:flex;align-items:center;gap:var(--space-2);
+                        border-left:2px solid var(--ok);padding-left:var(--space-2)">
+              <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.14em;color:var(--text-faint)">CORE</span>
+              <div style="flex:1;height:4px;background:rgba(93,211,158,.14);border-radius:2px;overflow:hidden">
+                <div style="width:88%;height:100%;background:var(--ok);border-radius:2px"></div>
+              </div>
+              <span style="font-family:var(--font-data);font-size:12px;color:var(--ok)">88<span style="color:var(--text-faint);font-size:10px">%</span></span>
+            </div>
+          </div>
+
+          <!-- 우하단: 탄약 -->
+          <div style="position:absolute;right:24px;bottom:20px;text-align:right">
+            <div class="ui-stat" style="align-items:flex-end"><span class="ui-stat__label">DENSE AMMO</span>
+              <span class="ui-stat__value" style="font-size:22px">24<span style="color:var(--text-faint);font-size:14px"> / 120</span></span></div>
+          </div>
+
+          <!-- 하단 중앙: 핫바 -->
+          <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:var(--space-2)">
+            <div class="ui-slot ui-slot--active"><span class="ui-slot__key">1</span><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">24</span></div>
+            <div class="ui-slot"><span class="ui-slot__key">2</span><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">8</span></div>
+            <div class="ui-slot"><span class="ui-slot__key">3</span><div class="ui-slot__icon" style="background:var(--beast)"></div><span class="ui-slot__n">3</span></div>
+            <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">4</span><div class="ui-slot__icon"></div></div>
+            <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">5</span><div class="ui-slot__icon"></div></div>
+            <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">6</span><div class="ui-slot__icon"></div></div>
+            <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">7</span><div class="ui-slot__icon"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+      좌하단은 <b style="color:var(--text)">체력을 큰 숫자로</b> 세우고 바는 얇게 깔았다 — 급할 때 읽는 건 바의 길이가 아니라 숫자다. 코어는 초록 세로선 하나로 묶어 플레이어 체력과 시각적으로 분리했다. 상단 나침반은 시야에 따라 흐르고 <b style="color:var(--text)">방위각(도)과 방위(NE·E·SE)</b>를 함께 새긴다 — 팀원에게 "68도 쪽"이라 말할 수 있어야 한다.
+      마커는 두 종류뿐이다: <b style="color:var(--beast)">붉은 삼각</b>은 몰려오는 방향, <b style="color:var(--ok)">초록 삼각</b>은 코어 방향(길 잃음 방지).
+      아래 줄에는 <b style="color:var(--text)">웨이브 번호 · 남은 규모 · 잔여 개체 수</b>만 둔다. 개체 수 앞의 <b style="color:var(--beast)">괴수 두상 아이콘</b>이 "무엇의 23인지"를 라벨 없이 말해준다 — HUD에서 영문 라벨을 하나라도 줄이면 그만큼 전방을 더 본다. 시간은 좌상단 DAY 옆으로 — 시계는 전투 중에 계속 볼 것이 아니라 <b style="color:var(--text)">항상 같은 자리에 있어야 하는 정보</b>다.
+    </div>
+  </div>
+
+  <!-- 건설 메뉴 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-03</span><h3>건설 메뉴</h3><span class="cls">BuildMenuPanel.uxml</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg);position:relative">
+        <div class="ui-panel" style="width:620px;position:relative">
+          <!-- 커서가 '조립기' 행 위에 있을 때 -->
+          <svg width="14" height="18" viewBox="0 0 14 18" style="position:absolute;left:344px;top:118px;z-index:5;
+               filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">
+            <path d="M1 1 L1 14 L4.6 10.6 L7 16 L9.6 14.8 L7.2 9.6 L12 9.4 Z" fill="#fff" stroke="#0B1220" stroke-width="1"/>
+          </svg>
+          <div class="ui-tooltip" style="position:absolute;left:356px;top:132px;z-index:4;max-width:290px">
+            <div class="ui-tooltip__name" style="color:var(--copper)">조립기</div>
+            <div class="ui-tooltip__type">TIER 2 · 생산</div>
+            <div class="ui-tooltip__desc">부품 2종을 합쳐 조립 부품을 만듭니다.</div>
+            <div class="ui-tooltip__sep"></div>
+            <div class="ui-tooltip__stat"><span>입력 슬롯</span><b>2</b></div>
+            <div class="ui-tooltip__sep"></div>
+            <div style="display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--text-faint)">건설 비용</span>
+              <span class="ui-chip ui-chip--iron">철판<span class="ui-chip__n">8</span></span>
+              <span class="ui-chip ui-chip--iron">철 기어<span class="ui-chip__n">4</span></span>
+            </div>
+          </div>
+          <div class="ui-panel__title"><span class="tag">BUILD</span>건설<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body" style="padding-top:0">
+            <div class="ui-tabs" style="margin:0 calc(-1 * var(--space-4)) var(--space-4);padding:0 var(--space-4)">
+              <button class="ui-tab ui-tab--active">공장</button>
+              <button class="ui-tab">방어</button>
+              <button class="ui-tab">운송</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);position:relative">
+              <div class="ui-row ui-row--selected"><div class="ui-slot__icon" style="background:var(--copper)"></div>
+                <span class="ui-row__name">컨베이어 벨트</span></div>
+              <div class="ui-row" style="background:var(--bg-raised)"><div class="ui-slot__icon" style="background:var(--copper)"></div>
+                <span class="ui-row__name">조립기</span></div>
+              <div class="ui-row"><div class="ui-slot__icon" style="background:var(--copper)"></div>
+                <span class="ui-row__name">제련로</span></div>
+              <div class="ui-row"><div class="ui-slot__icon" style="background:var(--copper)"></div>
+                <span class="ui-row__name">스플리터</span></div>
+              <div class="ui-row ui-row--locked"><div class="ui-slot__icon" style="background:var(--crystal)"></div>
+                <span class="ui-row__name">제조기</span><span class="ui-row__meta">게이트②</span></div>
+              <div class="ui-row ui-row--locked"><div class="ui-slot__icon" style="background:var(--crystal)"></div>
+                <span class="ui-row__name">드론 포트</span><span class="ui-row__meta">게이트②</span></div>
+            </div>
+
+
+
+            <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);
+                        border-top:1px solid var(--line);padding-top:var(--space-3)">
+              <div style="margin-left:auto;display:flex;align-items:center;gap:var(--space-3)">
+                <span class="ui-key"><span class="ui-key__cap">R</span>회전</span>
+                <span class="ui-key"><span class="ui-key__cap">T</span>모양 변경</span>
+                <span class="ui-key"><span class="ui-key__cap">RMB</span>취소</span>
+                <button class="ui-btn ui-btn--primary">배치 시작</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+목록에는 <b style="color:var(--text)">이름만</b> 남긴다 — 입력 슬롯 수·비용 같은 수치는 고를 때만 필요하므로 <b style="color:var(--text)">커서 옆에 뜨는 툴팁</b>으로 보여준다.
+      한 줄에 이름과 스펙을 같이 적으면 여섯 개만 놓여도 화면이 빽빽해지고, 정작 <b style="color:var(--text)">무엇을 지을지 고르는 일</b>이 느려진다.
+      잠긴 항목만 예외로 해금 조건(게이트②)을 줄에 남긴다 — 그건 고르기 전에 알아야 하는 정보다.
+      조작 힌트는 <b style="color:var(--text)">배치 버튼 바로 옆</b>에 둔다 — 별도 줄을 만들면 시선이 한 번 더 움직인다. 항목은 선택한 건물에 따라 바뀌어서, 벨트를 고르면 T(모양 변경)가 나타나고 회전이 없는 건물에서는 R이 사라진다. 마우스는 <code>LMB</code>/<code>RMB</code>로 표기해 키캡과 같은 형식으로 읽히게 한다.
+      현재 <code>BuildMenuPopup.cs</code>가 런타임에 <code>new GameObject</code>로 조립하는 화면이다 — UXML로 옮기면 조립부가 사라지고 바인딩만 남는다.
+    </div>
+  </div>
+
+  <!-- 인벤토리 + 제작 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-04</span><h3>인벤토리 · 수동 제작</h3><span class="cls">InventoryPanel.uxml</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo" style="padding:0;border-radius:0 0 var(--r-lg) var(--r-lg)">
+        <div style="width:100%;aspect-ratio:16/10;position:relative;overflow:hidden;border-radius:0 0 var(--r-lg) var(--r-lg);
+                    background:linear-gradient(180deg,#132038 0%,#0B1220 55%,#0E1A2E 100%)">
+          <div style="position:absolute;left:0;right:0;top:46%;height:1px;background:rgba(79,216,224,.12)"></div>
+          <!-- 인벤토리 열면 화면이 어두워진다 -->
+          <div style="position:absolute;inset:0;background:rgba(6,10,20,.55)"></div>
+
+          <!-- 열려 있어도 남는 HUD (흐리게) -->
+          <div style="position:absolute;left:24px;top:18px;display:flex;gap:var(--space-5);opacity:.4">
+            <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
+            <div class="ui-stat"><span class="ui-stat__label">NIGHT ENDS</span><span class="ui-stat__value" style="color:var(--beast)">01:32</span></div>
+          </div>
+
+          <!-- 인벤토리 패널: 핫바가 HUD 핫바 자리에 그대로 오도록 하단 정렬 -->
+          <div class="ui-panel" style="width:600px;position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
+                                       border-bottom-left-radius:0;border-bottom-right-radius:0">
+            <div class="ui-panel__title"><span class="tag">INV</span>인벤토리<button class="ui-panel__x">✕</button></div>
+            <div class="ui-panel__body" style="padding-bottom:0">
+
+              <!-- 수동 제작 -->
+              <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-3)">HAND CRAFT</div>
+              <div style="display:grid;grid-template-columns:236px minmax(0,1fr);gap:var(--space-4)">
+                <div>
+                  <div class="ui-search" style="margin-bottom:var(--space-2)">
+                    <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
+                      <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
+                      <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <input class="ui-search__input" type="text" placeholder="레시피 검색">
+                  </div>
+                  <div class="ui-scroll" style="display:flex;flex-direction:column;gap:2px;max-height:126px">
+                    <div class="ui-row ui-row--selected" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">선체 패널</span><span class="ui-row__meta">4.0s</span></div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">철판</span><span class="ui-row__meta">3.0s</span></div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">철 기어</span><span class="ui-row__meta">3.0s</span></div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">철 주괴</span><span class="ui-row__meta">2.0s</span></div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">회로 기판</span><span class="ui-row__meta">4.0s</span></div>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column">
+                  <div class="ui-yield" style="margin-bottom:var(--space-3)">
+                    <div class="ui-slot" style="width:40px;height:40px"><div class="ui-slot__icon" style="background:var(--iron)"></div></div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:13px;color:var(--iron);font-weight:500">선체 패널</div>
+                      <div style="font-size:11px;color:var(--text-faint)">회당 1개 산출</div>
+                    </div>
+                    <span class="ui-timepill">◷ 4.0s</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-3)">
+                    <div class="ui-mat ui-mat--iron"><span class="ui-mat__name">철판</span>
+                      <span class="ui-mat__n">2 <span class="ui-num--dim">/ 31</span></span></div>
+                    <div class="ui-mat ui-mat--iron"><span class="ui-mat__name">철 기어</span>
+                      <span class="ui-mat__n">1 <span class="ui-num--dim">/ 64</span></span></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-2);margin:auto 0 var(--space-2)">
+                    <div class="ui-bar ui-bar--iron" style="flex:1;min-width:0"><div class="ui-bar__fill" style="width:42%"></div></div>
+                    <span style="font-family:var(--font-data);font-size:11px;color:var(--text-faint)">2.3s</span>
+                  </div>
+                  <button class="ui-btn ui-btn--primary ui-btn--hold" style="width:100%;padding:var(--space-2)">
+                    <span class="ui-btn__fill" style="width:42%"></span>
+                    <span class="ui-btn__label">누르고 있는 동안 제작 <span class="ui-btn__key">HOLD</span></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 인벤토리 격자 -->
+              <div style="border-top:1px solid var(--line);margin-top:var(--space-4);padding-top:var(--space-3)">
+                <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-2)">INVENTORY</div>
+                <div style="display:grid;grid-template-columns:repeat(9,52px);gap:var(--space-2);justify-content:center">
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">64</span></div>
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">31</span></div>
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">12</span></div>
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">18</span></div>
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">50</span></div>
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--crystal)"></div><span class="ui-slot__n">4</span></div>
+                  <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--beast)"></div><span class="ui-slot__n">2</span></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                  <div class="ui-slot ui-slot--empty"><div class="ui-slot__icon"></div></div>
+                </div>
+              </div>
+
+              <!-- 핫바: HUD와 같은 자리 -->
+              <div style="border-top:1px solid var(--line);margin-top:var(--space-3);padding:var(--space-3) 0 var(--space-4);
+                          display:flex;justify-content:center;gap:var(--space-2)">
+                <div class="ui-slot ui-slot--active"><span class="ui-slot__key">1</span><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">24</span></div>
+                <div class="ui-slot"><span class="ui-slot__key">2</span><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">8</span></div>
+                <div class="ui-slot"><span class="ui-slot__key">3</span><div class="ui-slot__icon" style="background:var(--beast)"></div><span class="ui-slot__n">3</span></div>
+                <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">4</span><div class="ui-slot__icon"></div></div>
+                <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">5</span><div class="ui-slot__icon"></div></div>
+                <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">6</span><div class="ui-slot__icon"></div></div>
+                <div class="ui-slot ui-slot--empty"><span class="ui-slot__key">7</span><div class="ui-slot__icon"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+패널을 화면 하단에 붙여 <b style="color:var(--text)">핫바가 HUD의 핫바와 같은 자리</b>에 오게 한다 — I를 눌러 열고 닫아도 핫바는 움직이지 않는다.
+      손이 기억하는 위치가 유지되고, 격자에서 핫바로 아이템을 끌어 내리는 동작이 화면상의 실제 방향과 일치한다.
+      위에서 아래로 <b style="color:var(--text)">제작 → 소지품 → 핫바</b> 순. 격자는 빈 칸까지 전부 그려 칸 수가 곧 소지 한도임을 보여주고,
+      제작 영역만 가로 2단인데 목록과 상세는 함께 봐야 고를 수 있기 때문이다.
+      수동 제작은 <b style="color:var(--text)">인벤토리 안에 들어간다</b> — 티어 0~1에서만 쓰는 기능에 별도 화면을 주면 자동화 이후 죽은 UI가 남는다.
+      목록에는 <b style="color:var(--text)">해금된 레시피만</b> 올린다 — 해금되면 전부 수동 제작이 가능하므로 "잠김" 줄을 보여줄 이유가 없다.
+      대신 티어가 오르면 목록이 계속 길어지므로 <b style="color:var(--text)">검색과 스크롤</b>을 처음부터 넣는다.
+      제작은 수량을 미리 고르지 않고 <b style="color:var(--text)">버튼을 누르고 있는 동안 계속 만든다</b> — 버튼 안이 차오르면 한 개 완성,
+      떼면 그 자리에서 멈춘다. 몇 개가 필요할지 미리 세지 않아도 되고, 재료가 떨어지면 자동으로 멈춘다.
+      시간은 목록의 <b style="color:var(--text)">회당 시간</b>(레시피 비교용), 상세의 <b style="color:var(--text)">시간 배지</b>,
+      진행 중 <b style="color:var(--text)">현재 항목 잔여</b> 세 군데에 나온다. 재료는 계통색 띠로 표시해 어느 라인에서 나온 것인지 바로 읽힌다.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 5. 구현 규약 ══════════ -->
+<section class="doc-sec" id="impl">
+  <div class="doc-sec-head"><span class="n">05</span><h2>UITK 이식 규약</h2><span class="aside">Claude Code 작업 기준</span></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5)">
+    <div>
+      <h3 style="font-size:14px;margin-bottom:var(--space-3)">파일 배치</h3>
+      <div class="doc-code"><span class="c">Assets/Scripts/Runtime/UI/</span>
+├── <span class="s">Styles/</span>
+│   ├── tokens.uss        <span class="c">/* :root 변수만 */</span>
+│   ├── components.uss    <span class="c">/* .ui-* 전부 */</span>
+│   └── screens.uss       <span class="c">/* 화면별 예외 */</span>
+├── <span class="s">Screens/</span>
+│   ├── CorePanel.uxml
+│   ├── GameplayHUD.uxml
+│   ├── BuildMenuPanel.uxml
+│   └── InventoryPanel.uxml
+├── <span class="s">Views/</span>
+│   ├── CorePanelView.cs  <span class="c">/* 바인딩만 */</span>
+│   ├── GameplayHUDView.cs
+│   └── ...
+└── UITKPopup.cs          <span class="c">/* UIPopup 상속 */</span></div>
+      <p class="doc-note" style="font-size:12px">기존 UI 스크립트가 <code>Assets/Scripts/Runtime/</code> 아래 있으므로 UI도 같은 트리에 둔다. <code>tokens.uss</code>는 이 문서의 <code>:root</code>를 그대로 옮긴 것이다.
+        USS도 <code>var(--이름)</code> 문법을 지원하므로 변환이 거의 필요 없다.</p>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin-bottom:var(--space-3)">클래스 이름 규칙</h3>
+      <div class="doc-code"><span class="c">/* 블록 */</span>
+<span class="s">.ui-panel</span> { ... }
+<span class="c">/* 요소 — 두 밑줄 */</span>
+<span class="s">.ui-panel__title</span> { ... }
+<span class="c">/* 변형 — 두 하이픈 */</span>
+<span class="s">.ui-btn--primary</span> { ... }
+<span class="s">.ui-chip--iron</span> { ... }
+
+<span class="c">/* UXML에서는 조합해서 붙인다 */</span>
+&lt;Button <span class="s">class</span>=<span class="v">"ui-btn ui-btn--primary"</span> /&gt;</div>
+      <p class="doc-note" style="font-size:12px">변형을 <b>새 클래스로 만들지 않는다</b>. <code>.ui-btn-primary</code>가 아니라
+        <code>.ui-btn</code> + <code>.ui-btn--primary</code>. 기본 스타일이 한 곳에만 있어야 한다.</p>
+    </div>
+  </div>
+
+  <h3 style="font-size:14px;margin-bottom:var(--space-3)">기존 입력 시스템과 연결</h3>
+  <p class="doc-lead">저장소의 <code>UIPopup</code> — OnEnable에서 입력 맵 Push + 커서 해제, OnDisable에서 Pop + 잠금 — 은
+    <b>이미 잘 동작하므로 그대로 쓴다</b>. UITK 패널용 베이스를 하나 얹기만 하면 된다.</p>
+  <div class="doc-code">public class <span class="s">UITKPopup</span> : UIPopup
+{
+    [SerializeField] protected UIDocument document;
+    protected VisualElement Root =&gt; document.rootVisualElement;
+
+    protected override void <span class="s">OnEnable</span>()
+    {
+        base.OnEnable();          <span class="c">// 입력 맵 Push · 리시버 등록 (기존 계약 유지)</span>
+        Root.style.display = DisplayStyle.Flex;
+        Bind();                   <span class="c">// 이벤트 구독 + 초기 1회 갱신</span>
+    }
+
+    protected override void <span class="s">OnDisable</span>()
+    {
+        Unbind();
+        Root.style.display = DisplayStyle.None;
+        base.OnDisable();         <span class="c">// 입력 맵 Pop · 커서 재잠금</span>
+    }
+
+    protected abstract void <span class="s">Bind</span>();
+    protected abstract void <span class="s">Unbind</span>();
+}</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-top:var(--space-5)">
+    <div>
+      <h3 style="font-size:14px;margin-bottom:var(--space-3)">이관 순서</h3>
+      <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+        <div class="ui-row" style="cursor:default;border-color:var(--line)"><span style="font-family:var(--font-data);font-size:11px;color:var(--copper)">1</span><span class="ui-row__name">게이트 납품 패널 — 신규</span><span class="ui-row__meta">토큰 검증</span></div>
+        <div class="ui-row" style="cursor:default;border-color:var(--line)"><span style="font-family:var(--font-data);font-size:11px;color:var(--copper)">2</span><span class="ui-row__name">건설 메뉴 · 스플리터 필터</span><span class="ui-row__meta">코드 조립 제거</span></div>
+        <div class="ui-row" style="cursor:default;border-color:var(--line)"><span style="font-family:var(--font-data);font-size:11px;color:var(--copper)">3</span><span class="ui-row__name">인벤토리 · 핫바 · 제작</span><span class="ui-row__meta">슬롯 규격 통일</span></div>
+        <div class="ui-row" style="cursor:default;border-color:var(--line)"><span style="font-family:var(--font-data);font-size:11px;color:var(--copper)">4</span><span class="ui-row__name">HUD</span><span class="ui-row__meta">마지막</span></div>
+      </div>
+      <p class="doc-note" style="font-size:12px">1번이 끝나면 <code>components.uss</code>가 확정된다. 이후는 같은 클래스의 재조합이라 속도가 붙는다.</p>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin-bottom:var(--space-3)">주의할 것</h3>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:var(--space-2);font-size:12.5px;color:var(--text-dim)">
+        <li style="border-left:2px solid var(--beast);padding-left:var(--space-3)"><b style="color:var(--text)">월드 스페이스는 예외</b> — 몬스터 체력바, 설비 위 아이콘은 UGUI로 남긴다. UITK 월드 스페이스 지원은 6.3에서 먼저 확인할 것.</li>
+        <li style="border-left:2px solid var(--iron);padding-left:var(--space-3)"><b style="color:var(--text)">Update 폴링 금지</b> — 현재 <code>SystemUIManager</code>가 매 프레임 HUD를 갱신한다. 이관 시 이벤트 구독으로 바꾼다. 시간 표시처럼 진짜 매 프레임이 필요한 것만 예외.</li>
+        <li style="border-left:2px solid var(--iron);padding-left:var(--space-3)"><b style="color:var(--text)">커서 처리 일원화</b> — <code>BuildMenuPopup</code>·<code>SplitterFilterPopup</code>이 커서를 직접 만지고 있다. 이관하며 <code>UITKPopup</code> 계약으로 흡수.</li>
+        <li style="border-left:2px solid var(--copper);padding-left:var(--space-3)"><b style="color:var(--text)">인라인 스타일 금지</b> — 이 문서의 목업에는 레이아웃용 인라인 style이 있지만, 실제 UXML에서는 전부 클래스로 뺀다. 예외는 진행바 <code>width</code>처럼 런타임 값뿐.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="doc-note" style="margin-top:var(--space-5)"><b>이 문서를 열어둔 채로 작업할 것.</b> 브라우저 개발자도구로 요소를 찍으면
+    실제 적용된 값이 그대로 보이고, 그게 곧 USS에 들어갈 값이다. 컴포넌트를 새로 추가하면 이 문서에도 부품 코드를 하나 늘린다.</p>
+</section>
+
+<footer style="margin-top:96px;border-top:1px solid var(--line);padding-top:var(--space-4);
+  display:flex;flex-wrap:wrap;gap:var(--space-5);font-size:var(--fs-micro);color:var(--text-faint);font-family:var(--font-data)">
+  <span>LEVELUPPROJ26 · UI SYSTEM</span>
+  <span>계통색은 테크트리 문서와 동일 값</span>
+  <span>ui- 접두 클래스만 이식 대상</span>
+</footer>
+
+</div>
+</body>
+</html>

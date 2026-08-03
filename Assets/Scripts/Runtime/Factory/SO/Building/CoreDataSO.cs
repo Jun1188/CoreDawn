@@ -75,6 +75,15 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
     /// <summary>플레이어 상호작용/UI가 바인딩할 컨테이너 — 벨트도 여기로 들어온다.</summary>
     public ItemContainer Container => _b.Input;
 
+    /// <summary>수리 단계 목록을 읽기 위한 UI용 접근자.</summary>
+    public CoreDataSO Data => _so;
+
+    /// <summary>현재 진행 중인 단계 인덱스. tiers.Length와 같으면 전 단계 완료.</summary>
+    public int CurrentTierIndex => TierIndex;
+
+    /// <summary>전체 수리 단계 수.</summary>
+    public int TierCount => _so.tiers != null ? _so.tiers.Length : 0;
+
     int TierIndex => GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
 
     public bool HasNextTier => _so.tiers != null && TierIndex < _so.tiers.Length;
@@ -83,7 +92,13 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
 
     public string InteractPrompt => HasNextTier ? "코어에 자원 납품" : "코어 (최고 티어 달성)";
 
-    public void Interact(PlayerController player) => InventoryManager.Instance?.OpenCoreScreen(this);
+    public void Interact(PlayerController player)
+    {
+        // 씬에 UITK 코어 패널이 있으면 그쪽을 연다. 없으면 기존 uGUI 화면으로 —
+        // 씬 내용만으로 전환이 결정되므로 이관 중에도 두 경로가 공존한다.
+        if (CorePanelView.TryOpen(this)) return;
+        InventoryManager.Instance?.OpenCoreScreen(this);
+    }
 
     /// <summary>현재 티어 요구 아이템별 (아이템, 필요량, 현재량) — 진행률 UI용.</summary>
     public IReadOnlyList<(ItemDataSO item, int required, int current)> GetProgress()

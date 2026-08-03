@@ -1,0 +1,181 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   screens.uss — 화면별 예외만. 여기 규칙이 늘어나면 components.uss로
+   승격할 후보라는 뜻이다 (부품으로 조립되지 않는 화면이 생기고 있다는 신호).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 팝업 루트 — UIDocument 최상단. 화면 전체를 덮고 패널만 가운데 띄운다 */
+.screen-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(6, 10, 20, 0.55);
+}
+
+/* ───────────────── SCR-01 코어 패널 ───────────────── */
+
+.core-panel { width: 880px; }
+
+.core-panel__tabs { padding: 0 var(--space-4); }
+
+.core-panel__body {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.core-panel__rail {
+    width: 176px;
+    flex-shrink: 0;
+    margin-right: var(--space-5);
+}
+
+/* 게이트 요약 — 이 게이트 전체가 얼마나 찼는지 */
+.core-gate {
+    margin-bottom: var(--space-4);
+}
+
+/* 문서 목업은 baseline 정렬이지만 USS의 align-items에는 baseline이 없다
+   (auto/flex-start/flex-end/center/stretch만). 글자 크기가 다른 두 줄이라 flex-end가 가장 가깝다 */
+.core-gate__head {
+    flex-direction: row;
+    align-items: flex-end;
+    margin-bottom: var(--space-2);
+}
+
+.core-gate__name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: var(--text);
+}
+
+.core-gate__count {
+    margin-left: auto;
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+}
+
+.core-gate__meter {
+    flex-direction: row;
+    align-items: center;
+}
+
+.core-gate__meter .ui-bar {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin-right: var(--space-3);
+}
+
+.core-gate__pct {
+    width: 48px;
+    color: var(--crystal);
+    -unity-text-align: middle-right;
+}
+
+/* 하단 액션 줄 — "이번에 납품" 요약 + 버튼 */
+.core-actions {
+    flex-direction: row;
+    align-items: center;
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top-width: 1px;
+    border-top-color: var(--line);
+}
+
+.core-actions > * { margin-right: var(--space-3); }
+
+.core-actions__label {
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+/* 모든 부품이 준비됐을 때 나오는 줄 */
+.core-actions__ready {
+    font-size: 13px;
+    color: var(--ok);
+}
+
+/* ───────────── SCR-01c 코어 정보 탭 ───────────── */
+
+.core-section-label {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: var(--text-faint);
+    margin-bottom: var(--space-3);
+}
+
+.core-section-label--inline { margin-bottom: 0; }
+.core-section-label--spaced { margin-top: var(--space-4); }
+
+/* 웨이브 수치 — 라벨 위, 값 아래 (ui-stat). 한 줄에 넉넉히 벌린다 */
+.core-wave {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.core-wave__item {
+    margin-right: var(--space-5);
+    margin-bottom: var(--space-2);
+}
+
+.core-wave__danger { color: var(--beast); }
+
+/* 레이더가 꺼져 있어 모르는 값 — 색으로 강조하지 않는다 */
+.core-wave__unknown { color: var(--text-faint); }
+
+/* 레이더 스코프가 들어갈 자리 — 좌우에 지시선 라벨 여백을 항상 확보해 둔다 */
+.core-radar-slot {
+    height: 240px;
+    background-color: var(--bg-inset);
+    border-width: 1px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+}
+
+.core-section-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.core-stat { margin-bottom: var(--space-3); }
+
+.core-stat__head {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.core-stat__name {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+}
+
+.core-info__radar {
+    width: 400px;
+    flex-shrink: 0;
+    margin-left: var(--space-5);
+}
+
+/* 최고 티어 도달 — 더 납품할 것이 없을 때 표 자리를 대신한다 */
+.core-complete {
+    padding: var(--space-6) var(--space-4);
+    align-items: center;
+}
+
+.core-complete__title {
+    font-size: var(--fs-sub);
+    color: var(--ok);
+    margin-bottom: var(--space-2);
+}
+
+.core-complete__desc {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
