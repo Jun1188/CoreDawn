@@ -9,6 +9,9 @@ using UnityEngine;
 ///   1. 심 생성·매 프레임 Advance() 호출
 ///   2. 심 Building ↔ BuildingEntity(GameObject) 매핑 관리
 /// 시뮬레이션 로직은 전부 FactorySim(plain C#)에 있다.
+///
+/// 씬을 넘어 살아남지 않는다 — 심과 건물 뷰는 한 씬 안에서만 의미가 있고,
+/// 씬이 바뀌면 새 심으로 시작한다.
 /// </summary>
 /// <remarks>
 /// 실행 순서를 뒤로 민 이유: 코어 자동 설치가 씬에 미리 놓인
@@ -50,7 +53,6 @@ public class FactoryBootstrap : MonoBehaviour
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         Sim = new FactorySim(_tps, _maxCatchUpTicks);
-        DontDestroyOnLoad(gameObject);
 
         // 벨트 철거로 세그먼트에서 밀려난 아이템 → 월드 드롭 (통지 시점엔 벨트 뷰가 아직 살아있음)
         Sim.Belts.ItemDiscarded += (belt, item) =>
