@@ -274,6 +274,15 @@
     color: var(--ok);
 }
 
+/* 준비 상태의 확정 버튼 — 이 줄에서 유일한 행동이므로 좌우를 넉넉히 준다.
+   `.core-actions > *`의 오른쪽 여백을 확실히 이기도록 같은 자식 선택자로 쓴다
+   (같은 특정도면 순서로 갈리는데, 그런 건 나중에 규칙이 하나 끼어들면 조용히 뒤집힌다) */
+.core-actions > .core-actions__go {
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
+    margin-right: 0;
+}
+
 /* ───────────── SCR-01c 코어 정보 탭 ───────────── */
 
 .core-section-label {
@@ -427,3 +436,89 @@
 .hud-card__keys > .ui-key  { margin-right: var(--space-3); }
 .hud-card__cost > .ui-chip--last { margin-right: 0; }
 .hud-card__keys > .ui-key--last  { margin-right: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCR-01b 수리 확인창
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 코어 패널 위에 겹쳐 뜬다 — 뒤 화면을 덮어 지금 답해야 할 질문 하나만 남긴다 */
+.core-confirm-scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(6, 10, 20, 0.55);
+}
+
+.core-confirm {
+    width: 460px;
+}
+
+.core-confirm__desc {
+    font-size: 13px;
+    color: var(--text);
+    white-space: normal;
+    margin-bottom: var(--space-4);
+}
+
+.core-confirm__unlocks {
+    flex-direction: column;
+    margin-bottom: var(--space-4);
+}
+
+.core-confirm__unlocks > .ui-mat { margin-bottom: 2px; }
+
+/* 되돌릴 수 없는 단계에만 붙는다. 전부에 붙이면 정작 위험한 마지막에서 눈에 안 띈다 */
+.core-confirm__warn {
+    border-width: 1px;
+    border-color: var(--danger-a50);
+    background-color: var(--danger-a07);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.core-confirm__warn-head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.core-confirm__warn-icon {
+    color: var(--danger);
+    font-size: 13px;
+    margin-right: var(--space-2);
+}
+
+.core-confirm__warn-title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--danger);
+}
+
+.core-confirm__warn-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: normal;
+}
+
+/* 확인 버튼을 조금 넓게 — 기본 행동이 어느 쪽인지 크기로 말한다 */
+.core-confirm__actions {
+    flex-direction: row;
+}
+
+.core-confirm__cancel {
+    flex-grow: 1;
+    flex-basis: 0;
+    justify-content: center;
+    margin-right: var(--space-2);
+}
+
+.core-confirm__ok {
+    flex-grow: 1.4;
+    flex-basis: 0;
+    justify-content: center;
+}

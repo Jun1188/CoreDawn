@@ -125,19 +125,61 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
 
     public void OnAfterPlaced() => RefreshAcceptFilter(); // 배치 시점에 이미 진행된 티어 반영(재시작 등)
 
+    // ── 수리 확인 (SCR-01b)
+    //
+    // 마지막 부품을 넣자마자 수리가 시작되면 플레이어가 준비할 틈이 없다. 특히 마지막 단계는
+    // 곧바로 최종 방어전이라, 확인창을 거쳐야 한다. 그래서 요구 충족과 실제 진행을 갈라 둔다.
+
+    bool _ready;
+
+    /// <summary>요구가 전부 채워졌는가 — UI가 "납품" 버튼을 "수리 시작"으로 바꾸는 신호.</summary>
+    public bool IsReadyToRepair => _ready;
+
+    /// <summary>준비 상태가 바뀔 때만 발화. UI가 매 프레임 폴링하지 않게 한다.</summary>
+    public event System.Action ReadyChanged;
+
     public void Tick(float dt)
     {
         var reqs = CurrentTier?.requirements;
-        if (reqs == null) return;
+        if (reqs == null) { SetReady(false); return; }
 
         foreach (var r in reqs)
-            if (_b.Input.CountOf(r.item) < r.amount) return; // 아직 미충족
+            if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return; } // 아직 미충족
+
+        SetReady(true);
+
+        // 확인창을 띄울 UI가 없는 씬에서는 예전처럼 즉시 진행한다.
+        // 그러지 않으면 UITK 패널이 아직 안 들어간 씬에서 코어 진행이 영영 멈춘다 —
+        // Interact가 이미 쓰고 있는 "씬 내용이 경로를 결정한다" 방침과 같다.
+        if (!CorePanelView.ExistsInScene()) TryStartRepair();
+    }
+
+    /// <summary>
+    /// 확인창의 "수리 시작"이 호출. 요구를 소비하고 다음 단계를 연다.
+    /// 호출 시점에 요구가 다시 미달일 수 있으므로(벨트가 도로 빼갔다든지) 여기서 한 번 더 검사한다.
+    /// </summary>
+    public bool TryStartRepair()
+    {
+        var reqs = CurrentTier?.requirements;
+        if (reqs == null) return false;
+
+        foreach (var r in reqs)
+            if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return false; }
 
         foreach (var r in reqs) _b.Input.TryConsume(r.item, r.amount);
 
         GameManager.Instance.AdvanceTier(TierIndex + 1);
+        SetReady(false);
         RefreshAcceptFilter();
         _b.NotifyUpstream(); // 자리 비었으니 막혀있던 상류(벨트) 재개
+        return true;
+    }
+
+    void SetReady(bool on)
+    {
+        if (_ready == on) return;
+        _ready = on;
+        ReadyChanged?.Invoke();
     }
 
     void RefreshAcceptFilter()

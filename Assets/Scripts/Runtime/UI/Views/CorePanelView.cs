@@ -24,6 +24,11 @@ public class CorePanelView : UITKPopup
     Label gateName, gateCount, gatePct, actionsLabel, deliverLabel;
     Button btnClose, btnAll, btnDeliver, tabDeliver, tabInfo;
 
+    // SCR-01b 수리 확인창
+    VisualElement confirmScrim, confirmUnlocks, confirmWarn;
+    Label confirmGate, confirmName, confirmDesc, confirmUnlocksLabel, confirmWarnTitle, confirmWarnBody;
+    Button confirmOk, confirmCancel, confirmX;
+
     // 코어 정보 탭
     VisualElement viewDeliver, viewInfo, hpFill, repairFill, radarSlot, radarChip;
     Label hpText, hpMax, repairText, repairMax, radarChipText;
@@ -60,13 +65,22 @@ public class CorePanelView : UITKPopup
     /// 씬에 이 패널이 있으면 열고 true. 없으면 false —
     /// 호출부(CoreBehavior)가 기존 uGUI 경로로 넘어갈 수 있게 한다.
     /// </summary>
+    /// <summary>
+    /// 이 씬이 UITK 코어 패널을 갖고 있는가 — 즉 수리 확인창을 띄울 수 있는가.
+    /// CoreBehavior가 자동 진행을 멈출지 판단할 때 쓴다 (SCR-01b).
+    /// 비활성 오브젝트까지 찾고 결과를 캐시하므로 매 틱 불려도 된다.
+    /// </summary>
+    public static bool ExistsInScene()
+    {
+        if (cached == null)
+            cached = FindFirstObjectByType<CorePanelView>(FindObjectsInactive.Include);
+        return cached != null;
+    }
+
     public static bool TryOpen(CoreBehavior core)
     {
         if (core == null) return false;
-
-        if (cached == null)
-            cached = FindFirstObjectByType<CorePanelView>(FindObjectsInactive.Include);
-        if (cached == null) return false;
+        if (!ExistsInScene()) return false;
 
         // 이미 열려 있으면 SetActive(true)가 아무 일도 하지 않아 OnEnable(=Bind)이 뜨지 않는다.
         // 다른 코어를 열 때와, 씬이 패널을 켠 채로 시작한 경우가 여기 해당한다 —
@@ -101,10 +115,15 @@ public class CorePanelView : UITKPopup
 
         btnClose.clicked += Close;
         btnAll.clicked += SelectAll;
-        btnDeliver.clicked += Deliver;
+        btnDeliver.clicked += OnPrimaryAction;
         tabDeliver.clicked += ShowDeliverTab;
         tabInfo.clicked += ShowInfoTab;
 
+        confirmOk.clicked += ConfirmRepair;
+        confirmCancel.clicked += CloseConfirm;
+        confirmX.clicked += CloseConfirm;
+
+        CloseConfirm();
         ShowDeliverTab();
         Subscribe();
         builtForTier = -1;   // 강제 재구성
@@ -117,9 +136,13 @@ public class CorePanelView : UITKPopup
 
         if (btnClose != null) btnClose.clicked -= Close;
         if (btnAll != null) btnAll.clicked -= SelectAll;
-        if (btnDeliver != null) btnDeliver.clicked -= Deliver;
+        if (btnDeliver != null) btnDeliver.clicked -= OnPrimaryAction;
         if (tabDeliver != null) tabDeliver.clicked -= ShowDeliverTab;
         if (tabInfo != null) tabInfo.clicked -= ShowInfoTab;
+
+        if (confirmOk != null) confirmOk.clicked -= ConfirmRepair;
+        if (confirmCancel != null) confirmCancel.clicked -= CloseConfirm;
+        if (confirmX != null) confirmX.clicked -= CloseConfirm;
 
         target = null;
     }
@@ -175,6 +198,19 @@ public class CorePanelView : UITKPopup
         repairMax = r.Q<Label>("repair-max");
 
         radarSlot = r.Q("radar-slot");
+
+        confirmScrim        = r.Q("confirm-scrim");
+        confirmGate         = r.Q<Label>("confirm-gate");
+        confirmName         = r.Q<Label>("confirm-name");
+        confirmDesc         = r.Q<Label>("confirm-desc");
+        confirmUnlocksLabel = r.Q<Label>("confirm-unlocks-label");
+        confirmUnlocks      = r.Q("confirm-unlocks");
+        confirmWarn         = r.Q("confirm-warn");
+        confirmWarnTitle    = r.Q<Label>("confirm-warn-title");
+        confirmWarnBody     = r.Q<Label>("confirm-warn-body");
+        confirmOk           = r.Q<Button>("confirm-ok");
+        confirmCancel       = r.Q<Button>("confirm-cancel");
+        confirmX            = r.Q<Button>("confirm-x");
         radarChip = r.Q("radar-chip");
         radarChipText = r.Q<Label>("radar-chip-text");
         waveNext = r.Q<Label>("wave-next");
@@ -285,6 +321,9 @@ public class CorePanelView : UITKPopup
         if (subHotbar != null) subHotbar.Changed += OnContainerChanged;
         if (subBag != null) subBag.Changed += OnContainerChanged;
 
+        // 요구가 다 채워지면 버튼이 "납품"에서 "수리 시작"으로 바뀐다 (SCR-01b)
+        if (target != null) target.ReadyChanged += OnContainerChanged;
+
         // 코어 내구도도 폴링하지 않고 이벤트로 받는다
         coreEntity = FindCoreEntity();
         if (coreEntity != null) coreEntity.OnHealthChanged += OnCoreHealthChanged;
@@ -296,6 +335,8 @@ public class CorePanelView : UITKPopup
         if (subHotbar != null) subHotbar.Changed -= OnContainerChanged;
         if (subBag != null) subBag.Changed -= OnContainerChanged;
         subCore = subHotbar = subBag = null;
+
+        if (target != null) target.ReadyChanged -= OnContainerChanged;
 
         if (coreEntity != null) coreEntity.OnHealthChanged -= OnCoreHealthChanged;
         coreEntity = null;
@@ -414,6 +455,30 @@ public class CorePanelView : UITKPopup
             actionsChips.Add(chip);
         }
 
+        // 부품이 다 모이면 납품 줄이 통째로 "수리 시작"으로 바뀐다 (SCR-01b) —
+        // 더 넣을 것이 없으니 부품 선택 UI를 남겨둘 이유가 없다
+        bool ready = target != null && target.IsReadyToRepair;
+        ToggleClass(btnDeliver, "ui-btn--danger", ready && IsFinalTier);
+        ToggleClass(btnDeliver, "ui-btn--primary", !(ready && IsFinalTier));
+        Show(actionsChips, !ready);
+        btnAll.style.display = ready ? DisplayStyle.None : DisplayStyle.Flex;
+
+        // 오른쪽으로 미는 일은 원래 btn-all(.ui-push)이 했다. 준비 상태에서 그걸 숨기므로
+        // 밀어낼 것이 사라져 버튼이 라벨 바로 옆에 붙는다 — 그때는 버튼 자신이 민다.
+        ToggleClass(btnDeliver, "ui-push", ready);
+        ToggleClass(btnDeliver, "core-actions__go", ready);
+
+        if (ready)
+        {
+            btnDeliver.SetEnabled(true);
+            deliverLabel.text = IsFinalTier ? "예열 시작" : "수리 시작";
+            actionsLabel.text = "모든 부품이 준비됐습니다";
+            ToggleClass(actionsLabel, "core-actions__ready", true);
+            return;
+        }
+
+        ToggleClass(actionsLabel, "core-actions__ready", false);
+
         bool can = chosenTotal > 0;
         btnDeliver.SetEnabled(can);
         // 비활성 버튼은 "확인"이 아니라 왜 못 누르는지를 말한다 (문서 §03 BTN)
@@ -424,6 +489,87 @@ public class CorePanelView : UITKPopup
         foreach (var row in builtRows)
             if (row.Stepper.enabledSelf) { anyAvailable = true; break; }
         btnAll.SetEnabled(anyAvailable);
+    }
+
+    // ───────────────── SCR-01b 수리 확인창 ─────────────────
+
+    CoreTierDefinition CurrentTier
+    {
+        get
+        {
+            var tiers = target?.Data?.tiers;
+            int i = target?.CurrentTierIndex ?? -1;
+            return tiers != null && i >= 0 && i < tiers.Length ? tiers[i] : null;
+        }
+    }
+
+    bool IsFinalTier => CurrentTier?.isFinal ?? false;
+
+    /// <summary>납품 버튼의 두 얼굴 — 아직 모자라면 납품, 다 모였으면 확인창.</summary>
+    void OnPrimaryAction()
+    {
+        if (target != null && target.IsReadyToRepair) OpenConfirm();
+        else Deliver();
+    }
+
+    void OpenConfirm()
+    {
+        var tier = CurrentTier;
+        if (tier == null) return;
+
+        confirmGate.text = $"GATE {(target.CurrentTierIndex + 1):00}";
+        confirmName.text = string.IsNullOrEmpty(tier.tierLabel)
+            ? $"{target.CurrentTierIndex + 1}단계" : tier.tierLabel;
+
+        confirmDesc.text = tier.description ?? "";
+        Show(confirmDesc, !string.IsNullOrEmpty(tier.description));
+
+        // 해금 목록 — 계통색은 마지막 단계만 crystal, 나머지는 copper (문서 목업과 동일)
+        string matClass = tier.isFinal ? "ui-mat--crystal" : "ui-mat--copper";
+        confirmUnlocks.Clear();
+        int n = 0;
+        if (tier.unlocks != null)
+        {
+            foreach (var u in tier.unlocks)
+            {
+                if (string.IsNullOrEmpty(u)) continue;
+                var row = new VisualElement();
+                row.AddToClassList("ui-mat");
+                row.AddToClassList(matClass);
+                var label = new Label(u);
+                label.AddToClassList("ui-mat__name");
+                row.Add(label);
+                confirmUnlocks.Add(row);
+                n++;
+            }
+        }
+        Show(confirmUnlocksLabel, n > 0);
+        Show(confirmUnlocks, n > 0);
+
+        // 경고는 되돌릴 수 없는 단계에만. 전부에 붙이면 정작 위험한 마지막에서 눈에 안 띈다
+        Show(confirmWarn, tier.isFinal);
+        if (tier.isFinal)
+        {
+            confirmWarnTitle.text = "예열이 시작되면 멈출 수 없습니다";
+            confirmWarnBody.text  = "예열 동안 행성의 모든 무리가 코어로 몰려옵니다. 끝까지 지켜내면 이륙합니다.";
+        }
+
+        confirmOk.text = tier.isFinal ? "예열 시작" : "수리 시작";
+        ToggleClass(confirmOk, "ui-btn--danger", tier.isFinal);
+        ToggleClass(confirmOk, "ui-btn--primary", !tier.isFinal);
+
+        Show(confirmScrim, true);
+    }
+
+    void CloseConfirm() => Show(confirmScrim, false);
+
+    void ConfirmRepair()
+    {
+        // 창이 떠 있는 동안 벨트가 내용물을 도로 빼갔을 수 있다 — 실패하면 창만 닫고 화면을 갱신한다
+        target?.TryStartRepair();
+        CloseConfirm();
+        builtForTier = -1;   // 단계가 바뀌면 요구 부품 구성도 바뀐다
+        Refresh();
     }
 
     // ───────────────────────── 조작 ─────────────────────────

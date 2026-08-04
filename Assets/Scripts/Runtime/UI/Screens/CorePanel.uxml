@@ -157,5 +157,43 @@
             </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+
+        <!-- SCR-01b 수리 확인창.
+             부품이 다 모이면 납품 버튼이 "수리 시작"으로 바뀌고, 누르면 이 창이 뜬다 —
+             마지막 부품을 넣자마자 수리가 시작되면 준비할 틈이 없다.
+             해금 목록과 버튼 문구는 단계 데이터(tiers)에서 나오므로 CorePanelView가 채운다.
+             경고 블록은 되돌릴 수 없는 단계(isFinal)에만 붙인다 — 전부에 붙이면
+             정작 위험한 마지막 단계에서 눈에 띄지 않는다. -->
+        <ui:VisualElement name="confirm-scrim" class="core-confirm-scrim ui-hidden">
+            <ui:VisualElement name="confirm" class="ui-panel core-confirm">
+
+                <ui:VisualElement class="ui-panel__title">
+                    <ui:Label name="confirm-gate" text="GATE 01" class="ui-panel__tag" />
+                    <ui:Label name="confirm-name" text="" />
+                    <ui:Button name="confirm-x" text="✕" class="ui-panel__x" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="ui-panel__body">
+                    <ui:Label name="confirm-desc" text="" class="core-confirm__desc" />
+
+                    <ui:Label name="confirm-unlocks-label" text="해금" class="core-section-label" />
+                    <ui:VisualElement name="confirm-unlocks" class="core-confirm__unlocks" />
+
+                    <ui:VisualElement name="confirm-warn" class="core-confirm__warn ui-hidden">
+                        <ui:VisualElement class="core-confirm__warn-head">
+                            <ui:Label text="⚠" class="core-confirm__warn-icon" />
+                            <ui:Label name="confirm-warn-title" text="" class="core-confirm__warn-title" />
+                        </ui:VisualElement>
+                        <ui:Label name="confirm-warn-body" text="" class="core-confirm__warn-body" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="core-confirm__actions">
+                        <ui:Button name="confirm-cancel" text="돌아가기" class="ui-btn core-confirm__cancel" />
+                        <ui:Button name="confirm-ok" text="수리 시작" class="ui-btn ui-btn--primary core-confirm__ok" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
