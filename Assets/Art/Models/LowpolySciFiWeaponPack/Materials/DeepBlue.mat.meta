@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a1f0b8fe173d62d4c91ff7aa211c49f0
+timeCreated: 1518627528
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 106040
+  packageName: Lowpoly Sci Fi Weapon Pack
+  packageVersion: 1.0
+  assetPath: Assets/LowpolySciFiWeaponPack/Materials/DeepBlue.mat
+  uploadId: 230169

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b4a1a184f2dfb834fa98f05e44867d04
+timeCreated: 1518732905
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 106040
+  packageName: Lowpoly Sci Fi Weapon Pack
+  packageVersion: 1.0
+  assetPath: Assets/LowpolySciFiWeaponPack/Prefabs/HighPowerThermalRifle.prefab
+  uploadId: 230169

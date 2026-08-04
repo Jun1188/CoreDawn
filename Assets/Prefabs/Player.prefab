@@ -2631,6 +2631,15 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
     amount: 50
     maxStackSize: 50
+  - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+    amount: 50
+    maxStackSize: 50
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 50
+    maxStackSize: 50
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 50
+    maxStackSize: 50
   inventoryProcessor: {fileID: 711201946653970601}
   playerController: {fileID: 6442160254612740854}
 --- !u!114 &711201946653970601
