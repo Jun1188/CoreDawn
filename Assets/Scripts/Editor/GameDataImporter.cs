@@ -87,6 +87,21 @@ public static class GameDataImporter
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
         public string[] ammoFilter;                          // Tower
+        public TierDto[] tiers;                              // Core
+    }
+
+    /// <summary>
+    /// 코어 수리 단계. 이걸 JSON에 두는 이유 — 예전엔 에셋에만 손으로 적혀 있어서
+    /// 브랜치 머지 때 조용히 덮여 사라졌다. 이제 재임포트로 항상 복구된다.
+    /// </summary>
+    [Serializable] class TierDto
+    {
+        public string   name;            // → CoreTierDefinition.tierLabel
+        public string   description;
+        public SlotDto[] requirements;
+        public string[] unlocks;
+        public int      maxHpBonus;
+        public bool     isFinal;
     }
 
     /// <summary>
@@ -340,7 +355,59 @@ public static class GameDataImporter
                 if (dto.fireRate > 0f) tower.fireRate = dto.fireRate;
                 tower.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
                 break;
+
+            case CoreDataSO core:
+                // tiers 가 통째로 빠진 JSON이면 기존 값을 지우지 않는다 —
+                // 한 필드 누락으로 게임 진행 전체가 사라지는 편이 더 나쁘다
+                if (dto.tiers != null) core.tiers = ResolveTiers(file, dto, byId, ref errors);
+                break;
         }
+    }
+
+    /// <summary>
+    /// 코어 수리 단계 해석. 요구 아이템을 하나라도 못 찾으면 그 단계는 넣지 않는다 —
+    /// 요구가 반쯤 빠진 단계는 그냥 통과해 버려서, 조용히 진행도를 깨뜨린다.
+    /// </summary>
+    static CoreTierDefinition[] ResolveTiers(string file, BuildingDto dto,
+        Dictionary<string, GameDataSO> byId, ref int errors)
+    {
+        var list = new List<CoreTierDefinition>(dto.tiers.Length);
+
+        for (int i = 0; i < dto.tiers.Length; i++)
+        {
+            var t = dto.tiers[i];
+            if (t == null) continue;
+
+            string where = $"{dto.id} tiers[{i}]" + (string.IsNullOrEmpty(t.name) ? "" : $" '{t.name}'");
+
+            if (!TryResolveSlots(file, "buildings", where, t.requirements, byId, out var reqs, ref errors))
+            {
+                Debug.LogError($"[GameDataImporter] {file} {where}: 요구 아이템을 해석하지 못해 이 단계를 건너뜁니다.");
+                continue;
+            }
+            if (reqs == null || reqs.Length == 0)
+            {
+                Debug.LogError($"[GameDataImporter] {file} {where}: 요구가 비어 있습니다 — 즉시 통과하는 단계가 되므로 제외합니다.");
+                errors++;
+                continue;
+            }
+
+            var reqArr = new CoreTierRequirement[reqs.Length];
+            for (int k = 0; k < reqs.Length; k++)
+                reqArr[k] = new CoreTierRequirement { item = reqs[k].item, amount = reqs[k].amount };
+
+            list.Add(new CoreTierDefinition
+            {
+                tierLabel    = t.name,
+                description  = t.description,
+                requirements = reqArr,
+                unlocks      = t.unlocks ?? Array.Empty<string>(),
+                maxHpBonus   = t.maxHpBonus,
+                isFinal      = t.isFinal,
+            });
+        }
+
+        return list.ToArray();
     }
 
     static RecipeDataSO[] ResolveRecipes(string file, BuildingDto dto,

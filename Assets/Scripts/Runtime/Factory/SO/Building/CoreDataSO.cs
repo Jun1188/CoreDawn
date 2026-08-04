@@ -42,9 +42,22 @@ public class CoreTierRequirement
 [System.Serializable]
 public class CoreTierDefinition
 {
-    [Tooltip("표시용 — 진화 결과 설명 등 (선택).")]
+    [Tooltip("단계 이름 — \"선체 봉합\" 등. GameData.json 의 tiers[].name.")]
     public string tierLabel;
+
+    [Tooltip("이 단계가 무엇을 하는 일인지 한 줄. 코어 패널이 이름 아래 붙인다.")]
+    [TextArea] public string description;
+
     public CoreTierRequirement[] requirements;
+
+    [Tooltip("이 단계를 마치면 열리는 것들 — 표시 전용 문자열. 실제 해금은 requiredCoreTier가 한다.")]
+    public string[] unlocks;
+
+    [Tooltip("완료 시 코어 최대 체력 증가분.")]
+    public int maxHpBonus;
+
+    [Tooltip("마지막 단계 — 완료하면 탈출(엔딩)로 이어진다.")]
+    public bool isFinal;
 }
 
 // ─── 행동 ──────────────────────────────────────────────────────
