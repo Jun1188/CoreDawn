@@ -57,7 +57,7 @@ MonoBehaviour:
   - LocalOffset: {x: 2, y: 2}
     Direction: 1
     IsInput: 1
-  inputSlots: 6
+  inputSlots: 4
   outputSlots: 0
   bufferStackCap: 0
   requiredCoreTier: 0
