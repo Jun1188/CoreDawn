@@ -1078,6 +1078,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactoryBootstrap
   _tps: 10
   _maxCatchUpTicks: 5
+  _autoPlaceCore: 1
+  _coreData: {fileID: 0}
+  _coreOrigin: {x: 0, y: 0}
+  _coreRotationSteps: 0
 --- !u!4 &479437657
 Transform:
   m_ObjectHideFlags: 0
@@ -3654,6 +3658,7 @@ MonoBehaviour:
   invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   showPortsOnAim: 1
+  demolishHoldSeconds: 0.4
 --- !u!4 &1532001791
 Transform:
   m_ObjectHideFlags: 0

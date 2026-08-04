@@ -55,6 +55,24 @@ public class BuildController : MonoBehaviour, IInputReceiver
 
     public bool OnInput(in InputEvent e)
     {
+        // 철거만 누름/뗌을 본다 — 클릭 한 번으로 사라지면 벨트 옆 조립기를 실수로 날린다(SCR-06).
+        // 나머지 입력은 아래 Performed 가드로 내려간다.
+        if (e.Id == InputActionId.Attack && placement != null
+            && placement.Mode == PlacementSystem.BuildMode.Demolishing)
+        {
+            switch (e.Phase)
+            {
+                case InputActionPhase.Started:
+                    if (!pointerOverUI) placement.BeginDemolishHold();
+                    return true;
+                case InputActionPhase.Canceled:
+                    placement.EndDemolishHold();
+                    return true;
+                case InputActionPhase.Performed:
+                    return true;   // 눌린 순간의 즉시 확정은 삼킨다 — 진행은 Update가 센다
+            }
+        }
+
         if (e.Phase != InputActionPhase.Performed) return false;
 
         // 모드 토글은 대기 상태에서도 받는다 — 단, 밤에는 건설/철거 진입 불가

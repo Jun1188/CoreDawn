@@ -48,6 +48,10 @@ public class PlacementSystem : MonoBehaviour
     [Tooltip("배치 모드가 아닐 때, 조준한 건물의 포트 흐름을 보여준다.")]
     [SerializeField] private bool showPortsOnAim = true;
 
+    [Header("철거")]
+    [Tooltip("철거에 필요한 누름 유지 시간(초). 클릭 한 번에 사라지면 옆 건물을 실수로 날린다.")]
+    [SerializeField] private float demolishHoldSeconds = 0.4f;
+
     private GridSystem grid;
     private PortFlowOverlay portFlow;
 
@@ -75,12 +79,30 @@ public class PlacementSystem : MonoBehaviour
     private Building hovered;                                          // 지금 하이라이트 중인 건물
     private readonly Dictionary<Renderer, Material[]> savedMats = new(); // 원본 머티리얼 백업
 
+    // 홀드 철거 — 누르고 있는 동안만 진행한다
+    private bool holdPressed;
+    private Building holdTarget;
+    private float holdElapsed;
+
     // ── 외부(UI) 조회용
     public BuildMode Mode => mode;
     public BuildingDataSO CurrentBuilding => current;
     public IReadOnlyList<BuildingDataSO> Buildings =>
         database != null ? database.buildings : System.Array.Empty<BuildingDataSO>();
     public BuildingDatabaseSO Database => database;
+
+    /// <summary>철거 모드에서 지금 조준 중인 건물. 없으면 null (HUD가 카드를 접는다).</summary>
+    public Building HoveredBuilding => hovered;
+
+    /// <summary>철거 홀드 진행도 0~1. 누르고 있지 않으면 0.</summary>
+    public float DemolishHoldProgress =>
+        holdPressed && holdTarget != null && demolishHoldSeconds > 0f
+            ? Mathf.Clamp01(holdElapsed / demolishHoldSeconds)
+            : 0f;
+
+    /// <summary>철거까지 남은 시간(초). 누르기 전에는 전체 시간을 보여준다.</summary>
+    public float DemolishHoldRemaining =>
+        Mathf.Max(0f, demolishHoldSeconds - (holdPressed && holdTarget != null ? holdElapsed : 0f));
 
     void Awake()
     {
@@ -144,7 +166,13 @@ public class PlacementSystem : MonoBehaviour
         return true;
     }
 
-    /// <summary>현재 조준 지점에서 확정 — 배치 모드면 설치, 철거 모드면 철거.</summary>
+    /// <summary>
+    /// 현재 조준 지점에서 확정 — 배치 모드면 설치, 철거 모드면 즉시 철거.
+    ///
+    /// 실제 플레이 입력에서 철거는 <see cref="BeginDemolishHold"/>/<see cref="EndDemolishHold"/>로
+    /// 누르고 있어야 진행된다(SCR-06). 이 즉시 경로는 UI 버튼·테스트처럼
+    /// 이미 확인을 거친 호출자를 위해 남겨 둔다.
+    /// </summary>
     public void ConfirmAtAim()
     {
         if (mode == BuildMode.Placing && lastCanPlace)
@@ -202,6 +230,7 @@ public class PlacementSystem : MonoBehaviour
         current = null;
 
         ClearHovered();
+        EndDemolishHold();
         if (portFlow != null) portFlow.Exit();
         flowSo = null;
         flowRot = -1;
@@ -309,8 +338,40 @@ public class PlacementSystem : MonoBehaviour
 
     private void UpdateDemolishing()
     {
-        // 건물 몸체 직접 조준 우선, 실패하면 바닥 칸 폴백 (철거는 OnInput(Attack)이 수행)
+        // 건물 몸체 직접 조준 우선, 실패하면 바닥 칸 폴백
         SetHovered(TryGetAimedBuilding(out Building target) ? target : null);
+
+        if (!holdPressed) { holdTarget = null; holdElapsed = 0f; return; }
+
+        // 누른 채로 다른 건물을 조준하면 그쪽부터 다시 센다 —
+        // 손을 뗐다 다시 누르게 하면 연속 철거가 번거로워진다
+        if (holdTarget != hovered) { holdTarget = hovered; holdElapsed = 0f; }
+        if (holdTarget == null) return;
+
+        holdElapsed += Time.deltaTime;
+        if (holdElapsed < demolishHoldSeconds) return;
+
+        var done = holdTarget;
+        holdTarget = null;
+        holdElapsed = 0f;
+        Demolish(done);
+    }
+
+    /// <summary>좌클릭을 누르기 시작했다 — 철거 모드에서만 의미가 있다.</summary>
+    public void BeginDemolishHold()
+    {
+        if (mode != BuildMode.Demolishing) return;
+        holdPressed = true;
+        holdTarget = hovered;
+        holdElapsed = 0f;
+    }
+
+    /// <summary>좌클릭을 뗐다. 임계 시간에 못 미쳤으면 아무 일도 일어나지 않는다.</summary>
+    public void EndDemolishHold()
+    {
+        holdPressed = false;
+        holdTarget = null;
+        holdElapsed = 0f;
     }
 
     /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴.</summary>

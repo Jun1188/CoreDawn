@@ -70,8 +70,10 @@
 /* 하단 상세 — 높이 고정. 설명 길이에 따라 창이 흔들리면 안 된다.
    설명이 두 줄인 건물(분배기 등)까지 담기게 잡고, 아래 여백을 둬서
    비용 칩이 경계에 딱 붙지 않게 한다. */
+/* 높이 고정 — 커서를 옮길 때마다 상세 영역이 늘었다 줄면 아래 목록이 출렁여 고르기 어렵다.
+   최악(재료 4종 · 설명 2줄)이 들어가는 높이로 잡는다. */
 .build-details {
-    height: 136px;
+    height: 168px;
     flex-shrink: 0;
     margin-top: var(--space-3);
     padding-top: var(--space-3);
@@ -126,10 +128,12 @@
     color: var(--text-faint);
 }
 
+/* 이제 독립된 줄이다 — 라벨과 같은 줄에 있던 시절의 wrap 은 필요 없다 */
 .build-details__cost {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    margin-top: var(--space-2);
     margin-right: -8px;
 }
 
@@ -355,3 +359,71 @@
     white-space: normal;
     -unity-text-align: middle-center;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCR-05 배치 모드 HUD · SCR-06 철거 모드 HUD
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* HUD는 화면을 덮지 않는다 — 루트는 전면을 차지하되 아무것도 그리지 않고,
+   실제 요소만 위/아래에 띄운다. picking은 UXML에서 전부 Ignore로 꺼 두었다
+   (여기로 클릭이 먹히면 월드 배치가 막힌다). */
+.hud-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-font-definition: var(--font-body);
+    /* 배경을 깔지 않는다 — .screen-root의 스크림은 모달 전용이다.
+       HUD는 월드를 가리면 안 되므로 완전히 투명하게 둔다. */
+}
+
+.hud-badge {
+    position: absolute;
+    top: 16px;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.hud-card-slot {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+/* 카드 안 요소들 — USS에 gap이 없어 개별 margin으로 띄운다 */
+.hud-card__icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    margin-right: var(--space-3);
+}
+
+.hud-card__ring {
+    margin-right: var(--space-3);
+}
+
+.hud-card__title {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hud-card__cost {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud-card__keys {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* 카드 안에서는 마지막 칩/키의 오른쪽 여백을 지운다 —
+   USS에 :last-child가 없어 뷰가 --last 클래스를 붙인다 */
+.hud-card__cost > .ui-chip { margin-right: var(--space-2); }
+.hud-card__keys > .ui-key  { margin-right: var(--space-3); }
+.hud-card__cost > .ui-chip--last { margin-right: 0; }
+.hud-card__keys > .ui-key--last  { margin-right: 0; }

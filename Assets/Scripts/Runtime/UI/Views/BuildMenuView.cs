@@ -255,23 +255,35 @@ public class BuildMenuView : UITKPopup
 
         detSize.text = $"크기 {so.size.x} × {so.size.y}";
 
+        // 비용은 "필요/보유"로 함께 적고, 모자란 칩만 붉힌다 — 배치 HUD(SCR-05)와 같은 문법이라
+        // 메뉴에서 본 것과 배치 중에 보는 것이 어긋나지 않는다
         detCost.Clear();
         int chips = 0;
-        foreach (var e in BuildCostDummyData.For(so))
+        if (BuildCost.HasCost(so))
         {
-            var chip = new VisualElement();
-            chip.AddToClassList("ui-chip");
-            var suffix = UIItemPalette.SuffixOf(e.Line);
-            if (suffix != null) chip.AddToClassList("ui-chip--" + suffix);
+            foreach (var c in so.buildCost)
+            {
+                if (c.item == null || c.amount <= 0) continue;
 
-            chip.Add(new Label(e.Name));
-            var n = new Label(e.Amount.ToString());
-            n.AddToClassList("ui-chip__n");
-            chip.Add(n);
-            detCost.Add(chip);
-            chips++;
+                int have = BuildCost.PlayerCountOf(c.item);
+                bool short_ = have < c.amount;
+
+                var chip = new VisualElement();
+                chip.AddToClassList("ui-chip");
+                var modifier = short_ ? "ui-chip--short" : UIItemPalette.ChipClass(c.item);
+                if (modifier != null) chip.AddToClassList(modifier);
+
+                chip.Add(new Label(DisplayNameOf(c.item)));
+                var n = new Label($"{c.amount}/{have}");
+                n.AddToClassList("ui-chip__n");
+                chip.Add(n);
+                detCost.Add(chip);
+                chips++;
+            }
         }
+        detCostLabel.text = chips > 0 ? "건설 비용" : "";
         Show(detCostLabel, chips > 0);
+        Show(detCost, chips > 0);   // 칩이 det-meta 밖으로 나왔으므로 따로 켜고 끈다
 
         // 조작 힌트는 이 건물에 실제로 쓰이는 것만 — 벨트에서만 T(모양 변경)가 뜬다
         hints.Clear();
@@ -291,12 +303,13 @@ public class BuildMenuView : UITKPopup
         Show(detType, false);
         Show(detDesc, false);
         Show(detMeta, false);
+        Show(detCost, false);
         hints?.Clear();
     }
 
     // ───────────────────────── 잡동사니 ─────────────────────────
 
-    static string DisplayNameOf(BuildingDataSO so) =>
+    static string DisplayNameOf(GameDataSO so) =>
         so == null ? "" : string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName;
 
     static void Show(VisualElement e, bool on)

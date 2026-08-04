@@ -264,6 +264,11 @@
 .ui-chip--done { border-color: var(--ok-a50); }
 .ui-chip--done .ui-chip__n { color: var(--ok); }
 
+/* 부족한 재료 — 칩이 통째로 붉어진다.
+   숫자가 이미 "8 필요한데 5 있음"을 말하므로 문장으로 한 번 더 쓰지 않는다 (SCR-05). */
+.ui-chip--short { border-color: var(--danger-a50); color: var(--danger); }
+.ui-chip--short .ui-chip__n { color: var(--danger); }
+
 /* ─────────────────── SLT 아이템 슬롯 ───────────────────
    52x52 고정. 인벤토리·핫바·제작 입출력 전부 동일 크기여야
    드래그로 옮길 때 손이 위치를 기억한다. */
@@ -866,4 +871,103 @@
 .ui-stat__value, .ui-stepper__n, .ui-row__meta, .ui-timepill,
 .ui-btn__key, .ui-mat__n, .ui-tooltip__stat-value {
     -unity-font-definition: var(--font-data);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   모드 배지 · 배치/철거 카드 (SCR-05 · SCR-06)
+   ───────────────────────────────────────────────────────────── */
+
+/* 지금이 어느 모드인지 화면 상단이 한 줄로 말한다.
+   USS에는 currentColor가 없어 색과 테두리를 변형마다 따로 준다. */
+.ui-modebadge {
+    flex-direction: row;
+    align-items: center;
+    -unity-font-definition: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 3px 10px;
+    border-radius: var(--r-sm);
+    border-width: 1px;
+}
+
+.ui-modebadge--build {
+    color: var(--copper);
+    border-color: var(--copper);
+    background-color: var(--copper-a08);
+}
+
+.ui-modebadge--demolish {
+    color: var(--danger);
+    border-color: var(--danger);
+    background-color: var(--danger-a07);
+}
+
+/* 배치·철거 중 화면에 남는 유일한 창. 배치는 월드를 보면서 하는 일이라
+   화면을 덮으면 안 된다 — 그래서 팝업이 아니라 하단 카드 하나다. */
+.ui-placecard {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--bg-panel);
+    border-width: 1px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-lg);
+    padding: var(--space-2) var(--space-3);
+}
+
+.ui-placecard--demolish { border-color: var(--danger-a50); }
+
+.ui-placecard__name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    white-space: nowrap;
+}
+
+.ui-placecard__name--danger { color: var(--danger); }
+
+.ui-placecard__sub {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 1px;
+}
+
+/* 세로 구분선 — 아이콘/이름/비용/키힌트를 끊어 읽게 한다 */
+.ui-placecard__sep {
+    width: 1px;
+    align-self: stretch;
+    background-color: var(--line);
+    margin-left: var(--space-3);
+    margin-right: var(--space-3);
+}
+
+.ui-placecard__label {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-right: var(--space-2);
+}
+
+/* 카드 안 요소 간격 — USS에 gap이 없어 자식에 margin을 준다 */
+.ui-placecard > .ui-chip { margin-right: var(--space-2); }
+.ui-placecard > .ui-key  { margin-right: var(--space-3); }
+
+/* 홀드 진행 링 — 호(arc)는 USS로 못 그리므로 Painter2D(HoldRing.cs)가 채운다.
+   여기서는 자리와 가운데 남은 시간 라벨만 잡는다. */
+.ui-holdring {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 링 한가운데. 절대 배치 + 사방 0으로 링을 꽉 채운 뒤 텍스트를 가운데 정렬한다 —
+   폭을 모르는 문자열이라 margin: auto 로는 세로가 안 맞는다. */
+.ui-holdring__time {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    font-size: 11px;
+    color: var(--danger);
+    -unity-text-align: middle-center;
 }
