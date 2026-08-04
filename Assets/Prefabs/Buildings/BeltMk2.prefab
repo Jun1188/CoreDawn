@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1072857837302742614}
   - component: {fileID: 5848071447759420100}
   - component: {fileID: 4776289471546724646}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: BeltMk2
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -453,9 +453,40 @@ public static class GameDataImporter
     /// 자식 오브젝트는 건드리지 않는다.
     /// </summary>
     /// <returns>무언가 바꿨으면 true.</returns>
+    /// <summary>
+    /// 건물 프리팹을 Entity 레이어로 올린다. 이 레이어가 아니면 조준·상호작용이 통째로 죽는다.
+    /// 레이어가 프로젝트에 없으면(설정 누락) 경고만 남기고 넘어간다 — 임포트 전체를 세울 일은 아니다.
+    /// </summary>
+    static bool EnsureEntityLayer(GameObject root, BuildingDataSO so)
+    {
+        int entityLayer = LayerMask.NameToLayer("Entity");
+        if (entityLayer < 0)
+        {
+            Debug.LogWarning($"[GameDataImporter] 'Entity' 레이어가 없습니다 — '{so.name}' 레이어를 건너뜁니다. " +
+                             "Project Settings > Tags and Layers 를 확인하세요.");
+            return false;
+        }
+
+        bool changed = false;
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+        {
+            // Default(0)인 것만 옮긴다 — 일부러 다른 레이어를 준 자식은 그 의도를 남긴다
+            if (t.gameObject.layer != 0) continue;
+            t.gameObject.layer = entityLayer;
+            changed = true;
+        }
+        return changed;
+    }
+
     static bool EnsureContract(GameObject root, BuildingDataSO so, bool isTower)
     {
         bool changed = false;
+
+        // 0) Entity 레이어 — 플레이어의 상호작용 레이캐스트가 이 마스크로 쏜다.
+        //    Default로 두면 조준해도 프롬프트가 안 뜨고 E가 먹지 않는다 (코어 열기·보관함·필터 전부).
+        //    콜라이더가 자식에 있는 모델 프리팹도 있으므로 Default인 자식까지 함께 옮긴다 —
+        //    일부러 다른 레이어를 준 자식(장애물 등)은 건드리지 않는다.
+        changed |= EnsureEntityLayer(root, so);
 
         // 1) Entity — 포탑만 사격 로직을 가진 BattleTower가 필요하다
         var entity = root.GetComponent<Entity>();

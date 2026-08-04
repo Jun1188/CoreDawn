@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7105739369615742428}
   - component: {fileID: 8417980076578839370}
   - component: {fileID: 8760937290235996759}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Smelter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
