@@ -20,9 +20,21 @@ public class PlayerInteractionManager : MonoBehaviour
     /// <summary>이번 프레임에 조준 중인 상호작용 대상. 없거나 Prompt가 비었으면 null.</summary>
     public IInteractable Current { get; private set; }
 
+    private PlacementSystem placement;
+
+    private void Awake() => placement = FindFirstObjectByType<PlacementSystem>();
+
+    /// <summary>
+    /// 건설·철거 모드 중에는 상호작용을 막는다.
+    /// 그 모드에서 좌클릭은 배치/철거이고 조준은 그리드를 겨냥하는 중이다 —
+    /// 같은 조준선에 "[E] 필터 설정" 같은 프롬프트가 함께 뜨면 무엇이 일어날지 알 수 없어진다.
+    /// </summary>
+    private bool BuildModeActive =>
+        placement != null && placement.Mode != PlacementSystem.BuildMode.None;
+
     private void Update()
     {
-        Current = FindAimedInteractable();
+        Current = BuildModeActive ? null : FindAimedInteractable();
 
         string prompt = Current?.Prompt;
         if (promptText != null)

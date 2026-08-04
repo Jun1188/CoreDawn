@@ -13,8 +13,18 @@ using UnityEngine.InputSystem;
 public abstract class UIPopup : MonoBehaviour, IInputReceiver
 {
     private static int _depthCounter;
+    private static int _openCount;
     private int _depth;
     private int _mapToken = -1;
+
+    /// <summary>
+    /// 지금 열려 있는 팝업이 하나라도 있는가.
+    ///
+    /// 창이 떠 있으면 커서는 조작용으로 풀려 있고, 그 커서가 가리키는 월드 지점은
+    /// 플레이어가 겨냥한 곳이 아니다. 조준을 근거로 무언가를 보여주는 표시들
+    /// (포트 흐름 등)이 이것을 보고 스스로 물러난다.
+    /// </summary>
+    public static bool AnyOpen => _openCount > 0;
 
     public int Priority => InputPriority.PopupBase + _depth;
     public bool IsInputActive => gameObject.activeInHierarchy;
@@ -24,6 +34,7 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
 
     protected virtual void OnEnable()
     {
+        _openCount++;
         _depth = ++_depthCounter;   // 나중에 열린 창이 항상 위
         if (InputManager.Instance == null)
         {
@@ -36,6 +47,7 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
 
     protected virtual void OnDisable()
     {
+        if (_openCount > 0) _openCount--;
         if (InputManager.Instance == null) return;   // 앱 종료/씬 전환 순서 가드
         InputManager.Instance.Unregister(this);
         if (_mapToken >= 0)

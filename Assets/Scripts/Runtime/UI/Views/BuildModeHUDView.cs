@@ -177,16 +177,39 @@ public class BuildModeHUDView : MonoBehaviour
         // 진행 링은 매 프레임 값만 갱신한다 (MarkDirtyRepaint는 값이 바뀔 때만 돈다)
         ring.Progress = placement.DemolishHoldProgress;
 
+        Show(card, true);
+        ring.Text = "HOLD";
+
         if (target == null)
         {
-            // 조준한 건물이 없으면 카드를 접는다 — 빈 카드가 떠 있으면 무엇을 지울지 헷갈린다
-            Show(card, false);
+            // 카드는 계속 띄우고 무엇을 해야 하는지만 바꾼다 — 카드가 사라졌다 나타나면
+            // 조준을 옮길 때마다 화면 아래가 깜빡이고, 지금 무슨 모드인지도 흐려진다
+            if (_shownTarget == null && _shownMode == PlacementSystem.BuildMode.Demolishing) return;
             _shownTarget = null;
+
+            badge.text = "DEMOLISH MODE";
+            ToggleClass(badge, "ui-modebadge--build", false);
+            ToggleClass(badge, "ui-modebadge--demolish", true);
+            ToggleClass(card, "ui-placecard--demolish", true);
+
+            Show(leadIcon, false);
+            Show(leadRing, true);
+
+            cardName.text = "철거할 건물을 선택하세요";
+            ToggleClass(cardName, "ui-placecard__name--danger", false);
+            Show(cardSub, false);
+
+            cost.Clear();
+            Show(costLabel, false);
+            Show(cost, false);
+            Show(sep1, false);
+            Show(sep2, true);
+
+            keys.Clear();
+            keys.Add(KeyHint("RMB", "나가기"));
+            MarkLast(keys, "ui-key--last");
             return;
         }
-        Show(card, true);
-
-        ring.TimeText = $"{placement.DemolishHoldRemaining:0.0}s";
 
         bool rebuild = _shownMode != PlacementSystem.BuildMode.Demolishing || _shownTarget != target;
         if (!rebuild) return;
@@ -228,6 +251,7 @@ public class BuildModeHUDView : MonoBehaviour
         Show(sep2, true);
 
         keys.Clear();
+        keys.Add(KeyHint("LMB", "철거"));
         keys.Add(KeyHint("RMB", "나가기"));
         MarkLast(keys, "ui-key--last");
     }

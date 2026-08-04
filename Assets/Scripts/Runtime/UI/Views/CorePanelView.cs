@@ -481,8 +481,9 @@ public class CorePanelView : UITKPopup
 
         bool can = chosenTotal > 0;
         btnDeliver.SetEnabled(can);
-        // 비활성 버튼은 "확인"이 아니라 왜 못 누르는지를 말한다 (문서 §03 BTN)
-        deliverLabel.text = can ? "납품" : "선택한 부품 없음";
+        // 버튼 글자는 고정한다 — 못 누르는 이유는 왼쪽 안내문이 말하고,
+        // 버튼이 눌릴 때마다 이름이 바뀌면 무엇을 누르는 자리인지가 흔들린다
+        deliverLabel.text = "납품";
         actionsLabel.text = can ? "이번에 납품" : "납품할 부품을 선택하세요";
 
         bool anyAvailable = false;

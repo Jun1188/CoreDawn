@@ -158,9 +158,21 @@ public class BuildMenuView : UITKPopup
             {
                 if (cat != category) continue;
 
+                // 티어 → 이름 순. 데이터베이스는 이름순이라 해금 순서가 뒤섞여 보인다 —
+                // 고를 때 실제로 쓰는 기준은 "지금 지을 수 있는가"다
+                var ordered = new List<BuildingDataSO>();
                 foreach (var so in items)
+                    if (so != null && !so.hideFromBuildMenu) ordered.Add(so);
+
+                ordered.Sort((a, b) =>
                 {
-                    if (so == null || so.hideFromBuildMenu) continue;
+                    int t = a.requiredCoreTier.CompareTo(b.requiredCoreTier);
+                    return t != 0 ? t
+                        : string.Compare(DisplayNameOf(a), DisplayNameOf(b), System.StringComparison.Ordinal);
+                });
+
+                foreach (var so in ordered)
+                {
                     grid.Add(MakeCell(so));
                     shown++;
                 }

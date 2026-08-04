@@ -522,3 +522,95 @@
     flex-basis: 0;
     justify-content: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCR-07 분배기 — 출구 필터
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.splitter-panel {
+    width: 660px;
+    height: 420px;
+}
+
+/* 문서는 grid(250px + 1fr)지만 USS에 grid가 없어 flex로 같은 결과를 만든다 */
+.splitter-panel__body {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.splitter-map-col {
+    width: 250px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-5);
+}
+
+.splitter-list-col {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 100%;
+}
+
+.splitter-list__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+/* 선택한 출구의 색 — 목록이 어느 출구의 것인지 색으로 먼저 말한다 */
+.splitter-list__swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background-color: var(--out);
+    margin-right: var(--space-2);
+}
+
+/* 제목이 남은 폭을 먹어 버튼들을 오른쪽 끝으로 민다.
+   .ui-push(margin-left:auto)를 버튼에 걸면 아래 .splitter-list__btn의
+   margin-left가 그것을 덮어써서(같은 프로퍼티, 나중 규칙) 밀리지 않는다. */
+.splitter-list__title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--text);
+    flex-grow: 1;
+    flex-basis: 0;
+    overflow: hidden;
+}
+
+.splitter-list__btn {
+    padding: 3px 10px;
+    font-size: 12px;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+.splitter-list__search { margin-bottom: var(--space-2); }
+
+.splitter-list__scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.splitter-list__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-4) 0;
+    -unity-text-align: middle-center;
+}
+
+/* 규칙을 한 줄로 다시 말해 준다 — 막은 출구를 만들고 나면 가장 먼저 드는 의문이다 */
+.splitter-list__foot {
+    margin-top: auto;
+    padding-top: var(--space-3);
+    border-top-width: 1px;
+    border-top-color: var(--line);
+    font-size: 11px;
+    color: var(--text-faint);
+}

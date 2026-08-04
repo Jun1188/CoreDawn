@@ -20,11 +20,16 @@ public class HoldRing : VisualElement
     static readonly Color TrackColor = new(0.133f, 0.200f, 0.314f);   // #223350
     static readonly Color FillColor  = new(1f, 0.365f, 0.451f);       // #FF5D73 = --danger
 
-    readonly Label _time;
+    readonly Label _label;
     float _progress;
 
-    /// <summary>가운데 남은 시간. 링이 직접 들고 있어야 중앙에 놓인다.</summary>
-    public string TimeText { set { if (_time.text != value) _time.text = value; } }
+    /// <summary>
+    /// 가운데 글자. 링이 직접 들고 있어야 중앙에 놓인다.
+    ///
+    /// 남은 시간(0.4s)이 아니라 "HOLD"를 적는다 — 숫자는 읽고 해석해야 하지만
+    /// 무엇을 해야 하는지는 링이 차오르는 것만으로 이미 보인다.
+    /// </summary>
+    public string Text { set { if (_label.text != value) _label.text = value; } }
 
     /// <summary>0~1. 값이 바뀔 때만 다시 그린다.</summary>
     public float Progress
@@ -49,9 +54,11 @@ public class HoldRing : VisualElement
 
         // 라벨을 링의 자식으로 둔다 — 형제로 두면 .ui-holdring의 가운데 정렬이 닿지 않아
         // 절대 배치 기본값인 좌상단에 붙는다
-        _time = new Label { pickingMode = PickingMode.Ignore };
-        _time.AddToClassList("ui-holdring__time");
-        Add(_time);
+        // 절대 배치 + inset 0 대신 그냥 가운데 정렬된 자식으로 둔다 —
+        // 절대 배치는 텍스트 상자의 높이가 폰트 메트릭을 따라가서 세로 중앙이 미세하게 어긋난다
+        _label = new Label("HOLD") { pickingMode = PickingMode.Ignore };
+        _label.AddToClassList("ui-holdring__time");
+        Add(_label);
     }
 
     void Draw(MeshGenerationContext ctx)

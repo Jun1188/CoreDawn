@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "\uC81C\uB828\uB85C 1\uC785\uB825. \uAD6C\uB9AC \uB77C\uC778 \uAC1C\uBC29."
   icon: {fileID: 0}
   tier: 2
-  requiredCoreTier: 1
+  requiredCoreTier: 2
   inputs:
   - item: {fileID: 11400000, guid: 76c129ed246f87d45a2874fe0f76a4c3, type: 2}
     amount: 2

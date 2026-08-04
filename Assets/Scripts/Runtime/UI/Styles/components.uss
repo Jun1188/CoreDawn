@@ -136,6 +136,17 @@
     color: var(--text-dim);
 }
 
+/* 허용·완료 — --danger와 짝을 이룬다 (차단/허용처럼 반대 방향의 두 행동) */
+.ui-btn--ok {
+    color: var(--ok);
+    border-color: var(--ok-a50);
+    background-color: rgba(93, 211, 158, 0.07);
+}
+
+.ui-btn--ok:hover {
+    background-color: rgba(93, 211, 158, 0.15);
+}
+
 /* 조건 미충족. 라벨에 "왜" 못 누르는지 쓴다 — "확인"이 아니라 "재료 부족" */
 .ui-btn:disabled,
 .ui-btn--disabled {
@@ -243,9 +254,16 @@
     padding: 3px 9px;
 }
 
+/* 이름과 숫자가 서로 다른 폰트를 쓴다(본문 / 데이터). 세로 정렬을 텍스트 상자에 맡기면
+   폰트 메트릭 차이만큼 밑선이 어긋나 보인다 — 각 상자 안에서 가운데로 앉힌다. */
+.ui-chip > Label {
+    -unity-text-align: middle-left;
+}
+
 .ui-chip__n {
     -unity-font-style: bold;
     margin-left: var(--space-2);
+    -unity-text-align: middle-left;
 }
 
 /* 표 안에서는 이름과 수량을 양끝으로 벌린다 */
@@ -904,9 +922,12 @@
 
 /* 배치·철거 중 화면에 남는 유일한 창. 배치는 월드를 보면서 하는 일이라
    화면을 덮으면 안 된다 — 그래서 팝업이 아니라 하단 카드 하나다. */
+/* 높이를 고정한다 — 조준을 옮길 때마다(이름만 있는 상태 ↔ 부제·칩이 있는 상태)
+   카드가 위아래로 늘었다 줄면 화면 아래가 출렁인다. 가장 키가 큰 내용(홀드 링 46px)에 맞춘다. */
 .ui-placecard {
     flex-direction: row;
     align-items: center;
+    height: 64px;
     background-color: var(--bg-panel);
     border-width: 1px;
     border-color: var(--line-strong);
@@ -916,9 +937,11 @@
 
 .ui-placecard--demolish { border-color: var(--danger-a50); }
 
+/* 색을 명시한다 — UITK는 color를 물려주지 않아 비워 두면 기본 검정이 되어 카드에서 사라진다 */
 .ui-placecard__name {
     font-size: 13px;
     -unity-font-style: bold;
+    color: var(--text);
     white-space: nowrap;
 }
 
@@ -961,13 +984,222 @@
 
 /* 링 한가운데. 절대 배치 + 사방 0으로 링을 꽉 채운 뒤 텍스트를 가운데 정렬한다 —
    폭을 모르는 문자열이라 margin: auto 로는 세로가 안 맞는다. */
+/* 링 한가운데. 부모(.ui-holdring)의 justify/align center가 상자를 가운데로 놓고,
+   -unity-text-align이 그 안에서 글자를 가운데로 놓는다.
+   절대 배치 + inset 0 으로 하면 텍스트 상자 높이가 폰트 메트릭을 따라가 세로가 미세하게 밀린다. */
 .ui-holdring__time {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--danger);
+    -unity-text-align: middle-center;
+    padding: 0;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DIR 방향 맵 · 허용 토글 행 (SCR-07 분배기 출구 필터)
+
+   HTML → USS 이식에서 바뀐 것:
+     box-shadow          → 생략 (테두리 색만으로 구분)
+     outline             → USS 미지원. 선택은 테두리 색·두께로
+     repeating-gradient  → USS 미지원. 빗금은 런타임 생성 텍스처 (SplitterPanelView)
+     ::before/::after    → 실제 요소로 승격 (✕ = 막대 2개, 스위치 손잡이)
+     grid-template-*     → flex + 고정 폭
+     filter:grayscale    → 아이콘이 배경색이라 색을 회색으로 바꾸는 것으로 대체
+     border:1px dashed   → USS에 점선 테두리가 없다. 꺼진 흐름선은 점선 텍스처로
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 창의 배치가 곧 월드의 배치 — 보이는 자리가 실제 출구 자리라 방위를 글자로 적지 않는다 */
+.ui-dirmap {
+    width: 250px;
+    height: 250px;
+}
+
+.ui-dirmap__body {
+    position: absolute;
+    left: 86px;
+    top: 86px;
+    width: 78px;
+    height: 78px;
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    background-color: var(--bg-inset);
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-dirmap__core {
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    background-color: var(--line);
+    opacity: 0.55;
+}
+
+.ui-dirslot {
+    position: absolute;
+    width: 66px;
+    height: 66px;
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    background-color: var(--bg-inset);
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-dirslot:hover { border-color: var(--out); }
+
+/* 허용 목록이 걸린 출구 */
+.ui-dirslot--open { border-color: var(--out); }
+
+/* 막은 출구 — 빗금 텍스처는 뷰가 넣는다 */
+.ui-dirslot--blocked { border-color: var(--line); }
+
+/* 선택 — 문서는 outline이지만 USS에 없다. 테두리를 굵게·계통색으로 바꿔 대신한다 */
+.ui-dirslot--sel {
+    border-width: 2.5px;
+    border-color: var(--copper);
+}
+
+.ui-dirslot__icons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+    margin-right: -3px;
+    margin-bottom: -3px;
+}
+
+.ui-dirslot__icons > .ui-dirslot__ic {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    margin-right: 3px;
+    margin-bottom: 3px;
+}
+
+/* 전체 허용 — 네 계통색 점 2×2.
+   padding을 0으로 두는 것이 중요하다: .ui-dirslot__icons의 6px 패딩이 남아 있으면
+   내용 폭이 32-12=20px가 되어 16px 점이 한 줄에 하나씩만 들어간다(세로로 늘어선다). */
+.ui-dirslot__all {
+    width: 32px;
+    padding: 0;
+}
+
+.ui-dirslot__all > .ui-dirslot__ic {
+    width: 13px;
+    height: 13px;
+    border-radius: 2px;
+    opacity: 0.85;
+}
+
+/* 차단 ✕ — 막대 두 개를 겹쳐 돌린다 */
+.ui-dirslot__x {
+    width: 26px;
+    height: 26px;
+    opacity: 0.8;
+}
+
+.ui-dirslot__x > .ui-dirslot__bar {
     position: absolute;
     left: 0;
     right: 0;
-    top: 0;
-    bottom: 0;
-    font-size: 11px;
-    color: var(--danger);
-    -unity-text-align: middle-center;
+    top: 12px;
+    height: 2.5px;
+    border-radius: 2px;
+    background-color: var(--danger);
+}
+
+.ui-dirslot__bar--a { rotate: 45deg; }
+.ui-dirslot__bar--b { rotate: -45deg; }
+
+/* 흐름선 — 그라디언트·점선 모두 USS에 없어 배경 텍스처를 뷰가 넣고 색만 여기서 입힌다 */
+.ui-flowline {
+    position: absolute;
+    border-radius: 2px;
+}
+
+.ui-flowline--off { opacity: 0.65; }
+
+/* ───────────── 아이템 허용 토글 행 ───────────── */
+
+.ui-allowrow {
+    flex-direction: row;
+    align-items: center;
+    padding: 5px var(--space-2);
+    border-radius: var(--r-md);
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.ui-allowrow:hover { background-color: var(--bg-raised); }
+
+.ui-allowrow--on {
+    background-color: rgba(255, 158, 74, 0.09);
+    border-color: rgba(255, 158, 74, 0.35);
+}
+
+/* 스위치 — 반경은 높이의 절반. --r-pill(999px)을 주면 x/y가 따로 잘려 타원이 된다 */
+.ui-allowrow__sw {
+    width: 26px;
+    height: 15px;
+    border-radius: 7.5px;
+    background-color: var(--bg-inset);
+    border-width: 1px;
+    border-color: var(--line-strong);
+    flex-shrink: 0;
+    margin-right: var(--space-2);
+}
+
+.ui-allowrow__knob {
+    position: absolute;
+    top: 1.5px;
+    left: 1.5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--text-faint);
+}
+
+.ui-allowrow--on .ui-allowrow__sw {
+    background-color: rgba(255, 158, 74, 0.3);
+    border-color: var(--out);
+}
+
+.ui-allowrow--on .ui-allowrow__knob {
+    left: auto;
+    right: 1.5px;
+    background-color: var(--out);
+}
+
+.ui-allowrow__ic {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-right: var(--space-2);
+}
+
+/* 색을 명시한다 — UITK는 color를 물려주지 않아 비워 두면 기본 검정이 되어
+   어두운 패널에서 글자가 통째로 사라진다 */
+.ui-allowrow__nm {
+    font-size: 12px;
+    color: var(--text);
+    flex-grow: 1;
+    flex-basis: 0;
+    overflow: hidden;
+}
+
+/* 꺼진 줄도 읽을 수는 있어야 한다 — 목록에서 무엇을 켤지 고르는 중이다 */
+.ui-allowrow--off .ui-allowrow__nm { color: var(--text-dim); }
+
+.ui-allowrow__meta {
+    font-size: 10px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+    margin-left: var(--space-2);
 }

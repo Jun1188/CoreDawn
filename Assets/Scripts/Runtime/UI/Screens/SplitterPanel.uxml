@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- SCR-07 분배기 — 출구 필터.
+
+         창의 배치가 월드의 배치와 같다 — 보이는 자리가 실제 출구 자리라
+         방위를 글자로 적지 않는다. 출구 칸과 흐름선은 이 건물의 출력 포트에 달려 있으므로
+         SplitterPanelView가 만들어 넣는다 (여기에는 담을 자리만 둔다).
+
+         상태 셋은 전부 그림으로 구분된다:
+           특정 아이템만 — 허용 아이콘이 그대로 뜸
+           전체 허용     — 네 계통색 점
+           차단          — 빗금 + ✕, 흐름선도 점선으로 꺼진다 -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="splitter-panel" class="ui-panel splitter-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="SPLIT" class="ui-panel__tag" />
+                <ui:Label text="분배기" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body splitter-panel__body">
+
+                <!-- 좌: 출구 맵 -->
+                <ui:VisualElement class="splitter-map-col">
+                    <ui:VisualElement name="dirmap" class="ui-dirmap">
+                        <ui:VisualElement class="ui-dirmap__body">
+                            <ui:VisualElement class="ui-dirmap__core" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- 우: 선택한 출구의 허용 목록 -->
+                <ui:VisualElement class="splitter-list-col">
+
+                    <ui:VisualElement class="splitter-list__head">
+                        <ui:VisualElement name="sel-swatch" class="splitter-list__swatch" />
+                        <ui:Label name="sel-title" text="선택한 출구" class="splitter-list__title" />
+                        <ui:Button name="btn-allow-all" text="전체 허용" class="ui-btn ui-btn--ok splitter-list__btn" />
+                        <ui:Button name="btn-block-all" text="전체 차단" class="ui-btn ui-btn--danger splitter-list__btn" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="ui-search splitter-list__search">
+                        <ui:TextField name="search" class="ui-search__input" />
+                    </ui:VisualElement>
+
+                    <ui:ScrollView name="rows-scroll" class="ui-scroll splitter-list__scroll">
+                        <ui:VisualElement name="rows" />
+                    </ui:ScrollView>
+
+                    <ui:Label name="list-empty" text="검색 결과가 없습니다" class="splitter-list__empty ui-hidden" />
+
+                    <ui:Label name="foot" text="막힌 출구로는 보내지 않고 다음 출구로 넘긴다"
+                              class="splitter-list__foot" />
+
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

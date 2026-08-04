@@ -126,9 +126,11 @@ public class PlacementSystem : MonoBehaviour
             case BuildMode.Placing: UpdatePlacing(); break;
             case BuildMode.Demolishing: UpdateDemolishing(); break;
             default:
-                // 조준한 건물의 포트 흐름 — 배치 중이 아닐 때만 (배치 중엔 열린 포트 표시가 우선)
-                if (showPortsOnAim)
-                    portFlow.ShowFocus(TryGetAimedBuilding(out Building aimed) ? aimed : null);
+                // 조준한 건물의 포트 흐름 — 배치 중이 아닐 때만 (배치 중엔 열린 포트 표시가 우선).
+                // 창이 떠 있으면 커서는 창을 조작하는 중이라, 그 커서가 가리키는 월드 지점은
+                // 조준이 아니다 — 마우스를 옮길 때마다 엉뚱한 건물에 포트가 켜진다.
+                portFlow.ShowFocus(showPortsOnAim && !UIPopup.AnyOpen
+                    && TryGetAimedBuilding(out Building aimed) ? aimed : null);
                 break;
         }
     }
