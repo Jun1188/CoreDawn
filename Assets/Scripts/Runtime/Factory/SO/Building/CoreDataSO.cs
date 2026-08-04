@@ -160,7 +160,8 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
     /// </summary>
     public bool TryStartRepair()
     {
-        var reqs = CurrentTier?.requirements;
+        var tier = CurrentTier;          // 진행하면 CurrentTier가 다음 단계를 가리키므로 먼저 잡는다
+        var reqs = tier?.requirements;
         if (reqs == null) return false;
 
         foreach (var r in reqs)
@@ -169,10 +170,33 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
         foreach (var r in reqs) _b.Input.TryConsume(r.item, r.amount);
 
         GameManager.Instance.AdvanceTier(TierIndex + 1);
+        ApplyMaxHpBonus(tier.maxHpBonus);
         SetReady(false);
         RefreshAcceptFilter();
         _b.NotifyUpstream(); // 자리 비었으니 막혀있던 상류(벨트) 재개
         return true;
+    }
+
+    /// <summary>
+    /// 수리로 늘어난 내구도. 확인창이 "코어 내구도 +1,500"이라 적는 그 수치와 같은 출처다 —
+    /// 같은 값을 UI와 로직이 따로 들고 있으면 반드시 어긋나고, 어긋난 쪽이 UI면 플레이어가 속는다.
+    ///
+    /// 최대치만 올리고 그만큼 회복시킨다(전체 회복 아님). 수리는 선체를 덧대는 일이지
+    /// 이미 난 상처를 없던 일로 만드는 게 아니다 — 밤에 깎인 체력이 공짜로 돌아오면
+    /// 방어를 못해도 코어가 버티게 된다.
+    /// </summary>
+    void ApplyMaxHpBonus(int bonus)
+    {
+        if (bonus <= 0) return;
+
+        // 체력의 원본은 씬 껍데기(BuildingEntity)다. 심만 있는 테스트에서는 뷰가 없으니 건너뛴다.
+        var boot = FactoryBootstrap.Instance;
+        var view = boot != null ? boot.GetView(_b) : null;
+        if (view == null) return;
+
+        var hp = view.Health;
+        hp.SetMaxHealth(hp.MaxHealth + bonus, refill: false);
+        hp.Heal(bonus);
     }
 
     void SetReady(bool on)

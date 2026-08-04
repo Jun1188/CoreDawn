@@ -533,15 +533,17 @@ public class CorePanelView : UITKPopup
             foreach (var u in tier.unlocks)
             {
                 if (string.IsNullOrEmpty(u)) continue;
-                var row = new VisualElement();
-                row.AddToClassList("ui-mat");
-                row.AddToClassList(matClass);
-                var label = new Label(u);
-                label.AddToClassList("ui-mat__name");
-                row.Add(label);
-                confirmUnlocks.Add(row);
+                confirmUnlocks.Add(UnlockRow(matClass, u));
                 n++;
             }
+        }
+
+        // 내구도 줄은 unlocks에 손으로 적지 않는다 — maxHpBonus에서 만들어 맨 아래에 붙인다.
+        // 같은 수치를 데이터와 문구 두 곳에 적으면 반드시 어긋나고, 어긋난 쪽이 UI면 플레이어가 속는다.
+        if (tier.maxHpBonus > 0)
+        {
+            confirmUnlocks.Add(UnlockRow(matClass, $"코어 내구도 +{tier.maxHpBonus:N0}"));
+            n++;
         }
         Show(confirmUnlocksLabel, n > 0);
         Show(confirmUnlocks, n > 0);
@@ -559,6 +561,20 @@ public class CorePanelView : UITKPopup
         ToggleClass(confirmOk, "ui-btn--primary", !tier.isFinal);
 
         Show(confirmScrim, true);
+    }
+
+    /// <summary>해금 한 줄. 손으로 적은 항목과 maxHpBonus에서 생성한 줄이 같은 모양이다 —
+    /// 플레이어에게는 둘 다 "이 단계를 마치면 생기는 것"이라 구분할 이유가 없다.</summary>
+    static VisualElement UnlockRow(string matClass, string text)
+    {
+        var row = new VisualElement();
+        row.AddToClassList("ui-mat");
+        row.AddToClassList(matClass);
+
+        var label = new Label(text);
+        label.AddToClassList("ui-mat__name");
+        row.Add(label);
+        return row;
     }
 
     void CloseConfirm() => Show(confirmScrim, false);
