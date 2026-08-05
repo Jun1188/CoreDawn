@@ -5,9 +5,11 @@ public class PlayerInventoryHolder : MonoBehaviour
     public static PlayerInventoryHolder Instance { get; private set; }
 
     // ★ 인스펙터 창에서 슬롯 개수를 자유롭게 수정 가능!
+    // 기본값은 SCR-04 — 핫바 7 · 가방 9×2. 칸 수가 곧 소지 한도로 보이는 화면이라
+    // 여기 수치가 바뀌면 인벤토리 패널의 줄 수도 따라 바뀐다
     [Header("Slot Size Settings")]
-    [SerializeField] private int hotbarSize = 9;
-    [SerializeField] private int mainInventorySize = 27;
+    [SerializeField] private int hotbarSize = 7;
+    [SerializeField] private int mainInventorySize = 18;
     [SerializeField] private int craftingInputSize = 4;
     [SerializeField] private int craftingOutputSize = 1;
 

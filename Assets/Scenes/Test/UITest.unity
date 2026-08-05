@@ -200,8 +200,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98e7c19a9e491eb42b2001a10c292674, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimeManager
-  dayDuration: 6
-  nightDuration: 4
+  dayDuration: 60
+  nightDuration: 10
 --- !u!1 &123262185
 GameObject:
   m_ObjectHideFlags: 0
@@ -1024,51 +1024,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1127188601}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &306525960
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 306525961}
-  - component: {fileID: 306525962}
-  m_Layer: 0
-  m_Name: RecipManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &306525961
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306525960}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &306525962
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306525960}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df4acf50779d34f439fa584f3c1b4488, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecipeManager
-  allRecipes: []
 --- !u!1001 &331194379
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1140,6 +1095,22 @@ PrefabInstance:
     - target: {fileID: 7498640336194902235, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[4].item
+      value: 
+      objectReference: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[4].amount
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[4].maxStackSize
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1519,6 +1490,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactoryBootstrap
   _tps: 10
   _maxCatchUpTicks: 5
+  _autoPlaceCore: 1
+  _coreData: {fileID: 0}
+  _coreOrigin: {x: 0, y: 0}
+  _coreRotationSteps: 0
 --- !u!4 &479437657
 Transform:
   m_ObjectHideFlags: 0
@@ -5893,6 +5868,8 @@ MonoBehaviour:
   validMat: {fileID: 2100000, guid: 8101430187e8a5a479f3ed5dfedd8bfa, type: 2}
   invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
+  showPortsOnAim: 1
+  demolishHoldSeconds: 0.4
 --- !u!4 &1532001791
 Transform:
   m_ObjectHideFlags: 0
@@ -7895,4 +7872,3 @@ SceneRoots:
   - {fileID: 557594382}
   - {fileID: 626640249}
   - {fileID: 98694566}
-  - {fileID: 306525961}

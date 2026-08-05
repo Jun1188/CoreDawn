@@ -57,7 +57,7 @@ MonoBehaviour:
   - LocalOffset: {x: 2, y: 2}
     Direction: 1
     IsInput: 1
-  inputSlots: 6
+  inputSlots: 4
   outputSlots: 0
   bufferStackCap: 0
   requiredCoreTier: 0
@@ -65,9 +65,63 @@ MonoBehaviour:
   buildCost: []
   maxHp: 5000
   tiers:
-  - tierLabel: Tier 1
+  - tierLabel: "\uC794\uD574 \uD68C\uC218"
+    description: "\uD769\uC5B4\uC9C4 \uD30C\uD3B8\uC744 \uBAA8\uC544 \uCF54\uC5B4\uB97C
+      \uAE68\uC6B4\uB2E4."
     requirements:
-    - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
-      amount: 5
-    - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+    - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
+      amount: 12
+    unlocks:
+    - "\uC791\uC5C5\uB300 \u2014 \uC190\uC73C\uB85C \uC81C\uB828\xB7\uC81C\uC791"
+    - "\uCC44\uAD74\uAE30 \xB7 \uC81C\uB828\uB85C \xB7 \uCEE8\uBCA0\uC774\uC5B4 \uBCA8\uD2B8"
+    maxHpBonus: 0
+    isFinal: 0
+  - tierLabel: "\uC120\uCCB4 \uBD09\uD569"
+    description: "\uCC22\uC5B4\uC9C4 \uB3D9\uCCB4\uB97C \uB36E\uC5B4 \uB0B4\uBD80
+      \uC815\uBE44 \uAD6C\uC5ED\uC744 \uC5F0\uB2E4."
+    requirements:
+    - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}
+      amount: 20
+    - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+      amount: 40
+    - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+      amount: 30
+    unlocks:
+    - "\uC870\uB9BD\uAE30 \u2014 \uBD80\uD488 2\uC885\uC744 \uD569\uCCD0 \uC870\uB9BD"
+    - "\uCC44\uAD74\uAE30 Mk.2 \xB7 \uBCA8\uD2B8 Mk.2"
+    - "\uC911\uAE30\uAD00 \uD3EC\uD0D1 \xB7 \uBC15\uACA9\uD3EC \uD0C0\uC6CC"
+    maxHpBonus: 2000
+    isFinal: 0
+  - tierLabel: "\uD56D\uBC95\xB7\uC81C\uC5B4 \uBCF5\uAD6C"
+    description: "\uC870\uC885 \uCF58\uC194\uACFC \uC120\uB0B4 \uBC30\uC120\uC744
+      \uB418\uC0B4\uB9B0\uB2E4."
+    requirements:
+    - item: {fileID: 11400000, guid: 953f117f3aca51d429084219427bec02, type: 2}
+      amount: 8
+    - item: {fileID: 11400000, guid: a1135b33ec184ee49b0aa1c217acda9e, type: 2}
+      amount: 20
+    - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
+      amount: 50
+    unlocks:
+    - "\uB808\uC774\uB354 \u2014 \uB2E4\uC74C \uC6E8\uC774\uBE0C\uC758 \uC9C4\uC785
+      \uBC29\uC704\uC640 \uADDC\uBAA8"
+    - "\uC81C\uC870\uAE30 \u2014 \uBD80\uD488 4\uC885\uC744 \uD55C \uBC88\uC5D0 \uC870\uB9BD"
+    - "\uB808\uC774\uC800 \uD0C0\uC6CC \xB7 \uAC10\uC18D \uD544\uB4DC \uD0C0\uC6CC"
+    maxHpBonus: 1500
+    isFinal: 0
+  - tierLabel: "\uB3D9\uB825 \uC7AC\uC810\uD654"
+    description: "\uC5D4\uC9C4\uC5D0 \uB3D9\uB825 \uBAA8\uB4C8\uC744 \uC7A5\uCC29\uD55C\uB2E4."
+    requirements:
+    - item: {fileID: 11400000, guid: 7270e26119604fb43a25dd6efb055137, type: 2}
       amount: 3
+    - item: {fileID: 11400000, guid: d98dc4dd6a76b4d428c80cade8daad06, type: 2}
+      amount: 15
+    - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
+      amount: 30
+    - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}
+      amount: 10
+    unlocks:
+    - "\uC5D4\uC9C4 \uC608\uC5F4 \uAC1C\uC2DC"
+    - "\uC774\uB959 \uC2DC\uD000\uC2A4"
+    maxHpBonus: 1500
+    isFinal: 1

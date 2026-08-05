@@ -1,0 +1,1117 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   screens.uss — 화면별 예외만. 여기 규칙이 늘어나면 components.uss로
+   승격할 후보라는 뜻이다 (부품으로 조립되지 않는 화면이 생기고 있다는 신호).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 팝업 루트 — UIDocument 최상단. 화면 전체를 덮고 패널만 가운데 띄운다 */
+.screen-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(6, 10, 20, 0.55);
+}
+
+/* ───────────────── SCR-03 건설 메뉴 ───────────────── */
+
+/* 코어 패널과 같은 규칙 — 크기 고정, 넘치면 스크롤 */
+.build-panel {
+    width: 930px;
+    height: 750px;
+}
+
+.build-panel__body {
+    padding-top: 0;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.build-grid-scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+/* 탭이 패널 안쪽 여백을 넘어 양끝까지 닿게 한다 */
+.build-panel__tabs {
+    margin-left: -24px;
+    margin-right: -24px;
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+/* 2열. USS에 grid가 없으므로 50% 셀을 flex-wrap으로 흘린다 */
+.build-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.build-cell {
+    width: 50%;
+    padding-right: var(--space-1);
+    padding-bottom: var(--space-2);
+}
+
+/* 셀이 폭을 정하므로 행의 최소폭 규칙은 여기서 푼다 */
+.build-cell .ui-row { min-width: 0; }
+
+.build-empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-5) 0;
+    -unity-text-align: middle-center;
+}
+
+/* 하단 상세 — 높이 고정. 설명 길이에 따라 창이 흔들리면 안 된다.
+   설명이 두 줄인 건물(분배기 등)까지 담기게 잡고, 아래 여백을 둬서
+   비용 칩이 경계에 딱 붙지 않게 한다. */
+/* 높이 고정 — 커서를 옮길 때마다 상세 영역이 늘었다 줄면 아래 목록이 출렁여 고르기 어렵다.
+   최악(재료 4종 · 설명 2줄)이 들어가는 높이로 잡는다. */
+.build-details {
+    height: 252px;
+    flex-shrink: 0;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+    overflow: hidden;
+}
+
+.build-details__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.build-details__name {
+    font-size: 22.5px;
+    -unity-font-style: bold;
+    color: var(--copper);
+    margin-right: var(--space-3);
+}
+
+.build-details__type {
+    font-size: 15px;
+    letter-spacing: 1.8px;
+    color: var(--text-faint);
+}
+
+.build-details__desc {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+    white-space: normal;
+    margin-bottom: var(--space-2);
+}
+
+.build-details__meta {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-right: -12px;
+}
+
+.build-details__meta > * { margin-right: var(--space-2); }
+
+.build-details__size {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+}
+
+.build-details__cost-label {
+    font-size: 16.5px;
+    color: var(--text-faint);
+}
+
+/* 이제 독립된 줄이다 — 라벨과 같은 줄에 있던 시절의 wrap 은 필요 없다 */
+.build-details__cost {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: var(--space-2);
+    margin-right: -12px;
+}
+
+.build-details__cost > * { margin-right: var(--space-2); }
+
+/* 커서를 아무 데도 올리지 않았을 때 자리를 지키는 안내 */
+.build-details__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+}
+
+.build-hints {
+    flex-direction: row;
+    align-items: center;
+    margin-left: auto;
+    margin-right: -18px;
+}
+
+.build-hints > * { margin-right: var(--space-3); }
+
+/* ───────────────── SCR-01 코어 패널 ───────────────── */
+
+/* 크기는 고정. 부품이 몇 종이든 창이 커졌다 작아졌다 하면 안 된다 —
+   넘치는 것은 스크롤로 처리한다. */
+.core-panel {
+    width: 1320px;
+    height: 780px;
+}
+
+.core-panel__tabs { padding: 0 var(--space-4); }
+
+/* 제목·탭은 고정 높이, 본문이 남은 공간을 먹는다 */
+.core-panel > .ui-panel__body {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.core-panel__body {
+    flex-direction: row;
+    align-items: stretch;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.core-panel__rail {
+    width: 264px;
+    flex-shrink: 0;
+    margin-right: var(--space-5);
+}
+
+/* 표: 머리글은 제자리, 행 영역만 남은 높이를 먹고 스크롤한다 */
+.core-panel__body .ui-table {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.core-rows-scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+/* 값과 "/ 최대"를 한 줄에 붙인다 */
+.core-stat__value {
+    flex-direction: row;
+    align-items: center;
+}
+
+.core-stat__value > * { margin-left: 6px; }
+
+/* 게이트 요약 — 이 게이트 전체가 얼마나 찼는지 */
+.core-gate {
+    margin-bottom: var(--space-4);
+}
+
+/* 문서 목업은 baseline 정렬이지만 USS의 align-items에는 baseline이 없다
+   (auto/flex-start/flex-end/center/stretch만). 글자 크기가 다른 두 줄이라 flex-end가 가장 가깝다 */
+.core-gate__head {
+    flex-direction: row;
+    align-items: flex-end;
+    margin-bottom: var(--space-2);
+}
+
+.core-gate__name {
+    font-size: 22.5px;
+    -unity-font-style: bold;
+    color: var(--text);
+}
+
+.core-gate__count {
+    margin-left: auto;
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+}
+
+.core-gate__meter {
+    flex-direction: row;
+    align-items: center;
+}
+
+.core-gate__meter .ui-bar {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin-right: var(--space-3);
+}
+
+.core-gate__pct {
+    width: 72px;
+    color: var(--crystal);
+    -unity-text-align: middle-right;
+}
+
+/* 하단 액션 줄 — "이번에 납품" 요약 + 버튼 */
+.core-actions {
+    flex-direction: row;
+    align-items: center;
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+}
+
+.core-actions > * { margin-right: var(--space-3); }
+
+.core-actions__label {
+    font-size: 18px;
+    color: var(--text-faint);
+}
+
+/* 모든 부품이 준비됐을 때 나오는 줄 */
+.core-actions__ready {
+    font-size: 19.5px;
+    color: var(--ok);
+}
+
+/* 준비 상태의 확정 버튼 — 이 줄에서 유일한 행동이므로 좌우를 넉넉히 준다.
+   `.core-actions > *`의 오른쪽 여백을 확실히 이기도록 같은 자식 선택자로 쓴다
+   (같은 특정도면 순서로 갈리는데, 그런 건 나중에 규칙이 하나 끼어들면 조용히 뒤집힌다) */
+.core-actions > .core-actions__go {
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
+    margin-right: 0;
+}
+
+/* ───────────── SCR-01c 코어 정보 탭 ───────────── */
+
+.core-section-label {
+    font-size: 15px;
+    letter-spacing: 1.8px;
+    color: var(--text-faint);
+    margin-bottom: var(--space-3);
+}
+
+.core-section-label--inline { margin-bottom: 0; }
+.core-section-label--spaced { margin-top: var(--space-4); }
+
+/* 웨이브 수치 — 라벨 위, 값 아래 (ui-stat). 한 줄에 넉넉히 벌린다 */
+.core-wave {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.core-wave__item {
+    margin-right: var(--space-5);
+    margin-bottom: var(--space-2);
+}
+
+.core-wave__danger { color: var(--beast); }
+
+/* 레이더가 꺼져 있어 모르는 값 — 색으로 강조하지 않는다 */
+.core-wave__unknown { color: var(--text-faint); }
+
+/* 레이더 스코프가 들어갈 자리 — 탭에 남는 세로 공간을 전부 먹는다.
+   스코프 반지름은 이 상자 크기에서 계산되므로 상자가 커지면 스코프도 커진다. */
+.core-radar-slot {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+}
+
+.core-section-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.core-stat { margin-bottom: var(--space-3); }
+
+.core-stat__head {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 7.5px;
+}
+
+.core-stat__name {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+}
+
+/* 설계 viewBox(440x300) 폭에 맞춘다 — 좌우 지시선 라벨 자리를 여기서 확보한다 */
+.core-info__radar {
+    width: 660px;
+    flex-shrink: 0;
+    margin-left: var(--space-5);
+}
+
+/* 최고 티어 도달 — 더 납품할 것이 없을 때 표 자리를 대신한다 */
+.core-complete {
+    padding: var(--space-6) var(--space-4);
+    align-items: center;
+}
+
+.core-complete__title {
+    font-size: var(--fs-sub);
+    color: var(--ok);
+    margin-bottom: var(--space-2);
+}
+
+.core-complete__desc {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCR-05 배치 모드 HUD · SCR-06 철거 모드 HUD
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* HUD는 화면을 덮지 않는다 — 루트는 전면을 차지하되 아무것도 그리지 않고,
+   실제 요소만 위/아래에 띄운다. picking은 UXML에서 전부 Ignore로 꺼 두었다
+   (여기로 클릭이 먹히면 월드 배치가 막힌다). */
+.hud-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-font-definition: var(--font-body);
+    /* 배경을 깔지 않는다 — .screen-root의 스크림은 모달 전용이다.
+       HUD는 월드를 가리면 안 되므로 완전히 투명하게 둔다. */
+}
+
+.hud-badge {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.hud-card-slot {
+    position: absolute;
+    bottom: 36px;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+/* 카드 안 요소들 — USS에 gap이 없어 개별 margin으로 띄운다 */
+.hud-card__icon {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    margin-right: var(--space-3);
+}
+
+.hud-card__ring {
+    margin-right: var(--space-3);
+}
+
+.hud-card__title {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hud-card__cost {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud-card__keys {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* 카드 안에서는 마지막 칩/키의 오른쪽 여백을 지운다 —
+   USS에 :last-child가 없어 뷰가 --last 클래스를 붙인다 */
+.hud-card__cost > .ui-chip { margin-right: var(--space-2); }
+.hud-card__keys > .ui-key  { margin-right: var(--space-3); }
+.hud-card__cost > .ui-chip--last { margin-right: 0; }
+.hud-card__keys > .ui-key--last  { margin-right: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCR-01b 수리 확인창
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 코어 패널 위에 겹쳐 뜬다 — 뒤 화면을 덮어 지금 답해야 할 질문 하나만 남긴다 */
+.core-confirm-scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(6, 10, 20, 0.55);
+}
+
+.core-confirm {
+    width: 690px;
+}
+
+.core-confirm__desc {
+    font-size: 19.5px;
+    color: var(--text);
+    white-space: normal;
+    margin-bottom: var(--space-4);
+}
+
+.core-confirm__unlocks {
+    flex-direction: column;
+    margin-bottom: var(--space-4);
+}
+
+.core-confirm__unlocks > .ui-mat { margin-bottom: 3px; }
+
+/* 되돌릴 수 없는 단계에만 붙는다. 전부에 붙이면 정작 위험한 마지막에서 눈에 안 띈다 */
+.core-confirm__warn {
+    border-width: 1.5px;
+    border-color: var(--danger-a50);
+    background-color: var(--danger-a07);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.core-confirm__warn-head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.core-confirm__warn-icon {
+    color: var(--danger);
+    font-size: 19.5px;
+    margin-right: var(--space-2);
+}
+
+.core-confirm__warn-title {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: var(--danger);
+}
+
+.core-confirm__warn-body {
+    font-size: 18px;
+    color: var(--text-dim);
+    white-space: normal;
+}
+
+/* 확인 버튼을 조금 넓게 — 기본 행동이 어느 쪽인지 크기로 말한다 */
+.core-confirm__actions {
+    flex-direction: row;
+}
+
+.core-confirm__cancel {
+    flex-grow: 1;
+    flex-basis: 0;
+    justify-content: center;
+    margin-right: var(--space-2);
+}
+
+.core-confirm__ok {
+    flex-grow: 1.4;
+    flex-basis: 0;
+    justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCR-07 분배기 — 출구 필터
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.splitter-panel {
+    width: 990px;
+    height: 630px;
+}
+
+/* 문서는 grid(375px + 1fr)지만 USS에 grid가 없어 flex로 같은 결과를 만든다 */
+.splitter-panel__body {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.splitter-map-col {
+    width: 375px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-5);
+}
+
+.splitter-list-col {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 100%;
+}
+
+.splitter-list__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+/* 선택한 출구의 색 — 목록이 어느 출구의 것인지 색으로 먼저 말한다 */
+.splitter-list__swatch {
+    width: 21px;
+    height: 21px;
+    border-radius: 4.5px;
+    background-color: var(--out);
+    margin-right: var(--space-2);
+}
+
+/* 제목이 남은 폭을 먹어 버튼들을 오른쪽 끝으로 민다.
+   .ui-push(margin-left:auto)를 버튼에 걸면 아래 .splitter-list__btn의
+   margin-left가 그것을 덮어써서(같은 프로퍼티, 나중 규칙) 밀리지 않는다. */
+.splitter-list__title {
+    font-size: 19.5px;
+    -unity-font-style: bold;
+    color: var(--text);
+    flex-grow: 1;
+    flex-basis: 0;
+    overflow: hidden;
+}
+
+.splitter-list__btn {
+    padding: 4.5px 15px;
+    font-size: 18px;
+    margin-left: 9px;
+    flex-shrink: 0;
+}
+
+.splitter-list__search { margin-bottom: var(--space-2); }
+
+.splitter-list__scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.splitter-list__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-4) 0;
+    -unity-text-align: middle-center;
+}
+
+/* 규칙을 한 줄로 다시 말해 준다 — 막은 출구를 만들고 나면 가장 먼저 드는 의문이다 */
+.splitter-list__foot {
+    margin-top: auto;
+    padding-top: var(--space-3);
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+    font-size: 16.5px;
+    color: var(--text-faint);
+}
+
+/* ───────────── SCR-04 인벤토리 · 수동 제작 ───────────── */
+
+/* 패널을 하단에 붙인다 — 핫바가 HUD 핫바와 같은 자리에 오도록.
+   가운데 정렬(.screen-root)은 그대로 두고 세로 방향만 바닥으로 민다 */
+.screen-root--bottom {
+    justify-content: flex-end;
+    padding-bottom: 30px;
+}
+
+/* 바닥에 붙는 패널이라 아래 모서리는 각지게 — 잘린 것이 아니라 이어진 것 */
+.inv-panel {
+    width: 900px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.inv-panel__body {
+    padding-bottom: 0;
+}
+
+/* 구획 라벨 — 제작/소지품/핫바 세 단의 머리글 */
+.inv-label {
+    font-size: 15px;
+    letter-spacing: 1.8px;
+    color: var(--text-faint);
+    margin-bottom: var(--space-2);
+}
+
+/* 라벨 + 오른쪽 버튼 한 줄 (SCR-08 보관소: 정렬 · ↑ 자동 넣기) */
+.inv-sechead {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.inv-sechead .inv-label {
+    margin-bottom: 0;
+}
+
+.inv-sechead__btn {
+    margin-left: auto;
+    padding: 4.5px 15px;
+    font-size: 18px;
+}
+
+.inv-label--spaced {
+    margin-bottom: var(--space-3);
+}
+
+/* 제작 영역만 가로 2단 — 목록과 상세는 함께 봐야 고를 수 있다.
+   높이 고정 (문서 354px): 재료 4종(제조기 4입력)이 최악이고, 그게 들어가는 높이면
+   나머지는 다 들어간다. 산출 66 + 8 + 재료 4줄 123 + 버튼 37 = 234 ≤ 236 실측 확인 */
+.inv-craft {
+    flex-direction: row;
+    height: 354px;
+}
+
+.inv-craft__list {
+    width: 354px;
+    margin-right: var(--space-4);
+}
+
+.inv-craft__search {
+    margin-bottom: var(--space-2);
+}
+
+.inv-craft__scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+/* 목록 행 — 레퍼런스: 간격 3px · 아이콘 30px. 아이콘 기본값이 39px라 명시로 눌러 준다 */
+.inv-craft__scroll .ui-row {
+    margin-bottom: 3px;
+}
+
+.inv-craft__scroll .ui-slot__icon {
+    width: 30px;
+    height: 30px;
+}
+
+.inv-craft__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-4) 0;
+    -unity-text-align: middle-center;
+}
+
+.inv-craft__detail {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.inv-craft__yield {
+    margin-bottom: var(--space-2);
+}
+
+/* 산출 슬롯은 60px 축소형 — 소지품 78px와 구분되는 표시용 슬롯 (레퍼런스) */
+.inv-craft__yield .ui-slot {
+    width: 60px;
+    height: 60px;
+}
+
+.inv-craft__yield .ui-slot__icon {
+    width: 30px;
+    height: 30px;
+}
+
+.inv-craft__yield-name {
+    font-size: 19.5px;
+    color: var(--text);
+}
+
+.inv-craft__yield-per {
+    font-size: 16.5px;
+    color: var(--text-faint);
+}
+
+/* "필요 / 보유"의 보유 쪽 — 흐리게. 판단 기준(필요)이 먼저 읽혀야 한다 */
+.inv-mat__dim {
+    font-size: 18px;
+    color: var(--text-faint);
+    margin-left: 4.5px;
+    -unity-text-align: middle-left;
+}
+
+/* 부족하면 보유 수만 붉어진다 — 계통색 띠는 그대로 (어느 라인의 재료인지는 여전히 유효한 정보) */
+.inv-mat__dim--short {
+    color: var(--danger);
+}
+
+.inv-craft__btn {
+    padding: var(--space-2);
+    margin-top: auto;
+}
+
+/* 소지품 격자 — 행은 코드가 9칸씩 잘라 만든다.
+   flex-wrap에 맡기지 않는 이유는 분배기 격자와 같다 (반올림 오차로 한 줄 밀림) */
+.inv-section {
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+}
+
+.inv-grid {
+    align-items: center;
+}
+
+.inv-grid__row {
+    flex-direction: row;
+    margin-bottom: var(--space-2);
+}
+
+.inv-grid__row > .ui-slot {
+    margin-right: var(--space-2);
+}
+
+.inv-grid__row .ui-slot--last {
+    margin-right: 0;
+}
+
+/* 핫바 — 격자와 같은 슬롯, 같은 간격. 위 구분선으로만 나뉜다 */
+.inv-hotbar {
+    flex-direction: row;
+    justify-content: center;
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+    margin-top: var(--space-1);
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-4);
+}
+
+.inv-hotbar > .ui-slot {
+    margin-right: var(--space-2);
+}
+
+.inv-hotbar .ui-slot--last {
+    margin-right: 0;
+}
+
+/* 마우스가 들고 있는 스택 — 포인터를 따라다닌다. 자리를 차지하면 안 되고
+   슬롯 클릭을 가로채면 안 된다 (picking은 코드에서 Ignore) */
+.inv-carry {
+    position: absolute;
+    width: 66px;
+    height: 66px;
+    align-items: center;
+    justify-content: center;
+}
+
+.inv-carry .ui-slot__icon {
+    width: 45px;
+    height: 45px;
+}
+
+/* ───────────── SCR-02 전투 HUD ───────────── */
+
+/* 상단 — 나침반 + 적 수 한 줄. 웨이브 배지·규모는 웨이브 시스템이 아직 없어 뺐다 */
+.combat-top {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 21px;
+    align-items: center;
+}
+
+/* 배율은 화면과 같게 고정돼 있으므로(도당 픽셀 = FOV), 폭을 늘리면 보이는 방위가 는다.
+   2073px(72%)면 FOV 103° 기준 대략 ±58° — 등 뒤 직전까지 보인다 */
+.combat-compass {
+    width: 72%;
+}
+
+.combat-enemyline {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 9px;
+}
+
+.combat-enemyline__n {
+    font-size: 21px;
+    color: var(--text);
+    margin-left: 7.5px;
+    -unity-font-definition: var(--font-data);
+}
+
+/* 좌상단 — 시계는 전투 중 계속 볼 것이 아니라 항상 같은 자리에 있어야 하는 정보다 */
+.combat-stats {
+    position: absolute;
+    left: 36px;
+    top: 30px;
+    flex-direction: row;
+}
+
+.combat-stats > .ui-stat {
+    margin-right: var(--space-5);
+}
+
+.combat-cross {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 27px;
+    height: 27px;
+    translate: -50% -50%;
+}
+
+.combat-cross__bar {
+    position: absolute;
+    background-color: var(--text-dim);
+}
+
+.combat-cross__bar--n { left: 12px; top: 0; width: 3px; height: 9px; }
+.combat-cross__bar--s { left: 12px; bottom: 0; width: 3px; height: 9px; }
+.combat-cross__bar--w { top: 12px; left: 0; width: 9px; height: 3px; }
+.combat-cross__bar--e { top: 12px; right: 0; width: 9px; height: 3px; }
+
+/* 좌하단 — 체력은 큰 숫자로 세우고 바는 얇게. 급할 때 읽는 건 바가 아니라 숫자다 */
+.combat-vitals {
+    position: absolute;
+    left: 36px;
+    bottom: 30px;
+    width: 438px;
+}
+
+.combat-vitals__head {
+    flex-direction: row;
+    align-items: flex-end;
+    margin-bottom: 7.5px;
+}
+
+.combat-vitals__hp {
+    font-size: 39px;
+    color: var(--text);
+    -unity-font-definition: var(--font-data);
+}
+
+.combat-vitals__max {
+    font-size: 18px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-data);
+    margin-left: var(--space-2);
+    padding-bottom: 3px;
+}
+
+.combat-vitals__tag {
+    margin-left: auto;
+    font-size: 15px;
+    letter-spacing: 2.1px;
+    color: var(--text-faint);
+    padding-bottom: 4.5px;
+    -unity-font-definition: var(--font-display);
+}
+
+.combat-vitals__bar {
+    height: 7.5px;
+    background-color: var(--danger-a15);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.combat-vitals__fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--danger);
+    border-radius: 3px;
+}
+
+/* 코어는 초록 세로선 하나로 묶어 플레이어 체력과 시각적으로 분리 */
+.combat-core {
+    flex-direction: row;
+    align-items: center;
+    border-left-width: 3px;
+    border-left-color: var(--ok);
+    padding-left: var(--space-2);
+    margin-top: 15px;
+}
+
+.combat-core__tag {
+    font-size: 15px;
+    letter-spacing: 2.1px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-display);
+}
+
+.combat-core__bar {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 6px;
+    background-color: var(--ok-a15);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: var(--space-2);
+    margin-right: var(--space-2);
+}
+
+.combat-core__fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--ok);
+    border-radius: 3px;
+}
+
+.combat-core__n {
+    font-size: 18px;
+    color: var(--ok);
+    -unity-font-definition: var(--font-data);
+}
+
+/* 우하단 — 탄약. 장착 무기가 없으면 통째로 사라진다 */
+.combat-ammo {
+    position: absolute;
+    right: 36px;
+    bottom: 30px;
+    align-items: flex-end;
+}
+
+.combat-ammo__row {
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.combat-ammo__now {
+    font-size: 33px;
+    color: var(--text);
+    -unity-font-definition: var(--font-data);
+}
+
+.combat-ammo__cap {
+    font-size: 21px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-data);
+    padding-bottom: 1.5px;
+}
+
+/* 하단 중앙 — 핫바. 인벤토리 패널의 핫바와 정확히 같은 자리(같은 손 위치).
+   37 = 패널 바닥 오프셋 20 + 패널 테두리 1 + 핫바 아래 패딩 16 */
+.combat-hotbar {
+    position: absolute;
+    left: 50%;
+    bottom: 55.5px;
+    flex-direction: row;
+    translate: -50% 0;
+}
+
+.combat-hotbar > .ui-slot {
+    margin-right: var(--space-2);
+}
+
+.combat-hotbar .ui-slot--last {
+    margin-right: 0;
+}
+
+/* 마커·글리프 색 — 코드가 아니라 여기서 정한다 */
+.combat-mark--threat { color: var(--beast); }
+.combat-mark--core { color: var(--ok); }
+.combat-enemyline__glyph { color: var(--beast); }
+
+/* ───────────── SCR-09 설비 — 레시피와 가동 상태 ───────────── */
+
+/* 제련로·제작기·조립기·제조기가 같은 화면 하나 — 데이터상 전부 같은 SO이고
+   입력 슬롯 수(1·1·2·4)만 다르므로 IN 칸이 그 수만큼 늘어날 뿐이다 */
+.machine-panel {
+    width: 900px;
+}
+
+.machine-panel__body {
+    flex-direction: row;
+    height: 408px;
+}
+
+.machine-list {
+    width: 354px;
+    margin-right: var(--space-4);
+}
+
+.machine-list__search {
+    margin-bottom: var(--space-2);
+}
+
+.machine-list__scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.machine-list__scroll .ui-row {
+    margin-bottom: 3px;
+}
+
+.machine-list__scroll .ui-slot__icon {
+    width: 30px;
+    height: 30px;
+}
+
+.machine-list__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-4) 0;
+    -unity-text-align: middle-center;
+}
+
+.machine-detail {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.machine-detail__yield {
+    margin-bottom: var(--space-2);
+}
+
+.machine-detail__yield .ui-slot {
+    width: 60px;
+    height: 60px;
+}
+
+.machine-yield-name {
+    font-size: 19.5px;
+    color: var(--text);
+}
+
+.machine-yield-sub {
+    font-size: 16.5px;
+    color: var(--text-faint);
+}
+
+/* 입력 → 진행 → 출력이 남은 세로 공간의 한가운데 — 슬롯 수가 달라도 눈높이가 같다 */
+.machine-io {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.machine-status {
+    flex-direction: row;
+    align-items: center;
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+    padding-top: var(--space-3);
+}
+
+.machine-status > * {
+    margin-right: var(--space-3);
+}
+
+.machine-status__note {
+    font-size: 17.2px;
+    color: var(--text-faint);
+}
+
+.machine-status__btn {
+    margin-left: auto;
+    margin-right: 0;
+    padding: 6px 21px;
+    font-size: 18px;
+}

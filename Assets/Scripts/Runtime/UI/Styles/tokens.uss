@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   tokens.uss — UI_디자인시스템_레퍼런스.html §01·§02의 :root를 옮긴 것.
+   값을 바꿀 일이 생기면 이 파일만 고친다. 다른 파일은 var()로만 참조한다.
+
+   USS 제약(Unity 6000.3.18f1에서 확인, 지원 속성 99개):
+     line-height / gap / box-shadow / grid-* / z-index / outline 없음.
+     background·border 단축 속성 없음 → background-color, border-width+border-color.
+     font-weight 없음 → -unity-font-style.  text-align 없음 → -unity-text-align.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── 배경 계층 ── */
+    --bg-void: rgb(11, 18, 32);         /* #0B1220 화면 최하단 */
+    --bg-panel: rgb(17, 27, 46);        /* #111B2E 패널 본체 */
+    --bg-inset: rgb(14, 23, 39);        /* #0E1727 패널 안에 파인 영역 */
+    --bg-raised: rgb(22, 36, 60);       /* #16243C 호버·선택된 행 */
+
+    /* ── 선 ── */
+    --line: rgb(34, 51, 80);            /* #223350 */
+    --line-strong: rgb(46, 66, 102);    /* #2E4266 */
+
+    /* ── 글자 ── */
+    --text: rgb(217, 228, 245);         /* #D9E4F5 */
+    --text-dim: rgb(143, 163, 192);     /* #8FA3C0 */
+    --text-faint: rgb(92, 110, 140);    /* #5C6E8C */
+
+    /* ── 계통색 — 자원·부품의 소속 ── */
+    --iron: rgb(232, 165, 75);          /* #E8A54B 구조 계통 */
+    --copper: rgb(79, 216, 224);        /* #4FD8E0 전자 계통 / UI 기본 강조 */
+    --crystal: rgb(180, 140, 255);      /* #B48CFF 동력 계통 */
+    --beast: rgb(255, 93, 115);         /* #FF5D73 괴수 소재 */
+
+    /* 흐름 방향 — 계통색이 아니라 "들어온다/나간다"를 뜻한다.
+       입력은 --copper를 그대로 쓰고, 출력만 별도 색이 필요해 여기 둔다.
+       월드의 포트 흐름 시각화(PortFlow.shader)도 같은 값을 쓴다. */
+    --out: rgb(255, 158, 74);           /* #FF9E4A 출력 흐름 */
+
+    /* ── 상태색 — 일어난 일
+       warn/danger가 iron/beast와 값을 공유하는 것은 의도된 것이나,
+       나중에 갈라야 할 때를 위해 변수는 반드시 분리해 둔다 (문서 §01). ── */
+    --ok: rgb(93, 211, 158);            /* #5DD39E */
+    --warn: rgb(232, 165, 75);          /* #E8A54B = --iron */
+    --danger: rgb(255, 93, 115);        /* #FF5D73 = --beast */
+
+    /* 반투명 파생색 — USS에는 rgba(var(--x), .5) 같은 합성이 없어 미리 풀어 둔다 */
+    --copper-a55: rgba(79, 216, 224, 0.55);
+    --copper-a35: rgba(79, 216, 224, 0.35);
+    --copper-a16: rgba(79, 216, 224, 0.16);
+    --copper-a08: rgba(79, 216, 224, 0.08);
+    --danger-a50: rgba(255, 93, 115, 0.5);
+    --danger-a15: rgba(255, 93, 115, 0.15);
+    --danger-a07: rgba(255, 93, 115, 0.07);
+    --iron-a50: rgba(232, 165, 75, 0.5);
+    --crystal-a50: rgba(180, 140, 255, 0.5);
+    --crystal-a15: rgba(180, 140, 255, 0.15);
+    --ok-a50: rgba(93, 211, 158, 0.5);
+    --ok-a15: rgba(93, 211, 158, 0.15);
+    --ok-a08: rgba(93, 211, 158, 0.08);
+    --warn-a08: rgba(232, 165, 75, 0.08);
+    --danger-a08: rgba(255, 93, 115, 0.08);
+    --dim-a07: rgba(143, 163, 192, 0.07);
+    --text-a35: rgba(217, 228, 245, 0.35);
+    --btn-hover-bg: rgb(27, 44, 72);    /* #1B2C48 */
+
+    /* ── 간격 — 6의 배수만 (2026-08-05 전체 1.5배 확대) ── */
+    --space-1: 6px;
+    --space-2: 12px;
+    --space-3: 18px;
+    --space-4: 24px;
+    --space-5: 36px;
+    --space-6: 48px;
+
+    /* ── 모서리 ── */
+    --r-sm: 6px;
+    --r-md: 9px;
+    --r-lg: 13.5px;
+    /* --r-pill은 가로세로가 비슷한 요소(원형 점 등)에만 쓸 것.
+       USS는 과대 반경을 x/y축 각각 독립 클램프해서, 납작하고 긴 요소에 주면
+       알약이 아니라 타원이 된다. 막대류는 높이의 절반을 직접 지정한다. */
+    --r-pill: 999px;
+
+    /* ── 글자 크기 ── */
+    --fs-micro: 16.5px;
+    --fs-cap: 18.8px;
+    --fs-body: 21px;
+    --fs-sub: 24px;
+    --fs-title: 30px;
+
+    /* ── 폰트 (Assets/Art/Fonts, 전부 SIL OFL 1.1 — 라이선스 원문 동봉) ──
+       세 폰트가 각자 다른 일을 한다. 한글에 display를 쓰지 않는다 (§02).
+
+       굵기는 Regular/SemiBold 한 벌만 넣고 -unity-font-style: bold일 때는
+       유니티 합성에 맡긴다 — IBM Plex Sans KR은 한글 글리프 때문에 한 벌이
+       2.8MB라, 쓰이는 곳(제목·수량)에 비해 Bold를 따로 받는 값이 크다.
+       합성 굵기가 눈에 걸리면 IBMPlexSansKR-Bold.ttf를 받아 여기에 추가할 것. */
+    --font-display: url("project://database/Assets/Art/Fonts/ChakraPetch-SemiBold.ttf?fileID=12800000&guid=eaae7239078207447bb36fd083f71734&type=3#ChakraPetch-SemiBold");
+    --font-body: url("project://database/Assets/Art/Fonts/IBMPlexSansKR-Regular.ttf?fileID=12800000&guid=1e57cd717b9148d4392587aa6471ea00&type=3#IBMPlexSansKR-Regular");
+    --font-data: url("project://database/Assets/Art/Fonts/IBMPlexMono-Medium.ttf?fileID=12800000&guid=52a35306637613e4f8efa501d1afb0e8&type=3#IBMPlexMono-Medium");
+}

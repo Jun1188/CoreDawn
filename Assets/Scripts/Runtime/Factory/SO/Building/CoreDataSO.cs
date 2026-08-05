@@ -42,9 +42,22 @@ public class CoreTierRequirement
 [System.Serializable]
 public class CoreTierDefinition
 {
-    [Tooltip("표시용 — 진화 결과 설명 등 (선택).")]
+    [Tooltip("단계 이름 — \"선체 봉합\" 등. GameData.json 의 tiers[].name.")]
     public string tierLabel;
+
+    [Tooltip("이 단계가 무엇을 하는 일인지 한 줄. 코어 패널이 이름 아래 붙인다.")]
+    [TextArea] public string description;
+
     public CoreTierRequirement[] requirements;
+
+    [Tooltip("이 단계를 마치면 열리는 것들 — 표시 전용 문자열. 실제 해금은 requiredCoreTier가 한다.")]
+    public string[] unlocks;
+
+    [Tooltip("완료 시 코어 최대 체력 증가분.")]
+    public int maxHpBonus;
+
+    [Tooltip("마지막 단계 — 완료하면 탈출(엔딩)로 이어진다.")]
+    public bool isFinal;
 }
 
 // ─── 행동 ──────────────────────────────────────────────────────
@@ -75,6 +88,15 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
     /// <summary>플레이어 상호작용/UI가 바인딩할 컨테이너 — 벨트도 여기로 들어온다.</summary>
     public ItemContainer Container => _b.Input;
 
+    /// <summary>수리 단계 목록을 읽기 위한 UI용 접근자.</summary>
+    public CoreDataSO Data => _so;
+
+    /// <summary>현재 진행 중인 단계 인덱스. tiers.Length와 같으면 전 단계 완료.</summary>
+    public int CurrentTierIndex => TierIndex;
+
+    /// <summary>전체 수리 단계 수.</summary>
+    public int TierCount => _so.tiers != null ? _so.tiers.Length : 0;
+
     int TierIndex => GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
 
     public bool HasNextTier => _so.tiers != null && TierIndex < _so.tiers.Length;
@@ -83,7 +105,13 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
 
     public string InteractPrompt => HasNextTier ? "코어에 자원 납품" : "코어 (최고 티어 달성)";
 
-    public void Interact(PlayerController player) => InventoryManager.Instance?.OpenCoreScreen(this);
+    public void Interact(PlayerController player)
+    {
+        // 씬에 UITK 코어 패널이 있으면 그쪽을 연다. 없으면 기존 uGUI 화면으로 —
+        // 씬 내용만으로 전환이 결정되므로 이관 중에도 두 경로가 공존한다.
+        if (CorePanelView.TryOpen(this)) return;
+        InventoryManager.Instance?.OpenCoreScreen(this);
+    }
 
     /// <summary>현재 티어 요구 아이템별 (아이템, 필요량, 현재량) — 진행률 UI용.</summary>
     public IReadOnlyList<(ItemDataSO item, int required, int current)> GetProgress()
@@ -97,19 +125,85 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
 
     public void OnAfterPlaced() => RefreshAcceptFilter(); // 배치 시점에 이미 진행된 티어 반영(재시작 등)
 
+    // ── 수리 확인 (SCR-01b)
+    //
+    // 마지막 부품을 넣자마자 수리가 시작되면 플레이어가 준비할 틈이 없다. 특히 마지막 단계는
+    // 곧바로 최종 방어전이라, 확인창을 거쳐야 한다. 그래서 요구 충족과 실제 진행을 갈라 둔다.
+
+    bool _ready;
+
+    /// <summary>요구가 전부 채워졌는가 — UI가 "납품" 버튼을 "수리 시작"으로 바꾸는 신호.</summary>
+    public bool IsReadyToRepair => _ready;
+
+    /// <summary>준비 상태가 바뀔 때만 발화. UI가 매 프레임 폴링하지 않게 한다.</summary>
+    public event System.Action ReadyChanged;
+
     public void Tick(float dt)
     {
         var reqs = CurrentTier?.requirements;
-        if (reqs == null) return;
+        if (reqs == null) { SetReady(false); return; }
 
         foreach (var r in reqs)
-            if (_b.Input.CountOf(r.item) < r.amount) return; // 아직 미충족
+            if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return; } // 아직 미충족
+
+        SetReady(true);
+
+        // 확인창을 띄울 UI가 없는 씬에서는 예전처럼 즉시 진행한다.
+        // 그러지 않으면 UITK 패널이 아직 안 들어간 씬에서 코어 진행이 영영 멈춘다 —
+        // Interact가 이미 쓰고 있는 "씬 내용이 경로를 결정한다" 방침과 같다.
+        if (!CorePanelView.ExistsInScene()) TryStartRepair();
+    }
+
+    /// <summary>
+    /// 확인창의 "수리 시작"이 호출. 요구를 소비하고 다음 단계를 연다.
+    /// 호출 시점에 요구가 다시 미달일 수 있으므로(벨트가 도로 빼갔다든지) 여기서 한 번 더 검사한다.
+    /// </summary>
+    public bool TryStartRepair()
+    {
+        var tier = CurrentTier;          // 진행하면 CurrentTier가 다음 단계를 가리키므로 먼저 잡는다
+        var reqs = tier?.requirements;
+        if (reqs == null) return false;
+
+        foreach (var r in reqs)
+            if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return false; }
 
         foreach (var r in reqs) _b.Input.TryConsume(r.item, r.amount);
 
         GameManager.Instance.AdvanceTier(TierIndex + 1);
+        ApplyMaxHpBonus(tier.maxHpBonus);
+        SetReady(false);
         RefreshAcceptFilter();
         _b.NotifyUpstream(); // 자리 비었으니 막혀있던 상류(벨트) 재개
+        return true;
+    }
+
+    /// <summary>
+    /// 수리로 늘어난 내구도. 확인창이 "코어 내구도 +1,500"이라 적는 그 수치와 같은 출처다 —
+    /// 같은 값을 UI와 로직이 따로 들고 있으면 반드시 어긋나고, 어긋난 쪽이 UI면 플레이어가 속는다.
+    ///
+    /// 최대치만 올리고 그만큼 회복시킨다(전체 회복 아님). 수리는 선체를 덧대는 일이지
+    /// 이미 난 상처를 없던 일로 만드는 게 아니다 — 밤에 깎인 체력이 공짜로 돌아오면
+    /// 방어를 못해도 코어가 버티게 된다.
+    /// </summary>
+    void ApplyMaxHpBonus(int bonus)
+    {
+        if (bonus <= 0) return;
+
+        // 체력의 원본은 씬 껍데기(BuildingEntity)다. 심만 있는 테스트에서는 뷰가 없으니 건너뛴다.
+        var boot = FactoryBootstrap.Instance;
+        var view = boot != null ? boot.GetView(_b) : null;
+        if (view == null) return;
+
+        var hp = view.Health;
+        hp.SetMaxHealth(hp.MaxHealth + bonus, refill: false);
+        hp.Heal(bonus);
+    }
+
+    void SetReady(bool on)
+    {
+        if (_ready == on) return;
+        _ready = on;
+        ReadyChanged?.Invoke();
     }
 
     void RefreshAcceptFilter()

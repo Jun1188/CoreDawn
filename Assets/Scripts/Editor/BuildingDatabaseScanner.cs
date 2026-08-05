@@ -12,28 +12,30 @@ public class BuildingDatabaseScanner : AssetPostprocessor
     static void OnPostprocessAllAssets(
         string[] imported, string[] deleted, string[] moved, string[] movedFrom)
     {
-        bool building = false, item = false;
+        bool building = false, item = false, recipe = false;
         foreach (var p in imported.Concat(deleted).Concat(moved))
         {
             if (!p.EndsWith(".asset")) continue;
             var type = AssetDatabase.GetMainAssetTypeAtPath(p);
-            if (type == null) { building = item = true; break; }   // 삭제된 에셋은 타입 조회 불가 — 둘 다 재수집
+            if (type == null) { building = item = recipe = true; break; }   // 삭제된 에셋은 타입 조회 불가 — 전부 재수집
             if (typeof(BuildingDataSO).IsAssignableFrom(type) || type == typeof(BuildingDatabaseSO)) building = true;
             if (typeof(ItemDataSO).IsAssignableFrom(type) || type == typeof(ItemDatabaseSO)) item = true;
+            if (typeof(RecipeDataSO).IsAssignableFrom(type) || type == typeof(RecipeDatabaseSO)) recipe = true;
         }
 
-        if (!building && !item) return;
+        if (!building && !item && !recipe) return;
 
         // 재수집은 Refresh가 끝난 뒤로 미룬다.
         // OnPostprocessAllAssets는 임포트 파이프라인 안이라, 여기서 FindAssets로 프로젝트를 훑으면
         // 같은 배치의 아직 임포트 안 된 에셋까지 강제 로드된다 → "scheduled for reimport ...
         // returning two versions of the same asset" 경고. 건물 SO는 프리팹을 참조하므로
         // Assembler.prefab / Minor.prefab 같은 프리팹이 딸려 들어온다.
-        bool rebuildBuildings = building, rebuildItems = item;
+        bool rebuildBuildings = building, rebuildItems = item, rebuildRecipes = recipe;
         EditorApplication.delayCall += () =>
         {
             if (rebuildBuildings) RebuildBuildings();
             if (rebuildItems)     RebuildItems();
+            if (rebuildRecipes)   RebuildRecipes();
         };
     }
 
@@ -42,6 +44,7 @@ public class BuildingDatabaseScanner : AssetPostprocessor
     {
         RebuildBuildings();
         RebuildItems();
+        RebuildRecipes();
     }
 
     public static void RebuildBuildings()
@@ -61,6 +64,26 @@ public class BuildingDatabaseScanner : AssetPostprocessor
             db.buildings = all;
             EditorUtility.SetDirty(db);
             Debug.Log($"[BuildingDatabase] '{db.name}' 재수집 — 건물 {all.Length}종", db);
+        }
+    }
+
+    public static void RebuildRecipes()
+    {
+        var all = AssetDatabase.FindAssets("t:RecipeDataSO")
+            .Select(g => AssetDatabase.LoadAssetAtPath<RecipeDataSO>(AssetDatabase.GUIDToAssetPath(g)))
+            .Where(r => r != null)
+            .OrderBy(r => r.tier)
+            .ThenBy(r => r.displayName, System.StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var guid in AssetDatabase.FindAssets("t:RecipeDatabaseSO"))
+        {
+            var db = AssetDatabase.LoadAssetAtPath<RecipeDatabaseSO>(AssetDatabase.GUIDToAssetPath(guid));
+            if (db == null || (db.recipes != null && db.recipes.SequenceEqual(all))) continue;
+
+            db.recipes = all;
+            EditorUtility.SetDirty(db);
+            Debug.Log($"[RecipeDatabase] '{db.name}' 재수집 — 레시피 {all.Length}종", db);
         }
     }
 

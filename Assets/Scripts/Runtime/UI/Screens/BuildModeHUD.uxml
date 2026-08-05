@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- SCR-05 배치 모드 HUD · SCR-06 철거 모드 HUD.
+
+         두 화면을 한 문서의 두 상태로 만든다. 배지 색과 카드 내용만 다르고 골격이
+         같은 데다, 배치↔철거를 오갈 때 문서가 통째로 바뀌면 카드가 한 프레임 깜빡인다.
+         (문서는 BuildModeHUD/DemolishModeHUD 두 파일로 적어뒀지만, 화면이 같은 자리에서
+          상태만 바뀌는 것이라 나눌 실익이 없다)
+
+         팝업이 아니다 — 배치는 월드를 보면서 하는 일이라 화면을 덮으면 안 되고,
+         커서를 풀거나 입력 맵을 Push해서도 안 된다. 그래서 UITKPopup을 쓰지 않는다.
+
+         카드 내용(비용 칩·키 힌트)은 고른 건물에 따라 달라지므로 BuildModeHUDView가 채운다. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+
+    <!-- .screen-root 를 쓰지 않는다 — 거기엔 모달용 스크림(반투명 검정)이 들어 있어
+         HUD가 화면 전체를 어둡게 덮어 버린다. 폰트만 따로 받는다. -->
+    <ui:VisualElement name="screen-root" class="hud-root" picking-mode="Ignore">
+
+        <!-- 상단 중앙 — 지금이 어느 모드인지 화면이 먼저 말한다 -->
+        <ui:VisualElement name="badge-slot" class="hud-badge" picking-mode="Ignore">
+            <ui:Label name="mode-badge" text="BUILD MODE" class="ui-modebadge ui-modebadge--build" />
+        </ui:VisualElement>
+
+        <!-- 하단 중앙 — 배치/철거 카드 -->
+        <ui:VisualElement name="card-slot" class="hud-card-slot" picking-mode="Ignore">
+            <ui:VisualElement name="card" class="ui-placecard" picking-mode="Ignore">
+
+                <!-- 배치: 건물 아이콘 / 철거: 홀드 링 (뷰가 둘 중 하나만 켠다) -->
+                <ui:VisualElement name="lead-icon" class="ui-slot hud-card__icon" picking-mode="Ignore">
+                    <ui:VisualElement name="lead-icon-img" class="ui-slot__icon" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="lead-ring" class="hud-card__ring" picking-mode="Ignore" />
+
+                <ui:VisualElement name="title-col" class="hud-card__title" picking-mode="Ignore">
+                    <ui:Label name="card-name" class="ui-placecard__name" />
+                    <ui:Label name="card-sub" class="ui-placecard__sub" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="sep-1" class="ui-placecard__sep" picking-mode="Ignore" />
+
+                <ui:Label name="cost-label" class="ui-placecard__label" />
+                <ui:VisualElement name="cost" class="hud-card__cost" picking-mode="Ignore" />
+
+                <ui:VisualElement name="sep-2" class="ui-placecard__sep" picking-mode="Ignore" />
+
+                <ui:VisualElement name="keys" class="hud-card__keys" picking-mode="Ignore" />
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

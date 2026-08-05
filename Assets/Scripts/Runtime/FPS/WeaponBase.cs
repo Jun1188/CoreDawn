@@ -16,6 +16,10 @@ public abstract class WeaponBase : MonoBehaviour
 
     [Header("Current States")]
     protected int currentAmmo;
+
+    /// <summary>현재 장전 수 — HUD 표시용 읽기 전용 (SCR-02).</summary>
+    public int CurrentAmmo => currentAmmo;
+
     public bool isReloading = false;
     protected float lastFireTime = 0f;
     protected float currentSpread;

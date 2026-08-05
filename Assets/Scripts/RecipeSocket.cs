@@ -36,8 +36,11 @@ public class RecipeSocket : MonoBehaviour
 
         for (int i = 0; i < _recipe.outputs.Length; i++)
         {
-            slots[i + _recipe.inputs.Length] = Instantiate(slotPrefab, outputSocket).GetComponent<ItemSocket>();
-            slots[i+_recipe.outputs.Length].SetItem(_recipe.outputs[i].item, _recipe.outputs[i].amount);
+            // 출력 슬롯은 입력 슬롯 뒤에 이어 붙는다. 인덱스는 반드시 inputs.Length 기준 —
+            // outputs.Length로 잡으면 출력이 2개 이상일 때 엉뚱한 슬롯에 쓴다.
+            int slot = i + _recipe.inputs.Length;
+            slots[slot] = Instantiate(slotPrefab, outputSocket).GetComponent<ItemSocket>();
+            slots[slot].SetItem(_recipe.outputs[i].item, _recipe.outputs[i].amount);
         }
     }
 

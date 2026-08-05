@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- SCR-08 보관소.
+
+         인벤토리 창(SCR-04)과 같은 뼈대 — 아래 두 단(소지품·핫바)이 자리까지 그대로라
+         창이 바뀌어도 손이 헤매지 않는다. 위에 보관소 칸이 얹힐 뿐이다.
+         보관소 격자는 6열로 인벤토리(9열)보다 좁게 — 격자 폭만으로 어느 쪽인지 구분된다.
+
+         슬롯 격자는 개수가 컨테이너 크기에 달려 있으므로 StoragePanelView가 만든다. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root screen-root--bottom">
+        <ui:VisualElement name="store-panel" class="ui-panel inv-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="STORE" class="ui-panel__tag" />
+                <ui:Label text="보관소" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body inv-panel__body">
+
+                <!-- 보관소 칸 — 정렬은 여기에만 있다. 자동으로 들어오는 물건이 쌓이는 곳이라
+                     흐트러지지만, 인벤토리는 플레이어가 배치한 순서에 의미가 있다 -->
+                <ui:VisualElement class="inv-sechead">
+                    <ui:Label text="STORAGE" class="inv-label" />
+                    <ui:Button name="btn-sort" text="정렬" class="ui-btn ui-btn--ghost inv-sechead__btn" />
+                </ui:VisualElement>
+                <ui:VisualElement name="store-grid" class="inv-grid" />
+
+                <!-- 소지품 — 자동 넣기는 보관소에 이미 있는 종류만 올려 보낸다.
+                     전부 비우면 탄약과 무기까지 딸려 들어가 밤에 빈손이 된다.
+                     버튼이 인벤토리 쪽 머리에 붙어 화살표(↑)와 위치가 "여기서 위로"를 같이 말한다 -->
+                <ui:VisualElement class="inv-section">
+                    <ui:VisualElement class="inv-sechead">
+                        <ui:Label text="INVENTORY" class="inv-label" />
+                        <ui:Button name="btn-stack" text="↑ 자동 넣기" class="ui-btn ui-btn--ghost inv-sechead__btn" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="grid" class="inv-grid" />
+                </ui:VisualElement>
+
+                <!-- 핫바 — HUD 핫바와 같은 자리 -->
+                <ui:VisualElement name="hotbar" class="inv-hotbar" />
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

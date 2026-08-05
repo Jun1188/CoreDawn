@@ -150,6 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ResourceNode
   resource: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
   size: {x: 2, y: 2}
+  extractInterval: 1
   productionInterval: 2
   amountPerCycle: 1
   maxStock: 10
@@ -496,9 +497,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
     amount: 1
     maxStackSize: 5
-  - item: {fileID: 11400000, guid: 7b5c61a2aef310e418c5575492c5a35d, type: 2}
-    amount: 3
-    maxStackSize: 64
 --- !u!114 &152612382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -636,6 +634,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ResourceNode
   resource: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
   size: {x: 1, y: 1}
+  extractInterval: 1
   productionInterval: 0.5
   amountPerCycle: 1
   maxStock: 5
@@ -1128,9 +1127,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SystemUIManager
   pausePanel: {fileID: 50308953}
   dayText: {fileID: 2054233901}
+  timeText: {fileID: 0}
   timeIconImage: {fileID: 1003453223}
+  timeProgressFill: {fileID: 0}
   morningSprite: {fileID: -2323845701886880878, guid: c8bb362480c67724681eb84458608438, type: 3}
   nightSprite: {fileID: 8920004102730603819, guid: c8bb362480c67724681eb84458608438, type: 3}
+  playerEntity: {fileID: 0}
+  healthSlider: {fileID: 0}
+  healthText: {fileID: 0}
 --- !u!1 &441924097
 GameObject:
   m_ObjectHideFlags: 0
@@ -1223,6 +1227,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactoryBootstrap
   _tps: 10
   _maxCatchUpTicks: 5
+  _autoPlaceCore: 1
+  _coreData: {fileID: 0}
+  _coreOrigin: {x: 0, y: 0}
+  _coreRotationSteps: 0
 --- !u!4 &479437657
 Transform:
   m_ObjectHideFlags: 0
@@ -3510,6 +3518,8 @@ MonoBehaviour:
   validMat: {fileID: 2100000, guid: 8101430187e8a5a479f3ed5dfedd8bfa, type: 2}
   invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
+  showPortsOnAim: 1
+  demolishHoldSeconds: 0.4
 --- !u!4 &1532001791
 Transform:
   m_ObjectHideFlags: 0

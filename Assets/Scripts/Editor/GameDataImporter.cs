@@ -56,8 +56,7 @@ public static class GameDataImporter
         public string id;            // 필수. 예: "Recipe:Recipe_IronIngot"
         public string displayName;   // 필수
         public string description;
-        public int    tier;
-        public int    requiredCoreTier;
+        public int    tier;          // 해금 코어 티어 (구 requiredCoreTier — 필드 통합)
         public float  craftTime = 2f;
         public SlotDto[] inputs;
         public SlotDto[] outputs;
@@ -87,6 +86,21 @@ public static class GameDataImporter
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
         public string[] ammoFilter;                          // Tower
+        public TierDto[] tiers;                              // Core
+    }
+
+    /// <summary>
+    /// 코어 수리 단계. 이걸 JSON에 두는 이유 — 예전엔 에셋에만 손으로 적혀 있어서
+    /// 브랜치 머지 때 조용히 덮여 사라졌다. 이제 재임포트로 항상 복구된다.
+    /// </summary>
+    [Serializable] class TierDto
+    {
+        public string   name;            // → CoreTierDefinition.tierLabel
+        public string   description;
+        public SlotDto[] requirements;
+        public string[] unlocks;
+        public int      maxHpBonus;
+        public bool     isFinal;
     }
 
     /// <summary>
@@ -240,7 +254,6 @@ public static class GameDataImporter
         recipe.displayName      = dto.displayName;
         recipe.description      = dto.description ?? "";
         recipe.tier             = dto.tier;
-        recipe.requiredCoreTier = dto.requiredCoreTier;
         recipe.craftTime        = dto.craftTime;
         recipe.inputs           = inputs;
         recipe.outputs          = outputs;
@@ -340,7 +353,59 @@ public static class GameDataImporter
                 if (dto.fireRate > 0f) tower.fireRate = dto.fireRate;
                 tower.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
                 break;
+
+            case CoreDataSO core:
+                // tiers 가 통째로 빠진 JSON이면 기존 값을 지우지 않는다 —
+                // 한 필드 누락으로 게임 진행 전체가 사라지는 편이 더 나쁘다
+                if (dto.tiers != null) core.tiers = ResolveTiers(file, dto, byId, ref errors);
+                break;
         }
+    }
+
+    /// <summary>
+    /// 코어 수리 단계 해석. 요구 아이템을 하나라도 못 찾으면 그 단계는 넣지 않는다 —
+    /// 요구가 반쯤 빠진 단계는 그냥 통과해 버려서, 조용히 진행도를 깨뜨린다.
+    /// </summary>
+    static CoreTierDefinition[] ResolveTiers(string file, BuildingDto dto,
+        Dictionary<string, GameDataSO> byId, ref int errors)
+    {
+        var list = new List<CoreTierDefinition>(dto.tiers.Length);
+
+        for (int i = 0; i < dto.tiers.Length; i++)
+        {
+            var t = dto.tiers[i];
+            if (t == null) continue;
+
+            string where = $"{dto.id} tiers[{i}]" + (string.IsNullOrEmpty(t.name) ? "" : $" '{t.name}'");
+
+            if (!TryResolveSlots(file, "buildings", where, t.requirements, byId, out var reqs, ref errors))
+            {
+                Debug.LogError($"[GameDataImporter] {file} {where}: 요구 아이템을 해석하지 못해 이 단계를 건너뜁니다.");
+                continue;
+            }
+            if (reqs == null || reqs.Length == 0)
+            {
+                Debug.LogError($"[GameDataImporter] {file} {where}: 요구가 비어 있습니다 — 즉시 통과하는 단계가 되므로 제외합니다.");
+                errors++;
+                continue;
+            }
+
+            var reqArr = new CoreTierRequirement[reqs.Length];
+            for (int k = 0; k < reqs.Length; k++)
+                reqArr[k] = new CoreTierRequirement { item = reqs[k].item, amount = reqs[k].amount };
+
+            list.Add(new CoreTierDefinition
+            {
+                tierLabel    = t.name,
+                description  = t.description,
+                requirements = reqArr,
+                unlocks      = t.unlocks ?? Array.Empty<string>(),
+                maxHpBonus   = t.maxHpBonus,
+                isFinal      = t.isFinal,
+            });
+        }
+
+        return list.ToArray();
     }
 
     static RecipeDataSO[] ResolveRecipes(string file, BuildingDto dto,
@@ -453,9 +518,41 @@ public static class GameDataImporter
     /// 자식 오브젝트는 건드리지 않는다.
     /// </summary>
     /// <returns>무언가 바꿨으면 true.</returns>
+    /// <summary>
+    /// 건물 프리팹을 Entity 레이어로 올린다. 이 레이어가 아니면 조준·상호작용이 통째로 죽는다.
+    /// 레이어가 프로젝트에 없으면(설정 누락) 경고만 남기고 넘어간다 — 임포트 전체를 세울 일은 아니다.
+    /// </summary>
+    static bool EnsureEntityLayer(GameObject root, BuildingDataSO so)
+    {
+        int entityLayer = LayerMask.NameToLayer("Entity");
+        if (entityLayer < 0)
+        {
+            Debug.LogWarning($"[GameDataImporter] 'Entity' 레이어가 없습니다 — '{so.name}' 레이어를 건너뜁니다. " +
+                             "Project Settings > Tags and Layers 를 확인하세요.");
+            return false;
+        }
+
+        bool changed = false;
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+        {
+            // Default(0)인 것만 옮긴다 — 일부러 다른 레이어를 준 자식은 그 의도를 남긴다
+            if (t.gameObject.layer != 0) continue;
+            t.gameObject.layer = entityLayer;
+            changed = true;
+        }
+        return changed;
+    }
+
     static bool EnsureContract(GameObject root, BuildingDataSO so, bool isTower)
     {
         bool changed = false;
+
+        // 0) Entity 레이어 — 플레이어의 상호작용 레이캐스트가 이 마스크로 쏜다.
+        //    Default로 두면 조준해도 프롬프트가 안 뜨고 E가 먹지 않는다 (코어 열기·보관함·필터 전부).
+        //    콜라이더가 자식에 있는 모델 프리팹도 있으므로 Default인 자식까지 함께 옮긴다 —
+        //    일부러 다른 레이어를 준 자식(장애물 등)은 건드리지 않는다.
+        changed |= EnsureEntityLayer(root, so);
+        changed |= NormalizeRootScale(root);
 
         // 1) Entity — 포탑만 사격 로직을 가진 BattleTower가 필요하다
         var entity = root.GetComponent<Entity>();
@@ -469,6 +566,21 @@ public static class GameDataImporter
             // 컴포넌트 교체는 참조·직렬화를 잃으므로 자동으로 하지 않는다 — 사람이 판단할 문제
             Debug.LogWarning($"[GameDataImporter] '{so.name}': 포탑인데 루트가 {entity.GetType().Name} 입니다. " +
                              "BattleTower로 직접 교체하거나 프리팹을 지우고 재임포트하세요.");
+        }
+
+        // 1-b) 코어 표식 — 이게 꺼져 있으면 코어를 아무도 못 찾는다.
+        //      내구도 UI가 비고, 플로우필드의 최종 목표도, 코어 파괴 = 게임오버 판정도 죽는다.
+        if (entity is BuildingEntity be)
+        {
+            var coreObj = new SerializedObject(be);
+            var isCore = coreObj.FindProperty("isCore");
+            bool wantCore = so is CoreDataSO;
+            if (isCore != null && isCore.boolValue != wantCore)
+            {
+                isCore.boolValue = wantCore;
+                coreObj.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
         }
 
         // 2) 최대 체력 — HealthComponent의 필드는 private이라 직렬화 경로로 넣는다
@@ -486,8 +598,8 @@ public static class GameDataImporter
 
         // 3) 풋프린트 콜라이더 — 프리팹과 점유 칸이 어긋나는 건 배치 버그의 단골이다.
         //    모델이 자기 콜라이더를 자식에 갖고 있어도 루트에는 풋프린트 기준이 하나 있어야 한다.
-        var want = new Vector3(so.size.x, 1f, so.size.y);
-        var center = new Vector3((so.size.x - 1) * 0.5f, 0.5f, (so.size.y - 1) * 0.5f);
+        var want = FootprintColliderSize(so.size);
+        var center = FootprintColliderCenter;
 
         var col = root.GetComponent<BoxCollider>();
         if (col == null)
@@ -535,22 +647,75 @@ public static class GameDataImporter
 
         if (model != null) return (GameObject)PrefabUtility.InstantiatePrefab(model);
 
+        // 루트는 스케일 1로 둔다. 큐브를 그대로 루트로 쓰면 루트 스케일이 2.7 같은 값이 되고,
+        // 그 위에 붙는 풋프린트 콜라이더 크기까지 곱해져 3×3 건물의 충돌이 8×8이 된다.
+        var root = new GameObject("Body");
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.name = "Mesh";
+        cube.transform.SetParent(root.transform, false);
         cube.transform.localScale = new Vector3(size.x * 0.9f, 0.6f, size.y * 0.9f);
         UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // 아래에서 풋프린트 기준으로 다시 붙인다
 
         if (!string.IsNullOrEmpty(modelFile))
             Debug.LogWarning($"[GameDataImporter] '{logName}': 모델 '{modelFile}' 을 찾지 못해 큐브로 만들었습니다");
-        return cube;
+        return root;
+    }
+
+    /// <summary>
+    /// 프리팹 루트의 스케일을 1로 되돌린다. 루트가 커져 있으면 그 위에 붙은 콜라이더 크기까지
+    /// 곱해져 충돌 영역이 통째로 부풀어 오른다 — 3×3 코어가 8×8로 잡히던 원인이다.
+    /// 스케일은 메시를 담은 자식으로 내린다 (보이는 모양은 그대로).
+    /// </summary>
+    static bool NormalizeRootScale(GameObject root)
+    {
+        var scale = root.transform.localScale;
+        if ((scale - Vector3.one).sqrMagnitude < 0.0001f) return false;
+
+        var mf = root.GetComponent<MeshFilter>();
+        var mr = root.GetComponent<MeshRenderer>();
+        if (mf == null || mr == null)
+        {
+            // 메시가 자식에 있는 모델 프리팹 — 스케일만 내리면 모양이 바뀌므로 손대지 않는다
+            Debug.LogWarning($"[GameDataImporter] '{root.name}': 루트 스케일이 {scale} 입니다. " +
+                             "콜라이더가 그만큼 부풀어 오르니 모델 프리팹 쪽에서 스케일을 1로 맞추세요.");
+            return false;
+        }
+
+        var body = new GameObject("Mesh");
+        body.transform.SetParent(root.transform, false);
+        body.transform.localScale = scale;
+        body.layer = root.layer;
+
+        var bmf = body.AddComponent<MeshFilter>();
+        bmf.sharedMesh = mf.sharedMesh;
+        var bmr = body.AddComponent<MeshRenderer>();
+        bmr.sharedMaterials = mr.sharedMaterials;
+
+        UnityEngine.Object.DestroyImmediate(mr);
+        UnityEngine.Object.DestroyImmediate(mf);
+        root.transform.localScale = Vector3.one;
+        return true;
     }
 
     /// <summary>충돌 크기는 size에서 계산한다 — 프리팹과 풋프린트가 어긋나는 건 배치 버그의 단골이다.</summary>
     static void AddFootprintCollider(GameObject root, Vector2Int size)
     {
         var col = root.AddComponent<BoxCollider>();
-        col.size   = new Vector3(size.x, 1f, size.y);
-        col.center = new Vector3((size.x - 1) * 0.5f, 0.5f, (size.y - 1) * 0.5f);
+        col.size   = FootprintColliderSize(size);
+        col.center = FootprintColliderCenter;
     }
+
+    static Vector3 FootprintColliderSize(Vector2Int size) => new(size.x, 1f, size.y);
+
+    /// <summary>
+    /// 콜라이더 중심은 로컬 원점 바로 위다.
+    ///
+    /// PlacementBridge가 건물을 <see cref="GridSystem.GetFootprintCenter"/>에 놓기 때문에
+    /// 프리팹의 로컬 원점이 곧 풋프린트의 한가운데다. 원점 "칸"의 중심으로 착각해
+    /// ((size-1)/2) 만큼 밀면 멀티타일 건물의 콜라이더가 통째로 어긋난다 —
+    /// 3×3 코어는 (1, 1)칸만큼 빗나가서 조준도 철거도 엉뚱한 자리에서 걸린다.
+    /// </summary>
+    static Vector3 FootprintColliderCenter => new(0f, 0.5f, 0f);
 
     static T FindAsset<T>(string name, string folder) where T : UnityEngine.Object
     {

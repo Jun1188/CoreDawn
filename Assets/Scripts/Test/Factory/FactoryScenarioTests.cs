@@ -45,6 +45,8 @@ public class FactoryScenarioTests : MonoBehaviour
         Run("9. 합류기 두 소스 합류",          S9_MergerTwoSources);
         Run("10. 분배기 필터 분배",            S10_SplitterFilter);
         Run("11. 분배기 필터 다중 아이템",      S11_SplitterMultiItemFilter);
+        Run("12. 한 아이템 → 두 출구 분배",     S12_SplitterItemToTwoOutlets);
+        Run("13. 막은 출구 건너뛰기",           S13_SplitterBlockedOutlet);
 
         foreach (var so in _createdSOs) DestroyImmediate(so);
         _createdSOs.Clear();
@@ -218,7 +220,9 @@ public class FactoryScenarioTests : MonoBehaviour
         Place(Miner(), 0, 0);                          // 서쪽에서 광석
         Place(Miner(), 1, 1, rot: 1);                  // 북쪽에서 주괴 (출력 South)
         Place(Merger(), 1, 0);
-        var store = Place(Storage(), 2, 0);
+        // 두 종류를 받으므로 2슬롯. 저장소는 받은 것을 보관함(입력 버퍼)에 그대로 쌓으므로
+        // 1슬롯이면 먼저 온 종류가 그 칸을 차지해 다른 종류가 못 들어온다.
+        var store = Place(Storage(slots: 2), 2, 0);
 
         RunSim(6f);
         Expect(StoredCount(store, _ore) >= 1 && StoredCount(store, _ingot) >= 1,
@@ -285,6 +289,61 @@ public class FactoryScenarioTests : MonoBehaviour
         Expect(bOre >= 2 && bIngot >= 2,
             $"두 필터 아이템 모두 북쪽 전용 출구로 가야 함 (광석:{bOre}, 주괴:{bIngot})");
         Expect(aTotal == 0, $"무필터 출구(동쪽)에는 아무것도 없어야 함 (실제: {aTotal}개)");
+    }
+
+    /// <summary>
+    /// 한 아이템을 두 출구에 지정: 광석을 북쪽·동쪽 둘 다 허용하면 그 둘 사이에서 나뉘어야 한다.
+    /// 같은 물건을 두 라인에 나눠 먹이는 배치를 위한 것 — 예전에는 아이템당 방향이 1개였다.
+    /// </summary>
+    void S12_SplitterItemToTwoOutlets()
+    {
+        var splitter = Place(Splitter(), 1, 0);
+        var storeA = Place(Storage(), 2, 0);                 // 동쪽
+        var storeB = Place(Storage(), 1, 1, rot: 3);         // 북쪽
+
+        var behavior = (SplitterBehavior)splitter.Behavior;
+        behavior.AddFilter(Direction.North, _ore);
+        behavior.AddFilter(Direction.East, _ore);
+
+        for (int i = 0; i < 6; i++)
+        {
+            splitter.Input.TryAdd(_ore);
+            _sim.MarkDirty(splitter);
+            RunSim(0.5f);
+        }
+
+        int a = StoredCount(storeA, _ore), b = StoredCount(storeB, _ore);
+        Expect(a > 0 && b > 0, $"두 출구 모두로 나뉘어야 함 (동:{a}, 북:{b})");
+        Expect(Mathf.Abs(a - b) <= 2, $"두 출구에 고르게 나뉘어야 함 (동:{a}, 북:{b})");
+        Expect(behavior.HasPassed(_ore), "지나간 아이템으로 기록돼야 함");
+    }
+
+    /// <summary>
+    /// 막은 출구: 북쪽을 막으면 그쪽으로는 가지 않고 남은 출구로 전부 넘어가야 한다.
+    /// 막을 때 그 출구의 허용 목록도 함께 비워진다.
+    /// </summary>
+    void S13_SplitterBlockedOutlet()
+    {
+        var splitter = Place(Splitter(), 1, 0);
+        var storeA = Place(Storage(), 2, 0);                 // 동쪽
+        var storeB = Place(Storage(), 1, 1, rot: 3);         // 북쪽 — 막을 대상
+
+        var behavior = (SplitterBehavior)splitter.Behavior;
+        behavior.AddFilter(Direction.North, _ore);           // 지정해 둔 뒤
+        behavior.SetBlocked(Direction.North, true);          // 막으면 지정도 사라져야 한다
+
+        Expect(behavior.AllowedAt(Direction.North).Count == 0, "막은 출구의 허용 목록은 비워져야 함");
+        Expect(behavior.StateOf(Direction.North) == OutletState.Blocked, "상태가 Blocked 여야 함");
+
+        for (int i = 0; i < 4; i++)
+        {
+            splitter.Input.TryAdd(_ore);
+            _sim.MarkDirty(splitter);
+            RunSim(0.5f);
+        }
+
+        Expect(StoredCount(storeB, _ore) == 0, "막은 출구로는 아무것도 가면 안 됨");
+        Expect(StoredCount(storeA, _ore) == 4, $"남은 출구로 전부 넘어가야 함 (실제: {StoredCount(storeA, _ore)}개)");
     }
 
     // ─── 검증/구동 헬퍼 ─────────────────────────────────────────

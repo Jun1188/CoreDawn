@@ -1,0 +1,1421 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   components.uss — 레퍼런스 문서 §03 컴포넌트 카탈로그의 USS 이식.
+   클래스 이름은 문서와 1:1이다. 변형은 새 클래스가 아니라 수식 클래스로 만든다
+   (.ui-btn + .ui-btn--primary, .ui-btn-primary 아님).
+
+   HTML → USS 이식 시 바뀐 것 (USS에 해당 기능이 없음):
+     gap                 → 자식 margin + 컨테이너 음수 margin으로 상쇄
+     box-shadow          → 생략. 깊이는 --line-strong 테두리로만 표현
+     line-height         → height 고정 + -unity-text-align
+     display:inline-flex → USS는 모든 요소가 flex. 그냥 뺀다
+     ::before/::after    → 실제 요소로 승격 (레일 연결선 = .ui-rail__line)
+     :last-child         → USS 미지원. UXML에서 --last 클래스를 붙인다
+     :focus-within       → USS 미지원. 입력 요소 자신의 :focus로 대체
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────── 기본 테마 상쇄 ───────────────────────
+   Unity 기본 런타임 테마는 Label에 margin 3.75/2.25 + padding 3.75×2를 준다.
+   레퍼런스(브라우저)에는 없는 값이라 라벨 하나마다 세로가 ~19.5px씩 부풀고,
+   행·산출 박스·재료 줄이 전부 문서 수치보다 커진다 (SCR-04에서 실측으로 확인).
+   여기(파일 맨 앞)서 0으로 되돌린다 — 뒤에 오는 같은 특이성의 클래스 규칙
+   (margin-left: auto 등)이 파일 순서로 이기므로 개별 배치는 깨지지 않는다. */
+.unity-label {
+    margin: 0;
+    padding: 0;
+}
+
+/* ───────────────────────── PNL 패널 ───────────────────────── */
+
+.ui-panel {
+    background-color: var(--bg-panel);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-lg);
+    min-width: 360px;
+    /* box-shadow: 0 12px 48px rgba(0,0,0,.45) — USS 미지원, 생략 */
+}
+
+.ui-panel__title {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border-bottom-width: 1.5px;
+    border-bottom-color: var(--line);
+    font-size: var(--fs-cap);
+    -unity-font-style: bold;
+    letter-spacing: 0.75px;
+    color: var(--text);
+}
+
+.ui-panel__title > * {
+    margin-right: var(--space-2);
+}
+
+.ui-panel__tag {
+    font-size: 15px;
+    letter-spacing: 1.8px;
+    color: var(--copper);
+    border-width: 1.5px;
+    border-color: var(--copper-a35);
+    border-radius: var(--r-sm);
+    padding: 1.5px 9px;
+    -unity-text-align: middle-center;
+}
+
+.ui-panel__tag--crystal {
+    color: var(--crystal);
+    border-color: var(--crystal-a50);
+}
+
+.ui-panel__x {
+    width: 33px;
+    height: 33px;
+    margin-left: auto;
+    margin-right: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1.5px;
+    border-color: var(--line);
+    border-radius: var(--r-sm);
+    color: var(--text-faint);
+    font-size: 18px;
+    padding: 0;
+    -unity-text-align: middle-center;
+    flex-shrink: 0;
+    transition: border-color 0.12s, background-color 0.12s, color 0.12s;
+}
+
+.ui-panel__x:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background-color: var(--danger-a07);
+}
+
+.ui-panel__body {
+    padding: var(--space-4);
+}
+
+.ui-panel--inset {
+    background-color: var(--bg-inset);
+    border-color: var(--line);
+}
+
+/* ───────────────────────── BTN 버튼 ───────────────────────── */
+
+.ui-btn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    font-size: 19.5px;
+    color: var(--text);
+    background-color: var(--bg-raised);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    padding: var(--space-2) var(--space-4);
+    margin: 0;
+    transition: border-color 0.12s, background-color 0.12s;
+}
+
+.ui-btn:hover {
+    border-color: var(--copper);
+    background-color: var(--btn-hover-bg);
+}
+
+.ui-btn--primary {
+    color: var(--copper);
+    border-color: var(--copper-a55);
+    background-color: var(--copper-a08);
+}
+
+.ui-btn--primary:hover {
+    background-color: var(--copper-a16);
+}
+
+.ui-btn--danger {
+    color: var(--danger);
+    border-color: var(--danger-a50);
+    background-color: var(--danger-a07);
+}
+
+.ui-btn--danger:hover {
+    background-color: var(--danger-a15);
+}
+
+.ui-btn--ghost {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: var(--line);
+    color: var(--text-dim);
+}
+
+/* 허용·완료 — --danger와 짝을 이룬다 (차단/허용처럼 반대 방향의 두 행동) */
+.ui-btn--ok {
+    color: var(--ok);
+    border-color: var(--ok-a50);
+    background-color: rgba(93, 211, 158, 0.07);
+}
+
+.ui-btn--ok:hover {
+    background-color: rgba(93, 211, 158, 0.15);
+}
+
+/* 조건 미충족. 라벨에 "왜" 못 누르는지 쓴다 — "확인"이 아니라 "재료 부족" */
+.ui-btn:disabled,
+.ui-btn--disabled {
+    opacity: 0.4;
+    border-color: var(--line);
+    background-color: var(--bg-inset);
+    color: var(--text-faint);
+}
+
+.ui-btn__key {
+    font-size: 15px;
+    color: var(--text-faint);
+    border-width: 1.5px;
+    border-color: var(--line);
+    border-radius: 4.5px;
+    padding: 0 6px;
+    margin-left: var(--space-1);
+    -unity-text-align: middle-center;
+}
+
+/* 라벨을 양끝으로 벌리는 변형 — 왼쪽 글, 오른쪽 시간 (SCR-04 제작 버튼) */
+.ui-btn__label--split {
+    width: 100%;
+    justify-content: space-between;
+}
+
+.ui-btn__time {
+    font-size: 17.25px;
+    color: var(--text-faint);
+    -unity-text-align: middle-right;
+}
+
+/* --hold: 누르는 동안 반복 실행. 안쪽 채움이 현재 1회분 진행 */
+.ui-btn--hold {
+    overflow: hidden;
+}
+
+.ui-btn--hold .ui-btn__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background-color: rgba(79, 216, 224, 0.22);
+}
+
+.ui-btn--hold .ui-btn__label {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* ───────────────── BAR 진행바 (연속형) ───────────────── */
+
+/* 반경은 --r-pill(999px)을 쓰지 않는다.
+   USS는 CSS와 달리 과대 반경을 x/y축 각각 독립적으로 클램프한다 —
+   12px 높이 570px 너비 막대에 999px를 주면 rx=190, ry=4가 되어
+   알약이 아니라 눈알(타원)이 된다. 높이의 절반을 직접 준다. */
+.ui-bar {
+    height: 12px;
+    min-width: 180px;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.ui-bar__fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--copper);
+    border-radius: 6px;
+}
+
+.ui-bar--iron .ui-bar__fill { background-color: var(--iron); }
+.ui-bar--crystal .ui-bar__fill { background-color: var(--crystal); }
+.ui-bar--beast .ui-bar__fill { background-color: var(--beast); }
+.ui-bar--danger .ui-bar__fill { background-color: var(--danger); }
+.ui-bar--ok .ui-bar__fill { background-color: var(--ok); }
+
+.ui-bar--thick { height: 21px; border-radius: 10.5px; }
+.ui-bar--thick .ui-bar__fill { border-radius: 10.5px; }
+
+/* ───────────── BAR 진행바 (분할형 — 셀 수 있는 것) ───────────── */
+
+.ui-seg {
+    flex-direction: row;
+    margin-right: -4.5px;
+}
+
+.ui-seg__cell {
+    width: 13.5px;
+    height: 21px;
+    margin-right: 4.5px;
+    border-radius: 3px;
+    background-color: var(--iron);
+    opacity: 0.9;
+}
+
+.ui-seg__cell--empty {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    opacity: 0.6;
+}
+
+/* ───────────────────── CHP 부품 칩 ───────────────────── */
+
+.ui-chip {
+    flex-direction: row;
+    align-items: center;
+    font-size: 18px;
+    color: var(--text-dim);
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-sm);
+    padding: 4.5px 13.5px;
+}
+
+/* 이름과 숫자가 서로 다른 폰트를 쓴다(본문 / 데이터). 세로 정렬을 텍스트 상자에 맡기면
+   폰트 메트릭 차이만큼 밑선이 어긋나 보인다 — 각 상자 안에서 가운데로 앉힌다. */
+.ui-chip > Label {
+    -unity-text-align: middle-left;
+}
+
+.ui-chip__n {
+    -unity-font-style: bold;
+    margin-left: var(--space-2);
+    -unity-text-align: middle-left;
+}
+
+/* 표 안에서는 이름과 수량을 양끝으로 벌린다 */
+.ui-chip--spread { justify-content: space-between; }
+.ui-chip--spread .ui-chip__n { margin-left: var(--space-2); }
+
+.ui-chip--iron { border-color: var(--iron-a50); }
+.ui-chip--iron .ui-chip__n { color: var(--iron); }
+.ui-chip--copper { border-color: var(--copper-a55); }
+.ui-chip--copper .ui-chip__n { color: var(--copper); }
+.ui-chip--crystal { border-color: var(--crystal-a50); }
+.ui-chip--crystal .ui-chip__n { color: var(--crystal); }
+.ui-chip--beast { border-color: var(--danger-a50); }
+.ui-chip--beast .ui-chip__n { color: var(--beast); }
+/* 요구량 충족 시 초록으로 전환 — 남은 게 무엇인지 한눈에 */
+.ui-chip--done { border-color: var(--ok-a50); }
+.ui-chip--done .ui-chip__n { color: var(--ok); }
+
+/* 부족한 재료 — 칩이 통째로 붉어진다.
+   숫자가 이미 "8 필요한데 5 있음"을 말하므로 문장으로 한 번 더 쓰지 않는다 (SCR-05). */
+.ui-chip--short { border-color: var(--danger-a50); color: var(--danger); }
+.ui-chip--short .ui-chip__n { color: var(--danger); }
+
+/* ─────────────────── SLT 아이템 슬롯 ───────────────────
+   52x52 고정. 인벤토리·핫바·제작 입출력 전부 동일 크기여야
+   드래그로 옮길 때 손이 위치를 기억한다. */
+
+.ui-slot {
+    width: 78px;
+    height: 78px;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-slot__icon {
+    width: 39px;
+    height: 39px;
+    border-radius: 4.5px;
+    background-color: var(--line-strong);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.ui-slot--active {
+    border-color: var(--copper);
+}
+
+.ui-slot--empty .ui-slot__icon {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1.5px;
+    border-color: var(--line);
+}
+
+/* 흰 글자 + 검은 외곽선 — 아이콘 색이 밝든 어둡든 읽힌다 */
+.ui-slot__n {
+    position: absolute;
+    right: 6px;
+    bottom: 4.5px;
+    font-size: var(--fs-micro);
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-outline-width: 1.35px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.9);
+}
+
+.ui-slot__key {
+    position: absolute;
+    left: 6px;
+    top: 4.5px;
+    font-size: 13.5px;
+    color: var(--text-faint);
+}
+
+/* 크기 변형 — 표·요약에서 쓰는 축소 슬롯 */
+.ui-slot--sm { width: 60px; height: 60px; }
+.ui-slot--sm .ui-slot__icon { width: 30px; height: 30px; }
+.ui-slot__icon--xs { width: 30px; height: 30px; }
+
+/* ───────────────────── ROW 리스트 행 ───────────────────── */
+
+.ui-row {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--r-md);
+    border-width: 1.5px;
+    border-color: rgba(0, 0, 0, 0);
+    min-width: 420px;
+    transition: background-color 0.12s, border-color 0.12s;
+}
+
+.ui-row > * {
+    margin-right: var(--space-3);
+}
+
+.ui-row:hover {
+    background-color: var(--bg-raised);
+}
+
+.ui-row--selected {
+    background-color: var(--bg-raised);
+    border-color: var(--copper);
+}
+
+.ui-row__name {
+    font-size: 19.5px;
+    color: var(--text);
+}
+
+.ui-row__meta {
+    margin-left: auto;
+    margin-right: 0;
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+}
+
+.ui-row--locked {
+    opacity: 0.45;
+}
+
+.ui-row--compact {
+    min-width: 0;
+    padding: 7.5px var(--space-2);
+}
+
+.ui-row--compact .ui-row__name { font-size: var(--fs-cap); }
+
+/* ───────────────────────── TAB 탭 ───────────────────────── */
+
+.ui-tabs {
+    flex-direction: row;
+    border-bottom-width: 1.5px;
+    border-bottom-color: var(--line);
+    margin-right: -6px;
+}
+
+.ui-tab {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-2) var(--space-3);
+    margin: 0 6px 0 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 3px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+    transition: color 0.12s, border-bottom-color 0.12s;
+}
+
+.ui-tab:hover { color: var(--text-dim); }
+
+.ui-tab--active {
+    color: var(--copper);
+    border-bottom-color: var(--copper);
+}
+
+/* ───────────────────────── TIP 툴팁 ─────────────────────────
+   구분선 위는 정체성(이름·설명), 아래는 수치. 순서를 섞지 않는다. */
+
+.ui-tooltip {
+    background-color: var(--bg-panel);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+    max-width: 390px;
+}
+
+.ui-tooltip__name {
+    font-size: 19.5px;
+    -unity-font-style: bold;
+    margin-bottom: 3px;
+    color: var(--text);
+}
+
+.ui-tooltip__type {
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    color: var(--text-faint);
+    margin-bottom: var(--space-2);
+}
+
+.ui-tooltip__desc {
+    font-size: 18px;
+    color: var(--text-dim);
+    white-space: normal;
+}
+
+.ui-tooltip__sep {
+    height: 1.5px;
+    background-color: var(--line);
+    margin: var(--space-2) 0;
+}
+
+.ui-tooltip__stat {
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 18px;
+    color: var(--text-dim);
+}
+
+.ui-tooltip__stat-value { color: var(--text); }
+
+/* ─────────────── KEY 키 힌트 / STAT HUD 수치 ─────────────── */
+
+.ui-key {
+    flex-direction: row;
+    align-items: center;
+    font-size: 18px;
+    color: var(--text-dim);
+}
+
+.ui-key__cap {
+    font-size: var(--fs-micro);
+    color: var(--text);
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-bottom-width: 3px;   /* 키캡의 물리적 두께 */
+    border-color: var(--line-strong);
+    border-radius: var(--r-sm);
+    padding: 1.5px 9px;
+    margin-right: var(--space-2);
+    -unity-text-align: middle-center;
+}
+
+/* 라벨이 위, 값이 아래 — 흘깃 봐도 위치로 구분된다 */
+.ui-stat { align-items: flex-start; }
+
+.ui-stat__label {
+    font-size: 15px;
+    letter-spacing: 1.8px;
+    color: var(--text-faint);
+    margin-bottom: 3px;
+}
+
+.ui-stat__value {
+    font-size: var(--fs-sub);
+    color: var(--text);
+}
+
+/* ────────────────────── STP 수량 스테퍼 ────────────────────── */
+
+.ui-stepper {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    overflow: hidden;
+}
+
+.ui-stepper__btn {
+    width: 36px;
+    height: 39px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    color: var(--text-dim);
+    font-size: 19.5px;
+    -unity-text-align: middle-center;
+    transition: background-color 0.12s, color 0.12s;
+}
+
+.ui-stepper__btn:hover {
+    background-color: var(--bg-raised);
+    color: var(--copper);
+}
+
+/* 60px 고정 — 자릿수가 늘어도 버튼이 안 밀린다 */
+.ui-stepper__n {
+    width: 60px;
+    height: 39px;
+    font-size: var(--fs-cap);
+    color: var(--text);
+    border-left-width: 1.5px;
+    border-right-width: 1.5px;
+    border-left-color: var(--line);
+    border-right-color: var(--line);
+    -unity-text-align: middle-center;
+}
+
+.ui-stepper__max {
+    height: 39px;
+    padding: 0 12px;
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-left-width: 1.5px;
+    border-left-color: var(--line);
+    border-radius: 0;
+    font-size: 15px;
+    letter-spacing: 1.2px;
+    color: var(--text-faint);
+    -unity-text-align: middle-center;
+    transition: color 0.12s;
+}
+
+.ui-stepper__max:hover { color: var(--copper); }
+
+.ui-stepper--off { opacity: 0.35; }
+
+/* ───────────────────────── TBL 데이터 표 ─────────────────────────
+   grid가 없으므로 flex + 고정폭 컬럼 클래스로 짠다.
+   가변 컬럼은 flex-grow:1 + flex-basis:0 + min-width:0
+   (min-width를 안 주면 안쪽 최소폭에 밀려 표가 넘친다 — 문서 §03 TBL 주의) */
+
+.ui-table__head,
+.ui-table__row {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+}
+
+.ui-table__head > *,
+.ui-table__row > * {
+    margin-right: var(--space-3);
+}
+
+.ui-table__head {
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    color: var(--text-faint);
+    border-bottom-width: 1.5px;
+    border-bottom-color: var(--line);
+    padding-bottom: var(--space-2);
+}
+
+.ui-table__row {
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: var(--r-md);
+    margin-bottom: 3px;
+}
+
+.ui-table__row:hover { border-color: var(--line-strong); }
+
+/* 처리 끝난 행은 시선에서 뺀다 */
+.ui-table__row--done { opacity: 0.62; }
+
+/* 컬럼 폭 */
+.ui-col-part { width: 222px; flex-shrink: 0; }
+.ui-col-bar { flex-grow: 1; flex-basis: 0; min-width: 0; }
+.ui-col-num { width: 78px; flex-shrink: 0; -unity-text-align: middle-right; }
+.ui-col-act { width: 228px; flex-shrink: 0; align-items: flex-end; }
+
+/* 숫자는 오른쪽 정렬 — 자릿수가 달라도 일의 자리가 세로로 맞는다 */
+.ui-num {
+    font-size: var(--fs-cap);
+    color: var(--text);
+}
+
+.ui-num--dim { color: var(--text-faint); }
+.ui-num--short { color: var(--danger); }
+.ui-num--ok { color: var(--ok); }
+
+/* ──────────────────── RAL 단계 레일 ────────────────────
+   되돌릴 수 없는 일방향 진행에만 쓴다.
+   HTML의 ::after 연결선은 USS에 의사요소가 없어 실제 요소로 승격했다. */
+
+.ui-rail {
+    padding-right: var(--space-4);
+    border-right-width: 1.5px;
+    border-right-color: var(--line);
+}
+
+.ui-rail__step {
+    flex-direction: row;
+    align-items: flex-start;
+    padding-bottom: var(--space-4);
+}
+
+.ui-rail__step--last { padding-bottom: 0; }
+
+/* 점과 점을 잇는 세로선 */
+.ui-rail__line {
+    position: absolute;
+    left: 16.5px;
+    top: 36px;
+    bottom: 0;
+    width: 1.5px;
+    background-color: var(--line);
+}
+
+.ui-rail__step--last .ui-rail__line { display: none; }
+
+.ui-rail__dot {
+    width: 34.5px;
+    height: 34.5px;
+    border-radius: var(--r-pill);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    background-color: var(--bg-panel);
+    align-items: center;
+    justify-content: center;
+    font-size: 16.5px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+    margin-right: var(--space-3);
+    -unity-text-align: middle-center;
+}
+
+.ui-rail__step--done .ui-rail__dot {
+    border-color: var(--ok);
+    color: var(--ok);
+}
+
+.ui-rail__step--active .ui-rail__dot {
+    border-color: var(--crystal);
+    color: var(--crystal);
+    border-width: 3px;
+}
+
+.ui-rail__label {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding-top: 4.5px;
+    white-space: normal;
+}
+
+.ui-rail__step--active .ui-rail__label { color: var(--text); }
+
+.ui-rail__sub {
+    font-size: 15.75px;
+    color: var(--text-faint);
+    margin-top: 1.5px;
+    white-space: normal;
+}
+
+/* ───────────── YLD 제작 결과 미리보기 / 재료 줄 ───────────── */
+
+.ui-yield {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+}
+
+.ui-yield > * { margin-right: var(--space-3); }
+
+.ui-yield__arrow {
+    color: var(--text-faint);
+    font-size: 21px;
+}
+
+/* 계통색 띠 — 어느 라인에서 나온 재료인지 바로 읽힌다 */
+.ui-mat {
+    flex-direction: row;
+    align-items: center;
+    padding: 7.5px var(--space-2);
+    background-color: var(--bg-inset);
+    border-left-width: 3px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-radius: var(--r-sm);
+    margin-bottom: 3px;
+}
+
+.ui-mat__name { font-size: 18px; color: var(--text-dim); }
+
+.ui-mat__n {
+    margin-left: auto;
+    font-size: 18px;
+    color: var(--text);
+}
+
+.ui-mat--iron { border-left-color: var(--iron); }
+.ui-mat--copper { border-left-color: var(--copper); }
+.ui-mat--crystal { border-left-color: var(--crystal); }
+.ui-mat--beast { border-left-color: var(--beast); }
+.ui-mat--short { border-left-color: var(--danger); }
+.ui-mat--short .ui-mat__n { color: var(--danger); }
+
+/* ─────────────── INP 검색 입력 / 스크롤 목록 ─────────────── */
+
+.ui-search {
+    flex-direction: row;
+    align-items: center;
+    height: 45px;
+    padding: 0 var(--space-2);
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    transition: border-color 0.12s;
+}
+
+/* 돋보기 — SVG가 없어 SearchGlyph(Painter2D)가 그린다. 색은 여기서 정한다 */
+.ui-search__icon {
+    width: 19.5px;
+    height: 19.5px;
+    margin-right: 9px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+}
+
+/* :focus-within이 없어 입력 요소 자신의 :focus로 대체 */
+.ui-search__input:focus { border-color: var(--copper); }
+
+.ui-search__input {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--text);
+    font-size: var(--fs-cap);
+    height: 100%;
+}
+
+.ui-search__input > #unity-text-input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--text);
+    padding: 0;
+}
+
+.ui-search__clear {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 3px 6px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--text-faint);
+    font-size: 18px;
+}
+
+.ui-search__clear:hover { color: var(--text); }
+
+/* 스크롤바는 항상 보이게 두어 "더 있다"는 사실을 숨기지 않는다 */
+.ui-scroll .unity-scroller--vertical {
+    width: 9px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.ui-scroll .unity-scroller--vertical .unity-base-slider__tracker {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.ui-scroll .unity-scroller--vertical .unity-base-slider__dragger {
+    width: 9px;
+    background-color: var(--line-strong);
+    border-width: 0;
+    border-radius: 4.5px;
+}
+
+.ui-scroll .unity-scroller--vertical .unity-base-slider__dragger:hover {
+    background-color: var(--text-faint);
+}
+
+/* 스크롤러 양끝 화살표 버튼 제거 */
+.ui-scroll .unity-scroller__low-button,
+.ui-scroll .unity-scroller__high-button {
+    display: none;
+}
+
+/* ───────────────── CMP 나침반 (HUD 상단) ─────────────────
+   눈금·라벨·마커는 방위가 시야에 따라 흐르므로 코드가 만들고 매 프레임 배치한다.
+   원본의 mask-image(양끝 페이드)는 USS에 없다 — 코드가 거리에 따라 opacity를 준다. */
+
+.ui-compass {
+    height: 51px;
+    overflow: hidden;
+}
+
+.ui-compass__tick {
+    position: absolute;
+    bottom: 0;
+    width: 1.5px;
+    background-color: var(--line-strong);
+}
+
+.ui-compass__label {
+    position: absolute;
+    bottom: 16.5px;
+    translate: -50% 0;
+    font-size: 15px;
+    letter-spacing: 0.9px;
+    color: var(--text-dim);
+    -unity-font-definition: var(--font-display);
+}
+
+.ui-compass__label--card {
+    color: var(--text);
+    font-size: 17.25px;
+    -unity-font-style: bold;
+}
+
+.ui-compass__mark {
+    position: absolute;
+    bottom: 3px;
+    translate: -50% 0;
+}
+
+.ui-compass__center {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1.5px;
+    background-color: var(--text-a35);
+    translate: -50% 0;
+}
+
+/* ──────────────── 잠긴 영역 / 시간 배지 ──────────────── */
+
+.ui-locked {
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    background-color: var(--bg-inset);
+    padding: var(--space-4);
+    align-items: center;
+    color: var(--text-faint);
+}
+
+.ui-locked__title {
+    font-size: 16.5px;
+    letter-spacing: 1.95px;
+    margin-bottom: var(--space-1);
+}
+
+.ui-locked__desc {
+    font-size: 17.25px;
+    color: var(--text-faint);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.ui-timepill {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    font-size: 17.25px;
+    color: var(--text-dim);
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line);
+    border-radius: 15px;   /* --r-pill 금지 — .ui-bar 위 주석 참조 */
+    padding: 0 13.5px;
+}
+
+/* ───────────────────── 공통 유틸 ───────────────────── */
+
+.ui-row-flex { flex-direction: row; align-items: center; }
+.ui-fill { flex-grow: 1; flex-basis: 0; min-width: 0; }
+.ui-push { margin-left: auto; }
+.ui-hidden { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   폰트 적용 — 세 폰트가 각자 다른 일을 한다 (문서 §02).
+     body    : 모든 한글 본문
+     display : 영문 시스템 문구·라벨 전용. 한글에 쓰지 않는다
+     data    : 수량·시간·좌표. 폭이 고정돼 숫자가 흔들리지 않는다
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 패널 루트에 본문 폰트를 걸어 상속시키고, 아래에서 예외만 덮어쓴다 */
+.ui-panel,
+.screen-root {
+    -unity-font-definition: var(--font-body);
+}
+
+.ui-panel__tag, .ui-tooltip__type, .ui-stat__label, .ui-locked__title,
+.ui-table__head, .ui-stepper__max {
+    -unity-font-definition: var(--font-display);
+}
+
+.ui-num, .ui-chip__n, .ui-slot__n, .ui-slot__key, .ui-key__cap,
+.ui-stat__value, .ui-stepper__n, .ui-row__meta, .ui-timepill,
+.ui-btn__key, .ui-mat__n, .ui-tooltip__stat-value {
+    -unity-font-definition: var(--font-data);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   모드 배지 · 배치/철거 카드 (SCR-05 · SCR-06)
+   ───────────────────────────────────────────────────────────── */
+
+/* 지금이 어느 모드인지 화면 상단이 한 줄로 말한다.
+   USS에는 currentColor가 없어 색과 테두리를 변형마다 따로 준다. */
+.ui-modebadge {
+    flex-direction: row;
+    align-items: center;
+    -unity-font-definition: var(--font-display);
+    font-size: 16.5px;
+    letter-spacing: 2.25px;
+    padding: 4.5px 15px;
+    border-radius: var(--r-sm);
+    border-width: 1.5px;
+}
+
+.ui-modebadge--build {
+    color: var(--copper);
+    border-color: var(--copper);
+    background-color: var(--copper-a08);
+}
+
+.ui-modebadge--demolish {
+    color: var(--danger);
+    border-color: var(--danger);
+    background-color: var(--danger-a07);
+}
+
+/* 배치·철거 중 화면에 남는 유일한 창. 배치는 월드를 보면서 하는 일이라
+   화면을 덮으면 안 된다 — 그래서 팝업이 아니라 하단 카드 하나다. */
+/* 높이를 고정한다 — 조준을 옮길 때마다(이름만 있는 상태 ↔ 부제·칩이 있는 상태)
+   카드가 위아래로 늘었다 줄면 화면 아래가 출렁인다. 가장 키가 큰 내용(홀드 링 69px)에 맞춘다. */
+.ui-placecard {
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    background-color: var(--bg-panel);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-lg);
+    padding: var(--space-2) var(--space-3);
+}
+
+.ui-placecard--demolish { border-color: var(--danger-a50); }
+
+/* 색을 명시한다 — UITK는 color를 물려주지 않아 비워 두면 기본 검정이 되어 카드에서 사라진다 */
+.ui-placecard__name {
+    font-size: 19.5px;
+    -unity-font-style: bold;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.ui-placecard__name--danger { color: var(--danger); }
+
+.ui-placecard__sub {
+    font-size: 16.5px;
+    color: var(--text-faint);
+    margin-top: 1.5px;
+}
+
+/* 세로 구분선 — 아이콘/이름/비용/키힌트를 끊어 읽게 한다 */
+.ui-placecard__sep {
+    width: 1.5px;
+    align-self: stretch;
+    background-color: var(--line);
+    margin-left: var(--space-3);
+    margin-right: var(--space-3);
+}
+
+.ui-placecard__label {
+    font-size: 16.5px;
+    color: var(--text-faint);
+    margin-right: var(--space-2);
+}
+
+/* 카드 안 요소 간격 — USS에 gap이 없어 자식에 margin을 준다 */
+.ui-placecard > .ui-chip { margin-right: var(--space-2); }
+.ui-placecard > .ui-key  { margin-right: var(--space-3); }
+
+/* 홀드 진행 링 — 호(arc)는 USS로 못 그리므로 Painter2D(HoldRing.cs)가 채운다.
+   여기서는 자리와 가운데 남은 시간 라벨만 잡는다. */
+.ui-holdring {
+    width: 69px;
+    height: 69px;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 링 한가운데. 절대 배치 + 사방 0으로 링을 꽉 채운 뒤 텍스트를 가운데 정렬한다 —
+   폭을 모르는 문자열이라 margin: auto 로는 세로가 안 맞는다. */
+/* 링 한가운데. 부모(.ui-holdring)의 justify/align center가 상자를 가운데로 놓고,
+   -unity-text-align이 그 안에서 글자를 가운데로 놓는다.
+   절대 배치 + inset 0 으로 하면 텍스트 상자 높이가 폰트 메트릭을 따라가 세로가 미세하게 밀린다. */
+.ui-holdring__time {
+    font-size: 15px;
+    letter-spacing: 0.75px;
+    color: var(--danger);
+    -unity-text-align: middle-center;
+    padding: 0;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DIR 방향 맵 · 허용 토글 행 (SCR-07 분배기 출구 필터)
+
+   HTML → USS 이식에서 바뀐 것:
+     box-shadow          → 생략 (테두리 색만으로 구분)
+     outline             → USS 미지원. 선택은 테두리 색·두께로
+     repeating-gradient  → USS 미지원. 빗금은 런타임 생성 텍스처 (SplitterPanelView)
+     ::before/::after    → 실제 요소로 승격 (✕ = 막대 2개, 스위치 손잡이)
+     grid-template-*     → flex + 고정 폭
+     filter:grayscale    → 아이콘이 배경색이라 색을 회색으로 바꾸는 것으로 대체
+     border:1.5px dashed   → USS에 점선 테두리가 없다. 꺼진 흐름선은 점선 텍스처로
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 창의 배치가 곧 월드의 배치 — 보이는 자리가 실제 출구 자리라 방위를 글자로 적지 않는다 */
+.ui-dirmap {
+    width: 375px;
+    height: 375px;
+}
+
+.ui-dirmap__body {
+    position: absolute;
+    left: 129px;
+    top: 129px;
+    width: 117px;
+    height: 117px;
+    border-width: 2.25px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    background-color: var(--bg-inset);
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-dirmap__core {
+    width: 51px;
+    height: 51px;
+    border-radius: 6px;
+    background-color: var(--line);
+    opacity: 0.55;
+}
+
+.ui-dirslot {
+    position: absolute;
+    width: 99px;
+    height: 99px;
+    border-width: 2.25px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-md);
+    background-color: var(--bg-inset);
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-dirslot:hover { border-color: var(--out); }
+
+/* 허용 목록이 걸린 출구 */
+.ui-dirslot--open { border-color: var(--out); }
+
+/* 막은 출구 — 빗금 텍스처는 뷰가 넣는다 */
+.ui-dirslot--blocked { border-color: var(--line); }
+
+/* 선택 — 문서는 outline이지만 USS에 없다. 테두리를 굵게·계통색으로 바꿔 대신한다 */
+.ui-dirslot--sel {
+    border-width: 3.75px;
+    border-color: var(--copper);
+}
+
+.ui-dirslot__icons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 9px;
+    margin-right: -4.5px;
+    margin-bottom: -4.5px;
+}
+
+.ui-dirslot__icons > .ui-dirslot__ic {
+    width: 27px;
+    height: 27px;
+    border-radius: 4.5px;
+    margin-right: 4.5px;
+    margin-bottom: 4.5px;
+}
+
+/* 전체 허용 — 네 계통색 점 2×2.
+   padding을 0으로 두는 것이 중요하다: .ui-dirslot__icons의 9px 패딩이 남아 있으면
+   내용 폭이 32-12=30px가 되어 24px 점이 한 줄에 하나씩만 들어간다(세로로 늘어선다). */
+.ui-dirslot__all {
+    width: 48px;
+    padding: 0;
+}
+
+.ui-dirslot__all > .ui-dirslot__ic {
+    width: 19.5px;
+    height: 19.5px;
+    border-radius: 3px;
+    opacity: 0.85;
+}
+
+/* 차단 ✕ — 막대 두 개를 겹쳐 돌린다 */
+.ui-dirslot__x {
+    width: 39px;
+    height: 39px;
+    opacity: 0.8;
+}
+
+.ui-dirslot__x > .ui-dirslot__bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 18px;
+    height: 3.75px;
+    border-radius: 3px;
+    background-color: var(--danger);
+}
+
+.ui-dirslot__bar--a { rotate: 45deg; }
+.ui-dirslot__bar--b { rotate: -45deg; }
+
+/* 흐름선 — 그라디언트·점선 모두 USS에 없어 배경 텍스처를 뷰가 넣고 색만 여기서 입힌다 */
+.ui-flowline {
+    position: absolute;
+    border-radius: 3px;
+}
+
+.ui-flowline--off { opacity: 0.65; }
+
+/* ───────────── 아이템 허용 토글 행 ───────────── */
+
+.ui-allowrow {
+    flex-direction: row;
+    align-items: center;
+    padding: 7.5px var(--space-2);
+    border-radius: var(--r-md);
+    border-width: 1.5px;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.ui-allowrow:hover { background-color: var(--bg-raised); }
+
+.ui-allowrow--on {
+    background-color: rgba(255, 158, 74, 0.09);
+    border-color: rgba(255, 158, 74, 0.35);
+}
+
+/* 스위치 — 반경은 높이의 절반. --r-pill(999px)을 주면 x/y가 따로 잘려 타원이 된다 */
+.ui-allowrow__sw {
+    width: 39px;
+    height: 22.5px;
+    border-radius: 11.25px;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    flex-shrink: 0;
+    margin-right: var(--space-2);
+}
+
+.ui-allowrow__knob {
+    position: absolute;
+    top: 2.25px;
+    left: 2.25px;
+    width: 15px;
+    height: 15px;
+    border-radius: 7.5px;
+    background-color: var(--text-faint);
+}
+
+.ui-allowrow--on .ui-allowrow__sw {
+    background-color: rgba(255, 158, 74, 0.3);
+    border-color: var(--out);
+}
+
+.ui-allowrow--on .ui-allowrow__knob {
+    left: auto;
+    right: 2.25px;
+    background-color: var(--out);
+}
+
+.ui-allowrow__ic {
+    width: 30px;
+    height: 30px;
+    border-radius: 4.5px;
+    flex-shrink: 0;
+    margin-right: var(--space-2);
+}
+
+/* 색을 명시한다 — UITK는 color를 물려주지 않아 비워 두면 기본 검정이 되어
+   어두운 패널에서 글자가 통째로 사라진다 */
+.ui-allowrow__nm {
+    font-size: 18px;
+    color: var(--text);
+    flex-grow: 1;
+    flex-basis: 0;
+    overflow: hidden;
+}
+
+/* 꺼진 줄도 읽을 수는 있어야 한다 — 목록에서 무엇을 켤지 고르는 중이다 */
+.ui-allowrow--off .ui-allowrow__nm { color: var(--text-dim); }
+
+.ui-allowrow__meta {
+    font-size: 15px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+    margin-left: var(--space-2);
+}
+
+/* ───────────── IO 설비 입력→진행→출력 (SCR-09) ─────────────
+   실제 흐름 방향대로 놓아 어디서 막혔는지 눈으로 짚게 한다.
+   세로 가운데 정렬 — 슬롯 수가 달라도 눈높이가 흔들리지 않는다. */
+
+.ui-io {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    padding-bottom: var(--space-3);
+}
+
+.ui-io > * {
+    margin-right: var(--space-3);
+}
+
+.ui-io__col {
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ui-io__cap {
+    font-size: 14.2px;
+    letter-spacing: 1.8px;
+    color: var(--text-faint);
+    margin-bottom: 7.5px;
+    flex-shrink: 0;
+    -unity-font-definition: var(--font-display);
+}
+
+.ui-io__slots {
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-io__slots > .ui-slot {
+    margin-bottom: var(--space-2);
+}
+
+.ui-io__slots .ui-slot--last {
+    margin-bottom: 0;
+}
+
+/* 입력이 넷이면 2×2로 접는다 — 어떤 설비든 창 높이가 같다 (168 = 78×2 + 12) */
+.ui-io__slots--grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: 168px;
+    justify-content: center;
+}
+
+.ui-io__slots--grid > .ui-slot {
+    margin: 0 6px 12px 6px;
+}
+
+/* 진행바를 세로 중앙에 — IN 칸 위의 캡 높이(≈22px)만큼 패딩을 줘 슬롯 눈높이와 맞춘다 */
+.ui-io__arrow {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 264px;
+    align-items: center;
+    justify-content: center;
+    padding-top: 22px;
+}
+
+/* 입력이 하나면 남는 폭을 진행바가 쓴다 */
+.ui-io__arrow--wide {
+    max-width: 420px;
+}
+
+.ui-machine {
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;   /* --r-pill 금지 — .ui-bar 위 주석 참조 */
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line);
+    overflow: hidden;
+}
+
+/* 원본은 copper→crystal 그라디언트 — USS에 그라디언트가 없어 구리 단색 */
+.ui-machine__fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--copper);
+    border-radius: 6px;
+}
+
+/* 멈춘 동안 회색으로 얼어붙는다 — 고장이 아니라 사람이 세운 것 */
+.ui-machine--paused .ui-machine__fill {
+    background-color: var(--line-strong);
+}
+
+/* 바 아래에 절대 배치 — 바가 메타 높이와 무관하게 세로 중앙을 지킨다 */
+.ui-machine__meta {
+    position: absolute;
+    top: 50%;
+    margin-top: 19px;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-data);
+}
+
+/* ───────────── STA 가동 상태 배지 (SCR-09) ───────────── */
+
+/* 테두리는 글자색과 같게 — USS에 currentColor가 없어 상태 수식마다 명시한다 */
+.ui-status {
+    flex-direction: row;
+    align-items: center;
+    font-size: 18px;
+    padding: 6px 15px;
+    border-radius: var(--r-md);
+    border-width: 1.5px;
+}
+
+.ui-status__dot {
+    width: 10.5px;
+    height: 10.5px;
+    border-radius: 6px;
+    margin-right: 9px;
+}
+
+.ui-status--run { color: var(--ok); border-color: var(--ok); background-color: var(--ok-a08); }
+.ui-status--run .ui-status__dot { background-color: var(--ok); }
+.ui-status--wait { color: var(--warn); border-color: var(--warn); background-color: var(--warn-a08); }
+.ui-status--wait .ui-status__dot { background-color: var(--warn); }
+.ui-status--block { color: var(--danger); border-color: var(--danger); background-color: var(--danger-a08); }
+.ui-status--block .ui-status__dot { background-color: var(--danger); }
+.ui-status--stop { color: var(--text-faint); border-color: var(--text-faint); background-color: var(--dim-a07); }
+.ui-status--stop .ui-status__dot { background-color: var(--text-faint); }
