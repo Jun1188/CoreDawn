@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -9,6 +8,7 @@ using UnityEngine.UIElements;
 ///
 /// 위에서 아래로 제작 → 소지품 → 핫바. 패널이 화면 하단에 붙어 핫바가 HUD 핫바와
 /// 같은 자리에 온다 — I로 열고 닫아도 손이 기억하는 위치가 유지된다.
+/// 소지품·핫바·캐리지 조작은 보관소(SCR-08)와 공유하는 뼈대(PlayerItemPanelView)에 있다.
 ///
 /// 수동 제작은 기존 uGUI(제작 입력 슬롯에 재료를 옮겨 담는 방식)와 다르다:
 ///   - 재료를 옮겨 담지 않는다. 가방·핫바의 보유량을 그대로 세고 그대로 쓴다
@@ -18,7 +18,7 @@ using UnityEngine.UIElements;
 ///     완성 시점 검사에 걸려 무에서 만들어지지 않는다
 /// </summary>
 [DefaultExecutionOrder(100)]
-public class InventoryPanelView : UITKPopup
+public class InventoryPanelView : PlayerItemPanelView
 {
     static InventoryPanelView cached;
 
@@ -28,21 +28,12 @@ public class InventoryPanelView : UITKPopup
     float progress;          // 현재 1회분 경과 시간(초)
     string search = "";
 
-    // ── 마우스 캐리지 — 들고 있는 스택 ──
-    ItemStack carried;
-    VisualElement carry, carryIcon;
-    Label carryCount;
-
     // ── 요소 참조 ──
-    VisualElement screenRoot;
-    VisualElement recipes, mats, grid, hotbarRow, detail;
+    VisualElement recipes, mats, detail;
     VisualElement yieldIcon, craftBtnFill;
     Label yieldName, yieldPer, yieldTime, craftBtnText, craftBtnTime, recipesEmpty;
     Button btnClose, btnCraft;
     TextField searchField;
-
-    ItemContainer Main   => PlayerInventoryHolder.Instance?.MainContainer;
-    ItemContainer Hotbar => PlayerInventoryHolder.Instance?.HotbarContainer;
 
     // ───────────────────────── 열기 ─────────────────────────
 
@@ -68,8 +59,6 @@ public class InventoryPanelView : UITKPopup
         recipes      = r.Q("recipes");
         recipesEmpty = r.Q<Label>("recipes-empty");
         mats         = r.Q("mats");
-        grid         = r.Q("grid");
-        hotbarRow    = r.Q("hotbar");
         detail       = r.Q("detail");
 
         yieldIcon    = r.Q("yield-icon");
@@ -98,25 +87,14 @@ public class InventoryPanelView : UITKPopup
         btnCraft.RegisterCallback<PointerUpEvent>(OnCraftUp);
         btnCraft.RegisterCallback<PointerCaptureOutEvent>(OnCraftCaptureOut);
 
-        // 캐리지 — 포인터를 따라다니는 스택. 패널 위 어디서든 보여야 하므로 루트에 단다
-        BuildCarry(r);
-        r.RegisterCallback<PointerMoveEvent>(OnPointerMove);
-
-        // 창 밖(스크림)에 놓으면 월드로 던진다 — 마인크래프트 문법.
-        // 좌클릭 전부 · 우클릭 한 개. 슬롯 클릭은 StopPropagation이라 여기 오지 않는다
-        screenRoot = r.Q("screen-root");
-        screenRoot?.RegisterCallback<PointerDownEvent>(OnScrimPointerDown);
-
-        var main = Main; var hot = Hotbar;
-        if (main != null) main.Changed += OnContainerChanged;
-        if (hot  != null) hot.Changed  += OnContainerChanged;
+        BindCommon();
         if (GameManager.Instance != null) GameManager.Instance.TierUnlocked += OnTierUnlocked;
 
         holding = false;
         progress = 0f;
 
         RebuildRecipes();
-        RebuildGrids();
+        RebuildPlayerGrids();
         RefreshDetail();
     }
 
@@ -130,33 +108,15 @@ public class InventoryPanelView : UITKPopup
             btnCraft.UnregisterCallback<PointerUpEvent>(OnCraftUp);
             btnCraft.UnregisterCallback<PointerCaptureOutEvent>(OnCraftCaptureOut);
         }
-        Root?.UnregisterCallback<PointerMoveEvent>(OnPointerMove);
-        screenRoot?.UnregisterCallback<PointerDownEvent>(OnScrimPointerDown);
-
-        var main = Main; var hot = Hotbar;
-        if (main != null) main.Changed -= OnContainerChanged;
-        if (hot  != null) hot.Changed  -= OnContainerChanged;
         if (GameManager.Instance != null) GameManager.Instance.TierUnlocked -= OnTierUnlocked;
 
         holding = false;
-        ReturnCarried();   // 닫는 경로가 무엇이든 (ESC·I·E·씬 전환) 들고 있던 것을 잃지 않는다
+        UnbindCommon();
     }
 
-    public override bool OnInput(in InputEvent e)
+    protected override void OnContainerChanged()
     {
-        // 연 키로 다시 닫는 대칭 조작 — uGUI InventoryPopup과 같은 계약
-        if (e.Phase == InputActionPhase.Performed &&
-            (e.Id == InputActionId.ToggleInventory || e.Id == InputActionId.Interact))
-        {
-            Close();
-            return true;
-        }
-        return base.OnInput(e);   // Cancel(ESC) 닫기 + 모달 삼킴
-    }
-
-    void OnContainerChanged()
-    {
-        RebuildGrids();
+        RebuildPlayerGrids();
         RefreshDetail();   // 보유량이 바뀌면 "필요/보유"와 버튼 상태도 함께
     }
 
@@ -421,297 +381,5 @@ public class InventoryPanelView : UITKPopup
             1 => $"{first} 부족",
             _ => $"{first} 외 {count - 1}종 부족",
         };
-    }
-
-    // ───────────────────── 슬롯 격자 ─────────────────────
-
-    const int Columns = 9;   // 문서 SCR-04 — 9열. 가방 18칸(기본)이면 2줄
-
-    void RebuildGrids()
-    {
-        if (grid == null) return;
-
-        grid.Clear();
-        var main = Main;
-        if (main != null)
-        {
-            // flex-wrap에 맡기지 않고 9칸씩 행을 직접 만든다 — 분배기 격자와 같은 이유
-            // (반올림 오차로 줄바꿈이 계산과 어긋나는 일이 구조적으로 없다)
-            VisualElement row = null;
-            for (int i = 0; i < main.SlotCount; i++)
-            {
-                if (i % Columns == 0)
-                {
-                    row = new VisualElement();
-                    row.AddToClassList("inv-grid__row");
-                    grid.Add(row);
-                }
-                var slot = MakeSlot(main, i, keyLabel: null);
-                if (i % Columns == Columns - 1) slot.AddToClassList("ui-slot--last");
-                row.Add(slot);
-            }
-        }
-
-        hotbarRow.Clear();
-        var hot = Hotbar;
-        if (hot != null)
-        {
-            int active = HotbarController.Instance != null ? HotbarController.Instance.CurrentHotbarIndex : -1;
-            for (int i = 0; i < hot.SlotCount; i++)
-            {
-                var slot = MakeSlot(hot, i, keyLabel: (i + 1).ToString());
-                if (i == active) slot.AddToClassList("ui-slot--active");
-                if (i == hot.SlotCount - 1) slot.AddToClassList("ui-slot--last");
-                hotbarRow.Add(slot);
-            }
-        }
-    }
-
-    VisualElement MakeSlot(ItemContainer container, int index, string keyLabel)
-    {
-        var stack = container.PeekAt(index);
-        bool empty = stack == null || stack.item == null || stack.amount <= 0;
-
-        var slot = new VisualElement();
-        slot.AddToClassList("ui-slot");
-        if (empty) slot.AddToClassList("ui-slot--empty");
-
-        if (keyLabel != null)
-        {
-            var key = new Label(keyLabel);
-            key.AddToClassList("ui-slot__key");
-            slot.Add(key);
-        }
-
-        var icon = new VisualElement();
-        icon.AddToClassList("ui-slot__icon");
-        if (!empty) icon.style.backgroundColor = UIFlowColors.Of(stack.item.line);
-        slot.Add(icon);
-
-        if (!empty)
-        {
-            var n = new Label(stack.amount.ToString());
-            n.AddToClassList("ui-slot__n");
-            slot.Add(n);
-        }
-
-        var c = container; var i = index;
-        slot.RegisterCallback<PointerDownEvent>(e => OnSlotPointerDown(e, c, i));
-        return slot;
-    }
-
-    // ───────────────── 슬롯 조작 — 캐리지 방식 ─────────────────
-    // uGUI InventoryManager와 같은 문법: 좌클릭 집기/놓기/합치기/교환,
-    // 우클릭 절반 집기/한 개 놓기, Shift+클릭 가방↔핫바 빠른 이동.
-    // 규칙(스택 상한 등)은 전부 ItemContainer가 지킨다 — 여기서는 옮기기만 한다.
-
-    void OnSlotPointerDown(PointerDownEvent e, ItemContainer container, int index)
-    {
-        e.StopPropagation();
-
-        if (e.button == 0)
-        {
-            if (e.shiftKey) QuickMove(container, index);
-            else LeftClick(container, index);
-        }
-        else if (e.button == 1)
-        {
-            RightClick(container, index);
-        }
-
-        MoveCarry(e.position);
-        RefreshCarry();
-        InventoryManager.Instance?.RefreshAllGameUIs();   // uGUI 핫바 HUD·무기 장착 동기화
-    }
-
-    void LeftClick(ItemContainer container, int index)
-    {
-        if (carried == null || carried.item == null)
-        {
-            var picked = container.TakeAt(index);
-            if (picked != null && picked.item != null) carried = picked;
-            return;
-        }
-
-        var target = container.PeekAt(index);
-        if (target == null || target.item == null)
-        {
-            if (container.TryPutAt(index, carried)) carried = null;
-        }
-        else if (target.item == carried.item)
-        {
-            int add = Mathf.Min(target.maxStackSize - target.amount, carried.amount);
-            target.amount += add;
-            carried.amount -= add;
-            container.Touch();
-            if (carried.amount <= 0) carried = null;
-        }
-        else
-        {
-            if (container.TryExchangeAt(index, carried, out var prev)) carried = prev;
-        }
-    }
-
-    void RightClick(ItemContainer container, int index)
-    {
-        var target = container.PeekAt(index);
-
-        if (carried == null || carried.item == null)
-        {
-            if (target == null || target.item == null || target.amount <= 0) return;
-
-            int take = target.amount - target.amount / 2;   // 절반 (홀수면 큰 쪽)
-            carried = new ItemStack(target.item, take);
-            target.amount -= take;
-            container.Touch();
-            if (target.amount <= 0) container.TakeAt(index);
-            return;
-        }
-
-        if (target == null || target.item == null)
-        {
-            if (container.TryPutAt(index, new ItemStack(carried.item, 1))) carried.amount--;
-        }
-        else if (target.item == carried.item && target.amount < target.maxStackSize)
-        {
-            target.amount++;
-            carried.amount--;
-            container.Touch();
-        }
-
-        if (carried.amount <= 0) carried = null;
-    }
-
-    /// <summary>Shift+클릭 — 가방↔핫바 반대편으로 보낸다 (SCR-04에는 상자가 없다).</summary>
-    void QuickMove(ItemContainer src, int index)
-    {
-        var stack = src.PeekAt(index);
-        if (stack == null || stack.item == null || stack.amount <= 0) return;
-
-        var dst = src == Main ? Hotbar : Main;
-        if (dst == null) return;
-
-        MoveStack(stack, dst);
-
-        src.Touch();
-        if (stack.amount <= 0) src.TakeAt(index);
-    }
-
-    /// <summary>기존 스택부터 채우고 남으면 빈 슬롯에 — uGUI 쪽과 같은 순서.</summary>
-    static void MoveStack(ItemStack src, ItemContainer dst)
-    {
-        for (int i = 0; i < dst.SlotCount && src.amount > 0; i++)
-        {
-            var t = dst.PeekAt(i);
-            if (t == null || t.item != src.item || t.amount >= t.maxStackSize) continue;
-            int add = Mathf.Min(t.maxStackSize - t.amount, src.amount);
-            t.amount += add;
-            src.amount -= add;
-            dst.Touch();
-        }
-        for (int i = 0; i < dst.SlotCount && src.amount > 0; i++)
-        {
-            var t = dst.PeekAt(i);
-            if (t != null && t.item != null) continue;
-            int add = Mathf.Min(src.maxStackSize, src.amount);
-            if (dst.TryPutAt(i, new ItemStack(src.item, add))) src.amount -= add;
-        }
-    }
-
-    // ───────────────────── 캐리지 표시 ─────────────────────
-
-    void BuildCarry(VisualElement root)
-    {
-        if (carry != null) carry.RemoveFromHierarchy();
-
-        carry = new VisualElement { pickingMode = PickingMode.Ignore };
-        carry.AddToClassList("inv-carry");
-
-        carryIcon = new VisualElement { pickingMode = PickingMode.Ignore };
-        carryIcon.AddToClassList("ui-slot__icon");
-        carry.Add(carryIcon);
-
-        carryCount = new Label { pickingMode = PickingMode.Ignore };
-        carryCount.AddToClassList("ui-slot__n");
-        carry.Add(carryCount);
-
-        root.Add(carry);
-        RefreshCarry();
-    }
-
-    void OnPointerMove(PointerMoveEvent e) => MoveCarry(e.position);
-
-    /// <summary>창 밖에 놓으면 던진다 — 마인크래프트 문법. 좌클릭 전부, 우클릭 한 개.</summary>
-    void OnScrimPointerDown(PointerDownEvent e)
-    {
-        if (e.target != screenRoot) return;   // 패널 안쪽 클릭은 각자의 몫
-        if (carried == null || carried.item == null || carried.amount <= 0) return;
-
-        if (e.button == 0)
-        {
-            DropToWorld(carried.item, carried.amount);
-            carried = null;
-        }
-        else if (e.button == 1)
-        {
-            DropToWorld(carried.item, 1);
-            carried.amount--;
-            if (carried.amount <= 0) carried = null;
-        }
-        else return;
-
-        RefreshCarry();
-        InventoryManager.Instance?.RefreshAllGameUIs();
-    }
-
-    void MoveCarry(Vector2 panelPos)
-    {
-        if (carry == null) return;
-        carry.style.left = panelPos.x - 22f;
-        carry.style.top  = panelPos.y - 22f;
-    }
-
-    void RefreshCarry()
-    {
-        if (carry == null) return;
-        bool has = carried != null && carried.item != null && carried.amount > 0;
-        carry.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
-        if (!has) return;
-
-        carryIcon.style.backgroundColor = UIFlowColors.Of(carried.item.line);
-        carryCount.text = carried.amount.ToString();
-    }
-
-    /// <summary>들고 있던 스택을 가방으로 되돌린다. 가방이 가득이면 바닥에 떨어뜨린다.</summary>
-    void ReturnCarried()
-    {
-        if (carried == null || carried.item == null || carried.amount <= 0) { carried = null; return; }
-
-        var holder = PlayerInventoryHolder.Instance;
-        if (holder == null || !holder.AddItemToPlayer(carried.item, carried.amount))
-            DropToWorld(carried.item, carried.amount);
-
-        carried = null;
-        RefreshCarry();
-        InventoryManager.Instance?.RefreshAllGameUIs();
-    }
-
-    static void DropToWorld(ItemDataSO item, int amount)
-    {
-        var pc = InventoryManager.Instance != null ? InventoryManager.Instance.playerController : null;
-        if (pc == null) return;   // 떨굴 위치가 없다 — 이 경로는 플레이어 없는 씬뿐
-
-        Vector3 pos = pc.transform.position + pc.playerCamera.forward * 1.5f + Vector3.up * 0.5f;
-        DroppedItem.Spawn(item, amount, pos, pc.playerCamera.forward);
-    }
-
-    // ───────────────────── 잡동사니 ─────────────────────
-
-    static string DisplayNameOf(ItemDataSO item) =>
-        item == null ? "" : string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
-
-    static void Show(VisualElement e, bool on)
-    {
-        if (e != null) e.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
     }
 }

@@ -643,6 +643,23 @@
     margin-bottom: var(--space-2);
 }
 
+/* 라벨 + 오른쪽 버튼 한 줄 (SCR-08 보관소: 정렬 · ↑ 자동 넣기) */
+.inv-sechead {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.inv-sechead .inv-label {
+    margin-bottom: 0;
+}
+
+.inv-sechead__btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 12px;
+}
+
 .inv-label--spaced {
     margin-bottom: var(--space-3);
 }
