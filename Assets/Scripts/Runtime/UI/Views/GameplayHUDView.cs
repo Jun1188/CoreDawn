@@ -172,7 +172,7 @@ public class GameplayHUDView : MonoBehaviour
 
             var tick = new VisualElement { pickingMode = PickingMode.Ignore };
             tick.AddToClassList("ui-compass__tick");
-            tick.style.height = cardinal ? 8f : 5f;
+            tick.style.height = cardinal ? 12f : 7.5f;
             compass.Add(tick);
             ticks[i] = tick;
 

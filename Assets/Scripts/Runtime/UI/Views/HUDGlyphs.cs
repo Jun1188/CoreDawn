@@ -10,8 +10,8 @@ public class TriangleGlyph : VisualElement
     public TriangleGlyph()
     {
         pickingMode = PickingMode.Ignore;
-        style.width = 10f;
-        style.height = 7f;
+        style.width = 15f;
+        style.height = 10.5f;
         generateVisualContent += Draw;
     }
 
@@ -40,8 +40,8 @@ public class MonsterGlyph : VisualElement
     public MonsterGlyph()
     {
         pickingMode = PickingMode.Ignore;
-        style.width = 14f;
-        style.height = 14f;
+        style.width = 21f;
+        style.height = 21f;
         generateVisualContent += Draw;
     }
 

@@ -55,32 +55,36 @@
     --crystal-a15: rgba(180, 140, 255, 0.15);
     --ok-a50: rgba(93, 211, 158, 0.5);
     --ok-a15: rgba(93, 211, 158, 0.15);
+    --ok-a08: rgba(93, 211, 158, 0.08);
+    --warn-a08: rgba(232, 165, 75, 0.08);
+    --danger-a08: rgba(255, 93, 115, 0.08);
+    --dim-a07: rgba(143, 163, 192, 0.07);
     --text-a35: rgba(217, 228, 245, 0.35);
     --btn-hover-bg: rgb(27, 44, 72);    /* #1B2C48 */
 
-    /* ── 간격 — 4의 배수만 ── */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 24px;
-    --space-6: 32px;
+    /* ── 간격 — 6의 배수만 (2026-08-05 전체 1.5배 확대) ── */
+    --space-1: 6px;
+    --space-2: 12px;
+    --space-3: 18px;
+    --space-4: 24px;
+    --space-5: 36px;
+    --space-6: 48px;
 
     /* ── 모서리 ── */
-    --r-sm: 4px;
-    --r-md: 6px;
-    --r-lg: 9px;
+    --r-sm: 6px;
+    --r-md: 9px;
+    --r-lg: 13.5px;
     /* --r-pill은 가로세로가 비슷한 요소(원형 점 등)에만 쓸 것.
        USS는 과대 반경을 x/y축 각각 독립 클램프해서, 납작하고 긴 요소에 주면
        알약이 아니라 타원이 된다. 막대류는 높이의 절반을 직접 지정한다. */
     --r-pill: 999px;
 
     /* ── 글자 크기 ── */
-    --fs-micro: 11px;
-    --fs-cap: 12.5px;
-    --fs-body: 14px;
-    --fs-sub: 16px;
-    --fs-title: 20px;
+    --fs-micro: 16.5px;
+    --fs-cap: 18.8px;
+    --fs-body: 21px;
+    --fs-sub: 24px;
+    --fs-title: 30px;
 
     /* ── 폰트 (Assets/Art/Fonts, 전부 SIL OFL 1.1 — 라이선스 원문 동봉) ──
        세 폰트가 각자 다른 일을 한다. 한글에 display를 쓰지 않는다 (§02).

@@ -62,7 +62,7 @@
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *{animation:none!important;transition:none!important}}
 body{background:var(--bg-void);color:var(--text);font-family:var(--font-body);font-size:var(--fs-body);line-height:1.6}
-.doc-wrap{max-width:1120px;margin:0 auto;padding:0 var(--space-5) 120px}
+.doc-wrap{max-width:1400px;margin:0 auto;padding:0 var(--space-5) 120px}
 
 /* ── 문서 헤더 ── */
 .doc-head{padding:56px 0 var(--space-5);border-bottom:1px solid var(--line);position:relative;overflow:hidden}
@@ -125,7 +125,9 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 .doc-part-head .cls{margin-left:auto;font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-faint)}
 .doc-part-body{display:grid;grid-template-columns:1fr 320px}
 @media(max-width:900px){.doc-part-body{grid-template-columns:1fr}}
-.doc-demo{padding:var(--space-5);background:
+@media(max-width:1100px){.doc-demo{zoom:.55}}
+.doc-demo{zoom:.7;   /* 표시용 축소 — 안의 px 값이 실제 규격이다 */
+  padding:var(--space-5);background:
   radial-gradient(circle at 1px 1px, rgba(79,216,224,.06) 1px, transparent 1px) 0 0/24px 24px, var(--bg-void);
   display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-start;border-radius:0 0 0 var(--r-lg)}
 .doc-demo.col{flex-direction:column}
@@ -414,19 +416,21 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 
 
 /* ── 설비 가동 패널 ── */
-.ui-io{display:flex;align-items:center;gap:var(--space-3);justify-content:center}
-.ui-io__col{display:flex;flex-direction:column;gap:7.5px;align-items:center;flex-shrink:0}
+.ui-io{display:flex;align-items:stretch;gap:var(--space-3);justify-content:center;padding-bottom:var(--space-3)}
+.ui-io__col{display:flex;flex-direction:column;gap:7.5px;align-items:center;justify-content:center;flex-shrink:0}
+.ui-io__cap{flex-shrink:0}
 .ui-io__cap{font-family:var(--font-display);font-size:14.2px;letter-spacing:.12em;color:var(--text-faint);line-height:1}
 /* 기본은 세로 한 줄. 4입력만 2열로 접는다 */
-.ui-io__slots{display:flex;flex-direction:column;gap:var(--space-2);align-items:center}
-.ui-io__slots--grid{flex-direction:row;flex-wrap:wrap;max-width:168px;justify-content:center}
-.ui-io__arrow{flex:1;min-width:0;max-width:264px;display:flex;flex-direction:column;gap:7.5px;align-items:center}
+.ui-io__slots{display:flex;flex-direction:column;gap:var(--space-2);align-items:center;justify-content:center}
+.ui-io__slots--grid{flex-direction:row;flex-wrap:wrap;max-width:168px;justify-content:center;align-content:center}
+.ui-io__arrow{flex:1;min-width:0;max-width:264px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding-top:22px;position:relative}
 .ui-io__arrow--wide{max-width:420px}   /* 입력이 하나면 남는 폭을 진행바가 쓴다 */
 .ui-machine{width:100%;height:12px;border-radius:var(--r-pill);background:var(--bg-inset);
   border:1.5px solid var(--line-strong);overflow:hidden}
 .ui-machine__fill{height:100%;background:linear-gradient(90deg,var(--copper),var(--crystal));border-radius:var(--r-pill)}
-.ui-machine__meta{display:flex;justify-content:space-between;width:100%;font-family:var(--font-data);
-  font-size:16.5px;color:var(--text-faint)}
+.ui-machine__meta{position:absolute;top:50%;margin-top:19px;display:flex;justify-content:space-between;
+  width:100%;font-family:var(--font-data);font-size:16.5px;color:var(--text-faint)}
 .ui-status{display:flex;align-items:center;gap:9px;font-size:18px;padding:6px 15px;border-radius:var(--r-md);
   border:1.5px solid currentColor}
 .ui-status__dot{width:10.5px;height:10.5px;border-radius:50%;background:currentColor}
@@ -893,7 +897,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 
 <!-- ══════════ 4. 화면 목업 ══════════ -->
 <section class="doc-sec" id="screens">
-  <div class="doc-sec-head"><span class="n">04</span><h2>화면 목업</h2><span class="aside">전부 §03 부품 조합</span></div>
+  <div class="doc-sec-head"><span class="n">04</span><h2>화면 목업</h2><span class="aside">전부 §03 부품 조합 · 목업은 70% 축소 표시</span></div>
   <p class="doc-lead">아래 네 화면에 새 컴포넌트는 하나도 없다. 전부 §03의 부품 조합이다.
      <b>게이트 납품 패널을 먼저 구현</b>하면 칩·진행바·버튼·패널이 한 번에 검증된다.</p>
 

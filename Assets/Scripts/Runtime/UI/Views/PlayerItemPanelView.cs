@@ -20,6 +20,7 @@ public abstract class PlayerItemPanelView : UITKPopup
     Label carryCount;
 
     protected VisualElement screenRoot, grid, hotbarRow;
+    protected UITooltip tooltip;
 
     protected ItemContainer Main   => PlayerInventoryHolder.Instance?.MainContainer;
     protected ItemContainer Hotbar => PlayerInventoryHolder.Instance?.HotbarContainer;
@@ -39,6 +40,8 @@ public abstract class PlayerItemPanelView : UITKPopup
         BuildCarry(r);
         r.RegisterCallback<PointerMoveEvent>(OnPointerMove);
 
+        tooltip = new UITooltip(r);
+
         // 창 밖(스크림)에 놓으면 월드로 던진다 — 마인크래프트 문법.
         // 좌클릭 전부 · 우클릭 한 개. 슬롯 클릭은 StopPropagation이라 여기 오지 않는다
         screenRoot = r.Q("screen-root");
@@ -53,6 +56,9 @@ public abstract class PlayerItemPanelView : UITKPopup
     {
         Root?.UnregisterCallback<PointerMoveEvent>(OnPointerMove);
         screenRoot?.UnregisterCallback<PointerDownEvent>(OnScrimPointerDown);
+
+        tooltip?.Dispose();
+        tooltip = null;
 
         var main = Main; var hot = Hotbar;
         if (main != null) main.Changed -= OnContainerChanged;
@@ -81,6 +87,9 @@ public abstract class PlayerItemPanelView : UITKPopup
     /// <summary>소지품(9열)과 핫바를 다시 그린다 — 파생의 OnContainerChanged가 부른다.</summary>
     protected void RebuildPlayerGrids()
     {
+        // 호버 중이던 슬롯이 통째로 교체되면 Leave가 안 오므로 여기서 닫는다
+        tooltip?.Hide();
+
         if (grid != null)
         {
             grid.Clear();
@@ -153,6 +162,8 @@ public abstract class PlayerItemPanelView : UITKPopup
             var n = new Label(stack.amount.ToString());
             n.AddToClassList("ui-slot__n");
             slot.Add(n);
+
+            tooltip?.AttachItem(slot, stack.item);
         }
 
         var c = container; var i = index;
@@ -327,8 +338,8 @@ public abstract class PlayerItemPanelView : UITKPopup
     void MoveCarry(Vector2 panelPos)
     {
         if (carry == null) return;
-        carry.style.left = panelPos.x - 22f;
-        carry.style.top  = panelPos.y - 22f;
+        carry.style.left = panelPos.x - 33f;
+        carry.style.top  = panelPos.y - 33f;
     }
 
     protected void RefreshCarry()

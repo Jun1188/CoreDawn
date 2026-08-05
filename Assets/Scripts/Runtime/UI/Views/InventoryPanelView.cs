@@ -224,6 +224,7 @@ public class InventoryPanelView : PlayerItemPanelView
     {
         if (recipes == null) return;
         recipes.Clear();
+        tooltip?.Hide();   // 호버 중이던 행이 교체되면 Leave가 안 온다
 
         var list = UnlockedRecipes();
 
@@ -271,6 +272,8 @@ public class InventoryPanelView : PlayerItemPanelView
         var meta = new Label($"{r.craftTime:0.0}s");
         meta.AddToClassList("ui-row__meta");
         row.Add(meta);
+
+        tooltip?.AttachRecipe(row, r);
 
         var captured = r;
         row.RegisterCallback<ClickEvent>(_ =>

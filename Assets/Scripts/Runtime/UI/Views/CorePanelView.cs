@@ -446,7 +446,7 @@ public class CorePanelView : UITKPopup
             var chip = new VisualElement();
             chip.AddToClassList("ui-chip");
             AddIf(chip, UIItemPalette.ChipClass(row.Item));
-            chip.style.marginRight = 8;
+            chip.style.marginRight = 12;
 
             chip.Add(new Label(DisplayNameOf(row.Item)));
             var n = new Label(row.Chosen.ToString());

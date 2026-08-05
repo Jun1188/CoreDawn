@@ -13,9 +13,9 @@ using UnityEngine.UIElements;
 /// </summary>
 public class HoldRing : VisualElement
 {
-    const float Size   = 46f;
-    const float Radius = 19f;
-    const float Stroke = 4f;
+    const float Size   = 69f;
+    const float Radius = 28.5f;
+    const float Stroke = 6f;
 
     static readonly Color TrackColor = new(0.133f, 0.200f, 0.314f);   // #223350
     static readonly Color FillColor  = new(1f, 0.365f, 0.451f);       // #FF5D73 = --danger

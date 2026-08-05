@@ -19,8 +19,8 @@
 
 /* 코어 패널과 같은 규칙 — 크기 고정, 넘치면 스크롤 */
 .build-panel {
-    width: 620px;
-    height: 500px;
+    width: 930px;
+    height: 750px;
 }
 
 .build-panel__body {
@@ -38,8 +38,8 @@
 
 /* 탭이 패널 안쪽 여백을 넘어 양끝까지 닿게 한다 */
 .build-panel__tabs {
-    margin-left: -16px;
-    margin-right: -16px;
+    margin-left: -24px;
+    margin-right: -24px;
     padding-left: var(--space-4);
     padding-right: var(--space-4);
     margin-bottom: var(--space-4);
@@ -73,12 +73,12 @@
 /* 높이 고정 — 커서를 옮길 때마다 상세 영역이 늘었다 줄면 아래 목록이 출렁여 고르기 어렵다.
    최악(재료 4종 · 설명 2줄)이 들어가는 높이로 잡는다. */
 .build-details {
-    height: 168px;
+    height: 252px;
     flex-shrink: 0;
     margin-top: var(--space-3);
     padding-top: var(--space-3);
     padding-bottom: var(--space-3);
-    border-top-width: 1px;
+    border-top-width: 1.5px;
     border-top-color: var(--line);
     overflow: hidden;
 }
@@ -90,15 +90,15 @@
 }
 
 .build-details__name {
-    font-size: 15px;
+    font-size: 22.5px;
     -unity-font-style: bold;
     color: var(--copper);
     margin-right: var(--space-3);
 }
 
 .build-details__type {
-    font-size: 10px;
-    letter-spacing: 1.2px;
+    font-size: 15px;
+    letter-spacing: 1.8px;
     color: var(--text-faint);
 }
 
@@ -113,7 +113,7 @@
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
-    margin-right: -8px;
+    margin-right: -12px;
 }
 
 .build-details__meta > * { margin-right: var(--space-2); }
@@ -124,7 +124,7 @@
 }
 
 .build-details__cost-label {
-    font-size: 11px;
+    font-size: 16.5px;
     color: var(--text-faint);
 }
 
@@ -134,7 +134,7 @@
     flex-wrap: wrap;
     align-items: center;
     margin-top: var(--space-2);
-    margin-right: -8px;
+    margin-right: -12px;
 }
 
 .build-details__cost > * { margin-right: var(--space-2); }
@@ -149,7 +149,7 @@
     flex-direction: row;
     align-items: center;
     margin-left: auto;
-    margin-right: -12px;
+    margin-right: -18px;
 }
 
 .build-hints > * { margin-right: var(--space-3); }
@@ -159,8 +159,8 @@
 /* 크기는 고정. 부품이 몇 종이든 창이 커졌다 작아졌다 하면 안 된다 —
    넘치는 것은 스크롤로 처리한다. */
 .core-panel {
-    width: 880px;
-    height: 520px;
+    width: 1320px;
+    height: 780px;
 }
 
 .core-panel__tabs { padding: 0 var(--space-4); }
@@ -182,7 +182,7 @@
 }
 
 .core-panel__rail {
-    width: 176px;
+    width: 264px;
     flex-shrink: 0;
     margin-right: var(--space-5);
 }
@@ -206,7 +206,7 @@
     align-items: center;
 }
 
-.core-stat__value > * { margin-left: 4px; }
+.core-stat__value > * { margin-left: 6px; }
 
 /* 게이트 요약 — 이 게이트 전체가 얼마나 찼는지 */
 .core-gate {
@@ -222,7 +222,7 @@
 }
 
 .core-gate__name {
-    font-size: 15px;
+    font-size: 22.5px;
     -unity-font-style: bold;
     color: var(--text);
 }
@@ -246,7 +246,7 @@
 }
 
 .core-gate__pct {
-    width: 48px;
+    width: 72px;
     color: var(--crystal);
     -unity-text-align: middle-right;
 }
@@ -257,20 +257,20 @@
     align-items: center;
     margin-top: var(--space-4);
     padding-top: var(--space-3);
-    border-top-width: 1px;
+    border-top-width: 1.5px;
     border-top-color: var(--line);
 }
 
 .core-actions > * { margin-right: var(--space-3); }
 
 .core-actions__label {
-    font-size: 12px;
+    font-size: 18px;
     color: var(--text-faint);
 }
 
 /* 모든 부품이 준비됐을 때 나오는 줄 */
 .core-actions__ready {
-    font-size: 13px;
+    font-size: 19.5px;
     color: var(--ok);
 }
 
@@ -286,8 +286,8 @@
 /* ───────────── SCR-01c 코어 정보 탭 ───────────── */
 
 .core-section-label {
-    font-size: 10px;
-    letter-spacing: 1.2px;
+    font-size: 15px;
+    letter-spacing: 1.8px;
     color: var(--text-faint);
     margin-bottom: var(--space-3);
 }
@@ -318,7 +318,7 @@
     flex-basis: 0;
     min-height: 0;
     background-color: var(--bg-inset);
-    border-width: 1px;
+    border-width: 1.5px;
     border-color: var(--line-strong);
     border-radius: var(--r-md);
     padding: var(--space-3);
@@ -335,7 +335,7 @@
 .core-stat__head {
     flex-direction: row;
     justify-content: space-between;
-    margin-bottom: 5px;
+    margin-bottom: 7.5px;
 }
 
 .core-stat__name {
@@ -345,7 +345,7 @@
 
 /* 설계 viewBox(440x300) 폭에 맞춘다 — 좌우 지시선 라벨 자리를 여기서 확보한다 */
 .core-info__radar {
-    width: 440px;
+    width: 660px;
     flex-shrink: 0;
     margin-left: var(--space-5);
 }
@@ -389,7 +389,7 @@
 
 .hud-badge {
     position: absolute;
-    top: 16px;
+    top: 24px;
     left: 0;
     right: 0;
     align-items: center;
@@ -397,7 +397,7 @@
 
 .hud-card-slot {
     position: absolute;
-    bottom: 24px;
+    bottom: 36px;
     left: 0;
     right: 0;
     align-items: center;
@@ -405,8 +405,8 @@
 
 /* 카드 안 요소들 — USS에 gap이 없어 개별 margin으로 띄운다 */
 .hud-card__icon {
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     flex-shrink: 0;
     margin-right: var(--space-3);
 }
@@ -454,11 +454,11 @@
 }
 
 .core-confirm {
-    width: 460px;
+    width: 690px;
 }
 
 .core-confirm__desc {
-    font-size: 13px;
+    font-size: 19.5px;
     color: var(--text);
     white-space: normal;
     margin-bottom: var(--space-4);
@@ -469,11 +469,11 @@
     margin-bottom: var(--space-4);
 }
 
-.core-confirm__unlocks > .ui-mat { margin-bottom: 2px; }
+.core-confirm__unlocks > .ui-mat { margin-bottom: 3px; }
 
 /* 되돌릴 수 없는 단계에만 붙는다. 전부에 붙이면 정작 위험한 마지막에서 눈에 안 띈다 */
 .core-confirm__warn {
-    border-width: 1px;
+    border-width: 1.5px;
     border-color: var(--danger-a50);
     background-color: var(--danger-a07);
     border-radius: var(--r-md);
@@ -489,18 +489,18 @@
 
 .core-confirm__warn-icon {
     color: var(--danger);
-    font-size: 13px;
+    font-size: 19.5px;
     margin-right: var(--space-2);
 }
 
 .core-confirm__warn-title {
-    font-size: 12px;
+    font-size: 18px;
     -unity-font-style: bold;
     color: var(--danger);
 }
 
 .core-confirm__warn-body {
-    font-size: 12px;
+    font-size: 18px;
     color: var(--text-dim);
     white-space: normal;
 }
@@ -528,11 +528,11 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .splitter-panel {
-    width: 660px;
-    height: 420px;
+    width: 990px;
+    height: 630px;
 }
 
-/* 문서는 grid(250px + 1fr)지만 USS에 grid가 없어 flex로 같은 결과를 만든다 */
+/* 문서는 grid(375px + 1fr)지만 USS에 grid가 없어 flex로 같은 결과를 만든다 */
 .splitter-panel__body {
     flex-direction: row;
     align-items: center;
@@ -542,7 +542,7 @@
 }
 
 .splitter-map-col {
-    width: 250px;
+    width: 375px;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
@@ -564,9 +564,9 @@
 
 /* 선택한 출구의 색 — 목록이 어느 출구의 것인지 색으로 먼저 말한다 */
 .splitter-list__swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    width: 21px;
+    height: 21px;
+    border-radius: 4.5px;
     background-color: var(--out);
     margin-right: var(--space-2);
 }
@@ -575,7 +575,7 @@
    .ui-push(margin-left:auto)를 버튼에 걸면 아래 .splitter-list__btn의
    margin-left가 그것을 덮어써서(같은 프로퍼티, 나중 규칙) 밀리지 않는다. */
 .splitter-list__title {
-    font-size: 13px;
+    font-size: 19.5px;
     -unity-font-style: bold;
     color: var(--text);
     flex-grow: 1;
@@ -584,9 +584,9 @@
 }
 
 .splitter-list__btn {
-    padding: 3px 10px;
-    font-size: 12px;
-    margin-left: 6px;
+    padding: 4.5px 15px;
+    font-size: 18px;
+    margin-left: 9px;
     flex-shrink: 0;
 }
 
@@ -609,9 +609,9 @@
 .splitter-list__foot {
     margin-top: auto;
     padding-top: var(--space-3);
-    border-top-width: 1px;
+    border-top-width: 1.5px;
     border-top-color: var(--line);
-    font-size: 11px;
+    font-size: 16.5px;
     color: var(--text-faint);
 }
 
@@ -621,12 +621,12 @@
    가운데 정렬(.screen-root)은 그대로 두고 세로 방향만 바닥으로 민다 */
 .screen-root--bottom {
     justify-content: flex-end;
-    padding-bottom: 20px;
+    padding-bottom: 30px;
 }
 
 /* 바닥에 붙는 패널이라 아래 모서리는 각지게 — 잘린 것이 아니라 이어진 것 */
 .inv-panel {
-    width: 600px;
+    width: 900px;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -637,8 +637,8 @@
 
 /* 구획 라벨 — 제작/소지품/핫바 세 단의 머리글 */
 .inv-label {
-    font-size: 10px;
-    letter-spacing: 1.2px;
+    font-size: 15px;
+    letter-spacing: 1.8px;
     color: var(--text-faint);
     margin-bottom: var(--space-2);
 }
@@ -656,8 +656,8 @@
 
 .inv-sechead__btn {
     margin-left: auto;
-    padding: 3px 10px;
-    font-size: 12px;
+    padding: 4.5px 15px;
+    font-size: 18px;
 }
 
 .inv-label--spaced {
@@ -665,15 +665,15 @@
 }
 
 /* 제작 영역만 가로 2단 — 목록과 상세는 함께 봐야 고를 수 있다.
-   높이 고정 (문서 236px): 재료 4종(제조기 4입력)이 최악이고, 그게 들어가는 높이면
+   높이 고정 (문서 354px): 재료 4종(제조기 4입력)이 최악이고, 그게 들어가는 높이면
    나머지는 다 들어간다. 산출 66 + 8 + 재료 4줄 123 + 버튼 37 = 234 ≤ 236 실측 확인 */
 .inv-craft {
     flex-direction: row;
-    height: 236px;
+    height: 354px;
 }
 
 .inv-craft__list {
-    width: 236px;
+    width: 354px;
     margin-right: var(--space-4);
 }
 
@@ -687,14 +687,14 @@
     min-height: 0;
 }
 
-/* 목록 행 — 레퍼런스: 간격 2px · 아이콘 20px. 아이콘 기본값이 26px라 명시로 눌러 준다 */
+/* 목록 행 — 레퍼런스: 간격 3px · 아이콘 30px. 아이콘 기본값이 39px라 명시로 눌러 준다 */
 .inv-craft__scroll .ui-row {
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
 .inv-craft__scroll .ui-slot__icon {
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
 }
 
 .inv-craft__empty {
@@ -714,32 +714,32 @@
     margin-bottom: var(--space-2);
 }
 
-/* 산출 슬롯은 40px 축소형 — 소지품 52px와 구분되는 표시용 슬롯 (레퍼런스) */
+/* 산출 슬롯은 60px 축소형 — 소지품 78px와 구분되는 표시용 슬롯 (레퍼런스) */
 .inv-craft__yield .ui-slot {
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
 }
 
 .inv-craft__yield .ui-slot__icon {
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
 }
 
 .inv-craft__yield-name {
-    font-size: 13px;
+    font-size: 19.5px;
     color: var(--text);
 }
 
 .inv-craft__yield-per {
-    font-size: 11px;
+    font-size: 16.5px;
     color: var(--text-faint);
 }
 
 /* "필요 / 보유"의 보유 쪽 — 흐리게. 판단 기준(필요)이 먼저 읽혀야 한다 */
 .inv-mat__dim {
-    font-size: 12px;
+    font-size: 18px;
     color: var(--text-faint);
-    margin-left: 3px;
+    margin-left: 4.5px;
     -unity-text-align: middle-left;
 }
 
@@ -756,7 +756,7 @@
 /* 소지품 격자 — 행은 코드가 9칸씩 잘라 만든다.
    flex-wrap에 맡기지 않는 이유는 분배기 격자와 같다 (반올림 오차로 한 줄 밀림) */
 .inv-section {
-    border-top-width: 1px;
+    border-top-width: 1.5px;
     border-top-color: var(--line);
     margin-top: var(--space-4);
     padding-top: var(--space-3);
@@ -783,7 +783,7 @@
 .inv-hotbar {
     flex-direction: row;
     justify-content: center;
-    border-top-width: 1px;
+    border-top-width: 1.5px;
     border-top-color: var(--line);
     margin-top: var(--space-1);
     padding-top: var(--space-3);
@@ -802,15 +802,15 @@
    슬롯 클릭을 가로채면 안 된다 (picking은 코드에서 Ignore) */
 .inv-carry {
     position: absolute;
-    width: 44px;
-    height: 44px;
+    width: 66px;
+    height: 66px;
     align-items: center;
     justify-content: center;
 }
 
 .inv-carry .ui-slot__icon {
-    width: 30px;
-    height: 30px;
+    width: 45px;
+    height: 45px;
 }
 
 /* ───────────── SCR-02 전투 HUD ───────────── */
@@ -820,12 +820,12 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 14px;
+    top: 21px;
     align-items: center;
 }
 
 /* 배율은 화면과 같게 고정돼 있으므로(도당 픽셀 = FOV), 폭을 늘리면 보이는 방위가 는다.
-   1382px(72%)면 FOV 103° 기준 대략 ±58° — 등 뒤 직전까지 보인다 */
+   2073px(72%)면 FOV 103° 기준 대략 ±58° — 등 뒤 직전까지 보인다 */
 .combat-compass {
     width: 72%;
 }
@@ -833,21 +833,21 @@
 .combat-enemyline {
     flex-direction: row;
     align-items: center;
-    margin-top: 6px;
+    margin-top: 9px;
 }
 
 .combat-enemyline__n {
-    font-size: 14px;
+    font-size: 21px;
     color: var(--text);
-    margin-left: 5px;
+    margin-left: 7.5px;
     -unity-font-definition: var(--font-data);
 }
 
 /* 좌상단 — 시계는 전투 중 계속 볼 것이 아니라 항상 같은 자리에 있어야 하는 정보다 */
 .combat-stats {
     position: absolute;
-    left: 24px;
-    top: 20px;
+    left: 36px;
+    top: 30px;
     flex-direction: row;
 }
 
@@ -859,8 +859,8 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 18px;
-    height: 18px;
+    width: 27px;
+    height: 27px;
     translate: -50% -50%;
 }
 
@@ -869,52 +869,52 @@
     background-color: var(--text-dim);
 }
 
-.combat-cross__bar--n { left: 8px; top: 0; width: 2px; height: 6px; }
-.combat-cross__bar--s { left: 8px; bottom: 0; width: 2px; height: 6px; }
-.combat-cross__bar--w { top: 8px; left: 0; width: 6px; height: 2px; }
-.combat-cross__bar--e { top: 8px; right: 0; width: 6px; height: 2px; }
+.combat-cross__bar--n { left: 12px; top: 0; width: 3px; height: 9px; }
+.combat-cross__bar--s { left: 12px; bottom: 0; width: 3px; height: 9px; }
+.combat-cross__bar--w { top: 12px; left: 0; width: 9px; height: 3px; }
+.combat-cross__bar--e { top: 12px; right: 0; width: 9px; height: 3px; }
 
 /* 좌하단 — 체력은 큰 숫자로 세우고 바는 얇게. 급할 때 읽는 건 바가 아니라 숫자다 */
 .combat-vitals {
     position: absolute;
-    left: 24px;
-    bottom: 20px;
-    width: 292px;
+    left: 36px;
+    bottom: 30px;
+    width: 438px;
 }
 
 .combat-vitals__head {
     flex-direction: row;
     align-items: flex-end;
-    margin-bottom: 5px;
+    margin-bottom: 7.5px;
 }
 
 .combat-vitals__hp {
-    font-size: 26px;
+    font-size: 39px;
     color: var(--text);
     -unity-font-definition: var(--font-data);
 }
 
 .combat-vitals__max {
-    font-size: 12px;
+    font-size: 18px;
     color: var(--text-faint);
     -unity-font-definition: var(--font-data);
     margin-left: var(--space-2);
-    padding-bottom: 2px;
+    padding-bottom: 3px;
 }
 
 .combat-vitals__tag {
     margin-left: auto;
-    font-size: 10px;
-    letter-spacing: 1.4px;
+    font-size: 15px;
+    letter-spacing: 2.1px;
     color: var(--text-faint);
-    padding-bottom: 3px;
+    padding-bottom: 4.5px;
     -unity-font-definition: var(--font-display);
 }
 
 .combat-vitals__bar {
-    height: 5px;
+    height: 7.5px;
     background-color: var(--danger-a15);
-    border-radius: 2px;
+    border-radius: 3px;
     overflow: hidden;
 }
 
@@ -922,22 +922,22 @@
     height: 100%;
     width: 0;
     background-color: var(--danger);
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 /* 코어는 초록 세로선 하나로 묶어 플레이어 체력과 시각적으로 분리 */
 .combat-core {
     flex-direction: row;
     align-items: center;
-    border-left-width: 2px;
+    border-left-width: 3px;
     border-left-color: var(--ok);
     padding-left: var(--space-2);
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
 .combat-core__tag {
-    font-size: 10px;
-    letter-spacing: 1.4px;
+    font-size: 15px;
+    letter-spacing: 2.1px;
     color: var(--text-faint);
     -unity-font-definition: var(--font-display);
 }
@@ -946,9 +946,9 @@
     flex-grow: 1;
     flex-basis: 0;
     min-width: 0;
-    height: 4px;
+    height: 6px;
     background-color: var(--ok-a15);
-    border-radius: 2px;
+    border-radius: 3px;
     overflow: hidden;
     margin-left: var(--space-2);
     margin-right: var(--space-2);
@@ -958,11 +958,11 @@
     height: 100%;
     width: 0;
     background-color: var(--ok);
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 .combat-core__n {
-    font-size: 12px;
+    font-size: 18px;
     color: var(--ok);
     -unity-font-definition: var(--font-data);
 }
@@ -970,8 +970,8 @@
 /* 우하단 — 탄약. 장착 무기가 없으면 통째로 사라진다 */
 .combat-ammo {
     position: absolute;
-    right: 24px;
-    bottom: 20px;
+    right: 36px;
+    bottom: 30px;
     align-items: flex-end;
 }
 
@@ -981,16 +981,16 @@
 }
 
 .combat-ammo__now {
-    font-size: 22px;
+    font-size: 33px;
     color: var(--text);
     -unity-font-definition: var(--font-data);
 }
 
 .combat-ammo__cap {
-    font-size: 14px;
+    font-size: 21px;
     color: var(--text-faint);
     -unity-font-definition: var(--font-data);
-    padding-bottom: 1px;
+    padding-bottom: 1.5px;
 }
 
 /* 하단 중앙 — 핫바. 인벤토리 패널의 핫바와 정확히 같은 자리(같은 손 위치).
@@ -998,7 +998,7 @@
 .combat-hotbar {
     position: absolute;
     left: 50%;
-    bottom: 37px;
+    bottom: 55.5px;
     flex-direction: row;
     translate: -50% 0;
 }
@@ -1015,3 +1015,103 @@
 .combat-mark--threat { color: var(--beast); }
 .combat-mark--core { color: var(--ok); }
 .combat-enemyline__glyph { color: var(--beast); }
+
+/* ───────────── SCR-09 설비 — 레시피와 가동 상태 ───────────── */
+
+/* 제련로·제작기·조립기·제조기가 같은 화면 하나 — 데이터상 전부 같은 SO이고
+   입력 슬롯 수(1·1·2·4)만 다르므로 IN 칸이 그 수만큼 늘어날 뿐이다 */
+.machine-panel {
+    width: 900px;
+}
+
+.machine-panel__body {
+    flex-direction: row;
+    height: 408px;
+}
+
+.machine-list {
+    width: 354px;
+    margin-right: var(--space-4);
+}
+
+.machine-list__search {
+    margin-bottom: var(--space-2);
+}
+
+.machine-list__scroll {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.machine-list__scroll .ui-row {
+    margin-bottom: 3px;
+}
+
+.machine-list__scroll .ui-slot__icon {
+    width: 30px;
+    height: 30px;
+}
+
+.machine-list__empty {
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    padding: var(--space-4) 0;
+    -unity-text-align: middle-center;
+}
+
+.machine-detail {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.machine-detail__yield {
+    margin-bottom: var(--space-2);
+}
+
+.machine-detail__yield .ui-slot {
+    width: 60px;
+    height: 60px;
+}
+
+.machine-yield-name {
+    font-size: 19.5px;
+    color: var(--text);
+}
+
+.machine-yield-sub {
+    font-size: 16.5px;
+    color: var(--text-faint);
+}
+
+/* 입력 → 진행 → 출력이 남은 세로 공간의 한가운데 — 슬롯 수가 달라도 눈높이가 같다 */
+.machine-io {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.machine-status {
+    flex-direction: row;
+    align-items: center;
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+    padding-top: var(--space-3);
+}
+
+.machine-status > * {
+    margin-right: var(--space-3);
+}
+
+.machine-status__note {
+    font-size: 17.2px;
+    color: var(--text-faint);
+}
+
+.machine-status__btn {
+    margin-left: auto;
+    margin-right: 0;
+    padding: 6px 21px;
+    font-size: 18px;
+}

@@ -30,6 +30,7 @@ public class SplitterPanelView : UITKPopup
     TextField searchField;
 
     readonly List<VisualElement> slots = new();
+    UITooltip tooltip;
 
     // ───────────────────────── 열기 ─────────────────────────
 
@@ -88,6 +89,8 @@ public class SplitterPanelView : UITKPopup
         if (searchBox != null && searchBox.Q<SearchGlyph>() == null)
             searchBox.Insert(0, new SearchGlyph());
 
+        tooltip = new UITooltip(r);
+
         RebuildAll();
     }
 
@@ -97,6 +100,9 @@ public class SplitterPanelView : UITKPopup
         if (btnAllowAll != null) btnAllowAll.clicked -= AllowAll;
         if (btnBlockAll != null) btnBlockAll.clicked -= BlockAll;
         if (searchField != null) searchField.UnregisterValueChangedCallback(OnSearchChanged);
+
+        tooltip?.Dispose();
+        tooltip = null;
 
         target = null;
     }
@@ -202,7 +208,7 @@ public class SplitterPanelView : UITKPopup
             var four = new List<Color>();
             foreach (var line in new[] { ItemLine.Iron, ItemLine.Copper, ItemLine.Crystal, ItemLine.Beast })
                 four.Add(UIFlowColors.Of(line));
-            return Grid(four, 2, 13, IconGap);
+            return Grid(four, 2, 20, IconGap);
         }
 
         // 지정 아이템은 몇 종이든 칸 안에 들어가야 한다 — 넘쳐 잘리면 무엇이 걸렸는지 못 읽는다.
@@ -233,7 +239,7 @@ public class SplitterPanelView : UITKPopup
 
         for (int cols = 1; cols <= MaxCols; cols++)
         {
-            int gap  = cols <= 3 ? 3 : 2;
+            int gap  = cols <= 3 ? 4 : 3;
             int rows = Mathf.CeilToInt(count / (float)cols);
 
             // 이 열 수로 잡을 수 있는 최대 점 크기 — 가로·세로 둘 다 들어가야 한다
@@ -280,7 +286,7 @@ public class SplitterPanelView : UITKPopup
             dot.style.height = size;
             dot.style.backgroundColor = colors[i];
 
-            float r = size >= 10 ? 3f : 2f;
+            float r = size >= 15 ? 4.5f : 3f;
             dot.style.borderTopLeftRadius = r;
             dot.style.borderTopRightRadius = r;
             dot.style.borderBottomLeftRadius = r;
@@ -292,14 +298,14 @@ public class SplitterPanelView : UITKPopup
     }
 
     // 출구 칸 66px에서 테두리·여백을 뺀 실사용 폭
-    const int InnerBox = 56;
-    const int IconGap  = 3;
-    const int MinIcon  = 6;     // 이보다 작으면 색을 구분할 수 없다
-    const int MaxIcon  = 18;
+    const int InnerBox = 84;
+    const int IconGap  = 4;
+    const int MinIcon  = 9;     // 이보다 작으면 색을 구분할 수 없다
+    const int MaxIcon  = 27;
     const int MaxCols  = 6;     // 36종까지. 그 이상은 점이 뭉개져 세는 의미가 없다
 
     // 250×250 맵. 본체 78px가 가운데(86~164), 출구 칸 66px가 각 변에 붙는다.
-    const float MapSize = 250f, SlotSize = 66f, BodyFrom = 86f, BodyTo = 164f;
+    const float MapSize = 375f, SlotSize = 99f, BodyFrom = 129f, BodyTo = 246f;
     const float SlotOff = (MapSize - SlotSize) * 0.5f;   // 92
 
     static void PlaceSlot(VisualElement slot, Direction dir)
@@ -307,8 +313,8 @@ public class SplitterPanelView : UITKPopup
         switch (dir)
         {
             case Direction.North: slot.style.left = SlotOff; slot.style.top = 0f; break;
-            case Direction.South: slot.style.left = SlotOff; slot.style.top = BodyTo + 20f; break;
-            case Direction.East:  slot.style.left = BodyTo + 20f; slot.style.top = SlotOff; break;
+            case Direction.South: slot.style.left = SlotOff; slot.style.top = BodyTo + 30f; break;
+            case Direction.East:  slot.style.left = BodyTo + 30f; slot.style.top = SlotOff; break;
             default:              slot.style.left = 0f; slot.style.top = SlotOff; break;   // West
         }
     }
@@ -321,8 +327,8 @@ public class SplitterPanelView : UITKPopup
         line.pickingMode = PickingMode.Ignore;
 
         bool vertical = dir == Direction.North || dir == Direction.South;
-        float thick = 16f;
-        float length = longLine ? 80f : 20f;
+        float thick = 24f;
+        float length = longLine ? 120f : 30f;
 
         if (vertical)
         {
@@ -332,7 +338,7 @@ public class SplitterPanelView : UITKPopup
             line.style.top = dir == Direction.North
                 ? BodyFrom - length
                 : BodyTo;
-            if (longLine) line.style.top = dir == Direction.North ? 6f : MapSize - 6f - length;
+            if (longLine) line.style.top = dir == Direction.North ? 9f : MapSize - 9f - length;
         }
         else
         {
@@ -342,7 +348,7 @@ public class SplitterPanelView : UITKPopup
             line.style.left = dir == Direction.West
                 ? BodyFrom - length
                 : BodyTo;
-            if (longLine) line.style.left = dir == Direction.West ? 6f : MapSize - 6f - length;
+            if (longLine) line.style.left = dir == Direction.West ? 9f : MapSize - 9f - length;
         }
 
         if (on)
@@ -359,16 +365,16 @@ public class SplitterPanelView : UITKPopup
             {
                 var dot = new VisualElement();
                 dot.style.position = Position.Absolute;
-                dot.style.width = 4f;
-                dot.style.height = 4f;
-                dot.style.borderTopLeftRadius = 2f;
-                dot.style.borderTopRightRadius = 2f;
-                dot.style.borderBottomLeftRadius = 2f;
-                dot.style.borderBottomRightRadius = 2f;
+                dot.style.width = 6f;
+                dot.style.height = 6f;
+                dot.style.borderTopLeftRadius = 3f;
+                dot.style.borderTopRightRadius = 3f;
+                dot.style.borderBottomLeftRadius = 3f;
+                dot.style.borderBottomRightRadius = 3f;
                 dot.style.backgroundColor = new Color(0.18f, 0.26f, 0.40f);
                 float t = (i + 0.5f) / 3f;
-                if (vertical) { dot.style.left = thick * 0.5f - 2f; dot.style.top = length * t - 2f; }
-                else          { dot.style.top = thick * 0.5f - 2f;  dot.style.left = length * t - 2f; }
+                if (vertical) { dot.style.left = thick * 0.5f - 3f; dot.style.top = length * t - 3f; }
+                else          { dot.style.top = thick * 0.5f - 3f;  dot.style.left = length * t - 3f; }
                 line.Add(dot);
             }
         }
@@ -406,6 +412,7 @@ public class SplitterPanelView : UITKPopup
     {
         if (rows == null) return;
         rows.Clear();
+        tooltip?.Hide();   // 호버 중이던 행이 교체되면 Leave가 안 온다
 
         UpdateSelectionHeader();
 
@@ -476,6 +483,8 @@ public class SplitterPanelView : UITKPopup
         var meta = new Label(MetaOf(item));
         meta.AddToClassList("ui-allowrow__meta");
         row.Add(meta);
+
+        tooltip?.AttachItem(row, item);
 
         var captured = item;
         row.RegisterCallback<ClickEvent>(_ => Toggle(captured));
