@@ -35,6 +35,7 @@ public class TimeManager : MonoBehaviour
     {
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
+        transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
 
         Cycle = new DayCycle(dayDuration, nightDuration);

@@ -36,6 +36,7 @@ public static class GameDataImporter
         public ItemDto[]     items;
         public RecipeDto[]   recipes;
         public BuildingDto[] buildings;
+        public WaveDto[]     waves;
     }
 
     [Serializable] class ItemDto
@@ -87,6 +88,18 @@ public static class GameDataImporter
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
         public string[] ammoFilter;                          // Tower
+    }
+
+    [Serializable] class WaveDto
+    {
+        public string id;
+        public string displayName;
+        public string description;
+        public int day;
+        public int requiredCoreTier;
+        public int baseAmount;
+        public int maxAliveAmount;
+        public float spawnInterval;
     }
 
     /// <summary>
@@ -151,6 +164,12 @@ public static class GameDataImporter
             if (root?.buildings != null)
                 foreach (var dto in root.buildings)
                     ImportBuilding(file, dto, byId, ref created, ref updated, ref errors);
+
+        // 4패스: 웨이브
+        foreach (var (file, root) in roots)
+            if (root?.waves != null)
+                foreach (var dto in root.waves)
+                    ImportWave(file, dto, byId, ref created, ref updated, ref errors);
 
         AssetDatabase.SaveAssets();
         BuildingDatabaseScanner.RebuildAll();   // 아이템·건물 DB 재수집
@@ -246,6 +265,32 @@ public static class GameDataImporter
         recipe.outputs          = outputs;
 
         EditorUtility.SetDirty(recipe);
+        if (isNew) created++; else updated++;
+    }
+
+    // ── 웨이브 ────────────────────────────────────────────────
+
+    static void ImportWave(string file, WaveDto dto, Dictionary<string, GameDataSO> byId,
+        ref int created, ref int updated, ref int errors)
+    {
+        if (!ValidateKey(file, "waves", dto?.id, dto?.displayName, ref errors)) return;
+
+        var existing = Find<WaveDataSO>(byId, dto.id, file, ref errors);
+        if (existing == null && byId.ContainsKey(dto.id)) return;
+
+        bool isNew = existing == null;
+        var wave = existing != null ? existing
+            : (WaveDataSO)CreateAsset(typeof(WaveDataSO), dto.id, "Assets/Data/Wave", byId);
+
+        wave.displayName      = dto.displayName;
+        wave.description      = dto.description ?? "";
+        wave.day              = dto.day;
+        wave.requiredCoreTier = dto.requiredCoreTier;
+        wave.baseAmount       = dto.baseAmount;
+        wave.maxAliveAmount   = dto.maxAliveAmount;
+        wave.spawnInterval    = dto.spawnInterval;
+
+        EditorUtility.SetDirty(wave);
         if (isNew) created++; else updated++;
     }
 

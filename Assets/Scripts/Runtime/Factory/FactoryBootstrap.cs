@@ -30,6 +30,7 @@ public class FactoryBootstrap : MonoBehaviour
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         Sim = new FactorySim(_tps, _maxCatchUpTicks);
+        transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
 
         // 벨트 철거로 세그먼트에서 밀려난 아이템 → 월드 드롭 (통지 시점엔 벨트 뷰가 아직 살아있음)
