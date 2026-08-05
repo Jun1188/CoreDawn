@@ -16,8 +16,7 @@ MonoBehaviour:
   displayName: "\uCCA0 \uC8FC\uAD34 \uC81C\uB828"
   description: "\uC81C\uB828\uB85C 1\uC785\uB825."
   icon: {fileID: -17470339, guid: 6cc7b23bf440b764893f0618ca3b9932, type: 3}
-  tier: 0
-  requiredCoreTier: 1
+  tier: 1
   inputs:
   - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
     amount: 2

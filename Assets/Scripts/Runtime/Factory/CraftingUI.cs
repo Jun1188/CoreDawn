@@ -32,7 +32,7 @@ public class CraftingUI : MonoBehaviour
     public Slider progressBarSlider; 
 
     [Header("Crafting Display Policy")]
-    [Tooltip("체크 시 0티어(손제작) 외 고티어 레시피는 아예 스크롤뷰 목록에서 숨깁니다.")]
+    [Tooltip("체크 시 아직 해금되지 않은 레시피를 목록에서 아예 숨깁니다 (끄면 잠긴 채로 표시).")]
     [SerializeField] private bool hideNonHandCraftableRecipes = false;
 
     private RecipeDataSO selectedRecipe;
@@ -59,10 +59,10 @@ public class CraftingUI : MonoBehaviour
             processor.OnProductionStopped += OnCraftStopped;
         }
 
-        // RecipeManager 이벤트 구독
-        if (RecipeManager.Instance != null)
+        // 티어 해금 시 목록 갱신
+        if (GameManager.Instance != null)
         {
-            RecipeManager.Instance.OnTierUnlocked += OnTierUnlocked;
+            GameManager.Instance.TierUnlocked += OnTierUnlocked;
         }
 
         GenerateRecipeList();
@@ -77,9 +77,9 @@ public class CraftingUI : MonoBehaviour
             processor.OnProductionStopped -= OnCraftStopped;
         }
 
-        if (RecipeManager.Instance != null)
+        if (GameManager.Instance != null)
         {
-            RecipeManager.Instance.OnTierUnlocked -= OnTierUnlocked;
+            GameManager.Instance.TierUnlocked -= OnTierUnlocked;
         }
     }
 
@@ -102,20 +102,18 @@ public class CraftingUI : MonoBehaviour
             Destroy(child.gameObject);
         spawnedRecipeSlots.Clear();
 
-        if (RecipeManager.Instance == null) return;
+        var db = RecipeDatabaseSO.LoadDefault();
+        if (db == null || db.recipes == null) return;
 
-        var allRecipes = RecipeManager.Instance.GetAllRecipes();
-
-        foreach (var recipe in allRecipes)
+        foreach (var recipe in db.recipes)
         {
             if (recipe == null) continue;
 
-            bool isHandCraftable = (recipe.tier == 0);
-            bool isTierUnlocked = RecipeManager.Instance.IsTierUnlocked(recipe);
+            // 해금되면 전부 수동 제작이 가능하다 (레퍼런스 SCR-04) —
+            // 구 "tier==0만 손제작" 규칙은 폐기, tier는 해금 게이트 하나로 통합됐다
+            bool isSelectable = RecipeDatabaseSO.IsUnlocked(recipe);
 
-            if (hideNonHandCraftableRecipes && !isHandCraftable) continue;
-
-            bool isSelectable = isHandCraftable && isTierUnlocked;
+            if (hideNonHandCraftableRecipes && !isSelectable) continue;
 
             RecipeSlotUI slot = Instantiate(recipeSlotPrefab, recipeListContent);
             slot.Init(recipe, isSelectable, OnSelectRecipe);

@@ -56,8 +56,7 @@ public static class GameDataImporter
         public string id;            // 필수. 예: "Recipe:Recipe_IronIngot"
         public string displayName;   // 필수
         public string description;
-        public int    tier;
-        public int    requiredCoreTier;
+        public int    tier;          // 해금 코어 티어 (구 requiredCoreTier — 필드 통합)
         public float  craftTime = 2f;
         public SlotDto[] inputs;
         public SlotDto[] outputs;
@@ -255,7 +254,6 @@ public static class GameDataImporter
         recipe.displayName      = dto.displayName;
         recipe.description      = dto.description ?? "";
         recipe.tier             = dto.tier;
-        recipe.requiredCoreTier = dto.requiredCoreTier;
         recipe.craftTime        = dto.craftTime;
         recipe.inputs           = inputs;
         recipe.outputs          = outputs;

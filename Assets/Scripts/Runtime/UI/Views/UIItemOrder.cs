@@ -7,7 +7,7 @@ using System.Linq;
 /// 목록이 데이터베이스 순서(용도 → 이름)로만 나오면 플레이어에게는 순서가 없어 보인다.
 /// 실제로 물건을 찾을 때 쓰는 기준은 "언제 열리는 것인가(티어)"와 "어느 라인인가(계통)"다.
 ///
-/// 아이템 자체에는 티어가 없다. 그래서 그것을 만드는 레시피의 requiredCoreTier로 역산한다 —
+/// 아이템 자체에는 티어가 없다. 그래서 그것을 만드는 레시피의 tier로 역산한다 —
 /// 여러 레시피가 만들면 가장 이른 것, 레시피가 없으면(원광·회수물) 0이다.
 /// 티어를 아이템 데이터로 옮기게 되면 이 역산은 지우고 필드를 바로 읽으면 된다.
 /// </summary>
@@ -58,7 +58,7 @@ public static class UIItemOrder
                 if (r == null || r.outputs == null) continue;
 
                 // 레시피 자체의 티어와 그것을 돌리는 건물의 티어 중 늦은 쪽이 실제 해금 시점이다
-                int tier = System.Math.Max(r.requiredCoreTier, b.requiredCoreTier);
+                int tier = System.Math.Max(r.tier, b.requiredCoreTier);
 
                 foreach (var o in r.outputs)
                 {

@@ -174,8 +174,7 @@
       "id": "Recipe:Recipe_IronIngot",
       "displayName": "철 주괴 제련",
       "description": "제련로 1입력.",
-      "tier": 0,
-      "requiredCoreTier": 1,
+      "tier": 1,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -195,7 +194,6 @@
       "displayName": "철판 제작",
       "description": "제작기 1입력.",
       "tier": 1,
-      "requiredCoreTier": 1,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -215,7 +213,6 @@
       "displayName": "철 기어 제작",
       "description": "제작기 1입력.",
       "tier": 1,
-      "requiredCoreTier": 1,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -235,7 +232,6 @@
       "displayName": "기본 탄약 제작",
       "description": "제작기 1입력. 총기·기본 포탑 공용.",
       "tier": 1,
-      "requiredCoreTier": 1,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -255,7 +251,6 @@
       "displayName": "선체 패널 조립",
       "description": "게이트 ① 납품 부품. 티어 1에서는 작업대 수동 조립.",
       "tier": 1,
-      "requiredCoreTier": 1,
       "craftTime": 4.0,
       "inputs": [
         {
@@ -279,7 +274,6 @@
       "displayName": "구리 주괴 제련",
       "description": "제련로 1입력. 구리 라인 개방.",
       "tier": 2,
-      "requiredCoreTier": 2,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -299,7 +293,6 @@
       "displayName": "구리 전선 제작",
       "description": "제작기 1입력.",
       "tier": 2,
-      "requiredCoreTier": 2,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -319,7 +312,6 @@
       "displayName": "회로 기판 조립",
       "description": "조립기 2입력.",
       "tier": 2,
-      "requiredCoreTier": 2,
       "craftTime": 4.0,
       "inputs": [
         {
@@ -343,7 +335,6 @@
       "displayName": "유탄 조립",
       "description": "조립기 2입력. 유탄 발사기·박격포 타워 공용.",
       "tier": 2,
-      "requiredCoreTier": 2,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -367,7 +358,6 @@
       "displayName": "항법 제어 유닛 조립",
       "description": "게이트 ② 납품 부품. 조립기 2입력 — 게이트① 부품(선체 패널) 재소비.",
       "tier": 2,
-      "requiredCoreTier": 2,
       "craftTime": 6.0,
       "inputs": [
         {
@@ -391,7 +381,6 @@
       "displayName": "크리스탈 정제",
       "description": "제련로 1입력. Ring 2~3 원정 자원.",
       "tier": 3,
-      "requiredCoreTier": 3,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -411,7 +400,6 @@
       "displayName": "고밀도 탄약 조립",
       "description": "조립기 2입력. 구리 코팅 강화 탄약.",
       "tier": 2,
-      "requiredCoreTier": 2,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -435,7 +423,6 @@
       "displayName": "에너지 셀 조립",
       "description": "조립기 2입력.",
       "tier": 3,
-      "requiredCoreTier": 3,
       "craftTime": 4.0,
       "inputs": [
         {
@@ -459,7 +446,6 @@
       "displayName": "에너지 셀 탄 제작",
       "description": "제작기 1입력.",
       "tier": 3,
-      "requiredCoreTier": 3,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -479,7 +465,6 @@
       "displayName": "동력 모듈 제조",
       "description": "게이트 ③ 납품 부품. 제조기 4입력 — 괴수 핵이 공장 라인에 합류하는 유일한 지점.",
       "tier": 3,
-      "requiredCoreTier": 3,
       "craftTime": 10.0,
       "inputs": [
         {
@@ -511,7 +496,6 @@
       "displayName": "크리스탈 탄약 조립",
       "description": "조립기 2입력. 고밀도 탄약에 크리스탈 첨두를 결합.",
       "tier": 3,
-      "requiredCoreTier": 3,
       "craftTime": 3.0,
       "inputs": [
         {

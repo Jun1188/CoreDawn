@@ -71,9 +71,9 @@ public class AssemblerBehavior : IBuildingBehavior
                              $"입력 슬롯({_b.Input.SlotCount})보다 많아 거부됨");
             return;
         }
-        if (r != null && GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(r.requiredCoreTier))
+        if (r != null && GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(r.tier))
         {
-            Debug.LogWarning($"[Assembler] 레시피 '{r.displayName}'는 아직 해금되지 않음 (요구 Tier {r.requiredCoreTier})");
+            Debug.LogWarning($"[Assembler] 레시피 '{r.displayName}'는 아직 해금되지 않음 (요구 Tier {r.tier})");
             return;
         }
         _recipe = r;
@@ -82,7 +82,7 @@ public class AssemblerBehavior : IBuildingBehavior
     /// <summary>현재 해금된 레시피만 — 향후 레시피 선택 UI가 이걸로 목록을 채우면 게이팅이 자동 반영된다.</summary>
     public IEnumerable<RecipeDataSO> GetUnlockedRecipes() =>
         _data.availableRecipes.Where(r => r != null &&
-            (GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.requiredCoreTier)));
+            (GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.tier)));
 
     bool IsIngredient(ItemDataSO item)
     {

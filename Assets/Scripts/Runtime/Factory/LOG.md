@@ -581,3 +581,40 @@ JSON 쪽으로 채택하면서 **JSON이 커버하지 않는 필드가 있는지
 **교훈**: 컴파일 에러가 있으면 Unity는 마지막 성공 어셈블리로 계속 돈다.
 이 세션에서 변수명 충돌 하나 때문에 여러 턴의 "수정 확인"이 옛 코드로 돌고 있었다 —
 검증 전에 **콘솔 에러를 넓은 시간 범위로** 볼 것.
+
+---
+
+## 2026-08-05 — 레시피 데이터 정리: 티어 필드 통합 · RecipeDatabaseSO
+
+### tier / requiredCoreTier → tier 하나로
+
+같은 개념(해금 코어 티어)이 두 필드에 있었고, 유일한 차이 소비자였던
+"tier==0만 손제작" 규칙이 SCR-04에서 폐기되면서(해금 = 손제작 가능) 존재 이유가 사라졌다.
+실제로 `Recipe_IronIngot`이 `tier 0 · requiredCoreTier 1`로 어긋나 있었다 —
+같은 수치를 두 곳에 적으면 반드시 어긋난다(코어 내구도 때와 같은 교훈).
+JSON·에셋은 게이트 값으로 정리됨 (철 주괴도 tier 1 — 첫 수리 전에는 제작 불가가 의도).
+
+### RecipeManager(씬 싱글턴) → RecipeDatabaseSO(Resources)
+
+확인해 보니 RecipeManager는 세 가지가 곪아 있었다:
+
+- **빌드에서 레시피 0개** — `Resources.LoadAll`로 읽는데 레시피는 Resources 밖.
+  `#if UNITY_EDITOR` 폴백(AssetDatabase 스캔)이 가려서 에디터에서만 멀쩡했다
+- **UITest 씬에만 존재** — DDOL 싱글턴이라 다른 씬 시작 시 Instance null → 수제작 사망
+- 티어 검사·해금 이벤트는 GameManager의 껍데기, GetRecipes는 사용처 0
+
+Building/ItemDatabaseSO와 같은 패턴으로 교체: **데이터는 Data에, 런타임 진입점(DB 에셋)만
+Resources에**. `BuildingDatabaseScanner`가 레시피 SO 생성/삭제 시 자동 재수집한다.
+티어 검사는 `RecipeDatabaseSO.IsUnlocked`(GameManager 없는 씬은 해금 취급 — 건설 메뉴와
+같은 규칙), 해금 이벤트는 `GameManager.TierUnlocked` 직접 구독.
+
+### ItemContainer — 변경 통지가 변경보다 먼저 나가고 있었다
+
+`TryAdd`/`TryConsume`가 `Touch()`를 **슬롯을 만지기 전에** 호출했다. Version 폴링만 있던
+시절에는 안 드러났지만, `Changed` 구독자가 생기자(핫바 HUD·인벤토리 패널) 구독자가
+항상 **변경 직전 상태**를 다시 그리고 끝났다 — "마우스를 움직여야 반영되는" 증상의 진범.
+Touch를 변경 완료 뒤로 옮겼다. 다른 연산(TakeAt·TryPutAt·TryExchangeAt)은 원래 올바랐다.
+시나리오 테스트 13/13 유지.
+
+부수: HotbarUI가 `RefreshAllGameUIs` 호출에만 기대지 않고 컨테이너 `Changed`를 직접
+구독한다 — 제작 소비든 월드 줍기든 누가 바꿨든 HUD가 즉시 따라온다.
