@@ -2623,8 +2623,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7672c0d6c9c0a554e8d61e413118ea5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryHolder
-  hotbarSize: 9
-  mainInventorySize: 27
+  hotbarSize: 7
+  mainInventorySize: 18
   craftingInputSize: 4
   craftingOutputSize: 4
   startingItems:
