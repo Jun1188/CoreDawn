@@ -44,8 +44,8 @@
                         <ui:Button name="btn-block-all" text="전체 차단" class="ui-btn ui-btn--danger splitter-list__btn" />
                     </ui:VisualElement>
 
-                    <ui:VisualElement class="ui-search splitter-list__search">
-                        <ui:TextField name="search" class="ui-search__input" />
+                    <ui:VisualElement name="search-box" class="ui-search splitter-list__search">
+                        <ui:TextField name="search" placeholder-text="아이템 검색" class="ui-search__input" />
                     </ui:VisualElement>
 
                     <ui:ScrollView name="rows-scroll" class="ui-scroll splitter-list__scroll">

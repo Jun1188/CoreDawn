@@ -83,6 +83,11 @@ public class SplitterPanelView : UITKPopup
         btnBlockAll.clicked += BlockAll;
         searchField.RegisterValueChangedCallback(OnSearchChanged);
 
+        // 돋보기 — USS에 SVG가 없어 요소로 넣는다. Bind가 다시 돌아도 하나만
+        var searchBox = r.Q("search-box");
+        if (searchBox != null && searchBox.Q<SearchGlyph>() == null)
+            searchBox.Insert(0, new SearchGlyph());
+
         RebuildAll();
     }
 

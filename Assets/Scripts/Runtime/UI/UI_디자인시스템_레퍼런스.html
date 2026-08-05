@@ -301,6 +301,8 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 .ui-btn--hold{position:relative;overflow:hidden;justify-content:center}
 .ui-btn--hold .ui-btn__fill{position:absolute;left:0;top:0;bottom:0;background:rgba(79,216,224,.22);pointer-events:none}
 .ui-btn--hold .ui-btn__label{position:relative;display:flex;align-items:center;gap:var(--space-2)}
+.ui-btn__label--split{width:100%;justify-content:space-between}
+.ui-btn__time{font-family:var(--font-data);font-size:11.5px;color:var(--text-faint)}
 .ui-mat{display:flex;align-items:center;gap:var(--space-2);padding:5px var(--space-2);
   background:var(--bg-inset);border:1px solid transparent;border-left-width:2px;border-radius:var(--r-sm)}
 .ui-mat__name{font-size:12px;color:var(--text-dim)}
@@ -338,7 +340,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 .ui-search__clear:hover{color:var(--text)}
 
 /* 스크롤 목록 */
-.ui-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+.ui-scroll{overflow-y:scroll;overscroll-behavior:contain;scrollbar-width:thin;
   scrollbar-color:var(--line-strong) transparent;padding-right:4px}
 .ui-scroll::-webkit-scrollbar{width:6px}
 .ui-scroll::-webkit-scrollbar-track{background:transparent}
@@ -538,7 +540,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
         <button class="ui-btn ui-btn--ghost">건너뛰기</button>
         <button class="ui-btn ui-btn--disabled" disabled>재료 부족</button>
         <button class="ui-btn">건설 메뉴 <span class="ui-btn__key">B</span></button>
-        <button class="ui-btn ui-btn--primary ui-btn--hold" style="min-width:220px">
+        <button class="ui-btn ui-btn--primary ui-btn--hold" style="min-width:240px">
           <span class="ui-btn__fill" style="width:42%"></span>
           <span class="ui-btn__label">누르고 있는 동안 제작 <span class="ui-btn__key">HOLD</span></span>
         </button>
@@ -855,7 +857,8 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
         <dl>
           <dt>높이</dt><dd>입력 30px 고정. 포커스 시 테두리 --copper</dd>
           <dt>지우기</dt><dd>입력값이 있을 때만 ✕ 표시</dd>
-          <dt>스크롤바</dt><dd>6px, --line-strong. 항상 보이게 두어 <b>더 있다</b>는 사실을 숨기지 않는다</dd>
+          <dt>스크롤바</dt><dd>6px, --line-strong. <code>overflow-y:scroll</code> 로 <b>항상 자리를 차지한다</b></dd>
+          <dt>왜 auto가 아닌가</dt><dd>검색으로 걸러 목록이 짧아질 때마다 폭이 6px씩 흔들리면 행이 재배치된다</dd>
           <dt>UITK</dt><dd><code>ScrollView</code> + <code>TextField</code>. 목록은 <code>ListView</code>로 가상화</dd>
         </dl>
         <p class="usage">항목이 <b>여덟 개를 넘길 가능성</b>이 있으면 검색과 스크롤을 같이 넣는다. 레시피는 티어가 오를수록 계속 늘어나므로 처음부터 넣어둔다.</p>
@@ -1489,56 +1492,94 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 
               <!-- 수동 제작 -->
               <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-3)">HAND CRAFT</div>
-              <div style="display:grid;grid-template-columns:236px minmax(0,1fr);gap:var(--space-4)">
-                <div>
-                  <div class="ui-search" style="margin-bottom:var(--space-2)">
+              <div style="display:grid;grid-template-columns:236px minmax(0,1fr);gap:var(--space-4);align-items:stretch;height:236px">
+
+                <!-- 좌: 검색 + 목록 -->
+                <div style="display:flex;flex-direction:column;min-height:0">
+                  <div class="ui-search" style="margin-bottom:var(--space-2);flex-shrink:0">
                     <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
                       <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
                       <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
                     <input class="ui-search__input" type="text" placeholder="레시피 검색">
                   </div>
-                  <div class="ui-scroll" style="display:flex;flex-direction:column;gap:2px;max-height:126px">
+                  <div class="ui-scroll" style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0">
                     <div class="ui-row ui-row--selected" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">선체 패널</span><span class="ui-row__meta">4.0s</span></div>
+                      <div class="ui-slot__icon" style="background:var(--crystal);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">동력 모듈</span><span class="ui-row__meta">10.0s</span>
+                    </div>
                     <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
                       <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">철판</span><span class="ui-row__meta">3.0s</span></div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">철 기어</span><span class="ui-row__meta">3.0s</span></div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">철 주괴</span><span class="ui-row__meta">2.0s</span></div>
+                      <span class="ui-row__name" style="font-size:12.5px">선체 패널</span><span class="ui-row__meta">4.0s</span>
+                    </div>
                     <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
                       <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">회로 기판</span><span class="ui-row__meta">4.0s</span></div>
+                      <span class="ui-row__name" style="font-size:12.5px">항법 제어 유닛</span><span class="ui-row__meta">6.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--crystal);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">에너지 셀</span><span class="ui-row__meta">4.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">크리스탈 탄약</span><span class="ui-row__meta">3.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">고밀도 탄약</span><span class="ui-row__meta">3.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">회로 기판</span><span class="ui-row__meta">4.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">구리 전선</span><span class="ui-row__meta">2.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">철판</span><span class="ui-row__meta">3.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">철 기어</span><span class="ui-row__meta">3.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">기본 탄약</span><span class="ui-row__meta">2.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
+                      <span class="ui-row__name" style="font-size:12.5px">철 주괴</span><span class="ui-row__meta">2.0s</span>
+                    </div>
                   </div>
                 </div>
 
-                <div style="display:flex;flex-direction:column">
-                  <div class="ui-yield" style="margin-bottom:var(--space-3)">
-                    <div class="ui-slot" style="width:40px;height:40px"><div class="ui-slot__icon" style="background:var(--iron)"></div></div>
+                <!-- 우: 선택 레시피 상세 -->
+                <div style="display:flex;flex-direction:column;min-height:0">
+                  <div class="ui-yield" style="margin-bottom:var(--space-2);flex-shrink:0">
+                    <div class="ui-slot" style="width:40px;height:40px"><div class="ui-slot__icon" style="background:var(--crystal)"></div></div>
                     <div style="flex:1;min-width:0">
-                      <div style="font-size:13px;color:var(--iron);font-weight:500">선체 패널</div>
+                      <div style="font-size:13px;color:var(--crystal);font-weight:500">동력 모듈</div>
                       <div style="font-size:11px;color:var(--text-faint)">회당 1개 산출</div>
                     </div>
-                    <span class="ui-timepill">◷ 4.0s</span>
+                    <span class="ui-timepill">◷ 10.0s</span>
                   </div>
-                  <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-3)">
-                    <div class="ui-mat ui-mat--iron"><span class="ui-mat__name">철판</span>
-                      <span class="ui-mat__n">2 <span class="ui-num--dim">/ 31</span></span></div>
-                    <div class="ui-mat ui-mat--iron"><span class="ui-mat__name">철 기어</span>
-                      <span class="ui-mat__n">1 <span class="ui-num--dim">/ 64</span></span></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+                    <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">항법 제어 유닛</span>
+                      <span class="ui-mat__n">1 <span class="ui-num--dim">/ 3</span></span></div>
+                    <div class="ui-mat ui-mat--iron"><span class="ui-mat__name">선체 패널</span>
+                      <span class="ui-mat__n">1 <span class="ui-num--dim">/ 12</span></span></div>
+                    <div class="ui-mat ui-mat--crystal"><span class="ui-mat__name">에너지 셀</span>
+                      <span class="ui-mat__n">2 <span class="ui-num--dim">/ 9</span></span></div>
+                    <div class="ui-mat ui-mat--beast"><span class="ui-mat__name">괴수 핵</span>
+                      <span class="ui-mat__n">1 <span class="ui-num--short">/ 0</span></span></div>
                   </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-2);margin:auto 0 var(--space-2)">
-                    <div class="ui-bar ui-bar--iron" style="flex:1;min-width:0"><div class="ui-bar__fill" style="width:42%"></div></div>
-                    <span style="font-family:var(--font-data);font-size:11px;color:var(--text-faint)">2.3s</span>
-                  </div>
-                  <button class="ui-btn ui-btn--primary ui-btn--hold" style="width:100%;padding:var(--space-2)">
-                    <span class="ui-btn__fill" style="width:42%"></span>
-                    <span class="ui-btn__label">누르고 있는 동안 제작 <span class="ui-btn__key">HOLD</span></span>
+                  <button class="ui-btn ui-btn--disabled ui-btn--hold" style="width:100%;padding:var(--space-2);margin-top:auto;flex-shrink:0">
+                    <span class="ui-btn__label ui-btn__label--split">
+                      <span>재료 부족</span>
+                      <span class="ui-btn__time">10.0s</span>
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1592,6 +1633,15 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
       수동 제작은 <b style="color:var(--text)">인벤토리 안에 들어간다</b> — 티어 0~1에서만 쓰는 기능에 별도 화면을 주면 자동화 이후 죽은 UI가 남는다.
       목록에는 <b style="color:var(--text)">해금된 레시피만</b> 올린다 — 해금되면 전부 수동 제작이 가능하므로 "잠김" 줄을 보여줄 이유가 없다.
       대신 티어가 오르면 목록이 계속 길어지므로 <b style="color:var(--text)">검색과 스크롤</b>을 처음부터 넣는다.
+      재료가 넷인 레시피(동력 모듈)를 기준으로 잡았다 — 해금된 레시피는 전부 수동 제작이 가능하므로
+      <b style="color:var(--text)">4재료가 최악의 경우</b>이고, 그게 들어가는 높이면 나머지는 다 들어간다.
+      <b style="color:var(--text)">재료는 스크롤하지 않는다</b> — 최대가 4종(제조기 4입력)이라 항상 다 보이는 높이로 잡으면 된다.
+      개수가 정해진 목록에 스크롤을 붙이면 마지막 재료가 가려져 "이게 전부인가"를 매번 확인하게 된다.
+      제작 영역은 <b style="color:var(--text)">높이를 고정</b>한다 — 레시피가 늘어난다고 창이 길어지면
+      아래 소지품·핫바가 화면 밖으로 밀려난다. 목록과 재료는 그 안에서 스크롤되고 버튼은 항상 바닥에 붙는다.
+      부족한 재료는 <b style="color:var(--danger)">보유 수를 붉게</b> 칠하고 버튼 라벨이 <b style="color:var(--text)">무엇이 없는지</b> 말한다.
+      진행 표시는 <b style="color:var(--text)">버튼 하나에만</b> 둔다 — 위에 진행바를 따로 두면 같은 값을 두 번 말하고,
+      정작 커서가 올라가 있는 곳은 버튼이다. 남은 시간은 버튼 오른쪽 끝에 붙여 채움과 숫자가 한 덩어리로 읽힌다.
       제작은 수량을 미리 고르지 않고 <b style="color:var(--text)">버튼을 누르고 있는 동안 계속 만든다</b> — 버튼 안이 차오르면 한 개 완성,
       떼면 그 자리에서 멈춘다. 몇 개가 필요할지 미리 세지 않아도 되고, 재료가 떨어지면 자동으로 멈춘다.
       시간은 목록의 <b style="color:var(--text)">회당 시간</b>(레시피 비교용), 상세의 <b style="color:var(--text)">시간 배지</b>,

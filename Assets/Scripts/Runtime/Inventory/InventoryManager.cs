@@ -37,7 +37,12 @@ public class InventoryManager : MonoBehaviour
         CloseScreen();
     }
 
-    public void OpenPlayerScreen() => OpenScreen(null);
+    public void OpenPlayerScreen()
+    {
+        // UITK 패널(SCR-04)이 있는 씬은 그쪽으로 — 없으면 기존 uGUI 화면 (분배기와 같은 이관 패턴)
+        if (InventoryPanelView.TryOpen()) return;
+        OpenScreen(null);
+    }
 
     public void OpenContainerScreen(ItemContainer container)
     {
