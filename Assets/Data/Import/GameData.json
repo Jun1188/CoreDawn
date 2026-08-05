@@ -165,7 +165,7 @@
       "displayName": "크리스탈 탄약",
       "description": "크리스탈 첨두 관통탄. T3 물리 계열 최상위 탄약 — 저격소총·중기관 포탑 상위 호환.",
       "type": "Ammo",
-      "line": "Iron",
+      "line": "Crystal",
       "icon": ""
     }
   ],
