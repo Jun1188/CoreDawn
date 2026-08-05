@@ -39,18 +39,18 @@
   --warn:#E8A54B;      /* = iron. 문맥이 달라 충돌하지 않는다 (§1 참고) */
   --danger:#FF5D73;    /* = beast. 둘 다 "적대·주의"를 뜻한다 */
 
-  /* 간격 — 4의 배수만 사용 */
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
+  /* 간격 — 6의 배수만 사용 */
+  --space-1:6px; --space-2:12px; --space-3:18px; --space-4:24px; --space-5:36px; --space-6:48px;
 
   /* 모서리 */
-  --r-sm:4px; --r-md:6px; --r-lg:9px; --r-pill:999px;
+  --r-sm:6px; --r-md:9px; --r-lg:13.5px; --r-pill:999px;
 
   /* 글자 크기 */
-  --fs-micro:11px;   /* 라벨, 키 힌트 */
-  --fs-cap:12.5px;   /* 보조 설명 */
-  --fs-body:14px;
-  --fs-sub:16px;
-  --fs-title:20px;
+  --fs-micro:16.5px;   /* 라벨, 키 힌트 */
+  --fs-cap:18.8px;   /* 보조 설명 */
+  --fs-body:21px;
+  --fs-sub:24px;
+  --fs-title:30px;
 
   /* 폰트 역할 */
   --font-display:'Chakra Petch',sans-serif;  /* 영문 라벨, 시스템 문구 */
@@ -150,22 +150,22 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
    ═══════════════════════════════════════════════════════════ */
 
 /* 패널 */
-.ui-panel{background:var(--bg-panel);border:1px solid var(--line-strong);border-radius:var(--r-lg);
-  min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.45)}
+.ui-panel{background:var(--bg-panel);border:1.5px solid var(--line-strong);border-radius:var(--r-lg);
+  min-width:360px;box-shadow:0 12px 48px rgba(0,0,0,.45)}
 .ui-panel__title{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);
-  border-bottom:1px solid var(--line);font-size:var(--fs-cap);font-weight:600;letter-spacing:.04em;color:var(--text)}
-.ui-panel__title .tag{font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--copper);
-  border:1px solid rgba(79,216,224,.35);border-radius:var(--r-sm);padding:1px 6px}
-.ui-panel__x{width:22px;height:22px;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;
-  background:transparent;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--text-faint);
-  font-family:var(--font-data);font-size:12px;line-height:1;cursor:pointer;flex-shrink:0}
+  border-bottom:1.5px solid var(--line);font-size:var(--fs-cap);font-weight:600;letter-spacing:.04em;color:var(--text)}
+.ui-panel__title .tag{font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--copper);
+  border:1.5px solid rgba(79,216,224,.35);border-radius:var(--r-sm);padding:1.5px 9px}
+.ui-panel__x{width:33px;height:33px;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border:1.5px solid var(--line);border-radius:var(--r-sm);color:var(--text-faint);
+  font-family:var(--font-data);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0}
 .ui-panel__x:hover{border-color:var(--danger);color:var(--danger);background:rgba(255,93,115,.08)}
 .ui-panel__body{padding:var(--space-4)}
 .ui-panel--inset{background:var(--bg-inset);border-color:var(--line)}
 
 /* 버튼 */
-.ui-btn{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text);
-  background:var(--bg-raised);border:1px solid var(--line-strong);border-radius:var(--r-md);
+.ui-btn{font-family:var(--font-body);font-size:19.5px;font-weight:500;color:var(--text);
+  background:var(--bg-raised);border:1.5px solid var(--line-strong);border-radius:var(--r-md);
   padding:var(--space-2) var(--space-4);cursor:pointer;display:inline-flex;align-items:center;gap:var(--space-2);
   transition:border-color .12s,background .12s}
 .ui-btn:hover{border-color:var(--copper);background:#1B2C48}
@@ -175,25 +175,25 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 .ui-btn--danger:hover{background:rgba(255,93,115,.15)}
 .ui-btn--ghost{background:transparent;border-color:var(--line);color:var(--text-dim)}
 .ui-btn:disabled,.ui-btn--disabled{opacity:.4;cursor:not-allowed;border-color:var(--line);background:var(--bg-inset);color:var(--text-faint)}
-.ui-btn__key{font-family:var(--font-data);font-size:10px;color:var(--text-faint);
-  border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:var(--space-1)}
+.ui-btn__key{font-family:var(--font-data);font-size:15px;color:var(--text-faint);
+  border:1.5px solid var(--line);border-radius:4.5px;padding:0 6px;margin-left:var(--space-1)}
 
 /* 진행바 — 연속형 */
-.ui-bar{height:8px;background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden;min-width:120px}
+.ui-bar{height:12px;background:var(--bg-inset);border:1.5px solid var(--line);border-radius:var(--r-pill);overflow:hidden;min-width:180px}
 .ui-bar__fill{height:100%;background:var(--copper);border-radius:var(--r-pill)}
 .ui-bar--iron .ui-bar__fill{background:var(--iron)}
 .ui-bar--crystal .ui-bar__fill{background:var(--crystal)}
 .ui-bar--danger .ui-bar__fill{background:var(--danger)}
-.ui-bar--thick{height:14px}
+.ui-bar--thick{height:21px}
 
 /* 진행바 — 분할형 (탄창, 웨이브 잔여 등 셀 수 있는 것) */
-.ui-seg{display:flex;gap:3px}
-.ui-seg i{width:9px;height:14px;border-radius:2px;background:var(--iron);opacity:.9}
-.ui-seg i.empty{background:transparent;border:1px solid var(--line-strong);opacity:.6}
+.ui-seg{display:flex;gap:4.5px}
+.ui-seg i{width:13.5px;height:21px;border-radius:3px;background:var(--iron);opacity:.9}
+.ui-seg i.empty{background:transparent;border:1.5px solid var(--line-strong);opacity:.6}
 
 /* 칩 — 부품 수량 */
-.ui-chip{display:inline-flex;align-items:center;gap:var(--space-2);font-size:12px;color:var(--text-dim);
-  background:var(--bg-inset);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:3px 9px}
+.ui-chip{display:inline-flex;align-items:center;gap:var(--space-2);font-size:18px;color:var(--text-dim);
+  background:var(--bg-inset);border:1.5px solid var(--line-strong);border-radius:var(--r-sm);padding:4.5px 13.5px}
 .ui-chip__n{font-family:var(--font-data);font-weight:600}
 .ui-chip--iron{border-color:rgba(232,165,75,.5)} .ui-chip--iron .ui-chip__n{color:var(--iron)}
 .ui-chip--copper{border-color:rgba(79,216,224,.5)} .ui-chip--copper .ui-chip__n{color:var(--copper)}
@@ -204,213 +204,237 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 .ui-chip--short .ui-chip__n{color:var(--danger)}
 
 /* 아이템 슬롯 */
-.ui-slot{width:52px;height:52px;background:var(--bg-inset);border:1px solid var(--line-strong);
+.ui-slot{width:78px;height:78px;background:var(--bg-inset);border:1.5px solid var(--line-strong);
   border-radius:var(--r-md);position:relative;display:flex;align-items:center;justify-content:center}
-.ui-slot__icon{width:26px;height:26px;border-radius:3px;background:var(--line-strong)}
-.ui-slot__n{position:absolute;right:4px;bottom:3px;line-height:1;font-family:var(--font-data);font-size:var(--fs-micro);
+.ui-slot__icon{width:39px;height:39px;border-radius:4.5px;background:var(--line-strong)}
+.ui-slot__n{position:absolute;right:6px;bottom:4.5px;line-height:1;font-family:var(--font-data);font-size:var(--fs-micro);
   font-weight:600;color:#fff;
-  text-shadow:0 0 2px #000, 1px 0 1px #000, -1px 0 1px #000, 0 1px 1px #000, 0 -1px 1px #000;
-  -webkit-text-stroke:.4px rgba(0,0,0,.9);paint-order:stroke fill}
-.ui-slot--active{border-color:var(--copper);box-shadow:0 0 0 1px rgba(79,216,224,.35)}
-.ui-slot--empty .ui-slot__icon{background:transparent;border:1px dashed var(--line)}
-.ui-slot__key{position:absolute;left:4px;top:3px;line-height:1;font-family:var(--font-data);font-size:9px;color:var(--text-faint)}
+  text-shadow:0 0 3px #000, 1.5px 0 1.5px #000, -1.5px 0 1.5px #000, 0 1.5px 1.5px #000, 0 -1.5px 1.5px #000;
+  -webkit-text-stroke:0.6px rgba(0,0,0,.9);paint-order:stroke fill}
+.ui-slot--active{border-color:var(--copper);box-shadow:0 0 0 1.5px rgba(79,216,224,.35)}
+.ui-slot--empty .ui-slot__icon{background:transparent;border:1.5px dashed var(--line)}
+.ui-slot__key{position:absolute;left:6px;top:4.5px;line-height:1;font-family:var(--font-data);font-size:13.5px;color:var(--text-faint)}
 
 /* 리스트 행 */
 .ui-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);
-  border-radius:var(--r-md);border:1px solid transparent;cursor:pointer;min-width:280px}
+  border-radius:var(--r-md);border:1.5px solid transparent;cursor:pointer;min-width:420px}
 .ui-row:hover{background:var(--bg-raised)}
 .ui-row--selected{background:var(--bg-raised);border-color:var(--copper)}
-.ui-row__name{font-size:13px}
+.ui-row__name{font-size:19.5px}
 .ui-row__meta{margin-left:auto;font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text-faint)}
 .ui-row--locked{opacity:.45;cursor:not-allowed}
 
 /* 탭 */
-.ui-tabs{display:flex;gap:var(--space-1);border-bottom:1px solid var(--line)}
-.ui-tab{font-size:12.5px;color:var(--text-faint);padding:var(--space-2) var(--space-3);
-  border-bottom:2px solid transparent;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none}
+.ui-tabs{display:flex;gap:var(--space-1);border-bottom:1.5px solid var(--line)}
+.ui-tab{font-size:18.8px;color:var(--text-faint);padding:var(--space-2) var(--space-3);
+  border-bottom:3px solid transparent;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none}
 .ui-tab--active{color:var(--copper);border-bottom-color:var(--copper)}
 
 /* 툴팁 */
-.ui-tooltip{background:var(--bg-panel);border:1px solid var(--line-strong);border-radius:var(--r-md);
-  padding:var(--space-3);max-width:260px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
-.ui-tooltip__name{font-size:13px;font-weight:600;margin-bottom:2px}
-.ui-tooltip__type{font-family:var(--font-display);font-size:10px;letter-spacing:.1em;color:var(--text-faint);margin-bottom:var(--space-2)}
-.ui-tooltip__desc{font-size:12px;color:var(--text-dim);line-height:1.55}
-.ui-tooltip__sep{height:1px;background:var(--line);margin:var(--space-2) 0}
-.ui-tooltip__stat{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim)}
+.ui-tooltip{background:var(--bg-panel);border:1.5px solid var(--line-strong);border-radius:var(--r-md);
+  padding:var(--space-3);max-width:390px;box-shadow:0 9px 36px rgba(0,0,0,.5)}
+.ui-tooltip__name{font-size:19.5px;font-weight:600;margin-bottom:3px}
+.ui-tooltip__type{font-family:var(--font-display);font-size:15px;letter-spacing:.1em;color:var(--text-faint);margin-bottom:var(--space-2)}
+.ui-tooltip__desc{font-size:18px;color:var(--text-dim);line-height:1.55}
+.ui-tooltip__sep{height:1.5px;background:var(--line);margin:var(--space-2) 0}
+.ui-tooltip__stat{display:flex;justify-content:space-between;font-size:18px;color:var(--text-dim)}
 .ui-tooltip__stat b{font-family:var(--font-data);color:var(--text);font-weight:500}
 
 /* 키 힌트 */
-.ui-key{display:inline-flex;align-items:center;gap:var(--space-2);font-size:12px;color:var(--text-dim)}
+.ui-key{display:inline-flex;align-items:center;gap:var(--space-2);font-size:18px;color:var(--text-dim)}
 .ui-key__cap{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--text);
-  background:var(--bg-inset);border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:var(--r-sm);padding:1px 6px}
+  background:var(--bg-inset);border:1.5px solid var(--line-strong);border-bottom-width:3px;border-radius:var(--r-sm);padding:1.5px 9px}
 
 /* 라벨 + 수치 (HUD 공용) */
-.ui-stat{display:flex;flex-direction:column;gap:2px}
-.ui-stat__label{font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)}
+.ui-stat{display:flex;flex-direction:column;gap:3px}
+.ui-stat__label{font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint)}
 .ui-stat__value{font-family:var(--font-data);font-size:var(--fs-sub);color:var(--text)}
 
 /* 수량 스테퍼 */
-.ui-stepper{display:inline-flex;align-items:center;gap:1px;background:var(--bg-inset);
-  border:1px solid var(--line-strong);border-radius:var(--r-md);overflow:hidden}
-.ui-stepper__btn{width:24px;height:26px;background:transparent;border:none;color:var(--text-dim);
-  font-family:var(--font-data);font-size:13px;cursor:pointer;line-height:1}
+.ui-stepper{display:inline-flex;align-items:center;gap:1.5px;background:var(--bg-inset);
+  border:1.5px solid var(--line-strong);border-radius:var(--r-md);overflow:hidden}
+.ui-stepper__btn{width:36px;height:39px;background:transparent;border:none;color:var(--text-dim);
+  font-family:var(--font-data);font-size:19.5px;cursor:pointer;line-height:1}
 .ui-stepper__btn:hover{background:var(--bg-raised);color:var(--copper)}
-.ui-stepper__n{width:40px;text-align:center;font-family:var(--font-data);font-size:12.5px;color:var(--text);
-  border-left:1px solid var(--line);border-right:1px solid var(--line);line-height:26px}
-.ui-stepper__max{height:26px;padding:0 8px;background:transparent;border:none;border-left:1px solid var(--line);
-  font-family:var(--font-display);font-size:10px;letter-spacing:.08em;color:var(--text-faint);cursor:pointer}
+.ui-stepper__n{width:60px;text-align:center;font-family:var(--font-data);font-size:18.8px;color:var(--text);
+  border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);line-height:39px}
+.ui-stepper__max{height:39px;padding:0 12px;background:transparent;border:none;border-left:1.5px solid var(--line);
+  font-family:var(--font-display);font-size:15px;letter-spacing:.08em;color:var(--text-faint);cursor:pointer}
 .ui-stepper__max:hover{color:var(--copper)}
 .ui-stepper--off{opacity:.35;pointer-events:none}
 
 /* 데이터 표 (납품·재료 목록) */
-.ui-table{display:grid;gap:2px}
+.ui-table{display:grid;gap:3px}
 .ui-table__head,.ui-table__row{display:grid;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3)}
 .ui-table__head>*,.ui-table__row>*{min-width:0}
 .ui-table .ui-bar{min-width:0}
 .ui-table .ui-chip{min-width:0;overflow:hidden}
-.ui-table__head{font-family:var(--font-display);font-size:10px;letter-spacing:.1em;color:var(--text-faint);
-  border-bottom:1px solid var(--line);padding-bottom:var(--space-2)}
-.ui-table__row{background:var(--bg-inset);border:1px solid transparent;border-radius:var(--r-md)}
+.ui-table__head{font-family:var(--font-display);font-size:15px;letter-spacing:.1em;color:var(--text-faint);
+  border-bottom:1.5px solid var(--line);padding-bottom:var(--space-2)}
+.ui-table__row{background:var(--bg-inset);border:1.5px solid transparent;border-radius:var(--r-md)}
 .ui-table__row:hover{border-color:var(--line-strong)}
 .ui-table__row--done{opacity:.62}
-.ui-num{font-family:var(--font-data);font-size:12.5px;color:var(--text)}
+.ui-num{font-family:var(--font-data);font-size:18.8px;color:var(--text)}
 .ui-num--dim{color:var(--text-faint)}
 .ui-num--short{color:var(--danger)}
 .ui-num--ok{color:var(--ok)}
 
 /* 수리 단계 레일 (패널 좌측) */
-.ui-rail{display:flex;flex-direction:column;gap:0;padding-right:var(--space-4);border-right:1px solid var(--line)}
+.ui-rail{display:flex;flex-direction:column;gap:0;padding-right:var(--space-4);border-right:1.5px solid var(--line)}
 .ui-rail__step{display:flex;gap:var(--space-3);align-items:flex-start;padding-bottom:var(--space-4);position:relative}
-.ui-rail__step::after{content:"";position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--line)}
+.ui-rail__step::after{content:"";position:absolute;left:16.5px;top:36px;bottom:0;width:1.5px;background:var(--line)}
 .ui-rail__step:last-child{padding-bottom:0}
 .ui-rail__step:last-child::after{display:none}
-.ui-rail__dot{width:23px;height:23px;border-radius:50%;border:1.5px solid var(--line-strong);background:var(--bg-panel);
-  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:11px;
+.ui-rail__dot{width:34.5px;height:34.5px;border-radius:50%;border:2.2px solid var(--line-strong);background:var(--bg-panel);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16.5px;
   color:var(--text-faint);flex-shrink:0;z-index:1}
 .ui-rail__step--done .ui-rail__dot{border-color:var(--ok);color:var(--ok)}
-.ui-rail__step--active .ui-rail__dot{border-color:var(--crystal);color:var(--crystal);box-shadow:0 0 0 3px rgba(180,140,255,.15)}
-.ui-rail__label{font-size:12.5px;color:var(--text-faint);line-height:1.35;padding-top:3px}
+.ui-rail__step--active .ui-rail__dot{border-color:var(--crystal);color:var(--crystal);box-shadow:0 0 0 4.5px rgba(180,140,255,.15)}
+.ui-rail__label{font-size:18.8px;color:var(--text-faint);line-height:1.35;padding-top:4.5px}
 .ui-rail__step--active .ui-rail__label{color:var(--text)}
-.ui-rail__sub{display:block;font-size:10.5px;color:var(--text-faint);margin-top:1px}
+.ui-rail__sub{display:block;font-size:15.8px;color:var(--text-faint);margin-top:1.5px}
 
 /* 제작 결과 미리보기 */
 .ui-yield{display:flex;align-items:center;gap:var(--space-3);background:var(--bg-inset);
-  border:1px solid var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)}
-.ui-yield__arrow{color:var(--text-faint);font-family:var(--font-data);font-size:14px}
+  border:1.5px solid var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)}
+.ui-yield__arrow{color:var(--text-faint);font-family:var(--font-data);font-size:21px}
 .ui-btn--hold{position:relative;overflow:hidden;justify-content:center}
 .ui-btn--hold .ui-btn__fill{position:absolute;left:0;top:0;bottom:0;background:rgba(79,216,224,.22);pointer-events:none}
 .ui-btn--hold .ui-btn__label{position:relative;display:flex;align-items:center;gap:var(--space-2)}
 .ui-btn__label--split{width:100%;justify-content:space-between}
-.ui-btn__time{font-family:var(--font-data);font-size:11.5px;color:var(--text-faint)}
-.ui-mat{display:flex;align-items:center;gap:var(--space-2);padding:5px var(--space-2);
-  background:var(--bg-inset);border:1px solid transparent;border-left-width:2px;border-radius:var(--r-sm)}
-.ui-mat__name{font-size:12px;color:var(--text-dim)}
-.ui-mat__n{margin-left:auto;font-family:var(--font-data);font-size:12px;color:var(--text)}
+.ui-btn__time{font-family:var(--font-data);font-size:17.2px;color:var(--text-faint)}
+.ui-mat{display:flex;align-items:center;gap:var(--space-2);padding:7.5px var(--space-2);
+  background:var(--bg-inset);border:1.5px solid transparent;border-left-width:3px;border-radius:var(--r-sm)}
+.ui-mat__name{font-size:18px;color:var(--text-dim)}
+.ui-mat__n{margin-left:auto;font-family:var(--font-data);font-size:18px;color:var(--text)}
 .ui-mat--iron{border-left-color:var(--iron)} .ui-mat--copper{border-left-color:var(--copper)}
 .ui-mat--crystal{border-left-color:var(--crystal)} .ui-mat--beast{border-left-color:var(--beast)}
 .ui-mat--short{border-left-color:var(--danger)} .ui-mat--short .ui-mat__n{color:var(--danger)}
 /* 나침반 (HUD 상단) */
-.ui-compass{position:relative;height:34px;overflow:hidden;
+.ui-compass{position:relative;height:51px;overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
   mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
-.ui-compass__tick{position:absolute;bottom:0;width:1px;background:var(--line-strong)}
-.ui-compass__label{position:absolute;bottom:11px;transform:translateX(-50%);
-  font-family:var(--font-display);font-size:10px;letter-spacing:.06em;color:var(--text-dim)}
-.ui-compass__label--card{color:var(--text);font-size:11.5px;font-weight:600}
-.ui-compass__mark{position:absolute;bottom:2px;transform:translateX(-50%)}
-.ui-compass__center{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(217,228,245,.35);transform:translateX(-50%)}
+.ui-compass__tick{position:absolute;bottom:0;width:1.5px;background:var(--line-strong)}
+.ui-compass__label{position:absolute;bottom:16.5px;transform:translateX(-50%);
+  font-family:var(--font-display);font-size:15px;letter-spacing:.06em;color:var(--text-dim)}
+.ui-compass__label--card{color:var(--text);font-size:17.2px;font-weight:600}
+.ui-compass__mark{position:absolute;bottom:3px;transform:translateX(-50%)}
+.ui-compass__center{position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:rgba(217,228,245,.35);transform:translateX(-50%)}
 
 /* 잠긴 영역 */
-.ui-locked{border:1px dashed var(--line-strong);border-radius:var(--r-md);background:var(--bg-inset);
+.ui-locked{border:1.5px dashed var(--line-strong);border-radius:var(--r-md);background:var(--bg-inset);
   padding:var(--space-4);text-align:center;color:var(--text-faint)}
-.ui-locked__title{font-family:var(--font-display);font-size:11px;letter-spacing:.12em;margin-bottom:var(--space-1)}
-.ui-locked__desc{font-size:11.5px;line-height:1.55}
+.ui-locked__title{font-family:var(--font-display);font-size:16.5px;letter-spacing:.12em;margin-bottom:var(--space-1)}
+.ui-locked__desc{font-size:17.2px;line-height:1.55}
 /* 검색 입력 */
 .ui-search{display:flex;align-items:center;gap:var(--space-2);background:var(--bg-inset);
-  border:1px solid var(--line-strong);border-radius:var(--r-md);padding:0 var(--space-2);height:30px}
+  border:1.5px solid var(--line-strong);border-radius:var(--r-md);padding:0 var(--space-2);height:45px}
 .ui-search:focus-within{border-color:var(--copper)}
 .ui-search__icon{flex-shrink:0;opacity:.65}
-.ui-search__input{flex:1;min-width:0;background:none;border:none;color:var(--text);font-size:12.5px;
+.ui-search__input{flex:1;min-width:0;background:none;border:none;color:var(--text);font-size:18.8px;
   font-family:var(--font-body);padding:0;height:100%}
 .ui-search__input::placeholder{color:var(--text-faint)}
 .ui-search__input:focus{outline:none}
 .ui-search__clear{flex-shrink:0;background:none;border:none;color:var(--text-faint);cursor:pointer;
-  font-family:var(--font-data);font-size:12px;line-height:1;padding:2px 4px}
+  font-family:var(--font-data);font-size:18px;line-height:1;padding:3px 6px}
 .ui-search__clear:hover{color:var(--text)}
 
 /* 스크롤 목록 */
 .ui-scroll{overflow-y:scroll;overscroll-behavior:contain;scrollbar-width:thin;
-  scrollbar-color:var(--line-strong) transparent;padding-right:4px}
-.ui-scroll::-webkit-scrollbar{width:6px}
+  scrollbar-color:var(--line-strong) transparent;padding-right:6px}
+.ui-scroll::-webkit-scrollbar{width:9px}
 .ui-scroll::-webkit-scrollbar-track{background:transparent}
-.ui-scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+.ui-scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:4.5px}
 .ui-scroll::-webkit-scrollbar-thumb:hover{background:var(--text-faint)}
-.ui-timepill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-data);font-size:11.5px;
-  color:var(--text-dim);background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--r-pill);padding:2px 9px}
+.ui-timepill{display:inline-flex;align-items:center;gap:7.5px;font-family:var(--font-data);font-size:17.2px;
+  color:var(--text-dim);background:var(--bg-inset);border:1.5px solid var(--line);border-radius:var(--r-pill);padding:3px 13.5px}
 
 /* ── 배치/철거 모드 ── */
 .ui-modebadge{display:inline-flex;align-items:center;gap:var(--space-2);font-family:var(--font-display);
-  font-size:11px;letter-spacing:.14em;padding:3px 10px;border-radius:var(--r-sm);border:1px solid currentColor}
+  font-size:16.5px;letter-spacing:.14em;padding:4.5px 15px;border-radius:var(--r-sm);border:1.5px solid currentColor}
 .ui-modebadge--build{color:var(--copper);background:rgba(79,216,224,.1)}
 .ui-modebadge--demolish{color:var(--danger);background:rgba(255,93,115,.1)}
-.ui-ghost{position:absolute;border:1.5px dashed var(--copper);background:rgba(79,216,224,.10);border-radius:3px}
+.ui-ghost{position:absolute;border:2.2px dashed var(--copper);background:rgba(79,216,224,.10);border-radius:4.5px}
 .ui-ghost--bad{border-color:var(--danger);background:rgba(255,93,115,.13)}
 .ui-flow{position:absolute;pointer-events:none}
 .ui-flow--in{background:linear-gradient(90deg, rgba(79,216,224,.55), rgba(79,216,224,0))}
 .ui-flow--out{background:linear-gradient(90deg, rgba(255,158,74,.55), rgba(255,158,74,0))}
 .ui-placecard{display:flex;align-items:center;gap:var(--space-3);background:rgba(17,27,46,.92);
-  border:1px solid var(--line-strong);border-radius:var(--r-lg);padding:var(--space-2) var(--space-3);
-  box-shadow:0 6px 24px rgba(0,0,0,.45)}
-.ui-placecard__name{font-size:13.5px;font-weight:600;white-space:nowrap}
-.ui-placecard__sep{width:1px;align-self:stretch;background:var(--line)}
-.ui-holdring{position:relative;width:46px;height:46px;flex-shrink:0}
+  border:1.5px solid var(--line-strong);border-radius:var(--r-lg);padding:var(--space-2) var(--space-3);
+  box-shadow:0 9px 36px rgba(0,0,0,.45)}
+.ui-placecard__name{font-size:20.2px;font-weight:600;white-space:nowrap}
+.ui-placecard__sep{width:1.5px;align-self:stretch;background:var(--line)}
+.ui-holdring{position:relative;width:69px;height:69px;flex-shrink:0}
 .ui-holdring svg{display:block;transform:rotate(-90deg)}
 .ui-holdring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-data);font-size:11px;color:var(--danger)}
+  font-family:var(--font-data);font-size:16.5px;color:var(--danger)}
 
 
 /* ── 분배기 출구 맵 ── */
-.ui-dirmap{position:relative;width:250px;height:250px;margin:0 auto}
+.ui-dirmap{position:relative;width:375px;height:375px;margin:0 auto}
 .ui-dirmap__body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:78px;height:78px;border:1.5px solid var(--line-strong);border-radius:var(--r-md);
+  width:117px;height:117px;border:2.2px solid var(--line-strong);border-radius:var(--r-md);
   background:var(--bg-inset);display:flex;align-items:center;justify-content:center}
-.ui-dirslot{position:absolute;width:66px;height:66px;border:1.5px solid var(--line-strong);
+.ui-dirslot{position:absolute;width:99px;height:99px;border:2.2px solid var(--line-strong);
   border-radius:var(--r-md);background:var(--bg-inset);cursor:pointer;overflow:hidden;
   display:flex;align-items:center;justify-content:center}
 .ui-dirslot:hover{border-color:var(--out)}
-.ui-dirslot--open{border-color:var(--out);box-shadow:0 0 0 1px rgba(255,158,74,.28)}
+.ui-dirslot--open{border-color:var(--out);box-shadow:0 0 0 1.5px rgba(255,158,74,.28)}
 .ui-dirslot--blocked{border-color:var(--line);background:
-  repeating-linear-gradient(45deg, rgba(255,93,115,.10) 0 6px, transparent 6px 12px), var(--bg-inset)}
-.ui-dirslot--sel{outline:2px solid var(--sel);outline-offset:2px}
-.ui-dirslot__icons{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-items:center;padding:6px}
-.ui-dirslot__icons i{width:18px;height:18px;border-radius:3px;display:block}
-.ui-dirslot__all{display:grid;grid-template-columns:1fr 1fr;gap:3px}
-.ui-dirslot__all i{width:13px;height:13px;border-radius:2px;opacity:.85}
-.ui-dirslot__x{width:26px;height:26px;position:relative;opacity:.8}
+  repeating-linear-gradient(45deg, rgba(255,93,115,.10) 0 9px, transparent 9px 18px), var(--bg-inset)}
+.ui-dirslot--sel{outline:3px solid var(--sel);outline-offset:3px}
+.ui-dirslot__icons{display:flex;flex-wrap:wrap;gap:4.5px;justify-content:center;align-items:center;padding:9px}
+.ui-dirslot__icons i{width:27px;height:27px;border-radius:4.5px;display:block}
+.ui-dirslot__all{display:grid;grid-template-columns:1fr 1fr;gap:4.5px}
+.ui-dirslot__all i{width:19.5px;height:19.5px;border-radius:3px;opacity:.85}
+.ui-dirslot__x{width:39px;height:39px;position:relative;opacity:.8}
 .ui-dirslot__x::before,.ui-dirslot__x::after{content:"";position:absolute;left:0;right:0;top:50%;
-  height:2.5px;background:var(--danger);border-radius:2px}
+  height:3.8px;background:var(--danger);border-radius:3px}
 .ui-dirslot__x::before{transform:rotate(45deg)} .ui-dirslot__x::after{transform:rotate(-45deg)}
-.ui-flowline{position:absolute;pointer-events:none;border-radius:2px}
-.ui-flowline--off{background:none !important;border:1px dashed var(--line2);opacity:.65}
+.ui-flowline{position:absolute;pointer-events:none;border-radius:3px}
+.ui-flowline--off{background:none !important;border:1.5px dashed var(--line2);opacity:.65}
 
 /* 아이템 허용 토글 행 */
-.ui-allowrow{display:grid;grid-template-columns:26px 20px minmax(0,1fr) auto;gap:var(--space-2);
-  align-items:center;padding:5px var(--space-2);border-radius:var(--r-md);cursor:pointer;
-  border:1px solid transparent}
+.ui-allowrow{display:grid;grid-template-columns:39px 30px minmax(0,1fr) auto;gap:var(--space-2);
+  align-items:center;padding:7.5px var(--space-2);border-radius:var(--r-md);cursor:pointer;
+  border:1.5px solid transparent}
 .ui-allowrow:hover{background:var(--bg-raised)}
-.ui-allowrow__sw{width:26px;height:15px;border-radius:999px;background:var(--bg-inset);
-  border:1px solid var(--line2);position:relative;flex-shrink:0}
-.ui-allowrow__sw::after{content:"";position:absolute;top:1.5px;left:1.5px;width:10px;height:10px;
+.ui-allowrow__sw{width:39px;height:22.5px;border-radius:1498.5px;background:var(--bg-inset);
+  border:1.5px solid var(--line2);position:relative;flex-shrink:0}
+.ui-allowrow__sw::after{content:"";position:absolute;top:2.2px;left:2.2px;width:15px;height:15px;
   border-radius:50%;background:var(--text-faint);transition:none}
 .ui-allowrow--on{background:rgba(255,158,74,.09);border-color:rgba(255,158,74,.35)}
 .ui-allowrow--on .ui-allowrow__sw{background:rgba(255,158,74,.3);border-color:var(--out)}
-.ui-allowrow--on .ui-allowrow__sw::after{left:auto;right:1.5px;background:var(--out)}
-.ui-allowrow__ic{width:20px;height:20px;border-radius:3px}
+.ui-allowrow--on .ui-allowrow__sw::after{left:auto;right:2.2px;background:var(--out)}
+.ui-allowrow__ic{width:30px;height:30px;border-radius:4.5px}
 .ui-allowrow--off .ui-allowrow__ic{filter:grayscale(1);opacity:.35}
 .ui-allowrow--off .ui-allowrow__nm{color:var(--text-faint)}
-.ui-allowrow__nm{font-size:12.5px}
-.ui-allowrow__meta{font-size:10.5px;color:var(--text-faint)}
+.ui-allowrow__nm{font-size:18.8px}
+.ui-allowrow__meta{font-size:15.8px;color:var(--text-faint)}
+
+
+/* ── 설비 가동 패널 ── */
+.ui-io{display:flex;align-items:center;gap:var(--space-3);justify-content:center}
+.ui-io__col{display:flex;flex-direction:column;gap:7.5px;align-items:center;flex-shrink:0}
+.ui-io__cap{font-family:var(--font-display);font-size:14.2px;letter-spacing:.12em;color:var(--text-faint);line-height:1}
+/* 기본은 세로 한 줄. 4입력만 2열로 접는다 */
+.ui-io__slots{display:flex;flex-direction:column;gap:var(--space-2);align-items:center}
+.ui-io__slots--grid{flex-direction:row;flex-wrap:wrap;max-width:168px;justify-content:center}
+.ui-io__arrow{flex:1;min-width:0;max-width:264px;display:flex;flex-direction:column;gap:7.5px;align-items:center}
+.ui-io__arrow--wide{max-width:420px}   /* 입력이 하나면 남는 폭을 진행바가 쓴다 */
+.ui-machine{width:100%;height:12px;border-radius:var(--r-pill);background:var(--bg-inset);
+  border:1.5px solid var(--line-strong);overflow:hidden}
+.ui-machine__fill{height:100%;background:linear-gradient(90deg,var(--copper),var(--crystal));border-radius:var(--r-pill)}
+.ui-machine__meta{display:flex;justify-content:space-between;width:100%;font-family:var(--font-data);
+  font-size:16.5px;color:var(--text-faint)}
+.ui-status{display:flex;align-items:center;gap:9px;font-size:18px;padding:6px 15px;border-radius:var(--r-md);
+  border:1.5px solid currentColor}
+.ui-status__dot{width:10.5px;height:10.5px;border-radius:50%;background:currentColor}
+.ui-status--run{color:var(--ok);background:rgba(93,211,158,.08)}
+.ui-status--wait{color:var(--warn);background:rgba(232,165,75,.08)}
+.ui-status--block{color:var(--danger);background:rgba(255,93,115,.08)}
+.ui-status--stop{color:var(--text-faint);background:rgba(143,163,192,.07)}
+.ui-machine--paused .ui-machine__fill{background:var(--line-strong)}
 
 </style>
 </head>
@@ -471,7 +495,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 
 <!-- ══════════ 2. 간격·모서리·타이포 ══════════ -->
 <section class="doc-sec" id="scale">
-  <div class="doc-sec-head"><span class="n">02</span><h2>간격 · 모서리 · 타이포</h2><span class="aside">4의 배수 외 값 금지</span></div>
+  <div class="doc-sec-head"><span class="n">02</span><h2>간격 · 모서리 · 타이포</h2><span class="aside">6의 배수 외 값 금지</span></div>
   <p class="doc-lead">임의의 픽셀값을 쓰기 시작하면 규격이 무너진다. <b>여백은 여섯 단계, 모서리는 네 단계, 글자는 다섯 단계</b>가 전부다.
      이 표에 없는 값이 필요하면 그건 대개 레이아웃을 잘못 짠 것이다.</p>
 
@@ -540,7 +564,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
         <button class="ui-btn ui-btn--ghost">건너뛰기</button>
         <button class="ui-btn ui-btn--disabled" disabled>재료 부족</button>
         <button class="ui-btn">건설 메뉴 <span class="ui-btn__key">B</span></button>
-        <button class="ui-btn ui-btn--primary ui-btn--hold" style="min-width:240px">
+        <button class="ui-btn ui-btn--primary ui-btn--hold" style="min-width:360px">
           <span class="ui-btn__fill" style="width:42%"></span>
           <span class="ui-btn__label">누르고 있는 동안 제작 <span class="ui-btn__key">HOLD</span></span>
         </button>
@@ -564,12 +588,12 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">PNL</span><h3>패널</h3><span class="cls">.ui-panel</span></div>
     <div class="doc-part-body">
       <div class="doc-demo">
-        <div class="ui-panel" style="width:300px">
+        <div class="ui-panel" style="width:450px">
           <div class="ui-panel__title"><span class="tag">CORE</span>코어 수리<button class="ui-panel__x">✕</button></div>
-          <div class="ui-panel__body" style="font-size:12.5px;color:var(--text-dim)">패널 본문. 안쪽 여백은 항상 --space-4.</div>
+          <div class="ui-panel__body" style="font-size:18.8px;color:var(--text-dim)">패널 본문. 안쪽 여백은 항상 --space-4.</div>
         </div>
-        <div class="ui-panel ui-panel--inset" style="width:220px">
-          <div class="ui-panel__body" style="font-size:12.5px;color:var(--text-dim)">--inset: 패널 안에 중첩되는 하위 영역</div>
+        <div class="ui-panel ui-panel--inset" style="width:330px">
+          <div class="ui-panel__body" style="font-size:18.8px;color:var(--text-dim)">--inset: 패널 안에 중첩되는 하위 영역</div>
         </div>
       </div>
       <div class="doc-spec">
@@ -589,21 +613,21 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-body">
       <div class="doc-demo col">
         <div style="display:flex;align-items:center;gap:var(--space-3)">
-          <span style="font-size:12px;color:var(--text-dim);width:76px">제작 진행</span>
+          <span style="font-size:18px;color:var(--text-dim);width:114px">제작 진행</span>
           <div class="ui-bar"><div class="ui-bar__fill" style="width:64%"></div></div>
-          <span style="font-family:var(--font-data);font-size:12px;color:var(--text-faint)">64%</span>
+          <span style="font-family:var(--font-data);font-size:18px;color:var(--text-faint)">64%</span>
         </div>
         <div style="display:flex;align-items:center;gap:var(--space-3)">
-          <span style="font-size:12px;color:var(--text-dim);width:76px">선체 패널</span>
+          <span style="font-size:18px;color:var(--text-dim);width:114px">선체 패널</span>
           <div class="ui-bar ui-bar--iron"><div class="ui-bar__fill" style="width:50%"></div></div>
-          <span style="font-family:var(--font-data);font-size:12px;color:var(--iron)">20 / 40</span>
+          <span style="font-family:var(--font-data);font-size:18px;color:var(--iron)">20 / 40</span>
         </div>
         <div style="display:flex;align-items:center;gap:var(--space-3)">
-          <span style="font-size:12px;color:var(--text-dim);width:76px">코어 HP</span>
-          <div class="ui-bar ui-bar--thick ui-bar--danger" style="min-width:220px"><div class="ui-bar__fill" style="width:31%"></div></div>
+          <span style="font-size:18px;color:var(--text-dim);width:114px">코어 HP</span>
+          <div class="ui-bar ui-bar--thick ui-bar--danger" style="min-width:330px"><div class="ui-bar__fill" style="width:31%"></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-2)">
-          <span style="font-size:12px;color:var(--text-dim);width:76px">탄창</span>
+          <span style="font-size:18px;color:var(--text-dim);width:114px">탄창</span>
           <div class="ui-seg"><i></i><i></i><i></i><i></i><i></i><i></i><i class="empty"></i><i class="empty"></i></div>
         </div>
       </div>
@@ -655,7 +679,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
       </div>
       <div class="doc-spec">
         <dl>
-          <dt>크기</dt><dd>52×52 고정. 인벤토리·핫바·제작 입출력 전부 동일</dd>
+          <dt>크기</dt><dd>78×78 고정. 인벤토리·핫바·제작 입출력 전부 동일</dd>
           <dt>--active</dt><dd>핫바 현재 선택. 테두리 색 + 외곽 링</dd>
           <dt>--empty</dt><dd>빈 슬롯. 점선 아이콘 자리</dd>
           <dt>수량</dt><dd>흰 글자 + 검은 외곽선. 아이콘 색이 밝든 어둡든 읽힌다</dd>
@@ -718,7 +742,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">TAB</span><h3>탭 · 키 힌트 · HUD 수치</h3><span class="cls">.ui-tabs / .ui-key / .ui-stat</span></div>
     <div class="doc-part-body">
       <div class="doc-demo col">
-        <div class="ui-tabs" style="min-width:320px">
+        <div class="ui-tabs" style="min-width:480px">
           <button class="ui-tab ui-tab--active">공장</button>
           <button class="ui-tab">방어</button>
           <button class="ui-tab">운송</button>
@@ -772,16 +796,16 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-body">
       <div class="doc-demo col" style="min-width:0">
         <div class="ui-table" style="width:100%">
-          <div class="ui-table__head" style="grid-template-columns:120px minmax(0,1fr) 52px 52px">
+          <div class="ui-table__head" style="grid-template-columns:180px minmax(0,1fr) 78px 78px">
             <span>부품</span><span>진행</span><span style="text-align:right">보유</span><span style="text-align:right">부족</span>
           </div>
-          <div class="ui-table__row" style="grid-template-columns:120px minmax(0,1fr) 52px 52px">
+          <div class="ui-table__row" style="grid-template-columns:180px minmax(0,1fr) 78px 78px">
             <span class="ui-chip ui-chip--copper" style="justify-content:space-between">구리 전선<span class="ui-chip__n">22/30</span></span>
             <div class="ui-bar"><div class="ui-bar__fill" style="width:73%"></div></div>
             <span class="ui-num" style="text-align:right">5</span>
             <span class="ui-num ui-num--short" style="text-align:right">3</span>
           </div>
-          <div class="ui-table__row ui-table__row--done" style="grid-template-columns:120px minmax(0,1fr) 52px 52px">
+          <div class="ui-table__row ui-table__row--done" style="grid-template-columns:180px minmax(0,1fr) 78px 78px">
             <span class="ui-chip ui-chip--done" style="justify-content:space-between">에너지 셀<span class="ui-chip__n">15/15</span></span>
             <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
             <span class="ui-num ui-num--dim" style="text-align:right">4</span>
@@ -805,7 +829,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">RAL</span><h3>단계 레일</h3><span class="cls">.ui-rail</span></div>
     <div class="doc-part-body">
       <div class="doc-demo">
-        <div class="ui-rail" style="border-right:none;padding-right:0;min-width:190px">
+        <div class="ui-rail" style="border-right:none;padding-right:0;min-width:285px">
           <div class="ui-rail__step ui-rail__step--done"><span class="ui-rail__dot">①</span>
             <span class="ui-rail__label">선체 봉합<span class="ui-rail__sub">정비 구역 개방</span></span></div>
           <div class="ui-rail__step ui-rail__step--active"><span class="ui-rail__dot">②</span>
@@ -830,27 +854,27 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">INP</span><h3>검색 입력 · 스크롤 목록</h3><span class="cls">.ui-search / .ui-scroll</span></div>
     <div class="doc-part-body">
       <div class="doc-demo col" style="min-width:0">
-        <div class="ui-search" style="width:260px">
+        <div class="ui-search" style="width:390px">
           <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
             <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
             <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
           <input class="ui-search__input" type="text" placeholder="레시피 검색">
         </div>
-        <div class="ui-scroll" style="width:260px;max-height:104px;display:flex;flex-direction:column;gap:2px;
-                                      border:1px solid var(--line);border-radius:var(--r-md);padding:var(--space-2)">
-          <div class="ui-row ui-row--selected" style="min-width:0;padding:5px var(--space-2)">
-            <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-            <span class="ui-row__name" style="font-size:12.5px">선체 패널</span><span class="ui-row__meta">4.0s</span></div>
-          <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-            <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-            <span class="ui-row__name" style="font-size:12.5px">철판</span><span class="ui-row__meta">3.0s</span></div>
-          <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-            <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-            <span class="ui-row__name" style="font-size:12.5px">철 기어</span><span class="ui-row__meta">3.0s</span></div>
-          <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-            <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
-            <span class="ui-row__name" style="font-size:12.5px">회로 기판</span><span class="ui-row__meta">4.0s</span></div>
+        <div class="ui-scroll" style="width:390px;max-height:156px;display:flex;flex-direction:column;gap:3px;
+                                      border:1.5px solid var(--line);border-radius:var(--r-md);padding:var(--space-2)">
+          <div class="ui-row ui-row--selected" style="min-width:0;padding:7.5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+            <span class="ui-row__name" style="font-size:18.8px">선체 패널</span><span class="ui-row__meta">4.0s</span></div>
+          <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+            <span class="ui-row__name" style="font-size:18.8px">철판</span><span class="ui-row__meta">3.0s</span></div>
+          <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+            <span class="ui-row__name" style="font-size:18.8px">철 기어</span><span class="ui-row__meta">3.0s</span></div>
+          <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+            <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+            <span class="ui-row__name" style="font-size:18.8px">회로 기판</span><span class="ui-row__meta">4.0s</span></div>
         </div>
       </div>
       <div class="doc-spec">
@@ -878,14 +902,14 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">SCR-01</span><h3>코어 패널 — 납품 탭</h3><span class="cls">CorePanel.uxml</span></div>
     <div class="doc-part-body" style="grid-template-columns:1fr">
       <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
-        <div class="ui-panel" style="width:880px">
+        <div class="ui-panel" style="width:1320px">
           <div class="ui-panel__title"><span class="tag">CORE</span>코어<button class="ui-panel__x">✕</button></div>
           <div class="ui-tabs" style="padding:0 var(--space-4)">
             <button class="ui-tab ui-tab--active">납품</button>
             <button class="ui-tab">코어 정보</button>
           </div>
 
-          <div class="ui-panel__body" style="display:grid;grid-template-columns:176px minmax(0,1fr);gap:var(--space-5)">
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:264px minmax(0,1fr);gap:var(--space-5)">
             <!-- 좌: 수리 단계 레일 -->
             <div class="ui-rail">
               <div class="ui-rail__step ui-rail__step--done"><span class="ui-rail__dot">⓪</span>
@@ -902,7 +926,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
             <div>
               <div style="margin-bottom:var(--space-4)">
                 <div style="display:flex;align-items:baseline;gap:var(--space-3);margin-bottom:var(--space-2)">
-                  <span style="font-size:15px;font-weight:600">동력 재점화</span>
+                  <span style="font-size:22.5px;font-weight:600">동력 재점화</span>
                   <span class="ui-num ui-num--dim" style="margin-left:auto">2 / 4 부품 충족</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:var(--space-3)">
@@ -912,11 +936,11 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
 
               <div class="ui-table">
-                <div class="ui-table__head" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                <div class="ui-table__head" style="grid-template-columns:222px minmax(0,1fr) 78px 78px 228px">
                   <span>부품</span><span>납품 진행</span><span style="text-align:right">보유</span>
                   <span style="text-align:right">부족</span><span style="text-align:right">이번 납품</span>
                 </div>
-                <div class="ui-table__row" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                <div class="ui-table__row" style="grid-template-columns:222px minmax(0,1fr) 78px 78px 228px">
                   <span class="ui-chip ui-chip--crystal" style="justify-content:space-between">동력 모듈<span class="ui-chip__n">1/3</span></span>
                   <div class="ui-bar ui-bar--crystal"><div class="ui-bar__fill" style="width:33%"></div></div>
                   <span class="ui-num" style="text-align:right">2</span>
@@ -925,7 +949,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                     <div class="ui-stepper"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">2</span>
                       <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
                 </div>
-                <div class="ui-table__row" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                <div class="ui-table__row" style="grid-template-columns:222px minmax(0,1fr) 78px 78px 228px">
                   <span class="ui-chip ui-chip--copper" style="justify-content:space-between">구리 전선<span class="ui-chip__n">22/30</span></span>
                   <div class="ui-bar"><div class="ui-bar__fill" style="width:73%"></div></div>
                   <span class="ui-num" style="text-align:right">5</span>
@@ -934,7 +958,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                     <div class="ui-stepper"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">5</span>
                       <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
                 </div>
-                <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                <div class="ui-table__row ui-table__row--done" style="grid-template-columns:222px minmax(0,1fr) 78px 78px 228px">
                   <span class="ui-chip ui-chip--done" style="justify-content:space-between">에너지 셀<span class="ui-chip__n">15/15</span></span>
                   <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
                   <span class="ui-num ui-num--dim" style="text-align:right">4</span>
@@ -943,7 +967,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                     <div class="ui-stepper ui-stepper--off"><button class="ui-stepper__btn">−</button><span class="ui-stepper__n">0</span>
                       <button class="ui-stepper__btn">+</button><button class="ui-stepper__max">MAX</button></div></div>
                 </div>
-                <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 52px 52px 152px">
+                <div class="ui-table__row ui-table__row--done" style="grid-template-columns:222px minmax(0,1fr) 78px 78px 228px">
                   <span class="ui-chip ui-chip--done" style="justify-content:space-between">선체 패널<span class="ui-chip__n">10/10</span></span>
                   <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
                   <span class="ui-num ui-num--dim" style="text-align:right">31</span>
@@ -955,8 +979,8 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
 
               <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);
-                          border-top:1px solid var(--line);padding-top:var(--space-3)">
-                <span style="font-size:12px;color:var(--text-faint)">이번에 납품</span>
+                          border-top:1.5px solid var(--line);padding-top:var(--space-3)">
+                <span style="font-size:18px;color:var(--text-faint)">이번에 납품</span>
                 <span class="ui-chip ui-chip--crystal">동력 모듈<span class="ui-chip__n">2</span></span>
                 <span class="ui-chip ui-chip--copper">구리 전선<span class="ui-chip__n">5</span></span>
                 <button class="ui-btn ui-btn--ghost" style="margin-left:auto">전부 선택 <span class="ui-btn__key">A</span></button>
@@ -981,23 +1005,23 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
       <div class="doc-demo col" style="align-items:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
 
         <!-- 요구 충족 시 하단 바 -->
-        <div class="ui-panel" style="width:640px">
+        <div class="ui-panel" style="width:960px">
           <div class="ui-panel__body" style="padding:var(--space-3) var(--space-4)">
             <div class="ui-table">
-              <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 60px">
+              <div class="ui-table__row ui-table__row--done" style="grid-template-columns:222px minmax(0,1fr) 90px">
                 <span class="ui-chip ui-chip--done" style="justify-content:space-between">동력 모듈<span class="ui-chip__n">3/3</span></span>
                 <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
                 <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
               </div>
-              <div class="ui-table__row ui-table__row--done" style="grid-template-columns:148px minmax(0,1fr) 60px">
+              <div class="ui-table__row ui-table__row--done" style="grid-template-columns:222px minmax(0,1fr) 90px">
                 <span class="ui-chip ui-chip--done" style="justify-content:space-between">구리 전선<span class="ui-chip__n">30/30</span></span>
                 <div class="ui-bar"><div class="ui-bar__fill" style="width:100%;background:var(--ok)"></div></div>
                 <span class="ui-num ui-num--ok" style="text-align:right">충족</span>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-3);
-                        border-top:1px solid var(--line);padding-top:var(--space-3)">
-              <span style="font-size:13px;color:var(--ok)">모든 부품이 준비됐습니다</span>
+                        border-top:1.5px solid var(--line);padding-top:var(--space-3)">
+              <span style="font-size:19.5px;color:var(--ok)">모든 부품이 준비됐습니다</span>
               <button class="ui-btn ui-btn--primary" style="margin-left:auto;padding:var(--space-2) var(--space-5)">
                 수리 시작 <span class="ui-btn__key">F</span></button>
             </div>
@@ -1005,31 +1029,31 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
         </div>
 
         <!-- 확인 모달 -->
-        <div class="ui-panel" style="width:460px;margin-top:var(--space-4)">
+        <div class="ui-panel" style="width:690px;margin-top:var(--space-4)">
           <div class="ui-panel__title"><span class="tag" style="color:var(--crystal);border-color:rgba(180,140,255,.4)">GATE 03</span>동력 재점화<button class="ui-panel__x">✕</button></div>
           <div class="ui-panel__body">
-            <div style="font-size:13px;color:var(--text);margin-bottom:var(--space-4)">엔진에 동력 모듈을 장착합니다.</div>
+            <div style="font-size:19.5px;color:var(--text);margin-bottom:var(--space-4)">엔진에 동력 모듈을 장착합니다.</div>
 
-            <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-2)">해금</div>
-            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-4)">
+            <div style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-2)">해금</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:var(--space-4)">
               <div class="ui-mat ui-mat--crystal"><span class="ui-mat__name">엔진 예열 개시</span></div>
               <div class="ui-mat ui-mat--crystal"><span class="ui-mat__name">이륙 시퀀스</span></div>
               <div class="ui-mat ui-mat--crystal"><span class="ui-mat__name">코어 내구도 +1,500</span>
-                <span class="ui-mat__n" style="color:var(--ok);font-size:10px">자동</span></div>
+                <span class="ui-mat__n" style="color:var(--ok);font-size:15px">자동</span></div>
             </div>
 
-            <div style="border:1px solid rgba(255,93,115,.45);background:rgba(255,93,115,.07);
+            <div style="border:1.5px solid rgba(255,93,115,.45);background:rgba(255,93,115,.07);
                         border-radius:var(--r-md);padding:var(--space-3);margin-bottom:var(--space-4)">
               <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)">
-                <span style="color:var(--danger);font-size:13px">⚠</span>
-                <span style="font-size:12.5px;color:var(--danger);font-weight:600">예열이 시작되면 멈출 수 없습니다</span>
+                <span style="color:var(--danger);font-size:19.5px">⚠</span>
+                <span style="font-size:18.8px;color:var(--danger);font-weight:600">예열이 시작되면 멈출 수 없습니다</span>
               </div>
-              <div style="font-size:12px;color:var(--text-dim);line-height:1.6">
+              <div style="font-size:18px;color:var(--text-dim);line-height:1.6">
                 예열 동안 행성의 모든 무리가 코어로 몰려옵니다. 끝까지 지켜내면 이륙합니다.</div>
               <div style="display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-3);
-                          border-top:1px solid rgba(255,93,115,.25);padding-top:var(--space-2)">
-                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)">예열 시간</span>
-                <span style="font-family:var(--font-data);font-size:16px;color:var(--danger);margin-left:auto">05:00</span>
+                          border-top:1.5px solid rgba(255,93,115,.25);padding-top:var(--space-2)">
+                <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint)">예열 시간</span>
+                <span style="font-family:var(--font-data);font-size:24px;color:var(--danger);margin-left:auto">05:00</span>
               </div>
             </div>
 
@@ -1041,18 +1065,18 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
         </div>
 
         <!-- 게이트② 확인 창 — 되돌릴 수 없는 단계가 아니므로 경고 없음 -->
-        <div class="ui-panel" style="width:460px;margin-top:var(--space-4)">
+        <div class="ui-panel" style="width:690px;margin-top:var(--space-4)">
           <div class="ui-panel__title"><span class="tag">GATE 02</span>항법·제어 복구<button class="ui-panel__x">✕</button></div>
           <div class="ui-panel__body">
-            <div style="font-size:13px;color:var(--text);margin-bottom:var(--space-4)">조종 콘솔과 선내 배선을 되살립니다.</div>
+            <div style="font-size:19.5px;color:var(--text);margin-bottom:var(--space-4)">조종 콘솔과 선내 배선을 되살립니다.</div>
 
-            <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-2)">해금</div>
-            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-4)">
+            <div style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-2)">해금</div>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:var(--space-4)">
               <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">레이더 — 다음 웨이브의 진입 방위와 규모</span></div>
               <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">제조기 — 부품 4종을 한 번에 조립</span></div>
               <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">레이저 타워 · 감속 필드 타워</span></div>
               <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">코어 내구도 +1,500</span>
-                <span class="ui-mat__n" style="color:var(--ok);font-size:10px">자동</span></div>
+                <span class="ui-mat__n" style="color:var(--ok);font-size:15px">자동</span></div>
             </div>
 
             <div style="display:flex;gap:var(--space-2)">
@@ -1082,51 +1106,51 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">SCR-01c</span><h3>코어 패널 — 코어 정보 탭</h3><span class="cls">CorePanel.uxml</span></div>
     <div class="doc-part-body" style="grid-template-columns:1fr">
       <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
-        <div class="ui-panel" style="width:880px">
+        <div class="ui-panel" style="width:1320px">
           <div class="ui-panel__title"><span class="tag">CORE</span>코어<button class="ui-panel__x">✕</button></div>
           <div class="ui-tabs" style="padding:0 var(--space-4)">
             <button class="ui-tab">납품</button>
             <button class="ui-tab ui-tab--active">코어 정보</button>
           </div>
 
-          <div class="ui-panel__body" style="display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--space-5)">
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:var(--space-5)">
             <!-- 좌: 상태 + 웨이브 -->
             <div>
-              <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-3)">CORE STATUS</div>
+              <div style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-3)">CORE STATUS</div>
               <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-bottom:var(--space-5)">
                 <div>
-                  <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-                    <span style="font-size:12.5px;color:var(--text-dim)">코어 내구도</span>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:7.5px">
+                    <span style="font-size:18.8px;color:var(--text-dim)">코어 내구도</span>
                     <span class="ui-num">4,400 <span class="ui-num--dim">/ 5,000</span></span>
                   </div>
                   <div class="ui-bar ui-bar--thick"><div class="ui-bar__fill" style="width:88%;background:var(--ok)"></div></div>
                 </div>
                 <div>
-                  <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-                    <span style="font-size:12.5px;color:var(--text-dim)">수리 진행</span>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:7.5px">
+                    <span style="font-size:18.8px;color:var(--text-dim)">수리 진행</span>
                     <span class="ui-num">3단계 <span class="ui-num--dim">/ 4</span></span>
                   </div>
                   <div class="ui-bar ui-bar--thick ui-bar--crystal"><div class="ui-bar__fill" style="width:75%"></div></div>
                 </div>
               </div>
 
-              <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-3)">WAVE</div>
+              <div style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);margin-bottom:var(--space-3)">WAVE</div>
               <div style="display:flex;flex-wrap:wrap;gap:var(--space-5)">
                 <div class="ui-stat"><span class="ui-stat__label">NEXT WAVE IN</span><span class="ui-stat__value">02:15</span></div>
                 <div class="ui-stat"><span class="ui-stat__label">WAVE</span><span class="ui-stat__value">7</span></div>
                 <div class="ui-stat"><span class="ui-stat__label">INCOMING</span><span class="ui-stat__value" style="color:var(--beast)">24</span></div>
-                <div class="ui-stat"><span class="ui-stat__label">DESTROYED NESTS</span><span class="ui-stat__value">2 <span style="color:var(--text-faint);font-size:12px">/ 6</span></span></div>
+                <div class="ui-stat"><span class="ui-stat__label">DESTROYED NESTS</span><span class="ui-stat__value">2 <span style="color:var(--text-faint);font-size:18px">/ 6</span></span></div>
               </div>
             </div>
 
             <!-- 우: 레이더 스코프 -->
             <div>
               <div style="display:flex;align-items:center;margin-bottom:var(--space-3)">
-                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)">RADAR</span>
+                <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint)">RADAR</span>
                 <span class="ui-chip ui-chip--done" style="margin-left:auto">가동 중</span>
               </div>
 
-              <div style="background:var(--bg-inset);border:1px solid var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)">
+              <div style="background:var(--bg-inset);border:1.5px solid var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)">
                 <svg viewBox="0 0 440 300" style="display:block;width:100%;height:auto">
                   <defs>
                     <radialGradient id="scopeBg" cx="50%" cy="50%" r="50%">
@@ -1232,12 +1256,12 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">SCR-01d</span><h3>레이더 — 해금 전 상태</h3><span class="cls">RadarView.uxml · locked</span></div>
     <div class="doc-part-body">
       <div class="doc-demo" style="justify-content:center">
-        <div style="width:400px">
+        <div style="width:600px">
           <div style="display:flex;align-items:center;margin-bottom:var(--space-3)">
-            <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint)">RADAR</span>
+            <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint)">RADAR</span>
             <span class="ui-chip" style="margin-left:auto">신호 없음</span>
           </div>
-          <div style="background:var(--bg-inset);border:1px dashed var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)">
+          <div style="background:var(--bg-inset);border:1.5px dashed var(--line-strong);border-radius:var(--r-md);padding:var(--space-3)">
             <svg viewBox="0 0 440 300" style="display:block;width:100%;height:auto">
               <circle cx="220" cy="150" r="112" fill="#0A1120" stroke="#223350" stroke-dasharray="3 5"/>
               <circle cx="220" cy="150" r="38" fill="none" stroke="#1A2740" stroke-dasharray="2 5"/>
@@ -1281,104 +1305,104 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
       <div class="doc-demo" style="padding:0;border-radius:0 0 var(--r-lg) var(--r-lg)">
         <div style="width:100%;aspect-ratio:16/7;position:relative;background:
             linear-gradient(180deg,#132038 0%,#0B1220 55%,#0E1A2E 100%);border-radius:0 0 var(--r-lg) var(--r-lg);overflow:hidden">
-          <div style="position:absolute;left:0;right:0;top:52%;height:1px;background:rgba(79,216,224,.12)"></div>
+          <div style="position:absolute;left:0;right:0;top:52%;height:1.5px;background:rgba(79,216,224,.12)"></div>
 
           <!-- ── 상단 바 ── -->
-          <div style="position:absolute;left:0;right:0;top:0;padding:14px 24px 0">
+          <div style="position:absolute;left:0;right:0;top:0;padding:21px 36px 0">
             <!-- 나침반 -->
-            <div class="ui-compass" style="width:min(620px,72%);margin:0 auto">
+            <div class="ui-compass" style="width:min(930px,72%);margin:0 auto">
               <div class="ui-compass__center"></div>
-              <span class="ui-compass__tick" style="left:2%;height:5px"></span>
+              <span class="ui-compass__tick" style="left:2%;height:7.5px"></span>
               <span class="ui-compass__label" style="left:2%">30</span>
-              <span class="ui-compass__tick" style="left:14.4%;height:5px"></span>
+              <span class="ui-compass__tick" style="left:14.4%;height:7.5px"></span>
               <span class="ui-compass__label" style="left:14.4%">45</span>
-              <span class="ui-compass__tick" style="left:26.8%;height:8px"></span>
+              <span class="ui-compass__tick" style="left:26.8%;height:12px"></span>
               <span class="ui-compass__label ui-compass__label--card" style="left:26.8%">NE</span>
-              <span class="ui-compass__tick" style="left:39.2%;height:5px"></span>
+              <span class="ui-compass__tick" style="left:39.2%;height:7.5px"></span>
               <span class="ui-compass__label" style="left:39.2%">75</span>
-              <span class="ui-compass__tick" style="left:51.6%;height:8px"></span>
+              <span class="ui-compass__tick" style="left:51.6%;height:12px"></span>
               <span class="ui-compass__label ui-compass__label--card" style="left:51.6%">E</span>
-              <span class="ui-compass__tick" style="left:64%;height:5px"></span>
+              <span class="ui-compass__tick" style="left:64%;height:7.5px"></span>
               <span class="ui-compass__label" style="left:64%">105</span>
-              <span class="ui-compass__tick" style="left:76.4%;height:5px"></span>
+              <span class="ui-compass__tick" style="left:76.4%;height:7.5px"></span>
               <span class="ui-compass__label" style="left:76.4%">120</span>
-              <span class="ui-compass__tick" style="left:88.8%;height:8px"></span>
+              <span class="ui-compass__tick" style="left:88.8%;height:12px"></span>
               <span class="ui-compass__label ui-compass__label--card" style="left:88.8%">SE</span>
               <!-- 위협 마커 -->
               <span class="ui-compass__mark" style="left:35%">
-                <span style="display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--beast)"></span></span>
+                <span style="display:block;width:0;height:0;border-left:7.5px solid transparent;border-right:7.5px solid transparent;border-top:10.5px solid var(--beast)"></span></span>
               <span class="ui-compass__mark" style="left:72%">
-                <span style="display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--beast)"></span></span>
+                <span style="display:block;width:0;height:0;border-left:7.5px solid transparent;border-right:7.5px solid transparent;border-top:10.5px solid var(--beast)"></span></span>
               <!-- 코어 방향 -->
               <span class="ui-compass__mark" style="left:18%">
-                <span style="display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--ok)"></span></span>
+                <span style="display:block;width:0;height:0;border-left:7.5px solid transparent;border-right:7.5px solid transparent;border-top:10.5px solid var(--ok)"></span></span>
             </div>
 
             <!-- 웨이브 정보 줄 -->
-            <div style="display:flex;justify-content:center;align-items:center;gap:var(--space-4);margin-top:6px">
-              <span style="font-family:var(--font-display);font-size:11px;letter-spacing:.1em;color:var(--beast);
-                           border:1px solid rgba(255,93,115,.45);border-radius:var(--r-sm);padding:1px 8px">WAVE 7</span>
+            <div style="display:flex;justify-content:center;align-items:center;gap:var(--space-4);margin-top:9px">
+              <span style="font-family:var(--font-display);font-size:16.5px;letter-spacing:.1em;color:var(--beast);
+                           border:1.5px solid rgba(255,93,115,.45);border-radius:var(--r-sm);padding:1.5px 12px">WAVE 7</span>
               <div class="ui-seg"><i style="background:var(--beast)"></i><i style="background:var(--beast)"></i>
                 <i style="background:var(--beast)"></i><i style="background:var(--beast)"></i><i class="empty"></i><i class="empty"></i></div>
-              <span style="display:inline-flex;align-items:center;gap:5px">
+              <span style="display:inline-flex;align-items:center;gap:7.5px">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:block">
                   <path d="M8 1.6 C5.4 1.6 3.4 3.7 3.4 6.3 L2 9.2 L4 9.2 L4.6 11 L6.4 11 L6.4 13.6 L9.6 13.6 L9.6 11 L11.4 11 L12 9.2 L14 9.2 L12.6 6.3 C12.6 3.7 10.6 1.6 8 1.6 Z"
                         fill="var(--beast)" opacity=".9"/>
                   <circle cx="6.1" cy="6.4" r="1.15" fill="#0B1220"/><circle cx="9.9" cy="6.4" r="1.15" fill="#0B1220"/>
                 </svg>
-                <span style="font-family:var(--font-data);font-size:14px;color:var(--text)">23</span>
+                <span style="font-family:var(--font-data);font-size:21px;color:var(--text)">23</span>
               </span>
             </div>
           </div>
 
           <!-- 좌상단: 일차 + 남은 시간 -->
-          <div style="position:absolute;left:24px;top:20px;display:flex;gap:var(--space-5)">
+          <div style="position:absolute;left:36px;top:30px;display:flex;gap:var(--space-5)">
             <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
             <div class="ui-stat"><span class="ui-stat__label">NIGHT ENDS</span><span class="ui-stat__value" style="color:var(--beast)">01:32</span></div>
           </div>
 
           <!-- 중앙 크로스헤어 -->
-          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px">
-            <div style="position:absolute;left:8px;top:0;width:2px;height:6px;background:var(--text-dim)"></div>
-            <div style="position:absolute;left:8px;bottom:0;width:2px;height:6px;background:var(--text-dim)"></div>
-            <div style="position:absolute;top:8px;left:0;height:2px;width:6px;background:var(--text-dim)"></div>
-            <div style="position:absolute;top:8px;right:0;height:2px;width:6px;background:var(--text-dim)"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:27px;height:27px">
+            <div style="position:absolute;left:12px;top:0;width:3px;height:9px;background:var(--text-dim)"></div>
+            <div style="position:absolute;left:12px;bottom:0;width:3px;height:9px;background:var(--text-dim)"></div>
+            <div style="position:absolute;top:12px;left:0;height:3px;width:9px;background:var(--text-dim)"></div>
+            <div style="position:absolute;top:12px;right:0;height:3px;width:9px;background:var(--text-dim)"></div>
           </div>
 
           <!-- 좌하단: 체력 + 코어 -->
-          <div style="position:absolute;left:24px;bottom:20px;width:292px">
+          <div style="position:absolute;left:36px;bottom:30px;width:438px">
             <!-- 플레이어 체력 -->
-            <div style="margin-bottom:10px">
-              <div style="display:flex;align-items:flex-end;gap:var(--space-2);margin-bottom:5px">
-                <span style="font-family:var(--font-data);font-size:26px;line-height:1;color:var(--text)">72</span>
-                <span style="font-family:var(--font-data);font-size:12px;color:var(--text-faint);padding-bottom:2px">/ 100</span>
-                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.14em;color:var(--text-faint);
-                             margin-left:auto;padding-bottom:3px">VITALS</span>
+            <div style="margin-bottom:15px">
+              <div style="display:flex;align-items:flex-end;gap:var(--space-2);margin-bottom:7.5px">
+                <span style="font-family:var(--font-data);font-size:39px;line-height:1;color:var(--text)">72</span>
+                <span style="font-family:var(--font-data);font-size:18px;color:var(--text-faint);padding-bottom:3px">/ 100</span>
+                <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.14em;color:var(--text-faint);
+                             margin-left:auto;padding-bottom:4.5px">VITALS</span>
               </div>
-              <div style="height:5px;background:rgba(255,93,115,.14);border-radius:2px;overflow:hidden">
+              <div style="height:7.5px;background:rgba(255,93,115,.14);border-radius:3px;overflow:hidden">
                 <div style="width:72%;height:100%;background:var(--danger);
-                            box-shadow:0 0 10px rgba(255,93,115,.55);border-radius:2px"></div>
+                            box-shadow:0 0 15px rgba(255,93,115,.55);border-radius:3px"></div>
               </div>
             </div>
             <!-- 코어 -->
             <div style="display:flex;align-items:center;gap:var(--space-2);
-                        border-left:2px solid var(--ok);padding-left:var(--space-2)">
-              <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.14em;color:var(--text-faint)">CORE</span>
-              <div style="flex:1;height:4px;background:rgba(93,211,158,.14);border-radius:2px;overflow:hidden">
-                <div style="width:88%;height:100%;background:var(--ok);border-radius:2px"></div>
+                        border-left:3px solid var(--ok);padding-left:var(--space-2)">
+              <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.14em;color:var(--text-faint)">CORE</span>
+              <div style="flex:1;height:6px;background:rgba(93,211,158,.14);border-radius:3px;overflow:hidden">
+                <div style="width:88%;height:100%;background:var(--ok);border-radius:3px"></div>
               </div>
-              <span style="font-family:var(--font-data);font-size:12px;color:var(--ok)">88<span style="color:var(--text-faint);font-size:10px">%</span></span>
+              <span style="font-family:var(--font-data);font-size:18px;color:var(--ok)">88<span style="color:var(--text-faint);font-size:15px">%</span></span>
             </div>
           </div>
 
           <!-- 우하단: 탄약 -->
-          <div style="position:absolute;right:24px;bottom:20px;text-align:right">
+          <div style="position:absolute;right:36px;bottom:30px;text-align:right">
             <div class="ui-stat" style="align-items:flex-end"><span class="ui-stat__label">DENSE AMMO</span>
-              <span class="ui-stat__value" style="font-size:22px">24<span style="color:var(--text-faint);font-size:14px"> / 120</span></span></div>
+              <span class="ui-stat__value" style="font-size:33px">24<span style="color:var(--text-faint);font-size:21px"> / 120</span></span></div>
           </div>
 
           <!-- 하단 중앙: 핫바 -->
-          <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:var(--space-2)">
+          <div style="position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;gap:var(--space-2)">
             <div class="ui-slot ui-slot--active"><span class="ui-slot__key">1</span><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">24</span></div>
             <div class="ui-slot"><span class="ui-slot__key">2</span><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">8</span></div>
             <div class="ui-slot"><span class="ui-slot__key">3</span><div class="ui-slot__icon" style="background:var(--beast)"></div><span class="ui-slot__n">3</span></div>
@@ -1402,13 +1426,13 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">SCR-03</span><h3>건설 메뉴</h3><span class="cls">BuildMenuPanel.uxml</span></div>
     <div class="doc-part-body" style="grid-template-columns:1fr">
       <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg);position:relative">
-        <div class="ui-panel" style="width:620px;position:relative">
+        <div class="ui-panel" style="width:930px;position:relative">
           <!-- 커서가 '조립기' 행 위에 있을 때 -->
-          <svg width="14" height="18" viewBox="0 0 14 18" style="position:absolute;left:344px;top:118px;z-index:5;
-               filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">
+          <svg width="14" height="18" viewBox="0 0 14 18" style="position:absolute;left:516px;top:177px;z-index:5;
+               filter:drop-shadow(0 1.5px 3px rgba(0,0,0,.6))">
             <path d="M1 1 L1 14 L4.6 10.6 L7 16 L9.6 14.8 L7.2 9.6 L12 9.4 Z" fill="#fff" stroke="#0B1220" stroke-width="1"/>
           </svg>
-          <div class="ui-tooltip" style="position:absolute;left:356px;top:132px;z-index:4;max-width:290px">
+          <div class="ui-tooltip" style="position:absolute;left:534px;top:198px;z-index:4;max-width:435px">
             <div class="ui-tooltip__name" style="color:var(--copper)">조립기</div>
             <div class="ui-tooltip__type">TIER 2 · 생산</div>
             <div class="ui-tooltip__desc">부품 2종을 합쳐 조립 부품을 만듭니다.</div>
@@ -1416,7 +1440,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
             <div class="ui-tooltip__stat"><span>입력 슬롯</span><b>2</b></div>
             <div class="ui-tooltip__sep"></div>
             <div style="display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap">
-              <span style="font-size:11px;color:var(--text-faint)">건설 비용</span>
+              <span style="font-size:16.5px;color:var(--text-faint)">건설 비용</span>
               <span class="ui-chip ui-chip--iron">철판<span class="ui-chip__n">8</span></span>
               <span class="ui-chip ui-chip--iron">철 기어<span class="ui-chip__n">4</span></span>
             </div>
@@ -1446,7 +1470,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 
 
             <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);
-                        border-top:1px solid var(--line);padding-top:var(--space-3)">
+                        border-top:1.5px solid var(--line);padding-top:var(--space-3)">
               <div style="margin-left:auto;display:flex;align-items:center;gap:var(--space-3)">
                 <span class="ui-key"><span class="ui-key__cap">R</span>회전</span>
                 <span class="ui-key"><span class="ui-key__cap">T</span>모양 변경</span>
@@ -1474,25 +1498,25 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
       <div class="doc-demo" style="padding:0;border-radius:0 0 var(--r-lg) var(--r-lg)">
         <div style="width:100%;aspect-ratio:16/10;position:relative;overflow:hidden;border-radius:0 0 var(--r-lg) var(--r-lg);
                     background:linear-gradient(180deg,#132038 0%,#0B1220 55%,#0E1A2E 100%)">
-          <div style="position:absolute;left:0;right:0;top:46%;height:1px;background:rgba(79,216,224,.12)"></div>
+          <div style="position:absolute;left:0;right:0;top:46%;height:1.5px;background:rgba(79,216,224,.12)"></div>
           <!-- 인벤토리 열면 화면이 어두워진다 -->
           <div style="position:absolute;inset:0;background:rgba(6,10,20,.55)"></div>
 
           <!-- 열려 있어도 남는 HUD (흐리게) -->
-          <div style="position:absolute;left:24px;top:18px;display:flex;gap:var(--space-5);opacity:.4">
+          <div style="position:absolute;left:36px;top:27px;display:flex;gap:var(--space-5);opacity:.4">
             <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
             <div class="ui-stat"><span class="ui-stat__label">NIGHT ENDS</span><span class="ui-stat__value" style="color:var(--beast)">01:32</span></div>
           </div>
 
           <!-- 인벤토리 패널: 핫바가 HUD 핫바 자리에 그대로 오도록 하단 정렬 -->
-          <div class="ui-panel" style="width:600px;position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
+          <div class="ui-panel" style="width:900px;position:absolute;left:50%;transform:translateX(-50%);bottom:30px;
                                        border-bottom-left-radius:0;border-bottom-right-radius:0">
             <div class="ui-panel__title"><span class="tag">INV</span>인벤토리<button class="ui-panel__x">✕</button></div>
             <div class="ui-panel__body" style="padding-bottom:0">
 
               <!-- 수동 제작 -->
-              <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-3)">HAND CRAFT</div>
-              <div style="display:grid;grid-template-columns:236px minmax(0,1fr);gap:var(--space-4);align-items:stretch;height:236px">
+              <div style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-3)">HAND CRAFT</div>
+              <div style="display:grid;grid-template-columns:354px minmax(0,1fr);gap:var(--space-4);align-items:stretch;height:354px">
 
                 <!-- 좌: 검색 + 목록 -->
                 <div style="display:flex;flex-direction:column;min-height:0">
@@ -1503,54 +1527,54 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                     </svg>
                     <input class="ui-search__input" type="text" placeholder="레시피 검색">
                   </div>
-                  <div class="ui-scroll" style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0">
-                    <div class="ui-row ui-row--selected" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--crystal);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">동력 모듈</span><span class="ui-row__meta">10.0s</span>
+                  <div class="ui-scroll" style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0">
+                    <div class="ui-row ui-row--selected" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--crystal);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">동력 모듈</span><span class="ui-row__meta">10.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">선체 패널</span><span class="ui-row__meta">4.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">선체 패널</span><span class="ui-row__meta">4.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">항법 제어 유닛</span><span class="ui-row__meta">6.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">항법 제어 유닛</span><span class="ui-row__meta">6.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--crystal);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">에너지 셀</span><span class="ui-row__meta">4.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--crystal);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">에너지 셀</span><span class="ui-row__meta">4.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">크리스탈 탄약</span><span class="ui-row__meta">3.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">크리스탈 탄약</span><span class="ui-row__meta">3.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">고밀도 탄약</span><span class="ui-row__meta">3.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">고밀도 탄약</span><span class="ui-row__meta">3.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">회로 기판</span><span class="ui-row__meta">4.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">회로 기판</span><span class="ui-row__meta">4.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--copper);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">구리 전선</span><span class="ui-row__meta">2.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">구리 전선</span><span class="ui-row__meta">2.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">철판</span><span class="ui-row__meta">3.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">철판</span><span class="ui-row__meta">3.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">철 기어</span><span class="ui-row__meta">3.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">철 기어</span><span class="ui-row__meta">3.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">기본 탄약</span><span class="ui-row__meta">2.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">기본 탄약</span><span class="ui-row__meta">2.0s</span>
                     </div>
-                    <div class="ui-row" style="min-width:0;padding:5px var(--space-2)">
-                      <div class="ui-slot__icon" style="background:var(--iron);width:20px;height:20px"></div>
-                      <span class="ui-row__name" style="font-size:12.5px">철 주괴</span><span class="ui-row__meta">2.0s</span>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">철 주괴</span><span class="ui-row__meta">2.0s</span>
                     </div>
                   </div>
                 </div>
@@ -1558,14 +1582,14 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                 <!-- 우: 선택 레시피 상세 -->
                 <div style="display:flex;flex-direction:column;min-height:0">
                   <div class="ui-yield" style="margin-bottom:var(--space-2);flex-shrink:0">
-                    <div class="ui-slot" style="width:40px;height:40px"><div class="ui-slot__icon" style="background:var(--crystal)"></div></div>
+                    <div class="ui-slot" style="width:60px;height:60px"><div class="ui-slot__icon" style="background:var(--crystal)"></div></div>
                     <div style="flex:1;min-width:0">
-                      <div style="font-size:13px;color:var(--crystal);font-weight:500">동력 모듈</div>
-                      <div style="font-size:11px;color:var(--text-faint)">회당 1개 산출</div>
+                      <div style="font-size:19.5px;color:var(--crystal);font-weight:500">동력 모듈</div>
+                      <div style="font-size:16.5px;color:var(--text-faint)">회당 1개 산출</div>
                     </div>
                     <span class="ui-timepill">◷ 10.0s</span>
                   </div>
-                  <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+                  <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">
                     <div class="ui-mat ui-mat--copper"><span class="ui-mat__name">항법 제어 유닛</span>
                       <span class="ui-mat__n">1 <span class="ui-num--dim">/ 3</span></span></div>
                     <div class="ui-mat ui-mat--iron"><span class="ui-mat__name">선체 패널</span>
@@ -1585,9 +1609,9 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
 
               <!-- 인벤토리 격자 -->
-              <div style="border-top:1px solid var(--line);margin-top:var(--space-4);padding-top:var(--space-3)">
-                <div style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-2)">INVENTORY</div>
-                <div style="display:grid;grid-template-columns:repeat(9,52px);gap:var(--space-2);justify-content:center">
+              <div style="border-top:1.5px solid var(--line);margin-top:var(--space-4);padding-top:var(--space-3)">
+                <div style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);line-height:1;margin-bottom:var(--space-2)">INVENTORY</div>
+                <div style="display:grid;grid-template-columns:repeat(9,78px);gap:var(--space-2);justify-content:center">
                   <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">64</span></div>
                   <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">31</span></div>
                   <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">12</span></div>
@@ -1610,7 +1634,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
 
               <!-- 핫바: HUD와 같은 자리 -->
-              <div style="border-top:1px solid var(--line);margin-top:var(--space-3);padding:var(--space-3) 0 var(--space-4);
+              <div style="border-top:1.5px solid var(--line);margin-top:var(--space-3);padding:var(--space-3) 0 var(--space-4);
                           display:flex;justify-content:center;gap:var(--space-2)">
                 <div class="ui-slot ui-slot--active"><span class="ui-slot__key">1</span><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">24</span></div>
                 <div class="ui-slot"><span class="ui-slot__key">2</span><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">8</span></div>
@@ -1659,34 +1683,34 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                     background:linear-gradient(180deg,#132038 0%,#0B1220 52%,#101B2E 100%)">
           <!-- 지면 격자 -->
           <div style="position:absolute;left:0;right:0;bottom:0;height:62%;
-                      background-image:linear-gradient(rgba(79,216,224,.10) 1px,transparent 1px),
-                                       linear-gradient(90deg,rgba(79,216,224,.10) 1px,transparent 1px);
-                      background-size:52px 34px;transform:perspective(360px) rotateX(52deg);transform-origin:bottom"></div>
+                      background-image:linear-gradient(rgba(79,216,224,.10) 1.5px,transparent 1.5px),
+                                       linear-gradient(90deg,rgba(79,216,224,.10) 1.5px,transparent 1.5px);
+                      background-size:78px 51px;transform:perspective(540px) rotateX(52deg);transform-origin:bottom"></div>
 
           <!-- 모드 배지 -->
-          <div style="position:absolute;left:50%;top:16px;transform:translateX(-50%)">
+          <div style="position:absolute;left:50%;top:24px;transform:translateX(-50%)">
             <span class="ui-modebadge ui-modebadge--build">BUILD MODE</span>
           </div>
           <!-- 좌상단 -->
-          <div style="position:absolute;left:24px;top:20px;display:flex;gap:var(--space-5)">
+          <div style="position:absolute;left:36px;top:30px;display:flex;gap:var(--space-5)">
             <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
             <div class="ui-stat"><span class="ui-stat__label">NIGHT IN</span><span class="ui-stat__value">04:12</span></div>
           </div>
 
           <!-- 고스트 + 포트 흐름 -->
           <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%)">
-            <div class="ui-ghost" style="position:relative;width:104px;height:68px">
-              <span class="ui-flow ui-flow--in"  style="left:-34px;top:10px;width:34px;height:14px"></span>
-              <span class="ui-flow ui-flow--in"  style="left:-34px;top:40px;width:34px;height:14px"></span>
-              <span class="ui-flow ui-flow--out" style="right:-34px;top:26px;width:34px;height:14px;
+            <div class="ui-ghost" style="position:relative;width:156px;height:102px">
+              <span class="ui-flow ui-flow--in"  style="left:-51px;top:15px;width:51px;height:21px"></span>
+              <span class="ui-flow ui-flow--in"  style="left:-51px;top:60px;width:51px;height:21px"></span>
+              <span class="ui-flow ui-flow--out" style="right:-51px;top:39px;width:51px;height:21px;
                     background:linear-gradient(270deg, rgba(255,158,74,0), rgba(255,158,74,.55))"></span>
             </div>
           </div>
 
           <!-- 하단: 배치 카드 -->
-          <div style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%)">
+          <div style="position:absolute;left:50%;bottom:36px;transform:translateX(-50%)">
             <div class="ui-placecard">
-              <div class="ui-slot" style="width:40px;height:40px"><div class="ui-slot__icon" style="background:var(--copper)"></div></div>
+              <div class="ui-slot" style="width:60px;height:60px"><div class="ui-slot__icon" style="background:var(--copper)"></div></div>
               <span class="ui-placecard__name">조립기</span>
               <span class="ui-placecard__sep"></span>
               <span class="ui-chip ui-chip--iron">철판<span class="ui-chip__n">10/31</span></span>
@@ -1721,27 +1745,27 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
         <div style="width:100%;aspect-ratio:16/7;position:relative;overflow:hidden;border-radius:0 0 var(--r-lg) var(--r-lg);
                     background:linear-gradient(180deg,#1A1622 0%,#0B1220 52%,#141020 100%)">
           <div style="position:absolute;left:0;right:0;bottom:0;height:62%;
-                      background-image:linear-gradient(rgba(255,93,115,.09) 1px,transparent 1px),
-                                       linear-gradient(90deg,rgba(255,93,115,.09) 1px,transparent 1px);
-                      background-size:52px 34px;transform:perspective(360px) rotateX(52deg);transform-origin:bottom"></div>
+                      background-image:linear-gradient(rgba(255,93,115,.09) 1.5px,transparent 1.5px),
+                                       linear-gradient(90deg,rgba(255,93,115,.09) 1.5px,transparent 1.5px);
+                      background-size:78px 51px;transform:perspective(540px) rotateX(52deg);transform-origin:bottom"></div>
 
-          <div style="position:absolute;left:50%;top:16px;transform:translateX(-50%)">
+          <div style="position:absolute;left:50%;top:24px;transform:translateX(-50%)">
             <span class="ui-modebadge ui-modebadge--demolish">DEMOLISH MODE</span>
           </div>
-          <div style="position:absolute;left:24px;top:20px;display:flex;gap:var(--space-5)">
+          <div style="position:absolute;left:36px;top:30px;display:flex;gap:var(--space-5)">
             <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
             <div class="ui-stat"><span class="ui-stat__label">NIGHT IN</span><span class="ui-stat__value">04:12</span></div>
           </div>
 
           <!-- 조준한 건물 -->
           <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%)">
-            <div class="ui-ghost ui-ghost--bad" style="position:relative;width:104px;height:68px;border-style:solid">
-              <span style="position:absolute;inset:-5px;border:1px solid rgba(255,93,115,.35);border-radius:5px"></span>
+            <div class="ui-ghost ui-ghost--bad" style="position:relative;width:156px;height:102px;border-style:solid">
+              <span style="position:absolute;inset:-7.5px;border:1.5px solid rgba(255,93,115,.35);border-radius:7.5px"></span>
             </div>
           </div>
 
           <!-- 하단: 철거 카드 -->
-          <div style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%)">
+          <div style="position:absolute;left:50%;bottom:36px;transform:translateX(-50%)">
             <div class="ui-placecard" style="border-color:rgba(255,93,115,.45)">
               <div class="ui-holdring">
                 <svg width="46" height="46" viewBox="0 0 46 46">
@@ -1753,10 +1777,10 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
               <div>
                 <div class="ui-placecard__name" style="color:var(--danger)">조립기 철거</div>
-                <div style="font-size:11px;color:var(--text-faint);margin-top:1px">누르고 있는 동안 진행</div>
+                <div style="font-size:16.5px;color:var(--text-faint);margin-top:1.5px">누르고 있는 동안 진행</div>
               </div>
               <span class="ui-placecard__sep"></span>
-              <span style="font-size:11.5px;color:var(--text-faint)">환급</span>
+              <span style="font-size:17.2px;color:var(--text-faint)">환급</span>
               <span class="ui-chip ui-chip--done">철판<span class="ui-chip__n">10</span></span>
               <span class="ui-chip ui-chip--done">철 기어<span class="ui-chip__n">6</span></span>
               <span class="ui-chip ui-chip--done">구리 전선<span class="ui-chip__n">8</span></span>
@@ -1783,42 +1807,42 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     <div class="doc-part-head"><span class="code">SCR-07</span><h3>분배기 — 출구 필터</h3><span class="cls">SplitterPanel.uxml</span></div>
     <div class="doc-part-body" style="grid-template-columns:1fr">
       <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
-        <div class="ui-panel" style="width:660px">
+        <div class="ui-panel" style="width:990px">
           <div class="ui-panel__title"><span class="tag">SPLIT</span>분배기<button class="ui-panel__x">✕</button></div>
-          <div class="ui-panel__body" style="display:grid;grid-template-columns:250px minmax(0,1fr);gap:var(--space-5);align-items:center">
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:375px minmax(0,1fr);gap:var(--space-5);align-items:center">
 
             <!-- 좌: 출구 맵 — 보이는 자리가 실제 자리 -->
             <div style="display:flex;align-items:center;justify-content:center;height:100%">
               <div class="ui-dirmap">
                 <!-- 입력 -->
-                <span class="ui-flowline" style="left:6px;top:117px;width:80px;height:16px;
+                <span class="ui-flowline" style="left:9px;top:175.5px;width:120px;height:24px;
                       background:linear-gradient(90deg, rgba(79,216,224,0), rgba(79,216,224,.55))"></span>
                 <!-- 출력 흐름: 허용은 귤색, 차단은 점선 -->
-                <span class="ui-flowline" style="left:117px;top:66px;width:16px;height:20px;
+                <span class="ui-flowline" style="left:175.5px;top:99px;width:24px;height:30px;
                       background:linear-gradient(0deg, rgba(255,158,74,.55), rgba(255,158,74,0))"></span>
-                <span class="ui-flowline" style="left:164px;top:117px;width:20px;height:16px;
+                <span class="ui-flowline" style="left:246px;top:175.5px;width:30px;height:24px;
                       background:linear-gradient(90deg, rgba(255,158,74,.55), rgba(255,158,74,0))"></span>
-                <span class="ui-flowline ui-flowline--off" style="left:117px;top:164px;width:16px;height:20px"></span>
+                <span class="ui-flowline ui-flowline--off" style="left:175.5px;top:246px;width:24px;height:30px"></span>
 
                 <div class="ui-dirmap__body">
-                  <div style="width:34px;height:34px;border-radius:4px;background:var(--line);opacity:.55"></div>
+                  <div style="width:51px;height:51px;border-radius:6px;background:var(--line);opacity:.55"></div>
                 </div>
 
                 <!-- 위쪽 출구: 특정 아이템만 -->
-                <div class="ui-dirslot ui-dirslot--open ui-dirslot--sel" style="left:92px;top:0">
+                <div class="ui-dirslot ui-dirslot--open ui-dirslot--sel" style="left:138px;top:0">
                   <div class="ui-dirslot__icons">
                     <i style="background:var(--iron)"></i><i style="background:var(--iron)"></i>
                   </div>
                 </div>
                 <!-- 오른쪽 출구: 전체 허용 -->
-                <div class="ui-dirslot ui-dirslot--open" style="right:0;top:92px">
+                <div class="ui-dirslot ui-dirslot--open" style="right:0;top:138px">
                   <div class="ui-dirslot__icons ui-dirslot__all">
                     <i style="background:var(--iron)"></i><i style="background:var(--copper)"></i>
                     <i style="background:var(--crystal)"></i><i style="background:var(--beast)"></i>
                   </div>
                 </div>
                 <!-- 아래쪽 출구: 차단 -->
-                <div class="ui-dirslot ui-dirslot--blocked" style="left:92px;bottom:0">
+                <div class="ui-dirslot ui-dirslot--blocked" style="left:138px;bottom:0">
                   <div class="ui-dirslot__x"></div>
                 </div>
               </div>
@@ -1827,11 +1851,11 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
             <!-- 우: 선택한 출구의 허용 목록 -->
             <div style="display:flex;flex-direction:column">
               <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3)">
-                <span style="width:14px;height:14px;border-radius:3px;background:var(--out)"></span>
-                <span style="font-size:13.5px;font-weight:600">선택한 출구</span>
-                <div style="margin-left:auto;display:flex;gap:6px">
-                  <button class="ui-btn ui-btn--ghost" style="padding:3px 10px;font-size:12px">전체 허용</button>
-                  <button class="ui-btn ui-btn--danger" style="padding:3px 10px;font-size:12px">전체 차단</button>
+                <span style="width:21px;height:21px;border-radius:4.5px;background:var(--out)"></span>
+                <span style="font-size:20.2px;font-weight:600">선택한 출구</span>
+                <div style="margin-left:auto;display:flex;gap:9px">
+                  <button class="ui-btn ui-btn--ghost" style="padding:4.5px 15px;font-size:18px">전체 허용</button>
+                  <button class="ui-btn ui-btn--danger" style="padding:4.5px 15px;font-size:18px">전체 차단</button>
                 </div>
               </div>
 
@@ -1843,7 +1867,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                 <input class="ui-search__input" type="text" placeholder="아이템 검색">
               </div>
 
-              <div class="ui-scroll" style="display:flex;flex-direction:column;gap:2px;max-height:186px">
+              <div class="ui-scroll" style="display:flex;flex-direction:column;gap:3px;max-height:279px">
                 <div class="ui-allowrow ui-allowrow--on">
                   <span class="ui-allowrow__sw"></span>
                   <span class="ui-allowrow__ic" style="background:var(--iron)"></span>
@@ -1876,8 +1900,8 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
                 </div>
               </div>
 
-              <div style="margin-top:auto;border-top:1px solid var(--line);padding-top:var(--space-3);
-                          font-size:11.5px;color:var(--text-faint)">
+              <div style="margin-top:auto;border-top:1.5px solid var(--line);padding-top:var(--space-3);
+                          font-size:17.2px;color:var(--text-faint)">
                 막힌 출구로는 보내지 않고 다음 출구로 넘긴다</div>
             </div>
           </div>
@@ -1905,24 +1929,24 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
       <div class="doc-demo" style="padding:0;border-radius:0 0 var(--r-lg) var(--r-lg)">
         <div style="width:100%;aspect-ratio:16/10;position:relative;overflow:hidden;border-radius:0 0 var(--r-lg) var(--r-lg);
                     background:linear-gradient(180deg,#132038 0%,#0B1220 55%,#0E1A2E 100%)">
-          <div style="position:absolute;left:0;right:0;top:46%;height:1px;background:rgba(79,216,224,.12)"></div>
+          <div style="position:absolute;left:0;right:0;top:46%;height:1.5px;background:rgba(79,216,224,.12)"></div>
           <div style="position:absolute;inset:0;background:rgba(6,10,20,.55)"></div>
-          <div style="position:absolute;left:24px;top:18px;display:flex;gap:var(--space-5);opacity:.4">
+          <div style="position:absolute;left:36px;top:27px;display:flex;gap:var(--space-5);opacity:.4">
             <div class="ui-stat"><span class="ui-stat__label">DAY</span><span class="ui-stat__value">4</span></div>
             <div class="ui-stat"><span class="ui-stat__label">NIGHT ENDS</span><span class="ui-stat__value" style="color:var(--beast)">01:32</span></div>
           </div>
 
-          <div class="ui-panel" style="width:600px;position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
+          <div class="ui-panel" style="width:900px;position:absolute;left:50%;transform:translateX(-50%);bottom:30px;
                                        border-bottom-left-radius:0;border-bottom-right-radius:0">
             <div class="ui-panel__title"><span class="tag">STORE</span>보관소<button class="ui-panel__x">✕</button></div>
             <div class="ui-panel__body" style="padding-bottom:0">
 
               <!-- 보관소 칸 -->
               <div style="display:flex;align-items:center;margin-bottom:var(--space-2)">
-                <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1">STORAGE</span>
-                <button class="ui-btn ui-btn--ghost" style="margin-left:auto;padding:3px 10px;font-size:12px">정렬</button>
+                <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);line-height:1">STORAGE</span>
+                <button class="ui-btn ui-btn--ghost" style="margin-left:auto;padding:4.5px 15px;font-size:18px">정렬</button>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(6,52px);gap:var(--space-2);justify-content:center">
+              <div style="display:grid;grid-template-columns:repeat(6,78px);gap:var(--space-2);justify-content:center">
                 <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">200</span></div>
                 <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">148</span></div>
                 <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">96</span></div>
@@ -1938,13 +1962,13 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
 
               <!-- 인벤토리 -->
-              <div style="border-top:1px solid var(--line);margin-top:var(--space-4);padding-top:var(--space-3)">
+              <div style="border-top:1.5px solid var(--line);margin-top:var(--space-4);padding-top:var(--space-3)">
                 <div style="display:flex;align-items:center;margin-bottom:var(--space-2)">
-                  <span style="font-family:var(--font-display);font-size:10px;letter-spacing:.12em;color:var(--text-faint);line-height:1">INVENTORY</span>
-                  <button class="ui-btn ui-btn--ghost" style="margin-left:auto;padding:3px 10px;font-size:12px"
+                  <span style="font-family:var(--font-display);font-size:15px;letter-spacing:.12em;color:var(--text-faint);line-height:1">INVENTORY</span>
+                  <button class="ui-btn ui-btn--ghost" style="margin-left:auto;padding:4.5px 15px;font-size:18px"
                           title="보관소에 이미 있는 종류만 올려 보낸다">↑ 자동 넣기</button>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(9,52px);gap:var(--space-2);justify-content:center">
+                <div style="display:grid;grid-template-columns:repeat(9,78px);gap:var(--space-2);justify-content:center">
                 <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">64</span></div>
                 <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">31</span></div>
                 <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">12</span></div>
@@ -1967,7 +1991,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
               </div>
 
               <!-- 핫바 -->
-              <div style="border-top:1px solid var(--line);margin-top:var(--space-3);padding:var(--space-3) 0 var(--space-4);
+              <div style="border-top:1.5px solid var(--line);margin-top:var(--space-3);padding:var(--space-3) 0 var(--space-4);
                           display:flex;justify-content:center;gap:var(--space-2)">
                 <div class="ui-slot ui-slot--active"><span class="ui-slot__key">1</span><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">24</span></div>
                 <div class="ui-slot"><span class="ui-slot__key">2</span><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">8</span></div>
@@ -1995,6 +2019,248 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
     </div>
   </div>
 
+  <!-- 설비 가동 -->
+  <div class="doc-part">
+    <div class="doc-part-head"><span class="code">SCR-09</span><h3>설비 — 레시피와 가동 상태</h3><span class="cls">MachinePanel.uxml</span></div>
+    <div class="doc-part-body" style="grid-template-columns:1fr">
+      <div class="doc-demo" style="justify-content:center;border-radius:0 0 var(--r-lg) var(--r-lg)">
+        <!-- 제련로 — 1입력 · 출력 막힘 -->
+        <div class="ui-panel" style="width:900px;margin-bottom:var(--space-4)">
+          <div class="ui-panel__title"><span class="tag">MACHINE</span>제련로<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:354px minmax(0,1fr);
+                                             gap:var(--space-4);align-items:stretch;height:408px">
+            <div style="display:flex;flex-direction:column;min-height:0">
+              <div class="ui-search" style="margin-bottom:var(--space-2);flex-shrink:0">
+                <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
+                  <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <input class="ui-search__input" type="text" placeholder="레시피 검색">
+              </div>
+              <div class="ui-scroll" style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0">
+                <div class="ui-row ui-row--selected" style="min-width:0;padding:7.5px var(--space-2)">
+                  <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                  <span class="ui-row__name" style="font-size:18.8px">철 주괴</span><span class="ui-row__meta">2.0s</span>
+                </div>
+                <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                  <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+                  <span class="ui-row__name" style="font-size:18.8px">구리 주괴</span><span class="ui-row__meta">2.0s</span>
+                </div>
+                <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                  <div class="ui-slot__icon" style="background:var(--crystal);width:30px;height:30px"></div>
+                  <span class="ui-row__name" style="font-size:18.8px">정제 크리스탈</span><span class="ui-row__meta">6.0s</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;min-height:0">
+              <div class="ui-yield" style="margin-bottom:var(--space-2);flex-shrink:0">
+                <div class="ui-slot" style="width:60px;height:60px"><div class="ui-slot__icon" style="background:var(--iron)"></div></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:19.5px;color:var(--iron);font-weight:500">철 주괴</div>
+                  <div style="font-size:16.5px;color:var(--text-faint)">회당 1개 · 30개 / 분</div>
+                </div>
+                <span class="ui-timepill">◷ 2.0s</span>
+              </div>
+
+              <div class="ui-io" style="flex:1;min-height:0">
+                <div class="ui-io__col">
+                  <span class="ui-io__cap">IN</span>
+                  <div class="ui-io__slots">
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">42</span></div>
+                  </div>
+                </div>
+                <div class="ui-io__arrow ui-io__arrow--wide">
+                  <div class="ui-machine"><div class="ui-machine__fill" style="width:100%"></div></div>
+                  <div class="ui-machine__meta"><span>100%</span><span>대기</span></div>
+                </div>
+                <div class="ui-io__col">
+                  <span class="ui-io__cap">OUT</span>
+                  <div class="ui-io__slots">
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">10</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:var(--space-3);
+                          border-top:1.5px solid var(--line);padding-top:var(--space-3)">
+                <span class="ui-status ui-status--block"><span class="ui-status__dot"></span>출력 막힘</span>
+                <button class="ui-btn" style="margin-left:auto;padding:6px 21px;font-size:18px">■ 중지</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ui-panel" style="width:900px">
+          <div class="ui-panel__title"><span class="tag">MACHINE</span>조립기<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:354px minmax(0,1fr);
+                                             gap:var(--space-4);align-items:stretch;height:408px">
+
+            <!-- 좌: 이 설비가 돌릴 수 있는 레시피 -->
+            <div style="display:flex;flex-direction:column;min-height:0">
+              <div class="ui-search" style="margin-bottom:var(--space-2);flex-shrink:0">
+                <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
+                  <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <input class="ui-search__input" type="text" placeholder="레시피 검색">
+              </div>
+              <div class="ui-scroll" style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0">
+                    <div class="ui-row ui-row--selected" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">선체 패널</span><span class="ui-row__meta">4.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">회로 기판</span><span class="ui-row__meta">4.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--copper);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">항법 제어 유닛</span><span class="ui-row__meta">6.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--crystal);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">에너지 셀</span><span class="ui-row__meta">4.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">고밀도 탄약</span><span class="ui-row__meta">3.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">크리스탈 탄약</span><span class="ui-row__meta">3.0s</span>
+                    </div>
+                    <div class="ui-row" style="min-width:0;padding:7.5px var(--space-2)">
+                      <div class="ui-slot__icon" style="background:var(--iron);width:30px;height:30px"></div>
+                      <span class="ui-row__name" style="font-size:18.8px">유탄</span><span class="ui-row__meta">5.0s</span>
+                    </div>
+              </div>
+            </div>
+
+            <!-- 우: 가동 상태 -->
+            <div style="display:flex;flex-direction:column;min-height:0">
+              <div class="ui-yield" style="margin-bottom:var(--space-2);flex-shrink:0">
+                <div class="ui-slot" style="width:60px;height:60px"><div class="ui-slot__icon" style="background:var(--iron)"></div></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:19.5px;color:var(--iron);font-weight:500">선체 패널</div>
+                  <div style="font-size:16.5px;color:var(--text-faint)">회당 1개 · 15개 / 분</div>
+                </div>
+                <span class="ui-timepill">◷ 4.0s</span>
+              </div>
+
+              <!-- 입력 → 진행 → 출력 -->
+              <div class="ui-io" style="flex:1;min-height:0">
+                <div class="ui-io__col">
+                  <span class="ui-io__cap">IN</span>
+                  <div class="ui-io__slots">
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">6</span></div>
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">3</span></div>
+                  </div>
+                </div>
+                <div class="ui-io__arrow">
+                  <div class="ui-machine"><div class="ui-machine__fill" style="width:62%"></div></div>
+                  <div class="ui-machine__meta"><span>62%</span><span>1.5s</span></div>
+                </div>
+                <div class="ui-io__col">
+                  <span class="ui-io__cap">OUT</span>
+                  <div class="ui-io__slots">
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">4</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:var(--space-3);
+                          border-top:1.5px solid var(--line);padding-top:var(--space-3)">
+                <span class="ui-status ui-status--run"><span class="ui-status__dot"></span>가동 중</span>
+                <span style="font-size:17.2px;color:var(--text-faint)">철판 2 · 철 기어 1 소비</span>
+                <button class="ui-btn" style="margin-left:auto;padding:6px 21px;font-size:18px">■ 중지</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 제조기 — 4입력 · 중지 상태 -->
+        <div class="ui-panel" style="width:900px;margin-top:var(--space-4)">
+          <div class="ui-panel__title"><span class="tag">MACHINE</span>제조기<button class="ui-panel__x">✕</button></div>
+          <div class="ui-panel__body" style="display:grid;grid-template-columns:354px minmax(0,1fr);
+                                             gap:var(--space-4);align-items:stretch;height:408px">
+            <div style="display:flex;flex-direction:column;min-height:0">
+              <div class="ui-search" style="margin-bottom:var(--space-2);flex-shrink:0">
+                <svg class="ui-search__icon" width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <circle cx="7" cy="7" r="4.6" stroke="#8FA3C0" stroke-width="1.5"/>
+                  <path d="M10.4 10.4 L14 14" stroke="#8FA3C0" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <input class="ui-search__input" type="text" placeholder="레시피 검색">
+              </div>
+              <div class="ui-scroll" style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0">
+                <div class="ui-row ui-row--selected" style="min-width:0;padding:7.5px var(--space-2)">
+                  <div class="ui-slot__icon" style="background:var(--crystal);width:30px;height:30px"></div>
+                  <span class="ui-row__name" style="font-size:18.8px">동력 모듈</span><span class="ui-row__meta">10.0s</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;min-height:0">
+              <div class="ui-yield" style="margin-bottom:var(--space-2);flex-shrink:0">
+                <div class="ui-slot" style="width:60px;height:60px"><div class="ui-slot__icon" style="background:var(--crystal)"></div></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:19.5px;color:var(--crystal);font-weight:500">동력 모듈</div>
+                  <div style="font-size:16.5px;color:var(--text-faint)">회당 1개 · 6개 / 분</div>
+                </div>
+                <span class="ui-timepill">◷ 10.0s</span>
+              </div>
+
+              <div class="ui-io" style="flex:1;min-height:0">
+                <div class="ui-io__col">
+                  <span class="ui-io__cap">IN</span>
+                  <div class="ui-io__slots ui-io__slots--grid">
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--copper)"></div><span class="ui-slot__n">2</span></div>
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--iron)"></div><span class="ui-slot__n">5</span></div>
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--crystal)"></div><span class="ui-slot__n">8</span></div>
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--beast)"></div><span class="ui-slot__n">1</span></div>
+                  </div>
+                </div>
+                <div class="ui-io__arrow">
+                  <div class="ui-machine ui-machine--paused"><div class="ui-machine__fill" style="width:28%"></div></div>
+                  <div class="ui-machine__meta"><span>28%</span><span>멈춤</span></div>
+                </div>
+                <div class="ui-io__col">
+                  <span class="ui-io__cap">OUT</span>
+                  <div class="ui-io__slots">
+                    <div class="ui-slot"><div class="ui-slot__icon" style="background:var(--crystal)"></div><span class="ui-slot__n">2</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:var(--space-3);
+                          border-top:1.5px solid var(--line);padding-top:var(--space-3)">
+                <span class="ui-status ui-status--stop"><span class="ui-status__dot"></span>중지됨</span>
+                <span style="font-size:17.2px;color:var(--text-faint)">진행은 그대로 보존된다</span>
+                <button class="ui-btn ui-btn--primary" style="margin-left:auto;padding:6px 21px;font-size:18px">▶ 시작</button>
+              </div>
+            </div>
+          </div>
+
+      </div>
+    </div>
+    <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--line);font-size:12px;color:var(--text-dim)">
+      제련로·제작기·조립기·제조기가 <b style="color:var(--text)">같은 화면 하나</b>를 쓴다 — 데이터상 셋 다 같은 SO이고
+      입력 슬롯 수(1·1·2·4)만 다르므로, 왼쪽 IN 칸이 그 수만큼 늘어날 뿐이다.
+      가운데는 <b style="color:var(--text)">입력 → 진행 → 출력</b>을 실제 흐름 방향대로 놓아, 어디서 막혔는지 눈으로 짚게 한다.
+      입력 슬롯은 <b style="color:var(--text)">세로로 쌓다가 넷이 되면 2×2</b>로 접는다 — 어떤 설비든 창 높이가 같다.
+      입력이 하나뿐인 제련로는 남는 폭을 진행바가 쓴다.
+      IN·진행·OUT 은 <b style="color:var(--text)">세로 가운데</b>에 맞춰, 슬롯 수가 달라도 눈높이가 흔들리지 않는다.
+      <b style="color:var(--text)">시작 / 중지</b>는 상태줄 오른쪽 끝에 둔다. 멈춰도 진행률과 버퍼는 보존되므로
+      "잠깐 자원을 아끼려고 세워둔다"가 안전한 조작이 된다 — 재료가 귀한 크리스탈 라인에서 실제로 자주 쓰게 된다.
+      멈춘 동안 진행바는 <b style="color:var(--text-faint)">회색으로 얼어붙어</b> 고장이 아니라 사람이 세운 것임을 말한다.
+      막힘의 원인은 셋뿐이라 <b style="color:var(--ok)">가동 중</b> · <b style="color:var(--warn)">재료 대기</b> ·
+      <b style="color:var(--danger)">출력 막힘</b> 상태 하나로 말한다 — 재료가 비었으면 왼쪽 칸이, 출력이 찼으면 오른쪽 칸이
+      같이 비어 있거나 가득 차 있어서 상태 배지와 화면이 서로를 확인해 준다.
+      <b style="color:var(--text)">15개 / 분</b>은 벨트 처리량(Mk.1 = 240개/분)과 비교해 라인을 몇 개 물릴지 계산하는 값이라
+      회당 시간과 함께 항상 띄운다.
+    </div>
+  </div>
+
 <!-- ══════════ 5. 구현 규약 ══════════ -->
 <section class="doc-sec" id="impl">
   <div class="doc-sec-head"><span class="n">05</span><h2>UITK 이식 규약</h2><span class="aside">Claude Code 작업 기준</span></div>
@@ -2015,6 +2281,7 @@ code{font-family:var(--font-data);font-size:12px;color:var(--copper);
 │   ├── DemolishModeHUD.uxml
 │   ├── SplitterPanel.uxml
 │   ├── StoragePanel.uxml
+│   ├── MachinePanel.uxml
 │   └── InventoryPanel.uxml
 ├── <span class="s">Views/</span>
 │   ├── CorePanelView.cs  <span class="c">/* 바인딩만 */</span>

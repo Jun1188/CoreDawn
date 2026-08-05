@@ -855,6 +855,54 @@
     display: none;
 }
 
+/* ───────────────── CMP 나침반 (HUD 상단) ─────────────────
+   눈금·라벨·마커는 방위가 시야에 따라 흐르므로 코드가 만들고 매 프레임 배치한다.
+   원본의 mask-image(양끝 페이드)는 USS에 없다 — 코드가 거리에 따라 opacity를 준다. */
+
+.ui-compass {
+    height: 34px;
+    overflow: hidden;
+}
+
+.ui-compass__tick {
+    position: absolute;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--line-strong);
+}
+
+.ui-compass__label {
+    position: absolute;
+    bottom: 11px;
+    translate: -50% 0;
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    color: var(--text-dim);
+    -unity-font-definition: var(--font-display);
+}
+
+.ui-compass__label--card {
+    color: var(--text);
+    font-size: 11.5px;
+    -unity-font-style: bold;
+}
+
+.ui-compass__mark {
+    position: absolute;
+    bottom: 2px;
+    translate: -50% 0;
+}
+
+.ui-compass__center {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--text-a35);
+    translate: -50% 0;
+}
+
 /* ──────────────── 잠긴 영역 / 시간 배지 ──────────────── */
 
 .ui-locked {

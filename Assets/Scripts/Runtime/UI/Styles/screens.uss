@@ -812,3 +812,206 @@
     width: 30px;
     height: 30px;
 }
+
+/* ───────────── SCR-02 전투 HUD ───────────── */
+
+/* 상단 — 나침반 + 적 수 한 줄. 웨이브 배지·규모는 웨이브 시스템이 아직 없어 뺐다 */
+.combat-top {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 14px;
+    align-items: center;
+}
+
+/* 배율은 화면과 같게 고정돼 있으므로(도당 픽셀 = FOV), 폭을 늘리면 보이는 방위가 는다.
+   1382px(72%)면 FOV 103° 기준 대략 ±58° — 등 뒤 직전까지 보인다 */
+.combat-compass {
+    width: 72%;
+}
+
+.combat-enemyline {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.combat-enemyline__n {
+    font-size: 14px;
+    color: var(--text);
+    margin-left: 5px;
+    -unity-font-definition: var(--font-data);
+}
+
+/* 좌상단 — 시계는 전투 중 계속 볼 것이 아니라 항상 같은 자리에 있어야 하는 정보다 */
+.combat-stats {
+    position: absolute;
+    left: 24px;
+    top: 20px;
+    flex-direction: row;
+}
+
+.combat-stats > .ui-stat {
+    margin-right: var(--space-5);
+}
+
+.combat-cross {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    translate: -50% -50%;
+}
+
+.combat-cross__bar {
+    position: absolute;
+    background-color: var(--text-dim);
+}
+
+.combat-cross__bar--n { left: 8px; top: 0; width: 2px; height: 6px; }
+.combat-cross__bar--s { left: 8px; bottom: 0; width: 2px; height: 6px; }
+.combat-cross__bar--w { top: 8px; left: 0; width: 6px; height: 2px; }
+.combat-cross__bar--e { top: 8px; right: 0; width: 6px; height: 2px; }
+
+/* 좌하단 — 체력은 큰 숫자로 세우고 바는 얇게. 급할 때 읽는 건 바가 아니라 숫자다 */
+.combat-vitals {
+    position: absolute;
+    left: 24px;
+    bottom: 20px;
+    width: 292px;
+}
+
+.combat-vitals__head {
+    flex-direction: row;
+    align-items: flex-end;
+    margin-bottom: 5px;
+}
+
+.combat-vitals__hp {
+    font-size: 26px;
+    color: var(--text);
+    -unity-font-definition: var(--font-data);
+}
+
+.combat-vitals__max {
+    font-size: 12px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-data);
+    margin-left: var(--space-2);
+    padding-bottom: 2px;
+}
+
+.combat-vitals__tag {
+    margin-left: auto;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    color: var(--text-faint);
+    padding-bottom: 3px;
+    -unity-font-definition: var(--font-display);
+}
+
+.combat-vitals__bar {
+    height: 5px;
+    background-color: var(--danger-a15);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.combat-vitals__fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--danger);
+    border-radius: 2px;
+}
+
+/* 코어는 초록 세로선 하나로 묶어 플레이어 체력과 시각적으로 분리 */
+.combat-core {
+    flex-direction: row;
+    align-items: center;
+    border-left-width: 2px;
+    border-left-color: var(--ok);
+    padding-left: var(--space-2);
+    margin-top: 10px;
+}
+
+.combat-core__tag {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-display);
+}
+
+.combat-core__bar {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 4px;
+    background-color: var(--ok-a15);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: var(--space-2);
+    margin-right: var(--space-2);
+}
+
+.combat-core__fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--ok);
+    border-radius: 2px;
+}
+
+.combat-core__n {
+    font-size: 12px;
+    color: var(--ok);
+    -unity-font-definition: var(--font-data);
+}
+
+/* 우하단 — 탄약. 장착 무기가 없으면 통째로 사라진다 */
+.combat-ammo {
+    position: absolute;
+    right: 24px;
+    bottom: 20px;
+    align-items: flex-end;
+}
+
+.combat-ammo__row {
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.combat-ammo__now {
+    font-size: 22px;
+    color: var(--text);
+    -unity-font-definition: var(--font-data);
+}
+
+.combat-ammo__cap {
+    font-size: 14px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-data);
+    padding-bottom: 1px;
+}
+
+/* 하단 중앙 — 핫바. 인벤토리 패널의 핫바와 정확히 같은 자리(같은 손 위치).
+   37 = 패널 바닥 오프셋 20 + 패널 테두리 1 + 핫바 아래 패딩 16 */
+.combat-hotbar {
+    position: absolute;
+    left: 50%;
+    bottom: 37px;
+    flex-direction: row;
+    translate: -50% 0;
+}
+
+.combat-hotbar > .ui-slot {
+    margin-right: var(--space-2);
+}
+
+.combat-hotbar .ui-slot--last {
+    margin-right: 0;
+}
+
+/* 마커·글리프 색 — 코드가 아니라 여기서 정한다 */
+.combat-mark--threat { color: var(--beast); }
+.combat-mark--core { color: var(--ok); }
+.combat-enemyline__glyph { color: var(--beast); }
