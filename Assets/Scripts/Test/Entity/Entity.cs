@@ -96,6 +96,16 @@ public class Entity : MonoBehaviour
     public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectSO> effectList, in EffectContext ctx)
         => Effects.ApplyAll(effectList, ctx);
 
+    /// <summary>
+    /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.
+    /// 피해를 주는 효과 구현(DamageEffectSO·DoT)이 Health.TakeDamage 대신 이걸 호출한다.
+    /// </summary>
+    public void ReceiveDamage(float amount)
+    {
+        float final = amount * Effects.IncomingDamageMultiplier;
+        if (final > 0f) health.TakeDamage(final);
+    }
+
     // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.
     public virtual void TakeDamage(float damageAmount)
         => ApplyEffects(null, new EffectContext(null, damageAmount, transform.position));

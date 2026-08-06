@@ -79,6 +79,7 @@ public class BattleTower : BuildingEntity
         // 쏘기 직전에 한 발 소비 — 피해량은 장전된 탄약이 정한다
         float damage = combat.AttackDamage;
         if (supply != null && !supply.TryConsumeRound(out damage)) return;
+        damage *= Effects.AttackMultiplier; // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
 
         if (bulletPrefab != null)
         {

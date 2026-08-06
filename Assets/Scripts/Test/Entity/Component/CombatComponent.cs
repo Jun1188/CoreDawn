@@ -56,8 +56,9 @@ public class CombatComponent
         {
             lastAttackTime = Time.time;
 
-            // 효과 전달 — 비어 있으면 attackDamage만큼의 순수 피해
-            target.ApplyEffects(attackEffects, new EffectContext(owner, attackDamage, target.GetPosition()));
+            // 효과 전달 — 비어 있으면 attackDamage만큼의 순수 피해. 공격 버프는 여기(Power)에 곱는다
+            float power = attackDamage * (owner != null ? owner.Effects.AttackMultiplier : 1f);
+            target.ApplyEffects(attackEffects, new EffectContext(owner, power, target.GetPosition()));
 
             // 이벤트 발생 (애니메이션, 사운드 등에서 구독)
             OnAttackAction?.Invoke();

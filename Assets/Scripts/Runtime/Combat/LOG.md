@@ -75,3 +75,52 @@ dt 누적 부동소수 오차(1e-8대)로 `tickTimer`가 0에 아주 미세하�
 - 가속(배율 >1)은 현재 집계(기준 1에서 최솟값)로는 표현 불가 — 넣을 때 집계 방식 재논의.
 - 효과 상태 아이콘 UI는 `EffectController.Changed` 이벤트에 붙이면 된다 (아직 미구현).
 - GameData.json에는 아직 효과 항목이 없다 — 효과를 json으로 정의하려면 임포터 확장 필요.
+
+---
+
+## 2026-08-06 — 넉백·스탯 버프 + SC2식 군중이동(CrowdSystem)
+
+### 군중이동 갈아엎기 — `Test/Entity/Manager/CrowdSystem.cs`
+구 `MovementComponent.ApplySeparation`(개체별 OverlapSphere + 힘 기반 + 속도 클램프)을
+버리고, SC2식 **위치 기반 겹침 해소**를 중앙 한 패스로:
+- **힘이 아니라 위치 보정** — 겹친 양(반지름 합 − 거리)을 그대로 되돌린다.
+  한 패스에 딱 붙어 정지 (실측: 거리 0.4 → 정확히 0.800).
+- **비대칭 분배** — 이동 중 3 : 정지 1 가중치. 움직이는 쪽은 겹침의 1/4만 밀리고
+  정지한 쪽이 3/4 비켜준다 (실측 1:3 정확).
+- **속도 클램프 없음** — 겹침 해소는 이동과 별개 레이어. 완전 겹침도 한 패스에 풀린다.
+- 구동: `Monster.OnEnable/OnDisable` 등록부(BuildingEntity.All 패턴) → 첫 등록 때
+  러너 생성 → 모든 이동이 끝난 `LateUpdate`에 Solve. 보정은 모아서 마지막에 일괄 적용
+  (순회 순서 편향 제거). 시체·비활성 제외, 워커빌리티 필터 유지.
+- **플레이어는 군중 밖** — 플레이어는 몬스터를 밀지 않는다(사용자 확정). 몬스터가
+  플레이어를 미는 건 기존 PhysX 접촉(kinematic 콜라이더 vs 플레이어 dynamic RB) 그대로.
+- 물리 정리 실측: Monster.prefab·스폰 경로 모두 이미 kinematic이라 프리팹 수정 불요.
+  씬에 남은 dynamic 잔재(MainScene `tracer (1)` 등 구 추적 테스트)는 별도 정리 대상.
+
+### 넉백 — `SO/KnockbackEffectSO.cs` + MovementComponent
+- 즉시 효과: HitPoint→대상 방향(근접처럼 방향이 0이면 시전자 위치로 폴백)으로
+  `AddKnockback(방향, 총거리)`.
+- MovementComponent에 넉백 임펄스 레이어: 지수 감쇠, 감속·이동속도 제한과 무관,
+  벽(비워커블 셀)에 닿으면 소멸. 밀린 결과의 겹침은 같은 프레임 CrowdSystem이 해소.
+- **함정**: `pos += v·dt`(explicit Euler)로 적분하면 60fps에서 총거리가 ~7% 과잉
+  (감쇠 전 속도로 한 스텝을 다 가는 오차 — 프레임레이트 의존). 한 프레임 변위를
+  지수 감쇠의 정확한 적분값 `v·(1−e^(−λdt))/λ`로 바꿔 총거리가 dt와 무관하게
+  지정 거리와 일치 (실측 2m 지정 → 1.989).
+
+### 스탯 버프 — `SO/StatModifierEffectSO.cs` + `Effects/IStatModifier.cs`
+- 지속 효과: 주는 피해 배율·받는 피해 배율. 집계는 **곱**(서로 다른 출처는 함께 작용,
+  자기 중첩은 stacking=Refresh가 차단) — 감속의 최솟값 집계와 다른 이유를 인터페이스에 기록.
+- 적용 지점: 공격 배율은 시전 측 Power 계산(CombatComponent·ProjectileGun 발사 시점·
+  BattleTower), 받는 피해 배율은 신설 **`Entity.ReceiveDamage`** — 피해의 단일 수렴점.
+  DamageEffectSO·DoT가 Health.TakeDamage 대신 이걸 호출한다 (구 TakeDamage 경로도
+  Default 피해 효과를 거치므로 방어 배율이 일괄 적용된다).
+
+### 검증
+- 헤드리스 12/12: 대칭 분리 정확 0.8 · 몫 50:50 · 이동 우선권 1:3 · 완전 겹침 해소 ·
+  시체 제외 · 넉백 총거리(2m→1.989, 1m→0.988) · 공격 배율 · 버프 곱(1.5×2=3) ·
+  방어 0.8 적용 · 만료 복원 · Movement 없는 대상 무시.
+- 플레이 실측(PlayLoopTest): 겹쳐 소환한 3마리가 군중 시스템으로 분리, 동행 쌍 거리
+  정확히 0.800 유지. 게임 코드 예외 0건.
+- **스모크 함정 2가지**: ① 그리드 밖 좌표에 소환하면 워커빌리티 필터가 보정을 다
+  버려서 "분리 안 됨"으로 오인 — 그리드 안 걷기 가능 셀에서 실측할 것.
+  ② PlayLoopTest 중앙은 타워 사거리라 소환 몬스터가 몇 초 만에 사살됨 — 실측용은
+  SetMaxHealth로 고체력을 줄 것.

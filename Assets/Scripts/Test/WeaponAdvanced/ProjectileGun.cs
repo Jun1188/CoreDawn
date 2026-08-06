@@ -24,8 +24,10 @@ public class ProjectileGun : WeaponBase
         GameObject bullet = bulletPool.Get();
         bullet.transform.position = spawnPos;
         bullet.transform.rotation = spawnRot;
-        // 효과는 총알이 명중 시 전달한다 — 대상은 Monster 레이어. 효과 미지정이면 damage만큼의 순수 피해
-        bullet.GetComponent<Bullet>()?.Setup(gunData.bulletSpeed, 3f, gunData.damage, gunData.enemyLayer, gunData.range,
+        // 효과는 총알이 명중 시 전달한다 — 대상은 Monster 레이어. 효과 미지정이면 damage만큼의 순수 피해.
+        // 공격 버프는 발사 시점 기준 (총알이 날아가는 동안 버프가 끝나도 발사 때 배율 유지)
+        float damage = gunData.damage * (OwnerEntity != null ? OwnerEntity.Effects.AttackMultiplier : 1f);
+        bullet.GetComponent<Bullet>()?.Setup(gunData.bulletSpeed, 3f, damage, gunData.enemyLayer, gunData.range,
                                              gunData.attackEffects, OwnerEntity);
     }
 

@@ -25,6 +25,10 @@ public class Monster : Entity
         Health.OnDeath += HandleMonsterDeath;
     }
 
+    // 군중 시스템(겹침 해소) 등록부 — BuildingEntity.All과 같은 패턴
+    private void OnEnable() => CrowdSystem.Register(this);
+    private void OnDisable() => CrowdSystem.Unregister(this);
+
     protected override void Start()
     {
         base.Start();

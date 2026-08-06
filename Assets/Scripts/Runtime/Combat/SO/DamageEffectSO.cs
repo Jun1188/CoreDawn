@@ -17,7 +17,7 @@ public class DamageEffectSO : EffectSO
     public override void Apply(Entity target, in EffectContext ctx)
     {
         float amount = flat + ctx.Power * powerScale;
-        if (amount > 0f) target.Health.TakeDamage(amount);
+        if (amount > 0f) target.ReceiveDamage(amount); // 방어 배율은 수렴점에서 적용
     }
 
     // 효과 미지정 공격의 폴백 — Power를 그대로 피해로 넣는 공유 런타임 인스턴스

@@ -22,6 +22,6 @@ public class DamageOverTimeEffectSO : DurationEffectSO
     public override void OnTick(Entity target, in EffectContext ctx)
     {
         float amount = damagePerTick + ctx.Power * powerScale;
-        if (amount > 0f) target.Health.TakeDamage(amount);
+        if (amount > 0f) target.ReceiveDamage(amount); // 방어 배율은 수렴점에서 적용
     }
 }

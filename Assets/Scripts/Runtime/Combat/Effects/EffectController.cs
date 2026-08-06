@@ -23,6 +23,12 @@ public class EffectController
     /// <summary>활성 이동 속도 배율 — 감속 효과 중 가장 강한 것. Entity가 Movement에 밀어 넣는다.</summary>
     public float MoveSpeedMultiplier { get; private set; } = 1f;
 
+    /// <summary>주는 피해 배율 — 활성 스탯 효과의 곱. 시전 측이 Power 계산에 곱한다.</summary>
+    public float AttackMultiplier { get; private set; } = 1f;
+
+    /// <summary>받는 피해 배율 — 활성 스탯 효과의 곱. Entity.ReceiveDamage가 곱한다.</summary>
+    public float IncomingDamageMultiplier { get; private set; } = 1f;
+
     /// <summary>지속 효과 시작/종료 시 발화 — 상태 아이콘 UI 등 표시용.</summary>
     public event Action Changed;
 
@@ -139,14 +145,24 @@ public class EffectController
     }
 
     // 활성 효과가 바뀔 때만 집계 — 매 프레임 순회하지 않는다.
-    // 주의: 기준값 1에서 최솟값을 취하므로 현재는 감속(<1)만 표현된다.
-    // 가속(>1)을 넣게 되면 집계 방식을 다시 정해야 한다.
+    // 이동 속도: 기준값 1에서 최솟값 — 감속(<1)만 표현. 가속(>1)을 넣으려면 재논의.
+    // 스탯 배율: 곱 — 서로 다른 출처의 버프는 함께 작용하고, 같은 효과의 자기 중첩은
+    //            stacking=Refresh가 막는다 (Stack으로 열면 곱으로 쌓인다).
     private void Recompute()
     {
-        float multiplier = 1f;
+        float speed = 1f, attack = 1f, incoming = 1f;
         foreach (var e in active)
-            if (e.def is IMoveSpeedModifier m && m.SpeedMultiplier < multiplier)
-                multiplier = m.SpeedMultiplier;
-        MoveSpeedMultiplier = multiplier < 0f ? 0f : multiplier;
+        {
+            if (e.def is IMoveSpeedModifier m && m.SpeedMultiplier < speed)
+                speed = m.SpeedMultiplier;
+            if (e.def is IStatModifier s)
+            {
+                attack *= s.AttackMultiplier;
+                incoming *= s.IncomingDamageMultiplier;
+            }
+        }
+        MoveSpeedMultiplier = speed < 0f ? 0f : speed;
+        AttackMultiplier = attack < 0f ? 0f : attack;
+        IncomingDamageMultiplier = incoming < 0f ? 0f : incoming;
     }
 }
