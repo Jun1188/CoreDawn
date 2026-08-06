@@ -3,28 +3,27 @@ using UnityEngine;
 using UnityEngine.Pool;
 
 /// <summary>
-/// 발사 한 번의 명세 — 발사체가 어떻게 날고(속도·수명·사거리), 명중 시 무엇을 하는가(Power·효과).
-/// Power는 발사 시점에 확정한다: 총알이 날아가는 동안 버프가 끝나도 발사 때 배율이 유지된다.
+/// 발사 한 번의 명세 — 발사체가 어떻게 날고(속도·수명·사거리), 명중 시 무엇을 하는가(효과 목록).
+/// ValueScale(시전측 배율 — 공격 버프·포탑 배율)은 발사 시점에 확정한다:
+/// 총알이 날아가는 동안 버프가 끝나도 발사 때 배율이 유지된다.
 /// </summary>
 public readonly struct ProjectileShot
 {
     public readonly float Speed;
     public readonly float Lifetime;
     public readonly float Range;
-    public readonly float Power;      // 명중 시 EffectContext.Power로 전달될 기본 수치
-    public readonly int TargetMask;   // 효과를 적용할 레이어 (0이면 적용 없음, 소멸만)
-    public readonly EffectSO[] Effects;
-    public readonly Entity Source;    // 발사자 — 효과 출처이자 자기 명중 무시 기준
+    public readonly int TargetMask;        // 효과를 적용할 레이어 (0이면 적용 없음, 소멸만)
+    public readonly EffectEntry[] Effects; // 명중 시 무슨 일이 일어나는가 — 배율이 이미 구워진 최종 목록
+    public readonly Entity Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
 
-    public ProjectileShot(float speed, float lifetime, float range, float power,
-                          int targetMask, EffectSO[] effects, Entity source)
+    public ProjectileShot(float speed, float lifetime, float range,
+                          EffectEntry[] effects, int targetMask, Entity source)
     {
         Speed = speed;
         Lifetime = lifetime;
         Range = range;
-        Power = power;
-        TargetMask = targetMask;
         Effects = effects;
+        TargetMask = targetMask;
         Source = source;
     }
 }
@@ -101,7 +100,7 @@ public static class ProjectileSystem
 
         Entity entity = hit.GetComponentInParent<Entity>();
         if (entity != null && !entity.IsDead)
-            entity.ApplyEffects(shot.Effects, new EffectContext(shot.Source, shot.Power, point));
+            entity.ApplyEffects(shot.Effects, shot.Source, point);
     }
 
     // ── 투사체 발사·풀 ──────────────────────────────────────────

@@ -90,11 +90,12 @@ public class Entity : MonoBehaviour
             }
 
     /// <summary>
-    /// 공격 명중의 단일 진입점 — 효과 목록을 이 엔티티에 적용한다.
-    /// 목록이 비어 있으면 ctx.Power만큼의 순수 피해로 처리된다.
+    /// 공격 명중의 단일 진입점 — 효과 항목 목록을 이 엔티티에 적용한다.
+    /// 시전측 배율(공격 버프·포탑 배율)은 시전자가 보낼 때 이미 항목에 구워져(bake) 있다.
     /// </summary>
-    public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectSO> effectList, in EffectContext ctx)
-        => Effects.ApplyAll(effectList, ctx);
+    public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
+                             Entity source, Vector3 hitPoint)
+        => Effects.ApplyAll(entries, source, hitPoint);
 
     /// <summary>
     /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.
@@ -107,8 +108,7 @@ public class Entity : MonoBehaviour
     }
 
     // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.
-    public virtual void TakeDamage(float damageAmount)
-        => ApplyEffects(null, new EffectContext(null, damageAmount, transform.position));
+    public virtual void TakeDamage(float damageAmount) => ReceiveDamage(damageAmount);
 
     // 즉시 사망 — HP를 0으로 만들고 사망 흐름(OnDeath → HandleDeath)을 태운다
     public void Die() => health.Kill();

@@ -19,4 +19,6 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 3
-  damage: 10
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 10

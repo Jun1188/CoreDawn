@@ -16,7 +16,6 @@ MonoBehaviour:
   weaponType: 1
   isAutomatic: 1
   fireMode: 1
-  damage: 10
   fireRate: 0.1
   bulletSpeed: 100
   maxRange: 1000
@@ -25,7 +24,9 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 2048
-  attackEffects: []
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 10
   magSize: 100
   reloadTime: 0
   xRecoil: 0.01

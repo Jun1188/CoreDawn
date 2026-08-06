@@ -37,9 +37,6 @@ public class Gun : MonoBehaviour
     private Entity OwnerEntity =>
         ownerEntity != null ? ownerEntity : (ownerEntity = GetComponentInParent<Entity>());
 
-    // 발사 시점의 실제 위력 — 기본 피해 × 플레이어 공격 버프. 투사체·히트스캔 공용.
-    private float FirePower =>
-        gunData.damage * (OwnerEntity != null ? OwnerEntity.Effects.AttackMultiplier : 1f);
 
     private void Awake()
     {
@@ -108,10 +105,13 @@ public class Gun : MonoBehaviour
         Vector3 direction = (muzzlePoint != null ? muzzlePoint.forward : transform.forward);
         direction += Random.insideUnitSphere * (currentSpread / 100f);
 
-        // 효과는 명중 시 전달 — 효과 미지정이면 위력만큼의 순수 피해.
-        // 위력은 발사 시점 기준 (탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지)
-        var shot = new ProjectileShot(gunData.bulletSpeed, 3f, gunData.range, FirePower,
-                                      gunData.enemyLayer, gunData.attackEffects, OwnerEntity);
+        // 공격 정의(효과 항목들)는 명중 시 전달. 공격 버프는 발사 시점에 항목별로 구워진다
+        // (버프의 affects 목록에 든 효과만 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지)
+        var effects = OwnerEntity != null
+            ? OwnerEntity.Effects.BakeOutgoing(gunData.attackEffects)
+            : gunData.attackEffects;
+        var shot = new ProjectileShot(gunData.bulletSpeed, 3f, gunData.range,
+                                      effects, gunData.enemyLayer, OwnerEntity);
 
         if (gunData.fireMode == FireMode.Hitscan)
             ProjectileSystem.Hitscan(origin, direction, shot);
@@ -121,7 +121,7 @@ public class Gun : MonoBehaviour
 
     private void ApplyRecoil()
     {
-        CameraShakeManager.Instance.ShakeOnPlayerShoot(gunData.damage);
+        CameraShakeManager.Instance.ShakeOnPlayerShoot(gunData.BaseDamage);
         weaponManager.recoilManager.FireRecoil(gunData.xRecoil, gunData.yRecoil, gunData.zRecoil);
         bool currentAimState = weaponManager.adsModule.isAiming; // ADS 모듈에서 현재 조준 상태 가져오기
         weaponManager.kickbackModule.Fire(gunData.visualKickbackZ, gunData.visualKickbackRot, currentAimState);

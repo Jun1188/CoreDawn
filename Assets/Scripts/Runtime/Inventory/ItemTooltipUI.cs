@@ -41,7 +41,7 @@ public class ItemTooltipUI : MonoBehaviour
         // 💡 무기 아이템일 경우 추가 정보 출력 확장성 제공
         if (item is WeaponItemSO weapon)
         {
-            typeText.text += $" (공격력: {weapon.gunData.damage})";
+            typeText.text += $" (공격력: {weapon.gunData.BaseDamage})";
         }
 
         tooltipPanel.SetActive(true);

@@ -173,3 +173,61 @@ dt 누적 부동소수 오차(1e-8대)로 `tickTimer`가 0에 아주 미세하�
 - 총알 프리팹의 콜라이더는 이제 판정에 쓰이지 않는다(스윕 반경 정보원으로만).
 - Player.cs의 `GetCurrentBulletDamage`는 구 우회 경로 잔재 — Bullet이 위력을 직접
   들고 다니므로 이제 참조처가 없어지면 삭제 후보.
+
+---
+
+## 2026-08-07 — 공격 정의를 EffectEntry 목록으로 완전 통일
+
+### 원칙 (사용자 확정 — "모두 동일한 effect라는 데이터 형태의 취급")
+bare 피해 필드(`GunData.damage`·`AmmoItemSO.damage`·`CombatComponent.attackDamage`)와
+숨은 폴백(`DamageEffectSO.Default`)을 전부 없애고, **공격 = `EffectEntry { effect, value }` 목록**:
+
+| 어디 | 무엇 |
+|---|---|
+| 클래스(EffectSO 하위) | **채널(코드)** — 무슨 일이 일어나는가 |
+| 에셋 | **정체성** — 중첩 키(Refresh)·지속시간 같은 형태. 감속/가속처럼 상반 용도는 에셋을 나눠야 재적용이 서로를 덮지 않는다 |
+| entry.value | **극성과 세기** — 피해량·거리(m)·배율. 해석은 효과가 한 가지 방식으로 고정 |
+| 시전측 배율 | **선별적** — 무차별 곱이면 배율 1.5 타워의 감속탄이 감속 0.5→0.75로 약해지는 버그. 공격 버프는 에셋의 `affects` 목록(데이터)에 든 효과만, 포탑 damageMultiplier는 이름값대로 피해형(Damage·DoT)만 |
+
+- `EffectContext.Power` → **Value** (의미: 그 항목의 크기).
+- 효과 정의에서 크기 노브 제거: Damage/Heal(flat·powerScale 삭제 → Value 그대로),
+  Knockback(distance 삭제 → Value=거리), DoT(damagePerTick 삭제 → Value=틱당 피해).
+- **상반 쌍은 채널 하나 + value 극성**: `SlowEffectSO` → `MoveSpeedEffectSO`(0.5=감속,
+  1.3=가속), `StatModifierEffectSO`(배율 2개짜리 — 원칙 위반) 분해·삭제 →
+  `AttackModifierEffectSO` + `IncomingDamageEffectSO`. Damage↔Heal은 코드가 달라 통합 제외.
+- 집계는 정의가 아니라 **활성 인스턴스의 ctx.Value**에서: 이동속도 = 최강 감속(min<1) ×
+  최강 가속(max>1) — 같은 극은 안 쌓임. 피해 배율 2채널은 곱. 같은 에셋 Refresh 재적용은
+  value도 갱신(집계 재계산 포함).
+
+### 시전측 전환
+- `GunData.attackEffects`(entry 목록) — 반동 연출·툴팁용 `BaseDamage`(피해 항목 합) 헬퍼.
+- `AmmoItemSO.attackEffects` — 탄약이 명중 효과 전부를 정의. `TowerBehavior.TryConsumeRound`가
+  피해값 대신 **효과 목록**을 반환하고, 타워는 damageMultiplier를 ValueScale로 곱한다.
+  크리스탈탄에 감속을 붙이려면 탄약 목록에 {MoveSpeed계 에셋, 0.5}만 추가.
+- `CombatComponent.attackEffects` — 몬스터·타워 폴백 근접. 런타임 부착 플레이어는
+  `BattleManager.EnsurePlayerEntity`가 `Resources/Effect_Damage`(RecipeDatabase 패턴)로 주입.
+- `TowerDataSO.attackEffects` → **auraEffects**로 개명 — 오라(감속 필드) 전용임을 명시.
+  발사 타워의 명중 효과는 탄약이 정의한다.
+- `ProjectileShot`: Power 제거 → Effects(entry 목록). 배율은 스칼라로 실려 가지 않는다 —
+  **발사/공격 시점에 항목별로 굽는다**(`EffectController.BakeOutgoing` + 타워 `ScaleDamage`).
+  탄이 날아가는 동안 버프가 끝나도 발사 때 배율이 유지되는 건 그대로.
+- 공격 버프(`AttackModifierEffectSO`)는 **affects 목록**으로 대상을 선언 — "피해만 강화",
+  "화상만 강화", "넉백 강화" 같은 변종이 코드 수정 없이 에셋으로 만들어진다. 그래서
+  공격 배율은 스칼라 집계가 불가능해졌고 `AttackMultiplierFor(effect)` 조회로 바뀌었다.
+  빈 affects = 아무것도 증폭하지 않음 (명시적 — 숨은 기본값 없음).
+
+### 마이그레이션 (에디터 스크립트 자동 변환)
+- `Assets/Resources/Effect_Damage.asset` 공용 피해 에셋 1개 — 전 시전자가 공유.
+- 총 2종·탄약 5종·프리팹 9종(combat) 변환, SlowFieldTower.auraEffects = {SlowField, 0.5}.
+- 임포터: json `damage` → Damage 항목 변환(수동 배선한 부가 효과는 보존). json 스키마 무변경.
+- **사고·교훈**: 마이그레이션의 YAML 파싱이 경로 문제로 전부 폴백(10)됐는데, 대상 값
+  대부분이 우연히 10이라 조용히 지나갈 뻔했다 — 유일하게 25였던 BattleTower.prefab으로
+  발각, git 히스토리로 복원. 변환 스크립트는 "파싱 실패 = 에러"로 짜야지 폴백으로 뭉개면 안 된다.
+
+### 검증
+- 헤드리스 12/12: 피해 value·시전측 배율(30×1.5=45)·복합 목록(피해+회복)·감속 최강만·
+  감속×가속(0.5×1.4=0.7)·만료 복원·같은 에셋 Refresh value 갱신(감속→가속 뒤집기)·
+  공격/받는 피해 채널·DoT 4틱·넉백 value=거리·TakeDamage 호환.
+- 플레이(통제 조건): 무공급 타워 프리팹이 4m 표적을 새 경로로 사살. 예외 0.
+- **스모크 함정 추가**: PlayLoopTest의 씬 배치 타워 4기는 밤 웨이브에 파괴될 수 있다 —
+  "타워가 안 쏜다"로 보이면 먼저 타워 생존부터 확인할 것.

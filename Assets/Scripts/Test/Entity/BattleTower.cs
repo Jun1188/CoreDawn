@@ -75,46 +75,64 @@ public class BattleTower : BuildingEntity
         Entity target = sensor.GetClosestTarget(combat.AttackRange);
         if (!target.IsValidTarget()) return;
 
-        // 쏘기 직전에 한 발 소비 — 피해량은 장전된 탄약이 정한다
-        float damage = combat.AttackDamage;
-        if (supply != null && !supply.TryConsumeRound(out damage)) return;
-        damage *= Effects.AttackMultiplier; // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
+        if (bulletPrefab == null)
+        {
+            combat.TryAttack(target); // 폴백: 즉시 적용 (구 TestTrace 씬 호환 — 효과는 combat이 정의)
+            return;
+        }
 
-        if (bulletPrefab != null)
+        // 쏘기 직전에 한 발 소비 — 명중 효과는 장전된 탄약이 정의하고, 타워는 배율만 곱한다.
+        // 심에 연결되지 않은 구 씬 타워(supply 없음)는 combat의 공격 정의로 무한 사격한다.
+        EffectEntry[] effects = combat.AttackEffects;
+        if (supply != null)
         {
-            FireBullet(target, damage);
-            combat.MarkAttackPerformed(); // 데미지는 총알이 전달, 여긴 쿨다운만 소비
+            if (!supply.TryConsumeRound(out effects)) return;
+            effects = ScaleDamage(effects, supply.Data.damageMultiplier);
         }
-        else
-        {
-            combat.TryAttack(target); // 폴백: 즉시 데미지 (구 TestTrace 씬 호환)
-        }
+        effects = Effects.BakeOutgoing(effects); // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
+
+        FireBullet(target, effects);
+        combat.MarkAttackPerformed(); // 효과는 총알이 전달, 여긴 쿨다운만 소비
     }
 
     // 감속 필드류 — 쏘는 대신 쿨다운(fireRate 주기)마다 범위 내 모든 몬스터에게 효과를 건다.
-    // 효과가 비어 있으면(인펜스 같은 순수 장애물) 아무것도 하지 않는다.
+    // 오라 효과가 비어 있으면(인펜스 같은 순수 장애물) 아무것도 하지 않는다.
     // 펄스 1회 = 탄약(에너지 셀) 1개. 범위가 비어 있으면 연료를 태우지 않는다.
     private readonly System.Collections.Generic.List<Entity> auraBuffer = new System.Collections.Generic.List<Entity>();
 
     private void TickAura(TowerDataSO data)
     {
-        if (data.attackEffects == null || data.attackEffects.Length == 0) return;
+        if (data.auraEffects == null || data.auraEffects.Length == 0) return;
         if (!combat.CanAttack()) return;
         if (supply != null && !supply.HasAmmo) return;
 
         if (!sensor.TryScan(auraBuffer) || auraBuffer.Count == 0) return;
 
-        float power = 0f; // 배율 0이라 탄약 피해는 0 — 효과 수치는 효과 SO가 정한다
-        if (supply != null && !supply.TryConsumeRound(out power)) return;
+        if (supply != null && !supply.TryConsumeRound(out _)) return; // 연료만 소비 — 효과는 오라가 정의
 
-        var ctx = new EffectContext(this, power, transform.position);
         foreach (var target in auraBuffer)
-            target.ApplyEffects(data.attackEffects, ctx);
+            target.ApplyEffects(data.auraEffects, this, transform.position);
 
         combat.MarkAttackPerformed();
     }
 
-    private void FireBullet(Entity target, float damage)
+    // 포탑 배율(damageMultiplier)은 이름 그대로 피해형(Damage·DoT)에만 곱는다 —
+    // 배율 1.5 타워가 감속탄을 쏜다고 감속(비율형 value)이 뭉개지면 안 된다.
+    private static EffectEntry[] ScaleDamage(EffectEntry[] effects, float multiplier)
+    {
+        if (effects == null || Mathf.Approximately(multiplier, 1f)) return effects;
+
+        var scaled = new EffectEntry[effects.Length];
+        for (int i = 0; i < effects.Length; i++)
+        {
+            var entry = effects[i];
+            bool damageLike = entry.effect is DamageEffectSO || entry.effect is DamageOverTimeEffectSO;
+            scaled[i] = damageLike ? new EffectEntry(entry.effect, entry.value * multiplier) : entry;
+        }
+        return scaled;
+    }
+
+    private void FireBullet(Entity target, EffectEntry[] effects)
     {
         // 조준점: 대상 콜라이더 중심 (없으면 트랜스폼 위치)
         var targetCol = target.GetComponentInChildren<Collider>();
@@ -127,7 +145,7 @@ public class BattleTower : BuildingEntity
 
         // 발사는 총(Gun)과 같은 공용 시스템 — 풀 공유, 자기 명중 무시는 Bullet 스윕 필터가 처리
         ProjectileSystem.Fire(bulletPrefab, muzzle + dir * 0.6f, dir,
-            new ProjectileShot(bulletSpeed, bulletLifetime, combat.AttackRange + 2f, damage,
-                               monsterMask, (Sim?.Data as TowerDataSO)?.attackEffects, this));
+            new ProjectileShot(bulletSpeed, bulletLifetime, combat.AttackRange + 2f,
+                               effects, monsterMask, this));
     }
 }

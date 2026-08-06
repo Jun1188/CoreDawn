@@ -50,7 +50,7 @@ public class WeaponManager : MonoBehaviour
                 if (currentIndex == i) return;
 
                 SwapTo(i);
-                Debug.Log($"[무기 교체 완료] {targetData.gunName} 장착 (공격력: {targetData.damage})");
+                Debug.Log($"[무기 교체 완료] {targetData.gunName} 장착 (공격력: {targetData.BaseDamage})");
                 return;
             }
         }

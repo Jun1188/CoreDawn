@@ -220,7 +220,27 @@ public static class GameDataImporter
             else { Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': 알 수 없는 line '{dto.line}'"); errors++; }
         }
 
-        if (item is AmmoItemSO ammo && dto.damage > 0f) ammo.damage = dto.damage;
+        // json의 damage 수치 → 피해 효과 항목으로 변환 (공격 정의는 EffectEntry 목록으로 통일).
+        // 피해 외 효과(감속 등)를 json으로 정의하려면 별도 스키마 확장이 필요 — 지금은 수동 배선.
+        if (item is AmmoItemSO ammo && dto.damage > 0f)
+        {
+            var damageEffect = AssetDatabase.LoadAssetAtPath<DamageEffectSO>("Assets/Resources/Effect_Damage.asset");
+            if (damageEffect == null)
+            {
+                Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': " +
+                               "Effect_Damage.asset이 없어 탄약 피해를 배선하지 못했습니다 (Assets/Resources).");
+                errors++;
+            }
+            else
+            {
+                // 기존 피해 항목이 있으면 값만 갱신, 없으면 맨 앞에 추가 — 수동 배선한 부가 효과는 보존
+                var list = new List<EffectEntry>(ammo.attackEffects ?? Array.Empty<EffectEntry>());
+                int idx = list.FindIndex(e => e.effect is DamageEffectSO);
+                if (idx >= 0) list[idx] = new EffectEntry(list[idx].effect, dto.damage);
+                else list.Insert(0, new EffectEntry(damageEffect, dto.damage));
+                ammo.attackEffects = list.ToArray();
+            }
+        }
 
         if (!string.IsNullOrEmpty(dto.icon))
         {

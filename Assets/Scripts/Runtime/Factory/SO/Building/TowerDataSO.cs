@@ -6,13 +6,13 @@ using UnityEngine;
 ///
 /// 피해를 배율로 둔 이유: 탄약이 강해지면 그 탄을 쓰는 모든 포탑이 함께 강해져야 한다.
 /// 포탑마다 고정 피해를 박아두면 새 탄약을 추가할 때마다 모든 포탑 수치를 다시 만져야 한다.
-/// 1발의 기본 피해는 <see cref="AmmoItemSO.damage"/>가 갖는다.
+/// 1발의 명중 효과(피해 포함)는 <see cref="AmmoItemSO.attackEffects"/>가 갖는다.
 /// </summary>
 [CreateAssetMenu(fileName = "NewTower", menuName = "Factory/Buildings/Tower")]
 public class TowerDataSO : BuildingDataSO
 {
     [Header("전투")]
-    [Tooltip("실제 피해 = 장전된 탄약의 기본 피해 × 이 배율. 0 = 공격하지 않음(인펜스·감속 필드).")]
+    [Tooltip("탄약 효과들의 크기(value)에 곱하는 배율. 0 = 발사하지 않음(인펜스·감속 필드).")]
     public float damageMultiplier = 1f;
 
     [Tooltip("사거리(타일).")]
@@ -21,9 +21,9 @@ public class TowerDataSO : BuildingDataSO
     [Tooltip("발/초.")]
     public float fireRate = 1f;
 
-    [Tooltip("명중 시 적용할 효과들. 비우면 탄약 피해 × 배율만큼의 순수 피해.\n" +
-             "감속 필드(배율 0)는 여기 감속 효과를 넣으면 fireRate 주기(펄스)마다 범위 내 몬스터에게 건다.")]
-    public EffectSO[] attackEffects;
+    [Tooltip("발사 없이 타워 자신이 거는 효과(펄스형 오라) — 감속 필드(배율 0)가 fireRate 주기마다\n" +
+             "범위 내 몬스터에게 적용한다. 발사 타워의 명중 효과는 탄약(AmmoItemSO)이 정의한다.")]
+    public EffectEntry[] auraEffects;
 
     [Header("보급")]
     [Tooltip("이 포탑이 받을 수 있는 탄약·연료. 비우면 아무것도 소비하지 않는다.\n" +
@@ -82,21 +82,21 @@ public class TowerBehavior : IBuildingBehavior
     public bool HasAmmo => _b.Input.HasAny;
 
     /// <summary>
-    /// 한 발 소비하고 그 피해량을 돌려준다. 탄약이 없으면 false.
+    /// 한 발 소비하고 그 탄약의 명중 효과 목록을 돌려준다. 탄약이 없으면 false.
+    /// 크기 배율(damageMultiplier)은 씬 쪽(BattleTower)이 발사 스펙에 싣는다.
     /// 소비 후 상류를 깨워, 버퍼가 꽉 차 멈춰 있던 벨트가 다시 흐르게 한다.
+    /// IsPassive여도 소비는 막지 않는다 — 감속 필드는 펄스마다 에너지 셀을 연료로 태운다.
     /// </summary>
-    public bool TryConsumeRound(out float damage)
+    public bool TryConsumeRound(out EffectEntry[] effects)
     {
-        damage = 0f;
-        // IsPassive여도 소비는 막지 않는다 — 감속 필드는 펄스마다 에너지 셀을 연료로 태운다.
-        // (배율이 0이라 damage는 0으로 나온다. 발사 여부는 BattleTower가 IsPassive로 가른다.)
+        effects = null;
 
         foreach (var (item, n) in _b.Input.Snapshot())
         {
             if (n <= 0 || !_b.Input.TryConsume(item, 1)) continue;
 
-            // 피해는 탄약이 갖고 포탑은 배율만 갖는다
-            damage = (item as AmmoItemSO)?.damage * _data.damageMultiplier ?? 0f;
+            // 명중 효과는 탄약이 갖고 포탑은 배율만 갖는다
+            effects = (item as AmmoItemSO)?.attackEffects;
             _b.NotifyUpstream();
             return true;
         }

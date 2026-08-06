@@ -20,7 +20,6 @@ public class GunData : ScriptableObject
     [Header("Gun General Settings")]
     [Tooltip("발사 방식 — Projectile은 bulletPrefab을 날리고, Hitscan은 즉시 판정.")]
     public FireMode fireMode = FireMode.Projectile;
-    public float damage = 10f;
     public float fireRate = 0.2f;        // 연사 속도 (낮을수록 빠름)
     public float bulletSpeed = 50f;
     public float maxRange = 100f;
@@ -28,9 +27,22 @@ public class GunData : ScriptableObject
     public float range;
     public LayerMask enemyLayer;
 
-    [Tooltip("명중 시 적용할 효과들. 비우면 damage만큼의 순수 피해. " +
-             "피해 효과를 넣으면 damage가 Power로 전달돼 배율이 곱해진다.")]
-    public EffectSO[] attackEffects;
+    [Tooltip("명중 시 무슨 일이 일어나는가 — 이 총의 공격 정의 전부. " +
+             "피해도 항목의 하나다: {Damage, 20} = 피해 20. bare 피해 필드는 없다.")]
+    public EffectEntry[] attackEffects;
+
+    /// <summary>피해 항목들의 value 합 — 반동 연출 크기·툴팁 표기용 (전투 계산엔 쓰지 않는다).</summary>
+    public float BaseDamage
+    {
+        get
+        {
+            float sum = 0f;
+            if (attackEffects != null)
+                foreach (var e in attackEffects)
+                    if (e.effect is DamageEffectSO) sum += e.value;
+            return sum;
+        }
+    }
 
     [Header("Ammo & Reload Settings")]
     public int magSize = 30;
