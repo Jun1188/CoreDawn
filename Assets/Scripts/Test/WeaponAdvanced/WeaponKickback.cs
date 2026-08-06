@@ -1,15 +1,14 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 총기 킥백(반동) 모듈.
 ///
-/// 위치/회전을 각각 "감쇠 스프링(damped harmonic oscillator)"으로 시뮬레이션합니다.
-/// 매 프레임 Lerp를 두 번 겹쳐 쫓아가는 방식(구 버전) 대신, 상미분방정식
-///     x'' + 2*zeta*omega*x' + omega^2*x = 0
-/// 의 "닫힌형 정확해(exact closed-form solution)"를 매 프레임 그대로 계산합니다.
-/// 그 결과 Time.deltaTime이 크든 작든, 스프링을 아무리 뻑뻑하게 세팅하든
-/// 절대 발산·흔들림 없이 항상 물리적으로 정확한 위치/속도가 나옵니다.
-/// (세미-임플리시트 오일러 적분은 진동수*dt가 커지면 발산하지만, 이 방식은 그런 한계가 없습니다.)
+/// 위치/회전을 각각 감쇠 스프링으로 시뮬레이션합니다. 스프링 수식 자체는
+/// <see cref="MotionSpring"/>으로 승격되어 카메라 반동(ProceduralRecoil)·발걸음 충격과
+/// 공유됩니다 — 손과 시야의 반동 톤이 같은 곡선에서 나옵니다.
+///
+/// 조준 보정은 이제 bool이 아니라 <see cref="PlayerMotionState.AimWeight"/>(0~1 연속값)에
+/// 비례합니다. 조준 전환 도중에 쏴도 반동 세기가 뚝 끊기지 않습니다.
 /// </summary>
 public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
 {
@@ -56,23 +55,28 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
     private Vector3 _posValue, _posVelocity;
     private Vector3 _rotEuler, _rotVelocity;
 
-    private bool _isAiming;
     private float _noiseSeed;
+
+    private IPlayerMotionProvider _provider;
+    /// <summary>조준 가중치 0~1. WeaponADS가 게시한 값을 그대로 쓴다.</summary>
+    private float AimWeight => _provider?.Motion != null ? Mathf.Clamp01(_provider.Motion.AimWeight) : 0f;
 
     private void Awake()
     {
         // 무기 인스턴스마다 노이즈 위상을 다르게 주어 흔들림 패턴이 서로 겹치지 않게 함
         _noiseSeed = Random.Range(0f, 1000f);
+        _provider = GetComponentInParent<IPlayerMotionProvider>();
     }
 
     // ★ WeaponBase에서 무기 고유의 반동값을 전달받아 스프링에 "임펄스(순간 속도)"를 가함
     public void Fire(float zAmount, Vector3 rotAmount, bool isAiming)
     {
-        _isAiming = isAiming;
+        // isAiming(bool)은 호출부 호환용 — 실제 보정은 연속 가중치로 한다
+        float aim = Mathf.Max(AimWeight, isAiming ? 1f : 0f);
 
-        float amountMult = isAiming ? aimAmountMultiplier : 1f;
-        float freqMult = isAiming ? aimFrequencyMultiplier : 1f;
-        float dampMult = isAiming ? aimDampingMultiplier : 1f;
+        float amountMult = Mathf.Lerp(1f, aimAmountMultiplier, aim);
+        float freqMult = Mathf.Lerp(1f, aimFrequencyMultiplier, aim);
+        float dampMult = Mathf.Lerp(1f, aimDampingMultiplier, aim);
 
         float posFreq = positionFrequency * freqMult;
         float posDamp = positionDamping * dampMult;
@@ -85,20 +89,20 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
 
         // 뒤로 튕기는 Z축 위치 반동
         float desiredZ = -zAmount * scaledAmount;
-        _posVelocity.z += SolveImpulseVelocity(desiredZ, posFreq, posDamp);
+        _posVelocity.z += MotionSpring.SolveImpulseVelocity(desiredZ, posFreq, posDamp);
 
         // 위로 튕기는 피치(수직) 반동 - 결정적 값
         float desiredPitch = -rotAmount.x * scaledAmount;
-        _rotVelocity.x += SolveImpulseVelocity(desiredPitch, rotFreq, rotDamp);
+        _rotVelocity.x += MotionSpring.SolveImpulseVelocity(desiredPitch, rotFreq, rotDamp);
 
         // 좌우 요(수평) 반동 - 완전 독립 난수 대신 펄린 노이즈로 자연스럽게 "흐르듯" 편향
         float wander = Mathf.PerlinNoise(Time.time * horizontalWanderSpeed + _noiseSeed, 0.5f) * 2f - 1f;
         float desiredYaw = wander * rotAmount.y * scaledAmount;
-        _rotVelocity.y += SolveImpulseVelocity(desiredYaw, rotFreq, rotDamp);
+        _rotVelocity.y += MotionSpring.SolveImpulseVelocity(desiredYaw, rotFreq, rotDamp);
 
         // 수평 반동에 비례한 롤 - 총구가 옆으로 틀어지는 무게감 있는 비틀림
         float desiredRoll = -desiredYaw * rollCoupling;
-        _rotVelocity.z += SolveImpulseVelocity(desiredRoll, rotFreq, rotDamp);
+        _rotVelocity.z += MotionSpring.SolveImpulseVelocity(desiredRoll, rotFreq, rotDamp);
     }
 
     private void Update()
@@ -106,11 +110,12 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
-        float freqMult = _isAiming ? aimFrequencyMultiplier : 1f;
-        float dampMult = _isAiming ? aimDampingMultiplier : 1f;
+        float aim = AimWeight;
+        float freqMult = Mathf.Lerp(1f, aimFrequencyMultiplier, aim);
+        float dampMult = Mathf.Lerp(1f, aimDampingMultiplier, aim);
 
-        StepSpring(ref _posValue, ref _posVelocity, positionFrequency * freqMult, positionDamping * dampMult, dt);
-        StepSpring(ref _rotEuler, ref _rotVelocity, rotationFrequency * freqMult, rotationDamping * dampMult, dt);
+        MotionSpring.Step(ref _posValue, ref _posVelocity, positionFrequency * freqMult, positionDamping * dampMult, dt);
+        MotionSpring.Step(ref _rotEuler, ref _rotVelocity, rotationFrequency * freqMult, rotationDamping * dampMult, dt);
 
         // 연사 중 값이 한없이 쌓이는 것을 막는 안전 상한(정상적인 세팅에서는 거의 발동하지 않음)
         if (_posValue.sqrMagnitude > maxPositionKick * maxPositionKick)
@@ -122,85 +127,4 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
         RotationOffset = Quaternion.Euler(_rotEuler);
     }
 
-    /// <summary>
-    /// 감쇠 스프링 x'' + 2*zeta*omega*x' + omega^2*x = 0 의 닫힌형 정확해로
-    /// (value, velocity)를 dt만큼 전진시킵니다.
-    /// dt 크기나 진동수와 무관하게 항상 안정적입니다(수치 적분이 아닌 해석해이므로 오차 없음).
-    /// </summary>
-    private static void StepSpring(ref Vector3 value, ref Vector3 velocity, float frequencyHz, float dampingRatio, float dt)
-    {
-        float omega = 2f * Mathf.PI * Mathf.Max(frequencyHz, 0.001f);
-        float zeta = Mathf.Max(dampingRatio, 0.001f);
-
-        Vector3 x0 = value;
-        Vector3 v0 = velocity;
-
-        if (zeta < 0.999f)
-        {
-            // 언더댐프: 살짝 튕기며 정지 (미세한 진동 O) - 총기 킥 특유의 통통 튀는 손맛
-            float wd = omega * Mathf.Sqrt(1f - zeta * zeta);
-            float et = Mathf.Exp(-zeta * omega * dt);
-            float c = Mathf.Cos(wd * dt);
-            float s = Mathf.Sin(wd * dt);
-
-            Vector3 c2 = (v0 + zeta * omega * x0) / wd;
-            value = et * (x0 * c + c2 * s);
-            velocity = et * (v0 * c - (omega * (omega * x0 + zeta * v0) / wd) * s);
-        }
-        else if (zeta < 1.001f)
-        {
-            // 임계댐프: 오버슈트 없이 가장 빠르게 정지
-            float et = Mathf.Exp(-omega * dt);
-            value = et * (x0 + (v0 + omega * x0) * dt);
-            velocity = et * (v0 - omega * dt * (v0 + omega * x0));
-        }
-        else
-        {
-            // 오버댐프: 진동 없이 느긋하게 정지
-            float wd = omega * Mathf.Sqrt(zeta * zeta - 1f);
-            float et = Mathf.Exp(-zeta * omega * dt);
-            float c = (float)System.Math.Cosh(wd * dt);
-            float s = (float)System.Math.Sinh(wd * dt);
-
-            Vector3 c2 = (v0 + zeta * omega * x0) / wd;
-            value = et * (x0 * c + c2 * s);
-            velocity = et * (v0 * c - (omega * (omega * x0 + zeta * v0) / wd) * s);
-        }
-    }
-
-    /// <summary>
-    /// "정지 상태에서 임펄스를 줬을 때 스프링이 도달하는 최대 변위(peak)가 정확히
-    /// desiredPeak가 되도록" 필요한 초기 속도(임펄스)를 역산합니다.
-    /// 이 덕분에 기획자가 넣는 반동 수치(zAmount, rotAmount)가 스프링의 뻑뻑함(frequency/damping)
-    /// 세팅과 무관하게 항상 "그 값만큼 킥된다"는 직관적인 의미를 그대로 유지합니다.
-    /// (검증: 고정밀 RK4 적분으로 찾은 실제 피크값과 이 공식의 오차는 1e-12 수준)
-    /// </summary>
-    private static float SolveImpulseVelocity(float desiredPeak, float frequencyHz, float dampingRatio)
-    {
-        if (Mathf.Approximately(desiredPeak, 0f)) return 0f;
-
-        float omega = 2f * Mathf.PI * Mathf.Max(frequencyHz, 0.001f);
-        float zeta = Mathf.Max(dampingRatio, 0.001f);
-        float k; // 단위 임펄스(V=1) 당 피크 변위 비율
-
-        if (zeta < 0.999f)
-        {
-            float wd = omega * Mathf.Sqrt(1f - zeta * zeta);
-            float tPeak = Mathf.Atan2(wd, zeta * omega) / wd;
-            k = Mathf.Exp(-zeta * omega * tPeak) * Mathf.Sin(wd * tPeak) / wd;
-        }
-        else if (zeta < 1.001f)
-        {
-            k = Mathf.Exp(-1f) / omega;
-        }
-        else
-        {
-            float wd = omega * Mathf.Sqrt(zeta * zeta - 1f);
-            float ratio = wd / (zeta * omega);
-            float tPeak = (0.5f * Mathf.Log((1f + ratio) / (1f - ratio))) / wd;
-            k = Mathf.Exp(-zeta * omega * tPeak) * (float)System.Math.Sinh(wd * tPeak) / wd;
-        }
-
-        return Mathf.Abs(k) > 1e-6f ? desiredPeak / k : 0f;
-    }
 }
