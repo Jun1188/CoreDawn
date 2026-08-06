@@ -20,6 +20,7 @@ public class Monster : Entity
     {
         base.Awake();
         movement.Initialize(transform);
+        combat.Initialize(this);
         stateMachine = new StateMachineComponent(this);
         Health.OnDeath += HandleMonsterDeath;
     }

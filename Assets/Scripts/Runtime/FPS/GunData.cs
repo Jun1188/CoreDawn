@@ -15,9 +15,13 @@ public class GunData : ScriptableObject
     public float fireRate = 0.2f;        // 연사 속도 (낮을수록 빠름)
     public float bulletSpeed = 50f;
     public float maxRange = 100f;
-    public GameObject bulletPrefab; 
-    public float range; 
-    public LayerMask enemyLayer; 
+    public GameObject bulletPrefab;
+    public float range;
+    public LayerMask enemyLayer;
+
+    [Tooltip("명중 시 적용할 효과들. 비우면 damage만큼의 순수 피해. " +
+             "피해 효과를 넣으면 damage가 Power로 전달돼 배율이 곱해진다.")]
+    public EffectSO[] attackEffects;
 
     [Header("Ammo & Reload Settings")]
     public int magSize = 30;

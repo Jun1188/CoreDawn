@@ -1,7 +1,8 @@
 using System;
 using UnityEngine;
 
-// 공격 — 순수 C# 클래스. 쿨다운 관리와 데미지 전달만 담당한다.
+// 공격 — 순수 C# 클래스. 쿨다운 관리와 효과 전달만 담당한다.
+// 피해도 효과의 하나다: attackEffects가 비어 있으면 attackDamage만큼의 순수 피해로 처리된다.
 [Serializable]
 public class CombatComponent
 {
@@ -9,6 +10,11 @@ public class CombatComponent
     [SerializeField] private float attackRange = 1.5f;
     [SerializeField] private float attackCooldown = 2f;
 
+    [Tooltip("명중 시 적용할 효과들. 비우면 attackDamage만큼의 순수 피해. " +
+             "피해 효과를 넣으면 attackDamage가 Power로 전달돼 배율이 곱해진다.")]
+    [SerializeField] private EffectSO[] attackEffects;
+
+    private Entity owner; // 효과의 출처(Source)로 전달 — Initialize로 주입
     private float lastAttackTime = float.MinValue;
 
     public float AttackDamage => attackDamage;
@@ -16,6 +22,9 @@ public class CombatComponent
     public float AttackCooldown => attackCooldown;
 
     public event Action OnAttackAction;
+
+    // 소유 엔티티 주입 — MovementComponent.Initialize와 같은 패턴. Awake에서 호출한다.
+    public void Initialize(Entity owner) => this.owner = owner;
 
     /// <summary>
     /// 데이터(SO)에서 전투 수치를 주입한다 — 인스펙터 값을 덮어쓴다.
@@ -47,8 +56,8 @@ public class CombatComponent
         {
             lastAttackTime = Time.time;
 
-            // 데미지 전달
-            target.TakeDamage(attackDamage);
+            // 효과 전달 — 비어 있으면 attackDamage만큼의 순수 피해
+            target.ApplyEffects(attackEffects, new EffectContext(owner, attackDamage, target.GetPosition()));
 
             // 이벤트 발생 (애니메이션, 사운드 등에서 구독)
             OnAttackAction?.Invoke();

@@ -24,6 +24,12 @@ public class MovementComponent
     public bool IsMoving => (currentPath != null && currentPath.Count > 0) || flowDirection != Vector3.zero;
     public float MoveSpeed => moveSpeed;
 
+    /// <summary>효과 시스템의 이동 속도 배율(감속 등) — Entity.Update가 매 프레임 밀어 넣는다.</summary>
+    public float SpeedMultiplier { get; set; } = 1f;
+
+    // 실제 이동에 쓰는 속도 — 기본 속도 × 효과 배율
+    private float EffectiveSpeed => moveSpeed * SpeedMultiplier;
+
     public event Action OnDestinationReached;
     public event Action OnPathBlocked;
 
@@ -97,13 +103,13 @@ public class MovementComponent
         }
 
         Vector3 moveDir = waypoint - transform.position;
-        transform.position = Vector3.MoveTowards(transform.position, waypoint, moveSpeed * deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, waypoint, EffectiveSpeed * deltaTime);
         Face(moveDir, deltaTime);
     }
 
     private void TickDirection(float deltaTime)
     {
-        Vector3 next = transform.position + flowDirection * (moveSpeed * deltaTime);
+        Vector3 next = transform.position + flowDirection * (EffectiveSpeed * deltaTime);
 
         // 건물/장애물 셀로는 진입하지 않는다 (플로우필드가 목표 건물 셀을 가리킬 수 있음 —
         // 그 앞에서 멈추면 FlowFieldState의 사거리 판정이 공격으로 전환시킨다)
@@ -157,9 +163,9 @@ public class MovementComponent
         }
         if (push == Vector3.zero) return;
 
-        // 본 이동을 압도하지 않도록 최대 이동속도의 절반으로 제한
-        Vector3 offset = Vector3.ClampMagnitude(push * (separationWeight * moveSpeed * deltaTime),
-                                                moveSpeed * deltaTime * 0.5f);
+        // 본 이동을 압도하지 않도록 최대 이동속도의 절반으로 제한 (감속 중에는 밀림도 같이 느려진다)
+        Vector3 offset = Vector3.ClampMagnitude(push * (separationWeight * EffectiveSpeed * deltaTime),
+                                                EffectiveSpeed * deltaTime * 0.5f);
         Vector3 next = pos + offset;
 
         // 건물/장애물 셀로는 밀려나지 않는다

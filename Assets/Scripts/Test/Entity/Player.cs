@@ -25,6 +25,7 @@ public class Player : Entity
     {
         base.Awake();
         sensor.Initialize(this);
+        combat.Initialize(this);
     }
 
     protected override void Update()

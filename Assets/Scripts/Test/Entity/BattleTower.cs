@@ -30,6 +30,7 @@ public class BattleTower : BuildingEntity
     {
         base.Awake();
         sensor.Initialize(this);
+        combat.Initialize(this);
         monsterMask = LayerMask.GetMask("Monster");
     }
 
@@ -59,8 +60,12 @@ public class BattleTower : BuildingEntity
 
         ApplyDataStats();
 
-        // 공격하지 않는 건물(인펜스·감속 필드)은 여기서 끝
-        if (Sim?.Data is TowerDataSO td && td.IsPassive) return;
+        // 쏘지 않는 건물(인펜스·감속 필드) — 효과가 있으면 펄스형 오라로 동작한다
+        if (Sim?.Data is TowerDataSO td && td.IsPassive)
+        {
+            TickAura(td);
+            return;
+        }
 
         // 쿨다운이 준비됐을 때만 스캔해 OverlapSphere 낭비를 줄인다
         if (!combat.CanAttack()) return;
@@ -86,6 +91,29 @@ public class BattleTower : BuildingEntity
         }
     }
 
+    // 감속 필드류 — 쏘는 대신 쿨다운(fireRate 주기)마다 범위 내 모든 몬스터에게 효과를 건다.
+    // 효과가 비어 있으면(인펜스 같은 순수 장애물) 아무것도 하지 않는다.
+    // 펄스 1회 = 탄약(에너지 셀) 1개. 범위가 비어 있으면 연료를 태우지 않는다.
+    private readonly System.Collections.Generic.List<Entity> auraBuffer = new System.Collections.Generic.List<Entity>();
+
+    private void TickAura(TowerDataSO data)
+    {
+        if (data.attackEffects == null || data.attackEffects.Length == 0) return;
+        if (!combat.CanAttack()) return;
+        if (supply != null && !supply.HasAmmo) return;
+
+        if (!sensor.TryScan(auraBuffer) || auraBuffer.Count == 0) return;
+
+        float power = 0f; // 배율 0이라 탄약 피해는 0 — 효과 수치는 효과 SO가 정한다
+        if (supply != null && !supply.TryConsumeRound(out power)) return;
+
+        var ctx = new EffectContext(this, power, transform.position);
+        foreach (var target in auraBuffer)
+            target.ApplyEffects(data.attackEffects, ctx);
+
+        combat.MarkAttackPerformed();
+    }
+
     private void FireBullet(Entity target, float damage)
     {
         // 조준점: 대상 콜라이더 중심 (없으면 트랜스폼 위치)
@@ -109,7 +137,8 @@ public class BattleTower : BuildingEntity
 
         var bullet = go.GetComponent<Bullet>();
         if (bullet != null)
-            bullet.Setup(bulletSpeed, bulletLifetime, damage, monsterMask);
+            bullet.Setup(bulletSpeed, bulletLifetime, damage, monsterMask,
+                         effects: (Sim?.Data as TowerDataSO)?.attackEffects, source: this);
         else
             Debug.LogWarning($"[BattleTower] bulletPrefab에 Bullet 컴포넌트가 없습니다: {bulletPrefab.name}", this);
     }

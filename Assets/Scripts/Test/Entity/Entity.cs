@@ -41,6 +41,10 @@ public class Entity : MonoBehaviour
 
     public HealthComponent Health => health;
 
+    // 활성 지속 효과(감속·DoT 등) 관리 — Awake 전에 맞아도 안전하게 지연 생성
+    private EffectController effects;
+    public EffectController Effects => effects ??= new EffectController(this);
+
     // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null)
     public virtual MovementComponent Movement => null;
     public virtual CombatComponent Combat => null;
@@ -69,19 +73,32 @@ public class Entity : MonoBehaviour
     protected virtual void Awake()
     {
         health.Initialize();
+        health.OnDeath += Effects.Clear; // 사망 즉시 지속 효과 종료 (HandleDeath보다 먼저)
         health.OnDeath += HandleDeath;
     }
 
     protected virtual void Start() { }
 
-    protected virtual void Update() { 
-        if ((int)(health.CurrentHealth)%7 == 0 
+    protected virtual void Update() {
+        Effects.Tick(Time.deltaTime);
+        if (Movement != null) Movement.SpeedMultiplier = Effects.MoveSpeedMultiplier;
+
+        if ((int)(health.CurrentHealth)%7 == 0
             && (this.GetType() == typeof(BattleTower)
             || this.GetType() == typeof(Player)
             || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);
             }
 
-    public virtual void TakeDamage(float damageAmount) => health.TakeDamage(damageAmount);
+    /// <summary>
+    /// 공격 명중의 단일 진입점 — 효과 목록을 이 엔티티에 적용한다.
+    /// 목록이 비어 있으면 ctx.Power만큼의 순수 피해로 처리된다.
+    /// </summary>
+    public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectSO> effectList, in EffectContext ctx)
+        => Effects.ApplyAll(effectList, ctx);
+
+    // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.
+    public virtual void TakeDamage(float damageAmount)
+        => ApplyEffects(null, new EffectContext(null, damageAmount, transform.position));
 
     // 즉시 사망 — HP를 0으로 만들고 사망 흐름(OnDeath → HandleDeath)을 태운다
     public void Die() => health.Kill();

@@ -21,6 +21,10 @@ public class TowerDataSO : BuildingDataSO
     [Tooltip("발/초.")]
     public float fireRate = 1f;
 
+    [Tooltip("명중 시 적용할 효과들. 비우면 탄약 피해 × 배율만큼의 순수 피해.\n" +
+             "감속 필드(배율 0)는 여기 감속 효과를 넣으면 fireRate 주기(펄스)마다 범위 내 몬스터에게 건다.")]
+    public EffectSO[] attackEffects;
+
     [Header("보급")]
     [Tooltip("이 포탑이 받을 수 있는 탄약·연료. 비우면 아무것도 소비하지 않는다.\n" +
              "무엇을 먹을 수 있는가가 곧 포탑의 성격이다 — 기본 포탑은 다 받고, 중기관은 고밀도 이상만.")]
@@ -84,7 +88,8 @@ public class TowerBehavior : IBuildingBehavior
     public bool TryConsumeRound(out float damage)
     {
         damage = 0f;
-        if (_data.IsPassive) return false;
+        // IsPassive여도 소비는 막지 않는다 — 감속 필드는 펄스마다 에너지 셀을 연료로 태운다.
+        // (배율이 0이라 damage는 0으로 나온다. 발사 여부는 BattleTower가 IsPassive로 가른다.)
 
         foreach (var (item, n) in _b.Input.Snapshot())
         {

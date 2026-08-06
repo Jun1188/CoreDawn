@@ -25,6 +25,12 @@ public abstract class WeaponBase : MonoBehaviour
     protected float currentSpread;
     protected Rigidbody playerRb; // 플레이어의 속도 측정을 위함
 
+    // 효과의 출처(Source)로 전달할 플레이어 엔티티.
+    // Player는 BattleManager가 런타임에 부착하므로(Awake 시점엔 없을 수 있음) 찾을 때까지 재시도한다.
+    private Entity ownerEntity;
+    protected Entity OwnerEntity =>
+        ownerEntity != null ? ownerEntity : (ownerEntity = GetComponentInParent<Entity>());
+
 
 
 
