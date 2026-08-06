@@ -65,7 +65,7 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
         _noiseSeed = Random.Range(0f, 1000f);
     }
 
-    // ★ WeaponBase에서 무기 고유의 반동값을 전달받아 스프링에 "임펄스(순간 속도)"를 가함
+    // ★ Gun에서 무기 고유의 반동값을 전달받아 스프링에 "임펄스(순간 속도)"를 가함
     public void Fire(float zAmount, Vector3 rotAmount, bool isAiming)
     {
         _isAiming = isAiming;

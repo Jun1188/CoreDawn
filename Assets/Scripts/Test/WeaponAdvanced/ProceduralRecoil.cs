@@ -22,7 +22,7 @@ public class ProceduralRecoil : MonoBehaviour
         transform.localRotation = Quaternion.Euler(currentRotation);
     }
 
-    // WeaponBase의 ApplyRecoil()에서 이 함수를 호출합니다.
+    // Gun의 ApplyRecoil()에서 이 함수를 호출합니다.
     public void FireRecoil(float recoilX, float recoilY, float recoilZ)
     {
 

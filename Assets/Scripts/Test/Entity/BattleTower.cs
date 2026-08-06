@@ -3,9 +3,8 @@ using UnityEngine;
 // 공격 가능한 건물(타워) — BuildingEntity의 HP/사망/레지스트리 위에 자동 공격을 더한다.
 // 구 canAttack 분기를 상속으로 대체: 타워는 이 클래스, 비전투 건물은 BuildingEntity 그대로.
 //
-// 공격 방식: 전용 sensor로 사거리 내 몬스터를 감지하면 Bullet을 발사한다.
-// 데미지는 플레이어 총과 동일하게 Bullet이 명중 시 전달(Bullet.TryApplyDamage)하며,
-// 여기서는 쿨다운 소비(MarkAttackPerformed)만 한다.
+// 공격 방식: 전용 sensor로 사거리 내 몬스터를 감지하면 발사한다 — 발사·명중 처리는
+// 플레이어 총(Gun)과 같은 ProjectileSystem 공용 경로. 여기서는 쿨다운 소비만 한다.
 // bulletPrefab을 비워두면 구 방식(즉시 데미지 TryAttack)으로 폴백한다.
 public class BattleTower : BuildingEntity
 {
@@ -126,21 +125,9 @@ public class BattleTower : BuildingEntity
         if (dir.sqrMagnitude < 0.0001f) return;
         dir.Normalize();
 
-        var go = Instantiate(bulletPrefab, muzzle + dir * 0.6f, Quaternion.LookRotation(dir));
-
-        // 자기 자신 콜라이더와의 즉시 충돌 방지
-        var bulletCol = go.GetComponentInChildren<Collider>();
-        if (bulletCol != null)
-        {
-            foreach (var ownCol in GetComponentsInChildren<Collider>())
-                Physics.IgnoreCollision(bulletCol, ownCol);
-        }
-
-        var bullet = go.GetComponent<Bullet>();
-        if (bullet != null)
-            bullet.Setup(bulletSpeed, bulletLifetime, damage, monsterMask,
-                         effects: (Sim?.Data as TowerDataSO)?.attackEffects, source: this);
-        else
-            Debug.LogWarning($"[BattleTower] bulletPrefab에 Bullet 컴포넌트가 없습니다: {bulletPrefab.name}", this);
+        // 발사는 총(Gun)과 같은 공용 시스템 — 풀 공유, 자기 명중 무시는 Bullet 스윕 필터가 처리
+        ProjectileSystem.Fire(bulletPrefab, muzzle + dir * 0.6f, dir,
+            new ProjectileShot(bulletSpeed, bulletLifetime, combat.AttackRange + 2f, damage,
+                               monsterMask, (Sim?.Data as TowerDataSO)?.attackEffects, this));
     }
 }

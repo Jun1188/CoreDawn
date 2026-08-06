@@ -2,6 +2,13 @@ using UnityEngine;
 
 public enum WeaponType { Pistol, SubMachineGun, Sniper }
 
+/// <summary>발사 방식 — 클래스 상속이 아니라 데이터가 정한다. Gun과 (향후) 타워가 공용.</summary>
+public enum FireMode
+{
+    Projectile, // bulletPrefab을 날린다 — 탄속·탄도 있음
+    Hitscan,    // 즉시 판정 — 속도 무한의 발사 (레이저·저격)
+}
+
 [CreateAssetMenu(fileName = "GunData", menuName = "ScriptableObjects/GunData", order = 1)]
 public class GunData : ScriptableObject
 {
@@ -11,6 +18,8 @@ public class GunData : ScriptableObject
     public bool isAutomatic;             // SMG는 true, 권총/저격은 false
 
     [Header("Gun General Settings")]
+    [Tooltip("발사 방식 — Projectile은 bulletPrefab을 날리고, Hitscan은 즉시 판정.")]
+    public FireMode fireMode = FireMode.Projectile;
     public float damage = 10f;
     public float fireRate = 0.2f;        // 연사 속도 (낮을수록 빠름)
     public float bulletSpeed = 50f;

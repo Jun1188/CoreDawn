@@ -2320,9 +2320,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7138405517517028216}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4906b116b24b57c47827622b042a56f1, type: 3}
+  m_Script: {fileID: 11500000, guid: 83d0fd681cf63984c96cde90fb48bad7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaycastGun
+  m_EditorClassIdentifier: 
   gunData: {fileID: 11400000, guid: a497678763b887142befc9bf626ab648, type: 2}
   muzzlePoint: {fileID: 3079051089413139162}
   weaponManager: {fileID: 0}

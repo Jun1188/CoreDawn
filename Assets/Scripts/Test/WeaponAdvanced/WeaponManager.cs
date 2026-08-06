@@ -3,7 +3,7 @@ using UnityEngine;
 public class WeaponManager : MonoBehaviour
 {
     [Header("Weapon Ob List")]
-    public WeaponBase[] weapons; // 하위에 있는 Gun1, Gun2 등을 모두 드래그 앤 드롭
+    public Gun[] weapons; // 하위에 있는 Gun1, Gun2 등을 모두 드래그 앤 드롭
     private int currentIndex = -1; // -1이면 현재 맨손 상태
 
     // 모듈 참조 (Weapon_Holder에 붙어있는 스크립트들)
@@ -13,7 +13,7 @@ public class WeaponManager : MonoBehaviour
 
     public ProceduralRecoil recoilManager;
 
-    public WeaponBase CurrentWeapon
+    public Gun CurrentWeapon
     {
         get
         {

@@ -77,6 +77,6 @@ public class Monster : Entity
     }
 
     // ── 총기 시스템 통합 ──
-    // 총알 피격 판정은 Bullet.cs가 직접 수행한다 (Bullet.TryApplyDamage → TakeDamage).
+    // 총알 피격 판정은 발사체 쪽이 수행한다 (Bullet 스윕 → ProjectileSystem.ApplyHit → ApplyEffects).
     // 몬스터 쪽 충돌 코드는 필요 없다.
 }

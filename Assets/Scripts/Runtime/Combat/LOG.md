@@ -124,3 +124,52 @@ dt 누적 부동소수 오차(1e-8대)로 `tickTimer`가 0에 아주 미세하�
   버려서 "분리 안 됨"으로 오인 — 그리드 안 걷기 가능 셀에서 실측할 것.
   ② PlayLoopTest 중앙은 타워 사거리라 소환 몬스터가 몇 초 만에 사살됨 — 실측용은
   SetMaxHealth로 고체력을 줄 것.
+
+---
+
+## 2026-08-07 — 총·타워 발사 통합(ProjectileSystem) · 총기 상속 제거
+
+### 상속 제거 — `Gun` 단일 클래스
+구 `WeaponBase`(abstract) ← `ProjectileGun`/`RaycastGun` 3층을 `Runtime/FPS/Gun.cs` 하나로.
+투사체냐 히트스캔이냐는 클래스가 아니라 **데이터(`GunData.fireMode`)**가 정한다 —
+서브클래스 간 차이가 ExecuteFire 몸통뿐이었으니 "다른 행동"이 아니라 "다른 수치"였던 것.
+- **프리팹 이관 요령**: 통합 클래스가 `ProjectileGun.cs`의 파일을 이름만 바꿔
+  **GUID를 승계**하고(스크립트 바인딩은 이름이 아니라 GUID), RaycastGun 컴포넌트는
+  Player.prefab·씬 3개의 YAML에서 GUID만 치환해 흡수했다(직렬화 필드가 전부 base 소유라
+  호환). 컴포넌트 fileID가 유지되므로 WeaponManager.weapons 배열 참조도 그대로 산다.
+  검증: Gun 2개(Rifle=Projectile, LaserGun=Hitscan), weapons 끊김 0, 빠진 스크립트 0.
+- 구 RaycastGun을 쓰던 `Test_Gun 1.asset`은 `fireMode = Hitscan`으로 설정 (동작 보존).
+
+### 발사 공용화 — `Runtime/Combat/ProjectileSystem.cs`
+총(Gun)과 공격 타워(BattleTower)가 같은 코드로 쏜다. 히트스캔은 속도 무한의 발사일 뿐:
+- `ProjectileShot`(스펙 struct) — 속도·수명·사거리·위력·대상 마스크·효과·발사자.
+  위력은 발사 시점 확정(탄이 나는 동안 버프가 끝나도 유지).
+- `Fire`(투사체) / `Hitscan`(즉시 판정) / `TryClosestHit`·`ApplyHit`(공용 판정·명중 처리).
+- **풀은 프리팹당 전역 공유** — 총기별 전용 풀(중복 인스턴스)과 타워의 발사마다
+  Instantiate/Destroy(GC)를 모두 대체. 풀 인스턴스는 DontDestroyOnLoad 루트 아래
+  (씬 전환이 풀 안 오브젝트를 파괴해 죽은 참조를 남기지 않게).
+  실측: 타워 ~280발 사격에 풀 인스턴스 3개.
+
+### Bullet — 스윕 이동으로 전환 (터널링 제거)
+매 프레임 "직전→다음 위치" 스피어캐스트. 트리거/충돌 이벤트 의존 제거 —
+빠른 탄(속도 50 = 60fps에서 프레임당 0.83m)이 얇은 콜라이더를 건너뛰는 터널링이
+원천 차단되고, 명중 처리는 히트스캔과 같은 `ApplyHit`를 탄다.
+- 발사자 무시는 스윕 필터(`IsChildOf(Source.root)`)가 처리 — 타워가 발사마다 돌리던
+  자기 콜라이더 IgnoreCollision 순회 삭제.
+- 트리거는 스윕에서 무시(`QueryTriggerInteraction.Ignore`) — 총알(트리거)끼리
+  서로 맞고 소멸하는 일이 없다.
+- Invoke 예약 수명 → 타이머(풀 재사용 시 취소 관리 불요), 거리 판정 sqrMagnitude.
+- **알려진 한계**: 스피어캐스트는 시작 시점에 이미 겹친 콜라이더를 못 본다 —
+  총구에 밀착한 대상은 첫 프레임에 관통될 수 있다(총구 오프셋으로 실질적으론 희귀).
+
+### 검증 (PlayLoopTest 실측)
+- 히트스캔: 위력 30 지정 → 체력 정확히 −30.
+- 타워: 새 경로로 자연 사격 — 소환 표적 체력이 지속 감소(수천 누적), 게임 코드 예외 0.
+- 풀: 수백 발에 인스턴스 3개 유지 (재사용 확인).
+
+### 알아둘 것
+- 타워 히트스캔(레이저 타워)은 `ProjectileSystem.Hitscan` 호출만 하면 된다 —
+  TowerDataSO에 fireMode를 내리는 건 다음 작업.
+- 총알 프리팹의 콜라이더는 이제 판정에 쓰이지 않는다(스윕 반경 정보원으로만).
+- Player.cs의 `GetCurrentBulletDamage`는 구 우회 경로 잔재 — Bullet이 위력을 직접
+  들고 다니므로 이제 참조처가 없어지면 삭제 후보.

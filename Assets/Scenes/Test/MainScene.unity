@@ -127,9 +127,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4906b116b24b57c47827622b042a56f1, type: 3}
+  m_Script: {fileID: 11500000, guid: 83d0fd681cf63984c96cde90fb48bad7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaycastGun
+  m_EditorClassIdentifier: 
 --- !u!1 &50308953
 GameObject:
   m_ObjectHideFlags: 0
