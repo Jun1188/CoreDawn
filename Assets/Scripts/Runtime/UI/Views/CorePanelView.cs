@@ -30,8 +30,8 @@ public class CorePanelView : UITKPopup
     Button confirmOk, confirmCancel, confirmX;
 
     // 코어 정보 탭
-    VisualElement viewDeliver, viewInfo, hpFill, repairFill, radarSlot, radarChip;
-    Label hpText, hpMax, repairText, repairMax, radarChipText;
+    VisualElement viewDeliver, viewInfo, hpFill, shieldFill, repairFill, radarSlot, radarChip;
+    Label hpText, hpMax, shieldText, shieldMax, repairText, repairMax, radarChipText;
     Label waveNext, waveNumber, waveIncoming, waveNests;
     RadarScope radar;
     BuildingEntity coreEntity;   // 내구도 원본 — 심(Building)이 아니라 씬 껍데기가 갖고 있다
@@ -191,9 +191,12 @@ public class CorePanelView : UITKPopup
         viewDeliver = r.Q("view-deliver");
         viewInfo = r.Q("view-info");
         hpFill = r.Q("hp-fill");
+        shieldFill = r.Q("shield-fill");
         repairFill = r.Q("repair-fill");
         hpText = r.Q<Label>("hp-text");
         hpMax = r.Q<Label>("hp-max");
+        shieldText = r.Q<Label>("shield-text");
+        shieldMax = r.Q<Label>("shield-max");
         repairText = r.Q<Label>("repair-text");
         repairMax = r.Q<Label>("repair-max");
 
@@ -260,6 +263,21 @@ public class CorePanelView : UITKPopup
             SetBarFill(hpFill, 0f);
         }
 
+        // 보호막 — 요구 밖 자원을 태워 채운 값. 최대치가 0인 코어는 이 시스템을 안 쓰는 것이므로 모름 표시
+        float shieldMaxValue = target.MaxShield;
+        if (shieldMaxValue > 0f)
+        {
+            shieldText.text = Mathf.FloorToInt(target.Shield).ToString("N0");
+            shieldMax.text = $"/ {Mathf.CeilToInt(shieldMaxValue):N0}";
+            SetBarFill(shieldFill, target.Shield / shieldMaxValue);
+        }
+        else
+        {
+            shieldText.text = "—";
+            shieldMax.text = "";
+            SetBarFill(shieldFill, 0f);
+        }
+
         // 수리 진행
         int done = target.CurrentTierIndex;
         int total = target.TierCount;
@@ -324,6 +342,9 @@ public class CorePanelView : UITKPopup
         // 요구가 다 채워지면 버튼이 "납품"에서 "수리 시작"으로 바뀐다 (SCR-01b)
         if (target != null) target.ReadyChanged += OnContainerChanged;
 
+        // 보호막은 소각(컨테이너 변화)뿐 아니라 피격으로도 움직인다 — 별도 구독이 필요하다
+        if (target != null) target.ShieldChanged += OnShieldChanged;
+
         // 코어 내구도도 폴링하지 않고 이벤트로 받는다
         coreEntity = FindCoreEntity();
         if (coreEntity != null) coreEntity.OnHealthChanged += OnCoreHealthChanged;
@@ -337,6 +358,7 @@ public class CorePanelView : UITKPopup
         subCore = subHotbar = subBag = null;
 
         if (target != null) target.ReadyChanged -= OnContainerChanged;
+        if (target != null) target.ShieldChanged -= OnShieldChanged;
 
         if (coreEntity != null) coreEntity.OnHealthChanged -= OnCoreHealthChanged;
         coreEntity = null;
@@ -345,6 +367,11 @@ public class CorePanelView : UITKPopup
     void OnContainerChanged() => Refresh();
 
     void OnCoreHealthChanged(float current, float max)
+    {
+        if (infoTabActive) RefreshInfo();
+    }
+
+    void OnShieldChanged(float current, float max)
     {
         if (infoTabActive) RefreshInfo();
     }

@@ -88,6 +88,20 @@ public class BuildingEntity : Entity, IInteractable
         if (boot != null && boot.Sim != null) boot.Sim.Remove(Sim);
     }
 
+    // 코어의 보호막이 내구도보다 먼저 맞는다 — 남은 몫만 HP로 내려간다.
+    // 보호막의 원본은 심(CoreBehavior)이다: 자원 소각으로 차오르는 값이라
+    // 자원과 같은 곳에 있어야 두 수치가 어긋나지 않는다.
+    public override void TakeDamage(float damageAmount)
+    {
+        if (damageAmount > 0f && Sim != null && Sim.Behavior is CoreBehavior core)
+        {
+            damageAmount = core.AbsorbDamage(damageAmount);
+            if (damageAmount <= 0f) return; // 전부 막았다 — OnHealthChanged도 뜨지 않는다
+        }
+
+        base.TakeDamage(damageAmount);
+    }
+
     // HP 0 → 몬스터의 사망 연출 지연 없이 즉시 소멸
     protected override void HandleDeath()
     {
