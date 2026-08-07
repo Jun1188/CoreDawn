@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- SCR-03 건설 메뉴.
+         탭과 목록은 BuildingDatabase에 달려 있으므로 BuildMenuView가 만든다.
+         목록에는 이름만 남기고 수치는 커서 옆 툴팁으로 — 한 줄에 스펙까지 적으면
+         여섯 개만 놓여도 화면이 빽빽해지고 정작 고르는 일이 느려진다 (문서 SCR-03). -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="build-panel" class="ui-panel build-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="BUILD" class="ui-panel__tag" />
+                <ui:Label text="건설" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body build-panel__body">
+                <ui:VisualElement name="tabs" class="ui-tabs build-panel__tabs" />
+
+                <!-- 건물이 몇 개든 창 크기는 그대로. 넘치면 스크롤한다 -->
+                <ui:ScrollView name="grid-scroll" class="ui-scroll build-grid-scroll">
+                    <ui:VisualElement name="grid" class="build-grid" />
+                    <ui:Label name="empty-note" text="이 분류에 지을 수 있는 건물이 없습니다."
+                              class="build-empty ui-hidden" />
+                </ui:ScrollView>
+
+                <!-- 커서를 올린 건물의 정보가 여기 뜬다. 목록 위를 떠다니는 툴팁이
+                     아니라 고정된 자리라, 시선이 목록과 설명 사이만 오간다.
+                     높이를 못박아 두어 건물마다 설명 길이가 달라도 창이 흔들리지 않는다. -->
+                <ui:VisualElement name="details" class="build-details">
+                    <ui:VisualElement class="build-details__head">
+                        <ui:Label name="det-name" text="" class="build-details__name" />
+                        <ui:Label name="det-type" text="" class="build-details__type" />
+                        <ui:VisualElement name="hints" class="build-hints" />
+                    </ui:VisualElement>
+
+                    <ui:Label name="det-desc" text="" class="build-details__desc" />
+
+                    <!-- 칩을 라벨과 같은 줄에 두면 폭이 넘칠 때 통째로 다음 줄로 밀려
+                         상세 영역 밖으로 잘린다 (재료 4종 = 약 500px). 처음부터 줄을 나눈다. -->
+                    <ui:VisualElement name="det-meta" class="build-details__meta">
+                        <ui:Label name="det-size" text="" class="build-details__size" />
+                        <ui:Label name="det-cost-label" text="건설 비용" class="build-details__cost-label" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="det-cost" class="build-details__cost" />
+
+                    <ui:Label name="det-empty" text="건물에 커서를 올리면 정보가 표시됩니다. 클릭하면 바로 배치가 시작됩니다."
+                              class="build-details__empty" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

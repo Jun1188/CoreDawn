@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 792f916070545f34181c8f2853dc2a4e
+timeCreated: 1518732911
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 106040
+  packageName: Lowpoly Sci Fi Weapon Pack
+  packageVersion: 1.0
+  assetPath: Assets/LowpolySciFiWeaponPack/Prefabs/LightWeightCrystalRifle.prefab
+  uploadId: 230169

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a45a685bd64670c47af135e604160a35
+timeCreated: 1518633823
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 106040
+  packageName: Lowpoly Sci Fi Weapon Pack
+  packageVersion: 1.0
+  assetPath: Assets/LowpolySciFiWeaponPack/Materials/DawnWhite.mat
+  uploadId: 230169

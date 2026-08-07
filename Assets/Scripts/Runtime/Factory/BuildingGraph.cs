@@ -102,6 +102,12 @@ public class BuildingGraph
                 // 방향 반대 + 입출력 반대여야 연결 가능
                 if (np.Direction != opp || np.IsInput == port.IsInput) continue;
 
+                // 그리고 그 포트가 **맞닿은 칸에** 있어야 한다.
+                // 이 검사가 없으면 2×2 저장소처럼 면마다 칸이 여럿인 건물에서,
+                // 실제로는 반대편 칸에 있는 포트와 연결돼 버린다 —
+                // 화면(포트 흐름 표시)은 칸까지 보고 그리므로 보이는 것과 실제가 어긋난다.
+                if (neighbor.Origin + np.LocalOffset != neighborCell) continue;
+
                 // 연결 방향: 출력 → 입력
                 var conn = !port.IsInput
                     ? new BuildingConnection { From = nb, FromPort = port, To = neighbor, ToPort = np }

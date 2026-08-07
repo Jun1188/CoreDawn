@@ -165,7 +165,7 @@
       "displayName": "크리스탈 탄약",
       "description": "크리스탈 첨두 관통탄. T3 물리 계열 최상위 탄약 — 저격소총·중기관 포탑 상위 호환.",
       "type": "Ammo",
-      "line": "Iron",
+      "line": "Crystal",
       "icon": ""
     }
   ],
@@ -174,8 +174,7 @@
       "id": "Recipe:Recipe_IronIngot",
       "displayName": "철 주괴 제련",
       "description": "제련로 1입력.",
-      "tier": 0,
-      "requiredCoreTier": 0,
+      "tier": 1,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -195,7 +194,6 @@
       "displayName": "철판 제작",
       "description": "제작기 1입력.",
       "tier": 1,
-      "requiredCoreTier": 0,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -215,7 +213,6 @@
       "displayName": "철 기어 제작",
       "description": "제작기 1입력.",
       "tier": 1,
-      "requiredCoreTier": 0,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -235,7 +232,6 @@
       "displayName": "기본 탄약 제작",
       "description": "제작기 1입력. 총기·기본 포탑 공용.",
       "tier": 1,
-      "requiredCoreTier": 0,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -255,7 +251,6 @@
       "displayName": "선체 패널 조립",
       "description": "게이트 ① 납품 부품. 티어 1에서는 작업대 수동 조립.",
       "tier": 1,
-      "requiredCoreTier": 0,
       "craftTime": 4.0,
       "inputs": [
         {
@@ -279,7 +274,6 @@
       "displayName": "구리 주괴 제련",
       "description": "제련로 1입력. 구리 라인 개방.",
       "tier": 2,
-      "requiredCoreTier": 1,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -299,7 +293,6 @@
       "displayName": "구리 전선 제작",
       "description": "제작기 1입력.",
       "tier": 2,
-      "requiredCoreTier": 1,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -319,7 +312,6 @@
       "displayName": "회로 기판 조립",
       "description": "조립기 2입력.",
       "tier": 2,
-      "requiredCoreTier": 1,
       "craftTime": 4.0,
       "inputs": [
         {
@@ -343,7 +335,6 @@
       "displayName": "유탄 조립",
       "description": "조립기 2입력. 유탄 발사기·박격포 타워 공용.",
       "tier": 2,
-      "requiredCoreTier": 1,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -367,7 +358,6 @@
       "displayName": "항법 제어 유닛 조립",
       "description": "게이트 ② 납품 부품. 조립기 2입력 — 게이트① 부품(선체 패널) 재소비.",
       "tier": 2,
-      "requiredCoreTier": 1,
       "craftTime": 6.0,
       "inputs": [
         {
@@ -391,7 +381,6 @@
       "displayName": "크리스탈 정제",
       "description": "제련로 1입력. Ring 2~3 원정 자원.",
       "tier": 3,
-      "requiredCoreTier": 2,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -411,7 +400,6 @@
       "displayName": "고밀도 탄약 조립",
       "description": "조립기 2입력. 구리 코팅 강화 탄약.",
       "tier": 2,
-      "requiredCoreTier": 1,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -435,7 +423,6 @@
       "displayName": "에너지 셀 조립",
       "description": "조립기 2입력.",
       "tier": 3,
-      "requiredCoreTier": 2,
       "craftTime": 4.0,
       "inputs": [
         {
@@ -459,7 +446,6 @@
       "displayName": "에너지 셀 탄 제작",
       "description": "제작기 1입력.",
       "tier": 3,
-      "requiredCoreTier": 2,
       "craftTime": 2.0,
       "inputs": [
         {
@@ -479,7 +465,6 @@
       "displayName": "동력 모듈 제조",
       "description": "게이트 ③ 납품 부품. 제조기 4입력 — 괴수 핵이 공장 라인에 합류하는 유일한 지점.",
       "tier": 3,
-      "requiredCoreTier": 2,
       "craftTime": 10.0,
       "inputs": [
         {
@@ -511,7 +496,6 @@
       "displayName": "크리스탈 탄약 조립",
       "description": "조립기 2입력. 고밀도 탄약에 크리스탈 첨두를 결합.",
       "tier": 3,
-      "requiredCoreTier": 2,
       "craftTime": 3.0,
       "inputs": [
         {
@@ -565,7 +549,7 @@
       "outputSlots": 1,
       "bufferStackCap": 10,
       "maxHp": 150,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "speedMultiplier": 1
     },
@@ -606,7 +590,7 @@
       "outputSlots": 1,
       "bufferStackCap": 20,
       "maxHp": 220,
-      "requiredCoreTier": 1,
+      "requiredCoreTier": 2,
       "hideFromBuildMenu": false,
       "speedMultiplier": 2
     },
@@ -649,7 +633,7 @@
       "outputSlots": 1,
       "bufferStackCap": 10,
       "maxHp": 180,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "availableRecipes": [
         "Recipe:Recipe_IronIngot",
@@ -696,7 +680,7 @@
       "outputSlots": 1,
       "bufferStackCap": 10,
       "maxHp": 180,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "availableRecipes": [
         "Recipe:Recipe_IronPlate",
@@ -755,7 +739,7 @@
       "outputSlots": 1,
       "bufferStackCap": 10,
       "maxHp": 250,
-      "requiredCoreTier": 1,
+      "requiredCoreTier": 2,
       "hideFromBuildMenu": false,
       "availableRecipes": [
         "Recipe:Recipe_HullPanel",
@@ -832,11 +816,60 @@
       "outputSlots": 1,
       "bufferStackCap": 10,
       "maxHp": 320,
-      "requiredCoreTier": 2,
+      "requiredCoreTier": 3,
       "hideFromBuildMenu": false,
       "availableRecipes": [
         "Recipe:Recipe_PowerModule"
       ]
+    },
+    {
+      "id": "Building:DronePort",
+      "kind": "DronePort",
+      "displayName": "드론 스테이션",
+      "category": "Logistics",
+      "description": "벨트 없이 다른 스테이션으로 물건을 실어 나른다. 멀리 떨어진 광맥을 잇는 용도.",
+      "model": "",
+      "size": {
+        "x": 2,
+        "y": 2
+      },
+      "ports": [
+        {
+          "x": 0,
+          "y": 0,
+          "dir": "West",
+          "isInput": true
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "dir": "East",
+          "isInput": false
+        }
+      ],
+      "buildCost": [
+        {
+          "item": "Item:CircuitBoard",
+          "amount": 12
+        },
+        {
+          "item": "Item:EnergyCell",
+          "amount": 8
+        },
+        {
+          "item": "Item:IronPlate",
+          "amount": 16
+        }
+      ],
+      "inputSlots": 1,
+      "outputSlots": 1,
+      "bufferStackCap": 30,
+      "maxHp": 260,
+      "requiredCoreTier": 3,
+      "hideFromBuildMenu": false,
+      "droneRange": 60,
+      "carryCapacity": 20,
+      "travelSpeed": 8
     },
     {
       "id": "Building:Belt",
@@ -874,10 +907,10 @@
         }
       ],
       "inputSlots": 1,
-      "outputSlots": 1,
-      "bufferStackCap": 4,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
       "maxHp": 60,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "speedTilesPerSec": 2
     },
@@ -917,10 +950,10 @@
         }
       ],
       "inputSlots": 1,
-      "outputSlots": 1,
-      "bufferStackCap": 4,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
       "maxHp": 60,
-      "requiredCoreTier": 1,
+      "requiredCoreTier": 2,
       "hideFromBuildMenu": false,
       "speedTilesPerSec": 4
     },
@@ -973,9 +1006,9 @@
       ],
       "inputSlots": 1,
       "outputSlots": 0,
-      "bufferStackCap": 4,
+      "bufferStackCap": 1,
       "maxHp": 80,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false
     },
     {
@@ -1026,10 +1059,10 @@
         }
       ],
       "inputSlots": 1,
-      "outputSlots": 1,
-      "bufferStackCap": 4,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
       "maxHp": 80,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false
     },
     {
@@ -1103,11 +1136,11 @@
           "amount": 4
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 12,
+      "inputSlots": 12,
+      "outputSlots": 1,
       "bufferStackCap": 0,
       "maxHp": 300,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false
     },
     {
@@ -1196,12 +1229,108 @@
         }
       ],
       "buildCost": [],
-      "inputSlots": 6,
+      "inputSlots": 4,
       "outputSlots": 0,
       "bufferStackCap": 0,
       "maxHp": 5000,
       "requiredCoreTier": 0,
-      "hideFromBuildMenu": true
+      "hideFromBuildMenu": true,
+      "tiers": [
+        {
+          "name": "잔해 회수",
+          "description": "흩어진 파편을 모아 코어를 깨운다.",
+          "requirements": [
+            {
+              "item": "Item:ShipDebris",
+              "amount": 12
+            }
+          ],
+          "unlocks": [
+            "작업대 — 손으로 제련·제작",
+            "채굴기 · 제련로 · 컨베이어 벨트"
+          ],
+          "maxHpBonus": 0,
+          "isFinal": false
+        },
+        {
+          "name": "선체 봉합",
+          "description": "찢어진 동체를 덮어 내부 정비 구역을 연다.",
+          "requirements": [
+            {
+              "item": "Item:HullPanel",
+              "amount": 20
+            },
+            {
+              "item": "Item:IronPlate",
+              "amount": 40
+            },
+            {
+              "item": "Item:IronGear",
+              "amount": 30
+            }
+          ],
+          "unlocks": [
+            "조립기 — 부품 2종을 합쳐 조립",
+            "채굴기 Mk.2 · 벨트 Mk.2",
+            "중기관 포탑 · 박격포 타워"
+          ],
+          "maxHpBonus": 2000,
+          "isFinal": false
+        },
+        {
+          "name": "항법·제어 복구",
+          "description": "조종 콘솔과 선내 배선을 되살린다.",
+          "requirements": [
+            {
+              "item": "Item:NavControlUnit",
+              "amount": 8
+            },
+            {
+              "item": "Item:CircuitBoard",
+              "amount": 20
+            },
+            {
+              "item": "Item:CopperWire",
+              "amount": 50
+            }
+          ],
+          "unlocks": [
+            "레이더 — 다음 웨이브의 진입 방위와 규모",
+            "제조기 — 부품 4종을 한 번에 조립",
+            "레이저 타워 · 감속 필드 타워"
+          ],
+          "maxHpBonus": 1500,
+          "isFinal": false
+        },
+        {
+          "name": "동력 재점화",
+          "description": "엔진에 동력 모듈을 장착한다.",
+          "requirements": [
+            {
+              "item": "Item:PowerModule",
+              "amount": 3
+            },
+            {
+              "item": "Item:EnergyCell",
+              "amount": 15
+            },
+            {
+              "item": "Item:CopperWire",
+              "amount": 30
+            },
+            {
+              "item": "Item:HullPanel",
+              "amount": 10
+            }
+          ],
+          "unlocks": [
+            "엔진 예열 개시",
+            "이륙 시퀀스"
+          ],
+          "maxHpBonus": 1500,
+          "isFinal": true
+        }
+      ]
     },
     {
       "id": "Building:Fence",
@@ -1225,7 +1354,7 @@
       "outputSlots": 0,
       "bufferStackCap": 0,
       "maxHp": 250,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "range": 0,
       "fireRate": 0,
@@ -1254,7 +1383,7 @@
       "outputSlots": 0,
       "bufferStackCap": 0,
       "maxHp": 10,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "range": 2,
       "fireRate": 1,
@@ -1296,7 +1425,7 @@
       "outputSlots": 0,
       "bufferStackCap": 20,
       "maxHp": 200,
-      "requiredCoreTier": 0,
+      "requiredCoreTier": 1,
       "hideFromBuildMenu": false,
       "range": 9,
       "fireRate": 2,
@@ -1344,7 +1473,7 @@
       "outputSlots": 0,
       "bufferStackCap": 30,
       "maxHp": 320,
-      "requiredCoreTier": 1,
+      "requiredCoreTier": 2,
       "hideFromBuildMenu": false,
       "range": 11,
       "fireRate": 4,
@@ -1391,7 +1520,7 @@
       "outputSlots": 0,
       "bufferStackCap": 20,
       "maxHp": 300,
-      "requiredCoreTier": 1,
+      "requiredCoreTier": 2,
       "hideFromBuildMenu": false,
       "range": 18,
       "fireRate": 0.5,
@@ -1437,7 +1566,7 @@
       "outputSlots": 0,
       "bufferStackCap": 20,
       "maxHp": 280,
-      "requiredCoreTier": 2,
+      "requiredCoreTier": 3,
       "hideFromBuildMenu": false,
       "range": 14,
       "fireRate": 3,
@@ -1451,7 +1580,7 @@
       "kind": "Tower",
       "displayName": "감속 필드 타워",
       "category": "Defense",
-      "description": "범위 안의 몬스터를 느리게 만든다. 공격하지 않는다.",
+      "description": "범위 안의 몬스터를 느리게 만든다. 5초마다 에너지 셀 1개를 태운다.",
       "model": "",
       "size": {
         "x": 1,
@@ -1479,10 +1608,10 @@
       "outputSlots": 0,
       "bufferStackCap": 10,
       "maxHp": 180,
-      "requiredCoreTier": 2,
+      "requiredCoreTier": 3,
       "hideFromBuildMenu": false,
       "range": 7,
-      "fireRate": 1,
+      "fireRate": 0.2,
       "damageMultiplier": 0,
       "ammoFilter": [
         "Item:EnergyCell"

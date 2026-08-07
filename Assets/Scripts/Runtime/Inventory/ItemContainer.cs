@@ -159,11 +159,10 @@ public class ItemContainer
     public bool TryAdd(ItemDataSO item, int n = 1)
     {
         if (item == null || n <= 0 || !HasRoomFor(item, n)) return false;
-        Touch();
 
         foreach (var s in _slots)
         {
-            if (n == 0) return true;
+            if (n == 0) break;
             if (s == null || s.item != item) continue;
             int add = Mathf.Min(CapOf(s) - s.amount, n);
             s.amount += add;
@@ -179,6 +178,10 @@ public class ItemContainer
             n -= add;
             if (SingleStackPerType) break; // 새 스택은 1개까지 (RoomFor 선검사로 n==0 보장)
         }
+
+        // Touch는 반드시 다 넣은 뒤에 — Changed 구독자(핫바 HUD 등)가 변경 전 상태를
+        // 다시 그리고 끝나면, 다음 변경까지 화면이 한 박자 낡은 채로 남는다
+        Touch();
         return true; // HasRoomFor 선검사로 보장됨
     }
 
@@ -186,7 +189,6 @@ public class ItemContainer
     public bool TryConsume(ItemDataSO item, int n = 1)
     {
         if (item == null || n <= 0 || CountOf(item) < n) return false;
-        Touch();
 
         for (int i = _slots.Length - 1; i >= 0 && n > 0; i--) // 뒤쪽 스택부터 소진
         {
@@ -197,6 +199,8 @@ public class ItemContainer
             n -= take;
             if (s.amount == 0) _slots[i] = null;
         }
+
+        Touch();   // TryAdd와 같은 이유 — 변경이 끝난 뒤에 알린다
         return true;
     }
 

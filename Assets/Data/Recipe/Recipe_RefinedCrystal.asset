@@ -17,7 +17,6 @@ MonoBehaviour:
   description: "\uC81C\uB828\uB85C 1\uC785\uB825. Ring 2~3 \uC6D0\uC815 \uC790\uC6D0."
   icon: {fileID: 0}
   tier: 3
-  requiredCoreTier: 2
   inputs:
   - item: {fileID: 11400000, guid: 790f0bbe186c053469c6485dc5f47991, type: 2}
     amount: 2

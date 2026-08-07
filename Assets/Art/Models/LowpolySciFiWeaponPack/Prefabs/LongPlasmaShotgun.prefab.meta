@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b37e16a20f07ad34489bdf9cbd65b123
+timeCreated: 1518732983
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 106040
+  packageName: Lowpoly Sci Fi Weapon Pack
+  packageVersion: 1.0
+  assetPath: Assets/LowpolySciFiWeaponPack/Prefabs/LongPlasmaShotgun.prefab
+  uploadId: 230169

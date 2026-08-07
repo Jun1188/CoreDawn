@@ -18,7 +18,6 @@ MonoBehaviour:
     \uD06C\uB9AC\uC2A4\uD0C8 \uCCA8\uB450\uB97C \uACB0\uD569."
   icon: {fileID: 0}
   tier: 3
-  requiredCoreTier: 2
   inputs:
   - item: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
     amount: 2

@@ -7,11 +7,13 @@ public class RecipeManager : MonoBehaviour
 {
     public static RecipeManager Instance { get; private set; }
 
-    [Header("Auto Loaded Recipes")]
+    [Header("Loaded Recipes")]
     [SerializeField] private List<RecipeDataSO> allRecipes = new List<RecipeDataSO>();
 
+    /// <summary> 티어가 해금될 때 UI나 타 시스템에 알리는 이벤트 </summary>
     public event Action<int> OnTierUnlocked;
 
+    /// <summary> 현재 게임의 코어 티어 (GameManager 연동) </summary>
     public int CurrentCoreTier => GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
 
     private void Awake()
@@ -21,7 +23,7 @@ public class RecipeManager : MonoBehaviour
             Instance = this;
             transform.SetParent(null);
             DontDestroyOnLoad(gameObject);
-            LoadAllRecipesAutomatically();
+            LoadAllRecipes();
         }
         else
         {
@@ -31,25 +33,35 @@ public class RecipeManager : MonoBehaviour
 
     private void Start()
     {
-        // GameManager의 티어 상승 이벤트를 중계
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.TierUnlocked += (newTier) => OnTierUnlocked?.Invoke(newTier);
+            GameManager.Instance.TierUnlocked += HandleTierUnlocked;
         }
     }
 
-    private void LoadAllRecipesAutomatically()
+    private void OnDestroy()
     {
-        // 1. 실제 빌드/런타임: Resources 폴더 내부 탐색
-        RecipeDataSO[] loadedRecipes = Resources.LoadAll<RecipeDataSO>("");
-        if (loadedRecipes != null && loadedRecipes.Length > 0)
+        if (GameManager.Instance != null)
         {
-            allRecipes = loadedRecipes.ToList();
-            Debug.Log($"<color=green>[RecipeManager] Resources 스캔 완료: 총 {allRecipes.Count}개 로드</color>");
+            GameManager.Instance.TierUnlocked -= HandleTierUnlocked;
+        }
+    }
+
+    private void HandleTierUnlocked(int newTier)
+    {
+        Debug.Log($"<color=cyan>[RecipeManager] 코어 티어 상승: {newTier}티어</color>");
+        OnTierUnlocked?.Invoke(newTier);
+    }
+
+    private void LoadAllRecipes()
+    {
+        RecipeDataSO[] loaded = Resources.LoadAll<RecipeDataSO>("");
+        if (loaded != null && loaded.Length > 0)
+        {
+            allRecipes = loaded.ToList();
         }
 
-    #if UNITY_EDITOR
-        // 2. 에디터 플레이 모드: Resources 폴더 밖에 있어도 프로젝트 전체에서 자동 수집
+#if UNITY_EDITOR
         if (allRecipes.Count == 0)
         {
             string[] guids = UnityEditor.AssetDatabase.FindAssets("t:RecipeDataSO");
@@ -57,34 +69,32 @@ public class RecipeManager : MonoBehaviour
                 .Select(g => UnityEditor.AssetDatabase.LoadAssetAtPath<RecipeDataSO>(UnityEditor.AssetDatabase.GUIDToAssetPath(g)))
                 .Where(r => r != null)
                 .ToList();
-
-            Debug.Log($"<color=yellow>[RecipeManager] (Editor Fallback) 프로젝트 전체에서 {allRecipes.Count}개의 레시피를 찾았습니다!</color>");
         }
-    #endif
-
-        if (allRecipes.Count == 0)
-        {
-            Debug.LogWarning("[RecipeManager] 레시피 에셋을 하나도 찾지 못했습니다. 에셋 경로 및 Resources 폴더를 확인해주세요!");
-        }
+#endif
     }
 
-    /// <summary> 특정 레시피가 코어 티어상 해금되었는지 검사 </summary>
-    public bool IsTierUnlocked(RecipeDataSO recipe)
+
+    /// <summary> 단일 레시피의 코어 티어 해금 여부 확인 </summary>
+    public bool IsRecipeUnlocked(RecipeDataSO recipe)
     {
         if (recipe == null) return false;
-        return recipe.requiredCoreTier <= CurrentCoreTier;
+        
+        // requiredCoreTier 대신 recipe.tier 사용!
+        return recipe.tier <= CurrentCoreTier;
     }
 
-    /// <summary> 모든 레시피 목록 반환 </summary>
-    public IReadOnlyList<RecipeDataSO> GetAllRecipes() => allRecipes;
-
-    /// <summary> 
-    /// [범용 함수] 조건에 맞는 레시피 목록 반환
-    /// ex) 손제작 UI: GetRecipes(r => r.tier == 0)
-    /// ex) 용광로 UI: GetRecipes(r => r.category == RecipeCategory.Smelting)
-    /// </summary>
-    public List<RecipeDataSO> GetRecipes(Predicate<RecipeDataSO> filter)
+    /// <summary> 현재 티어에서 사용 가능한(해금된) 레시피 목록만 반환 </summary>
+    public List<RecipeDataSO> GetUnlockedRecipes()
     {
-        return allRecipes.Where(r => r != null && filter(r)).ToList();
+        return allRecipes.Where(r => r != null && IsRecipeUnlocked(r)).ToList();
     }
+
+    /// <summary> 아직 잠겨있는(미해금) 레시피 목록만 반환 </summary>
+    public List<RecipeDataSO> GetLockedRecipes()
+    {
+        return allRecipes.Where(r => r != null && !IsRecipeUnlocked(r)).ToList();
+    }
+
+    /// <summary> 전체 레시피 목록 반환 </summary>
+    public IReadOnlyList<RecipeDataSO> GetAllRecipes() => allRecipes;
 }

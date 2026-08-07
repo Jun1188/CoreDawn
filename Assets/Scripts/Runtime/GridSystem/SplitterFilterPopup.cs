@@ -131,12 +131,8 @@ public class SplitterFilterPopup : UIPopup
             var btn = MakeButton(dirRow.transform, $"{DirName(dir)}쪽 출구", new Vector2(120, 34),
                 selected ? new Color(0.2f, 0.45f, 0.25f) : new Color(0.22f, 0.22f, 0.26f),
                 () => { selectedDir = d; Rebuild(); });
-            if (target.Filters is { } f)
-            {
-                int count = 0;
-                foreach (var kv in f) if (kv.Value == dir) count++;
-                if (count > 0) btn.text += $" ({count})";
-            }
+            int count = target.AllowedAt(dir).Count;
+            if (count > 0) btn.text += $" ({count})";
         }
 
         // ── 아이템 그리드 (ItemDatabase 전체)
@@ -157,22 +153,30 @@ public class SplitterFilterPopup : UIPopup
             if (item == null) continue;
             var captured = item;
 
-            bool hasFilter = target.Filters.TryGetValue(item, out var dir);
-            bool onSelected = hasFilter && dir == selectedDir;
+            // 한 아이템이 여러 출구에 걸릴 수 있다 — 선택 출구 지정 여부와
+            // "다른 출구에도 있음"을 따로 표시한다
+            bool onSelected = target.IsAllowedAt(selectedDir, item);
+            var others = new List<Direction>();
+            foreach (var d2 in target.DirectionsOf(item))
+                if (d2 != selectedDir) others.Add(d2);
 
             string label = string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
-            if (hasFilter && !onSelected) label += $" [{DirName(dir)}]";
+            if (others.Count > 0)
+            {
+                var names = new List<string>(others.Count);
+                foreach (var d2 in others) names.Add(DirName(d2));
+                label += $" [{string.Join(",", names)}]";
+            }
 
             Color color = onSelected ? new Color(0.2f, 0.5f, 0.25f)        // 선택 출구 지정 — 초록
-                : hasFilter ? new Color(0.5f, 0.42f, 0.15f)                 // 다른 출구 지정 — 노랑
-                : new Color(0.22f, 0.22f, 0.26f);                           // 무필터
+                : others.Count > 0 ? new Color(0.5f, 0.42f, 0.15f)          // 다른 출구에만 지정 — 노랑
+                : new Color(0.22f, 0.22f, 0.26f);                           // 무지정
 
             MakeButton(grid.transform, label, Vector2.zero, color, () =>
             {
-                if (target.Filters.TryGetValue(captured, out var cur) && cur == selectedDir)
-                    target.RemoveFilter(captured);              // 선택 출구에 있던 것 → 해제
-                else
-                    target.AddFilter(selectedDir, captured);    // 무필터/타 출구 → 선택 출구로
+                // 선택 출구 기준 토글 — 다른 출구의 지정은 그대로 둔다
+                if (target.IsAllowedAt(selectedDir, captured)) target.RemoveFilter(selectedDir, captured);
+                else                                          target.AddFilter(selectedDir, captured);
                 Rebuild();
             });
         }

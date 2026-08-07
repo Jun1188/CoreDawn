@@ -39,7 +39,7 @@ MonoBehaviour:
   inputSlots: 4
   outputSlots: 1
   bufferStackCap: 10
-  requiredCoreTier: 2
+  requiredCoreTier: 3
   hideFromBuildMenu: 0
   buildCost:
   - item: {fileID: 11400000, guid: e57d402018a869d4d9e7017aa7e6781a, type: 2}

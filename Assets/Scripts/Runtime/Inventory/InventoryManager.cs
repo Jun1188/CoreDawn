@@ -37,9 +37,21 @@ public class InventoryManager : MonoBehaviour
         CloseScreen();
     }
 
-    public void OpenPlayerScreen() => OpenScreen(null);
+    public void OpenPlayerScreen()
+    {
+        // UITK 패널(SCR-04)이 있는 씬은 그쪽으로 — 없으면 기존 uGUI 화면 (분배기와 같은 이관 패턴)
+        if (InventoryPanelView.TryOpen()) return;
+        OpenScreen(null);
+    }
 
     public void OpenContainerScreen(ItemContainer container)
+    {
+        // UITK 패널(SCR-08)이 있는 씬은 그쪽으로 — 없으면 기존 uGUI (인벤토리와 같은 이관 패턴)
+        if (StoragePanelView.TryOpen(container)) return;
+        OpenContainerScreenLegacy(container);
+    }
+
+    void OpenContainerScreenLegacy(ItemContainer container)
     {
         if (container == null || playerController == null || IsScreenOpen) return;
 
@@ -48,13 +60,14 @@ public class InventoryManager : MonoBehaviour
         OpenScreen(container);
     }
 
-    /// <summary>코어 전용 열기 — 일반 컨테이너 화면(드래그드롭)에 진행률 패널을 얹는다.</summary>
+    /// <summary>코어 전용 열기 — 일반 컨테이너 화면(드래그드롭)에 진행률 패널을 얹는다.
+    /// 보관소 UITK 패널을 거치지 않는다 — 코어 화면은 CorePanelView가 따로 맡는다.</summary>
     public void OpenCoreScreen(CoreBehavior core)
     {
         if (core == null || playerController == null || IsScreenOpen) return;
 
         boundCore = core;
-        OpenContainerScreen(core.Container);
+        OpenContainerScreenLegacy(core.Container);
         if (coreRequirementPanel != null) coreRequirementPanel.SetActive(true);
         RefreshCoreRows();
     }
