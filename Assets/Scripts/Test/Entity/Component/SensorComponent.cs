@@ -26,6 +26,10 @@ public class SensorComponent
 
     // 런타임 부착 엔티티(EnsurePlayerEntity 등) 전용 — 인스펙터를 못 쓰는 경우 감지 범위 조정
     public void SetDetectionRange(float range) => detectionRange = Mathf.Max(0f, range);
+    public void SetTargetLayer(params string[] layerNames) 
+    {
+        targetLayer = LayerMask.GetMask(layerNames);
+    }
 
     public void Initialize(Entity owner)
     {

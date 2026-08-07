@@ -139,6 +139,37 @@ public class WaveSpawnManager
         monsters.Clear();
     }
 
+    public void SpawnNestDefenders(MonsterNest nest, Player target, int amount)
+    {
+        var spawnPositions = nest.GetAllActiveSpawnPositions();
+        foreach (var position in spawnPositions)
+        {
+            GameObject go = monsterPrefab != null
+                ? UnityEngine.Object.Instantiate(monsterPrefab, position, Quaternion.identity, parent)
+                : CreateFallbackMonster(position);
+
+            go.SetActive(true);
+            SnapToGround(go);
+
+            int monsterLayer = LayerMask.NameToLayer("Monster");
+            if (monsterLayer >= 0 && go.layer == 0)
+                SetLayerRecursively(go.transform, monsterLayer);
+
+            var rb = go.GetComponent<Rigidbody>();
+            if (rb == null) rb = go.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
+            var monster = go.GetComponent<Monster>();
+            if (monster == null) monster = go.AddComponent<Monster>();
+            monsters.Add(monster);
+            
+            // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정
+            monster.SetAsNestDefender(target);
+        }
+        Debug.Log($"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
+    }
+
     private void CleanupDead()
     {
         for (int i = monsters.Count - 1; i >= 0; i--)
@@ -179,6 +210,7 @@ public class WaveSpawnManager
             ? UnityEngine.Object.Instantiate(monsterPrefab, position, Quaternion.identity, parent)
             : CreateFallbackMonster(position);
 
+        go.SetActive(true);
         SnapToGround(go);
 
         int monsterLayer = LayerMask.NameToLayer("Monster");
@@ -193,6 +225,7 @@ public class WaveSpawnManager
         var monster = go.GetComponent<Monster>();
         if (monster == null) monster = go.AddComponent<Monster>();
         monsters.Add(monster);
+
         return true;
     }
 
