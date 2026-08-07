@@ -1,42 +1,42 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 플레이어 총기 — 단일 클래스, 상속 없음(구 WeaponBase/ProjectileGun/RaycastGun 통합).
-/// 투사체냐 히트스캔이냐는 코드가 아니라 데이터(GunData.fireMode)가 정한다.
+/// 플레이어 총기 — 게임플레이만 담당한다: 탄창·재장전·연사 간격·탄퍼짐·발사.
+/// 수치는 전부 GunData(데이터), 여기는 상태(남은 탄·재장전 중·현재 탄퍼짐)뿐이다.
 ///
-/// 이 클래스는 FPS 총의 역할만 담당한다: 탄창·재장전·연사 간격·탄퍼짐·반동.
-/// 실제 발사(투사체 생성·히트스캔 판정·명중 효과)는 ProjectileSystem이 타워와 공용으로 처리한다.
+/// 연출(반동·킥백·셰이크)은 모른다 — 발사하면 <see cref="Fired"/>만 알리고,
+/// 반응은 WeaponManager가 연출 모듈들로 팬아웃한다. 실제 발사(투사체·히트스캔·명중 효과)는
+/// ProjectileSystem이 타워와 공용으로 처리한다.
 /// </summary>
 public class Gun : MonoBehaviour
 {
     [Header("Core References")]
     public GunData gunData;
     public Transform muzzlePoint;
-    [HideInInspector]
-    public WeaponManager weaponManager;
 
-    [Header("ADS Settings")]
-    public Transform sightPoint; // 이 총의 가늠자(눈 위치) 앵커
-    public float zoomFOV = 50f;  // 정조준 시 시야각
+    [Tooltip("이 총의 가늠자(눈 위치) 앵커 — ADS가 카메라 정렬에 쓴다.")]
+    public Transform sightPoint;
 
-    [Header("Current States")]
-    private int currentAmmo;
+    /// <summary>발사 성공 순간 발화 — WeaponManager가 구독해 연출(반동·킥백·셰이크)을 반응시킨다.</summary>
+    public event Action<Gun> Fired;
 
     /// <summary>현재 장전 수 — HUD 표시용 읽기 전용 (SCR-02).</summary>
-    public int CurrentAmmo => currentAmmo;
+    public int CurrentAmmo { get; private set; }
 
-    public bool isReloading = false;
-    private float lastFireTime = 0f;
+    /// <summary>재장전 중인가 — 읽기 전용. 진행은 StartReload로만 시작된다.</summary>
+    public bool IsReloading { get; private set; }
+
+    private float lastFireTime;
     private float currentSpread;
-    private Rigidbody playerRb; // 플레이어의 속도 측정을 위함
+    private Rigidbody playerRb; // 이동 속도에 따른 탄퍼짐 가중치용
 
     // 효과의 출처(Source)로 전달할 플레이어 엔티티.
     // Player는 BattleManager가 런타임에 부착하므로(Awake 시점엔 없을 수 있음) 찾을 때까지 재시도한다.
     private Entity ownerEntity;
     private Entity OwnerEntity =>
         ownerEntity != null ? ownerEntity : (ownerEntity = GetComponentInParent<Entity>());
-
 
     private void Awake()
     {
@@ -45,13 +45,13 @@ public class Gun : MonoBehaviour
 
     private void Start()
     {
-        currentAmmo = gunData.magSize;
+        CurrentAmmo = gunData.magSize;
     }
 
     private void Update()
     {
-        // 안 쏠 때는 에임이 다시 모임 (이동 속도에 따라 기본 탄퍼짐 증가)
-        float speedFactor = (playerRb != null && playerRb.linearVelocity.magnitude > 1f) ? 2f : 1f; // 달리면 2배
+        // 안 쏠 때는 에임이 다시 모임 (이동 속도에 따라 기본 탄퍼짐 증가 — 달리면 2배)
+        float speedFactor = (playerRb != null && playerRb.linearVelocity.magnitude > 1f) ? 2f : 1f;
         float targetSpread = gunData.baseSpread * speedFactor;
 
         currentSpread = Mathf.Lerp(currentSpread, targetSpread, Time.deltaTime * gunData.spreadRecoveryRate);
@@ -60,39 +60,34 @@ public class Gun : MonoBehaviour
     private void OnEnable()
     {
         // 무기를 스왑해서 꺼낼 때마다 상태 초기화
-        isReloading = false;
+        IsReloading = false;
     }
 
     private void OnDisable()
     {
-        // 무기를 집어넣을 때 코루틴 안전하게 정지
+        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지
         StopAllCoroutines();
     }
 
-    // 매니저가 호출하는 사격 시도 함수
+    /// <summary>사격 시도 — 재장전·탄약·연사 간격을 통과하면 발사하고 true.</summary>
     public bool TryFire()
     {
-        if (isReloading) return false;
+        if (IsReloading) return false;
 
-        // 탄약 부족 처리
-        if (currentAmmo <= 0)
+        if (CurrentAmmo <= 0)
         {
             StartReload();
             return false;
         }
 
-        // 연사속도 제어
         if (Time.time < lastFireTime + gunData.fireRate) return false;
 
-        // 실제 사격 로직 실행 (탄약 차감, 쿨타임 갱신)
-        currentAmmo--;
+        CurrentAmmo--;
         lastFireTime = Time.time;
-
         currentSpread = Mathf.Min(currentSpread + gunData.spreadIncreasePerShot, gunData.maxSpread);
 
         Fire();
-        ApplyRecoil();
-
+        Fired?.Invoke(this);
         return true;
     }
 
@@ -103,7 +98,7 @@ public class Gun : MonoBehaviour
 
         // 탄퍼짐 적용 (정면 방향에 랜덤한 구형 오차를 더함)
         Vector3 direction = (muzzlePoint != null ? muzzlePoint.forward : transform.forward);
-        direction += Random.insideUnitSphere * (currentSpread / 100f);
+        direction += UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
 
         // 공격 정의(효과 항목들)는 명중 시 전달. 공격 버프는 발사 시점에 항목별로 구워진다
         // (버프의 affects 목록에 든 효과만 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지)
@@ -119,30 +114,18 @@ public class Gun : MonoBehaviour
             ProjectileSystem.Fire(gunData.bulletPrefab, origin, direction, shot);
     }
 
-    private void ApplyRecoil()
-    {
-        CameraShakeManager.Instance.ShakeOnPlayerShoot(gunData.BaseDamage);
-        weaponManager.recoilManager.FireRecoil(gunData.xRecoil, gunData.yRecoil, gunData.zRecoil);
-        bool currentAimState = weaponManager.adsModule.isAiming; // ADS 모듈에서 현재 조준 상태 가져오기
-        weaponManager.kickbackModule.Fire(gunData.visualKickbackZ, gunData.visualKickbackRot, currentAimState);
-    }
-
     public void StartReload()
     {
-        if (isReloading || currentAmmo == gunData.magSize || !gameObject.activeSelf) return;
+        if (IsReloading || CurrentAmmo == gunData.magSize || !gameObject.activeSelf) return;
         StartCoroutine(ReloadRoutine());
     }
 
     private IEnumerator ReloadRoutine()
     {
-        isReloading = true;
-        // 필요 시 애니메이션 트리거 호출
-        // anim.SetTrigger("Reload");
-
+        IsReloading = true;
         yield return new WaitForSeconds(gunData.reloadTime);
 
-        currentAmmo = gunData.magSize;
-        isReloading = false;
-        Debug.Log($"{gunData.gunName} 재장전 완료!");
+        CurrentAmmo = gunData.magSize;
+        IsReloading = false;
     }
 }

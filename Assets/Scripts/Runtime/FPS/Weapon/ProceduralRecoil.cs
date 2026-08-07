@@ -1,5 +1,10 @@
 using UnityEngine;
 
+/// <summary>
+/// 카메라 반동 모듈 — 사격 시 시점(카메라 홀더)이 위로 튀었다가 스프링처럼 복귀한다.
+/// 무기 모델의 시각 반동은 WeaponKickback, 화면 흔들림은 CameraShakeManager가 담당 —
+/// 셋 다 WeaponManager의 발사 팬아웃(OnWeaponFired)에서 구동된다.
+/// </summary>
 public class ProceduralRecoil : MonoBehaviour
 {
 

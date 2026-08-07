@@ -43,7 +43,7 @@ public class CameraShakeManager : MonoBehaviour
     private void Awake()
     {
         if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        else Destroy(this); // 컴포넌트만 제거 — 카메라 리그에 붙어 있어 오브젝트째 지우면 위험
     }
 
     private void OnDestroy()
@@ -97,7 +97,6 @@ public class CameraShakeManager : MonoBehaviour
         cameraTransform.localRotation = Quaternion.Euler(totalRot);
     }
 
-    // (Impulse, ImpulseAtPosition, ShakeOnPlayerShoot 등은 기존과 동일)
     public void Impulse(ImpulseRequest req)
     {
         if (globalIntensityScale <= 0f) return;
@@ -126,15 +125,4 @@ public class CameraShakeManager : MonoBehaviour
         });
     }
 
-    /// </summary>
-    //public void ShakeEnemyProximity(Vector3 enemyPos, float massScale, float maxRange = 8f)
-    //{
-    //    ImpulseAtPosition(enemyPos, new ImpulseRequest
-    //    {
-    //        positionAmplitude = 0.005f * massScale,
-    //        rotationAmplitude = 0.12f  * massScale,
-    //        duration          = 0.25f,
-    //        frequency         = 6f
-    //    }, maxRange);
-    //}
 }

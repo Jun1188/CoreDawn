@@ -78,14 +78,13 @@ public class WeaponController : MonoBehaviour, IInputReceiver
                 return false;
 
             case InputActionId.Aim:
-                if (weapon == null || weaponManager.adsModule == null) return false;
+                if (weapon == null) return false;
                 if (e.Phase == InputActionPhase.Performed)
                 {
-                    weaponManager.adsModule.isAiming = true;
-                    weaponManager.adsModule.targetFov = weapon.zoomFOV;
+                    weaponManager.SetAiming(true); // 줌 FOV는 스왑 때 매니저가 무기 데이터로 이미 설정
                     return true;
                 }
-                if (e.Phase == InputActionPhase.Canceled) weaponManager.adsModule.isAiming = false;
+                if (e.Phase == InputActionPhase.Canceled) weaponManager.SetAiming(false);
                 return false;
 
             case InputActionId.Reload:
@@ -101,7 +100,6 @@ public class WeaponController : MonoBehaviour, IInputReceiver
     {
         isFiringHeld = false;
         lastFireInputTime = -1f;
-        if (weaponManager != null && weaponManager.adsModule != null)
-            weaponManager.adsModule.isAiming = false;
+        if (weaponManager != null) weaponManager.SetAiming(false);
     }
 }
