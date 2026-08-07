@@ -3,7 +3,7 @@ using UnityEngine;
 // 전투 총괄 매니저 — 전투에 필요한 구성요소를 한곳에서 멤버로 통합한다.
 //   Grid    : 길찾기 그리드 (GridManager, 씬 컴포넌트 참조)
 //   FlowField : 플로우필드 구동 (FlowFieldManager, 씬 컴포넌트 참조)
-//   Spawner : 몬스터 군집 생명주기 (MonsterSpawnManager, 순수 C# — 여기서 소유/Tick 구동)
+//   Spawner : 몬스터 군집 생명주기 (WaveSpawnManager, 순수 C# — 여기서 소유/Tick 구동)
 // 낮/밤 전환(TimeManager)에 맞춰 스폰을 켜고 끄며, 아침에는 군집을 일괄 소멸시킨다.
 public class BattleManager : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class BattleManager : MonoBehaviour
     [Header("Battle Members")]
     [SerializeField] private GridManager gridManager;
     [SerializeField] private FlowFieldManager flowFieldManager;
-    [SerializeField] private MonsterSpawnManager spawnManager = new MonsterSpawnManager();
+    [SerializeField] private WaveSpawnManager spawnManager = new WaveSpawnManager();
 
     [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 HealthComponent 기본값(100)을 쓴다.")]
     [SerializeField] private float playerMaxHealth = 300f;
@@ -24,7 +24,7 @@ public class BattleManager : MonoBehaviour
 
     public GridManager Grid => gridManager;
     public FlowFieldManager FlowField => flowFieldManager;
-    public MonsterSpawnManager Spawner => spawnManager;
+    public WaveSpawnManager Spawner => spawnManager;
 
     private void Awake()
     {

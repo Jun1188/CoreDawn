@@ -21,6 +21,7 @@ public class RecipeManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            transform.SetParent(null);
             DontDestroyOnLoad(gameObject);
             LoadAllRecipes();
         }

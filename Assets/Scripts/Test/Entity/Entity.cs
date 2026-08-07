@@ -74,12 +74,12 @@ public class Entity : MonoBehaviour
 
     protected virtual void Start() { }
 
-    protected virtual void Update() { 
-        if ((int)(health.CurrentHealth)%7 == 0 
+    protected virtual void Update() { /*
+        if (!health.IsDead && (int)(health.CurrentHealth)%7 == 0 
             && (this.GetType() == typeof(BattleTower)
             || this.GetType() == typeof(Player)
-            || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);
-            }
+            || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);*/
+    }
 
     public virtual void TakeDamage(float damageAmount) => health.TakeDamage(damageAmount);
 

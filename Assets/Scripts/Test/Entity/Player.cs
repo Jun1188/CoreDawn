@@ -89,6 +89,8 @@ public class Player : Entity
         }
     }
 
+
+
     private void OnDisable()
     {
         // 플레이어가 비활성화되면(사망 등) 추적 중이던 몬스터를 모두 해제
