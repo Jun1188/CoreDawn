@@ -36,8 +36,6 @@ public static class BuildCost
         if (!HasCost(so)) return true;
         if (PlayerInventoryHolder.Instance == null) return true;
 
-        if (HasBuildingItem(so)) return true; // NEW: Allow pre-crafted building item
-
         foreach (var c in so.buildCost)
         {
             if (c.item == null) continue;
@@ -46,20 +44,6 @@ public static class BuildCost
         return true;
     }
 
-    private static bool HasBuildingItem(BuildingDataSO so)
-    {
-        if (PlayerInventoryHolder.Instance == null) return false;
-        
-        bool Check(ItemContainer c)
-        {
-            if (c == null) return false;
-            foreach (var e in c.Snapshot())
-                if (e.item is BuildingItemSO bso && bso.building == so && e.n > 0) return true;
-            return false;
-        }
-        
-        return Check(Hotbar) || Check(Bag);
-    }
 
     /// <summary>부족한 첫 재료 — 건설 메뉴가 "무엇이 모자란지" 보여줄 때 쓴다.</summary>
     public static bool TryGetMissing(BuildingDataSO so, out ItemDataSO item, out int shortBy)
@@ -67,7 +51,6 @@ public static class BuildCost
         item = null;
         shortBy = 0;
         if (!HasCost(so) || PlayerInventoryHolder.Instance == null) return false;
-        if (HasBuildingItem(so)) return false;
 
         foreach (var c in so.buildCost)
         {
@@ -92,12 +75,6 @@ public static class BuildCost
         if (PlayerInventoryHolder.Instance == null) return true;
         if (!CanAfford(so)) return false;
 
-        if (HasBuildingItem(so))
-        {
-            ConsumeBuildingItem(so);
-            return true;
-        }
-
         foreach (var c in so.buildCost)
         {
             if (c.item == null || c.amount <= 0) continue;
@@ -106,25 +83,6 @@ public static class BuildCost
         return true;
     }
 
-    private static void ConsumeBuildingItem(BuildingDataSO so)
-    {
-        bool TryConsume(ItemContainer c)
-        {
-            if (c == null) return false;
-            foreach (var e in c.Snapshot())
-            {
-                if (e.item is BuildingItemSO bso && bso.building == so && e.n > 0)
-                {
-                    c.TryConsume(bso, 1);
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        if (TryConsume(Hotbar)) return;
-        TryConsume(Bag);
-    }
 
     /// <summary>
     /// 철거 시 전액 환급. 부분 환급은 배치 실험을 망설이게 만들어 공장 게임의 재미를 깎는다.
