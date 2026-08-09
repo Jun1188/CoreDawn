@@ -11,6 +11,9 @@ public class WeaponController : MonoBehaviour, IInputReceiver
 {
     [SerializeField] private WeaponManager weaponManager;
 
+    [Tooltip("비우면 상위에서 자동으로 찾는다. 사격/조준이 달리기를 끊기 위해 필요.")]
+    [SerializeField] private PlayerController player;
+
     [Tooltip("발사 선입력을 기억하는 시간(초) — 연사 간격 직전에 누른 클릭도 발사되게")]
     [SerializeField] private float fireBufferWindow = 0.15f;
 
@@ -23,6 +26,7 @@ public class WeaponController : MonoBehaviour, IInputReceiver
     private void Awake()
     {
         if (weaponManager == null) weaponManager = FindFirstObjectByType<WeaponManager>();
+        if (player == null) player = GetComponentInParent<PlayerController>();
     }
 
     private void Start()
@@ -72,6 +76,8 @@ public class WeaponController : MonoBehaviour, IInputReceiver
                 {
                     isFiringHeld = true;
                     lastFireInputTime = Time.time;   // 단발도 버퍼를 거쳐 Update에서 발사
+                    // 쏘려면 달리기를 멈춘다 — 총을 내린 채로 발사되는 모순을 원천 차단
+                    if (player != null) player.SuppressSprint();
                     return true;
                 }
                 if (e.Phase == InputActionPhase.Canceled) isFiringHeld = false;
@@ -82,6 +88,7 @@ public class WeaponController : MonoBehaviour, IInputReceiver
                 if (e.Phase == InputActionPhase.Performed)
                 {
                     weaponManager.SetAiming(true); // 줌 FOV는 스왑 때 매니저가 무기 데이터로 이미 설정
+                    if (player != null) player.SuppressSprint();
                     return true;
                 }
                 if (e.Phase == InputActionPhase.Canceled) weaponManager.SetAiming(false);

@@ -44,6 +44,7 @@ public static class BuildCost
         return true;
     }
 
+
     /// <summary>부족한 첫 재료 — 건설 메뉴가 "무엇이 모자란지" 보여줄 때 쓴다.</summary>
     public static bool TryGetMissing(BuildingDataSO so, out ItemDataSO item, out int shortBy)
     {
@@ -81,6 +82,7 @@ public static class BuildCost
         }
         return true;
     }
+
 
     /// <summary>
     /// 철거 시 전액 환급. 부분 환급은 배치 실험을 망설이게 만들어 공장 게임의 재미를 깎는다.

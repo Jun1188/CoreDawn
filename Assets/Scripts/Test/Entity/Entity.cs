@@ -79,15 +79,18 @@ public class Entity : MonoBehaviour
 
     protected virtual void Start() { }
 
-    protected virtual void Update() {
+    protected virtual void Update()
+    {
         Effects.Tick(Time.deltaTime);
         if (Movement != null) Movement.SpeedMultiplier = Effects.MoveSpeedMultiplier;
 
-        if ((int)(health.CurrentHealth)%7 == 0
+        // (팀) 체력 디버그 로그는 비활성화됨
+        /*
+        if (!health.IsDead && (int)(health.CurrentHealth)%7 == 0
             && (this.GetType() == typeof(BattleTower)
             || this.GetType() == typeof(Player)
-            || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);
-            }
+            || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);*/
+    }
 
     /// <summary>
     /// 공격 명중의 단일 진입점 — 효과 항목 목록을 이 엔티티에 적용한다.

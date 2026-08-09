@@ -14,6 +14,9 @@ public enum InputActionId
     None,
     // Gameplay 맵
     Move, Look, Jump, Attack, Interact,
+    Sprint,               // 좌Shift — 눌림 상태형. 전진 입력이 있을 때만 실제로 달린다
+    Crouch,               // 좌Ctrl — 눌림 상태형(토글 옵션은 PlayerController.crouchIsToggle).
+                          // 충분히 빠른 상태에서 누르면 슬라이딩으로 분기한다
     Rotate, CycleShape, ToggleBuild, ToggleDemolish,
     Reload, QuickDrop,
     Aim,                  // 우클릭 조준(ADS) — 눌림 상태형 (Performed=시작, Canceled=해제)

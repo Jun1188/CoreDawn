@@ -44,6 +44,7 @@ public class InputManager : MonoBehaviour
     {
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
+        transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
 
         _runtime = Instantiate(asset);

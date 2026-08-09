@@ -33,21 +33,18 @@ namespace Evets
         // moon
         [Range(0, 3), SerializeField] private int moonCount = 1;
         [SerializeField] private Cubemap moonTexture;
-        [SerializeField] private bool moonTurnOn = true;
         [Range(0f, 1f), SerializeField] private float moonRadius = .3f;
         [Range(0.01f, 1f), SerializeField] private float moonEdgeStrength = .4f;
         [Range(-16, 0), SerializeField] private float moonExposure = 0;
         [Range(0, .9f), SerializeField] private float moonDarkside = 0;
         
         [SerializeField] private Cubemap moonTexture1;
-        [SerializeField] private bool moonTurnOn1 = true;
         [Range(0f, 1f), SerializeField] private float moonRadius1 = .3f;
         [Range(0.01f, 1f), SerializeField] private float moonEdgeStrength1 = .4f;
         [Range(-16, 0), SerializeField] private float moonExposure1 = 0;
         [Range(0, .9f), SerializeField] private float moonDarkside1 = 0;
         
         [SerializeField] private Cubemap moonTexture2;
-        [SerializeField] private bool moonTurnOn2 = true;
         [Range(0f, 1f), SerializeField] private float moonRadius2 = .3f;
         [Range(0.01f, 1f), SerializeField] private float moonEdgeStrength2 = .4f;
         [Range(-16, 0), SerializeField] private float moonExposure2 = 0;

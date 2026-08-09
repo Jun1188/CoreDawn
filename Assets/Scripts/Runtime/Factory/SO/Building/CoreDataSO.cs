@@ -16,6 +16,31 @@ public class CoreDataSO : BuildingDataSO
     [Header("티어 — tiers[N] = Tier N → N+1 진화에 필요한 요구량")]
     public CoreTierDefinition[] tiers;
 
+    [Header("보호막 — 요구에 없는 자원을 소각해 채운다")]
+    [Tooltip("끄면 예전 동작 — 요구 아이템만 통과하고 나머지는 입구에서 거절된다.")]
+    public bool burnSurplusIntoShield = true;
+
+    [Tooltip("소각 1개당 기본 보호막 회복량.")]
+    public float shieldPerItem = 5f;
+
+    [Tooltip("용도(ItemType)별 소각 가치 — 여기 적은 분류만 shieldPerItem을 덮어쓴다.")]
+    public CoreShieldValue[] shieldValueByType;
+
+    [Tooltip("보호막 기본 최대치. 완료한 단계의 maxShieldBonus가 여기에 누적된다.")]
+    public float baseMaxShield = 100f;
+
+    /// <summary>이 아이템 1개를 태웠을 때 차오르는 보호막. 분류별 지정이 있으면 그쪽이 이긴다.</summary>
+    public float ShieldValueOf(ItemDataSO item)
+    {
+        if (item == null) return 0f;
+
+        if (shieldValueByType != null)
+            foreach (var v in shieldValueByType)
+                if (v != null && v.type == item.type) return Mathf.Max(0f, v.shieldPerItem);
+
+        return Mathf.Max(0f, shieldPerItem);
+    }
+
     public override IBuildingBehavior CreateBehavior(Building building) => new CoreBehavior(building, this);
 
     protected override void OnValidate()
@@ -39,6 +64,14 @@ public class CoreTierRequirement
     public int amount;
 }
 
+/// <summary>용도 분류별 소각 가치. 광석 한 덩이와 완성 부품 하나가 같은 값일 이유가 없다.</summary>
+[System.Serializable]
+public class CoreShieldValue
+{
+    public ItemType type;
+    public float shieldPerItem;
+}
+
 [System.Serializable]
 public class CoreTierDefinition
 {
@@ -56,6 +89,9 @@ public class CoreTierDefinition
     [Tooltip("완료 시 코어 최대 체력 증가분.")]
     public int maxHpBonus;
 
+    [Tooltip("완료 시 보호막 최대치 증가분. 최대치만 오르고 현재값은 오르지 않는다 — 보호막은 소각으로만 찬다.")]
+    public float maxShieldBonus;
+
     [Tooltip("마지막 단계 — 완료하면 탈출(엔딩)로 이어진다.")]
     public bool isFinal;
 }
@@ -63,8 +99,12 @@ public class CoreTierDefinition
 // ─── 행동 ──────────────────────────────────────────────────────
 
 /// <summary>
-/// 입력 버퍼(=플레이어 납품 + 벨트 자동 투입 공용 창구)에 현재 티어가 요구하는 아이템만 받는다.
+/// 입력 버퍼(=플레이어 납품 + 벨트 자동 투입 공용 창구)로 자원을 받는다.
 /// 요구량이 전부 채워지면 소비하고 GameManager.AdvanceTier로 다음 티어를 해금한다.
+///
+/// 요구에 없는 것이 들어오면 거절하지 않고 소각해 <b>보호막</b>으로 바꾼다 —
+/// 잘못 흘려보낸 자원이 벨트 위에 영원히 처박히는 대신 방어력이 되어 돌아온다.
+/// 단계가 오른 뒤 쓸모가 없어진 잔여물도 같은 경로로 사라진다.
 ///
 /// 투입 경로는 둘인데 반응 경로는 하나로 통일한다:
 ///   - 벨트가 TryAdd로 채우면 Building.TryPushOutput이 이미 Sim.MarkDirty를 호출 → 다음 틱에 Tick.
@@ -140,6 +180,11 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
 
     public void Tick(float dt)
     {
+        // 요구 밖 자원부터 태운다 — 그래야 그것들이 잡고 있던 슬롯이 풀린 상태에서
+        // 이번 단계의 충족 여부를 본다. 순서가 뒤집히면 쓰레기 한 칸이 요구 부품을
+        // 못 들어오게 막은 채로 "미충족" 판정이 나 한 틱씩 계속 헛돈다.
+        BurnSurplus();
+
         var reqs = CurrentTier?.requirements;
         if (reqs == null) { SetReady(false); return; }
 
@@ -167,14 +212,110 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
         foreach (var r in reqs)
             if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return false; }
 
+        // 진행을 기록할 곳이 없으면 시작하지 않는다. 여기서 그냥 밀고 나가면 부품만
+        // 먹고 단계는 그대로라 매 틱 같은 일이 반복된다 — 헤드리스 심/테스트 씬처럼
+        // GameManager가 없는 환경이 실제로 있다.
+        var gm = GameManager.Instance;
+        if (gm == null) { SetReady(false); return false; }
+
         foreach (var r in reqs) _b.Input.TryConsume(r.item, r.amount);
 
-        GameManager.Instance.AdvanceTier(TierIndex + 1);
+        gm.AdvanceTier(TierIndex + 1);
         ApplyMaxHpBonus(tier.maxHpBonus);
         SetReady(false);
         RefreshAcceptFilter();
+
+        // 단계가 오르면 요구 목록이 통째로 바뀐다 — 방금까지 부품이던 것이 잔여물이 된다.
+        // 다음 틱까지 미루지 않고 그 자리에서 태운다: 안 그러면 새 단계의 부품이
+        // 들어올 슬롯을 옛 단계의 재고가 한 틱 동안 막는다.
+        BurnSurplus();
+
         _b.NotifyUpstream(); // 자리 비었으니 막혀있던 상류(벨트) 재개
         return true;
+    }
+
+    // ── 보호막 (소각 전환)
+    //
+    // 값의 원본은 여기다. 내구도(HealthComponent)는 씬 껍데기가 갖고 있지만 보호막은
+    // 자원 흐름에서 생기는 값이라 자원과 같은 곳 — 심(sim) — 에 둔다.
+    // 씬의 BuildingEntity.TakeDamage가 피해를 넘기기 전에 AbsorbDamage로 들른다.
+
+    float _shield;
+
+    /// <summary>현재 보호막. 피해를 내구도보다 먼저 받아낸다.</summary>
+    public float Shield => _shield;
+
+    /// <summary>보호막 최대치 — 기본값 + 지금까지 완료한 단계들의 보너스.</summary>
+    public float MaxShield
+    {
+        get
+        {
+            float max = _so.baseMaxShield;
+            var tiers = _so.tiers;
+            if (tiers != null)
+                for (int i = 0; i < TierIndex && i < tiers.Length; i++)
+                    max += tiers[i].maxShieldBonus;
+            return Mathf.Max(0f, max);
+        }
+    }
+
+    /// <summary>보호막 값이 바뀔 때만 발화 — (현재, 최대). UI가 폴링하지 않게 한다.</summary>
+    public event System.Action<float, float> ShieldChanged;
+
+    /// <summary>
+    /// 피해를 보호막이 먼저 흡수하고 <b>남은 몫</b>을 돌려준다. 0이면 내구도는 무사하다.
+    /// 심을 깨우지 않는다 — 입구가 아무것도 거절하지 않으므로 보호막이 깎였다고 해서
+    /// 다시 받을 수 있게 되는 것이 없다.
+    /// </summary>
+    public float AbsorbDamage(float damage)
+    {
+        if (damage <= 0f || _shield <= 0f) return damage;
+
+        float absorbed = Mathf.Min(_shield, damage);
+        _shield -= absorbed;
+        ShieldChanged?.Invoke(_shield, MaxShield);
+        return damage - absorbed;
+    }
+
+    /// <summary>이 아이템이 지금 단계의 요구 목록에 있는가. 없으면 소각 대상이다.</summary>
+    bool IsRequired(ItemDataSO item)
+    {
+        var reqs = CurrentTier?.requirements;
+        return reqs != null && System.Array.Exists(reqs, r => r != null && r.item == item);
+    }
+
+    /// <summary>
+    /// 입력 버퍼에서 요구 목록에 없는 것을 전부 태워 보호막으로 바꾼다. 태운 개수를 돌려준다.
+    ///
+    /// 보호막 최대치를 넘는 분은 그대로 소멸한다. 안 태우고 남겨두면 그 물건이 슬롯을
+    /// 영구히 점거해 다음 단계 부품이 못 들어오는 교착이 되고, 코어가 아무것도 거절하지
+    /// 않는 이상 뒤에서 계속 밀려들어오기까지 한다. 상한은 방어력이 무한히 오르는 것을
+    /// 막는 장치이지 자원을 보관해 주겠다는 약속이 아니다.
+    ///
+    /// 마지막 단계까지 끝낸 코어는 요구 목록이 없으므로 들어오는 모든 것이 보호막이 된다.
+    /// </summary>
+    int BurnSurplus()
+    {
+        if (!_so.burnSurplusIntoShield || !_b.Input.HasAny) return 0;
+
+        float max = MaxShield;
+        int burned = 0;
+
+        foreach (var (item, n) in _b.Input.Snapshot()) // 사본이라 순회 중 소비해도 안전
+        {
+            if (item == null || n <= 0 || IsRequired(item)) continue;
+            if (!_b.Input.TryConsume(item, n)) continue;
+
+            _shield = Mathf.Clamp(_shield + _so.ShieldValueOf(item) * n, 0f, max);
+            burned += n;
+        }
+
+        if (burned > 0)
+        {
+            ShieldChanged?.Invoke(_shield, max);
+            _b.NotifyUpstream(); // 자리가 비었다 — 막혀 있던 벨트 재개
+        }
+        return burned;
     }
 
     /// <summary>
@@ -206,9 +347,22 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
         ReadyChanged?.Invoke();
     }
 
+    /// <summary>
+    /// 입구 규칙. 소각이 켜져 있으면 코어는 아무것도 거절하지 않는다 — 요구 부품은 쌓이고
+    /// 나머지는 태워진다. 보호막이 가득이어도 마찬가지로 받아서 태운다(초과분은 소멸).
+    ///
+    /// 가득일 때 거절해 배압을 거는 안도 있지만 택하지 않았다. 그러면 잘못 연결된 벨트 하나가
+    /// 코어 앞에서 정체를 만들고 그 정체가 상류 기계까지 stall시킨다 — 소각의 목적이
+    /// "잘못 흘려보낸 자원이 라인을 막지 않게 하는 것"인데 정작 코어가 막는 꼴이 된다.
+    /// 대신 보호막 상한이 방어력 무한 증가를 막는다. 초과분 소멸은 라인을 잘못 깐 대가다.
+    ///
+    /// 필터가 매번 현재 단계를 다시 읽으므로 단계가 올라도 다시 걸 필요는 없다. 그래도
+    /// 배치·진화 시점에 한 번씩 부르는 것은 남겨 둔다 — 입구 규칙의 유일한 설치 지점이라는
+    /// 사실이 호출부에서 보이는 편이 낫다.
+    /// </summary>
     void RefreshAcceptFilter()
     {
-        var reqs = CurrentTier?.requirements;
-        _b.Input.AcceptFilter = item => reqs != null && System.Array.Exists(reqs, r => r.item == item);
+        _b.Input.AcceptFilter = item =>
+            item != null && (_so.burnSurplusIntoShield || IsRequired(item));
     }
 }

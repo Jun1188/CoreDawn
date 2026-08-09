@@ -1,9 +1,13 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 /// <summary>
-/// 정조준(ADS) 연출 모듈 — 가늠자(sightPoint)가 카메라 중앙에 오도록 무기 홀더를
-/// 이동·회전시키고 FOV를 줌인한다. 다른 모션 모듈처럼 오프셋만 계산해 매니저에게 준다.
+/// 정조준(ADS) 연출 모듈 — 가늠자(sightPoint)가 카메라 중앙에 오도록 오프셋을 계산하고,
+/// "얼마나 조준했는지"(<see cref="AimWeight"/>)와 "원하는 FOV"(<see cref="AimFov"/>)를 게시한다.
+///
+/// <b>카메라 FOV를 직접 쓰지 않는다</b> — 실제 FOV 합성은 <see cref="PlayerCameraRig"/>가
+/// 한 곳에서 처리한다 (이동 속도 FOV·슬라이딩 FOV와 싸우지 않기 위해서).
+/// 조준 가중치는 <see cref="PlayerMotionState.AimWeight"/>로도 게시되어 카메라
+/// 틸트/보브/스웨이/반동이 전부 이 값 하나를 보고 억제된다.
 ///
 /// 조준 상태의 원본은 WeaponManager다 — 여기는 SetAiming/SetupWeapon으로 받기만 하고,
 /// 밖에서 필드를 직접 찌르는 경로는 없다.
@@ -16,24 +20,41 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
     [Tooltip("조준 시 가늠자와 눈(카메라) 사이 거리(m).")]
     [SerializeField] private float aimDistance = 0.2f;
 
-    [FormerlySerializedAs("camera")]
-    [Tooltip("FOV 줌을 적용할 카메라.")]
-    [SerializeField] private Camera targetCamera;
+    /// <summary>0=허리, 1=완전 조준. 카메라/무기 모듈 전체의 억제 기준.</summary>
+    public float AimWeight { get; private set; }
 
-    [Tooltip("비조준 시 시야각. 0이면 시작 시 카메라의 현재 FOV를 쓴다.")]
-    [SerializeField] private float defaultFov = 60f;
+    /// <summary>PlayerCameraRig가 읽어가는 조준 FOV — 현재 무기의 zoomFOV(무기 데이터).</summary>
+    public float AimFov => zoomFov;
+
+    /// <summary>달리기·슬라이딩 중이 아닌가 — 그때는 조준이 자동 해제된다.</summary>
+    public bool IsAimAllowed
+    {
+        get
+        {
+            var m = _provider?.Motion;
+            if (m == null) return true;
+            return !m.IsSprinting && !m.IsSliding;
+        }
+    }
 
     public Vector3 PositionOffset { get; private set; }
     public Quaternion RotationOffset { get; private set; } = Quaternion.identity;
 
     private bool isAiming;
     private float zoomFov = 50f;
-    private Vector3 targetPosOffset;
-    private Quaternion targetRotOffset = Quaternion.identity;
+    private Vector3 _targetPosOffset;
+    private Quaternion _targetRotOffset = Quaternion.identity;
 
-    private void Awake()
+    private IPlayerMotionProvider _provider;
+
+    private void Awake() => _provider = GetComponentInParent<IPlayerMotionProvider>();
+
+    // 무기 홀더가 꺼지면 조준 가중치가 1로 굳어 카메라/스웨이가 잠긴 채 남는다 — 반드시 해제
+    private void OnDisable()
     {
-        if (targetCamera != null && defaultFov <= 0f) defaultFov = targetCamera.fieldOfView;
+        isAiming = false;
+        AimWeight = 0f;
+        if (_provider?.Motion != null) _provider.Motion.AimWeight = 0f;
     }
 
     /// <summary>WeaponManager가 무기 스왑 때 호출 — 새 무기의 가늠자와 줌 FOV 등록.</summary>
@@ -42,14 +63,13 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
         zoomFov = weaponZoomFov;
         if (sightPoint == null) return;
 
-        // 주의: 홀더가 흔들림(모션 오프셋)으로 틀어진 상태면 계산이 망가진다 —
-        // 매니저가 호출 직전에 홀더 transform을 원점으로 되돌려 놓는다 (SwapTo 참고)
+        // 순수 오프셋을 구하려면 홀더가 원점에 있어야 한다 — WeaponManager.SwapTo가 잠시 초기화한 상태로 부른다
         Vector3 relativePos = transform.InverseTransformPoint(sightPoint.position);
         Quaternion relativeRot = Quaternion.Inverse(transform.rotation) * sightPoint.rotation;
 
-        targetRotOffset = Quaternion.Inverse(relativeRot);
-        Vector3 rotatedSightPos = targetRotOffset * relativePos;
-        targetPosOffset = new Vector3(0f, 0f, aimDistance) - rotatedSightPos;
+        _targetRotOffset = Quaternion.Inverse(relativeRot);
+        Vector3 rotatedSightPos = _targetRotOffset * relativePos;
+        _targetPosOffset = new Vector3(0f, 0f, aimDistance) - rotatedSightPos;
     }
 
     /// <summary>WeaponManager가 호출 — 조준 상태 반영.</summary>
@@ -57,14 +77,17 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
 
     private void Update()
     {
-        Vector3 destPos = isAiming ? targetPosOffset : Vector3.zero;
-        Quaternion destRot = isAiming ? targetRotOffset : Quaternion.identity;
+        float dt = Time.deltaTime;
 
-        PositionOffset = Vector3.Lerp(PositionOffset, destPos, Time.deltaTime * aimSpeed);
-        RotationOffset = Quaternion.Slerp(RotationOffset, destRot, Time.deltaTime * aimSpeed);
+        bool aiming = isAiming && IsAimAllowed;
+        AimWeight = MotionSpring.Damp(AimWeight, aiming ? 1f : 0f, aimSpeed, dt);
+        if (AimWeight < 0.0005f) AimWeight = 0f;
 
-        if (targetCamera != null)
-            targetCamera.fieldOfView = Mathf.Lerp(targetCamera.fieldOfView,
-                isAiming ? zoomFov : defaultFov, Time.deltaTime * aimSpeed);
+        // 모든 모듈이 참조하는 단일 소스로 게시
+        var m = _provider?.Motion;
+        if (m != null) m.AimWeight = AimWeight;
+
+        PositionOffset = Vector3.Lerp(Vector3.zero, _targetPosOffset, AimWeight);
+        RotationOffset = Quaternion.Slerp(Quaternion.identity, _targetRotOffset, AimWeight);
     }
 }

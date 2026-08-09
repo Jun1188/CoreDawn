@@ -1,0 +1,39 @@
+{
+  "waves": [
+    {
+      "day": 1,
+      "requiredCoreTier": 0,
+      "baseAmount": 4,
+      "maxAliveAmount": 4,
+      "spawnInterval": 2.0
+    },
+    {
+      "day": 2,
+      "requiredCoreTier": 0,
+      "baseAmount": 6,
+      "maxAliveAmount": 6,
+      "spawnInterval": 2.0
+    },
+    {
+      "day": 3,
+      "requiredCoreTier": 1,
+      "baseAmount": 8,
+      "maxAliveAmount": 8,
+      "spawnInterval": 1.5
+    },
+    {
+      "day": 4,
+      "requiredCoreTier": 1,
+      "baseAmount": 10,
+      "maxAliveAmount": 10,
+      "spawnInterval": 1.5
+    },
+    {
+      "day": 5,
+      "requiredCoreTier": 2,
+      "baseAmount": 15,
+      "maxAliveAmount": 12,
+      "spawnInterval": 1.0
+    }
+  ]
+}
