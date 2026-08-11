@@ -29,7 +29,7 @@ public static class GameDataImporter
     const string RecipeFolder   = "Assets/Data/Recipe";
     const string BuildingFolder = "Assets/Data/Buildings";
     const string PrefabFolder   = "Assets/Prefabs/Buildings";
-    const string ModelFolder    = "Assets/Models";
+    const string ModelFolder    = "Assets/Art/Models";
     const string EffectFolder   = "Assets/Data/Effects";
     const string GunFolder      = "Assets/Data/Guns";
 

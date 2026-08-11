@@ -34,5 +34,6 @@ MonoBehaviour:
   damageMultiplier: 6
   range: 2
   fireRate: 1
+  auraEffects: []
   ammoFilter:
   - {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}

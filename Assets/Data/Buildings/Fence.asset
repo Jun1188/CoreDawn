@@ -33,4 +33,5 @@ MonoBehaviour:
   damageMultiplier: 0
   range: 8
   fireRate: 1
+  auraEffects: []
   ammoFilter: []
