@@ -37,9 +37,13 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
     amount: 12
   maxHp: 280
+  fireMode: 1
   damageMultiplier: 2.8
   range: 14
   fireRate: 3
-  auraEffects: []
+  bulletPrefab: {fileID: 0}
+  bulletSpeed: 25
+  bulletLifetime: 3
+  muzzleHeight: 1.2
   ammoFilter:
   - {fileID: 11400000, guid: fb4b36fa8fcb05248a3cf6d0c0d1a668, type: 2}

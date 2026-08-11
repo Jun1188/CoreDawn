@@ -29,7 +29,7 @@ public static class GameDataImporter
     const string RecipeFolder   = "Assets/Data/Recipe";
     const string BuildingFolder = "Assets/Data/Buildings";
     const string PrefabFolder   = "Assets/Prefabs/Buildings";
-    const string ModelFolder    = "Assets/Models";
+    const string ModelFolder    = "Assets/Art/Models";
     const string EffectFolder   = "Assets/Data/Effects";
     const string GunFolder      = "Assets/Data/Guns";
 
@@ -66,10 +66,13 @@ public static class GameDataImporter
         public string displayName;   // 필수
         public string description;
         public bool   isAutomatic;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것
-        public string fireMode;      // Projectile | Hitscan. 생략 시 유지
+        public string fireMode;      // Projectile | Hitscan | Aura. 생략 시 유지
         public float  fireRate, bulletSpeed, range, reloadTime, zoomFOV;   // >0일 때만 덮음
         public int    magSize;                                             // >0일 때만 덮음
-        public EffectEntryDto[] attackEffects;                             // null = 유지
+
+        // 명중 효과는 탄약이 정의한다 — 총은 쓰는 탄약(아이템 id)과 배율만 갖는다
+        public string ammo;                      // 예: "Item:BasicAmmo" (AmmoModule 필수). 생략 시 유지
+        public float  damageMultiplier = -1f;    // 피해형 항목 배율. 음수 = 생략(유지)
 
         // 감각 튜닝 — 0이 정당한 값이라 음수를 "생략(유지)" 신호로 쓴다
         public float  xRecoil = -1f, yRecoil = -1f, zRecoil = -1f;
@@ -127,6 +130,9 @@ public static class GameDataImporter
         public string   modelCurveL, modelCurveR;
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
+        public string   fireMode;                            // Tower — Projectile | Hitscan | Aura
+        public float    bulletSpeed, bulletLifetime;         // Tower (>0일 때만 덮음)
+        public float    muzzleHeight = -1f;                  // Tower — 0 정당, 음수 = 생략(유지)
         public string[] ammoFilter;                          // Tower
         public TierDto[] tiers;                              // Core
     }
@@ -227,7 +233,8 @@ public static class GameDataImporter
         foreach (var (file, dto, asset) in pendingAffects)
             ResolveAffects(file, dto, asset, byId, ref errors);
 
-        // 0.5패스: 총 (무기 아이템의 gun 참조가 필요하다)
+        // 0.5패스: 총 (무기 아이템의 gun 참조가 필요하다).
+        // 총의 ammo(아이템 참조)는 상호 참조라 아이템 패스 뒤 2차로 해석한다.
         foreach (var (file, root) in roots)
             if (root?.guns != null)
                 foreach (var dto in root.guns)
@@ -238,6 +245,13 @@ public static class GameDataImporter
             if (root?.items != null)
                 foreach (var dto in root.items)
                     ImportItem(file, dto, byId, ref created, ref updated, ref errors);
+
+        // 1.5패스: 총 → 탄약 참조 해석 (아이템이 다 만들어진 뒤)
+        foreach (var (file, root) in roots)
+            if (root?.guns != null)
+                foreach (var dto in root.guns)
+                    if (!string.IsNullOrEmpty(dto?.id) && byId.TryGetValue(dto.id, out var g) && g is GunData gun)
+                        ResolveGunAmmo(file, dto, gun, byId, ref errors);
 
         // 2패스: 레시피 (건물의 availableRecipes가 참조한다)
         foreach (var (file, root) in roots)
@@ -408,12 +422,32 @@ public static class GameDataImporter
         if (dto.spreadIncreasePerShot >= 0f) gun.spreadIncreasePerShot = dto.spreadIncreasePerShot;
         if (dto.spreadRecoveryRate    >= 0f) gun.spreadRecoveryRate    = dto.spreadRecoveryRate;
 
-        if (TryResolveEffectEntries(file, "guns", dto.id, dto.attackEffects, byId, out var entries, ref errors)
-            && entries != null)
-            gun.attackEffects = entries;
+        if (dto.damageMultiplier >= 0f) gun.damageMultiplier = dto.damageMultiplier;
+        // ammo(아이템 참조)는 아이템 패스가 끝난 뒤 2차로 해석한다 — ResolveGunAmmo
 
         EditorUtility.SetDirty(gun);
         if (isNew) created++; else updated++;
+    }
+
+    /// <summary>총의 탄약 참조 해석 — 아이템 패스 뒤에 호출된다 (총↔아이템 상호 참조 해소).</summary>
+    static void ResolveGunAmmo(string file, GunDto dto, GunData gun,
+        Dictionary<string, GameDataSO> byId, ref int errors)
+    {
+        if (string.IsNullOrEmpty(dto.ammo)) return;   // 생략 = 유지
+
+        if (byId.TryGetValue(dto.ammo, out var so) && so is ItemDataSO item)
+        {
+            if (item.GetModule<AmmoModuleSO>() == null)
+                Debug.LogWarning($"[GameDataImporter] {file} guns '{dto.id}': 탄약 '{dto.ammo}'에 " +
+                                 "AmmoModule이 없습니다 — 발사해도 효과가 없습니다 (attackEffects 확인)");
+            gun.ammo = item;
+            EditorUtility.SetDirty(gun);
+        }
+        else
+        {
+            Debug.LogError($"[GameDataImporter] {file} guns '{dto.id}': 탄약 id '{dto.ammo}' 를 찾을 수 없습니다");
+            errors++;
+        }
     }
 
     // ── 아이템 ────────────────────────────────────────────────
@@ -661,9 +695,17 @@ public static class GameDataImporter
                 break;
 
             case TowerDataSO tower:
-                tower.damageMultiplier = dto.damageMultiplier;
+                if (dto.damageMultiplier > 0f) tower.damageMultiplier = dto.damageMultiplier;
                 if (dto.range > 0f) tower.range = dto.range;
                 if (dto.fireRate > 0f) tower.fireRate = dto.fireRate;
+                if (!string.IsNullOrEmpty(dto.fireMode))
+                {
+                    if (Enum.TryParse(dto.fireMode, true, out FireMode fm)) tower.fireMode = fm;
+                    else { Debug.LogError($"[GameDataImporter] {file} buildings '{dto.id}': 알 수 없는 fireMode '{dto.fireMode}'"); errors++; }
+                }
+                if (dto.bulletSpeed > 0f) tower.bulletSpeed = dto.bulletSpeed;
+                if (dto.bulletLifetime > 0f) tower.bulletLifetime = dto.bulletLifetime;
+                if (dto.muzzleHeight >= 0f) tower.muzzleHeight = dto.muzzleHeight;   // 0 정당 — 음수가 생략 신호
                 tower.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
                 break;
 

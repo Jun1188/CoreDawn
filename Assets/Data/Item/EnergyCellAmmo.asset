@@ -34,5 +34,5 @@ MonoBehaviour:
   m_Name: AmmoModuleSO
   m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
   attackEffects:
-  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
-    value: 10
+  - effect: {fileID: 11400000, guid: 31b0fd9d8106bdf47922c4c2a49c0986, type: 2}
+    value: 0.5

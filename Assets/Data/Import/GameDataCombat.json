@@ -30,7 +30,8 @@
       "xRecoil": 3, "yRecoil": 2, "zRecoil": 1,
       "visualKickbackZ": 0.3,
       "baseSpread": 0.5, "maxSpread": 5, "spreadIncreasePerShot": 1, "spreadRecoveryRate": 5,
-      "attackEffects": [ { "effect": "Effect:Damage", "value": 10 } ]
+      "ammo": "Item:BasicAmmo",
+      "damageMultiplier": 1
     },
     {
       "id": "Gun:LaserGun",
@@ -45,7 +46,8 @@
       "xRecoil": 0.01, "yRecoil": 0.01, "zRecoil": 0.01,
       "visualKickbackZ": 0.01,
       "baseSpread": 0.5, "maxSpread": 3, "spreadIncreasePerShot": 1, "spreadRecoveryRate": 5,
-      "attackEffects": [ { "effect": "Effect:Damage", "value": 10 } ]
+      "ammo": "Item:BasicAmmo",
+      "damageMultiplier": 1
     }
   ],
   "items": [

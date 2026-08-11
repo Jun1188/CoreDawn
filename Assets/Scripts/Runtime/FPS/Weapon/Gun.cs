@@ -100,11 +100,11 @@ public class Gun : MonoBehaviour
         Vector3 direction = (muzzlePoint != null ? muzzlePoint.forward : transform.forward);
         direction += UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
 
-        // 공격 정의(효과 항목들)는 명중 시 전달. 공격 버프는 발사 시점에 항목별로 구워진다
-        // (버프의 affects 목록에 든 효과만 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지)
-        var effects = OwnerEntity != null
-            ? OwnerEntity.Effects.BakeOutgoing(gunData.attackEffects)
-            : gunData.attackEffects;
+        // 명중 효과는 장전된 탄약이 정의하고(타워와 같은 원칙), 총은 배율만 곱는다(피해형 항목에만).
+        // 공격 버프는 발사 시점에 항목별로 구워진다 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지.
+        var effects = ProjectileSystem.ScaleDamage(gunData.AmmoEffects, gunData.damageMultiplier);
+        if (OwnerEntity != null) effects = OwnerEntity.Effects.BakeOutgoing(effects);
+
         var shot = new ProjectileShot(gunData.bulletSpeed, 3f, gunData.range,
                                       effects, gunData.enemyLayer, OwnerEntity);
 

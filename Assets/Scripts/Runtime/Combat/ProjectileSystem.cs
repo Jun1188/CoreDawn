@@ -3,8 +3,20 @@ using UnityEngine;
 using UnityEngine.Pool;
 
 /// <summary>
+/// 전달 방식 — 효과를 대상에게 어떻게 전달하는가. 클래스 상속이 아니라 데이터가 정하며,
+/// 총(GunData)과 타워(TowerDataSO)가 공용으로 쓴다.
+/// </summary>
+public enum FireMode
+{
+    Projectile, // 발사체가 날아가 명중한 하나에게 — 탄속·탄도 있음
+    Hitscan,    // 즉시 판정으로 명중한 하나에게 — 속도 무한의 발사 (레이저·저격)
+    Aura,       // 원점 반경의 전원에게 (펄스) — 감속 필드 등
+    None,       // 전달하지 않음 — 비전투 구조물 (인펜스 같은 순수 장애물)
+}
+
+/// <summary>
 /// 발사 한 번의 명세 — 발사체가 어떻게 날고(속도·수명·사거리), 명중 시 무엇을 하는가(효과 목록).
-/// ValueScale(시전측 배율 — 공격 버프·포탑 배율)은 발사 시점에 확정한다:
+/// 배율(공격 버프·발사기 배율)은 발사 시점에 목록에 구워져 확정된다:
 /// 총알이 날아가는 동안 버프가 끝나도 발사 때 배율이 유지된다.
 /// </summary>
 public readonly struct ProjectileShot
@@ -101,6 +113,72 @@ public static class ProjectileSystem
         Entity entity = hit.GetComponentInParent<Entity>();
         if (entity != null && !entity.IsDead)
             entity.ApplyEffects(shot.Effects, shot.Source, point);
+    }
+
+    // ── 오라(펄스) — 세 번째 전달 방식 ──────────────────────────
+
+    private static readonly Collider[] pulseBuffer = new Collider[64];
+    private static readonly HashSet<Entity> pulseSeen = new HashSet<Entity>();
+
+    /// <summary>
+    /// 원점 반경의 대상 전원에게 효과를 적용한다 (펄스형 오라 — 감속 필드 등).
+    /// 히트스캔이 "속도 무한의 발사"이듯 오라는 "반경 전체 명중의 발사"다 —
+    /// 발사기(타워)는 언제 펄스할지·연료를 태울지만 정하고, 적용은 여기가 한다.
+    /// 적용된 대상 수를 반환한다.
+    /// </summary>
+    public static int Pulse(Vector3 origin, float radius, in ProjectileShot shot)
+    {
+        if (shot.TargetMask == 0) return 0;
+
+        int count = Physics.OverlapSphereNonAlloc(origin, radius, pulseBuffer, shot.TargetMask);
+        pulseSeen.Clear();
+        int applied = 0;
+        for (int i = 0; i < count; i++)
+        {
+            Entity entity = pulseBuffer[i].GetComponentInParent<Entity>();
+            if (entity == null || entity.IsDead) continue;
+            if (!pulseSeen.Add(entity)) continue;   // 콜라이더 여러 개인 대상 중복 방지
+
+            entity.ApplyEffects(shot.Effects, shot.Source, origin);
+            applied++;
+        }
+        return applied;
+    }
+
+    /// <summary>반경 안의 유효 대상 수 — 빈 필드에 연료를 태우지 않으려는 발사기가 펄스 전에 확인한다.</summary>
+    public static int CountTargets(Vector3 origin, float radius, int targetMask)
+    {
+        if (targetMask == 0) return 0;
+
+        int count = Physics.OverlapSphereNonAlloc(origin, radius, pulseBuffer, targetMask);
+        pulseSeen.Clear();
+        for (int i = 0; i < count; i++)
+        {
+            Entity entity = pulseBuffer[i].GetComponentInParent<Entity>();
+            if (entity != null && !entity.IsDead) pulseSeen.Add(entity);
+        }
+        return pulseSeen.Count;
+    }
+
+    // ── 배율 ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 발사기 배율(damageMultiplier)을 피해형(Damage·DoT) 항목에만 곱한다 —
+    /// 배율 1.5 발사기가 감속탄을 쏜다고 감속(비율형 value)이 뭉개지면 안 된다.
+    /// 총·타워 공용 (탄약이 효과의 주인, 발사기는 배율).
+    /// </summary>
+    public static EffectEntry[] ScaleDamage(EffectEntry[] effects, float multiplier)
+    {
+        if (effects == null || Mathf.Approximately(multiplier, 1f)) return effects;
+
+        var scaled = new EffectEntry[effects.Length];
+        for (int i = 0; i < effects.Length; i++)
+        {
+            var entry = effects[i];
+            bool damageLike = entry.effect is DamageEffectSO || entry.effect is DamageOverTimeEffectSO;
+            scaled[i] = damageLike ? new EffectEntry(entry.effect, entry.value * multiplier) : entry;
+        }
+        return scaled;
     }
 
     // ── 투사체 발사·풀 ──────────────────────────────────────────

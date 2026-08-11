@@ -319,3 +319,37 @@ ItemDataSO 하나이고, 역할은 `modules` 목록의 모듈이 정의한다:
 ### 검증
 재임포트 후 무기 아이템 배선 유지(새 위치), EffectDatabase 수집 2종·조회 정상,
 플레이(PlayLoopTest)에서 플레이어 근접이 DB 경로로 [Effect:Damage, 10] 주입 확인.
+
+---
+
+## 2026-08-12 — 발사기 문법 통일 — 탄약이 효과의 주인, 전달은 ProjectileSystem 3종
+
+### 원칙 (사용자 확정 — "총도 배수고 효과는 총알", "오라도 projectile이 생성")
+발사기(총·타워)와 탄약의 역할을 완전히 통일했다:
+
+| 층 | 담당 |
+|---|---|
+| **탄약/연료** (AmmoModuleSO) | 명중 효과의 주인 — 유일한 효과 정의처 |
+| **발사기** (GunData·TowerDataSO) | 배율(damageMultiplier, 피해형만)·발사 특성·소비 시점·조준 |
+| **전달** (ProjectileSystem) | fireMode 4종: Projectile / Hitscan / **Aura(펄스)** / None(비전투) |
+
+- `GunData.attackEffects` 삭제 → `ammo`(탄약 아이템 참조) + `damageMultiplier`.
+  탄약 티어업이 총·포탑을 동시에 강화한다. (실소비 탄창·탄종 전환은 후속 — 단계적 합의)
+- `TowerDataSO.auraEffects` 삭제 → **오라 효과 = 소비한 연료의 효과**. 연료를 바꾸면
+  오라가 바뀐다 (EnergyCell 효과를 [{SlowField, 0.5}]로 교체 — 감속 필드의 실체).
+- `Pulse`·`CountTargets`를 ProjectileSystem으로 — 오라도 히트스캔처럼 전달 방식의 하나.
+  타워는 "언제 펄스할지·연료를 태울지"만. `ScaleDamage`도 시스템 공용으로 승격.
+- 타워 발사 특성(bulletSpeed·bulletLifetime·muzzleHeight·bulletPrefab)을 BattleTower
+  컴포넌트 → TowerDataSO로. 씬 배치 타워는 `fallbackData`(인스펙터)로 데이터 지정.
+- **FireMode.None 신설** — 구 규칙(배율 0 = 패시브)이 사라지며 인펜스가 공격을 시작하는
+  회귀를 막는다. Fence = None. LaserTower = Hitscan(레이저가 드디어 레이저).
+- json: guns에 ammo·damageMultiplier(구 attackEffects 삭제), buildings Tower에
+  fireMode·bulletSpeed·bulletLifetime·muzzleHeight. 총↔아이템 상호 참조는
+  총의 ammo를 아이템 패스 뒤 2차 해석으로 해소.
+
+### 함정·검증
+- **함정**: 마이그레이션 1차에서 프리팹을 재저장(SaveAsPrefabAsset)하면 삭제된 구 필드가
+  YAML에서 사라진다 — 값 추출은 재저장 전에. 놓친 값은 git 히스토리에서 복구했다.
+- 발사형 타워 4종에 bulletPrefab 배선(구 미배선 → 근접 폴백이던 것이 진짜 발사 타워로).
+- 플레이 실측 4경로: 총(탄약 효과·BaseDamage 10) / 발사 타워 사살 / 레이저(Hitscan) 사살 /
+  오라 펄스(연료 효과 → 감속 0.5). 재임포트 왕복 정상.

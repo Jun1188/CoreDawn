@@ -1,20 +1,17 @@
 using UnityEngine;
 
-/// <summary>발사 방식 — 클래스 상속이 아니라 데이터가 정한다. Gun과 (향후) 타워가 공용.</summary>
-public enum FireMode
-{
-    Projectile, // bulletPrefab을 날린다 — 탄속·탄도 있음
-    Hitscan,    // 즉시 판정 — 속도 무한의 발사 (레이저·저격)
-}
-
 /// <summary>
-/// 총 하나의 데이터 전부 — 전투 정합(발사 방식·효과·연사·탄창)과 감각 튜닝(반동·탄퍼짐).
+/// 총 하나의 데이터 전부 — 전투 정합(발사 방식·연사·탄창)과 감각 튜닝(반동·탄퍼짐).
 /// 컴포넌트(Gun)는 상태만 갖고, 수치는 전부 여기다.
+///
+/// <b>명중 효과는 총이 아니라 탄약이 정의한다</b> — 타워와 같은 원칙:
+/// 효과 = 장전된 탄약(AmmoModuleSO.attackEffects), 총 = 배율(damageMultiplier) + 발사 특성.
+/// 탄약이 강해지면 그 탄을 쓰는 총·포탑이 함께 강해진다. (지금은 ammo 참조로 탄종이
+/// 고정되고 실소비는 추상 탄창 — 인벤토리 소비·탄종 전환은 후속 작업)
 ///
 /// GameDataSO 상속인 이유: 총 수치는 json(GameData)이 소유한다 — 임포터가 id("Gun:이름")로
 /// 찾아 갱신하고, 무기 아이템의 WeaponModuleSO가 json의 gun 필드로 참조를 배선한다.
-/// 이름 표시는 displayName을 쓴다(구 gunName 삭제). 단 bulletPrefab·enemyLayer는
-/// 에셋/씬 참조라 json 밖 — 인스펙터에서 배선한다.
+/// 단 bulletPrefab·enemyLayer는 에셋/씬 참조라 json 밖 — 인스펙터에서 배선한다.
 /// </summary>
 [CreateAssetMenu(fileName = "GunData", menuName = "ScriptableObjects/GunData", order = 1)]
 public class GunData : GameDataSO
@@ -24,7 +21,7 @@ public class GunData : GameDataSO
     public bool isAutomatic;
 
     [Header("발사")]
-    [Tooltip("발사 방식 — Projectile은 bulletPrefab을 날리고, Hitscan은 즉시 판정.")]
+    [Tooltip("전달 방식 — Projectile은 bulletPrefab을 날리고, Hitscan은 즉시 판정.")]
     public FireMode fireMode = FireMode.Projectile;
     [Tooltip("발사 간격(초). 낮을수록 빠른 연사.")]
     public float fireRate = 0.2f;
@@ -34,9 +31,16 @@ public class GunData : GameDataSO
     public GameObject bulletPrefab;
     public LayerMask enemyLayer;
 
-    [Tooltip("명중 시 무슨 일이 일어나는가 — 이 총의 공격 정의 전부. " +
-             "피해도 항목의 하나다: {Damage, 20} = 피해 20. bare 피해 필드는 없다.")]
-    public EffectEntry[] attackEffects;
+    [Header("탄약 (명중 효과의 주인)")]
+    [Tooltip("이 총이 쓰는 탄약 아이템(AmmoModuleSO 필수) — 명중 효과는 이 탄약이 정의한다. " +
+             "json의 ammo 필드(예: \"Item:BasicAmmo\")로 임포터가 배선한다.")]
+    public ItemDataSO ammo;
+
+    [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 포탑의 damageMultiplier와 같은 개념.")]
+    public float damageMultiplier = 1f;
+
+    /// <summary>장전 탄약의 명중 효과 — 없으면 null (발사해도 아무 일도 없음).</summary>
+    public EffectEntry[] AmmoEffects => ammo != null ? ammo.GetModule<AmmoModuleSO>()?.attackEffects : null;
 
     [Header("탄창")]
     public int magSize = 30;
@@ -61,16 +65,17 @@ public class GunData : GameDataSO
     public float spreadIncreasePerShot = 1f; // 쏠 때마다 늘어나는 수치
     public float spreadRecoveryRate = 5f;    // 다시 에임이 모이는 속도
 
-    /// <summary>피해 항목들의 value 합 — 반동 연출 크기·툴팁 표기용 (전투 계산엔 쓰지 않는다).</summary>
+    /// <summary>피해 항목들의 value 합 × 배율 — 반동 연출 크기·툴팁 표기용 (전투 계산엔 쓰지 않는다).</summary>
     public float BaseDamage
     {
         get
         {
             float sum = 0f;
-            if (attackEffects != null)
-                foreach (var e in attackEffects)
+            var effects = AmmoEffects;
+            if (effects != null)
+                foreach (var e in effects)
                     if (e.effect is DamageEffectSO) sum += e.value;
-            return sum;
+            return sum * damageMultiplier;
         }
     }
 }

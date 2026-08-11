@@ -12,18 +12,26 @@ using UnityEngine;
 public class TowerDataSO : BuildingDataSO
 {
     [Header("전투")]
-    [Tooltip("탄약 효과들의 크기(value)에 곱하는 배율. 0 = 발사하지 않음(인펜스·감속 필드).")]
+    [Tooltip("전달 방식 — Projectile(총알)·Hitscan(즉시 판정, 레이저)·Aura(반경 펄스, 감속 필드).\n" +
+             "어느 방식이든 효과는 소비한 탄약/연료(AmmoModuleSO)가 정의한다.")]
+    public FireMode fireMode = FireMode.Projectile;
+
+    [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 감속 같은 부가 효과는 그대로.")]
     public float damageMultiplier = 1f;
 
     [Tooltip("사거리(타일).")]
     public float range = 8f;
 
-    [Tooltip("발/초.")]
+    [Tooltip("발/초. Aura는 펄스 주기의 역수 (0.2 = 5초마다 펄스).")]
     public float fireRate = 1f;
 
-    [Tooltip("발사 없이 타워 자신이 거는 효과(펄스형 오라) — 감속 필드(배율 0)가 fireRate 주기마다\n" +
-             "범위 내 몬스터에게 적용한다. 발사 타워의 명중 효과는 탄약(AmmoModuleSO)이 정의한다.")]
-    public EffectEntry[] auraEffects;
+    [Header("발사체 (Projectile 전용)")]
+    [Tooltip("총알 프리팹(Bullet 컴포넌트 필요) — 에셋 참조라 json 밖. 비우면 즉시 공격 폴백.")]
+    public GameObject bulletPrefab;
+    public float bulletSpeed = 25f;
+    public float bulletLifetime = 3f;
+    [Tooltip("총구 위치 오프셋(로컬 높이) — 타워 콜라이더 밖에서 발사되도록.")]
+    public float muzzleHeight = 1.2f;
 
     [Header("보급")]
     [Tooltip("이 포탑이 받을 수 있는 탄약·연료. 비우면 아무것도 소비하지 않는다.\n" +
@@ -33,8 +41,8 @@ public class TowerDataSO : BuildingDataSO
     public override IBuildingBehavior CreateBehavior(Building building)
         => new TowerBehavior(building, this);
 
-    /// <summary>공격하지 않는 건물인가 (인펜스·감속 필드처럼 피해가 0인 것).</summary>
-    public bool IsPassive => damageMultiplier <= 0f;
+    /// <summary>발사하지 않는 건물인가 — 오라(감속 필드)는 쏘는 대신 펄스한다.</summary>
+    public bool IsPassive => fireMode == FireMode.Aura;
 }
 
 // ─── 행동 ──────────────────────────────────────────────────────
