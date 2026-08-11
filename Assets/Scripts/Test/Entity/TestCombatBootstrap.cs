@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 //   - H키로 낮/밤 강제 전환 (TimeManager 필요) — 낮=건설, 밤=웨이브 디펜스 사이클을 즉시 확인
 public class TestCombatBootstrap : MonoBehaviour
 {
-    [Tooltip("시작 시 플레이어 인벤토리에 넣어줄 무기 아이템(WeaponItemSO). 비우면 지급하지 않는다.")]
+    [Tooltip("시작 시 플레이어 인벤토리에 넣어줄 무기 아이템(WeaponModuleSO를 단 아이템). 비우면 지급하지 않는다.")]
     [SerializeField] private ItemDataSO startingWeapon;
 
     // H키 — 낮/밤 강제 전환 (디버그/테스트 전용이라 입력 파이프라인을 거치지 않는다)

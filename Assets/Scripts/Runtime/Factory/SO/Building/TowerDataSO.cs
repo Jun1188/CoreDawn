@@ -6,7 +6,7 @@ using UnityEngine;
 ///
 /// 피해를 배율로 둔 이유: 탄약이 강해지면 그 탄을 쓰는 모든 포탑이 함께 강해져야 한다.
 /// 포탑마다 고정 피해를 박아두면 새 탄약을 추가할 때마다 모든 포탑 수치를 다시 만져야 한다.
-/// 1발의 명중 효과(피해 포함)는 <see cref="AmmoItemSO.attackEffects"/>가 갖는다.
+/// 1발의 명중 효과(피해 포함)는 탄약의 <see cref="AmmoModuleSO.attackEffects"/>가 갖는다.
 /// </summary>
 [CreateAssetMenu(fileName = "NewTower", menuName = "Factory/Buildings/Tower")]
 public class TowerDataSO : BuildingDataSO
@@ -22,7 +22,7 @@ public class TowerDataSO : BuildingDataSO
     public float fireRate = 1f;
 
     [Tooltip("발사 없이 타워 자신이 거는 효과(펄스형 오라) — 감속 필드(배율 0)가 fireRate 주기마다\n" +
-             "범위 내 몬스터에게 적용한다. 발사 타워의 명중 효과는 탄약(AmmoItemSO)이 정의한다.")]
+             "범위 내 몬스터에게 적용한다. 발사 타워의 명중 효과는 탄약(AmmoModuleSO)이 정의한다.")]
     public EffectEntry[] auraEffects;
 
     [Header("보급")]
@@ -95,8 +95,8 @@ public class TowerBehavior : IBuildingBehavior
         {
             if (n <= 0 || !_b.Input.TryConsume(item, 1)) continue;
 
-            // 명중 효과는 탄약이 갖고 포탑은 배율만 갖는다
-            effects = (item as AmmoItemSO)?.attackEffects;
+            // 명중 효과는 탄약(모듈)이 갖고 포탑은 배율만 갖는다
+            effects = item.GetModule<AmmoModuleSO>()?.attackEffects;
             _b.NotifyUpstream();
             return true;
         }

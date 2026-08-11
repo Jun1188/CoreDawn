@@ -38,11 +38,11 @@ public class ItemTooltipUI : MonoBehaviour
         nameText.text = item.displayName;
         typeText.text = $"유형: {item.type}"; // 예: 유형: Weapon, 유형: Ore
 
-        // 💡 무기 아이템일 경우 추가 정보 출력 확장성 제공
-        if (item is WeaponItemSO weapon)
-        {
-            typeText.text += $" (공격력: {weapon.gunData.BaseDamage})";
-        }
+        // 역할 모듈별 추가 정보 — 타입 검사 대신 모듈 존재로 판정한다
+        if (item.TryGetModule<WeaponModuleSO>(out var weapon) && weapon.gun != null)
+            typeText.text += $" (공격력: {weapon.gun.BaseDamage})";
+        else if (item.TryGetModule<AmmoModuleSO>(out var ammo))
+            typeText.text += $" (피해: {ammo.BaseDamage})";
 
         tooltipPanel.SetActive(true);
     }

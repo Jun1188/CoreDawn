@@ -58,9 +58,32 @@ public class ItemDataSO : GameDataSO
               "이 프로퍼티는 에셋 파일명(Object.name)으로의 fallback이라 표시용으로 부적합하다.")]
     public string Name => base.name;
 
-    [Tooltip("용도 축 — 무엇인가.")]
+    [Tooltip("용도 축 — 무엇인가. 분류·UI용이며, 코드 판정은 모듈 존재(GetModule)로 한다.")]
     public ItemType type;
 
     [Tooltip("계통 축 — 어느 생산 라인 소속인가. UI 계통색의 근거.")]
     public ItemLine line;
+
+    [Tooltip("역할 모듈 — 탄약(AmmoModuleSO)·무기(WeaponModuleSO) 같은 전용 데이터를 " +
+             "상속 대신 조합으로 단다. 아이템 에셋의 서브에셋으로 저장되며 임포터가 관리한다.")]
+    [SerializeField] private System.Collections.Generic.List<ItemModuleSO> modules = new();
+
+    /// <summary>해당 역할 모듈을 돌려준다 — 없으면 null. "탄약인가?"의 정의는 타입 검사가 아니라 이것이다.</summary>
+    public T GetModule<T>() where T : ItemModuleSO
+    {
+        foreach (var m in modules)
+            if (m is T typed) return typed;
+        return null;
+    }
+
+    public bool TryGetModule<T>(out T module) where T : ItemModuleSO
+    {
+        module = GetModule<T>();
+        return module != null;
+    }
+
+#if UNITY_EDITOR
+    /// <summary>임포터·마이그레이션 전용 — 런타임 코드는 GetModule만 쓸 것.</summary>
+    public System.Collections.Generic.List<ItemModuleSO> EditorModules => modules;
+#endif
 }

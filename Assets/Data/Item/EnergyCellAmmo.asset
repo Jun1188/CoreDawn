@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0e07f66bd29af546bfd695364c0f610, type: 3}
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
   m_Name: EnergyCellAmmo
   m_EditorClassIdentifier: Assembly-CSharp::AmmoItemSO
   id: Item:EnergyCellAmmo
@@ -19,6 +19,20 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 3
+  modules:
+  - {fileID: 8529454691081697983}
+--- !u!114 &8529454691081697983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702d344e9408d614e8bfeda54bd0b855, type: 3}
+  m_Name: AmmoModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
   attackEffects:
   - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
     value: 10

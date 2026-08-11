@@ -325,8 +325,9 @@ public class InventoryManager : MonoBehaviour
         if (hotbarContainer.SlotCount > activeSlotIndex && activeSlotIndex >= 0)
         {
             ItemStack activeSlot = hotbarContainer.PeekAt(activeSlotIndex);
-            if (activeSlot != null && activeSlot.item is WeaponItemSO weaponItem)
-                playerController.weaponManager.EquipWeapon(weaponItem.gunData);
+            if (activeSlot != null && activeSlot.item != null
+                && activeSlot.item.TryGetModule<WeaponModuleSO>(out var weaponModule))
+                playerController.weaponManager.EquipWeapon(weaponModule.gun);
             else
                 playerController.weaponManager.UnequipWeapon();
         }

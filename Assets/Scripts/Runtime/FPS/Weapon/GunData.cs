@@ -12,7 +12,7 @@ public enum FireMode
 /// 컴포넌트(Gun)는 상태만 갖고, 수치는 전부 여기다.
 ///
 /// GameDataSO 상속인 이유: 총 수치는 json(GameData)이 소유한다 — 임포터가 id("Gun:이름")로
-/// 찾아 갱신하고, 무기 아이템(WeaponItemSO)이 json의 gun 필드로 참조를 배선한다.
+/// 찾아 갱신하고, 무기 아이템의 WeaponModuleSO가 json의 gun 필드로 참조를 배선한다.
 /// 이름 표시는 displayName을 쓴다(구 gunName 삭제). 단 bulletPrefab·enemyLayer는
 /// 에셋/씬 참조라 json 밖 — 인스펙터에서 배선한다.
 /// </summary>

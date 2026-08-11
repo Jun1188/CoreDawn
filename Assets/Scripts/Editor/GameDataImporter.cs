@@ -18,8 +18,8 @@ using UnityEngine;
 //     무기 아이템이 총을, 레시피가 아이템을, 건물이 레시피와 아이템을 참조하므로 이 순서여야 한다.
 //   - json에 적힌 필드만 덮는다 — 생략 필드는 에셋 값 유지 (짧은 항목이 에셋을 0으로 밀지 않게)
 //   - 항목 하나가 실패해도 전체를 중단하지 않는다 — 에러 로그 + errors++ 후 그 항목만 스킵
-//  주의: 임포터는 base(GameDataSO)+해당 타입 필드만 만진다. 기존 에셋이 서브클래스
-//        (WeaponItemSO 등)면 공통 필드만 갱신되고 서브클래스 필드는 보존된다.
+//  주의: 아이템의 역할(탄약·무기)은 서브클래스가 아니라 모듈(서브에셋)이다 —
+//        임포터는 json에 해당 필드가 있을 때 모듈을 만들어(EnsureModule) 배선한다.
 //        에셋/씬 참조(bulletPrefab·enemyLayer·icon 스프라이트 외 오브젝트)는 json 밖 — 인스펙터 소관.
 // ================================================================
 public static class GameDataImporter
@@ -418,6 +418,23 @@ public static class GameDataImporter
 
     // ── 아이템 ────────────────────────────────────────────────
 
+    /// <summary>
+    /// 아이템의 역할 모듈을 보장한다 — 없으면 만들어 아이템 에셋의 서브에셋으로 붙인다
+    /// (파일 하나 = 아이템 + 그 모듈들. 별도 에셋 파일이 늘지 않는다).
+    /// </summary>
+    static T EnsureModule<T>(ItemDataSO item) where T : ItemModuleSO
+    {
+        var module = item.GetModule<T>();
+        if (module != null) return module;
+
+        module = ScriptableObject.CreateInstance<T>();
+        module.name = typeof(T).Name;
+        AssetDatabase.AddObjectToAsset(module, item);
+        item.EditorModules.Add(module);
+        EditorUtility.SetDirty(item);
+        return module;
+    }
+
     static void ImportItem(string file, ItemDto dto, Dictionary<string, GameDataSO> byId,
         ref int created, ref int updated, ref int errors)
     {
@@ -432,29 +449,14 @@ public static class GameDataImporter
             return;
         }
 
-        // 탄약·무기는 전용 필드(명중 효과·총 참조)를 갖는 전용 클래스가 필요하다.
-        // 기존 에셋이 요구 타입을 만족하지 못하면 같은 id로 다시 만든다.
-        // (레시피·건물은 뒤 패스에서 id로 다시 해석되므로 참조가 스스로 복구된다)
-        Type wanted = hasType && type == ItemType.Ammo   ? typeof(AmmoItemSO)
-                    : hasType && type == ItemType.Weapon ? typeof(WeaponItemSO)
-                    : typeof(ItemDataSO);
-
+        // 아이템은 전부 평평한 ItemDataSO — 탄약·무기 같은 역할은 모듈(서브에셋)로 조합한다.
+        // 그래서 구 방식의 "타입 승격을 위한 같은 id 재생성"이 필요 없다.
         var existing = Find<ItemDataSO>(byId, dto.id, file, ref errors);
         if (existing == null && byId.ContainsKey(dto.id)) return;   // id가 다른 타입과 충돌
 
-        // 서브클래스는 그대로 둔다 — 요구 타입을 이미 만족하거나 더 구체적이다
-        if (existing != null && wanted != typeof(ItemDataSO) && !wanted.IsInstanceOfType(existing))
-        {
-            Debug.LogWarning($"[GameDataImporter] {file} items '{dto.id}': " +
-                             $"{existing.GetType().Name} → {wanted.Name} 으로 다시 만듭니다 (전용 필드 필요).");
-            AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(existing));
-            byId.Remove(dto.id);
-            existing = null;
-        }
-
         bool isNew = existing == null;
         var item = existing != null ? existing
-            : (ItemDataSO)CreateAsset(wanted, dto.id, ItemFolder, byId);
+            : (ItemDataSO)CreateAsset(typeof(ItemDataSO), dto.id, ItemFolder, byId);
 
         item.displayName = dto.displayName;
         item.description = dto.description ?? "";
@@ -466,39 +468,40 @@ public static class GameDataImporter
             else { Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': 알 수 없는 line '{dto.line}'"); errors++; }
         }
 
-        // 탄약의 명중 효과 — attackEffects(정식)가 있으면 그대로, 없으면 구 damage 숏컷을 변환
-        if (item is AmmoItemSO ammo)
+        // 탄약 모듈 — attackEffects(정식)가 있으면 그대로, 없으면 구 damage 숏컷을 변환.
+        // json에 둘 다 없으면 기존 모듈은 건드리지 않는다 (적힌 필드만 덮기).
+        if (dto.attackEffects != null)
         {
             if (TryResolveEffectEntries(file, "items", dto.id, dto.attackEffects, byId, out var ammoEntries, ref errors)
                 && ammoEntries != null)
+                EnsureModule<AmmoModuleSO>(item).attackEffects = ammoEntries;
+        }
+        else if (dto.damage > 0f)
+        {
+            var damageEffect = AssetDatabase.LoadAssetAtPath<DamageEffectSO>("Assets/Resources/Effect_Damage.asset");
+            if (damageEffect == null)
             {
-                ammo.attackEffects = ammoEntries;
+                Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': " +
+                               "Effect_Damage.asset이 없어 탄약 피해를 배선하지 못했습니다 (Assets/Resources).");
+                errors++;
             }
-            else if (dto.attackEffects == null && dto.damage > 0f)
+            else
             {
-                var damageEffect = AssetDatabase.LoadAssetAtPath<DamageEffectSO>("Assets/Resources/Effect_Damage.asset");
-                if (damageEffect == null)
-                {
-                    Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': " +
-                                   "Effect_Damage.asset이 없어 탄약 피해를 배선하지 못했습니다 (Assets/Resources).");
-                    errors++;
-                }
-                else
-                {
-                    // 기존 피해 항목이 있으면 값만 갱신, 없으면 맨 앞에 추가 — 수동 배선한 부가 효과는 보존
-                    var list = new List<EffectEntry>(ammo.attackEffects ?? Array.Empty<EffectEntry>());
-                    int idx = list.FindIndex(e => e.effect is DamageEffectSO);
-                    if (idx >= 0) list[idx] = new EffectEntry(list[idx].effect, dto.damage);
-                    else list.Insert(0, new EffectEntry(damageEffect, dto.damage));
-                    ammo.attackEffects = list.ToArray();
-                }
+                // 기존 피해 항목이 있으면 값만 갱신, 없으면 맨 앞에 추가 — 수동 배선한 부가 효과는 보존
+                var ammo = EnsureModule<AmmoModuleSO>(item);
+                var list = new List<EffectEntry>(ammo.attackEffects ?? Array.Empty<EffectEntry>());
+                int idx = list.FindIndex(e => e.effect is DamageEffectSO);
+                if (idx >= 0) list[idx] = new EffectEntry(list[idx].effect, dto.damage);
+                else list.Insert(0, new EffectEntry(damageEffect, dto.damage));
+                ammo.attackEffects = list.ToArray();
             }
         }
 
-        // 무기 아이템 ↔ 총 데이터 연결
-        if (item is WeaponItemSO weaponItem && !string.IsNullOrEmpty(dto.gun))
+        // 무기 모듈 — 아이템 ↔ 총 데이터 연결
+        if (!string.IsNullOrEmpty(dto.gun))
         {
-            if (byId.TryGetValue(dto.gun, out var g) && g is GunData gunData) weaponItem.gunData = gunData;
+            if (byId.TryGetValue(dto.gun, out var g) && g is GunData gunData)
+                EnsureModule<WeaponModuleSO>(item).gun = gunData;
             else
             {
                 Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': 총 id '{dto.gun}' 을 찾을 수 없습니다 (guns 섹션 확인)");

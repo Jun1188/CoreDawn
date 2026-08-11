@@ -262,3 +262,37 @@ bare 피해 필드(`GunData.damage`·`AmmoItemSO.damage`·`CombatComponent.attac
   2차 재임포트 아이덤포턴스(신규 에러 0) → 플레이 장착·발사 정상(HUD displayName 표기).
 - 크리스탈탄 감속 예시는 이제 json 한 줄: 탄약 항목에
   `"attackEffects": [{"effect":"Effect:Damage","value":12},{"effect":"Effect:SlowField","value":0.5}]`.
+
+---
+
+## 2026-08-11 — 아이템 상속 제거 — 역할은 모듈(ItemModuleSO) 조합으로
+
+### 원칙 (사용자 확정 — "item에 상속구조가 있어선 안돼")
+구 `ItemDataSO ← AmmoItemSO/WeaponItemSO` 상속을 폐기. 모든 아이템은 평평한
+ItemDataSO 하나이고, 역할은 `modules` 목록의 모듈이 정의한다:
+
+| | 구 (상속) | 신 (조합) |
+|---|---|---|
+| 탄약 | AmmoItemSO.attackEffects | `AmmoModuleSO` (attackEffects) |
+| 무기 | WeaponItemSO.gunData | `WeaponModuleSO` (gun) |
+| 판정 | `item is AmmoItemSO` | `item.GetModule<AmmoModuleSO>()` / TryGetModule |
+
+- 상속의 문제였던 것: 역할 추가 = 서브클래스 추가, 겸직 불가(탄약이자 투척 무기 같은 것),
+  타입 승격 시 같은 id 재생성(참조 복구 의존). 모듈은 셋 다 해소.
+- 모듈은 아이템 에셋의 **서브에셋**(AddObjectToAsset) — 파일 하나 = 아이템 + 모듈들.
+  `ItemType` enum은 분류·UI 축으로 유지하되 코드 판정은 모듈 존재로.
+- 소비처 전환: TowerBehavior(TryConsumeRound)·InventoryManager(핫바 장착)·ItemTooltipUI.
+- 임포터: 타입 승격 재생성 로직 삭제 → `EnsureModule<T>`가 json 필드
+  (attackEffects·gun) 존재 시 모듈을 만들어 배선. json 스키마는 무변화.
+
+### 마이그레이션·함정
+- 에셋 7종(탄약 5 + 무기 2): 데이터 → 모듈 서브에셋 생성 → 본체 `m_Script`를
+  ItemDataSO로 스와프(guid 보존 — 레시피·ammoFilter·인벤 참조 전부 무사).
+- **함정**: 스와프+SaveAssets를 한 배치에서 여러 에셋에 돌리면 앞 에셋의 리임포트가
+  뒤 에셋의 매니지드 래퍼를 죽인다("destroyed but still trying to access") —
+  호출당 1개 처리 + 처리 전 `ImportAsset(ForceUpdate)`로 캐시를 새로 잡아 해결.
+- **함정 2**: 클래스 스와프 직후엔 `FindAssets("t:타입")` 검색 인덱스가 낡아 있다 —
+  임포터의 byId 구축이 원본을 놓쳐 같은 id의 에셋을 중복 생성했다. 스와프한 에셋들을
+  `ImportAsset(ForceUpdate)`로 재인덱싱해 해결. 마이그레이션 후 첫 임포트 전에 필수.
+- 검증: 7/7 모듈 값 무결(탄약 [Damage,10]·무기 gun id), 서브클래스 삭제 후 컴파일 클린,
+  재임포트 아이덤포턴스(중복 재발 없음), 플레이에서 모듈 경로 장착·발사 정상.
