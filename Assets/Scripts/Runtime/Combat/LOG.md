@@ -231,3 +231,34 @@ bare 피해 필드(`GunData.damage`·`AmmoItemSO.damage`·`CombatComponent.attac
 - 플레이(통제 조건): 무공급 타워 프리팹이 4m 표적을 새 경로로 사살. 예외 0.
 - **스모크 함정 추가**: PlayLoopTest의 씬 배치 타워 4기는 밤 웨이브에 파괴될 수 있다 —
   "타워가 안 쏜다"로 보이면 먼저 타워 생존부터 확인할 것.
+
+---
+
+## 2026-08-11 — 효과·총을 json(GameData)으로 — 임포터 확장
+
+### 결정 (사용자 확정)
+"json을 쓰는 이유가 임포터"이므로 **총 데이터는 json이 전부 소유**한다 (건물들과 같은 문화).
+안전장치: **json에 적힌 필드만 덮는다** — 생략 필드는 에셋 값 유지. 0이 정당한 감각
+튜닝 필드(반동·킥백·탄퍼짐)는 음수를 생략 신호로 쓰고, bool(isAutomatic)은 생략 판별이
+불가능하므로 항상 명시한다(DTO 주석에 박음). 예외 2개: bulletPrefab·enemyLayer는
+에셋/씬 참조라 json 밖 — 인스펙터 소관.
+
+### 스키마 (Assets/Data/Import/*.json — 파일 분할 가능, GameDataCombat.json 초안 추가)
+- **effects 섹션**: `kind`(→클래스 매핑: Damage/Heal/Knockback/DamageOverTime/MoveSpeed/
+  AttackModifier/IncomingDamage) + 형태 필드만(duration·stacking·tickInterval·affects).
+  EffectSO를 GameDataSO 상속으로 바꿔 id 부여("Effect:이름"). affects(효과→효과 참조)는
+  전 파일 임포트 후 2차 해석. kind 불일치는 자동 재생성하지 않음(참조 파괴 방지 — 수동 정리).
+- **guns 섹션**: GunData를 GameDataSO 상속으로("Gun:이름"), gunName 삭제 → displayName
+  (HUD·WeaponManager 수정). 전투 정합 + 감각 튜닝 전부.
+- **items 확장**: 탄약 `attackEffects`(정식 — 구 damage 숏컷은 attackEffects 없을 때만 변환),
+  무기 `type: "Weapon"` → WeaponItemSO 생성/재생성 + `gun` 참조로 GunData 자동 배선.
+- 임포트 순서: **효과 → 총 → 아이템** → 레시피 → 건물 (참조 방향 역순).
+
+### 마이그레이션·검증
+- 기존 에셋 id 부여: Effect:Damage(Resources — 런타임 부착 플레이어용 위치 유지),
+  Effect:SlowField, Gun:Rifle(Test_Gun), Gun:LaserGun(Test_Gun 1). 무기 아이템은
+  기존 id(Item:Test_Weapon 계열) 재사용.
+- 검증: 1차 임포트 왕복 무손실(값 일치·gun 참조 유지·CrystalAmmo 배선 보존) →
+  2차 재임포트 아이덤포턴스(신규 에러 0) → 플레이 장착·발사 정상(HUD displayName 표기).
+- 크리스탈탄 감속 예시는 이제 json 한 줄: 탄약 항목에
+  `"attackEffects": [{"effect":"Effect:Damage","value":12},{"effect":"Effect:SlowField","value":0.5}]`.

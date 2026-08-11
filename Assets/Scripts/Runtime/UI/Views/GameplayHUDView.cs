@@ -322,7 +322,7 @@ public class GameplayHUDView : MonoBehaviour
         Show(ammoBox, has);
         if (!has) return;
 
-        ammoName.text = weapon.gunData.gunName.ToUpperInvariant();
+        ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
         ammoNow.text = weapon.CurrentAmmo.ToString();
         ammoCap.text = $" / {weapon.gunData.magSize}";
     }

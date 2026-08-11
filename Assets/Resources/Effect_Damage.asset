@@ -12,3 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d79bdfea50678d9449fc2fb816072671, type: 3}
   m_Name: Effect_Damage
   m_EditorClassIdentifier: Assembly-CSharp::DamageEffectSO
+  id: Effect:Damage
+  displayName: "\uD53C\uD574"
+  description: "value\uB9CC\uD07C \uCCB4\uB825\uC744 \uAE4E\uB294\uB2E4. \uBAA8\uB4E0
+    \uACF5\uACA9\uC758 \uAE30\uBCF8 \uD56D\uBAA9."
+  icon: {fileID: 0}

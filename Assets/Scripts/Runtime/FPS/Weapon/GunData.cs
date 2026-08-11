@@ -10,12 +10,16 @@ public enum FireMode
 /// <summary>
 /// 총 하나의 데이터 전부 — 전투 정합(발사 방식·효과·연사·탄창)과 감각 튜닝(반동·탄퍼짐).
 /// 컴포넌트(Gun)는 상태만 갖고, 수치는 전부 여기다.
+///
+/// GameDataSO 상속인 이유: 총 수치는 json(GameData)이 소유한다 — 임포터가 id("Gun:이름")로
+/// 찾아 갱신하고, 무기 아이템(WeaponItemSO)이 json의 gun 필드로 참조를 배선한다.
+/// 이름 표시는 displayName을 쓴다(구 gunName 삭제). 단 bulletPrefab·enemyLayer는
+/// 에셋/씬 참조라 json 밖 — 인스펙터에서 배선한다.
 /// </summary>
 [CreateAssetMenu(fileName = "GunData", menuName = "ScriptableObjects/GunData", order = 1)]
-public class GunData : ScriptableObject
+public class GunData : GameDataSO
 {
-    [Header("Identity")]
-    public string gunName = "Pistol";
+    [Header("동작")]
     [Tooltip("눌림 유지로 연사되는가. 권총/저격은 false — 클릭마다 한 발.")]
     public bool isAutomatic;
 

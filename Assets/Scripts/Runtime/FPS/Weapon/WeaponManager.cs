@@ -59,7 +59,7 @@ public class WeaponManager : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"[WeaponManager] {targetData.gunName} 데이터를 가진 무기 오브젝트가 WeaponHolder 하위에 없습니다!");
+        Debug.LogWarning($"[WeaponManager] {targetData.displayName} 데이터를 가진 무기 오브젝트가 WeaponHolder 하위에 없습니다!");
     }
 
     public void UnequipWeapon()

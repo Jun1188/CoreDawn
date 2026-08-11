@@ -10,8 +10,11 @@ using UnityEngine;
 ///
 /// 즉시 효과(피해·회복·넉백)는 Apply에서 끝나고,
 /// 지속 효과는 <see cref="DurationEffectSO"/>를 상속해 대상의 EffectController에 등록된다.
+///
+/// GameDataSO 상속인 이유: 효과도 json(GameData)이 소유하는 데이터다 — 임포터가
+/// id("Effect:이름")로 찾아 갱신하고, 탄약·총의 attackEffects가 id로 참조한다.
 /// </summary>
-public abstract class EffectSO : ScriptableObject
+public abstract class EffectSO : GameDataSO
 {
     public abstract void Apply(Entity target, in EffectContext ctx);
 }

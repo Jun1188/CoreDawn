@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Test_Weapon 1
   m_EditorClassIdentifier: Assembly-CSharp::WeaponItemSO
   id: Item:Test_Weapon 1
-  displayName: 
+  displayName: "\uB808\uC774\uC800\uAC74"
   description: 
   icon: {fileID: -17470339, guid: 6cc7b23bf440b764893f0618ca3b9932, type: 3}
   type: 5
+  line: 0
   gunData: {fileID: 11400000, guid: a497678763b887142befc9bf626ab648, type: 2}

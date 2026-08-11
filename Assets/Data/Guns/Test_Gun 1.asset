@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be05d876c35f7a499414f3d43c683b7, type: 3}
   m_Name: Test_Gun 1
   m_EditorClassIdentifier: Assembly-CSharp::GunData
-  gunName: 
-  weaponType: 1
+  id: Gun:LaserGun
+  displayName: "\uB808\uC774\uC800\uAC74"
+  description: 
+  icon: {fileID: 0}
   isAutomatic: 1
   fireMode: 1
   fireRate: 0.1
   bulletSpeed: 100
-  maxRange: 1000
-  bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
   range: 100
+  bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 2048
@@ -29,6 +30,7 @@ MonoBehaviour:
     value: 10
   magSize: 100
   reloadTime: 0
+  zoomFOV: 50
   xRecoil: 0.01
   yRecoil: 0.01
   zRecoil: 0.01
