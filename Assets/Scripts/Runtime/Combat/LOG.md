@@ -296,3 +296,26 @@ ItemDataSO 하나이고, 역할은 `modules` 목록의 모듈이 정의한다:
   `ImportAsset(ForceUpdate)`로 재인덱싱해 해결. 마이그레이션 후 첫 임포트 전에 필수.
 - 검증: 7/7 모듈 값 무결(탄약 [Damage,10]·무기 gun id), 서브클래스 삭제 후 컴파일 클린,
   재임포트 아이덤포턴스(중복 재발 없음), 플레이에서 모듈 경로 장착·발사 정상.
+
+---
+
+## 2026-08-12 — EffectDatabase 신설 + 작업물 폴더 정리
+
+### EffectDatabaseSO (사용자 제안 — "개별 에셋을 Resources에 두지 말 것")
+- `Resources/EffectDatabase.asset` 하나만 Resources에 — Recipe/Item/BuildingDatabase와
+  같은 패턴. 효과 에셋들은 전부 `Data/Effects/`에 산다 (Effect_Damage도 Resources에서 이사).
+- 스캐너(BuildingDatabaseScanner)에 `RebuildEffects` 편입 — EffectSO 에셋을
+  만들거나 지우면 목록이 저절로 갱신된다 (RebuildAll·임포터 경유 포함).
+- 조회 API: `FindById("Effect:이름")` + `FindFirst<T>()`(공용 에셋을 채널 타입으로).
+- 소비처 전환: BattleManager 플레이어 근접(`FindFirst<DamageEffectSO>`),
+  임포터 damage 숏컷(하드코딩 경로 → byId "Effect:Damage").
+
+### 폴더 정리
+- `Runtime/Factory/SO/Item/` ← ItemDataSO·ItemModuleSO·AmmoModuleSO·WeaponModuleSO
+  (아이템 데이터 한 세트로 — 구 서브클래스가 흩어져 있던 Runtime/Inventory 자리 정리).
+- 무기 아이템 2종을 `Data/Guns` → `Data/Item`으로 (아이템은 아이템 폴더에 —
+  Data/Guns에는 GunData만 남음). 전부 guid 보존 이동이라 참조 무사.
+
+### 검증
+재임포트 후 무기 아이템 배선 유지(새 위치), EffectDatabase 수집 2종·조회 정상,
+플레이(PlayLoopTest)에서 플레이어 근접이 DB 경로로 [Effect:Damage, 10] 주입 확인.

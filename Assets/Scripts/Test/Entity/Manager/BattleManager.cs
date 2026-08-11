@@ -98,12 +98,12 @@ public class BattleManager : MonoBehaviour
             player.Sensor.SetDetectionRange(playerDetectionRange);
 
         // 근접 자동 반격의 공격 정의 — 런타임 부착이라 인스펙터 배선이 불가능해 여기서 만든다.
-        // 공용 피해 효과는 Resources에 있다 (RecipeDatabase와 같은 패턴).
-        var damageEffect = Resources.Load<DamageEffectSO>("Effect_Damage");
+        // 효과 에셋은 EffectDatabase(Resources)에서 집는다 — 개별 에셋을 Resources에 두지 않는다.
+        var damageEffect = EffectDatabaseSO.LoadDefault()?.FindFirst<DamageEffectSO>();
         if (damageEffect != null && player.Combat != null)
             player.Combat.SetAttackEffects(new[] { new EffectEntry(damageEffect, playerMeleeDamage) });
         else if (damageEffect == null)
-            Debug.LogWarning("[BattleManager] Resources/Effect_Damage를 찾지 못해 플레이어 근접 공격이 무효과입니다.");
+            Debug.LogWarning("[BattleManager] EffectDatabase에서 피해 효과를 찾지 못해 플레이어 근접 공격이 무효과입니다.");
         playerEntity = player;
         Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
     }

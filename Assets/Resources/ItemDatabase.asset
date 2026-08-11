@@ -35,7 +35,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 87777112f27ea6b478b669a63dc0a6c0, type: 2}
   - {fileID: 11400000, guid: e92829eb1699dab47a38ddd2df1e22ad, type: 2}
   - {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
-  - {fileID: 11400000, guid: ab6279cac08827e45bfdc855ed71d286, type: 2}
   - {fileID: 11400000, guid: ec8535dc32ca13348a6fa768206ddcb0, type: 2}
   - {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
   droppedItemPrefab: {fileID: 5100000000000000006, guid: 4800f66116cf4329885747041f5ece99, type: 3}

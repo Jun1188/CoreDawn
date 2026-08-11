@@ -29,7 +29,7 @@ public static class GameDataImporter
     const string RecipeFolder   = "Assets/Data/Recipe";
     const string BuildingFolder = "Assets/Data/Buildings";
     const string PrefabFolder   = "Assets/Prefabs/Buildings";
-    const string ModelFolder    = "Assets/Art/Models";
+    const string ModelFolder    = "Assets/Models";
     const string EffectFolder   = "Assets/Data/Effects";
     const string GunFolder      = "Assets/Data/Guns";
 
@@ -478,11 +478,11 @@ public static class GameDataImporter
         }
         else if (dto.damage > 0f)
         {
-            var damageEffect = AssetDatabase.LoadAssetAtPath<DamageEffectSO>("Assets/Resources/Effect_Damage.asset");
+            var damageEffect = byId.TryGetValue("Effect:Damage", out var dmgSo) ? dmgSo as DamageEffectSO : null;
             if (damageEffect == null)
             {
                 Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': " +
-                               "Effect_Damage.asset이 없어 탄약 피해를 배선하지 못했습니다 (Assets/Resources).");
+                               "id 'Effect:Damage' 효과가 없어 탄약 피해를 배선하지 못했습니다 (effects 섹션 확인).");
                 errors++;
             }
             else
