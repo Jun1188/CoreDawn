@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- 세이브 슬롯 목록 — 저장과 불러오기가 같은 화면을 쓴다.
+
+         한 화면인 이유: 고르는 대상(슬롯)과 보이는 정보(며칠째·플레이타임·저장 시각)가
+         같은데 화면을 둘로 나누면 같은 목록을 두 벌 관리하게 된다.
+         무엇을 하려는 창인지는 제목과 실행 버튼의 글자로 구분한다.
+
+         슬롯 줄은 개수가 설정(SaveSystemConfig)에 달려 있으므로 SaveLoadPanelView가 만든다. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+    <Style src="../Styles/saveload.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="slots-panel" class="ui-panel slots-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label name="mode-tag" text="LOAD" class="ui-panel__tag" />
+                <ui:Label name="mode-title" text="불러오기" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body slots-panel__body">
+
+                <ui:ScrollView name="slot-list" class="ui-scroll slots-list" />
+
+                <ui:Label name="empty-note" text="저장된 게임이 없습니다." class="slots-empty" />
+
+                <ui:VisualElement name="footer" class="slots-footer">
+                    <ui:Button name="btn-delete" text="삭제" class="ui-btn ui-btn--ghost" />
+                    <ui:VisualElement class="slots-footer__spacer" />
+                    <ui:Button name="btn-cancel" text="취소" class="ui-btn ui-btn--ghost" />
+                    <ui:Button name="btn-confirm" text="불러오기" class="ui-btn ui-btn--primary" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

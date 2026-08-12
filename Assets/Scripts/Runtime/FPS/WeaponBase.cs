@@ -20,6 +20,13 @@ public abstract class WeaponBase : MonoBehaviour
     /// <summary>현재 장전 수 — HUD 표시용 읽기 전용 (SCR-02).</summary>
     public int CurrentAmmo => currentAmmo;
 
+    /// <summary>세이브 복원 전용 — 장전된 탄수를 되돌린다. 재장전 중이었다면 그 상태는 취소한다.</summary>
+    public void RestoreAmmo(int ammo)
+    {
+        currentAmmo = Mathf.Max(0, ammo);
+        isReloading = false;
+    }
+
     public bool isReloading = false;
     protected float lastFireTime = 0f;
     protected float currentSpread;

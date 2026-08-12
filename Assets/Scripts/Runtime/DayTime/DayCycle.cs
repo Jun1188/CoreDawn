@@ -79,6 +79,21 @@ public class DayCycle
         if (Phase == DayPhase.Night) BeginDay(0f);
     }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 주기를 저장된 시점으로 되돌린다.
+    ///
+    /// DayStarted/NightStarted를 발화시키지 않는다. 복원은 "그 시점으로 옮겨 앉는 것"이지
+    /// 페이즈가 새로 시작되는 사건이 아니기 때문이다 — 발화시키면 아침마다 도는
+    /// 자동 저장·몬스터 정리·둥지 복구가 로드할 때마다 한 번 더 돌아버린다.
+    /// </summary>
+    public void RestoreState(DayPhase phase, int dayNumber, float phaseRemaining)
+    {
+        Phase = phase;
+        DayNumber = Math.Max(1, dayNumber);
+        PhaseRemaining = Math.Clamp(phaseRemaining, 0f, PhaseDuration);
+        _started = true;   // 이미 시작된 게임을 이어받는 것이므로 Begin()을 기다리지 않는다
+    }
+
     void BeginNight(float overshoot)
     {
         Phase          = DayPhase.Night;

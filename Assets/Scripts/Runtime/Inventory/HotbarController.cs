@@ -15,6 +15,21 @@ public class HotbarController : MonoBehaviour, IInputReceiver
     private int currentHotbarIndex;
     public int CurrentHotbarIndex => currentHotbarIndex;
 
+    /// <summary>
+    /// 세이브 복원 전용 — 선택 칸을 되돌리고 그 칸에 맞는 무기를 다시 장착시킨다.
+    /// (장착 상태는 핫바 선택에서 유도되므로 무기 쪽을 따로 저장할 필요가 없다)
+    /// </summary>
+    public void RestoreSelection(int index)
+    {
+        currentHotbarIndex = Mathf.Max(0, index);
+
+        var holder = PlayerInventoryHolder.Instance;
+        if (holder != null && InventoryManager.Instance != null)
+            InventoryManager.Instance.CheckWeaponEquip(holder.HotbarContainer, currentHotbarIndex);
+
+        if (HotbarUI.Instance != null) HotbarUI.Instance.RefreshHotbar();
+    }
+
     public int Priority => InputPriority.HudWidget;
     public bool IsInputActive => isActiveAndEnabled;
 

@@ -298,7 +298,7 @@ public class PlacementSystem : MonoBehaviour
 
         if (current is BeltDataSO belt)
             PlacementBridge.Place(current, origin, pos, rotation,
-                BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape));
+                BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape), beltShape);
         else
             PlacementBridge.Place(current, origin, pos, rotation);
 
@@ -310,9 +310,10 @@ public class PlacementSystem : MonoBehaviour
     /// 프리뷰만 건너뛸 뿐 지형 높이·겹침·광맥 판정은 조준 배치와 완전히 같은 규칙을 쓴다
     /// (그리드 수학이 두 벌로 갈라지지 않게 여기 한 곳에 둔다).
     /// </summary>
+    /// <param name="shape">벨트 모양. 벨트가 아닌 건물에서는 무시된다.</param>
     /// <returns>배치 성공 여부. 실패 사유는 reason으로 돌려준다.</returns>
     public bool TryPlaceAt(BuildingDataSO so, Vector2Int origin, int rotSteps,
-        out Building placed, out string reason)
+        out Building placed, out string reason, BeltShape shape = BeltShape.Straight)
     {
         placed = null;
         reason = null;
@@ -332,7 +333,11 @@ public class PlacementSystem : MonoBehaviour
         Vector3 pos = grid.GetFootprintCenter(origin, size);
         pos.y = groundY + SurfaceLift(so, origin);
 
-        placed = PlacementBridge.Place(so, origin, pos, rotSteps);
+        // 조준 배치(Place)와 같은 규칙 — 벨트는 모양에 맞는 포트·커브 메시로 세운다
+        placed = so is BeltDataSO belt
+            ? PlacementBridge.Place(so, origin, pos, rotSteps,
+                BeltDataSO.BuildPorts(shape, rotSteps), belt.PrefabFor(shape), shape)
+            : PlacementBridge.Place(so, origin, pos, rotSteps);
         return placed != null;
     }
 

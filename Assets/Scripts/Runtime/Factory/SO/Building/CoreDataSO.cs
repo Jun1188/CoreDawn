@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -111,7 +113,7 @@ public class CoreTierDefinition
 ///   - 플레이어가 인벤토리 UI로 직접 넣으면(TryPutAt/TryExchangeAt) 벨트 경로를 거치지 않으므로,
 ///     ItemContainer.Changed 이벤트를 구독해 그 자리에서 Sim.MarkDirty를 걸어 같은 결과를 만든다.
 /// </summary>
-public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
+public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
 {
     readonly Building _b;
     readonly CoreDataSO _so;
@@ -364,5 +366,30 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior
     {
         _b.Input.AcceptFilter = item =>
             item != null && (_so.burnSurplusIntoShield || IsRequired(item));
+    }
+
+    // ── 세이브 ────────────────────────────────────────────────────
+    //
+    // 티어는 GameManager가 갖고 있고(progress 모듈), 최대 보호막은 티어에서 계산되며,
+    // 납품 재고는 입력 컨테이너에 들어 있다. 그래서 여기서 따로 챙길 것은 두 개뿐이다.
+
+    public class SaveState
+    {
+        [JsonProperty("shield")] public float Shield;
+        [JsonProperty("ready")] public bool Ready;
+    }
+
+    public object CaptureState() => new SaveState { Shield = _shield, Ready = _ready };
+
+    public void RestoreState(JToken state)
+    {
+        var s = SaveJson.FromToken<SaveState>(state);
+        if (s == null) return;
+
+        _shield = Mathf.Clamp(s.Shield, 0f, MaxShield);
+        _ready = s.Ready;   // SetReady를 쓰지 않는다 — 복원은 사건이 아니라 상태 이전이다
+
+        ShieldChanged?.Invoke(_shield, MaxShield);
+        RefreshAcceptFilter();
     }
 }

@@ -136,10 +136,34 @@ public class SystemUIManager : MonoBehaviour, IInputReceiver
         }
     }
 
+    /// <summary>
+    /// ESC 일시정지 토글.
+    ///
+    /// 새 UITK 메뉴(PauseMenuView)가 씬에 있으면 그쪽을 쓰고, 없으면 기존 uGUI 패널로 넘어간다 —
+    /// GameplayHUDView가 구 HUD를 대하는 방식과 같은 공존 규칙이다.
+    ///
+    /// 구 패널은 9개 씬에 각각 복사돼 있어 지우려면 씬 파일을 전부 건드려야 한다.
+    /// 팀의 씬 병합 작업과 충돌하므로 지우지 않고 런타임에 숨기기만 한다.
+    /// </summary>
     public void TogglePauseMenu()
     {
+        if (PauseMenuView.ExistsInScene())
+        {
+            HideLegacyPausePanel();
+
+            if (PauseMenuView.IsOpen) PauseMenuView.CloseIfOpen();
+            else PauseMenuView.TryOpen();
+            return;
+        }
+
         if (pausePanel == null) return;
         pausePanel.SetActive(!pausePanel.activeSelf);
+    }
+
+    /// <summary>UITK 메뉴가 있으면 구 패널은 두 번 다시 뜨지 않게 한다.</summary>
+    void HideLegacyPausePanel()
+    {
+        if (pausePanel != null && pausePanel.activeSelf) pausePanel.SetActive(false);
     }
 
     public void OnClickSave()
