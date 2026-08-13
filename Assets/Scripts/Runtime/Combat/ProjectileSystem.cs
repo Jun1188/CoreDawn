@@ -24,7 +24,7 @@ public readonly struct ProjectileShot
     public readonly float Speed;
     public readonly float Lifetime;
     public readonly float Range;
-    public readonly int TargetMask;        // 효과를 적용할 레이어 (0이면 적용 없음, 소멸만)
+    public readonly int TargetMask;        // 효과를 적용할 레이어. 0 = 판정 없는 연출탄 — 스윕도 생략(트레이서)
     public readonly EffectEntry[] Effects; // 명중 시 무슨 일이 일어나는가 — 배율이 이미 구워진 최종 목록
     public readonly Entity Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
     public readonly float Gravity;         // 낙하 가속 — 0이면 직선탄, >0이면 포물선 (탄약의 성질)
@@ -85,8 +85,8 @@ public static class ProjectileSystem
                 return;
 
             case FireMode.Hitscan:
-                Hitscan(origin, direction, shot);
-                SpawnTracer(origin, direction, shot);
+                Hitscan(origin, direction, shot, out Vector3 beamEnd);
+                SpawnTracer(origin, direction, shot, Vector3.Distance(origin, beamEnd));
                 return;
 
             case FireMode.Aura:
@@ -100,14 +100,15 @@ public static class ProjectileSystem
     }
 
     /// <summary>
-    /// 히트스캔 연출용 트레이서 — 효과도 대상도 없는 탄(TargetMask 0)이 같은 궤적을 날아
-    /// 벽·대상에서 멈춘다. 판정은 이미 끝났다 — 이 탄은 눈을 위해서만 존재한다.
+    /// 히트스캔 연출용 트레이서 — 효과도 판정도 없는 탄(TargetMask 0 = 스윕 생략)이
+    /// 판정이 계산해 준 빔 길이만큼 날고 그 자리에서 소멸한다. 관통 빔이면 뚫린 대상들을
+    /// 그대로 지나쳐 차폐물·종점에서 죽는다 — 궤적이 판정과 정확히 일치한다.
     /// </summary>
-    private static void SpawnTracer(Vector3 origin, Vector3 direction, in ProjectileShot shot)
+    private static void SpawnTracer(Vector3 origin, Vector3 direction, in ProjectileShot shot, float distance)
     {
-        if (shot.Prefab == null) return;
+        if (shot.Prefab == null || distance <= 0f) return;
 
-        var cosmetic = new ProjectileShot(shot.Speed, shot.Lifetime, shot.Range,
+        var cosmetic = new ProjectileShot(shot.Speed, shot.Lifetime, distance,
                                           null, 0, shot.Source, shot.Gravity, 0f,
                                           FireMode.Projectile, shot.Prefab);
         Spawn(shot.Prefab, origin, direction, cosmetic);
@@ -125,9 +126,14 @@ public static class ProjectileSystem
     /// 비대상 콜라이더에서는 빔이 멈춘다 (에너지탄이 관통해도 차폐는 차폐).
     /// </summary>
     public static bool Hitscan(Vector3 origin, Vector3 direction, in ProjectileShot shot)
+        => Hitscan(origin, direction, shot, out _);
+
+    /// <summary>end로 빔의 실제 종점을 보고한다 — 트레이서가 판정과 같은 자리에서 죽도록.</summary>
+    public static bool Hitscan(Vector3 origin, Vector3 direction, in ProjectileShot shot, out Vector3 end)
     {
-        if (direction.sqrMagnitude < 0.0001f) return false;
+        if (direction.sqrMagnitude < 0.0001f) { end = origin; return false; }
         direction.Normalize();
+        end = origin + direction * shot.Range; // 아무것도 안 맞으면 사거리 끝까지
 
         Transform ignore = shot.Source != null ? shot.Source.transform.root : null;
 
@@ -136,6 +142,7 @@ public static class ProjectileSystem
             if (!TryClosestHit(origin, direction, shot.Range, 0f, ignore, out RaycastHit hit))
                 return false;
 
+            end = hit.point;
             Impact(hit.collider, hit.point, shot);
             return true;
         }
@@ -152,14 +159,22 @@ public static class ProjectileSystem
             var h = hitBuffer[i];
             if (ignore != null && h.transform.IsChildOf(ignore)) continue;
 
-            if ((shot.TargetMask & (1 << h.collider.gameObject.layer)) == 0) break; // 차폐물 — 빔 종료
+            if ((shot.TargetMask & (1 << h.collider.gameObject.layer)) == 0)
+            {
+                end = h.point; // 차폐물 — 빔 종료
+                break;
+            }
 
             Entity entity = h.collider.GetComponentInParent<Entity>();
             if (entity == null || entity.IsDead || !pulseSeen.Add(entity)) continue;
 
             entity.ApplyEffects(shot.Effects, shot.Source, h.point);
             applied++;
-            if (applied > shot.Pierce) break;
+            if (applied > shot.Pierce)
+            {
+                end = h.point; // 관통력 소진 — 마지막 대상에서 멈춘다
+                break;
+            }
         }
         return applied > 0;
     }

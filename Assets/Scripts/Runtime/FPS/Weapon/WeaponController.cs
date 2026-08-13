@@ -98,6 +98,11 @@ public class WeaponController : MonoBehaviour, IInputReceiver
                 if (weapon == null || e.Phase != InputActionPhase.Performed) return false;
                 weapon.StartReload();
                 return true;
+
+            case InputActionId.SwitchAmmo:
+                if (weapon == null || e.Phase != InputActionPhase.Performed) return false;
+                weapon.TrySwitchAmmo();   // 인벤토리에 다른 탄종이 없으면 조용히 실패
+                return true;
         }
         return false;
     }

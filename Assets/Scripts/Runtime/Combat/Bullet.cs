@@ -56,7 +56,9 @@ public class Bullet : MonoBehaviour
         Vector3 step = velocity * dt;
         float dist = step.magnitude;
 
-        if (dist > 0f &&
+        // TargetMask 0 = 연출탄(히트스캔 트레이서) — 판정은 이미 끝났으니 스윕도 하지 않는다.
+        // 관통 빔의 트레이서가 뚫린 대상 몸에 걸려 멈추면 안 된다; Range가 곧 판정된 빔 길이다.
+        if (shot.TargetMask != 0 && dist > 0f &&
             ProjectileSystem.TryClosestHit(pos, step / dist, dist, sweepRadius, shooterRoot, out RaycastHit hit))
         {
             ProjectileSystem.Impact(hit.collider, hit.point, shot); // 폭발탄은 착탄점 Pulse

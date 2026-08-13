@@ -456,3 +456,38 @@ bulletSpeed → BasicAmmo 70으로 통일. 총별 차이는 연사·배율·탄�
 - 사각: 3m 대상만 → 조준 null / 3m+12m → 12m 대상 선택. minRange 0이면 3m 정상 조준.
 - 실소비: 저격총(탄창 5)에 DenseAmmo 3 지급 → 부분 장전 3, 인벤 0 / 탄 없이 재장전
   거부 / CrystalAmmo로 전환 → 장전탄 1발 반환·자동 재장전 → 탄창 5, 인벤 2, 예비탄 2.
+
+---
+
+## 2026-08-14 (2) — 관통 트레이서 정합 + 탄약 HUD·탄종 전환 입력
+
+### 트레이서가 판정과 일치하게
+관통 빔의 트레이서가 첫 대상 몸에 걸려 멈추던 연출 격차를 해소했다:
+- `Hitscan(..., out end)` — 판정이 빔의 실제 종점(차폐물·관통력 소진 지점·사거리 끝)을
+  보고한다. 트레이서는 그 길이를 Range로 받는다.
+- **TargetMask 0 = 연출탄 — 스윕 자체를 생략한다.** 판정은 이미 끝났으니 연출탄이
+  물리를 다시 물을 이유가 없다. 정확히 빔 길이만 날고 그 자리에서 죽는다 —
+  관통 빔이면 뚫린 대상들을 그대로 지나친다. (ProjectileShot.TargetMask 의미 갱신)
+
+### 탄약 HUD (SCR-02 확장)
+combat-ammo 박스에 탄종 줄 추가: `[탄종 displayName] [× 예비탄]`.
+- 예비탄 = `Gun.ReserveAmmo`(인벤토리 잔량), 인벤토리 없는 씬은 ∞.
+- 재장전 중엔 예비탄 자리가 "장전 중"으로 바뀌고 큰 숫자가 흐려진다
+  (combat-ammo__now--reloading).
+
+### 탄종 전환 입력 — V
+InputActionId.SwitchAmmo + GameInput.inputactions Gameplay 맵 `<Keyboard>/v` →
+WeaponController가 `Gun.TrySwitchAmmo()` 라우팅 (다른 탄종이 없으면 조용히 실패).
+BindAll이 이름으로 자동 매핑하므로 enum·액션 이름만 일치시키면 끝.
+
+### 검증 (플레이 실측, ItemTree + GameUI_UITK 런타임 소환)
+- 트레이서: 일렬 3마리(x=150·153·156) 관통 발사 → 판정 즉시 전원 -30, 트레이서가
+  x=158.6 → 173.6으로 대상들을 통과 비행, 종점(184)에서 소멸.
+- HUD: 부분 장전 후 "3 / 5 · 고밀도 탄약 · × 0" → TrySwitchAmmo → 재장전 완료 후
+  "5 / 5 · 크리스탈 탄약 · × 2". 전환·반환·소비 수치 전부 일치.
+
+### 주의 (검증 절차)
+- 씬 확인 없이 열린 씬에서 플레이 테스트를 돌리지 말 것 — 이번엔 ItemTree가 우연히
+  전투 장비를 갖춰 통과했지만, 검증 전 활성 씬·isDirty부터 확인한다.
+- unity eval은 메서드 본문 래핑이라 using 불가 — UI Toolkit Q<>는
+  UQueryExtensions 정적 호출로.
