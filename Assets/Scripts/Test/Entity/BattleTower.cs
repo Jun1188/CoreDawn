@@ -84,7 +84,8 @@ public class BattleTower : BuildingEntity
             return;
         }
 
-        Entity target = sensor.GetClosestTarget(combat.AttackRange);
+        // 최소 사거리(박격포의 사각)보다 가까운 적은 조준 대상에서 빠진다
+        Entity target = sensor.GetClosestTarget(combat.AttackRange, data.minRange);
         if (!target.IsValidTarget()) return;
 
         // 쏘기 직전에 한 발 소비 — 효과·탄도는 소비한 탄약이 정의하고, 타워는 각도·배율만.
@@ -155,7 +156,7 @@ public class BattleTower : BuildingEntity
 
         var shot = new ProjectileShot(round.speed, round.lifetime, combat.AttackRange + 2f,
                                       effects, monsterMask, this, round.gravity, round.explosionRadius,
-                                      data.fireMode, round.bulletPrefab);
+                                      data.fireMode, round.bulletPrefab, round.pierce);
 
         // 전달은 총(Gun)과 같은 단일 진입점 — 방식 분기는 ProjectileSystem이 한다.
         // 총구를 살짝 앞으로: 자기 명중은 필터가 걸러주지만 탄이 타워 모델 안에서 태어나지 않게.

@@ -26,6 +26,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   ammo: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
+  ammoFilter:
+  - {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
   damageMultiplier: 1
   magSize: 4
   reloadTime: 2.5

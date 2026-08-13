@@ -31,6 +31,10 @@ public class AmmoModuleSO : ItemModuleSO
     [Tooltip("최대 비행 시간(초). Hitscan에서는 무시된다.")]
     public float lifetime = 3f;
 
+    [Tooltip("관통 — 첫 대상 뒤로 추가로 뚫는 대상 수. 0 = 첫 대상에서 멈춤(기본). " +
+             "벽·건물 같은 비대상은 뚫지 못한다. 에너지 계열 탄의 성질.")]
+    public int pierce;
+
     [Tooltip("탄 외형 프리팹(Bullet 컴포넌트 필수) — 에셋 참조라 json 밖, 인스펙터에서 배선한다. " +
              "Projectile 발사기가 이 탄을 쓸 때만 필요.")]
     public GameObject bulletPrefab;

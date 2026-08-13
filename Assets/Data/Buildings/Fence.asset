@@ -33,6 +33,7 @@ MonoBehaviour:
   fireMode: 3
   damageMultiplier: 0
   range: 8
+  minRange: 0
   fireRate: 1
   muzzleHeight: 1.2
   preferHighArc: 0

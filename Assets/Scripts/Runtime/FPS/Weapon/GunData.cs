@@ -32,9 +32,13 @@ public class GunData : GameDataSO
     public LayerMask enemyLayer;
 
     [Header("탄약 (효과·탄도의 주인)")]
-    [Tooltip("이 총이 쓰는 탄약 아이템(AmmoModuleSO 필수) — 명중 효과·탄속·중력·폭발 반경은 이 탄약이 정의한다. " +
+    [Tooltip("이 총의 기본 탄약 아이템(AmmoModuleSO 필수) — 명중 효과·탄속·중력·폭발 반경은 이 탄약이 정의한다. " +
              "json의 ammo 필드(예: \"Item:BasicAmmo\")로 임포터가 배선한다.")]
     public ItemDataSO ammo;
+
+    [Tooltip("장전 가능한 탄종들 — 탄종 전환은 이 목록 안에서 돈다(포탑 ammoFilter와 같은 개념). " +
+             "비우면 ammo 하나만. json의 ammoFilter 필드로 임포터가 배선한다.")]
+    public ItemDataSO[] ammoFilter;
 
     [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 포탑의 damageMultiplier와 같은 개념.")]
     public float damageMultiplier = 1f;

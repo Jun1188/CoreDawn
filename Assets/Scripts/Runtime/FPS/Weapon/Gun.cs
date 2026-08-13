@@ -4,7 +4,12 @@ using UnityEngine;
 
 /// <summary>
 /// 플레이어 총기 — 게임플레이만 담당한다: 탄창·재장전·연사 간격·탄퍼짐·발사.
-/// 수치는 전부 GunData(데이터), 여기는 상태(남은 탄·재장전 중·현재 탄퍼짐)뿐이다.
+/// 수치는 전부 GunData(데이터), 여기는 상태(남은 탄·재장전 중·현재 탄종·탄퍼짐)뿐이다.
+///
+/// <b>탄약 실소비</b>: 재장전은 인벤토리(PlayerInventoryHolder)에서 현재 탄종 아이템을
+/// 실제로 소모한다 — 포탑이 벨트 보급 탄을 소비하는 것과 같은 원칙. 탄종 전환
+/// (TrySwitchAmmo)은 gunData.ammoFilter 안에서 돌며, 장전돼 있던 탄은 인벤토리로 반환한다.
+/// 인벤토리가 없는 씬(테스트)에서는 추상 탄창으로 폴백한다 — 무한 보급.
 ///
 /// 연출(반동·킥백·셰이크)은 모른다 — 발사하면 <see cref="Fired"/>만 알리고,
 /// 반응은 WeaponManager가 연출 모듈들로 팬아웃한다. 실제 발사(투사체·히트스캔·명중 효과)는
@@ -24,6 +29,12 @@ public class Gun : MonoBehaviour
 
     /// <summary>현재 장전 수 — HUD 표시용 읽기 전용 (SCR-02).</summary>
     public int CurrentAmmo { get; private set; }
+
+    /// <summary>지금 장전된 탄종 — 발사 스펙(효과·탄도)의 출처. 기본은 gunData.ammo.</summary>
+    public ItemDataSO CurrentAmmoItem { get; private set; }
+
+    /// <summary>인벤토리에 남은 현재 탄종 수 — HUD 예비탄 표시용. 인벤토리 없는 씬은 -1(무한).</summary>
+    public int ReserveAmmo => PlayerInventoryHolder.Instance != null ? CountInInventory(CurrentAmmoItem) : -1;
 
     /// <summary>재장전 중인가 — 읽기 전용. 진행은 StartReload로만 시작된다.</summary>
     public bool IsReloading { get; private set; }
@@ -45,7 +56,11 @@ public class Gun : MonoBehaviour
 
     private void Start()
     {
-        CurrentAmmo = gunData.magSize;
+        CurrentAmmoItem = gunData != null ? gunData.ammo : null;
+
+        // 실소비 세계에서는 빈 탄창으로 시작한다 — 첫 발도 인벤토리의 탄에서 나와야 한다.
+        // 인벤토리가 없는 씬(테스트)만 공짜 만장전.
+        CurrentAmmo = PlayerInventoryHolder.Instance != null ? 0 : gunData.magSize;
     }
 
     private void Update()
@@ -96,8 +111,8 @@ public class Gun : MonoBehaviour
     // 발사 — 스펙(ProjectileShot)을 만들어 공용 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
     private void Fire(int rounds)
     {
-        // 탄도(속도·중력·폭발·수명·외형)는 탄약의 성질 — 총은 각도(조준·탄퍼짐)만 정한다
-        var round = gunData.AmmoModule;
+        // 탄도(속도·중력·폭발·수명·외형)는 장전된 탄종의 성질 — 총은 각도(조준·탄퍼짐)만 정한다
+        var round = CurrentAmmoItem != null ? CurrentAmmoItem.GetModule<AmmoModuleSO>() : null;
         if (round == null)
         {
             Debug.LogWarning($"[Gun] '{gunData.Id}'에 탄약(AmmoModule)이 배선되지 않았습니다 — 발사 불가.");
@@ -115,7 +130,7 @@ public class Gun : MonoBehaviour
         var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
                                       effects, gunData.enemyLayer, OwnerEntity,
                                       round.gravity, round.explosionRadius,
-                                      gunData.fireMode, round.bulletPrefab);
+                                      gunData.fireMode, round.bulletPrefab, round.pierce);
 
         // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것.
         // 전달 방식(투사체/히트스캔)은 스펙에 실려 있다 — 분기는 ProjectileSystem이 한다.
@@ -129,6 +144,10 @@ public class Gun : MonoBehaviour
     public void StartReload()
     {
         if (IsReloading || CurrentAmmo == gunData.magSize || !gameObject.activeSelf) return;
+
+        // 실소비 — 인벤토리에 현재 탄종이 하나도 없으면 재장전 자체가 시작되지 않는다
+        if (PlayerInventoryHolder.Instance != null && CountInInventory(CurrentAmmoItem) <= 0) return;
+
         StartCoroutine(ReloadRoutine());
     }
 
@@ -137,7 +156,68 @@ public class Gun : MonoBehaviour
         IsReloading = true;
         yield return new WaitForSeconds(gunData.reloadTime);
 
-        CurrentAmmo = gunData.magSize;
+        var holder = PlayerInventoryHolder.Instance;
+        if (holder == null || CurrentAmmoItem == null)
+            CurrentAmmo = gunData.magSize; // 추상 탄창 폴백 — 인벤토리 없는 씬(테스트)·미배선
+        else
+            CurrentAmmo += ConsumeFromInventory(CurrentAmmoItem, gunData.magSize - CurrentAmmo);
+
         IsReloading = false;
+    }
+
+    /// <summary>
+    /// 탄종 전환 — gunData.ammoFilter 안에서 인벤토리에 있는 다음 탄종으로 돈다.
+    /// 장전돼 있던 탄은 인벤토리로 반환하고 새 탄종으로 재장전을 시작한다. 성공 시 true.
+    /// </summary>
+    public bool TrySwitchAmmo()
+    {
+        var filter = gunData.ammoFilter;
+        if (filter == null || filter.Length <= 1 || IsReloading) return false;
+
+        var holder = PlayerInventoryHolder.Instance;
+        int idx = System.Array.IndexOf(filter, CurrentAmmoItem);
+
+        for (int step = 1; step <= filter.Length; step++)
+        {
+            var candidate = filter[(idx + step) % filter.Length];
+            if (candidate == null || candidate == CurrentAmmoItem) continue;
+            if (holder != null && CountInInventory(candidate) <= 0) continue; // 없는 탄으로는 못 바꾼다
+
+            // 장전돼 있던 탄을 인벤토리로 반환 — 전환이 탄을 증발시키면 안 된다
+            if (holder != null && CurrentAmmo > 0 && CurrentAmmoItem != null)
+                holder.AddItemToPlayer(CurrentAmmoItem, CurrentAmmo);
+
+            CurrentAmmo = 0;
+            CurrentAmmoItem = candidate;
+            StartReload();
+            return true;
+        }
+        return false;
+    }
+
+    // ── 인벤토리 실소비 (보관 순서: 메인 가방 먼저, 핫바 나중) ──────
+
+    private static int CountInInventory(ItemDataSO item)
+    {
+        var h = PlayerInventoryHolder.Instance;
+        if (h == null || item == null) return 0;
+        return h.MainContainer.CountOf(item) + h.HotbarContainer.CountOf(item);
+    }
+
+    private static int ConsumeFromInventory(ItemDataSO item, int need)
+    {
+        var h = PlayerInventoryHolder.Instance;
+        if (h == null || item == null || need <= 0) return 0;
+
+        int got = ConsumeFrom(h.MainContainer, item, need);
+        got += ConsumeFrom(h.HotbarContainer, item, need - got);
+        return got;
+    }
+
+    private static int ConsumeFrom(ItemContainer container, ItemDataSO item, int need)
+    {
+        if (container == null || need <= 0) return 0;
+        int take = Mathf.Min(need, container.CountOf(item));
+        return take > 0 && container.TryConsume(item, take) ? take : 0;
     }
 }

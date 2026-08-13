@@ -72,6 +72,7 @@ public static class GameDataImporter
 
         // 명중 효과는 탄약이 정의한다 — 총은 쓰는 탄약(아이템 id)과 배율만 갖는다
         public string ammo;                      // 예: "Item:BasicAmmo" (AmmoModule 필수). 생략 시 유지
+        public string[] ammoFilter;              // 장전 가능한 탄종 id들 — 탄종 전환 범위. null = 유지
         public float  damageMultiplier = -1f;    // 피해형 항목 배율. 음수 = 생략(유지)
 
         // 감각 튜닝 — 0이 정당한 값이라 음수를 "생략(유지)" 신호로 쓴다
@@ -95,6 +96,7 @@ public static class GameDataImporter
 
         // Ammo 탄도 — 탄의 물리 성질(발사기가 아니라 탄약 소유). 0이 정당한 값(직선·무폭발)이라 음수가 생략(유지) 신호다
         public float  speed = -1f, gravity = -1f, explosionRadius = -1f, lifetime = -1f;
+        public int    pierce = -1;   // 추가 관통 대상 수 — 0 정당(첫 대상에서 멈춤), 음수 = 생략(유지)
     }
 
     [Serializable] class SlotDto { public string item; public int amount; }
@@ -133,6 +135,7 @@ public static class GameDataImporter
         public string   modelCurveL, modelCurveR;
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
+        public float    minRange = -1f;                      // Tower — 최소 사거리(박격포 사각). 0 정당, 음수 = 생략(유지)
         public string   fireMode;                            // Tower — Projectile | Hitscan | Aura | None
         public float    muzzleHeight = -1f;                  // Tower — 0 정당, 음수 = 생략(유지)
         public bool     preferHighArc;                       // Tower — 곡사 시 고각 선택(박격포). bool은 항상 명시
@@ -437,20 +440,28 @@ public static class GameDataImporter
     static void ResolveGunAmmo(string file, GunDto dto, GunData gun,
         Dictionary<string, GameDataSO> byId, ref int errors)
     {
-        if (string.IsNullOrEmpty(dto.ammo)) return;   // 생략 = 유지
-
-        if (byId.TryGetValue(dto.ammo, out var so) && so is ItemDataSO item)
+        if (!string.IsNullOrEmpty(dto.ammo))   // 생략 = 유지
         {
-            if (item.GetModule<AmmoModuleSO>() == null)
-                Debug.LogWarning($"[GameDataImporter] {file} guns '{dto.id}': 탄약 '{dto.ammo}'에 " +
-                                 "AmmoModule이 없습니다 — 발사해도 효과가 없습니다 (attackEffects 확인)");
-            gun.ammo = item;
-            EditorUtility.SetDirty(gun);
+            if (byId.TryGetValue(dto.ammo, out var so) && so is ItemDataSO item)
+            {
+                if (item.GetModule<AmmoModuleSO>() == null)
+                    Debug.LogWarning($"[GameDataImporter] {file} guns '{dto.id}': 탄약 '{dto.ammo}'에 " +
+                                     "AmmoModule이 없습니다 — 발사해도 효과가 없습니다 (attackEffects 확인)");
+                gun.ammo = item;
+                EditorUtility.SetDirty(gun);
+            }
+            else
+            {
+                Debug.LogError($"[GameDataImporter] {file} guns '{dto.id}': 탄약 id '{dto.ammo}' 를 찾을 수 없습니다");
+                errors++;
+            }
         }
-        else
+
+        // 장전 가능 탄종 — 탄종 전환의 범위 (포탑 ammoFilter와 같은 해석기)
+        if (dto.ammoFilter != null)
         {
-            Debug.LogError($"[GameDataImporter] {file} guns '{dto.id}': 탄약 id '{dto.ammo}' 를 찾을 수 없습니다");
-            errors++;
+            gun.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
+            EditorUtility.SetDirty(gun);
         }
     }
 
@@ -536,13 +547,14 @@ public static class GameDataImporter
         }
 
         // 탄도 — 탄의 물리 성질(발사기가 아니라 탄약 소유). 0이 정당한 값이라 음수가 생략 신호다.
-        if (dto.speed >= 0f || dto.gravity >= 0f || dto.explosionRadius >= 0f || dto.lifetime >= 0f)
+        if (dto.speed >= 0f || dto.gravity >= 0f || dto.explosionRadius >= 0f || dto.lifetime >= 0f || dto.pierce >= 0)
         {
             var ammo = EnsureModule<AmmoModuleSO>(item);
             if (dto.speed           >= 0f) ammo.speed           = dto.speed;
             if (dto.gravity         >= 0f) ammo.gravity         = dto.gravity;
             if (dto.explosionRadius >= 0f) ammo.explosionRadius = dto.explosionRadius;
             if (dto.lifetime        >= 0f) ammo.lifetime        = dto.lifetime;
+            if (dto.pierce          >= 0)  ammo.pierce          = dto.pierce;
         }
 
         // 무기 모듈 — 아이템 ↔ 총 데이터 연결
@@ -711,6 +723,7 @@ public static class GameDataImporter
             case TowerDataSO tower:
                 if (dto.damageMultiplier > 0f) tower.damageMultiplier = dto.damageMultiplier;
                 if (dto.range > 0f) tower.range = dto.range;
+                if (dto.minRange >= 0f) tower.minRange = dto.minRange;   // 0 정당 — 음수가 생략 신호
                 if (dto.fireRate > 0f) tower.fireRate = dto.fireRate;
                 if (!string.IsNullOrEmpty(dto.fireMode))
                 {

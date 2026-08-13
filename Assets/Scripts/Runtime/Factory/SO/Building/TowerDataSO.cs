@@ -22,6 +22,9 @@ public class TowerDataSO : BuildingDataSO
     [Tooltip("사거리(타일).")]
     public float range = 8f;
 
+    [Tooltip("최소 사거리 — 이보다 가까운 적은 조준하지 못한다(박격포의 사각). 0 = 제한 없음.")]
+    public float minRange;
+
     [Tooltip("발/초. Aura는 펄스 주기의 역수 (0.2 = 5초마다 펄스).")]
     public float fireRate = 1f;
 

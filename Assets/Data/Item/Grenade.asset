@@ -21,6 +21,7 @@ MonoBehaviour:
   gravity: 9.8
   explosionRadius: 3
   lifetime: 6
+  pierce: 0
   bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:

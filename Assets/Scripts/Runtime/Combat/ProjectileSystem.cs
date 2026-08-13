@@ -31,11 +31,13 @@ public readonly struct ProjectileShot
     public readonly float ExplosionRadius; // 착탄 폭발 반경 — 0이면 단일 명중, >0이면 착탄점 Pulse
     public readonly FireMode Mode;         // 전달 방식 — 발사기(GunData·TowerDataSO)가 정한다
     public readonly GameObject Prefab;     // 탄 외형(탄약의 bulletPrefab) — Projectile은 판정하는 몸, Hitscan은 트레이서 연출
+    public readonly int Pierce;            // 추가 관통 대상 수 — 0이면 첫 대상에서 멈춤 (탄약의 성질)
 
     public ProjectileShot(float speed, float lifetime, float range,
                           EffectEntry[] effects, int targetMask, Entity source,
                           float gravity = 0f, float explosionRadius = 0f,
-                          FireMode mode = FireMode.Projectile, GameObject prefab = null)
+                          FireMode mode = FireMode.Projectile, GameObject prefab = null,
+                          int pierce = 0)
     {
         Speed = speed;
         Lifetime = lifetime;
@@ -47,6 +49,7 @@ public readonly struct ProjectileShot
         ExplosionRadius = explosionRadius;
         Mode = mode;
         Prefab = prefab;
+        Pierce = pierce;
     }
 }
 
@@ -118,18 +121,54 @@ public static class ProjectileSystem
     /// <summary>
     /// 히트스캔 발사 — 투사체 없이 즉시 판정. 명중했으면 true.
     /// 트리거(총알 등)는 무시하고, 발사자 자신도 무시한다.
+    /// Pierce > 0이면 경로의 대상을 (1+Pierce)명까지 차례로 뚫는다 — 단 벽·건물 같은
+    /// 비대상 콜라이더에서는 빔이 멈춘다 (에너지탄이 관통해도 차폐는 차폐).
     /// </summary>
     public static bool Hitscan(Vector3 origin, Vector3 direction, in ProjectileShot shot)
     {
         if (direction.sqrMagnitude < 0.0001f) return false;
+        direction.Normalize();
 
         Transform ignore = shot.Source != null ? shot.Source.transform.root : null;
-        if (!TryClosestHit(origin, direction.normalized, shot.Range, 0f, ignore, out RaycastHit hit))
-            return false;
 
-        Impact(hit.collider, hit.point, shot);
-        return true;
+        if (shot.Pierce <= 0)
+        {
+            if (!TryClosestHit(origin, direction, shot.Range, 0f, ignore, out RaycastHit hit))
+                return false;
+
+            Impact(hit.collider, hit.point, shot);
+            return true;
+        }
+
+        // 관통 — 경로의 모든 히트를 거리순으로 밟는다
+        int count = Physics.RaycastNonAlloc(origin, direction, hitBuffer, shot.Range,
+                                            Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+        System.Array.Sort(hitBuffer, 0, count, hitByDistance);
+
+        pulseSeen.Clear(); // 콜라이더 여러 개인 대상 중복 방지 (버퍼 재사용)
+        int applied = 0;
+        for (int i = 0; i < count; i++)
+        {
+            var h = hitBuffer[i];
+            if (ignore != null && h.transform.IsChildOf(ignore)) continue;
+
+            if ((shot.TargetMask & (1 << h.collider.gameObject.layer)) == 0) break; // 차폐물 — 빔 종료
+
+            Entity entity = h.collider.GetComponentInParent<Entity>();
+            if (entity == null || entity.IsDead || !pulseSeen.Add(entity)) continue;
+
+            entity.ApplyEffects(shot.Effects, shot.Source, h.point);
+            applied++;
+            if (applied > shot.Pierce) break;
+        }
+        return applied > 0;
     }
+
+    private class HitDistanceComparer : IComparer<RaycastHit>
+    {
+        public int Compare(RaycastHit a, RaycastHit b) => a.distance.CompareTo(b.distance);
+    }
+    private static readonly HitDistanceComparer hitByDistance = new HitDistanceComparer();
 
     /// <summary>
     /// 발사자(ignoreRoot 소속)를 제외한 가장 가까운 히트를 찾는다.

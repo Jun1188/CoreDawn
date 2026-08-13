@@ -51,7 +51,10 @@
       "spreadRecoveryRate": 5,
       "magSize": 12,
       "ammo": "Item:BasicAmmo",
-      "damageMultiplier": 1
+      "damageMultiplier": 1,
+      "ammoFilter": [
+        "Item:BasicAmmo"
+      ]
     },
     {
       "id": "Gun:Rifle",
@@ -73,7 +76,10 @@
       "spreadRecoveryRate": 5,
       "magSize": 30,
       "ammo": "Item:BasicAmmo",
-      "damageMultiplier": 1.4
+      "damageMultiplier": 1.4,
+      "ammoFilter": [
+        "Item:BasicAmmo"
+      ]
     },
     {
       "id": "Gun:Shotgun",
@@ -96,7 +102,10 @@
       "magSize": 8,
       "ammo": "Item:DenseAmmo",
       "damageMultiplier": 0.5,
-      "pellets": 8
+      "pellets": 8,
+      "ammoFilter": [
+        "Item:DenseAmmo"
+      ]
     },
     {
       "id": "Gun:Sniper",
@@ -118,7 +127,11 @@
       "spreadRecoveryRate": 3,
       "magSize": 5,
       "ammo": "Item:DenseAmmo",
-      "damageMultiplier": 4
+      "damageMultiplier": 4,
+      "ammoFilter": [
+        "Item:DenseAmmo",
+        "Item:CrystalAmmo"
+      ]
     },
     {
       "id": "Gun:GrenadeLauncher",
@@ -140,7 +153,10 @@
       "spreadRecoveryRate": 4,
       "magSize": 4,
       "ammo": "Item:Grenade",
-      "damageMultiplier": 1
+      "damageMultiplier": 1,
+      "ammoFilter": [
+        "Item:Grenade"
+      ]
     },
     {
       "id": "Gun:EnergyRifle",
@@ -162,7 +178,10 @@
       "spreadRecoveryRate": 6,
       "magSize": 20,
       "ammo": "Item:EnergyCellAmmo",
-      "damageMultiplier": 1.2
+      "damageMultiplier": 1.2,
+      "ammoFilter": [
+        "Item:EnergyCellAmmo"
+      ]
     }
   ],
   "items": [
@@ -348,7 +367,8 @@
       "speed": 60,
       "gravity": 0,
       "explosionRadius": 0,
-      "lifetime": 3
+      "lifetime": 3,
+      "pierce": 4
     },
     {
       "id": "Item:NavControlUnit",
@@ -1962,7 +1982,8 @@
       "fireMode": "Projectile",
       "preferHighArc": true,
       "defaultAmmo": "Item:Grenade",
-      "muzzleHeight": 1.8
+      "muzzleHeight": 1.8,
+      "minRange": 5
     },
     {
       "id": "Building:LaserTower",
