@@ -82,36 +82,50 @@ public class Gun : MonoBehaviour
 
         if (Time.time < lastFireTime + gunData.fireRate) return false;
 
-        CurrentAmmo--;
+        // 샷건은 방아쇠 한 번에 펠릿 수만큼 탄을 소비한다 — 탄창이 모자라면 남은 만큼만 나간다
+        int rounds = Mathf.Min(CurrentAmmo, Mathf.Max(1, gunData.pellets));
+        CurrentAmmo -= rounds;
         lastFireTime = Time.time;
         currentSpread = Mathf.Min(currentSpread + gunData.spreadIncreasePerShot, gunData.maxSpread);
 
-        Fire();
+        Fire(rounds);
         Fired?.Invoke(this);
         return true;
     }
 
     // 발사 — 스펙(ProjectileShot)을 만들어 공용 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
-    private void Fire()
+    private void Fire(int rounds)
     {
-        Vector3 origin = muzzlePoint != null ? muzzlePoint.position : transform.position;
+        // 탄도(속도·중력·폭발·수명·외형)는 탄약의 성질 — 총은 각도(조준·탄퍼짐)만 정한다
+        var round = gunData.AmmoModule;
+        if (round == null)
+        {
+            Debug.LogWarning($"[Gun] '{gunData.Id}'에 탄약(AmmoModule)이 배선되지 않았습니다 — 발사 불가.");
+            return;
+        }
 
-        // 탄퍼짐 적용 (정면 방향에 랜덤한 구형 오차를 더함)
-        Vector3 direction = (muzzlePoint != null ? muzzlePoint.forward : transform.forward);
-        direction += UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
+        Vector3 origin = muzzlePoint != null ? muzzlePoint.position : transform.position;
+        Vector3 forward = muzzlePoint != null ? muzzlePoint.forward : transform.forward;
 
         // 명중 효과는 장전된 탄약이 정의하고(타워와 같은 원칙), 총은 배율만 곱는다(피해형 항목에만).
         // 공격 버프는 발사 시점에 항목별로 구워진다 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지.
-        var effects = ProjectileSystem.ScaleDamage(gunData.AmmoEffects, gunData.damageMultiplier);
+        var effects = ProjectileSystem.ScaleDamage(round.attackEffects, gunData.damageMultiplier);
         if (OwnerEntity != null) effects = OwnerEntity.Effects.BakeOutgoing(effects);
 
-        var shot = new ProjectileShot(gunData.bulletSpeed, 3f, gunData.range,
-                                      effects, gunData.enemyLayer, OwnerEntity);
+        var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
+                                      effects, gunData.enemyLayer, OwnerEntity,
+                                      round.gravity, round.explosionRadius);
 
-        if (gunData.fireMode == FireMode.Hitscan)
-            ProjectileSystem.Hitscan(origin, direction, shot);
-        else
-            ProjectileSystem.Fire(gunData.bulletPrefab, origin, direction, shot);
+        // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것
+        for (int i = 0; i < rounds; i++)
+        {
+            Vector3 direction = forward + UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
+
+            if (gunData.fireMode == FireMode.Hitscan)
+                ProjectileSystem.Hitscan(origin, direction, shot);
+            else
+                ProjectileSystem.Fire(round.bulletPrefab, origin, direction, shot);
+        }
     }
 
     public void StartReload()

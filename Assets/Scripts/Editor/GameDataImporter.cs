@@ -67,8 +67,8 @@ public static class GameDataImporter
         public string description;
         public bool   isAutomatic;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것
         public string fireMode;      // Projectile | Hitscan | Aura. 생략 시 유지
-        public float  fireRate, bulletSpeed, range, reloadTime, zoomFOV;   // >0일 때만 덮음
-        public int    magSize;                                             // >0일 때만 덮음
+        public float  fireRate, range, reloadTime, zoomFOV;   // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
+        public int    magSize, pellets;                       // >0일 때만 덮음. pellets = 방아쇠당 탄 수(샷건 8)
 
         // 명중 효과는 탄약이 정의한다 — 총은 쓰는 탄약(아이템 id)과 배율만 갖는다
         public string ammo;                      // 예: "Item:BasicAmmo" (AmmoModule 필수). 생략 시 유지
@@ -92,6 +92,9 @@ public static class GameDataImporter
         public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
         public float  damage;        // Ammo 전용 구 숏컷 — attackEffects가 없을 때만 {Damage, damage}로 변환
         public string gun;           // Weapon 전용 — 연결할 GunData id (예: "Gun:Rifle")
+
+        // Ammo 탄도 — 탄의 물리 성질(발사기가 아니라 탄약 소유). 0이 정당한 값(직선·무폭발)이라 음수가 생략(유지) 신호다
+        public float  speed = -1f, gravity = -1f, explosionRadius = -1f, lifetime = -1f;
     }
 
     [Serializable] class SlotDto { public string item; public int amount; }
@@ -130,9 +133,10 @@ public static class GameDataImporter
         public string   modelCurveL, modelCurveR;
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
-        public string   fireMode;                            // Tower — Projectile | Hitscan | Aura
-        public float    bulletSpeed, bulletLifetime;         // Tower (>0일 때만 덮음)
+        public string   fireMode;                            // Tower — Projectile | Hitscan | Aura | None
         public float    muzzleHeight = -1f;                  // Tower — 0 정당, 음수 = 생략(유지)
+        public bool     preferHighArc;                       // Tower — 곡사 시 고각 선택(박격포). bool은 항상 명시
+        public string   defaultAmmo;                         // Tower — 무공급(씬 배치) 폴백 탄 아이템 id. 생략 시 유지
         public string[] ammoFilter;                          // Tower
         public TierDto[] tiers;                              // Core
     }
@@ -404,9 +408,9 @@ public static class GameDataImporter
         }
 
         if (dto.fireRate    > 0f) gun.fireRate    = dto.fireRate;
-        if (dto.bulletSpeed > 0f) gun.bulletSpeed = dto.bulletSpeed;
         if (dto.range       > 0f) gun.range       = dto.range;
         if (dto.magSize     > 0)  gun.magSize     = dto.magSize;
+        if (dto.pellets     > 0)  gun.pellets     = dto.pellets;
         if (dto.reloadTime  > 0f) gun.reloadTime  = dto.reloadTime;
         if (dto.zoomFOV     > 0f) gun.zoomFOV     = dto.zoomFOV;
 
@@ -529,6 +533,16 @@ public static class GameDataImporter
                 else list.Insert(0, new EffectEntry(damageEffect, dto.damage));
                 ammo.attackEffects = list.ToArray();
             }
+        }
+
+        // 탄도 — 탄의 물리 성질(발사기가 아니라 탄약 소유). 0이 정당한 값이라 음수가 생략 신호다.
+        if (dto.speed >= 0f || dto.gravity >= 0f || dto.explosionRadius >= 0f || dto.lifetime >= 0f)
+        {
+            var ammo = EnsureModule<AmmoModuleSO>(item);
+            if (dto.speed           >= 0f) ammo.speed           = dto.speed;
+            if (dto.gravity         >= 0f) ammo.gravity         = dto.gravity;
+            if (dto.explosionRadius >= 0f) ammo.explosionRadius = dto.explosionRadius;
+            if (dto.lifetime        >= 0f) ammo.lifetime        = dto.lifetime;
         }
 
         // 무기 모듈 — 아이템 ↔ 총 데이터 연결
@@ -703,9 +717,18 @@ public static class GameDataImporter
                     if (Enum.TryParse(dto.fireMode, true, out FireMode fm)) tower.fireMode = fm;
                     else { Debug.LogError($"[GameDataImporter] {file} buildings '{dto.id}': 알 수 없는 fireMode '{dto.fireMode}'"); errors++; }
                 }
-                if (dto.bulletSpeed > 0f) tower.bulletSpeed = dto.bulletSpeed;
-                if (dto.bulletLifetime > 0f) tower.bulletLifetime = dto.bulletLifetime;
                 if (dto.muzzleHeight >= 0f) tower.muzzleHeight = dto.muzzleHeight;   // 0 정당 — 음수가 생략 신호
+                tower.preferHighArc = dto.preferHighArc;   // bool은 생략 판별 불가 — json이 항상 명시한다
+                if (!string.IsNullOrEmpty(dto.defaultAmmo))
+                {
+                    if (byId.TryGetValue(dto.defaultAmmo, out var da) && da is ItemDataSO defAmmo)
+                        tower.defaultAmmo = defAmmo;
+                    else
+                    {
+                        Debug.LogError($"[GameDataImporter] {file} buildings '{dto.id}': defaultAmmo id '{dto.defaultAmmo}' 를 찾을 수 없습니다");
+                        errors++;
+                    }
+                }
                 tower.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
                 break;
 

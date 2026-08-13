@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7be05d876c35f7a499414f3d43c683b7, type: 3}
+  m_Name: GrenadeLauncher
+  m_EditorClassIdentifier: Assembly-CSharp::GunData
+  id: Gun:GrenadeLauncher
+  displayName: "\uC720\uD0C4 \uBC1C\uC0AC\uAE30"
+  description: "\uBC94\uC704. \uBC15\uACA9\uD3EC \uD0C0\uC6CC\uC640 \uD0C4\uC57D\uC744
+    \uACF5\uC720\uD55C\uB2E4."
+  icon: {fileID: 0}
+  isAutomatic: 0
+  fireMode: 0
+  fireRate: 2
+  range: 50
+  pellets: 1
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  ammo: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
+  damageMultiplier: 1
+  magSize: 4
+  reloadTime: 2.5
+  zoomFOV: 40
+  xRecoil: 6
+  yRecoil: 4
+  zRecoil: 2
+  visualKickbackZ: 0.5
+  visualKickbackRot: {x: 1, y: 1, z: 1}
+  baseSpread: 1
+  maxSpread: 4
+  spreadIncreasePerShot: 1
+  spreadRecoveryRate: 4

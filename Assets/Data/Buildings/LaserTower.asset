@@ -41,9 +41,8 @@ MonoBehaviour:
   damageMultiplier: 2.8
   range: 14
   fireRate: 3
-  bulletPrefab: {fileID: 0}
-  bulletSpeed: 25
-  bulletLifetime: 3
   muzzleHeight: 1.2
+  preferHighArc: 0
   ammoFilter:
   - {fileID: 11400000, guid: fb4b36fa8fcb05248a3cf6d0c0d1a668, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: fb4b36fa8fcb05248a3cf6d0c0d1a668, type: 2}

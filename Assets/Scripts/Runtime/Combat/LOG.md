@@ -353,3 +353,49 @@ ItemDataSO 하나이고, 역할은 `modules` 목록의 모듈이 정의한다:
 - 발사형 타워 4종에 bulletPrefab 배선(구 미배선 → 근접 폴백이던 것이 진짜 발사 타워로).
 - 플레이 실측 4경로: 총(탄약 효과·BaseDamage 10) / 발사 타워 사살 / 레이저(Hitscan) 사살 /
   오라 펄스(연료 효과 → 감속 0.5). 재임포트 왕복 정상.
+
+---
+
+## 2026-08-13 — 탄도는 탄의 성질 — 곡사·폭발·펠릿을 데이터로
+
+### 원칙 (사용자 확정 — "gravity는 탄약 소유지. 발사기가 할 건 어느 각도로 쏠 것인가지")
+발사 특성의 소유를 물리적으로 정직하게 재배치했다:
+
+| 층 | 담당 |
+|---|---|
+| **탄약** (AmmoModuleSO) | 효과 + **탄도 전부**: speed·gravity·explosionRadius·lifetime·bulletPrefab |
+| **발사기** (GunData·TowerDataSO) | **각도**(조준·탄퍼짐·곡사 고각)·연사·배율·소비·펠릿 수 |
+
+같은 유탄은 유탄발사기에서 쏘든 박격포에서 쏘든 같은 속도로 포물선을 그리며 같은
+반경으로 터진다 — "박격포 타워와 탄약을 공유한다"가 저절로 성립한다.
+따라온 결과: 여러 총이 공유하는 탄약은 탄속이 하나다(권총 60·라이플 80이던
+bulletSpeed → BasicAmmo 70으로 통일. 총별 차이는 연사·배율·탄퍼짐으로).
+
+- `ProjectileShot`에 Gravity·ExplosionRadius. `Bullet`은 속도 벡터 적분 — 중력탄은
+  스윕 방향이 매 프레임 함께 굽는다(관통 방지 그대로). 사거리는 곡사 시 수평 거리로
+  잰다 — 고각 정점이 직선 기준을 넘겨 공중 소멸하면 안 되니까.
+- **폭발 = 착탄점 Pulse** (`ProjectileSystem.Impact`) — 오라용으로 만든 코드가 그대로
+  폭발 처리기. 수명 만료 순간에도 터진다(유탄 공중폭발). 히트스캔 폭발도 같은 분기.
+- **`BallisticAim`** — 고정 초속·중력의 탄도해(tanθ 공식, 저각/고각 선택, 도달 불가면
+  45°). 발사기는 각도만 정한다는 문법의 "각도 계산기". 박격포 = preferHighArc.
+- `GunData.pellets` — 샷건 8. 방아쇠 한 번에 펠릿마다 따로 탄퍼짐, 탄창도 그만큼 소비
+  ("한 번에 8발을 소비한다"). BaseDamage는 방아쇠당 총량(×펠릿).
+- `TowerBehavior.TryConsumeRound`가 효과 배열 대신 **모듈(효과+탄도)** 반환 — 소비한
+  탄이 발사의 내용 전부를 정의한다. 무공급 씬 타워는 `defaultAmmo`로 무한 사격
+  (구 combat 폴백 대체 — 근접 폴백은 탄 정의가 아예 없을 때만).
+- GunData·TowerDataSO에서 bulletSpeed·bulletLifetime·bulletPrefab 삭제. json 스키마
+  이동: guns.bulletSpeed 삭제·pellets 추가, items(Ammo)에 speed·gravity·
+  explosionRadius·lifetime(음수 센티널 — 0이 정당), buildings Tower에 preferHighArc
+  (bool 항상 명시)·defaultAmmo. 유탄 = v25·g9.8·폭발r3·수명6.
+
+### 검증 (플레이 실측)
+- 곡사해 각도: 거리 15에서 고각 83.3°·저각 2.9° — 손계산과 일치.
+- 포물선: 고각 유탄이 y=2 → 25.7(발사 3.7초, 이론 26.7) → 하강·착지.
+- 폭발 AoE: 박격포(배율 3.5)가 반경 2m 밀집 3마리를 유탄 한 발 범위로 전멸.
+- 샷건: 방아쇠 한 번에 탄창 8→0 (pellets=8), BaseDamage 96(12×8).
+- 기본 포탑 회귀: defaultAmmo(BasicAmmo) 직선탄 사살 정상.
+
+### 남은 격차 (json에 적혔지만 코드 미구현)
+- **지뢰(Mine)**: "밟으면 터진다·1회용" — 근접 기폭·자폭 코드 없음. 지금은 불활성.
+- **에너지 소총 "관통"**: 히트스캔이 첫 대상에서 멈춤 — 관통 판정 없음.
+- **박격포 "근접한 적은 때리지 못한다"**: 최소 사거리 개념 없음.

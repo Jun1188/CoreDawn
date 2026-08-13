@@ -25,18 +25,21 @@ public class TowerDataSO : BuildingDataSO
     [Tooltip("발/초. Aura는 펄스 주기의 역수 (0.2 = 5초마다 펄스).")]
     public float fireRate = 1f;
 
-    [Header("발사체 (Projectile 전용)")]
-    [Tooltip("총알 프리팹(Bullet 컴포넌트 필요) — 에셋 참조라 json 밖. 비우면 즉시 공격 폴백.")]
-    public GameObject bulletPrefab;
-    public float bulletSpeed = 25f;
-    public float bulletLifetime = 3f;
+    [Header("조준 — 탄도(탄속·중력·폭발)는 탄약(AmmoModuleSO)의 성질, 발사기는 각도만 정한다")]
     [Tooltip("총구 위치 오프셋(로컬 높이) — 타워 콜라이더 밖에서 발사되도록.")]
     public float muzzleHeight = 1.2f;
+
+    [Tooltip("중력 있는 탄을 쏠 때 고각 궤적을 고른다 — 박격포는 장애물을 넘겨 쏘고, 직사 발사기는 저각으로 빨리 닿는다.")]
+    public bool preferHighArc;
 
     [Header("보급")]
     [Tooltip("이 포탑이 받을 수 있는 탄약·연료. 비우면 아무것도 소비하지 않는다.\n" +
              "무엇을 먹을 수 있는가가 곧 포탑의 성격이다 — 기본 포탑은 다 받고, 중기관은 고밀도 이상만.")]
     public ItemDataSO[] ammoFilter;
+
+    [Tooltip("무공급 폴백 탄 — 심 없이 씬에 직접 놓인 타워가 무한 사격할 때 가정하는 탄약.\n" +
+             "벨트 보급 타워(심 배치)에서는 쓰이지 않는다 — 그쪽은 실제 소비한 탄이 정의한다.")]
+    public ItemDataSO defaultAmmo;
 
     public override IBuildingBehavior CreateBehavior(Building building)
         => new TowerBehavior(building, this);
@@ -90,21 +93,22 @@ public class TowerBehavior : IBuildingBehavior
     public bool HasAmmo => _b.Input.HasAny;
 
     /// <summary>
-    /// 한 발 소비하고 그 탄약의 명중 효과 목록을 돌려준다. 탄약이 없으면 false.
+    /// 한 발 소비하고 그 탄약의 모듈(명중 효과 + 탄도)을 돌려준다. 탄약이 없으면 false.
+    /// 소비한 탄이 발사의 전부를 정의한다 — 유탄을 먹인 박격포는 포물선 폭발탄을 쏜다.
     /// 크기 배율(damageMultiplier)은 씬 쪽(BattleTower)이 발사 스펙에 싣는다.
     /// 소비 후 상류를 깨워, 버퍼가 꽉 차 멈춰 있던 벨트가 다시 흐르게 한다.
     /// IsPassive여도 소비는 막지 않는다 — 감속 필드는 펄스마다 에너지 셀을 연료로 태운다.
     /// </summary>
-    public bool TryConsumeRound(out EffectEntry[] effects)
+    public bool TryConsumeRound(out AmmoModuleSO round)
     {
-        effects = null;
+        round = null;
 
         foreach (var (item, n) in _b.Input.Snapshot())
         {
             if (n <= 0 || !_b.Input.TryConsume(item, 1)) continue;
 
-            // 명중 효과는 탄약(모듈)이 갖고 포탑은 배율만 갖는다
-            effects = item.GetModule<AmmoModuleSO>()?.attackEffects;
+            // 효과·탄도는 탄약(모듈)이 갖고 포탑은 배율·각도만 갖는다
+            round = item.GetModule<AmmoModuleSO>();
             _b.NotifyUpstream();
             return true;
         }

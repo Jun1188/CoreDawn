@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SlowEffectSO
   id: Effect:SlowField
   displayName: "\uAC10\uC18D \uD544\uB4DC"
-  description: "value = \uC774\uB3D9\uC18D\uB3C4 \uBC30\uC728 (0.5 = \uC808\uBC18,
-    1\uBCF4\uB2E4 \uD06C\uBA74 \uAC00\uC18D). \uAC10\uC18D \uD544\uB4DC \uD0C0\uC6CC\uC758
-    \uC624\uB77C."
+  description: "value = \uC774\uB3D9\uC18D\uB3C4 \uBC30\uC728 (0.5 = \uC808\uBC18).
+    \uAC10\uC18D \uD544\uB4DC \uD0C0\uC6CC\uC758 \uC624\uB77C."
   icon: {fileID: 0}
   duration: 6
   stacking: 0

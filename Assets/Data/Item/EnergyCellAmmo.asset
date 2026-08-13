@@ -34,5 +34,12 @@ MonoBehaviour:
   m_Name: AmmoModuleSO
   m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
   attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 30
   - effect: {fileID: 11400000, guid: 31b0fd9d8106bdf47922c4c2a49c0986, type: 2}
     value: 0.5
+  speed: 60
+  gravity: 0
+  explosionRadius: 0
+  lifetime: 3
+  bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}

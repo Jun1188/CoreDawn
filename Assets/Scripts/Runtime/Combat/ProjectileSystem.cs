@@ -27,9 +27,12 @@ public readonly struct ProjectileShot
     public readonly int TargetMask;        // 효과를 적용할 레이어 (0이면 적용 없음, 소멸만)
     public readonly EffectEntry[] Effects; // 명중 시 무슨 일이 일어나는가 — 배율이 이미 구워진 최종 목록
     public readonly Entity Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
+    public readonly float Gravity;         // 낙하 가속 — 0이면 직선탄, >0이면 포물선 (탄약의 성질)
+    public readonly float ExplosionRadius; // 착탄 폭발 반경 — 0이면 단일 명중, >0이면 착탄점 Pulse
 
     public ProjectileShot(float speed, float lifetime, float range,
-                          EffectEntry[] effects, int targetMask, Entity source)
+                          EffectEntry[] effects, int targetMask, Entity source,
+                          float gravity = 0f, float explosionRadius = 0f)
     {
         Speed = speed;
         Lifetime = lifetime;
@@ -37,6 +40,8 @@ public readonly struct ProjectileShot
         Effects = effects;
         TargetMask = targetMask;
         Source = source;
+        Gravity = gravity;
+        ExplosionRadius = explosionRadius;
     }
 }
 
@@ -69,7 +74,7 @@ public static class ProjectileSystem
         if (!TryClosestHit(origin, direction.normalized, shot.Range, 0f, ignore, out RaycastHit hit))
             return false;
 
-        ApplyHit(hit.collider, hit.point, shot);
+        Impact(hit.collider, hit.point, shot);
         return true;
     }
 
@@ -102,6 +107,17 @@ public static class ProjectileSystem
             }
         }
         return found;
+    }
+
+    /// <summary>
+    /// 착탄 처리 — 폭발탄(ExplosionRadius > 0)은 착탄점 반경 전원에게(Pulse), 아니면
+    /// 명중한 하나에게(ApplyHit). 투사체 스윕·히트스캔이 같은 분기를 쓴다.
+    /// 폭발은 오라와 같은 코드다 — "터진다"는 착탄점에서 한 번 펄스하는 것.
+    /// </summary>
+    public static void Impact(Collider hit, Vector3 point, in ProjectileShot shot)
+    {
+        if (shot.ExplosionRadius > 0f) Pulse(point, shot.ExplosionRadius, shot);
+        else ApplyHit(hit, point, shot);
     }
 
     /// <summary>명중 처리 — 맞은 것이 대상 레이어의 Entity면 실린 효과를 적용한다.</summary>
@@ -179,6 +195,33 @@ public static class ProjectileSystem
             scaled[i] = damageLike ? new EffectEntry(entry.effect, entry.value * multiplier) : entry;
         }
         return scaled;
+    }
+
+    // ── 곡사 조준 ───────────────────────────────────────────────
+
+    /// <summary>
+    /// 고정 초속·중력으로 표적을 맞추는 발사 방향(탄도해). 발사기는 각도만 정한다는
+    /// 문법의 "각도 계산기" — 탄속·중력은 탄약의 성질이라 인자로 받는다.
+    /// 같은 사거리에 해가 둘(저각·고각) 있으면 highArc로 고른다 — 박격포는 고각으로
+    /// 장애물을 넘기고, 직사 발사기는 저각으로 빨리 닿는다.
+    /// 초속이 모자라 닿지 않으면 최대 사거리인 45°로 최선을 다한다.
+    /// </summary>
+    public static Vector3 BallisticAim(Vector3 origin, Vector3 target, float speed, float gravity, bool highArc = false)
+    {
+        Vector3 delta = target - origin;
+        var flat = new Vector3(delta.x, 0f, delta.z);
+        float d = flat.magnitude;
+        if (d < 0.001f || gravity <= 0f || speed <= 0f)
+            return delta.sqrMagnitude > 0.0001f ? delta.normalized : Vector3.up;
+
+        // 포물선 공식: tanθ = (v² ± √(v⁴ − g(gd² + 2yv²))) / (gd)  (y = 높이차)
+        float v2 = speed * speed;
+        float disc = v2 * v2 - gravity * (gravity * d * d + 2f * delta.y * v2);
+        float tan = disc <= 0f
+            ? 1f // 도달 불가 — 45°
+            : (v2 + (highArc ? Mathf.Sqrt(disc) : -Mathf.Sqrt(disc))) / (gravity * d);
+
+        return (flat / d + Vector3.up * tan).normalized;
     }
 
     // ── 투사체 발사·풀 ──────────────────────────────────────────

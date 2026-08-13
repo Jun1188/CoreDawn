@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
+  m_Name: Recipe_EnergyRifle
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
+  id: Recipe:Recipe_EnergyRifle
+  displayName: "\uC5D0\uB108\uC9C0 \uC18C\uCD1D \uC81C\uC791"
+  description: "\uC77C\uC9C1\uC120\uC758 \uC801\uC744 \uAD00\uD1B5\uD55C\uB2E4."
+  icon: {fileID: 0}
+  tier: 3
+  inputs:
+  - item: {fileID: 11400000, guid: d98dc4dd6a76b4d428c80cade8daad06, type: 2}
+    amount: 6
+  - item: {fileID: 11400000, guid: a1135b33ec184ee49b0aa1c217acda9e, type: 2}
+    amount: 8
+  outputs:
+  - item: {fileID: 11400000, guid: e17b9bc7dbf8648459fd1b9b42945fe1, type: 2}
+    amount: 1
+  craftTime: 15

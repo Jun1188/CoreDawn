@@ -34,8 +34,7 @@ MonoBehaviour:
   damageMultiplier: 0
   range: 8
   fireRate: 1
-  bulletPrefab: {fileID: 0}
-  bulletSpeed: 25
-  bulletLifetime: 3
   muzzleHeight: 1.2
+  preferHighArc: 0
   ammoFilter: []
+  defaultAmmo: {fileID: 0}

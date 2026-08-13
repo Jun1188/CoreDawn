@@ -4,10 +4,9 @@ using UnityEngine;
 // 구 canAttack 분기를 상속으로 대체: 타워는 이 클래스, 비전투 건물은 BuildingEntity 그대로.
 //
 // 역할 분담 (총과 같은 문법):
-//   효과   = 소비한 탄약/연료 (AmmoModuleSO.attackEffects)
-//   타워   = 배율(damageMultiplier) · 조준 · 소비 시점 · 펄스 주기
+//   탄약   = 효과 + 탄도(탄속·중력·폭발·외형) — 소비한 AmmoModuleSO가 발사의 내용 전부
+//   타워   = 각도(조준·곡사) · 배율(damageMultiplier) · 소비 시점 · 펄스 주기
 //   전달   = ProjectileSystem — fireMode(Projectile/Hitscan/Aura)는 TowerDataSO(데이터)가 정한다
-// 발사 특성(탄속·수명·총구 높이·프리팹)도 전부 TowerDataSO에 있다 — 컴포넌트엔 수치가 없다.
 public class BattleTower : BuildingEntity
 {
     [Header("Tower Combat")]
@@ -88,21 +87,29 @@ public class BattleTower : BuildingEntity
         Entity target = sensor.GetClosestTarget(combat.AttackRange);
         if (!target.IsValidTarget()) return;
 
-        if (data.fireMode == FireMode.Projectile && data.bulletPrefab == null)
+        // 쏘기 직전에 한 발 소비 — 효과·탄도는 소비한 탄약이 정의하고, 타워는 각도·배율만.
+        AmmoModuleSO round = NextRound(data);
+        if (round == null || (data.fireMode == FireMode.Projectile && round.bulletPrefab == null))
         {
-            combat.TryAttack(target); // 폴백: 즉시 적용 (프리팹 미배선 — 효과는 combat이 정의)
+            combat.TryAttack(target); // 폴백: 즉시 적용 (탄 정의 없음 — 효과는 combat이 정의)
             return;
         }
 
-        // 쏘기 직전에 한 발 소비 — 명중 효과는 소비한 탄약이 정의하고, 타워는 배율만 곱한다.
-        // 심에 연결되지 않은 씬 타워(supply 없음)는 combat의 공격 정의로 무한 사격한다.
-        EffectEntry[] effects = combat.AttackEffects;
-        if (supply != null && !supply.TryConsumeRound(out effects)) return;
-        effects = ProjectileSystem.ScaleDamage(effects, data.damageMultiplier);
+        var effects = ProjectileSystem.ScaleDamage(round.attackEffects, data.damageMultiplier);
         effects = Effects.BakeOutgoing(effects); // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
 
-        FireAt(target, data, effects);
+        FireAt(target, data, round, effects);
         combat.MarkAttackPerformed(); // 효과는 전달 계층이 적용, 여긴 쿨다운만 소비
+    }
+
+    /// <summary>
+    /// 이번 발사의 탄 — 보급(심)이 있으면 실제로 한 발 소비하고, 없으면(씬 직접 배치)
+    /// defaultAmmo를 가정해 무한 사격한다. 없으면 null — 근접 폴백.
+    /// </summary>
+    private AmmoModuleSO NextRound(TowerDataSO data)
+    {
+        if (supply != null) return supply.TryConsumeRound(out var round) ? round : null;
+        return data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
     }
 
     // 오라 — 쏘는 대신 쿨다운(fireRate 주기)마다 반경 전원에게 펄스한다.
@@ -112,8 +119,8 @@ public class BattleTower : BuildingEntity
     {
         if (ProjectileSystem.CountTargets(transform.position, combat.AttackRange, monsterMask) == 0) return;
 
-        EffectEntry[] effects = combat.AttackEffects; // 무공급 폴백 (씬 배치 오라)
-        if (supply != null && !supply.TryConsumeRound(out effects)) return;
+        AmmoModuleSO round = NextRound(data);
+        EffectEntry[] effects = round != null ? round.attackEffects : combat.AttackEffects; // 구 씬 오라 폴백
         if (effects == null || effects.Length == 0) return;
 
         effects = ProjectileSystem.ScaleDamage(effects, data.damageMultiplier);
@@ -124,24 +131,34 @@ public class BattleTower : BuildingEntity
         combat.MarkAttackPerformed();
     }
 
-    private void FireAt(Entity target, TowerDataSO data, EffectEntry[] effects)
+    private void FireAt(Entity target, TowerDataSO data, AmmoModuleSO round, EffectEntry[] effects)
     {
         // 조준점: 대상 콜라이더 중심 (없으면 트랜스폼 위치)
         var targetCol = target.GetComponentInChildren<Collider>();
         Vector3 aimPoint = targetCol != null ? targetCol.bounds.center : target.GetPosition();
 
         Vector3 muzzle = transform.position + Vector3.up * data.muzzleHeight;
-        Vector3 dir = aimPoint - muzzle;
-        if (dir.sqrMagnitude < 0.0001f) return;
-        dir.Normalize();
 
-        var shot = new ProjectileShot(data.bulletSpeed, data.bulletLifetime, combat.AttackRange + 2f,
-                                      effects, monsterMask, this);
+        // 발사기의 일은 각도다 — 중력탄(유탄)은 탄도해로 조준각을 풀고, 직선탄은 그냥 겨눈다
+        Vector3 dir;
+        if (data.fireMode == FireMode.Projectile && round.gravity > 0f)
+        {
+            dir = ProjectileSystem.BallisticAim(muzzle, aimPoint, round.speed, round.gravity, data.preferHighArc);
+        }
+        else
+        {
+            dir = aimPoint - muzzle;
+            if (dir.sqrMagnitude < 0.0001f) return;
+            dir.Normalize();
+        }
+
+        var shot = new ProjectileShot(round.speed, round.lifetime, combat.AttackRange + 2f,
+                                      effects, monsterMask, this, round.gravity, round.explosionRadius);
 
         // 전달은 총(Gun)과 같은 공용 시스템 — 자기 명중 무시는 스윕/히트스캔 필터가 처리
         if (data.fireMode == FireMode.Hitscan)
             ProjectileSystem.Hitscan(muzzle, dir, shot);
         else
-            ProjectileSystem.Fire(data.bulletPrefab, muzzle + dir * 0.6f, dir, shot);
+            ProjectileSystem.Fire(round.bulletPrefab, muzzle + dir * 0.6f, dir, shot);
     }
 }
