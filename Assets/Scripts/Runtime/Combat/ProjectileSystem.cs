@@ -29,10 +29,13 @@ public readonly struct ProjectileShot
     public readonly Entity Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
     public readonly float Gravity;         // 낙하 가속 — 0이면 직선탄, >0이면 포물선 (탄약의 성질)
     public readonly float ExplosionRadius; // 착탄 폭발 반경 — 0이면 단일 명중, >0이면 착탄점 Pulse
+    public readonly FireMode Mode;         // 전달 방식 — 발사기(GunData·TowerDataSO)가 정한다
+    public readonly GameObject Prefab;     // 탄 외형(탄약의 bulletPrefab) — Projectile은 판정하는 몸, Hitscan은 트레이서 연출
 
     public ProjectileShot(float speed, float lifetime, float range,
                           EffectEntry[] effects, int targetMask, Entity source,
-                          float gravity = 0f, float explosionRadius = 0f)
+                          float gravity = 0f, float explosionRadius = 0f,
+                          FireMode mode = FireMode.Projectile, GameObject prefab = null)
     {
         Speed = speed;
         Lifetime = lifetime;
@@ -42,13 +45,16 @@ public readonly struct ProjectileShot
         Source = source;
         Gravity = gravity;
         ExplosionRadius = explosionRadius;
+        Mode = mode;
+        Prefab = prefab;
     }
 }
 
 /// <summary>
 /// 발사 공용 시스템 — 총(Gun)과 공격 타워(BattleTower)가 같은 코드로 쏜다.
-/// 투사체(Fire)와 히트스캔(Hitscan)은 같은 스펙(ProjectileShot)·같은 명중 처리(ApplyHit)를
-/// 공유한다 — 히트스캔은 속도 무한의 발사일 뿐이다.
+/// 진입점은 Fire(origin, direction, shot) 하나 — 전달 방식(shot.Mode) 분기는 여기서 끝나고,
+/// 네 모드 전부 같은 스펙(ProjectileShot)·같은 착탄 처리(Impact)를 공유한다.
+/// 히트스캔은 속도 무한의 발사, 오라는 반경 전체 명중의 발사일 뿐이다.
 ///
 /// 풀은 프리팹당 하나를 전역 공유한다. 총기마다 전용 풀을 들면 같은 총알 프리팹인데도
 /// 인스턴스가 이중으로 쌓이고, 타워처럼 풀 없이 Instantiate/Destroy 하던 곳은
@@ -57,6 +63,53 @@ public readonly struct ProjectileShot
 /// </summary>
 public static class ProjectileSystem
 {
+    // ── 발사 진입점 ─────────────────────────────────────────────
+
+    /// <summary>
+    /// 발사 한 번 — 발사기(총·타워)의 유일한 진입점. 발사기는 스펙(shot)만 만들고
+    /// 전달 방식은 모른다 — 분기는 여기서 끝난다.
+    ///
+    /// 판정과 연출의 분리: <b>판정은 모드의 물리대로</b>(히트스캔·오라 = 즉시, 투사체 =
+    /// 비행 스윕 — 판정을 인스턴스 Update에 태우면 프레임 지연·풀 수명 결합이 생긴다),
+    /// <b>인스턴스는 연출</b> — 히트스캔도 판정 직후 같은 탄 프리팹을 트레이서(판정 없는 탄)로
+    /// 날려 눈에 보인다. 프리팹이 없으면 연출만 생략되고 판정은 그대로다(헤드리스 안전).
+    /// </summary>
+    public static void Fire(Vector3 origin, Vector3 direction, in ProjectileShot shot)
+    {
+        switch (shot.Mode)
+        {
+            case FireMode.None:
+                return;
+
+            case FireMode.Hitscan:
+                Hitscan(origin, direction, shot);
+                SpawnTracer(origin, direction, shot);
+                return;
+
+            case FireMode.Aura:
+                Pulse(origin, shot.Range, shot);
+                return;
+
+            default: // Projectile — 인스턴스가 곧 판정하는 몸
+                Spawn(shot.Prefab, origin, direction, shot);
+                return;
+        }
+    }
+
+    /// <summary>
+    /// 히트스캔 연출용 트레이서 — 효과도 대상도 없는 탄(TargetMask 0)이 같은 궤적을 날아
+    /// 벽·대상에서 멈춘다. 판정은 이미 끝났다 — 이 탄은 눈을 위해서만 존재한다.
+    /// </summary>
+    private static void SpawnTracer(Vector3 origin, Vector3 direction, in ProjectileShot shot)
+    {
+        if (shot.Prefab == null) return;
+
+        var cosmetic = new ProjectileShot(shot.Speed, shot.Lifetime, shot.Range,
+                                          null, 0, shot.Source, shot.Gravity, 0f,
+                                          FireMode.Projectile, shot.Prefab);
+        Spawn(shot.Prefab, origin, direction, cosmetic);
+    }
+
     // ── 명중 판정 공용부 (투사체 스윕·히트스캔이 함께 쓴다) ──────────
 
     // GC 방지용 재사용 버퍼 (메인 스레드 전용, SensorComponent와 같은 패턴)
@@ -237,8 +290,8 @@ public static class ProjectileSystem
         poolRoot = null;
     }
 
-    /// <summary>발사체 하나를 발사한다. direction은 정규화돼 있지 않아도 된다.</summary>
-    public static Bullet Fire(GameObject prefab, Vector3 position, Vector3 direction, in ProjectileShot shot)
+    /// <summary>발사체 인스턴스 하나를 풀에서 꺼내 날린다. direction은 정규화돼 있지 않아도 된다.</summary>
+    private static Bullet Spawn(GameObject prefab, Vector3 position, Vector3 direction, in ProjectileShot shot)
     {
         if (prefab == null || direction.sqrMagnitude < 0.0001f) return null;
 

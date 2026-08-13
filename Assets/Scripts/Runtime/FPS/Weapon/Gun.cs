@@ -114,17 +114,15 @@ public class Gun : MonoBehaviour
 
         var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
                                       effects, gunData.enemyLayer, OwnerEntity,
-                                      round.gravity, round.explosionRadius);
+                                      round.gravity, round.explosionRadius,
+                                      gunData.fireMode, round.bulletPrefab);
 
-        // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것
+        // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것.
+        // 전달 방식(투사체/히트스캔)은 스펙에 실려 있다 — 분기는 ProjectileSystem이 한다.
         for (int i = 0; i < rounds; i++)
         {
             Vector3 direction = forward + UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
-
-            if (gunData.fireMode == FireMode.Hitscan)
-                ProjectileSystem.Hitscan(origin, direction, shot);
-            else
-                ProjectileSystem.Fire(round.bulletPrefab, origin, direction, shot);
+            ProjectileSystem.Fire(origin, direction, shot);
         }
     }
 

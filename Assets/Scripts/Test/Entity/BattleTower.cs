@@ -126,8 +126,9 @@ public class BattleTower : BuildingEntity
         effects = ProjectileSystem.ScaleDamage(effects, data.damageMultiplier);
         effects = Effects.BakeOutgoing(effects);
 
-        ProjectileSystem.Pulse(transform.position, combat.AttackRange,
-            new ProjectileShot(0f, 0f, combat.AttackRange, effects, monsterMask, this));
+        ProjectileSystem.Fire(transform.position, transform.forward,
+            new ProjectileShot(0f, 0f, combat.AttackRange, effects, monsterMask, this,
+                               mode: FireMode.Aura));
         combat.MarkAttackPerformed();
     }
 
@@ -153,12 +154,11 @@ public class BattleTower : BuildingEntity
         }
 
         var shot = new ProjectileShot(round.speed, round.lifetime, combat.AttackRange + 2f,
-                                      effects, monsterMask, this, round.gravity, round.explosionRadius);
+                                      effects, monsterMask, this, round.gravity, round.explosionRadius,
+                                      data.fireMode, round.bulletPrefab);
 
-        // 전달은 총(Gun)과 같은 공용 시스템 — 자기 명중 무시는 스윕/히트스캔 필터가 처리
-        if (data.fireMode == FireMode.Hitscan)
-            ProjectileSystem.Hitscan(muzzle, dir, shot);
-        else
-            ProjectileSystem.Fire(round.bulletPrefab, muzzle + dir * 0.6f, dir, shot);
+        // 전달은 총(Gun)과 같은 단일 진입점 — 방식 분기는 ProjectileSystem이 한다.
+        // 총구를 살짝 앞으로: 자기 명중은 필터가 걸러주지만 탄이 타워 모델 안에서 태어나지 않게.
+        ProjectileSystem.Fire(muzzle + dir * 0.6f, dir, shot);
     }
 }
