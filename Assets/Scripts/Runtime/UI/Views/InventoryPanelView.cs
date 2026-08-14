@@ -89,6 +89,7 @@ public class InventoryPanelView : PlayerItemPanelView
 
         BindCommon();
         if (GameManager.Instance != null) GameManager.Instance.TierUnlocked += OnTierUnlocked;
+        RecipeRewardUnlockService.RecipeUnlocked += OnRecipeRewardUnlocked;
 
         holding = false;
         progress = 0f;
@@ -109,6 +110,7 @@ public class InventoryPanelView : PlayerItemPanelView
             btnCraft.UnregisterCallback<PointerCaptureOutEvent>(OnCraftCaptureOut);
         }
         if (GameManager.Instance != null) GameManager.Instance.TierUnlocked -= OnTierUnlocked;
+        RecipeRewardUnlockService.RecipeUnlocked -= OnRecipeRewardUnlocked;
 
         holding = false;
         UnbindCommon();
@@ -121,6 +123,7 @@ public class InventoryPanelView : PlayerItemPanelView
     }
 
     void OnTierUnlocked(int _) => RebuildRecipes();
+    void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
 
     void OnSearchChanged(ChangeEvent<string> e)
     {

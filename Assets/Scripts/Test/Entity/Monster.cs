@@ -15,6 +15,8 @@ public class Monster : Entity
     private Vector3 defendOrigin;
     private float defendRadius = 30f;
     private Player currentTarget;
+    private Vector3 nestOrigin;
+    private NestEngagementZone engagementZone;
 
     // 보스 전용 변수
     private bool isBoss = false;
@@ -77,7 +79,8 @@ public class Monster : Entity
     protected override void Start()
     {
         base.Start();
-        StateMachine.SetState(new IdleState());
+        if (StateMachine.CurrentState == null)
+            StateMachine.SetState(new IdleState());
     }
 
     protected override void Update()
@@ -116,7 +119,8 @@ public class Monster : Entity
             else if (currentTarget != null && aggroOnPlayer)
             {
                 float distFromOrigin = Vector3.Distance(transform.position, defendOrigin);
-                if (distFromOrigin > defendRadius)
+                if (distFromOrigin > defendRadius ||
+                    (engagementZone != null && !engagementZone.CanChase(nestOrigin, currentTarget.transform.position)))
                 {
                     aggroOnPlayer = false;
                     currentTarget = null;
@@ -139,6 +143,7 @@ public class Monster : Entity
     public void OnDetectedByPlayer(Player player)
     {
         if (IsDead || aggroOnPlayer || !player.IsValidTarget()) return;
+        if (isNestDefender && engagementZone != null && !engagementZone.CanChase(nestOrigin, player.transform.position)) return;
         aggroOnPlayer = true;
         currentTarget = player;
         StateMachine.SetState(new ChaseState(player));
@@ -170,6 +175,20 @@ public class Monster : Entity
         currentTarget = target;
         aggroOnPlayer = true;
         StateMachine.SetState(new ChaseState(target));
+    }
+
+    public void SetAsNestDefender(Player target, Vector3 origin, NestEngagementZone zone)
+    {
+        isNestDefender = true;
+        defendOrigin = transform.position;
+        nestOrigin = origin;
+        engagementZone = zone;
+        defendRadius = zone != null ? zone.LeashRange : defendRadius;
+        currentTarget = target;
+        aggroOnPlayer = zone == null || zone.CanChase(nestOrigin, target.transform.position);
+        StateMachine.SetState(aggroOnPlayer
+            ? (IEntityState)new ChaseState(target)
+            : new ReturnToOriginState(defendOrigin));
     }
 
     // 방어자 전용 대기 상태 (FlowFieldState로 넘어가지 않음)

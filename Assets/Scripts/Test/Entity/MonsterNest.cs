@@ -47,6 +47,7 @@ public class MonsterNest : Entity
     private SensorComponent sensor = new SensorComponent();
     private bool hasWarned;
     private float lastDefenseSpawnTime;
+    private NestEngagementZone engagementZone;
 
 
     public bool IsDestroyed { get; private set; }
@@ -61,6 +62,7 @@ public class MonsterNest : Entity
         sensor.Initialize(this);
         sensor.SetTargetLayer("Player", "Character");
         sensor.SetDetectionRange(Mathf.Max(warningRange, triggerRange));
+        engagementZone = GetComponent<NestEngagementZone>();
     }
 
     protected override void Start()
@@ -73,7 +75,7 @@ public class MonsterNest : Entity
         }
         
         // 씬 시작 시 보스가 없다면 스폰 (에디터에서 씬 리로드를 안 했을 경우 대비)
-        if (spawnPoints != null)
+        if (engagementZone == null && spawnPoints != null)
         {
             foreach (var sp in spawnPoints)
             {
@@ -160,8 +162,13 @@ public class MonsterNest : Entity
             {
                 float dist = Vector3.Distance(transform.position, player.transform.position);
 
-                if (dist <= triggerRange)
+                bool canSpawn = engagementZone != null
+                    ? engagementZone.CanSpawnFor(transform.position, player.transform.position)
+                    : dist <= triggerRange;
+
+                if (canSpawn)
                 {
+                    EnsureBossesSpawned();
                     if (Time.time >= lastDefenseSpawnTime + defenseSpawnCooldown)
                     {
                         lastDefenseSpawnTime = Time.time;
@@ -171,7 +178,7 @@ public class MonsterNest : Entity
                         }
                     }
                 }
-                else if (dist <= warningRange)
+                else if ((engagementZone == null || engagementZone.IsActivePhase) && dist <= warningRange)
                 {
                     if (!hasWarned)
                     {
@@ -192,6 +199,23 @@ public class MonsterNest : Entity
         else
         {
             hasWarned = false;
+        }
+    }
+
+    private void EnsureBossesSpawned()
+    {
+        if (spawnPoints == null) return;
+
+        foreach (var sp in spawnPoints)
+        {
+            if (sp.isDestroyed || sp.point == null || sp.bossPrefab == null) continue;
+            if (sp.linkedBoss != null && !sp.linkedBoss.IsDead) continue;
+
+            Vector3 spawnPos = sp.point.position + sp.point.forward * 2f;
+            var go = Instantiate(sp.bossPrefab, spawnPos, sp.point.rotation, transform);
+            SnapBossToGround(go);
+            sp.linkedBoss = go.GetComponent<Monster>();
+            sp.linkedBoss?.SetAsBoss();
         }
     }
 
@@ -250,7 +274,7 @@ public class MonsterNest : Entity
                     if (sp.point != null) sp.point.gameObject.SetActive(true);
                     
                     // 보스 복구
-                    if (sp.bossPrefab != null && sp.point != null)
+                    if (engagementZone == null && sp.bossPrefab != null && sp.point != null)
                     {
                         Vector3 spawnPos = sp.point.position + sp.point.forward * 2f;
                         var go = Instantiate(sp.bossPrefab, spawnPos, sp.point.rotation, transform);
@@ -280,7 +304,7 @@ public class MonsterNest : Entity
         }
 
         // 밤 시작 시 보스가 없으면 스폰 (파괴되지 않은 스폰포인트에 한해)
-        if (!IsDestroyed && spawnPoints != null)
+        if (engagementZone == null && !IsDestroyed && spawnPoints != null)
         {
             foreach (var sp in spawnPoints)
             {

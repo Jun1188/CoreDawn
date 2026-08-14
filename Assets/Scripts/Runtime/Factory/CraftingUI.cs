@@ -64,6 +64,7 @@ public class CraftingUI : MonoBehaviour
         {
             GameManager.Instance.TierUnlocked += OnTierUnlocked;
         }
+        RecipeRewardUnlockService.RecipeUnlocked += OnRecipeRewardUnlocked;
 
         GenerateRecipeList();
     }
@@ -81,9 +82,11 @@ public class CraftingUI : MonoBehaviour
         {
             GameManager.Instance.TierUnlocked -= OnTierUnlocked;
         }
+        RecipeRewardUnlockService.RecipeUnlocked -= OnRecipeRewardUnlocked;
     }
 
     private void OnTierUnlocked(int _) => GenerateRecipeList();
+    private void OnRecipeRewardUnlocked(RecipeDataSO _) => GenerateRecipeList();
 
     private void Update()
     {

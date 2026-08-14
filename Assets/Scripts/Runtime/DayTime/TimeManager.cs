@@ -31,6 +31,16 @@ public class TimeManager : MonoBehaviour
     /// <summary>건축 가능한 타이밍(낮)인지 체크.</summary>
     public bool IsBuildingAllowed => Cycle.Phase == DayPhase.Day;
 
+    public bool IsNightCompletionControlled => Cycle != null && Cycle.IsNightCompletionControlled;
+
+    /// <summary>
+    /// Opt-in gate used by objective-based nights. False preserves the original timed night.
+    /// </summary>
+    public void SetNightCompletionControlled(bool controlled)
+    {
+        if (Cycle != null) Cycle.IsNightCompletionControlled = controlled;
+    }
+
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }

@@ -13,6 +13,11 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private FlowFieldManager flowFieldManager;
     [SerializeField] private WaveSpawnManager spawnManager = new WaveSpawnManager();
+    [SerializeField] private NightSpawnPointProvider nightSpawnPointProvider;
+
+    [Header("Night Wave Completion")]
+    [Tooltip("MainScene opt-in. When enabled, night ends only after the finite WaveDataSO.baseAmount quota is defeated. Legacy scenes keep timed nights by default.")]
+    [SerializeField] private bool quantityBasedNightWaves;
 
     [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 HealthComponent 기본값(100)을 쓴다.")]
     [SerializeField] private float playerMaxHealth = 300f;
@@ -28,6 +33,8 @@ public class BattleManager : MonoBehaviour
     public GridManager Grid => gridManager;
     public FlowFieldManager FlowField => flowFieldManager;
     public WaveSpawnManager Spawner => spawnManager;
+    public bool UsesQuantityBasedNightWaves => quantityBasedNightWaves;
+    public event System.Action<int, int> NightWaveCleared;
 
     private void Awake()
     {
@@ -43,6 +50,8 @@ public class BattleManager : MonoBehaviour
             gridManager = GridManager.Instance != null ? GridManager.Instance : FindFirstObjectByType<GridManager>();
         if (flowFieldManager == null)
             flowFieldManager = FlowFieldManager.Instance != null ? FlowFieldManager.Instance : FindFirstObjectByType<FlowFieldManager>();
+        if (nightSpawnPointProvider == null)
+            nightSpawnPointProvider = GetComponentInChildren<NightSpawnPointProvider>(true);
     }
 
     // 코어 파괴로 게임이 끝났는지 여부. UI/연출은 GameOver 이벤트를 구독하면 된다.
@@ -54,10 +63,17 @@ public class BattleManager : MonoBehaviour
         EnsurePlayerEntity();
         BuildingEntity.CoreDestroyed += OnCoreDestroyed;
 
-        spawnManager.Initialize(gridManager, transform);
+        spawnManager.SetQuantityBasedMode(quantityBasedNightWaves);
+        spawnManager.QuantityWaveCompleted += OnQuantityWaveCompleted;
+
+        if (nightSpawnPointProvider != null)
+            spawnManager.Initialize(gridManager, transform, nightSpawnPointProvider.SpawnPoints);
+        else
+            spawnManager.Initialize(gridManager, transform);
 
         if (TimeManager.Instance != null)
         {
+            TimeManager.Instance.SetNightCompletionControlled(quantityBasedNightWaves);
             TimeManager.Instance.Cycle.NightStarted += OnNightStarted;
             TimeManager.Instance.Cycle.DayStarted += OnDayStarted;
             spawnManager.SetSpawningEnabled(TimeManager.Instance.Phase == DayPhase.Night);
@@ -73,8 +89,11 @@ public class BattleManager : MonoBehaviour
     {
         if (Instance == this) Instance = null;
         BuildingEntity.CoreDestroyed -= OnCoreDestroyed;
+        spawnManager.QuantityWaveCompleted -= OnQuantityWaveCompleted;
         if (TimeManager.Instance != null)
         {
+            if (quantityBasedNightWaves)
+                TimeManager.Instance.SetNightCompletionControlled(false);
             TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
             TimeManager.Instance.Cycle.DayStarted -= OnDayStarted;
         }
@@ -133,6 +152,18 @@ public class BattleManager : MonoBehaviour
         spawnManager.SetSpawningEnabled(false);
         spawnManager.DespawnAll();
         RevivePlayerIfDead();
+    }
+
+    private void OnQuantityWaveCompleted(int defeatedAmount)
+    {
+        int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 1;
+        NightWaveCleared?.Invoke(day, defeatedAmount);
+
+        if (quantityBasedNightWaves && TimeManager.Instance != null &&
+            TimeManager.Instance.Phase == DayPhase.Night)
+        {
+            TimeManager.Instance.EndNightEarly();
+        }
     }
 
     // 밤에 전사한 플레이어를 아침에 부활 — FPS 카메라가 플레이어 하위라 죽은 채 두면 시점이 사라진다
