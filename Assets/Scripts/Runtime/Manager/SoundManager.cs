@@ -131,9 +131,9 @@ public class SoundManager : MonoBehaviour
         // 쿨타임 검사 (연타로 소리 찢어짐 방지)
         if (sfxCooldownDict.TryGetValue(clip, out float lastPlayTime))
         {
-            if (Time.time - lastPlayTime < DEFAULT_COOLDOWN) return;
+            if (Time.unscaledTime - lastPlayTime < DEFAULT_COOLDOWN) return;
         }
-        sfxCooldownDict[clip] = Time.time;
+        sfxCooldownDict[clip] = Time.unscaledTime;
 
         // 미세 피치 조절 (발소리/총소리 피로감 완화)
         sfxSource.pitch = randomizePitch ? UnityEngine.Random.Range(0.9f, 1.1f) : 1.0f;
