@@ -20,6 +20,9 @@ public class BattleManager : MonoBehaviour
     [Tooltip("런타임 부착 Player의 몬스터 감지 범위. 기본값(10)이면 밤에 몬스터 전원이 플레이어에게 몰리므로 좁힌다. 0 이하면 기본값 유지.")]
     [SerializeField] private float playerDetectionRange = 5f;
 
+    [Tooltip("런타임 부착 플레이어의 근접 자동 반격 피해 (공격 정의를 인스펙터로 못 만지므로 여기서).")]
+    [SerializeField] private float playerMeleeDamage = 10f;
+
     private Player playerEntity; // 아침 부활 처리용 캐시
 
     public GridManager Grid => gridManager;
@@ -93,6 +96,14 @@ public class BattleManager : MonoBehaviour
         if (playerMaxHealth > 0f) player.Health.SetMaxHealth(playerMaxHealth);
         if (playerDetectionRange > 0f && player.Sensor != null)
             player.Sensor.SetDetectionRange(playerDetectionRange);
+
+        // 근접 자동 반격의 공격 정의 — 런타임 부착이라 인스펙터 배선이 불가능해 여기서 만든다.
+        // 효과 에셋은 EffectDatabase(Resources)에서 집는다 — 개별 에셋을 Resources에 두지 않는다.
+        var damageEffect = EffectDatabaseSO.LoadDefault()?.FindFirst<DamageEffectSO>();
+        if (damageEffect != null && player.Combat != null)
+            player.Combat.SetAttackEffects(new[] { new EffectEntry(damageEffect, playerMeleeDamage) });
+        else if (damageEffect == null)
+            Debug.LogWarning("[BattleManager] EffectDatabase에서 피해 효과를 찾지 못해 플레이어 근접 공격이 무효과입니다.");
         playerEntity = player;
         Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
     }

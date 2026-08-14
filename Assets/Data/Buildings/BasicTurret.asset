@@ -35,10 +35,15 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
     amount: 6
   maxHp: 200
+  fireMode: 0
   damageMultiplier: 1
   range: 9
+  minRange: 0
   fireRate: 2
+  muzzleHeight: 1.2
+  preferHighArc: 0
   ammoFilter:
   - {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
   - {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
   - {fileID: 11400000, guid: e5a738777b5d0c6439fe96693c249825, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}

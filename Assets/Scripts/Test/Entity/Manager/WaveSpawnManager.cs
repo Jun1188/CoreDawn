@@ -83,7 +83,8 @@ public class WaveSpawnManager
     private void DetermineCurrentWave()
     {
         int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 1;
-        int coreTier = RecipeManager.Instance != null ? RecipeManager.Instance.CurrentCoreTier : 0;
+        // 티어의 정본은 GameManager (RecipeManager는 팀 결정으로 취소·삭제됨 — PR #54)
+        int coreTier = GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
 
         // 해당 일차와 티어에 맞는 가장 적합한 웨이브 탐색 (조건을 만족하는 마지막 웨이브)
         currentWave = waves.LastOrDefault(w => w.day <= day && w.requiredCoreTier <= coreTier);

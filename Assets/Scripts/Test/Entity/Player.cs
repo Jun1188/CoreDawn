@@ -25,6 +25,7 @@ public class Player : Entity
     {
         base.Awake();
         sensor.Initialize(this);
+        combat.Initialize(this);
     }
 
     protected override void Update()
@@ -44,20 +45,6 @@ public class Player : Entity
         {
             combat.TryAttack(target);
         }
-    }
-
-    // ── 총기 시스템 통합 (get 전용 조회) ──
-    // 현재 장착 무기의 GunData.damage를 읽는다. Monster의 Bullet 피격 처리가 사용.
-    private static WeaponManager cachedWeaponManager;
-
-    public static float GetCurrentBulletDamage()
-    {
-        if (cachedWeaponManager == null)
-            cachedWeaponManager = FindFirstObjectByType<WeaponManager>();
-
-        var weapon = cachedWeaponManager != null ? cachedWeaponManager.CurrentWeapon : null;
-        if (weapon != null && weapon.gunData != null) return weapon.gunData.damage;
-        return 20f; // 무기 시스템이 없는 테스트 씬용 기본값
     }
 
     private void ScanForMonsters()

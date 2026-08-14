@@ -62,8 +62,9 @@ public class SensorComponent
         return true;
     }
 
-    // 범위 내 가장 가까운 유효 Entity (타워 자동 공격 등 단일 대상용, 즉시 스캔)
-    public Entity GetClosestTarget(float rangeOverride = -1f)
+    // 범위 내 가장 가까운 유효 Entity (타워 자동 공격 등 단일 대상용, 즉시 스캔).
+    // minRange보다 가까운 대상은 건너뛴다 — 박격포처럼 사각(최소 사거리)이 있는 발사기용.
+    public Entity GetClosestTarget(float rangeOverride = -1f, float minRange = 0f)
     {
         if (transform == null) return null;
         float range = rangeOverride > 0f ? rangeOverride : detectionRange;
@@ -77,6 +78,7 @@ public class SensorComponent
             if (entity == null || entity == owner || !entity.IsValidTarget()) continue;
 
             float dist = Vector3.Distance(transform.position, overlapBuffer[i].transform.position);
+            if (dist < minRange) continue; // 사각 안 — 조준 불가
             if (dist < minDistance)
             {
                 minDistance = dist;

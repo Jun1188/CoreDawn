@@ -75,9 +75,26 @@ public class HotbarController : MonoBehaviour, IInputReceiver
 
         if (HotbarUI.Instance != null) HotbarUI.Instance.RefreshHotbar();
 
+        EquipFromActiveSlot();
+    }
+
+    /// <summary>
+    /// 활성 슬롯의 무기를 장착/해제한다 — 핫바 상태의 소유자인 여기가 장착 브리지의
+    /// 유일한 집이다. (구 InventoryManager.CheckWeaponEquip에서 회수 — 화면 매니저가
+    /// 게임플레이 로직을 들고 있으면 uGUI 없는 씬에서 장착이 통째로 죽는다.)
+    /// </summary>
+    public void EquipFromActiveSlot()
+    {
         var holder = PlayerInventoryHolder.Instance;
-        if (InventoryManager.Instance != null && holder != null)
-            InventoryManager.Instance.CheckWeaponEquip(holder.HotbarContainer, currentHotbarIndex);
+        var weaponManager = player != null ? player.weaponManager : null;
+        if (holder == null || holder.HotbarContainer == null || weaponManager == null) return;
+        if (currentHotbarIndex < 0 || currentHotbarIndex >= holder.HotbarContainer.SlotCount) return;
+
+        var slot = holder.HotbarContainer.PeekAt(currentHotbarIndex);
+        if (slot != null && slot.item != null && slot.item.TryGetModule<WeaponModuleSO>(out var weaponModule))
+            weaponManager.EquipWeapon(weaponModule.gun);
+        else
+            weaponManager.UnequipWeapon();
     }
 
     private void DropActiveItem()

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07795cd7725dd834eb78b3ff94b15ae4, type: 3}
+  m_Name: Effect_SlowField
+  m_EditorClassIdentifier: Assembly-CSharp::SlowEffectSO
+  id: Effect:SlowField
+  displayName: "\uAC10\uC18D \uD544\uB4DC"
+  description: "value = \uC774\uB3D9\uC18D\uB3C4 \uBC30\uC728 (0.5 = \uC808\uBC18).
+    \uAC10\uC18D \uD544\uB4DC \uD0C0\uC6CC\uC758 \uC624\uB77C."
+  icon: {fileID: 0}
+  duration: 6
+  stacking: 0

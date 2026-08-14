@@ -15,16 +15,16 @@ public class Monster : Entity
     private Vector3 defendOrigin;
     private float defendRadius = 30f;
     private Player currentTarget;
-    
+
     // 보스 전용 변수
     private bool isBoss = false;
     private bool hasBeenAttacked = false;
 
     public override MovementComponent Movement => movement;
     public override CombatComponent Combat => combat;
-    public StateMachineComponent StateMachine 
+    public StateMachineComponent StateMachine
     {
-        get 
+        get
         {
             EnsureInitialized();
             return stateMachine;
@@ -34,12 +34,13 @@ public class Monster : Entity
     private void EnsureInitialized()
     {
         if (stateMachine != null) return;
-        
+
         movement.Initialize(transform);
+        combat.Initialize(this); // 효과 시스템 — 공격의 출처(Source)·버프 베이크 주입
         stateMachine = new StateMachineComponent(this);
         Health.OnDeath += HandleMonsterDeath;
-        
-        Health.OnHealthChanged += (current, max) => 
+
+        Health.OnHealthChanged += (current, max) =>
         {
             if (current < max)
             {
@@ -59,8 +60,10 @@ public class Monster : Entity
         base.Awake();
         EnsureInitialized();
     }
-        
 
+    // 군중 시스템(겹침 해소) 등록부 — BuildingEntity.All과 같은 패턴
+    private void OnEnable() => CrowdSystem.Register(this);
+    private void OnDisable() => CrowdSystem.Unregister(this);
 
     private void HandleDamageTaken()
     {
@@ -80,7 +83,7 @@ public class Monster : Entity
     protected override void Update()
     {
         base.Update();
-        
+
         if (IsDead) return;
 
         // 보스몹이고 아직 선제 공격을 받지 않았다면 아무것도 하지 않음 (제자리 대기)
@@ -147,7 +150,7 @@ public class Monster : Entity
         aggroOnPlayer = false;
         currentTarget = null;
         if (IsDead) return;
-        
+
         // 방어자는 제자리 대기 대신 원위치로 돌아간 뒤 사라진다
         if (isNestDefender)
         {
@@ -182,8 +185,8 @@ public class Monster : Entity
     {
         private Vector3 origin;
         public ReturnToOriginState(Vector3 origin) { this.origin = origin; }
-        
-        public void Enter(StateMachineComponent sm) 
+
+        public void Enter(StateMachineComponent sm)
         {
             System.Collections.Generic.List<Node> path = PathFinder.FindPath(sm.Transform.position, origin);
             if (path != null && path.Count > 0)
@@ -195,8 +198,8 @@ public class Monster : Entity
                 sm.Movement?.SetDirection((origin - sm.Transform.position).normalized);
             }
         }
-        
-        public void Update(StateMachineComponent sm) 
+
+        public void Update(StateMachineComponent sm)
         {
             float dist = Vector3.Distance(sm.Transform.position, origin);
             if (dist < 1.5f)
@@ -205,14 +208,14 @@ public class Monster : Entity
                 Destroy(sm.Owner.gameObject);
             }
         }
-        
-        public void Exit(StateMachineComponent sm) 
+
+        public void Exit(StateMachineComponent sm)
         {
             sm.Movement?.StopMoving();
         }
     }
 
     // ── 총기 시스템 통합 ──
-    // 총알 피격 판정은 Bullet.cs가 직접 수행한다 (Bullet.TryApplyDamage → TakeDamage).
+    // 총알 피격 판정은 Bullet(스윕)이 직접 수행한다 — 명중 시 효과 목록 적용(Entity.ApplyEffects).
     // 몬스터 쪽 충돌 코드는 필요 없다.
 }

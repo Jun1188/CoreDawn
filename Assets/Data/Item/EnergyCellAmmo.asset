@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0e07f66bd29af546bfd695364c0f610, type: 3}
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
   m_Name: EnergyCellAmmo
   m_EditorClassIdentifier: Assembly-CSharp::AmmoItemSO
   id: Item:EnergyCellAmmo
@@ -19,4 +19,30 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 3
-  damage: 10
+  modules:
+  - {fileID: 8529454691081697983}
+--- !u!114 &8529454691081697983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702d344e9408d614e8bfeda54bd0b855, type: 3}
+  m_Name: AmmoModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 30
+  - effect: {fileID: 11400000, guid: 31b0fd9d8106bdf47922c4c2a49c0986, type: 2}
+    value: 0.5
+  speed: 60
+  gravity: 0
+  explosionRadius: 0
+  lifetime: 3
+  pierce: 4
+  bulletPrefab: {fileID: 6104304068761616416, guid: 60dbfc80def39a042abb9eb0be9b1459, type: 3}
+  muzzleFlashPrefab: {fileID: 1903369569249518, guid: 6716924e2ed157843b9d9295af57bf0e, type: 3}
+  hitEffectPrefab: {fileID: 1493148575174948, guid: 383ff3797b825254293298bbf11b2858, type: 3}

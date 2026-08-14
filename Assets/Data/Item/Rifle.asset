@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3215488353189641609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6313d71248690c4eb70ba6c111d2c38, type: 3}
+  m_Name: WeaponModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponModuleSO
+  gun: {fileID: 11400000, guid: 845b0795164612a428f47c8252826ccd, type: 2}
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
+  m_Name: Rifle
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
+  id: Item:Rifle
+  displayName: "\uB77C\uC774\uD50C"
+  description: "\uC5F0\uC0AC\uAC00 \uAC00\uB2A5\uD55C \uC8FC\uB825 \uD654\uAE30."
+  icon: {fileID: 0}
+  type: 5
+  line: 1
+  modules:
+  - {fileID: -3215488353189641609}
