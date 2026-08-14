@@ -35,6 +35,15 @@ public static class GameBootstrap
             shouldLoad = () => Object.FindFirstObjectByType<InputManager>() == null,
         },
 
+        // Combat — 전투 총괄(BattleManager: 플레이어 엔티티 부착·웨이브 스포너).
+        // 그리드·플로우필드·둥지는 맵 소유라 씬에 남는다 — BattleManager가 Awake에서 자동 발견하고,
+        // 그리드도 둥지도 없는 씬에서는 스폰이 조용히 쉰다 (아이템 테스트 씬을 오염시키지 않음).
+        new Entry
+        {
+            scene = "Combat",
+            shouldLoad = () => Object.FindFirstObjectByType<BattleManager>() == null,
+        },
+
         // GameUI — 전투 HUD·패널 (구 UIBootstrap 항목 그대로)
         new Entry
         {

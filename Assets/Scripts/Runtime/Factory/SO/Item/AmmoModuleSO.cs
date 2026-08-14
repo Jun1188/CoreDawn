@@ -39,6 +39,13 @@ public class AmmoModuleSO : ItemModuleSO
              "Projectile 발사기가 이 탄을 쓸 때만 필요.")]
     public GameObject bulletPrefab;
 
+    [Header("연출 (파티클 — 에셋 참조라 json 밖)")]
+    [Tooltip("발사 순간 총구에서 재생할 이펙트 — 같은 탄이면 어느 발사기(총·타워)든 같은 화염.")]
+    public GameObject muzzleFlashPrefab;
+
+    [Tooltip("착탄/폭발 지점에서 재생할 이펙트 — 폭발탄이면 폭발 연출을 여기에.")]
+    public GameObject hitEffectPrefab;
+
     /// <summary>피해 항목들의 value 합 — 툴팁 표기용 (전투 계산엔 쓰지 않는다).</summary>
     public float BaseDamage
     {

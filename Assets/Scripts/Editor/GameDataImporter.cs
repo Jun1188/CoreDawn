@@ -70,9 +70,8 @@ public static class GameDataImporter
         public float  fireRate, range, reloadTime, zoomFOV;   // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
         public int    magSize, pellets;                       // >0일 때만 덮음. pellets = 방아쇠당 탄 수(샷건 8)
 
-        // 명중 효과는 탄약이 정의한다 — 총은 쓰는 탄약(아이템 id)과 배율만 갖는다
-        public string ammo;                      // 예: "Item:BasicAmmo" (AmmoModule 필수). 생략 시 유지
-        public string[] ammoFilter;              // 장전 가능한 탄종 id들 — 탄종 전환 범위. null = 유지
+        // 명중 효과는 탄약이 정의한다 — 총은 장전 가능 탄종 목록과 배율만 갖는다
+        public string[] ammoFilter;              // 장전 가능 탄종 id들 — 첫 항목이 기본 탄종. null = 유지
         public float  damageMultiplier = -1f;    // 피해형 항목 배율. 음수 = 생략(유지)
 
         // 감각 튜닝 — 0이 정당한 값이라 음수를 "생략(유지)" 신호로 쓴다
@@ -436,33 +435,21 @@ public static class GameDataImporter
         if (isNew) created++; else updated++;
     }
 
-    /// <summary>총의 탄약 참조 해석 — 아이템 패스 뒤에 호출된다 (총↔아이템 상호 참조 해소).</summary>
+    /// <summary>총의 탄종 목록 해석 — 아이템 패스 뒤에 호출된다 (총↔아이템 상호 참조 해소).
+    /// 첫 항목이 기본 탄종이다 — 별도 ammo 필드는 중복이라 폐지했다.</summary>
     static void ResolveGunAmmo(string file, GunDto dto, GunData gun,
         Dictionary<string, GameDataSO> byId, ref int errors)
     {
-        if (!string.IsNullOrEmpty(dto.ammo))   // 생략 = 유지
-        {
-            if (byId.TryGetValue(dto.ammo, out var so) && so is ItemDataSO item)
-            {
-                if (item.GetModule<AmmoModuleSO>() == null)
-                    Debug.LogWarning($"[GameDataImporter] {file} guns '{dto.id}': 탄약 '{dto.ammo}'에 " +
-                                     "AmmoModule이 없습니다 — 발사해도 효과가 없습니다 (attackEffects 확인)");
-                gun.ammo = item;
-                EditorUtility.SetDirty(gun);
-            }
-            else
-            {
-                Debug.LogError($"[GameDataImporter] {file} guns '{dto.id}': 탄약 id '{dto.ammo}' 를 찾을 수 없습니다");
-                errors++;
-            }
-        }
+        if (dto.ammoFilter == null) return;   // 생략 = 유지
 
-        // 장전 가능 탄종 — 탄종 전환의 범위 (포탑 ammoFilter와 같은 해석기)
-        if (dto.ammoFilter != null)
-        {
-            gun.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
-            EditorUtility.SetDirty(gun);
-        }
+        gun.ammoFilter = ResolveItems(file, dto.id, dto.ammoFilter, byId, ref errors);
+
+        if (gun.DefaultAmmo == null)
+            Debug.LogWarning($"[GameDataImporter] {file} guns '{dto.id}': ammoFilter가 비어 기본 탄종이 없습니다 — 발사 불가");
+        else if (gun.AmmoModule == null)
+            Debug.LogWarning($"[GameDataImporter] {file} guns '{dto.id}': 기본 탄종 '{gun.DefaultAmmo.Id}'에 " +
+                             "AmmoModule이 없습니다 — 발사해도 효과가 없습니다 (attackEffects 확인)");
+        EditorUtility.SetDirty(gun);
     }
 
     // ── 아이템 ────────────────────────────────────────────────

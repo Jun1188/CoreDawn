@@ -156,7 +156,11 @@ public class BattleTower : BuildingEntity
 
         var shot = new ProjectileShot(round.speed, round.lifetime, combat.AttackRange + 2f,
                                       effects, monsterMask, this, round.gravity, round.explosionRadius,
-                                      data.fireMode, round.bulletPrefab, round.pierce);
+                                      data.fireMode, round.bulletPrefab, round.pierce, null,
+                                      round.hitEffectPrefab);
+
+        // 총구 화염 — 같은 탄이면 총과 타워가 같은 연출을 쓴다 (탄약이 연출의 주인)
+        ProjectileSystem.PlayEffect(round.muzzleFlashPrefab, muzzle + dir * 0.6f, Quaternion.LookRotation(dir));
 
         // 전달은 총(Gun)과 같은 단일 진입점 — 방식 분기는 ProjectileSystem이 한다.
         // 총구를 살짝 앞으로: 자기 명중은 필터가 걸러주지만 탄이 타워 모델 안에서 태어나지 않게.

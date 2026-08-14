@@ -32,21 +32,20 @@ public class GunData : GameDataSO
     public LayerMask enemyLayer;
 
     [Header("탄약 (효과·탄도의 주인)")]
-    [Tooltip("이 총의 기본 탄약 아이템(AmmoModuleSO 필수) — 명중 효과·탄속·중력·폭발 반경은 이 탄약이 정의한다. " +
-             "json의 ammo 필드(예: \"Item:BasicAmmo\")로 임포터가 배선한다.")]
-    public ItemDataSO ammo;
-
-    [Tooltip("장전 가능한 탄종들 — 탄종 전환은 이 목록 안에서 돈다(포탑 ammoFilter와 같은 개념). " +
-             "비우면 ammo 하나만. json의 ammoFilter 필드로 임포터가 배선한다.")]
+    [Tooltip("장전 가능한 탄종들(AmmoModuleSO 필수) — 첫 항목이 기본 탄종이고, 탄종 전환(V)은 이 목록 안에서 돈다. " +
+             "포탑 ammoFilter와 같은 개념. json의 ammoFilter 필드로 임포터가 배선한다.")]
     public ItemDataSO[] ammoFilter;
 
     [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 포탑의 damageMultiplier와 같은 개념.")]
     public float damageMultiplier = 1f;
 
-    /// <summary>장전 탄약의 모듈(효과+탄도) — 없으면 null (발사 불가).</summary>
-    public AmmoModuleSO AmmoModule => ammo != null ? ammo.GetModule<AmmoModuleSO>() : null;
+    /// <summary>기본 탄종 = ammoFilter의 첫 항목 — 없으면 null (발사 불가).</summary>
+    public ItemDataSO DefaultAmmo => ammoFilter != null && ammoFilter.Length > 0 ? ammoFilter[0] : null;
 
-    /// <summary>장전 탄약의 명중 효과 — 없으면 null (발사해도 아무 일도 없음).</summary>
+    /// <summary>기본 탄종의 모듈(효과+탄도) — 없으면 null.</summary>
+    public AmmoModuleSO AmmoModule => DefaultAmmo != null ? DefaultAmmo.GetModule<AmmoModuleSO>() : null;
+
+    /// <summary>기본 탄종의 명중 효과 — 없으면 null (발사해도 아무 일도 없음).</summary>
     public EffectEntry[] AmmoEffects => AmmoModule?.attackEffects;
 
     [Header("탄창")]

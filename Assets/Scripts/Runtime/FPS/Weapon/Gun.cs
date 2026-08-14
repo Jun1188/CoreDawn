@@ -42,6 +42,7 @@ public class Gun : MonoBehaviour
     private float lastFireTime;
     private float currentSpread;
     private Rigidbody playerRb; // 이동 속도에 따른 탄퍼짐 가중치용
+    private Camera aimCamera;   // 조준점(화면 중앙)의 기준 — 총알은 총구에서 나와 조준점으로 수렴한다
 
     // 효과의 출처(Source)로 전달할 플레이어 엔티티.
     // Player는 BattleManager가 런타임에 부착하므로(Awake 시점엔 없을 수 있음) 찾을 때까지 재시도한다.
@@ -52,11 +53,12 @@ public class Gun : MonoBehaviour
     private void Awake()
     {
         playerRb = GetComponentInParent<Rigidbody>();
+        aimCamera = transform.root.GetComponentInChildren<Camera>(); // 뷰모델 홀더는 카메라의 형제라 부모 탐색이 안 닿는다
     }
 
     private void Start()
     {
-        CurrentAmmoItem = gunData != null ? gunData.ammo : null;
+        CurrentAmmoItem = gunData != null ? gunData.DefaultAmmo : null;
 
         // 실소비 세계에서는 빈 탄창으로 시작한다 — 첫 발도 인벤토리의 탄에서 나와야 한다.
         // 인벤토리가 없는 씬(테스트)만 공짜 만장전.
@@ -119,8 +121,24 @@ public class Gun : MonoBehaviour
             return;
         }
 
-        Vector3 origin = muzzlePoint != null ? muzzlePoint.position : transform.position;
-        Vector3 forward = muzzlePoint != null ? muzzlePoint.forward : transform.forward;
+        // 판정 축 = 카메라(조준선). 총구 축으로 쏘면 ① 비행 중 충돌이 조준선 밖에서 판정되고
+        // ② 근접 표적에서 탄이 옆으로 날며 ③ 중력탄(유탄)의 포물선이 크로스헤어와 어긋난다.
+        // 탄의 몸은 총구에서 태어나 조준선 1m 지점에 합류 후 직진(ProjectileSystem) —
+        // 카메라에서 태어나 화면을 가리는 일도 없다.
+        Vector3 origin, forward;
+        Vector3? muzzle = null;
+        if (aimCamera != null)
+        {
+            Transform cam = aimCamera.transform;
+            forward = cam.forward;
+            origin = cam.position;
+            if (muzzlePoint != null) muzzle = muzzlePoint.position;
+        }
+        else // 카메라 없는 구성(테스트 리그) — 총구 축 폴백
+        {
+            origin = muzzlePoint != null ? muzzlePoint.position : transform.position;
+            forward = muzzlePoint != null ? muzzlePoint.forward : transform.forward;
+        }
 
         // 명중 효과는 장전된 탄약이 정의하고(타워와 같은 원칙), 총은 배율만 곱는다(피해형 항목에만).
         // 공격 버프는 발사 시점에 항목별로 구워진다 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지.
@@ -130,7 +148,12 @@ public class Gun : MonoBehaviour
         var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
                                       effects, gunData.enemyLayer, OwnerEntity,
                                       round.gravity, round.explosionRadius,
-                                      gunData.fireMode, round.bulletPrefab, round.pierce);
+                                      gunData.fireMode, round.bulletPrefab, round.pierce, muzzle,
+                                      round.hitEffectPrefab);
+
+        // 총구 화염 — 방아쇠당 1회, 총구에 붙여서 총과 함께 움직이게 (탄약이 연출의 주인)
+        if (muzzlePoint != null)
+            ProjectileSystem.PlayEffect(round.muzzleFlashPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
 
         // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것.
         // 전달 방식(투사체/히트스캔)은 스펙에 실려 있다 — 분기는 ProjectileSystem이 한다.

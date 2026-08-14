@@ -34,21 +34,33 @@ public class WeaponMotionManager : MonoBehaviour
     {
         if (_modules == null) return;
 
-        Vector3 pos = Vector3.zero;
-        Quaternion rot = Quaternion.identity;
+        // 정렬(ADS)과 절차 모션을 분리해 합산한다 — 안전 상한은 절차 모션(반동·스웨이)의
+        // 폭주 방지용이지, "가늠자를 눈까지 끌어오는" 정렬에 적용되면 힙 포즈가 먼 무기의
+        // 조준이 중간에 잘린다. 정렬은 저작된 거리만큼 무조건 간다.
+        Vector3 alignPos = Vector3.zero, pos = Vector3.zero;
+        Quaternion alignRot = Quaternion.identity, rot = Quaternion.identity;
 
         foreach (var module in _modules)
         {
             // 인스펙터에서 체크를 끄면 그 모듈만 즉시 격리된다
             if (module is Behaviour b && !b.isActiveAndEnabled) continue;
-            pos += module.PositionOffset;
-            rot *= module.RotationOffset;
+
+            if (module is WeaponADS)
+            {
+                alignPos += module.PositionOffset;
+                alignRot *= module.RotationOffset;
+            }
+            else
+            {
+                pos += module.PositionOffset;
+                rot *= module.RotationOffset;
+            }
         }
 
         pos = Vector3.ClampMagnitude(pos * globalScale, maxPositionOffset);
         if (globalScale < 1f) rot = Quaternion.Slerp(Quaternion.identity, rot, globalScale);
 
-        transform.localPosition = _originPos + pos;
-        transform.localRotation = _originRot * rot;
+        transform.localPosition = _originPos + alignPos + pos;
+        transform.localRotation = _originRot * alignRot * rot;
     }
 }

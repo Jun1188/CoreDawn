@@ -119,11 +119,11 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     [Header("Gun & Combat Settings")]
     public WeaponManager weaponManager;
 
-    [Header("Inventory Backend")]
-    public Inventory playerInventory;
+    // (구 "Inventory Backend" 필드 제거 — 플레이어의 Inventory 컴포넌트는 어떤 UI·시스템도
+    //  읽지 않는 유령 컨테이너였다. 인벤토리의 정본은 PlayerInventoryHolder의 핫바/가방.)
 
     [Header("Inventory & HUD UI")]
-    // 화면 열닫 소유는 InventoryManager(OpenPlayerScreen/OpenContainerScreen/CloseScreen)
+    // 화면 열기 정책은 GameScreens(UITK 정본·uGUI 폴백), 아래 필드들은 uGUI 잔존 씬 전용
     public GameObject inventoryUIPanel;
     public InventoryUI inventoryUI;
     public InventoryUI chestInventoryUI;
@@ -249,9 +249,10 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
                 TryInteract();
                 return true;
 
-            // 열기만 담당 — 인벤이 열려 있으면 InventoryPopup(상위 우선순위)이 먼저 가로채 닫는다
+            // 열기만 담당 — 인벤이 열려 있으면 인벤 팝업(상위 우선순위)이 먼저 가로채 닫는다.
+            // 어느 UI 체계(UITK/uGUI)로 여는지는 GameScreens의 정책 — 여기는 모른다.
             case InputActionId.ToggleInventory:
-                if (InventoryManager.Instance != null) InventoryManager.Instance.OpenPlayerScreen();
+                GameScreens.OpenInventory();
                 return true;
         }
         return false;
@@ -301,8 +302,9 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         if (interaction == null)
             Debug.LogWarning("[PlayerController] PlayerInteractionManager가 없어 E 상호작용이 비활성입니다.", this);
 
-        if (InventoryManager.Instance != null && playerInventory != null)
-            InventoryManager.Instance.CheckWeaponEquip(PlayerInventoryHolder.Instance.HotbarContainer);
+        // 시작 시 핫바 활성 슬롯의 무기를 장착 — 장착 브리지는 핫바 컨트롤러가 유일 소유
+        if (HotbarController.Instance != null)
+            HotbarController.Instance.EquipFromActiveSlot();
     }
 
     private void OnEnable()

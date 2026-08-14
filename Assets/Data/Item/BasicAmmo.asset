@@ -21,6 +21,8 @@ MonoBehaviour:
   lifetime: 3
   pierce: 0
   bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
+  muzzleFlashPrefab: {fileID: 1383616907660598, guid: 1d58b0b48b0be754a946ef13a5b47064, type: 3}
+  hitEffectPrefab: {fileID: 1546657409941744, guid: 701fe55687f0a6143a595adb30249cfb, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0

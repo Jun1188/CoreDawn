@@ -31,10 +31,10 @@ MonoBehaviour:
   requiredCoreTier: 3
   hideFromBuildMenu: 0
   buildCost:
-  - item: {fileID: 11400000, guid: d98dc4dd6a76b4d428c80cade8daad06, type: 2}
-    amount: 8
+  - item: {fileID: 11400000, guid: f72e981c3d32945469d3cf594600dd9c, type: 2}
+    amount: 2
   - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
-    amount: 15
+    amount: 10
   maxHp: 180
   fireMode: 2
   damageMultiplier: 1
