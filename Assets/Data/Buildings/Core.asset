@@ -75,6 +75,7 @@ MonoBehaviour:
     - "\uC791\uC5C5\uB300 \u2014 \uC190\uC73C\uB85C \uC81C\uB828\xB7\uC81C\uC791"
     - "\uCC44\uAD74\uAE30 \xB7 \uC81C\uB828\uB85C \xB7 \uCEE8\uBCA0\uC774\uC5B4 \uBCA8\uD2B8"
     maxHpBonus: 0
+    maxShieldBonus: 0
     isFinal: 0
   - tierLabel: "\uC120\uCCB4 \uBD09\uD569"
     description: "\uCC22\uC5B4\uC9C4 \uB3D9\uCCB4\uB97C \uB36E\uC5B4 \uB0B4\uBD80
@@ -91,6 +92,7 @@ MonoBehaviour:
     - "\uCC44\uAD74\uAE30 Mk.2 \xB7 \uBCA8\uD2B8 Mk.2"
     - "\uC911\uAE30\uAD00 \uD3EC\uD0D1 \xB7 \uBC15\uACA9\uD3EC \uD0C0\uC6CC"
     maxHpBonus: 2000
+    maxShieldBonus: 0
     isFinal: 0
   - tierLabel: "\uD56D\uBC95\xB7\uC81C\uC5B4 \uBCF5\uAD6C"
     description: "\uC870\uC885 \uCF58\uC194\uACFC \uC120\uB0B4 \uBC30\uC120\uC744
@@ -108,6 +110,7 @@ MonoBehaviour:
     - "\uC81C\uC870\uAE30 \u2014 \uBD80\uD488 4\uC885\uC744 \uD55C \uBC88\uC5D0 \uC870\uB9BD"
     - "\uB808\uC774\uC800 \uD0C0\uC6CC \xB7 \uAC10\uC18D \uD544\uB4DC \uD0C0\uC6CC"
     maxHpBonus: 1500
+    maxShieldBonus: 0
     isFinal: 0
   - tierLabel: "\uB3D9\uB825 \uC7AC\uC810\uD654"
     description: "\uC5D4\uC9C4\uC5D0 \uB3D9\uB825 \uBAA8\uB4C8\uC744 \uC7A5\uCC29\uD55C\uB2E4."
@@ -124,4 +127,9 @@ MonoBehaviour:
     - "\uC5D4\uC9C4 \uC608\uC5F4 \uAC1C\uC2DC"
     - "\uC774\uB959 \uC2DC\uD000\uC2A4"
     maxHpBonus: 1500
+    maxShieldBonus: 0
     isFinal: 1
+  burnSurplusIntoShield: 1
+  shieldPerItem: 5
+  shieldValueByType: []
+  baseMaxShield: 100

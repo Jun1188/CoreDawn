@@ -60,6 +60,146 @@ MonoBehaviour:
   maxNits:
     m_OverrideState: 1
     m_Value: 1000
+--- !u!114 &-6805602428537808248
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40e764624c3f5af42bd666e261c55e7b, type: 3}
+  m_Name: TiltShiftVolume
+  m_EditorClassIdentifier: FronkonGames.Artistic.TiltShift::FronkonGames.Artistic.TiltShift.TiltShiftVolume
+  active: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 1
+  quality:
+    m_OverrideState: 1
+    m_Value: 1
+  angle:
+    m_OverrideState: 1
+    m_Value: 0
+    min: -90
+    max: 90
+  aperture:
+    m_OverrideState: 1
+    m_Value: 0.5
+    min: 0.1
+    max: 5
+  offset:
+    m_OverrideState: 1
+    m_Value: 0
+    min: -1.5
+    max: 1.5
+  blurCurve:
+    m_OverrideState: 1
+    m_Value: 3
+    min: 1
+    max: 10
+  blur:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 10
+  distortion:
+    m_OverrideState: 1
+    m_Value: 5
+    min: 0
+    max: 20
+  distortionScale:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0.01
+    max: 2
+  debugView:
+    m_OverrideState: 1
+    m_Value: 0
+  focusedBrightness:
+    m_OverrideState: 1
+    m_Value: 0
+    min: -1
+    max: 1
+  focusedContrast:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 10
+  focusedGamma:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0.1
+    max: 10
+  focusedHue:
+    m_OverrideState: 1
+    m_Value: 0
+    min: 0
+    max: 1
+  focusedSaturation:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 2
+  unfocusedBrightness:
+    m_OverrideState: 1
+    m_Value: 0
+    min: -1
+    max: 1
+  unfocusedContrast:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 10
+  unfocusedGamma:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0.1
+    max: 10
+  unfocusedHue:
+    m_OverrideState: 1
+    m_Value: 0
+    min: 0
+    max: 1
+  unfocusedSaturation:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 2
+  brightness:
+    m_OverrideState: 1
+    m_Value: 0
+    min: -1
+    max: 1
+  contrast:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 10
+  gamma:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0.1
+    max: 10
+  hue:
+    m_OverrideState: 1
+    m_Value: 0
+    min: 0
+    max: 1
+  saturation:
+    m_OverrideState: 1
+    m_Value: 1
+    min: 0
+    max: 2
+  affectSceneView:
+    m_OverrideState: 1
+    m_Value: 0
+  useScaledTime:
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &-6537456156611779482
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -396,26 +536,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
   m_Name: DefaultVolumeProfile
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.VolumeProfile
-  components:
-  - {fileID: -8737189774512287793}
-  - {fileID: 5871971380311209363}
-  - {fileID: 3554870625879582637}
-  - {fileID: -1108846577807140320}
-  - {fileID: 4843645841026283402}
-  - {fileID: -6537456156611779482}
-  - {fileID: 717430133773826792}
-  - {fileID: -7972708368177192917}
-  - {fileID: 8508945979923902264}
-  - {fileID: 5942446031209274998}
-  - {fileID: -1848979162146204113}
-  - {fileID: 8913829258755293955}
-  - {fileID: 5954687495047621821}
-  - {fileID: -1372985063030398376}
-  - {fileID: -82086264490172469}
-  - {fileID: -5419743522104580619}
-  - {fileID: -6032892743417449523}
-  - {fileID: 5506094251685535093}
-  - {fileID: 2050440108595878601}
+  components: []
 --- !u!114 &717430133773826792
 MonoBehaviour:
   m_ObjectHideFlags: 3

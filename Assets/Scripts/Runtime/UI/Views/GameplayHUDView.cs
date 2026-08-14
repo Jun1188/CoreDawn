@@ -25,6 +25,7 @@ public class GameplayHUDView : MonoBehaviour
     VisualElement root, compass, crosshair, coreLine, ammoBox, hotbarRow, enemyLine;
     VisualElement hpFill, coreFill;
     Label dayValue, phaseLabel, phaseTime, hpNow, hpMax, corePct, ammoName, ammoNow, ammoCap, enemyCount;
+    Label ammoType, ammoReserve;
 
     PlayerController player;
     Entity playerEntity;
@@ -77,6 +78,8 @@ public class GameplayHUDView : MonoBehaviour
         ammoName   = r.Q<Label>("ammo-name");
         ammoNow    = r.Q<Label>("ammo-now");
         ammoCap    = r.Q<Label>("ammo-cap");
+        ammoType   = r.Q<Label>("ammo-type");
+        ammoReserve = r.Q<Label>("ammo-reserve");
         enemyCount = r.Q<Label>("enemy-count");
 
         root.pickingMode = PickingMode.Ignore;   // HUD는 클릭을 먹으면 안 된다 — 월드로 통과
@@ -322,9 +325,18 @@ public class GameplayHUDView : MonoBehaviour
         Show(ammoBox, has);
         if (!has) return;
 
-        ammoName.text = weapon.gunData.gunName.ToUpperInvariant();
+        ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
         ammoNow.text = weapon.CurrentAmmo.ToString();
         ammoCap.text = $" / {weapon.gunData.magSize}";
+        ammoNow.EnableInClassList("combat-ammo__now--reloading", weapon.IsReloading);
+
+        // 탄종 + 인벤토리 예비탄 (실소비). 인벤토리 없는 씬은 ReserveAmmo -1 = 무한 보급.
+        var item = weapon.CurrentAmmoItem;
+        ammoType.text = item != null ? item.displayName : "";
+        int reserve = weapon.ReserveAmmo;
+        ammoReserve.text = weapon.IsReloading ? "장전 중"
+                         : reserve < 0 ? "∞"
+                         : $"× {reserve}";
     }
 
     // ───────────────────── 적 수 ─────────────────────

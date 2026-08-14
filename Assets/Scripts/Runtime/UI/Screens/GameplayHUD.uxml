@@ -63,12 +63,16 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- 우하단: 장착 무기 탄약 -->
+        <!-- 우하단: 장착 무기 탄약 — 탄창/탄창용량 + 탄종·예비탄(인벤토리 실소비) -->
         <ui:VisualElement name="ammo" class="combat-ammo">
             <ui:Label name="ammo-name" text="" class="ui-stat__label" />
             <ui:VisualElement class="combat-ammo__row">
                 <ui:Label name="ammo-now" text="" class="combat-ammo__now" />
                 <ui:Label name="ammo-cap" text="" class="combat-ammo__cap" />
+            </ui:VisualElement>
+            <ui:VisualElement class="combat-ammo__typeline">
+                <ui:Label name="ammo-type" text="" class="combat-ammo__type" />
+                <ui:Label name="ammo-reserve" text="" class="combat-ammo__reserve" />
             </ui:VisualElement>
         </ui:VisualElement>
 

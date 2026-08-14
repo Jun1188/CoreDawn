@@ -1,5 +1,30 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7444227262419028243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702d344e9408d614e8bfeda54bd0b855, type: 3}
+  m_Name: AmmoModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 30
+  - effect: {fileID: 11400000, guid: a91cbf0acaed48b4da440a1df003f7c3, type: 2}
+    value: 4
+  speed: 90
+  gravity: 0
+  explosionRadius: 0
+  lifetime: 3
+  pierce: 0
+  bulletPrefab: {fileID: 6104304068761616416, guid: 60dbfc80def39a042abb9eb0be9b1459, type: 3}
+  muzzleFlashPrefab: {fileID: 1909230596122784, guid: d7d7f5edf939ae74a9c85c9655849dff, type: 3}
+  hitEffectPrefab: {fileID: 1588091547206974, guid: 06c01719d67a8284b891e3011c7b3a71, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9,7 +34,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0e07f66bd29af546bfd695364c0f610, type: 3}
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
   m_Name: CrystalAmmo
   m_EditorClassIdentifier: Assembly-CSharp::AmmoItemSO
   id: Item:CrystalAmmo
@@ -20,4 +45,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 3
-  damage: 10
+  modules:
+  - {fileID: -7444227262419028243}

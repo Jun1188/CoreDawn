@@ -132,14 +132,13 @@ MonoBehaviour:
     maxHealth: 500
   isCore: 0
   combat:
-    attackDamage: 25
     attackRange: 5
     attackCooldown: 1.5
+    attackEffects:
+    - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+      value: 25
   sensor:
     detectionRange: 6
     targetLayerName: Monster
     scanInterval: 0.2
-  bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
-  bulletSpeed: 25
-  bulletLifetime: 3
-  muzzleHeight: 1.5
+  fallbackData: {fileID: 11400000, guid: 1c4b7eaf8636b824fb8c837c98be9daf, type: 2}

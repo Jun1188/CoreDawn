@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0661903656fd144e9dd7a23d323b6a0, type: 3}
+  m_Name: Burn
+  m_EditorClassIdentifier: Assembly-CSharp::DamageOverTimeEffectSO
+  id: Effect:Burn
+  displayName: "\uBC1C\uD654"
+  description: "value = \uD2F1\uB2F9 \uD53C\uD574. \uD06C\uB9AC\uC2A4\uD0C8 \uD0C4\uC57D\uC758
+    \uC794\uC5EC \uD53C\uD574."
+  icon: {fileID: 0}
+  duration: 4
+  stacking: 0
+  tickInterval: 0.5

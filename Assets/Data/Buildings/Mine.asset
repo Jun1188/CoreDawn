@@ -25,14 +25,19 @@ MonoBehaviour:
   inputSlots: 0
   outputSlots: 0
   bufferStackCap: 0
-  requiredCoreTier: 1
+  requiredCoreTier: 2
   hideFromBuildMenu: 0
   buildCost:
   - item: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
     amount: 1
   maxHp: 10
+  fireMode: 0
   damageMultiplier: 6
   range: 2
+  minRange: 0
   fireRate: 1
+  muzzleHeight: 1.2
+  preferHighArc: 0
   ammoFilter:
   - {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
+  defaultAmmo: {fileID: 0}

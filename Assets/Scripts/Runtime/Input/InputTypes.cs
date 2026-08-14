@@ -19,6 +19,7 @@ public enum InputActionId
                           // 충분히 빠른 상태에서 누르면 슬라이딩으로 분기한다
     Rotate, CycleShape, ToggleBuild, ToggleDemolish,
     Reload, QuickDrop,
+    SwitchAmmo,           // V — 장전 가능한 탄종(GunData.ammoFilter) 순환
     Aim,                  // 우클릭 조준(ADS) — 눌림 상태형 (Performed=시작, Canceled=해제)
     Hotbar, HotbarScroll, // Hotbar는 숫자키 1~9 멀티 바인딩 — 슬롯 번호는 control 이름에서 읽는다
     Cancel,               // ESC 전용. Gameplay와 UI 맵 양쪽에 같은 이름으로 존재 (활성 맵의 것이 발화)

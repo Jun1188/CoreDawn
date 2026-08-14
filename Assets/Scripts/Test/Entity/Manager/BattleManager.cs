@@ -3,7 +3,7 @@ using UnityEngine;
 // 전투 총괄 매니저 — 전투에 필요한 구성요소를 한곳에서 멤버로 통합한다.
 //   Grid    : 길찾기 그리드 (GridManager, 씬 컴포넌트 참조)
 //   FlowField : 플로우필드 구동 (FlowFieldManager, 씬 컴포넌트 참조)
-//   Spawner : 몬스터 군집 생명주기 (MonsterSpawnManager, 순수 C# — 여기서 소유/Tick 구동)
+//   Spawner : 몬스터 군집 생명주기 (WaveSpawnManager, 순수 C# — 여기서 소유/Tick 구동)
 // 낮/밤 전환(TimeManager)에 맞춰 스폰을 켜고 끄며, 아침에는 군집을 일괄 소멸시킨다.
 public class BattleManager : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class BattleManager : MonoBehaviour
     [Header("Battle Members")]
     [SerializeField] private GridManager gridManager;
     [SerializeField] private FlowFieldManager flowFieldManager;
-    [SerializeField] private MonsterSpawnManager spawnManager = new MonsterSpawnManager();
+    [SerializeField] private WaveSpawnManager spawnManager = new WaveSpawnManager();
 
     [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 HealthComponent 기본값(100)을 쓴다.")]
     [SerializeField] private float playerMaxHealth = 300f;
@@ -20,11 +20,14 @@ public class BattleManager : MonoBehaviour
     [Tooltip("런타임 부착 Player의 몬스터 감지 범위. 기본값(10)이면 밤에 몬스터 전원이 플레이어에게 몰리므로 좁힌다. 0 이하면 기본값 유지.")]
     [SerializeField] private float playerDetectionRange = 5f;
 
+    [Tooltip("런타임 부착 플레이어의 근접 자동 반격 피해 (공격 정의를 인스펙터로 못 만지므로 여기서).")]
+    [SerializeField] private float playerMeleeDamage = 10f;
+
     private Player playerEntity; // 아침 부활 처리용 캐시
 
     public GridManager Grid => gridManager;
     public FlowFieldManager FlowField => flowFieldManager;
-    public MonsterSpawnManager Spawner => spawnManager;
+    public WaveSpawnManager Spawner => spawnManager;
 
     private void Awake()
     {
@@ -93,6 +96,14 @@ public class BattleManager : MonoBehaviour
         if (playerMaxHealth > 0f) player.Health.SetMaxHealth(playerMaxHealth);
         if (playerDetectionRange > 0f && player.Sensor != null)
             player.Sensor.SetDetectionRange(playerDetectionRange);
+
+        // 근접 자동 반격의 공격 정의 — 런타임 부착이라 인스펙터 배선이 불가능해 여기서 만든다.
+        // 효과 에셋은 EffectDatabase(Resources)에서 집는다 — 개별 에셋을 Resources에 두지 않는다.
+        var damageEffect = EffectDatabaseSO.LoadDefault()?.FindFirst<DamageEffectSO>();
+        if (damageEffect != null && player.Combat != null)
+            player.Combat.SetAttackEffects(new[] { new EffectEntry(damageEffect, playerMeleeDamage) });
+        else if (damageEffect == null)
+            Debug.LogWarning("[BattleManager] EffectDatabase에서 피해 효과를 찾지 못해 플레이어 근접 공격이 무효과입니다.");
         playerEntity = player;
         Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
     }

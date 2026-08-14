@@ -115,6 +115,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "SwitchAmmo",
+                    "type": "Button",
+                    "id": "8e4b7c26-5a91-4d3f-b8a2-6f1c9d4e7a53",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Hotbar",
                     "type": "Button",
                     "id": "b7539252-8eee-4d86-b7da-b214418780f3",
@@ -387,6 +396,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "QuickDrop",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2c9f5d18-7b4e-4a62-9d3c-e85a1f6b0c47",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SwitchAmmo",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
