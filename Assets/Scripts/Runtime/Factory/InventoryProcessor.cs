@@ -29,7 +29,6 @@ public class InventoryProcessor : BaseProcessor
             inputContainer.TryConsume(input.item, input.amount);
         }
 
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 
     protected override void GiveOutputs()
@@ -48,6 +47,5 @@ public class InventoryProcessor : BaseProcessor
             }
         }
 
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 }

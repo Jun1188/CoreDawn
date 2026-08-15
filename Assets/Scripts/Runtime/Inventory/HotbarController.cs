@@ -24,14 +24,24 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         if (player == null) player = FindFirstObjectByType<PlayerController>();
     }
 
+    private ItemContainer watched;
+
     private void Start()
     {
         if (InputManager.Instance != null) InputManager.Instance.Register(this);
+
+        // 핫바 내용이 바뀌면(인벤 조작·제작·줍기·드롭 무엇이든) 장착을 스스로 맞춘다.
+        // 바꾸는 쪽이 "장착도 갱신해 달라"고 부르던 호출들(구 RefreshAllGameUIs)이 전부 사라진다 —
+        // 호출을 한 군데라도 빠뜨리면 손에 든 무기와 핫바가 어긋나던 문제도 함께 사라진다.
+        watched = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
+        if (watched != null) watched.Changed += EquipFromActiveSlot;
+        EquipFromActiveSlot();
     }
 
     private void OnDisable()
     {
         if (InputManager.Instance != null) InputManager.Instance.Unregister(this);
+        if (watched != null) { watched.Changed -= EquipFromActiveSlot; watched = null; }
     }
 
     public bool OnInput(in InputEvent e)
@@ -112,9 +122,7 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         DroppedItem.Spawn(slot.item, 1, spawnPos, player.playerCamera.forward);
 
         slot.amount--;
-        container.Touch();
+        container.Touch();   // Changed → 위 구독이 장착을, HUD가 표시를 스스로 맞춘다
         if (slot.amount <= 0) container.TakeAt(currentHotbarIndex);
-
-        if (InventoryManager.Instance != null) InventoryManager.Instance.RefreshAllGameUIs();
     }
 }

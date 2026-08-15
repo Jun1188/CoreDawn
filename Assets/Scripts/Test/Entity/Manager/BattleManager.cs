@@ -37,12 +37,18 @@ public class BattleManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
 
-        // 인스펙터에서 비워두면 씬에서 자동 해결
-        if (gridManager == null)
-            gridManager = GridManager.Instance != null ? GridManager.Instance : FindFirstObjectByType<GridManager>();
-        if (flowFieldManager == null)
-            flowFieldManager = FlowFieldManager.Instance != null ? FlowFieldManager.Instance : FindFirstObjectByType<FlowFieldManager>();
+    /// <summary>
+    /// 길찾기 그리드·플로우필드 주입 — 둘 다 <b>월드(맵)가 소유</b>하므로, 전투를 별도 씬
+    /// (Combat 부트스트랩)으로 얹으면 인스펙터 참조가 씬 경계를 넘지 못한다. GameBootstrap이
+    /// 월드에서 찾아 꽂아준다. 씬에 직접 둔 경우엔 인스펙터 배선이 이미 있어 덮지 않는다.
+    /// 그리드가 없는 씬(아이템 테스트 등)에서는 스폰만 쉬고 나머지 전투는 정상 동작한다.
+    /// </summary>
+    public void Inject(GridManager grid, FlowFieldManager flowField)
+    {
+        if (gridManager == null) gridManager = grid;
+        if (flowFieldManager == null) flowFieldManager = flowField;
     }
 
     // 코어 파괴로 게임이 끝났는지 여부. UI/연출은 GameOver 이벤트를 구독하면 된다.

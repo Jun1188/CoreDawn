@@ -518,3 +518,47 @@ UI가 빠져 있고, ItemTree의 Player만 최신 무기 리그, MainScene은 �
 - PlayerControl 덩어리: InventoryManager가 PlayerController를 인스펙터 참조 + uGUI와
   얽힘. uGUI 폐기(구 이슈)와 함께 풀 것. Player.prefab은 이미 최신 리그 완전체.
 - 팀원 씬의 복사본 제거는 각 소유자가 — 로더가 멱등이라 강제할 필요 없음.
+
+---
+
+## 2026-08-15 — 부트스트랩이 조립까지 · uGUI 폴백 제거
+
+### 폴백 → 의존성 주입 (사용자 지적: "왜 이렇게 폴백을 좋아하는거야?")
+기능을 별도 씬으로 옮기면 인스펙터 참조(카메라·그리드)가 끊긴다. 그 구멍을 소비자마다
+런타임 탐색(`FindObjectByType`·`Camera.main`)으로 메우고 있었다 — 실측 37곳. 대가는
+① 배선을 잊어도 그럭저럭 도는 "조용한 실패" ② 잘못된 대상을 집어도 모름 ③ 초기화 순서가
+코드 어디에도 없음.
+
+**`GameBootstrap`이 로더 겸 조립기가 됐다** — 탐색을 이 파일이 독점하고 소비자는 받기만 한다.
+조립 시점은 씬 로드 직후(그 씬의 Awake 뒤, Start 앞)라 주입값을 Start에서 바로 쓴다.
+
+```
+Systems → Factory → Combat → GameUI     (순서 = 의존 순서)
+             ↓         ↓
+   PlacementSystem   GridManager ← 월드의 맵
+   FactoryBootstrap  BattleManager
+```
+
+- `PlacementSystem`: `Camera.main` 폴백 삭제 → 주입. 없으면 **Start에서 에러 + 컴포넌트 비활성**
+- `BattleManager`: `GridManager.Instance ?? FindFirstObjectByType` 삭제 → 주입
+- `GridManager`: 굽기(`Bake`)를 Awake에서 분리 — Awake에서 즉시 mapBounds를 쓰던 것이
+  "부트스트랩으로 못 빼는" 진짜 이유였다. 분리하니 주입이 제때 도착한다.
+- `FactoryBootstrap`: 코어 자리도 맵이 정한다(`map.core` 주입, 자동 설치는 Start라 순서 안전)
+
+### uGUI 폴백 제거
+`GameScreens`의 uGUI 폴백 3줄 삭제 — UITK가 정본이고, 못 열면 경고를 낸다. 폴백이 있으면
+UI가 실제로 탑재됐는지 아무도 확인하지 않게 된다.
+
+**덤: `RefreshAllGameUIs` 호출 11곳 전멸.** 실제 목적이 "무기 장착 동기화"뿐이었는데
+(UITK HUD는 이미 `hotbar.Changed`로 자체 갱신), `HotbarController`가 핫바 컨테이너의
+`Changed`를 구독하게 하니 호출처가 전부 불필요해졌다. 이제 어떤 경로로 핫바가 바뀌든
+(인벤 조작·제작·줍기·드롭) 장착이 자동으로 따라온다 — 호출을 한 곳이라도 빠뜨리면
+손에 든 무기가 어긋나던 문제도 함께 사라졌다.
+
+남은 `InventoryManager` 의존은 uGUI 컴포넌트 내부(InventoryUI·InventoryPopup)뿐이라,
+uGUI 폐기 시 그 파일들과 함께 통째로 삭제하면 된다.
+
+### 씬
+`Scenes/Bootstrap/Factory.unity` 신설(FactoryBootstrap·PlacementSystem·BuildController·
+BeltItemView), `Combat.unity`에 Pathfinding(GridManager·FlowFieldManager) 추가.
+`Scenes/World.unity` — 루트 3개(조명·World·플레이어), **매니저 0개**.

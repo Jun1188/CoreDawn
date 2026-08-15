@@ -80,16 +80,24 @@ public class FlowField
                     if (dx == 0 && dy == 0) continue;
                     Vector2Int n = new Vector2Int(cell.x + dx, cell.y + dy);
                     if (!InBounds(n)) continue;
-                    // 몬스터가 실제로 걸을 수 있는 셀로만 확장
-                    if (!grid.IsWalkable(n)) continue;
-                    // 대각 확장은 양 옆 직교 셀이 모두 열려 있어야 허용 (A*와 동일한 끼임 방지)
+
+                    // 진격 비용: 지면 10 · 강 30 · 건물 +HP비례 · 절벽 ∞.
+                    // passBuildings=true — 건물은 "비싼 길"이라 경로가 사라지지 않는다.
+                    // 목표가 아닌 건물(벨트)로 막아도 몬스터가 굳지 않고 가장 얇은 곳을 뚫는다.
+                    int enter = grid.EnterCost(n, passBuildings: true);
+                    if (enter >= TileRules.Blocked) continue;
+
+                    // 대각은 양 옆이 물리적으로 열려 있어야 한다 — 절벽이든 건물이든 모서리는 못 스친다.
+                    // 여기만 IsWalkable을 쓰는 이유: 직교로는 건물을 뚫고 갈 수 있지만(비용),
+                    // 대각으로 두 건물 사이 틈을 공짜로 빠져나가는 것은 물리와 맞지 않는다.
                     if (dx != 0 && dy != 0)
                     {
                         if (!grid.IsWalkable(new Vector2Int(cell.x + dx, cell.y))) continue;
                         if (!grid.IsWalkable(new Vector2Int(cell.x, cell.y + dy))) continue;
                     }
 
-                    int step = (dx != 0 && dy != 0) ? 14 : 10;
+                    // 대각은 √2배 — 정수 유지를 위해 14/10으로 근사한다
+                    int step = (dx != 0 && dy != 0) ? enter * 14 / 10 : enter;
                     int newCost = cost + step;
                     if (newCost >= integration[n.x, n.y]) continue;
 

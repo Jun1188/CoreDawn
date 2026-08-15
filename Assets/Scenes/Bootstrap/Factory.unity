@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1186209663
+--- !u!1 &624921168
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,54 +127,55 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1186209666}
-  - component: {fileID: 1186209665}
-  - component: {fileID: 1186209664}
+  - component: {fileID: 624921172}
+  - component: {fileID: 624921171}
+  - component: {fileID: 624921170}
   m_Layer: 0
-  m_Name: Pathfinding
+  m_Name: FactorySystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1186209664
+--- !u!114 &624921170
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1186209663}
+  m_GameObject: {fileID: 624921168}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d77e77eb0a25c0e4f97920de968cc795, type: 3}
+  m_Script: {fileID: 11500000, guid: 4960c5925cd86d14ea92a168a20b10d0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldManager
-  rebuildInterval: 2
-  towerGoalCost: 30
---- !u!114 &1186209665
+  m_EditorClassIdentifier: Assembly-CSharp::FactoryBootstrap
+  _tps: 10
+  _maxCatchUpTicks: 5
+  _autoPlaceCore: 1
+  _coreData: {fileID: 0}
+  _coreOrigin: {x: 0, y: 0}
+  _coreRotationSteps: 0
+--- !u!114 &624921171
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1186209663}
+  m_GameObject: {fileID: 624921168}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08c3ad216ac94e04a8b5da26b1b297ea, type: 3}
+  m_Script: {fileID: 11500000, guid: eb219762334e4f509c87686bcc6531e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GridManager
-  obstacleLayerName: Obstacle
-  cellSize: 1
-  mapBounds: {fileID: 0}
-  gridSize: {x: 0, y: 0}
-  originPosition: {x: 0, y: 0, z: 0}
---- !u!4 &1186209666
+  m_EditorClassIdentifier: Assembly-CSharp::BeltItemView
+  itemHeight: 1
+  itemScale: 1
+--- !u!4 &624921172
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1186209663}
+  m_GameObject: {fileID: 624921168}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -183,7 +184,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2019025795
+--- !u!1 &1310938163
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -191,42 +192,62 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2019025797}
-  - component: {fileID: 2019025796}
+  - component: {fileID: 1310938166}
+  - component: {fileID: 1310938165}
+  - component: {fileID: 1310938164}
   m_Layer: 0
-  m_Name: BattleManager
+  m_Name: PlacementSystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2019025796
+--- !u!114 &1310938164
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2019025795}
+  m_GameObject: {fileID: 1310938163}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0e6a4f10ca3fc24588be88360104289, type: 3}
+  m_Script: {fileID: 11500000, guid: 7ab2e8622be675d429dacd2b88291ca1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BattleManager
-  gridManager: {fileID: 0}
-  flowFieldManager: {fileID: 0}
-  spawnManager:
-    monsterPrefab: {fileID: 1332241365330258894, guid: a0ab261b89819e4489aaf424fc926d00, type: 3}
-    spawnHeight: 0
-  playerMaxHealth: 300
-  playerDetectionRange: 5
-  playerMeleeDamage: 10
---- !u!4 &2019025797
+  m_EditorClassIdentifier: Assembly-CSharp::BuildController
+  placement: {fileID: 1310938165}
+--- !u!114 &1310938165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1310938163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d66ecd0e3ebb51488da3f9859668861, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlacementSystem
+  cam: {fileID: 0}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  database: {fileID: 0}
+  cellSize: 1
+  gridOrigin: {x: 0, y: 0, z: 0}
+  raycastStartHeight: 100
+  maxSlopeHeightDiff: 0.25
+  validMat: {fileID: 2100000, guid: 8101430187e8a5a479f3ed5dfedd8bfa, type: 2}
+  invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
+  demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
+  showPortsOnAim: 1
+  demolishHoldSeconds: 0.4
+--- !u!4 &1310938166
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2019025795}
+  m_GameObject: {fileID: 1310938163}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -239,5 +260,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2019025797}
-  - {fileID: 1186209666}
+  - {fileID: 624921172}
+  - {fileID: 1310938166}

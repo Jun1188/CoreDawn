@@ -1,0 +1,241 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>
+/// MapData.json → MapDataSO 임포터.
+///
+/// GameDataImporter와 같은 규율을 따른다:
+///   · json이 정본 — 에셋을 손으로 고치지 말고 json을 고쳐 다시 임포트한다
+///   · id("Map:이름")로 기존 에셋을 찾아 <b>제자리 갱신</b> — 참조(씬·프리팹)가 끊기지 않는다
+///   · 파싱 실패는 에러다 — 조용한 기본값 폴백은 만들지 않는다 (잘못된 맵으로 게임이 돌면 더 나쁘다)
+///
+/// 파일을 나눈 이유: 맵은 여러 개고 한 장이 수십~수백 KB라, 규칙 데이터(GameData.json)와
+/// 수명 주기가 다르다. 맵 편집이 규칙 파일의 diff를 뒤덮지 않는다.
+/// </summary>
+public static class MapImporter
+{
+    const string JsonPath = "Assets/Data/Import/MapData.json";
+    const string MapFolder = "Assets/Data/Maps";
+
+    // ── DTO (JsonUtility가 채운다) ──────────────────────────────
+
+    [Serializable] class Root { public MapDto[] maps; }
+
+    [Serializable] class MapDto
+    {
+        public string id;            // 필수. 예: "Map:Plains01"
+        public string displayName;   // 필수
+        public string description;
+        public int width, height;
+        public CellDto core;
+        public string[] tiles;       // 행마다 한 줄, 한 글자가 한 칸
+        public NodeDto[] nodes;
+        public NestDto[] nests;
+    }
+
+    [Serializable] class CellDto { public int x, y; }
+
+    [Serializable] class NodeDto
+    {
+        public string item;          // GameData의 아이템 id
+        public int x, y;
+        public int size;
+        public float extractInterval;
+        public int maxStock;
+    }
+
+    [Serializable] class NestDto
+    {
+        public int x, y;
+        public float warningRange, triggerRange;
+        public int defenseSpawnAmount;
+        public float defenseSpawnCooldown;
+        public SpawnDto[] spawnPoints;
+    }
+
+    [Serializable] class SpawnDto { public int x, y; public bool hasBoss; }
+
+    // ── 실행 ────────────────────────────────────────────────────
+
+    [MenuItem("Tools/Factory/Import Map Data (JSON)")]
+    public static void ImportAll()
+    {
+        if (!File.Exists(JsonPath))
+        {
+            Debug.LogError($"[MapImporter] {JsonPath} 가 없습니다.");
+            return;
+        }
+
+        var root = JsonUtility.FromJson<Root>(File.ReadAllText(JsonPath));
+        if (root?.maps == null)
+        {
+            Debug.LogError($"[MapImporter] {JsonPath} 파싱 실패 — maps 배열을 찾지 못했습니다.");
+            return;
+        }
+
+        // 아이템 참조 해석용 색인 (광맥이 GameData의 아이템을 가리킨다)
+        var byId = new Dictionary<string, GameDataSO>();
+        foreach (var guid in AssetDatabase.FindAssets("t:GameDataSO"))
+        {
+            var so = AssetDatabase.LoadAssetAtPath<GameDataSO>(AssetDatabase.GUIDToAssetPath(guid));
+            if (so != null && !string.IsNullOrEmpty(so.Id)) byId[so.Id] = so;
+        }
+
+        int created = 0, updated = 0, errors = 0;
+        foreach (var dto in root.maps)
+            ImportMap(dto, byId, ref created, ref updated, ref errors);
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        string msg = $"[MapImporter] 맵 {created}개 생성, {updated}개 갱신";
+        if (errors > 0) Debug.LogError($"{msg} — 오류 {errors}건 (위 로그 확인)");
+        else Debug.Log(msg);
+    }
+
+    static void ImportMap(MapDto dto, Dictionary<string, GameDataSO> byId,
+        ref int created, ref int updated, ref int errors)
+    {
+        if (dto == null || string.IsNullOrEmpty(dto.id) || string.IsNullOrEmpty(dto.displayName))
+        {
+            Debug.LogError($"[MapImporter] id 또는 displayName이 비어 있는 맵이 있습니다.");
+            errors++;
+            return;
+        }
+        if (dto.width <= 0 || dto.height <= 0)
+        {
+            Debug.LogError($"[MapImporter] '{dto.id}': width/height가 유효하지 않습니다 ({dto.width}×{dto.height}).");
+            errors++;
+            return;
+        }
+
+        // 기존 에셋 제자리 갱신 (참조 보존)
+        MapDataSO map = byId.TryGetValue(dto.id, out var found) ? found as MapDataSO : null;
+        bool isNew = map == null;
+        if (isNew)
+        {
+            if (!AssetDatabase.IsValidFolder(MapFolder))
+                AssetDatabase.CreateFolder("Assets/Data", "Maps");
+
+            map = ScriptableObject.CreateInstance<MapDataSO>();
+            var so = new SerializedObject(map);
+            so.FindProperty("id").stringValue = dto.id;   // id는 private — 직렬화로만 설정한다
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            string file = $"{MapFolder}/{dto.id.Replace(':', '_')}.asset";
+            AssetDatabase.CreateAsset(map, AssetDatabase.GenerateUniqueAssetPath(file));
+            byId[dto.id] = map;
+        }
+
+        map.displayName = dto.displayName;
+        map.description = dto.description ?? "";
+        map.width = dto.width;
+        map.height = dto.height;
+        map.core = dto.core != null ? new Vector2Int(dto.core.x, dto.core.y) : Vector2Int.zero;
+        map.EditorSetTiles(BakeTiles(dto, ref errors));
+        map.nodes = ResolveNodes(dto, byId, ref errors);
+        map.nests = ResolveNests(dto);
+
+        EditorUtility.SetDirty(map);
+        if (isNew) created++; else updated++;
+    }
+
+    /// <summary>
+    /// 문자열 타일을 바이트 격자로 굽는다 — 런타임은 매 칸을 조회하므로 문자열로 두지 않는다.
+    /// 줄이 모자라거나 짧으면 지면(0)으로 채운다(명세). 알 수 없는 글자는 에러로 알리고 지면 처리.
+    /// </summary>
+    static byte[] BakeTiles(MapDto dto, ref int errors)
+    {
+        var baked = new byte[dto.width * dto.height];   // 기본값 0 = 지면
+        if (dto.tiles == null) return baked;
+
+        int rows = Mathf.Min(dto.tiles.Length, dto.height);
+        for (int y = 0; y < rows; y++)
+        {
+            string row = dto.tiles[y];
+            if (string.IsNullOrEmpty(row)) continue;
+
+            int cols = Mathf.Min(row.Length, dto.width);
+            for (int x = 0; x < cols; x++)
+            {
+                char c = row[x];
+                if (c < '0' || c > '2')
+                {
+                    Debug.LogError($"[MapImporter] '{dto.id}' ({x},{y}): 알 수 없는 타일 '{c}' — 지면으로 처리합니다. " +
+                                   "0=지면 1=강 2=절벽");
+                    errors++;
+                    continue;
+                }
+                baked[y * dto.width + x] = (byte)(c - '0');
+            }
+        }
+        return baked;
+    }
+
+    static ResourceNodeSpec[] ResolveNodes(MapDto dto, Dictionary<string, GameDataSO> byId, ref int errors)
+    {
+        if (dto.nodes == null) return Array.Empty<ResourceNodeSpec>();
+
+        var list = new List<ResourceNodeSpec>(dto.nodes.Length);
+        foreach (var n in dto.nodes)
+        {
+            if (n == null) continue;
+
+            ItemDataSO item = null;
+            if (!string.IsNullOrEmpty(n.item))
+            {
+                if (byId.TryGetValue(n.item, out var so)) item = so as ItemDataSO;
+                if (item == null)
+                {
+                    Debug.LogError($"[MapImporter] '{dto.id}' 광맥({n.x},{n.y}): 아이템 id '{n.item}' 를 찾을 수 없습니다.");
+                    errors++;
+                    continue;   // 캘 것이 없는 광맥은 넣지 않는다
+                }
+            }
+
+            list.Add(new ResourceNodeSpec
+            {
+                item = item,
+                cell = new Vector2Int(n.x, n.y),
+                size = Mathf.Clamp(n.size <= 0 ? 1 : n.size, 1, 3),
+                extractInterval = n.extractInterval,
+                maxStock = n.maxStock,
+            });
+        }
+        return list.ToArray();
+    }
+
+    static NestSpec[] ResolveNests(MapDto dto)
+    {
+        if (dto.nests == null) return Array.Empty<NestSpec>();
+
+        var list = new List<NestSpec>(dto.nests.Length);
+        foreach (var nest in dto.nests)
+        {
+            if (nest == null) continue;
+
+            var points = new List<SpawnPointSpec>();
+            if (nest.spawnPoints != null)
+                foreach (var p in nest.spawnPoints)
+                    if (p != null) points.Add(new SpawnPointSpec { offset = new Vector2Int(p.x, p.y), hasBoss = p.hasBoss });
+
+            if (nest.triggerRange > nest.warningRange)
+                Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): triggerRange가 warningRange보다 큽니다 — " +
+                                 "경고 없이 습격당합니다.");
+
+            list.Add(new NestSpec
+            {
+                cell = new Vector2Int(nest.x, nest.y),
+                warningRange = nest.warningRange,
+                triggerRange = nest.triggerRange,
+                defenseSpawnAmount = nest.defenseSpawnAmount,
+                defenseSpawnCooldown = nest.defenseSpawnCooldown,
+                spawnPoints = points.ToArray(),
+            });
+        }
+        return list.ToArray();
+    }
+}

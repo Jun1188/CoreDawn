@@ -14,5 +14,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Bootstrap/Combat.unity
     guid: 25767de7a60f4e642a2b9e413788651e
+  - enabled: 1
+    path: Assets/Scenes/Bootstrap/Factory.unity
+    guid: cb0b4d51174bec44891ce978b8c95157
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

@@ -107,7 +107,6 @@ public class PlacementSystem : MonoBehaviour
     void Awake()
     {
         grid = new GridSystem(cellSize, gridOrigin);
-        if (cam == null) cam = Camera.main;
 
         // 미리 붙여두면 인스펙터로 색·반경을 조절할 수 있고, 없으면 알아서 붙는다 (씬 배선 불필요)
         portFlow = GetComponent<PortFlowOverlay>();
@@ -116,6 +115,47 @@ public class PlacementSystem : MonoBehaviour
 
         if (database == null) database = BuildingDatabaseSO.LoadDefault();
         if (database == null) Debug.LogError("[PlacementSystem] BuildingDatabase가 없습니다 (Resources/BuildingDatabase).", this);
+    }
+
+    // 주입된 맵 — 강·절벽에는 짓지 못한다. 없으면 지형 높이·점유만으로 판정한다(구 동작).
+    private MapDataSO map;
+
+    /// <summary>
+    /// 조준 카메라 주입 — 별도 씬(Factory 부트스트랩)으로 얹힐 때는 인스펙터 참조가 씬 경계를
+    /// 넘지 못하므로 GameBootstrap이 플레이어 카메라를 꽂아준다. 씬에 직접 둔 경우엔
+    /// 인스펙터 배선이 이미 있으므로 호출되지 않는다(주입이 그것을 덮지도 않는다).
+    /// </summary>
+    public void Inject(Camera aimCamera)
+    {
+        if (cam == null) cam = aimCamera;
+    }
+
+    /// <summary>
+    /// 월드의 맵·격자 주입 — 건설 가능 판정(강·절벽)과 좌표계를 맵에 맞춘다.
+    /// 길찾기 격자(GridManager)와 <b>같은 원점·같은 칸 크기</b>를 쓰게 하는 것이 핵심이다:
+    /// 둘이 어긋나면 건물이 점유한 칸과 몬스터가 막히는 칸이 달라진다.
+    /// </summary>
+    public void Inject(MapDataSO worldMap, Vector3 origin, float tileSize)
+    {
+        if (worldMap == null) return;
+
+        map = worldMap;
+        cellSize = tileSize;
+        gridOrigin = origin;
+        grid = new GridSystem(cellSize, gridOrigin);
+        if (portFlow != null) portFlow.Configure(cellSize, gridOrigin);
+    }
+
+    void Start()
+    {
+        // 조준 카메라는 배치·철거 판정의 기준이라 없으면 아무것도 할 수 없다.
+        // Camera.main으로 조용히 때우지 않는다 — 잘못된 카메라를 집어도 알 수 없기 때문이다.
+        if (cam != null) return;
+
+        Debug.LogError("[PlacementSystem] 조준 카메라가 없어 배치 기능을 끕니다. " +
+                       "씬에 직접 두었다면 인스펙터에 배선하고, 부트스트랩 구성이면 " +
+                       "플레이어(카메라 포함)가 씬에 있는지 확인하세요.", this);
+        enabled = false;
     }
 
     void Update()
@@ -267,7 +307,7 @@ public class PlacementSystem : MonoBehaviour
         // 설치 판정 캐시 — OnInput(Attack)이 사용
         // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
         // 재료가 모자라면 프리뷰가 빨갛게 떠서 누르기 전에 알 수 있다
-        lastCanPlace = heightOk && CanPlace(origin, size)
+        lastCanPlace = heightOk && CanBuildTerrain(origin, size) && CanPlace(origin, size)
                     && ResourceNodeRegistry.CanPlace(current, origin, size)
                     && BuildCost.CanAfford(current);
         lastOrigin   = origin;
@@ -326,6 +366,7 @@ public class PlacementSystem : MonoBehaviour
             reason = $"지형 높이 판정 실패 (바닥이 없거나 경사가 {maxSlopeHeightDiff}를 넘음)";
             return false;
         }
+        if (!CanBuildTerrain(origin, size)) { reason = "지을 수 없는 지형 (강·절벽 또는 맵 밖)"; return false; }
         if (!CanPlace(origin, size)) { reason = "이미 점유된 칸"; return false; }
         if (!ResourceNodeRegistry.CanPlace(so, origin, size)) { reason = "광맥 조건 불충족"; return false; }
 
@@ -563,8 +604,19 @@ public class PlacementSystem : MonoBehaviour
                 yield return origin + new Vector2Int(x, z);
     }
 
+    /// <summary>
+    /// 칸이 비어 있는가 — 이미 놓인 건물과 겹치지 않는지만 본다.
+    /// 지형(강·절벽)은 <see cref="CanBuildTerrain"/>이 따로 판정한다.
+    /// </summary>
     private static bool CanPlace(Vector2Int origin, Vector2Int size)
         => GetCells(origin, size).All(c => !FactoryBootstrap.Instance.Sim.Grid.IsOccupied(c));
+
+    /// <summary>
+    /// 맵 타일이 건설을 허용하는가 — 지면(0)에만 짓는다. 강(1)은 지나갈 수는 있어도 지을 수 없고,
+    /// 절벽(2)과 맵 밖은 둘 다 막힌다. 맵이 주입되지 않은 구성에서는 제한하지 않는다.
+    /// </summary>
+    private bool CanBuildTerrain(Vector2Int origin, Vector2Int size)
+        => map == null || map.CanBuildFootprint(origin, size);
 
     private void SpawnPreview()
     {

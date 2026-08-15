@@ -32,8 +32,25 @@ public class MovementComponent
     /// <summary>효과 시스템의 이동 속도 배율(감속 등) — Entity.Update가 매 프레임 밀어 넣는다.</summary>
     public float SpeedMultiplier { get; set; } = 1f;
 
-    // 실제 이동에 쓰는 속도 — 기본 속도 × 효과 배율
-    private float EffectiveSpeed => moveSpeed * SpeedMultiplier;
+    /// <summary>
+    /// 지금 밟고 있는 칸의 지형 배율(강 0.5 등) — 효과와 달리 <b>위치의 성질</b>이라
+    /// 칸을 벗어나는 즉시 원복된다. 그래서 효과 시스템(시간 기반)에 얹지 않고 따로 곱한다.
+    /// 감속탄과 강이 겹치면 자연스럽게 함께 곱해진다 (0.5 × 0.5 = 0.25).
+    /// </summary>
+    private float TerrainMultiplier
+    {
+        get
+        {
+            var grid = GridManager.Instance;
+            if (grid == null || transform == null) return 1f;
+
+            var node = grid.NodeFromWorldPoint(transform.position);
+            return node != null ? grid.TerrainSpeed(node.gridCoord) : 1f;
+        }
+    }
+
+    // 실제 이동에 쓰는 속도 — 기본 속도 × 효과 배율 × 지형 배율
+    private float EffectiveSpeed => moveSpeed * SpeedMultiplier * TerrainMultiplier;
 
     public event Action OnDestinationReached;
     public event Action OnPathBlocked;

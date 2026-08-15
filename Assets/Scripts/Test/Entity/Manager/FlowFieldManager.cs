@@ -14,8 +14,8 @@ public class FlowFieldManager : MonoBehaviour
     [Tooltip("주기 갱신 간격(초). 1~3초 권장.")]
     [SerializeField, Range(1f, 3f)] private float rebuildInterval = 2f;
 
-    [Tooltip("타워 목표의 시드 비용. 코어(0)보다 크게 주면 몬스터가 코어를 우선 목표로 삼는다. 10 = 한 칸 거리.")]
-    [SerializeField] private int towerGoalCost = 30;
+    [Tooltip("건물 데이터에 위협도가 없을 때 쓰는 시드 비용(구 씬 호환). 10 = 한 칸 거리.")]
+    [SerializeField] private int fallbackGoalCost = 80;
 
     private readonly FlowField field = new FlowField();
     private readonly List<FlowField.Goal> goalBuffer = new List<FlowField.Goal>();
@@ -91,7 +91,12 @@ public class FlowFieldManager : MonoBehaviour
         {
             if (!building.IsValidTarget()) continue;
             if (building.Data is BeltDataSO) continue; // 벨트만 목표 제외
-            int seedCost = building.IsCore ? 0 : towerGoalCost;
+
+            // 무엇부터 노릴지는 건물이 정한다 — 코어 0(최종 목표), 공격 타워는 낮게(먼저 부순다),
+            // 일반 건물은 높게(굳이 돌아가지 않는다). 시드가 작을수록 그 목표가 가깝게 계산된다.
+            int seedCost = building.IsCore ? 0
+                         : building.Data != null ? building.Data.threatSeedCost
+                         : fallbackGoalCost;
 
             var col = building.GetComponentInChildren<Collider>();
             if (col != null)

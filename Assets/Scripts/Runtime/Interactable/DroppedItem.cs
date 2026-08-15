@@ -109,8 +109,7 @@ public class DroppedItem : Interactable
 
         if (success)
         {
-            InventoryManager.Instance?.RefreshAllGameUIs();
-            Destroy(gameObject);
+            Destroy(gameObject);   // 적재로 컨테이너가 Changed를 쏘면 HUD·장착이 스스로 따라온다
         }
         else
         {

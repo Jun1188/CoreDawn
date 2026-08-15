@@ -192,7 +192,6 @@ public abstract class PlayerItemPanelView : UITKPopup
 
         MoveCarry(e.position);
         RefreshCarry();
-        InventoryManager.Instance?.RefreshAllGameUIs();   // uGUI 핫바 HUD·무기 장착 동기화
     }
 
     void LeftClick(ItemContainer container, int index)
@@ -332,7 +331,6 @@ public abstract class PlayerItemPanelView : UITKPopup
         else return;
 
         RefreshCarry();
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 
     void MoveCarry(Vector2 panelPos)
@@ -364,12 +362,12 @@ public abstract class PlayerItemPanelView : UITKPopup
 
         carried = null;
         RefreshCarry();
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 
     protected static void DropToWorld(ItemDataSO item, int amount)
     {
-        var pc = InventoryManager.Instance != null ? InventoryManager.Instance.playerController : null;
+        // 떨굴 위치는 플레이어가 정한다 — 구 uGUI 매니저를 경유하지 않는다
+        var pc = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.playerController : null;
         if (pc == null) return;   // 떨굴 위치가 없다 — 이 경로는 플레이어 없는 씬뿐
 
         Vector3 pos = pc.transform.position + pc.playerCamera.forward * 1.5f + Vector3.up * 0.5f;

@@ -16,6 +16,10 @@ public class TowerDataSO : BuildingDataSO
              "어느 방식이든 효과는 소비한 탄약/연료(AmmoModuleSO)가 정의한다.")]
     public FireMode fireMode = FireMode.Projectile;
 
+    // 쏘는 건물은 몬스터에게 위협이라 먼저 노려진다 — 비전투 구조물(인펜스 등)은 일반 건물과 같다.
+    // (BuildingDataSO.threatSeedCost의 기본값을 타워에서만 낮춘다)
+    private void Reset() => threatSeedCost = 10;
+
     [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 감속 같은 부가 효과는 그대로.")]
     public float damageMultiplier = 1f;
 
