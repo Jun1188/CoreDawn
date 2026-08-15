@@ -1122,7 +1122,6 @@ GameObject:
   - component: {fileID: 4783920156234871905}
   - component: {fileID: 307732148233776431}
   - component: {fileID: 8415338401495421512}
-  - component: {fileID: 711201946653970601}
   - component: {fileID: 3702532305778674119}
   m_Layer: 6
   m_Name: Player
@@ -1305,21 +1304,8 @@ MonoBehaviour:
   craftingInputSize: 4
   craftingOutputSize: 4
   startingItems: []
-  inventoryProcessor: {fileID: 711201946653970601}
+  inventoryProcessor: {fileID: 0}
   playerController: {fileID: 6442160254612740854}
---- !u!114 &711201946653970601
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7498640336194902235}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87597f0bd1a8e7445a91529db8ccaead, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InventoryProcessor
-  currentRecipe: {fileID: 0}
 --- !u!114 &3702532305778674119
 MonoBehaviour:
   m_ObjectHideFlags: 0

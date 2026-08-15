@@ -562,3 +562,16 @@ uGUI 폐기 시 그 파일들과 함께 통째로 삭제하면 된다.
 `Scenes/Bootstrap/Factory.unity` 신설(FactoryBootstrap·PlacementSystem·BuildController·
 BeltItemView), `Combat.unity`에 Pathfinding(GridManager·FlowFieldManager) 추가.
 `Scenes/World.unity` — 루트 3개(조명·World·플레이어), **매니저 0개**.
+
+### uGUI 마무리 — 제작 4+1 제거
+`GameScreens` 폴백을 걷어낼 때 함께 하기로 했던 정리를 마쳤다. UITK 인벤토리 패널은
+가방·핫바에서 직접 재료를 소모하고 결과를 돌려주므로, 재료를 맡아두는 그릇 자체가 필요 없다.
+
+삭제: `PlayerInventoryHolder`의 CraftingInput/OutputContainer·StartHandCrafting·
+ReturnCraftingInputsToPlayer, `InventoryProcessor`(Player.prefab에서 컴포넌트도 제거),
+`CraftingUI`(uGUI 손제작 화면), `InventoryManager`의 제작 컨테이너 시프트클릭 분기와
+화면 닫을 때의 재료 회수.
+
+`BaseProcessor`는 남는다 — 건물 제작기(Assembler)가 쓴다.
+**주의**: UITest 씬(팀원)에 CraftingUI가 배선돼 있어 Missing 스크립트가 된다. uGUI 폐기의
+일부라 의도된 변화지만, 그 씬을 쓰는 팀원에게 공지가 필요하다.

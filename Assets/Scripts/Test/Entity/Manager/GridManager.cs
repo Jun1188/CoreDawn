@@ -146,8 +146,8 @@ public class GridManager : MonoBehaviour
     [SerializeField] private float buildingCostPerHp = 0.5f;
 
     [Tooltip("건물 비용 상한. 맵 대각 횡단이 약 1700(121칸)이라 이보다 크면 사실상 통행 불가가 되어 " +
-             "봉쇄가 성립한다 — 유한하게 묶어 둔다. 400 = 40칸 우회할 값어치.")]
-    [SerializeField] private int buildingCostCap = 400;
+             "봉쇄가 성립한다 — 유한하게 묶어 둔다. 200 = 20칸 우회할 값어치.")]
+    [SerializeField] private int buildingCostCap = 200;
 
     /// <summary>
     /// 이 칸에 발을 들이는 비용 — <b>길찾기의 정본</b>. 통행 가부도 여기서 파생된다
