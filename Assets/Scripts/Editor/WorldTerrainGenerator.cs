@@ -26,18 +26,39 @@ public static class WorldTerrainGenerator
 
     // ── 지형 프로파일 ───────────────────────────────────────────
     const float CliffHeight = 3.6f;    // 절벽 정상 높이(m) — 사람 키를 훌쩍 넘겨 시야를 끊는다
-    const float RiverDepth = 0.55f;    // 강바닥 깊이(m) — 물 평면보다 깊어야 물이 보인다
+    // 강바닥 깊이(m). 물 평면보다 넉넉히 깊어야 한다 — 다듬기가 폭 1칸짜리 물길의 바닥을
+    // 들어올리기 때문에, 여유가 없으면 그런 구간에서 물이 끊겨 보인다.
+    const float RiverDepth = 0.85f;
     const float WaterLevel = -0.15f;   // 물 표면 높이(m)
 
-    // 잦아드는 거리(타일). 이 값이 곧 경사다 — 높이/거리가 기울기다.
-    // 절벽은 1.0이면 약 74°로, 걸어 오를 수 없는 벼랑이 된다(2.2면 47°라 언덕처럼 보였다).
-    const float CliffFalloff = 1.0f;
-    // 강둑은 1.2 — 더 넓히면 폭 1~2칸짜리 물길이 바닥까지 파이지 못해 물 표면과 지형이
-    // 어중간하게 만나고, 그 교선이 칸 모양 톱니로 드러난다.
-    const float RiverFalloff = 1.2f;
+    // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 몇 칸 들어가야 제 높이가 되는가.
+    // 짧아야 한다. 경사를 칸 하나에 걸쳐 눕히면 폭 1~2칸짜리 절벽·물길은 제 높이에 닿기도
+    // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
+    // 절벽·강 타일은 어차피 건설 불가라 칸 안에서는 마음껏 깎아도 된다. 경계선 자체는 이미
+    // 블러로 매끈한 곡선이므로, 짧게 세울수록 그 곡선이 또렷한 벼랑·물길이 된다.
+    const float CliffFalloff = 0.12f;
+    const float RiverFalloff = 0.08f;
+
+    // ── 해상도 ──────────────────────────────────────────────────
+    const int FieldSubDiv = 4;      // 거리장을 칸의 몇 배 격자로 뜨는가 — 계단이 1/4로 잘게 쪼개진다
+    const int SamplesPerCell = 4;   // 높이맵 샘플 밀도(칸당). 2ⁿ+1로 올림된다
+
+    // 계단 다듬기 — 타일은 네모라 거리장 등고선이 90°·45°로 꺾인다. 그 각을 뭉갠다.
+    // 반경 0.5칸 × 2겹이면 칸 단위 계단은 뭉개지면서, 폭 1~2칸짜리 형상의 속살까지
+    // 밀어버리지는 않는다(반경 1칸으로 뭉개면 좁은 물길이 통째로 평탄해진다).
+    const int SmoothRadius = FieldSubDiv / 2;
+    const int SmoothPasses = 2;             // 박스 블러를 겹쳐 가우시안에 가깝게
+
+    // 높이맵 단계의 2차 다듬기(높이맵 샘플 단위). 거리장을 아무리 뭉개도 "타일 밖은 0" 클램프가
+    // 칸 격자에서 일어나 모서리가 되살아나므로, 격자를 떠난 뒤 한 번 더 편다.
+    const int HeightSmoothRadius = SamplesPerCell / 2;   // 0.5칸
+    const int HeightSmoothPasses = 2;
+    // 타일 경계에서 이만큼 밖으로 나가면 원래 높이를 그대로 지킨다 — 건물 놓을 땅은 평평해야 한다.
+    // 인접 칸 중심이 경계에서 0.5칸이므로 그보다 짧아야 옆 칸이 온전히 지켜진다.
+    const float GroundGuard = 0.3f;
 
     // ── 불규칙성 ────────────────────────────────────────────────
-    const float WarpStrength = 2.4f;   // 경계를 흔드는 세기(타일). 직각을 깨는 주역
+    const float WarpStrength = 3.2f;   // 경계를 흔드는 세기(타일). 직각을 깨는 주역
     const float WarpFrequency = 0.055f;
     const float DetailAmplitude = 0.14f;  // 지면 미세 굴곡(m)
     const float DetailFrequency = 0.09f;
@@ -99,19 +120,40 @@ public static class WorldTerrainGenerator
                 float wx = tx + (Mathf.PerlinNoise(tx * WarpFrequency, ty * WarpFrequency) - 0.5f) * 2f * WarpStrength;
                 float wy = ty + (Mathf.PerlinNoise(tx * WarpFrequency + 37.7f, ty * WarpFrequency + 12.3f) - 0.5f) * 2f * WarpStrength;
 
-                float cliff = SampleField(cliffField, map, wx, wy);
-                float river = SampleField(riverField, map, wx, wy);
+                // 워핑된 좌표와 원래 좌표 중 <b>바깥쪽</b>을 택한다(거리장은 안이 음수).
+                // 워핑이 형상을 밖으로 밀어 지면을 파는 일을 막는 장치 —
+                // 흔들림은 자기 영역을 깎는 방향으로만 남는다.
+                float cliff = Mathf.Max(SampleField(cliffField, map, wx, wy),
+                                        SampleField(cliffField, map, tx, ty));
+                float river = Mathf.Max(SampleField(riverField, map, wx, wy),
+                                        SampleField(riverField, map, tx, ty));
 
-                // 절벽: 안쪽으로 들어갈수록 솟고, 밖으로 falloff만큼 가면 지면
-                float h = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(CliffFalloff, -CliffFalloff, cliff)) * CliffHeight;
+                // 경계(0)에서 지면 높이, 안쪽으로 falloff만큼 들어가면 제 높이.
+                // 밖(양수)에서는 아예 0이라 건설 가능한 땅은 평평하게 남는다.
+                float h = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, -CliffFalloff, cliff)) * CliffHeight;
 
                 // 강: 안쪽으로 들어갈수록 파이고, 절벽과 겹치면 절벽이 이긴다
-                float dig = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(RiverFalloff, -RiverFalloff, river)) * RiverDepth;
+                float dig = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, -RiverFalloff, river)) * RiverDepth;
                 h -= dig;
 
-                // 미세 굴곡 — 평평한 지면을 깬다. 물 밑은 잔잔하게(파임을 흐리지 않도록 약하게)
+                height[j, i] = h;   // 아직 미터 단위, 형상만
+            }
+
+        // 높이맵 자체를 한 번 더 다듬는다. 거리장을 아무리 부드럽게 만들어도 "타일 밖은 0"
+        // 클램프가 칸 격자에서 일어나기 때문에 경계선이 다시 칸 모서리를 따라간다 —
+        // 격자를 떠난 이 단계에서 뭉개야 그 직각이 실제로 없어진다.
+        SmoothHeight(height, res, map, cliffField, riverField);
+
+        // 미세 굴곡은 다듬은 뒤에 얹는다(먼저 넣으면 방금 한 블러가 도로 지운다)
+        for (int j = 0; j < res; j++)
+            for (int i = 0; i < res; i++)
+            {
+                float tx = (float)i / (res - 1) * map.width;
+                float ty = (float)j / (res - 1) * map.height;
+
+                // 물 밑은 잔잔하게 — 파임을 흐리지 않도록
                 float detail = (Mathf.PerlinNoise(tx * DetailFrequency, ty * DetailFrequency) - 0.5f) * 2f * DetailAmplitude;
-                h += detail * Mathf.Lerp(0.35f, 1f, Mathf.InverseLerp(-1f, 1f, river));
+                float h = height[j, i] + detail * (height[j, i] < -0.05f ? 0.35f : 1f);
 
                 height[j, i] = Mathf.Clamp01((h + RiverDepth) / total);
             }
@@ -119,10 +161,59 @@ public static class WorldTerrainGenerator
         return height;
     }
 
+    /// <summary>
+    /// 높이맵 다듬기 — 칸 경계에 남은 직각을 편다.
+    /// 다만 블러는 절벽·강을 옆 지면으로 흘려보내므로, 지면에서는 원래 높이로 되돌린다.
+    /// 되돌리는 세기는 <b>타일 경계로부터의 거리</b>로 잰다 — 칸 중심/경계로 재면 그 되돌림이
+    /// 칸 주기로 반복돼 물가에 가리비 같은 물결이 새로 생긴다(격자를 지우려다 다시 그리는 꼴).
+    /// </summary>
+    static void SmoothHeight(float[,] height, int res, MapDataSO map, float[,] cliffField, float[,] riverField)
+    {
+        int r = HeightSmoothRadius;
+        if (r <= 0) return;
+
+        var original = (float[,])height.Clone();
+        var tmp = new float[res, res];
+
+        for (int pass = 0; pass < HeightSmoothPasses; pass++)
+        {
+            for (int j = 0; j < res; j++)
+                for (int i = 0; i < res; i++)
+                {
+                    float sum = 0f;
+                    for (int k = -r; k <= r; k++) sum += height[j, Mathf.Clamp(i + k, 0, res - 1)];
+                    tmp[j, i] = sum / (2 * r + 1);
+                }
+
+            for (int j = 0; j < res; j++)
+                for (int i = 0; i < res; i++)
+                {
+                    float sum = 0f;
+                    for (int k = -r; k <= r; k++) sum += tmp[Mathf.Clamp(j + k, 0, res - 1), i];
+                    height[j, i] = sum / (2 * r + 1);
+                }
+        }
+
+        for (int j = 0; j < res; j++)
+            for (int i = 0; i < res; i++)
+            {
+                float tx = (float)i / (res - 1) * map.width;
+                float ty = (float)j / (res - 1) * map.height;
+
+                // 절벽·강 밖으로 얼마나 나왔는가(거리장은 안이 음수) — 안쪽은 자유롭게 뭉갠다
+                float outside = Mathf.Min(SampleField(cliffField, map, tx, ty),
+                                          SampleField(riverField, map, tx, ty));
+                if (outside <= 0f) continue;
+
+                float hold = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, GroundGuard, outside));
+                height[j, i] = Mathf.Lerp(height[j, i], original[j, i], hold);
+            }
+    }
+
     static int HeightmapResolution(MapDataSO map)
     {
         // Terrain 높이맵은 2ⁿ+1이어야 한다. 맵보다 촘촘하게 잡아 곡선이 뭉개지지 않게.
-        int target = Mathf.Max(map.width, map.height) * 2;
+        int target = Mathf.Max(map.width, map.height) * SamplesPerCell;
         int res = 33;
         while (res - 1 < target && res < 2049) res = (res - 1) * 2 + 1;
         return res;
@@ -133,17 +224,23 @@ public static class WorldTerrainGenerator
     /// <summary>
     /// 부호 있는 거리장(타일 단위) — 해당 타일 안이면 음수, 밖이면 양수.
     /// 두 번 훑는 체임퍼 변환이라 맵 크기에 선형이다(브루트포스 O(n²)를 피한다).
+    ///
+    /// 칸이 아니라 <b>칸을 FieldSubDiv로 쪼갠 격자</b>에서 뜬다. 칸 단위로 뜨면 계단 하나가
+    /// 곧 한 칸이라 아무리 보간해도 마인크래프트 같은 직각이 남는다.
+    /// 뜬 뒤에는 블러로 그 직각을 뭉개되(<see cref="Smooth"/>), 뭉개진 형상이 타일 <b>밖으로</b>
+    /// 번지지는 못하게 잘라낸다 — 지면은 건물을 짓는 땅이라 깎이면 안 되기 때문이다.
+    /// 결과적으로 다듬기는 언제나 자기 쪽을 깎는 방향으로만 일어난다.
     /// </summary>
     static float[,] SignedDistance(MapDataSO map, MapTile tile)
     {
-        int w = map.width, h = map.height;
+        int w = map.width * FieldSubDiv, h = map.height * FieldSubDiv;
         var inside = new float[w, h];
         var outside = new float[w, h];
 
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
-                bool isTile = map.TileAt(x, y) == tile;
+                bool isTile = map.TileAt(x / FieldSubDiv, y / FieldSubDiv) == tile;
                 outside[x, y] = isTile ? 0f : float.MaxValue;   // 타일까지의 거리
                 inside[x, y] = isTile ? float.MaxValue : 0f;    // 타일 밖까지의 거리
             }
@@ -154,8 +251,52 @@ public static class WorldTerrainGenerator
         var signed = new float[w, h];
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
-                signed[x, y] = outside[x, y] - inside[x, y];   // 안이면 음수
+                signed[x, y] = (outside[x, y] - inside[x, y]) / FieldSubDiv;   // 안이면 음수, 칸 단위
+
+        Smooth(signed, w, h);
+
+        // 타일 밖은 음수로 내려가지 못한다 = 어떤 다듬기도 남의 땅을 파지 않는다
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (map.TileAt(x / FieldSubDiv, y / FieldSubDiv) != tile)
+                    signed[x, y] = Mathf.Max(signed[x, y], 0f);
+
         return signed;
+    }
+
+    /// <summary>분리형 박스 블러 — 거리장의 꺾인 등고선을 둥글게 편다.</summary>
+    static void Smooth(float[,] d, int w, int h)
+    {
+        var tmp = new float[w, h];
+        int r = SmoothRadius;
+        if (r <= 0) return;
+
+        for (int pass = 0; pass < SmoothPasses; pass++)
+        {
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float sum = 0f; int n = 0;
+                    for (int k = -r; k <= r; k++)
+                    {
+                        int sx = Mathf.Clamp(x + k, 0, w - 1);
+                        sum += d[sx, y]; n++;
+                    }
+                    tmp[x, y] = sum / n;
+                }
+
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float sum = 0f; int n = 0;
+                    for (int k = -r; k <= r; k++)
+                    {
+                        int sy = Mathf.Clamp(y + k, 0, h - 1);
+                        sum += tmp[x, sy]; n++;
+                    }
+                    d[x, y] = sum / n;
+                }
+        }
     }
 
     /// <summary>체임퍼 거리 변환 — 직교 1, 대각 √2로 두 방향 전파.</summary>
@@ -186,15 +327,21 @@ public static class WorldTerrainGenerator
             }
     }
 
-    /// <summary>거리장을 실수 좌표에서 이중선형 보간으로 읽는다 — 워핑된 좌표를 부드럽게 조회하기 위해.</summary>
+    /// <summary>
+    /// 거리장을 칸 좌표(실수)에서 읽는다. 격자는 FieldSubDiv배로 촘촘하므로 먼저 환산한다.
+    /// 보간 계수에 smoothstep을 물려 격자 선에서 기울기가 끊기지 않게 한다 — 선형 보간만 쓰면
+    /// 샘플 사이는 곧게 이어져 미세한 각이 남는다.
+    /// </summary>
     static float SampleField(float[,] field, MapDataSO map, float x, float y)
     {
-        x = Mathf.Clamp(x - 0.5f, 0f, map.width - 1.001f);
-        y = Mathf.Clamp(y - 0.5f, 0f, map.height - 1.001f);
+        int w = field.GetLength(0), h = field.GetLength(1);
+
+        x = Mathf.Clamp(x * FieldSubDiv - 0.5f, 0f, w - 1.001f);
+        y = Mathf.Clamp(y * FieldSubDiv - 0.5f, 0f, h - 1.001f);
 
         int x0 = Mathf.FloorToInt(x), y0 = Mathf.FloorToInt(y);
-        int x1 = Mathf.Min(x0 + 1, map.width - 1), y1 = Mathf.Min(y0 + 1, map.height - 1);
-        float fx = x - x0, fy = y - y0;
+        int x1 = Mathf.Min(x0 + 1, w - 1), y1 = Mathf.Min(y0 + 1, h - 1);
+        float fx = Mathf.SmoothStep(0f, 1f, x - x0), fy = Mathf.SmoothStep(0f, 1f, y - y0);
 
         float a = Mathf.Lerp(field[x0, y0], field[x1, y0], fx);
         float b = Mathf.Lerp(field[x0, y1], field[x1, y1], fx);
@@ -209,7 +356,7 @@ public static class WorldTerrainGenerator
         var data = new TerrainData
         {
             heightmapResolution = res,
-            alphamapResolution = Mathf.Min(1024, Mathf.NextPowerOfTwo(Mathf.Max(map.width, map.height) * 4)),
+            alphamapResolution = Mathf.Min(2048, Mathf.NextPowerOfTwo(Mathf.Max(map.width, map.height) * SamplesPerCell * 2)),
             baseMapResolution = 512,
             name = $"{map.Id.Replace(':', '_')}_TerrainData",
         };
