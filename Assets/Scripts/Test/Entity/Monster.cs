@@ -21,6 +21,7 @@ public class Monster : Entity
     // 보스 전용 변수
     private bool isBoss = false;
     private bool hasBeenAttacked = false;
+    private bool isReturningToNest;
 
     public override MovementComponent Movement => movement;
     public override CombatComponent Combat => combat;
@@ -52,9 +53,17 @@ public class Monster : Entity
     }
 
     public void SetAsBoss()
+        => SetAsBoss(transform.position, null);
+
+    public void SetAsBoss(Vector3 ownerNestOrigin, NestEngagementZone zone)
     {
         isBoss = true;
         hasBeenAttacked = false;
+        isReturningToNest = false;
+        defendOrigin = transform.position;
+        nestOrigin = ownerNestOrigin;
+        engagementZone = zone;
+        defendRadius = zone != null ? zone.LeashRange : defendRadius;
     }
 
     protected override void Awake()
@@ -69,10 +78,26 @@ public class Monster : Entity
 
     private void HandleDamageTaken()
     {
-        if (isBoss && !hasBeenAttacked)
+        if (!isBoss) return;
+
+        if (!hasBeenAttacked)
         {
             hasBeenAttacked = true;
             Debug.Log($"[Monster] 보스 몬스터가 공격을 받아 깨어났습니다!");
+        }
+
+        isReturningToNest = false;
+        var player = FindFirstObjectByType<Player>();
+        if (player.IsValidTarget() &&
+            (engagementZone == null || engagementZone.CanChase(nestOrigin, player.transform.position)))
+        {
+            aggroOnPlayer = true;
+            currentTarget = player;
+            StateMachine.SetState(new ChaseState(player));
+        }
+        else
+        {
+            BeginReturnToNest();
         }
     }
 
@@ -89,15 +114,34 @@ public class Monster : Entity
 
         if (IsDead) return;
 
-        // 보스몹이고 아직 선제 공격을 받지 않았다면 아무것도 하지 않음 (제자리 대기)
+        // 비선공 보스는 복귀 중일 때만 이동하고, 그 외에는 제자리에서 대기한다.
         if (isBoss && !hasBeenAttacked)
         {
-            if (!(StateMachine.CurrentState is IdleState))
+            if (isReturningToNest)
+            {
+                StateMachine.Tick();
+                movement.Tick(Time.deltaTime);
+            }
+            else if (!(StateMachine.CurrentState is IdleState))
                 StateMachine.SetState(new IdleState());
             return;
         }
 
+        // 낮 둥지 소속 몬스터는 NestCore의 추적/이탈 범위를 벗어나면 교전을 포기한다.
+        if ((isBoss || isNestDefender) && aggroOnPlayer && ShouldAbandonNestFight())
+        {
+            BeginReturnToNest();
+            StateMachine.Tick();
+            movement.Tick(Time.deltaTime);
+            return;
+        }
+
+        // 둥지 소속 몬스터가 경로 탐색 중 방해 건물(타워)을 임시 타깃으로 바꾸더라도
+        // 즉시 플레이어 타깃으로 복원한다. 밤 웨이브 몬스터에는 적용되지 않는다.
+        EnforceNestPlayerOnlyTarget();
+
         StateMachine.Tick();
+        EnforceNestPlayerOnlyTarget();
         movement.Tick(Time.deltaTime);
 
         // 추적 사슬(Chase/Attack)이 끝나 기본 상태로 돌아왔으면 어그로 해제 —
@@ -108,26 +152,50 @@ public class Monster : Entity
             aggroOnPlayer = false;
         }
 
-        // 방어자 모드일 경우 플레이어가 죽으면 동반 자살, 또는 거리가 너무 멀어지면 복귀
+        // 방어자 모드에서 플레이어가 죽으면 둥지로 복귀한다.
         if (isNestDefender)
         {
             if (currentTarget != null && currentTarget.IsDead)
             {
-                Health.Kill();
-                currentTarget = null;
-            }
-            else if (currentTarget != null && aggroOnPlayer)
-            {
-                float distFromOrigin = Vector3.Distance(transform.position, defendOrigin);
-                if (distFromOrigin > defendRadius ||
-                    (engagementZone != null && !engagementZone.CanChase(nestOrigin, currentTarget.transform.position)))
-                {
-                    aggroOnPlayer = false;
-                    currentTarget = null;
-                    StateMachine.SetState(new ReturnToOriginState(defendOrigin));
-                }
+                BeginReturnToNest();
             }
         }
+    }
+
+    private bool ShouldAbandonNestFight()
+    {
+        if (!currentTarget.IsValidTarget()) return true;
+        if (Vector3.Distance(transform.position, nestOrigin) > defendRadius) return true;
+        return engagementZone != null &&
+               !engagementZone.CanChase(nestOrigin, currentTarget.transform.position);
+    }
+
+    private void BeginReturnToNest()
+    {
+        aggroOnPlayer = false;
+        currentTarget = null;
+
+        if (isBoss)
+        {
+            // 보스전 포기: 비선공 상태로 되돌리고 체력을 전량 회복한다.
+            hasBeenAttacked = false;
+            isReturningToNest = true;
+            Health.Initialize();
+        }
+
+        StateMachine.SetState(new ReturnToOriginState(defendOrigin, despawnOnArrival: !isBoss));
+    }
+
+    private void EnforceNestPlayerOnlyTarget()
+    {
+        if ((!isBoss && !isNestDefender) || !aggroOnPlayer || !currentTarget.IsValidTarget()) return;
+
+        bool targetsPlayer =
+            StateMachine.CurrentState is ChaseState chase && ReferenceEquals(chase.Target, currentTarget) ||
+            StateMachine.CurrentState is AttackState attack && ReferenceEquals(attack.Target, currentTarget);
+
+        if (!targetsPlayer)
+            StateMachine.SetState(new ChaseState(currentTarget));
     }
 
     private void HandleMonsterDeath()
@@ -143,6 +211,7 @@ public class Monster : Entity
     public void OnDetectedByPlayer(Player player)
     {
         if (IsDead || aggroOnPlayer || !player.IsValidTarget()) return;
+        if (isBoss && !hasBeenAttacked) return;
         if (isNestDefender && engagementZone != null && !engagementZone.CanChase(nestOrigin, player.transform.position)) return;
         aggroOnPlayer = true;
         currentTarget = player;
@@ -152,11 +221,13 @@ public class Monster : Entity
     public void OnLostByPlayer()
     {
         if (!aggroOnPlayer) return;
+        // 깨어난 보스는 플레이어 센서 반경이 아니라 둥지의 chase/leash 범위로 교전을 유지한다.
+        if (isBoss && hasBeenAttacked) return;
         aggroOnPlayer = false;
         currentTarget = null;
         if (IsDead) return;
 
-        // 방어자는 제자리 대기 대신 원위치로 돌아간 뒤 사라진다
+        // 방어자는 플로우필드(건물 공격)로 복귀하지 않고 둥지 쪽으로 돌아간다.
         if (isNestDefender)
         {
             StateMachine.SetState(new ReturnToOriginState(defendOrigin));
@@ -172,6 +243,7 @@ public class Monster : Entity
     {
         isNestDefender = true;
         defendOrigin = transform.position;
+        nestOrigin = defendOrigin;
         currentTarget = target;
         aggroOnPlayer = true;
         StateMachine.SetState(new ChaseState(target));
@@ -199,11 +271,17 @@ public class Monster : Entity
         public void Exit(StateMachineComponent sm) { }
     }
 
-    // 원위치 복귀 후 사라지는 상태
+    // 원위치 복귀. 일회성 방어 몬스터는 도착 후 정리하고, 보스는 비선공 대기로 남는다.
     private class ReturnToOriginState : IEntityState
     {
         private Vector3 origin;
-        public ReturnToOriginState(Vector3 origin) { this.origin = origin; }
+        private bool despawnOnArrival;
+
+        public ReturnToOriginState(Vector3 origin, bool despawnOnArrival = true)
+        {
+            this.origin = origin;
+            this.despawnOnArrival = despawnOnArrival;
+        }
 
         public void Enter(StateMachineComponent sm)
         {
@@ -224,7 +302,8 @@ public class Monster : Entity
             if (dist < 1.5f)
             {
                 sm.Movement?.StopMoving();
-                Destroy(sm.Owner.gameObject);
+                if (despawnOnArrival) Destroy(sm.Owner.gameObject);
+                else sm.SetState(new DefenderIdleState());
             }
         }
 

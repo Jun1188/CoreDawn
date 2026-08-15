@@ -30,6 +30,8 @@ public sealed class NestEngagementZone : MonoBehaviour
     {
         if (!IsActivePhase) return false;
         float distance = Vector3.Distance(nestPosition, targetPosition);
-        return distance >= MinimumRange && distance <= ChaseRange;
+        // minimumRange는 추가 스폰 금지 거리일 뿐이다. 이미 교전한 몬스터가
+        // 플레이어가 둥지 안쪽으로 들어왔다는 이유로 추적을 포기하면 안 된다.
+        return distance <= ChaseRange;
     }
 }

@@ -874,6 +874,26 @@
 .combat-cross__bar--w { top: 12px; left: 0; width: 9px; height: 3px; }
 .combat-cross__bar--e { top: 12px; right: 0; width: 9px; height: 3px; }
 
+.combat-death {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.combat-death__text {
+    color: var(--danger);
+    font-size: 54px;
+    letter-spacing: 4.5px;
+    -unity-font-style: bold;
+    -unity-font-definition: var(--font-display);
+    -unity-text-align: middle-center;
+}
+
 /* 좌하단 — 체력은 큰 숫자로 세우고 바는 얇게. 급할 때 읽는 건 바가 아니라 숫자다 */
 .combat-vitals {
     position: absolute;
