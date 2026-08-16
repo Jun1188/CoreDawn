@@ -38,6 +38,11 @@ public static class WorldTerrainGenerator
     const float ShoreWidth = 1f;    // 맵 가장자리에서 물에 잠기는 폭(칸)
     const float SeaMargin = 1.5f;   // 물을 맵 밖으로 얼마나 더 깔지 (맵 한 변의 배수)
 
+    // ── 경계벽 ──────────────────────────────────────────────────
+    const float BoundsHeight = 40f;      // 점프·넉백으로도 넘지 못할 높이(m)
+    const float BoundsThickness = 2f;    // 빠른 이동체가 한 프레임에 뚫지 않을 두께(m)
+    const float BoundsSink = 5f;         // 바닥을 지형 아래까지 내려 물가 틈으로 새지 않게
+
     /// <summary>수면 정점 간격(m). 물 셰이더가 정점을 흔들므로 파도 주기보다 촘촘해야 한다.</summary>
     const float WaterVertexSpacing = 2f;
 
@@ -102,6 +107,11 @@ public static class WorldTerrainGenerator
         CreateTerrain(map, world, root.transform, height);
         CreateWater(map, world, root.transform, height);
         PlaceCliffs(map, world, root.transform);
+        CreateBounds(map, world, root.transform);
+
+        // 생성물은 전부 정적이다 — 맵이 바뀌기 전에는 움직이지 않으므로
+        // 배칭·오클루전·라이트맵을 전부 받을 수 있다.
+        MarkStatic(root.transform);
 
         // 디스크에 굳힌다. SetDirty만으로는 부족하다 — 디테일(풀)과 스캐터 모드는
         // 저장되지 않은 채 에셋이 다시 로드되는 순간 통째로 사라진다(알파맵은 별도
@@ -699,6 +709,64 @@ public static class WorldTerrainGenerator
             }
 
         Debug.Log($"[WorldTerrainGenerator] 절벽 프리팹 {placed}개 (칸당 1개, 칸 {world.CellSize}m)");
+    }
+
+    // ── 경계 · 정적 표시 ────────────────────────────────────────
+
+    /// <summary>
+    /// 맵 둘레에 보이지 않는 벽을 세운다 — 지형은 맵 크기만큼만 있어서 그 밖은 허공이다.
+    ///
+    /// <b>총알은 통과해야 한다.</b> 그래서 `Ignore Raycast` 레이어에 둔다:
+    /// 사격 판정(<see cref="ProjectileSystem"/>)이 쓰는 `Physics.DefaultRaycastLayers`가
+    /// 정확히 이 레이어를 빼고 있어, 총알은 없는 것처럼 지나간다.
+    /// 반면 물리 충돌은 레이어 충돌 매트릭스가 따로 정하므로 플레이어는 그대로 막힌다.
+    /// </summary>
+    static void CreateBounds(MapDataSO map, World world, Transform root)
+    {
+        int ignoreRaycast = LayerMask.NameToLayer("Ignore Raycast");
+        if (ignoreRaycast < 0)
+        {
+            Debug.LogWarning("[WorldTerrainGenerator] 'Ignore Raycast' 레이어가 없어 경계벽을 세우지 못했습니다.");
+            return;
+        }
+
+        var parent = new GameObject("Bounds").transform;
+        parent.SetParent(root, false);
+
+        float w = map.width * world.CellSize, h = map.height * world.CellSize;
+        float t = BoundsThickness, half = BoundsHeight * 0.5f;
+
+        // 벽 안쪽 면이 맵 경계에 딱 맞도록 두께의 절반만큼 바깥으로 민다
+        Wall("Bounds_-X", new Vector3(-t * 0.5f, half, h * 0.5f), new Vector3(t, BoundsHeight, h + t * 2f));
+        Wall("Bounds_+X", new Vector3(w + t * 0.5f, half, h * 0.5f), new Vector3(t, BoundsHeight, h + t * 2f));
+        Wall("Bounds_-Z", new Vector3(w * 0.5f, half, -t * 0.5f), new Vector3(w + t * 2f, BoundsHeight, t));
+        Wall("Bounds_+Z", new Vector3(w * 0.5f, half, h + t * 0.5f), new Vector3(w + t * 2f, BoundsHeight, t));
+
+        void Wall(string name, Vector3 center, Vector3 size)
+        {
+            var go = new GameObject(name) { layer = ignoreRaycast };
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = center - new Vector3(0f, BoundsSink, 0f);
+
+            var box = go.AddComponent<BoxCollider>();
+            box.size = size;
+        }
+    }
+
+    /// <summary>
+    /// 생성물 전체를 정적으로 표시한다 — 배칭·오클루전·라이트맵이 걸리도록.
+    /// 플래그를 나열하는 이유: `(StaticEditorFlags)~0`은 아직 없는 비트까지 켠다.
+    /// </summary>
+    static void MarkStatic(Transform root)
+    {
+        const StaticEditorFlags All =
+            StaticEditorFlags.ContributeGI | StaticEditorFlags.OccluderStatic |
+            StaticEditorFlags.BatchingStatic | StaticEditorFlags.NavigationStatic |
+            StaticEditorFlags.OccludeeStatic | StaticEditorFlags.OffMeshLinkGeneration |
+            StaticEditorFlags.ReflectionProbeStatic;
+
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+            GameObjectUtility.SetStaticEditorFlags(t.gameObject, All);
     }
 
     /// <summary>
