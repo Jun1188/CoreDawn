@@ -17,15 +17,37 @@ public class WaveSpawnManager
     private bool spawningEnabled;
     private float nextSpawnTime;
     private readonly List<Monster> monsters = new List<Monster>();
+    private readonly List<Monster> nightWaveMonsters = new List<Monster>();
+
+    private bool quantityBasedMode;
+    private bool quantityWaveActive;
+    private bool quantityWaveCompleted;
+    private int targetSpawnAmount;
+    private int spawnedThisWave;
+    private int lastNotifiedDefeated = -1;
+    private int lastNotifiedSpawned = -1;
 
     private List<WaveDataSO> waves = new List<WaveDataSO>();
     private WaveDataSO currentWave;
 
     // 파괴되지 않은 둥지 캐시
     private List<MonsterNest> activeNests = new List<MonsterNest>();
+    private readonly List<Transform> nightSpawnPoints = new List<Transform>();
+    private bool useExplicitNightSpawnPoints;
 
     public IReadOnlyList<Monster> Monsters => monsters;
     public bool SpawningEnabled => spawningEnabled;
+    public bool QuantityBasedMode => quantityBasedMode;
+    public bool IsQuantityWaveActive => quantityWaveActive;
+    public bool IsQuantityWaveCompleted => quantityWaveCompleted;
+    public int TargetSpawnAmount => targetSpawnAmount;
+    public int SpawnedThisWave => spawnedThisWave;
+    public int DefeatedThisWave => Mathf.Clamp(spawnedThisWave - NightWaveAliveCount, 0, spawnedThisWave);
+    public int RemainingThisWave => Mathf.Max(0, targetSpawnAmount - DefeatedThisWave);
+
+    public event Action<int> QuantityWaveStarted;
+    public event Action<int, int, int> QuantityWaveProgressChanged;
+    public event Action<int> QuantityWaveCompleted;
 
     public int AliveCount
     {
@@ -42,10 +64,44 @@ public class WaveSpawnManager
     private int BaseAmount => currentWave != null ? currentWave.baseAmount : 4;
     private float SpawnInterval => currentWave != null ? currentWave.spawnInterval : 2f;
 
+    private int NightWaveAliveCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (var monster in nightWaveMonsters)
+                if (monster != null && !monster.IsDead) count++;
+            return count;
+        }
+    }
+
+    public void SetQuantityBasedMode(bool enabled)
+    {
+        quantityBasedMode = enabled;
+        if (!enabled)
+        {
+            quantityWaveActive = false;
+            quantityWaveCompleted = false;
+            nightWaveMonsters.Clear();
+        }
+    }
+
     public void Initialize(GridManager grid, Transform parent)
+    {
+        Initialize(grid, parent, null);
+    }
+
+    public void Initialize(GridManager grid, Transform parent, IReadOnlyList<Transform> explicitNightSpawnPoints)
     {
         this.grid = grid;
         this.parent = parent;
+        nightSpawnPoints.Clear();
+        useExplicitNightSpawnPoints = explicitNightSpawnPoints != null;
+        if (explicitNightSpawnPoints != null)
+        {
+            for (int i = 0; i < explicitNightSpawnPoints.Count; i++)
+                if (explicitNightSpawnPoints[i] != null) nightSpawnPoints.Add(explicitNightSpawnPoints[i]);
+        }
         if (grid == null)
             Debug.LogWarning("[WaveSpawnManager] GridManager가 없습니다. 둥지 또는 바닥에 스폰이 실패할 수 있습니다.");
 
@@ -76,7 +132,22 @@ public class WaveSpawnManager
         {
             nextSpawnTime = Time.time;
             DetermineCurrentWave();
+            // Spawn location and nest-strength tracking are separate concerns.
+            // Explicit dungeon entrances still need the live nest count for wave weakening.
             FindActiveNests();
+
+            if (quantityBasedMode)
+            {
+                nightWaveMonsters.Clear();
+                targetSpawnAmount = Mathf.Max(1, BaseAmount);
+                spawnedThisWave = 0;
+                lastNotifiedDefeated = -1;
+                lastNotifiedSpawned = -1;
+                quantityWaveCompleted = false;
+                quantityWaveActive = true;
+                QuantityWaveStarted?.Invoke(targetSpawnAmount);
+                NotifyQuantityProgress();
+            }
         }
     }
 
@@ -116,6 +187,18 @@ public class WaveSpawnManager
         CleanupDead();
 
         if (!spawningEnabled) return;
+
+        if (quantityBasedMode)
+        {
+            if (!quantityWaveActive) return;
+            NotifyQuantityProgress();
+            if (spawnedThisWave >= targetSpawnAmount)
+            {
+                if (NightWaveAliveCount == 0) CompleteQuantityWave();
+                return;
+            }
+        }
+
         if (Time.time < nextSpawnTime) return;
         
         // 둥지 파괴 시 웨이브 약화 (절반으로 줄임, 최소 1)
@@ -125,10 +208,17 @@ public class WaveSpawnManager
             effectiveMaxAlive = Mathf.Max(1, MaxAlive / 2);
         }
 
-        if (AliveCount >= effectiveMaxAlive) return;
+        int concurrencyCount = quantityBasedMode ? NightWaveAliveCount : AliveCount;
+        if (concurrencyCount >= effectiveMaxAlive) return;
 
-        if (TrySpawn())
+        if (TrySpawn(out Monster spawnedMonster))
         {
+            if (quantityBasedMode)
+            {
+                nightWaveMonsters.Add(spawnedMonster);
+                spawnedThisWave++;
+                NotifyQuantityProgress();
+            }
             nextSpawnTime = Time.time + SpawnInterval;
         }
     }
@@ -138,13 +228,17 @@ public class WaveSpawnManager
         foreach (var m in monsters)
             if (m != null) UnityEngine.Object.Destroy(m.gameObject);
         monsters.Clear();
+        nightWaveMonsters.Clear();
     }
 
     public void SpawnNestDefenders(MonsterNest nest, Player target, int amount)
     {
         var spawnPositions = nest.GetAllActiveSpawnPositions();
-        foreach (var position in spawnPositions)
+        if (spawnPositions.Count == 0 || amount <= 0) return;
+
+        for (int i = 0; i < amount; i++)
         {
+            Vector3 position = spawnPositions[i % spawnPositions.Count];
             GameObject go = monsterPrefab != null
                 ? UnityEngine.Object.Instantiate(monsterPrefab, position, Quaternion.identity, parent)
                 : CreateFallbackMonster(position);
@@ -166,7 +260,11 @@ public class WaveSpawnManager
             monsters.Add(monster);
             
             // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정
-            monster.SetAsNestDefender(target);
+            var zone = nest.GetComponent<NestEngagementZone>();
+            if (zone != null)
+                monster.SetAsNestDefender(target, nest.transform.position, zone);
+            else
+                monster.SetAsNestDefender(target);
         }
         Debug.Log($"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
     }
@@ -187,14 +285,29 @@ public class WaveSpawnManager
                 monsters.RemoveAt(i);
             }
         }
+
+        for (int i = nightWaveMonsters.Count - 1; i >= 0; i--)
+        {
+            var monster = nightWaveMonsters[i];
+            if (monster == null || (monster.IsDead && !monster.gameObject.activeInHierarchy))
+                nightWaveMonsters.RemoveAt(i);
+        }
     }
 
-    private bool TrySpawn()
+    private bool TrySpawn(out Monster spawnedMonster)
     {
+        spawnedMonster = null;
         Vector3 position = default;
         bool foundPos = false;
 
-        if (activeNests.Count > 0)
+        if (useExplicitNightSpawnPoints)
+        {
+            if (nightSpawnPoints.Count == 0) return false;
+            Transform point = nightSpawnPoints[UnityEngine.Random.Range(0, nightSpawnPoints.Count)];
+            position = point.position;
+            foundPos = true;
+        }
+        else if (activeNests.Count > 0)
         {
             var nest = activeNests[UnityEngine.Random.Range(0, activeNests.Count)];
             foundPos = nest.TryGetSpawnPosition(out position);
@@ -223,11 +336,32 @@ public class WaveSpawnManager
         rb.isKinematic = true;
         rb.useGravity = false;
 
-        var monster = go.GetComponent<Monster>();
-        if (monster == null) monster = go.AddComponent<Monster>();
-        monsters.Add(monster);
+        spawnedMonster = go.GetComponent<Monster>();
+        if (spawnedMonster == null) spawnedMonster = go.AddComponent<Monster>();
+        monsters.Add(spawnedMonster);
 
         return true;
+    }
+
+    private void NotifyQuantityProgress()
+    {
+        if (!quantityBasedMode) return;
+        int defeated = DefeatedThisWave;
+        if (defeated == lastNotifiedDefeated && spawnedThisWave == lastNotifiedSpawned) return;
+        lastNotifiedDefeated = defeated;
+        lastNotifiedSpawned = spawnedThisWave;
+        QuantityWaveProgressChanged?.Invoke(defeated, spawnedThisWave, targetSpawnAmount);
+    }
+
+    private void CompleteQuantityWave()
+    {
+        if (!quantityWaveActive || quantityWaveCompleted) return;
+        quantityWaveActive = false;
+        quantityWaveCompleted = true;
+        spawningEnabled = false;
+        NotifyQuantityProgress();
+        Debug.Log($"[WaveSpawnManager] 물량 웨이브 완료: {targetSpawnAmount}마리 전멸");
+        QuantityWaveCompleted?.Invoke(targetSpawnAmount);
     }
 
     private bool TryGetEdgeSpawnPosition(out Vector3 position)

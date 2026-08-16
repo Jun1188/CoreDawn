@@ -44,6 +44,10 @@
             <ui:VisualElement class="combat-cross__bar combat-cross__bar--e" />
         </ui:VisualElement>
 
+        <ui:VisualElement name="death-overlay" class="combat-death" picking-mode="Ignore">
+            <ui:Label text="You Die" class="combat-death__text" picking-mode="Ignore" />
+        </ui:VisualElement>
+
         <!-- 좌하단: 체력(큰 숫자 + 얇은 바) + 코어 -->
         <ui:VisualElement class="combat-vitals">
             <ui:VisualElement class="combat-vitals__head">

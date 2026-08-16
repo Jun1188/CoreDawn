@@ -13,6 +13,14 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private FlowFieldManager flowFieldManager;
     [SerializeField] private WaveSpawnManager spawnManager = new WaveSpawnManager();
+    [SerializeField] private NightSpawnPointProvider nightSpawnPointProvider;
+
+    [Tooltip("맵에 직접 배선된 전투 매니저가 빈 Bootstrap/Combat 인스턴스를 교체합니다.")]
+    [SerializeField] private bool preferSceneInstance;
+
+    [Header("Night Wave Completion")]
+    [Tooltip("MainScene opt-in. When enabled, night ends only after the finite WaveDataSO.baseAmount quota is defeated. Legacy scenes keep timed nights by default.")]
+    [SerializeField] private bool quantityBasedNightWaves;
 
     [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 HealthComponent 기본값(100)을 쓴다.")]
     [SerializeField] private float playerMaxHealth = 300f;
@@ -24,25 +32,45 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private float playerMeleeDamage = 10f;
 
     private Player playerEntity; // 아침 부활 처리용 캐시
+    private GameObject playerSceneRoot;
 
     public GridManager Grid => gridManager;
     public FlowFieldManager FlowField => flowFieldManager;
     public WaveSpawnManager Spawner => spawnManager;
+    public bool UsesQuantityBasedNightWaves => quantityBasedNightWaves;
+    public event System.Action<int, int> NightWaveCleared;
 
     private void Awake()
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
-            return;
+            if (preferSceneInstance && !Instance.preferSceneInstance)
+            {
+                var bootstrapInstance = Instance;
+                Instance = this;
+                // 다른 시스템·타워·둥지와 같은 루트일 수 있으므로 중복 컴포넌트만 제거한다.
+                Destroy(bootstrapInstance);
+            }
+            else
+            {
+                // BattleManager가 다른 시스템과 같은 루트에 붙어 있을 수 있으므로
+                // 중복 컴포넌트만 제거하고 형제 시스템은 보존한다.
+                Destroy(this);
+                return;
+            }
         }
-        Instance = this;
+        else
+        {
+            Instance = this;
+        }
 
         // 인스펙터에서 비워두면 씬에서 자동 해결
         if (gridManager == null)
             gridManager = GridManager.Instance != null ? GridManager.Instance : FindFirstObjectByType<GridManager>();
         if (flowFieldManager == null)
             flowFieldManager = FlowFieldManager.Instance != null ? FlowFieldManager.Instance : FindFirstObjectByType<FlowFieldManager>();
+        if (nightSpawnPointProvider == null)
+            nightSpawnPointProvider = GetComponentInChildren<NightSpawnPointProvider>(true);
     }
 
     // 코어 파괴로 게임이 끝났는지 여부. UI/연출은 GameOver 이벤트를 구독하면 된다.
@@ -54,10 +82,17 @@ public class BattleManager : MonoBehaviour
         EnsurePlayerEntity();
         BuildingEntity.CoreDestroyed += OnCoreDestroyed;
 
-        spawnManager.Initialize(gridManager, transform);
+        spawnManager.SetQuantityBasedMode(quantityBasedNightWaves);
+        spawnManager.QuantityWaveCompleted += OnQuantityWaveCompleted;
+
+        if (nightSpawnPointProvider != null)
+            spawnManager.Initialize(gridManager, transform, nightSpawnPointProvider.SpawnPoints);
+        else
+            spawnManager.Initialize(gridManager, transform);
 
         if (TimeManager.Instance != null)
         {
+            TimeManager.Instance.SetNightCompletionControlled(quantityBasedNightWaves);
             TimeManager.Instance.Cycle.NightStarted += OnNightStarted;
             TimeManager.Instance.Cycle.DayStarted += OnDayStarted;
             spawnManager.SetSpawningEnabled(TimeManager.Instance.Phase == DayPhase.Night);
@@ -73,8 +108,11 @@ public class BattleManager : MonoBehaviour
     {
         if (Instance == this) Instance = null;
         BuildingEntity.CoreDestroyed -= OnCoreDestroyed;
+        spawnManager.QuantityWaveCompleted -= OnQuantityWaveCompleted;
         if (TimeManager.Instance != null)
         {
+            if (quantityBasedNightWaves)
+                TimeManager.Instance.SetNightCompletionControlled(false);
             TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
             TimeManager.Instance.Cycle.DayStarted -= OnDayStarted;
         }
@@ -87,10 +125,13 @@ public class BattleManager : MonoBehaviour
     {
         var controller = FindFirstObjectByType<PlayerController>();
         if (controller == null) return;
-        if (controller.GetComponent<Player>() != null) return;
+        playerSceneRoot = controller.transform.root.gameObject;
 
-        var player = controller.gameObject.AddComponent<Player>();
-        // FPS 플레이어는 카메라/UI가 하위에 있어 Destroy 대신 비활성화로 사망 처리
+        var player = controller.GetComponent<Player>();
+        bool attachedNow = player == null;
+        if (attachedNow) player = controller.gameObject.AddComponent<Player>();
+
+        // 사망 문구는 별도 GameplayHUD UIDocument에 남고, FPS 플레이어/카메라는 기존처럼 비활성화한다.
         player.SetDeathBehavior(destroy: false, delay: 2f);
         // 런타임 부착이라 인스펙터로 HP/감지 범위를 못 만지므로 여기서 설정
         if (playerMaxHealth > 0f) player.Health.SetMaxHealth(playerMaxHealth);
@@ -105,7 +146,8 @@ public class BattleManager : MonoBehaviour
         else if (damageEffect == null)
             Debug.LogWarning("[BattleManager] EffectDatabase에서 피해 효과를 찾지 못해 플레이어 근접 공격이 무효과입니다.");
         playerEntity = player;
-        Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
+        if (attachedNow)
+            Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
     }
 
     private void OnCoreDestroyed(BuildingEntity core)
@@ -119,7 +161,19 @@ public class BattleManager : MonoBehaviour
 
     private void Update()
     {
+        RestorePlayerSceneRootIfNeeded();
         spawnManager.Tick();
+    }
+
+    // FPS 카메라가 PlayerControl 계층 아래 있으므로 부모가 꺼지면 모든 카메라가 함께 사라진다.
+    // 플레이어 사망은 Player 자식 자체를 끄는 기존 흐름이 담당하므로 부모 컨테이너는 항상 살아 있어야 한다.
+    private void RestorePlayerSceneRootIfNeeded()
+    {
+        if (IsGameOver || playerSceneRoot == null || playerSceneRoot.activeSelf)
+            return;
+
+        playerSceneRoot.SetActive(true);
+        Debug.LogWarning("[BattleManager] 비활성화된 플레이어 씬 루트를 복구했습니다. 카메라 렌더링을 계속 유지합니다.", playerSceneRoot);
     }
 
     private void OnNightStarted(int day)
@@ -135,10 +189,24 @@ public class BattleManager : MonoBehaviour
         RevivePlayerIfDead();
     }
 
-    // 밤에 전사한 플레이어를 아침에 부활 — FPS 카메라가 플레이어 하위라 죽은 채 두면 시점이 사라진다
+    private void OnQuantityWaveCompleted(int defeatedAmount)
+    {
+        int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 1;
+        NightWaveCleared?.Invoke(day, defeatedAmount);
+
+        if (quantityBasedNightWaves && TimeManager.Instance != null &&
+            TimeManager.Instance.Phase == DayPhase.Night)
+        {
+            TimeManager.Instance.EndNightEarly();
+        }
+    }
+
+    // 밤에 전사한 플레이어와 카메라 계층을 아침에 다시 활성화하고 부활시킨다.
     private void RevivePlayerIfDead()
     {
         if (playerEntity == null || !playerEntity.IsDead) return;
+        if (playerSceneRoot != null && !playerSceneRoot.activeSelf)
+            playerSceneRoot.SetActive(true);
         playerEntity.gameObject.SetActive(true);
         playerEntity.Health.Initialize(); // IsDead 해제 + HP 전량 회복
         Debug.Log("[BattleManager] 아침 — 플레이어 부활 (HP 전량 회복)");

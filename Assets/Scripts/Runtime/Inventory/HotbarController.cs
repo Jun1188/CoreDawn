@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[DefaultExecutionOrder(100)]
 public class HotbarController : MonoBehaviour, IInputReceiver
 {
     public static HotbarController Instance { get; private set; }
@@ -24,9 +25,16 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         if (player == null) player = FindFirstObjectByType<PlayerController>();
     }
 
-    private void Start()
+    private System.Collections.IEnumerator Start()
     {
         if (InputManager.Instance != null) InputManager.Instance.Register(this);
+
+        // PlayerInventoryHolder seeds the starting hotbar in Awake, while
+        // WeaponManager disables every weapon model in Start. Wait until all
+        // Start callbacks have finished, then equip slot 0 so a configured
+        // starting gun is visible and usable immediately.
+        yield return null;
+        EquipFromActiveSlot();
     }
 
     private void OnDisable()

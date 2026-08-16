@@ -47,6 +47,7 @@ public class MonsterNest : Entity
     private SensorComponent sensor = new SensorComponent();
     private bool hasWarned;
     private float lastDefenseSpawnTime;
+    private NestEngagementZone engagementZone;
 
 
     public bool IsDestroyed { get; private set; }
@@ -61,6 +62,7 @@ public class MonsterNest : Entity
         sensor.Initialize(this);
         sensor.SetTargetLayer("Player", "Character");
         sensor.SetDetectionRange(Mathf.Max(warningRange, triggerRange));
+        engagementZone = GetComponent<NestEngagementZone>();
     }
 
     protected override void Start()
@@ -72,22 +74,10 @@ public class MonsterNest : Entity
             TimeManager.Instance.Cycle.DayStarted += OnDayStarted;
         }
         
-        // 씬 시작 시 보스가 없다면 스폰 (에디터에서 씬 리로드를 안 했을 경우 대비)
-        if (spawnPoints != null)
-        {
-            foreach (var sp in spawnPoints)
-            {
-                if ((sp.linkedBoss == null || sp.linkedBoss.IsDead) && !sp.isDestroyed && sp.bossPrefab != null && sp.point != null)
-                {
-                    Vector3 spawnPos = sp.point.position + sp.point.forward * 2f;
-                    var go = Instantiate(sp.bossPrefab, spawnPos, sp.point.rotation, transform);
-                    SnapBossToGround(go);
-                    sp.linkedBoss = go.GetComponent<Monster>();
-                    sp.linkedBoss?.SetAsBoss();
-                    Debug.Log($"[MonsterNest] 시작 시 누락된 보스 몬스터를 자동 스폰했습니다.");
-                }
-            }
-        }
+        // 보스는 낮 던전의 고정 전투 대상이다. NestEngagementZone은 방어 몬스터의
+        // 출현/추적 거리만 제어하며, 보스의 초기 배치를 막으면 플레이어가 선공할
+        // 비선공 보스 자체가 존재하지 않게 된다.
+        EnsureBossesSpawned();
     }
 
     private void SnapBossToGround(GameObject boss)
@@ -160,8 +150,13 @@ public class MonsterNest : Entity
             {
                 float dist = Vector3.Distance(transform.position, player.transform.position);
 
-                if (dist <= triggerRange)
+                bool canSpawn = engagementZone != null
+                    ? engagementZone.CanSpawnFor(transform.position, player.transform.position)
+                    : dist <= triggerRange;
+
+                if (canSpawn)
                 {
+                    EnsureBossesSpawned();
                     if (Time.time >= lastDefenseSpawnTime + defenseSpawnCooldown)
                     {
                         lastDefenseSpawnTime = Time.time;
@@ -171,7 +166,7 @@ public class MonsterNest : Entity
                         }
                     }
                 }
-                else if (dist <= warningRange)
+                else if ((engagementZone == null || engagementZone.IsActivePhase) && dist <= warningRange)
                 {
                     if (!hasWarned)
                     {
@@ -193,6 +188,31 @@ public class MonsterNest : Entity
         {
             hasWarned = false;
         }
+    }
+
+    private void EnsureBossesSpawned()
+    {
+        if (spawnPoints == null) return;
+
+        foreach (var sp in spawnPoints)
+        {
+            if (sp.isDestroyed || sp.point == null || sp.bossPrefab == null) continue;
+            if (sp.linkedBoss != null && !sp.linkedBoss.IsDead) continue;
+
+            SpawnBossAtPoint(sp);
+        }
+    }
+
+    // 낮 방어 몬스터와 보스는 같은 에디터 지정 스폰 포인트를 사용한다.
+    // 지면 스냅은 Y축 보정만 하므로 수평 위치는 point와 항상 일치한다.
+    private void SpawnBossAtPoint(NestSpawnPoint spawnPoint)
+    {
+        var go = Instantiate(spawnPoint.bossPrefab, spawnPoint.point.position,
+            spawnPoint.point.rotation, transform);
+        SnapBossToGround(go);
+        spawnPoint.linkedBoss = go.GetComponent<Monster>();
+        spawnPoint.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
     }
 
     private void OnDestroy()
@@ -249,14 +269,11 @@ public class MonsterNest : Entity
                     sp.isDestroyed = false;
                     if (sp.point != null) sp.point.gameObject.SetActive(true);
                     
-                    // 보스 복구
+                    // 보스 복구. EngagementZone은 방어 몬스터의 거리 규칙일 뿐,
+                    // 보스 재배치를 차단하지 않는다.
                     if (sp.bossPrefab != null && sp.point != null)
                     {
-                        Vector3 spawnPos = sp.point.position + sp.point.forward * 2f;
-                        var go = Instantiate(sp.bossPrefab, spawnPos, sp.point.rotation, transform);
-                        SnapBossToGround(go);
-                        sp.linkedBoss = go.GetComponent<Monster>();
-                        sp.linkedBoss?.SetAsBoss();
+                        SpawnBossAtPoint(sp);
                         Debug.Log($"[MonsterNest] 보스 몬스터와 스폰포인트가 복구되었습니다! (Day {day})");
                     }
                 }
@@ -279,8 +296,10 @@ public class MonsterNest : Entity
             Debug.Log($"[MonsterNest] 파괴되었던 둥지가 복구되었습니다 (Day {day}).");
         }
 
-        // 밤 시작 시 보스가 없으면 스폰 (파괴되지 않은 스폰포인트에 한해)
-        if (!IsDestroyed && spawnPoints != null)
+        // 낮 던전은 밤에 보스를 보충하지 않는다. 밤 스폰은 BattleManager가 별도
+        // NightSpawnPointProvider(던전 입구)에서 전담한다. EngagementZone이 없는
+        // 레거시 둥지만 기존의 밤 보충 동작을 유지한다.
+        if (engagementZone == null && !IsDestroyed && spawnPoints != null)
         {
             foreach (var sp in spawnPoints)
             {
@@ -288,11 +307,7 @@ public class MonsterNest : Entity
                 {
                     if (sp.bossPrefab != null && sp.point != null)
                     {
-                        Vector3 spawnPos = sp.point.position + sp.point.forward * 2f;
-                        var go = UnityEngine.Object.Instantiate(sp.bossPrefab, spawnPos, sp.point.rotation, transform);
-                        SnapBossToGround(go);
-                        sp.linkedBoss = go.GetComponent<Monster>();
-                        sp.linkedBoss?.SetAsBoss();
+                        SpawnBossAtPoint(sp);
                         Debug.Log($"[MonsterNest] 새로운 보스 몬스터가 스폰되었습니다!");
                     }
                 }

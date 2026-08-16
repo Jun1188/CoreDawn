@@ -36,7 +36,6 @@ public class Entity : MonoBehaviour
     [SerializeField] private float deathDelay = 2f;
     [Tooltip("true면 사망 연출 후 Destroy로 완전 소멸, false면 SetActive(false)로 비활성화만 한다.")]
     [SerializeField] private bool destroyOnDeath = true;
-
     [SerializeField] private HealthComponent health = new HealthComponent();
 
     public HealthComponent Health => health;
@@ -116,7 +115,7 @@ public class Entity : MonoBehaviour
     // 즉시 사망 — HP를 0으로 만들고 사망 흐름(OnDeath → HandleDeath)을 태운다
     public void Die() => health.Kill();
 
-    // 런타임 부착 시 사망 방식 변경용 (예: FPS 플레이어는 카메라 보존을 위해 비활성화만)
+    // 런타임 부착 시 사망 방식 변경용 (예: FPS 플레이어는 Destroy 대신 비활성화)
     public void SetDeathBehavior(bool destroy, float delay)
     {
         destroyOnDeath = destroy;
