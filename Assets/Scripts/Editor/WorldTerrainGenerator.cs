@@ -467,7 +467,7 @@ public static class WorldTerrainGenerator
         // 크기는 프리팹 원본에 곱해지는 배율이다. 1인칭 게임이라 무릎 높이여야 시야가 열린다 —
         // Demo 값(0.5~1)을 그대로 쓰면 눈높이를 덮어 앞이 안 보인다.
         var protos = new List<DetailPrototype>();
-        foreach (var n in GrassSet) AddProto(protos, n, 0.28f, 0.5f);
+        foreach (var n in GrassSet) AddProto(protos, n, 0.56f, 1.0f);
         int flowerStart = protos.Count;
         foreach (var n in FlowerSet) AddProto(protos, n, 0.3f, 0.55f);
         int grassCount = flowerStart;
@@ -515,7 +515,7 @@ public static class WorldTerrainGenerator
                 // 풀은 <b>빈 곳 없이</b> 깔되 밀도만 흔든다. 임계값으로 자르면 노이즈 모양 그대로
                 // 구멍이 뚫려, 잔디밭이 아니라 얼룩으로 보인다.
                 float patch = Mathf.PerlinNoise(tx * 0.06f, ty * 0.06f);
-                int amount = patch > 0.55f ? 2 : 1;
+                int amount = patch > 0.7f ? 3 : 2;   // 평균 약 2.3 — 이전(1.45)의 1.5배
                 layers[Hash(i, j, 17) % grassCount][j, i] = amount;
 
                 // 꽃 — 셀 단위로 흩뿌린다. 칸 좌표로 종류를 고르면 같은 칸이 통째로 한 색이 되고,
