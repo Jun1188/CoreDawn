@@ -468,8 +468,9 @@ public static class WorldTerrainGenerator
         // Demo 값(0.5~1)을 그대로 쓰면 눈높이를 덮어 앞이 안 보인다.
         var protos = new List<DetailPrototype>();
         foreach (var n in GrassSet) AddProto(protos, n, 0.56f, 1.0f);
+        // 꽃은 잔디보다 조금 커야 보인다 — 작으면 풀숲에 통째로 묻힌다
         int flowerStart = protos.Count;
-        foreach (var n in FlowerSet) AddProto(protos, n, 0.3f, 0.55f);
+        foreach (var n in FlowerSet) AddProto(protos, n, 0.7f, 1.2f);
         int grassCount = flowerStart;
         int flowerCount = protos.Count - flowerStart;
 
@@ -523,7 +524,7 @@ public static class WorldTerrainGenerator
                 if (flowerCount > 0)
                 {
                     float bloom = Mathf.PerlinNoise(tx * 0.04f + 31.7f, ty * 0.04f + 12.9f);
-                    if (bloom > 0.66f && Hash(i, j, 91) % 24 == 0)
+                    if (bloom > 0.58f && Hash(i, j, 91) % 8 == 0)
                         layers[flowerStart + Hash(i, j, 53) % flowerCount][j, i] = 1;
                 }
             }
