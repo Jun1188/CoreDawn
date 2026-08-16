@@ -380,8 +380,15 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         float yaw = _lookInput.x * mouseSensitivity * 0.1f;
         float pitch = _lookInput.y * mouseSensitivity * 0.1f;
 
-        // 요는 몸이, 피치는 카메라 리그가 소유한다
-        if (Mathf.Abs(yaw) > 0f) transform.Rotate(Vector3.up * yaw, Space.Self);
+        // 요는 몸이, 피치는 카메라 리그가 소유한다.
+        // Transform만 돌리면 물리 엔진이 <b>자기가 기억하는 회전으로 매 스텝 되돌린다</b> —
+        // 좌우로 돌려도 제자리로 끌려오는 증상이 이것이다(FreezeRotation이라 각속도는 0인데도).
+        // 피치가 멀쩡한 이유는 그쪽은 Rigidbody가 없는 자식 노드이기 때문이다.
+        if (Mathf.Abs(yaw) > 0f)
+        {
+            transform.Rotate(Vector3.up * yaw, Space.Self);
+            if (rb != null) rb.rotation = transform.rotation;
+        }
 
         if (cameraRig != null) cameraRig.ApplyLook(pitch, MAX_CAMERA_ROTATION_X);
         else if (playerCamera != null) ApplyLookFallback(pitch);

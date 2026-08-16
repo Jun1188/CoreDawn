@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,7 +26,9 @@ public static class WorldTerrainGenerator
     const string AssetFolder = "Assets/Data/Maps/Terrain";
 
     // ── 지형 프로파일 ───────────────────────────────────────────
-    const float CliffHeight = 3.6f;    // 절벽 정상 높이(m) — 사람 키를 훌쩍 넘겨 시야를 끊는다
+    // 지형이 담는 높이 폭(m). 절벽은 프리팹이 맡으므로 지형이 표현할 것은 강 깊이뿐이다 —
+    // 여유를 조금 둬야 미세 굴곡이 잘리지 않는다.
+    const float TerrainHeightRange = 2f;
     // 강바닥 깊이(m). 물 평면보다 넉넉히 깊어야 한다 — 다듬기가 폭 1칸짜리 물길의 바닥을
     // 들어올리기 때문에, 여유가 없으면 그런 구간에서 물이 끊겨 보인다.
     const float RiverDepth = 0.85f;
@@ -36,8 +39,7 @@ public static class WorldTerrainGenerator
     // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
     // 절벽·강 타일은 어차피 건설 불가라 칸 안에서는 마음껏 깎아도 된다. 경계선 자체는 이미
     // 블러로 매끈한 곡선이므로, 짧게 세울수록 그 곡선이 또렷한 벼랑·물길이 된다.
-    const float CliffFalloff = 0.12f;
-    const float RiverFalloff = 0.08f;
+    const float RiverFalloff = 0.16f;   // 크면 완만하다 — 경사를 절반으로 눕히려면 거리를 두 배로
 
     // 형상을 타일 경계에서 이만큼 <b>안쪽으로</b> 물려 시작한다. 경사면이 남의 땅이 아니라
     // 제 타일을 깎으며 생기게 하는 장치다 — 경계에 딱 맞춰 세우면 다듬는 과정에서 높이가
@@ -89,6 +91,12 @@ public static class WorldTerrainGenerator
         var height = BuildHeightmap(map);
         CreateTerrain(map, world, root.transform, height);
         CreateWater(map, world, root.transform);
+        PlaceCliffs(map, world, root.transform);
+
+        // 디스크에 굳힌다. SetDirty만으로는 부족하다 — 디테일(풀)과 스캐터 모드는
+        // 저장되지 않은 채 에셋이 다시 로드되는 순간 통째로 사라진다(알파맵은 별도
+        // 경로라 살아남아서, 풀만 없어지는 것으로 보인다).
+        AssetDatabase.SaveAssets();
 
         EditorUtility.SetDirty(world.gameObject);
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(world.gameObject.scene);
@@ -110,7 +118,7 @@ public static class WorldTerrainGenerator
         var riverField = SignedDistance(map, MapTile.River);
 
         var height = new float[res, res];
-        float total = CliffHeight + RiverDepth;   // 정규화 기준 (0 = 강바닥, 1 = 절벽 정상)
+        float total = TerrainHeightRange;   // 정규화 기준 (0 = 바닥, 1 = 천장)
 
         for (int j = 0; j < res; j++)
             for (int i = 0; i < res; i++)
@@ -131,12 +139,12 @@ public static class WorldTerrainGenerator
                 float river = Mathf.Max(SampleField(riverField, map, wx, wy),
                                         SampleField(riverField, map, tx, ty));
 
-                // 경계에서 ShapeInset만큼 안쪽에 발치가 있고, 거기서 falloff만큼 더 들어가면 제 높이.
-                // 발치가 이미 타일 안이라 지면은 어떤 경우에도 평평하게 남는다.
-                float h = Mathf.SmoothStep(0f, 1f,
-                    Mathf.InverseLerp(-ShapeInset, -ShapeInset - CliffFalloff, cliff)) * CliffHeight;
+                // 절벽은 지형이 아니라 프리팹이 맡는다(PlaceCliffs) — 높이맵은 평평하게 둔다.
+                // 높이맵으로 세운 벽은 결국 늘어난 텍스처라 가까이서 암벽으로 보이지 않는다.
+                float h = 0f;
 
-                // 강: 안쪽으로 들어갈수록 파이고, 절벽과 겹치면 절벽이 이긴다
+                // 강만 판다. 경계에서 ShapeInset만큼 안쪽에 물가가 있고, 거기서 falloff만큼
+                // 더 들어가면 제 깊이 — 발치가 타일 안이라 지면은 평평하게 남는다.
                 float dig = Mathf.SmoothStep(0f, 1f,
                     Mathf.InverseLerp(-ShapeInset, -ShapeInset - RiverFalloff, river)) * RiverDepth;
                 h -= dig;
@@ -358,7 +366,7 @@ public static class WorldTerrainGenerator
             name = $"{map.Id.Replace(':', '_')}_TerrainData",
         };
         // size는 heightmapResolution 설정 뒤에 줘야 한다 (해상도 변경이 size를 되돌린다)
-        data.size = new Vector3(map.width * world.CellSize, CliffHeight + RiverDepth, map.height * world.CellSize);
+        data.size = new Vector3(map.width * world.CellSize, TerrainHeightRange, map.height * world.CellSize);
         data.SetHeights(0, 0, height);
         data.terrainLayers = BuildLayers();
 
@@ -380,10 +388,249 @@ public static class WorldTerrainGenerator
         terrain.heightmapPixelError = 3f;
         terrain.drawInstanced = true;
 
+        // 풀은 멀리서 보이지 않아도 된다 — 가까이서 발밑을 덮는 것이 목적이다
+        terrain.detailObjectDistance = DetailDistance;
+        terrain.detailObjectDensity = 1f;
+
         // 스플랫은 반드시 에셋으로 굳힌 뒤에 칠한다. TerrainData를 CreateAsset 하는 순간
         // 알파맵 텍스처가 새로 만들어지면서 그 전에 칠한 내용이 전부 첫 레이어로 초기화된다.
         PaintSplat(data, map, height);
+        PaintDetails(data, map, height);
         EditorUtility.SetDirty(data);
+
+        // 여기서 디스크에 굳힌다. 뒤이어 물 메시를 CreateAsset 하는 순간, 아직 저장되지 않은
+        // TerrainData의 디테일이 통째로 날아간다 — 다른 에셋을 만드는 것이 이쪽의 미저장
+        // 변경을 되돌린다(스플랫이 CreateAsset에 초기화되던 것과 같은 함정의 반대편).
+        AssetDatabase.SaveAssets();
+    }
+
+    // ── 디테일(풀·꽃) ───────────────────────────────────────────
+    //
+    // 지형 텍스처만으로는 에셋 홍보 사진 같은 그림이 나오지 않는다. 그 인상의 대부분은
+    // 지면을 덮은 <b>잔디 메시</b>에서 온다 — 바닥이 평평한 그림에서 풀이 선 그림으로 바뀐다.
+
+    const string PrefabFolder = "Assets/ThirdParty/Idyllic Fantasy Nature/Prefabs";
+    const int DetailRes = 512;          // 디테일 격자(맵 전체). 121칸 맵이면 칸당 약 4점
+    const int DetailPatch = 32;         // 패치 단위 — Demo와 같은 값
+    const float DetailDistance = 120f;  // 이 거리 밖에서는 그리지 않는다
+
+    // ── 절벽 프리팹 배치 ────────────────────────────────────────
+    const float CliffSpacingMeters = 6f;   // 프리팹을 놓는 간격(m). 프리팹 폭보다 좁아야 서로 겹쳐 이어진다
+    const float CliffSink = 1.2f;          // 지면 아래로 묻는 깊이(m) — 밑동이 떠 보이지 않게
+    const float CliffScaleMin = 0.35f;     // 구획을 조금만 채운 곳(능선 끝자락)
+    const float CliffScaleMax = 0.7f;      // 구획이 절벽으로 꽉 찬 곳
+    const float CliffHeightScale = 1.3f;   // 가로보다 세로로 더 늘려 벽처럼 세운다
+
+    /// <summary>지면을 덮는 풀.</summary>
+    static readonly string[] GrassSet = { "Grass_01", "Grass_02", "Grass_03" };
+
+    /// <summary>드문드문 섞이는 꽃 — 단조로운 초원을 깬다.</summary>
+    static readonly string[] FlowerSet =
+    {
+        "Flower_White", "Flower_Yellow", "Flower_Blue_01", "Flower_Red", "Flower_Purple",
+    };
+
+    /// <summary>절벽 타일에 세우는 암벽 프리팹. 지형을 솟구치게 하는 대신 이것들이 벽이 된다.</summary>
+    static readonly string[] CliffSet =
+    {
+        "Cliff_01", "Cliff_02", "Cliff_03", "Cliff_05",
+    };
+
+    // 디테일은 지형 텍스처가 아니라 <b>정점 색</b>으로 물드므로 색을 여기서 준다 (Demo와 같은 값)
+    static readonly Color HealthyTint = new Color(0.263f, 0.976f, 0.165f);
+    static readonly Color DryTint = new Color(0.804f, 0.737f, 0.102f);
+
+    /// <summary>
+    /// 풀·꽃·갈대를 심는다. 심는 자리는 <b>타일이 정한다</b> — 지면에만 풀이 자라고,
+    /// 갈대는 물가(강에 닿은 지면)에만 선다. 절벽과 강 위에는 아무것도 두지 않는다.
+    /// 디테일은 콜라이더가 없어 길찾기·건설·사격 판정에 전혀 관여하지 않는다.
+    /// </summary>
+    static void PaintDetails(TerrainData data, MapDataSO map, float[,] height)
+    {
+        // 크기는 프리팹 원본에 곱해지는 배율이다. 1인칭 게임이라 무릎 높이여야 시야가 열린다 —
+        // Demo 값(0.5~1)을 그대로 쓰면 눈높이를 덮어 앞이 안 보인다.
+        var protos = new List<DetailPrototype>();
+        foreach (var n in GrassSet) AddProto(protos, n, 0.28f, 0.5f);
+        int flowerStart = protos.Count;
+        foreach (var n in FlowerSet) AddProto(protos, n, 0.3f, 0.55f);
+        int grassCount = flowerStart;
+        int flowerCount = protos.Count - flowerStart;
+
+        if (protos.Count == 0)
+        {
+            Debug.LogWarning("[WorldTerrainGenerator] 디테일 프리팹을 하나도 찾지 못해 풀을 심지 않았습니다.");
+            return;
+        }
+
+        // 해상도·모드를 먼저 잡고 <b>프로토타입은 마지막에</b> 대입한다.
+        // SetDetailResolution은 디테일 데이터를 초기화하면서 프로토타입 목록까지 비운다 —
+        // 순서를 반대로 하면 심을 것이 하나도 없는 상태가 된다.
+        data.SetDetailResolution(DetailRes, DetailPatch);
+
+        // 밀도 값을 <b>셀당 개수</b>로 해석하게 한다(Demo와 같은 모드).
+        // 기본값인 CoverageMode에서는 같은 값이 0~255 커버리지 비율로 읽혀,
+        // 2~3을 넣으면 1%도 안 되는 밀도가 되어 풀이 아예 보이지 않는다.
+        data.SetDetailScatterMode(DetailScatterMode.InstanceCountMode);
+
+        data.detailPrototypes = protos.ToArray();
+
+        var layers = new int[protos.Count][,];
+        for (int i = 0; i < layers.Length; i++) layers[i] = new int[DetailRes, DetailRes];
+
+        for (int j = 0; j < DetailRes; j++)
+            for (int i = 0; i < DetailRes; i++)
+            {
+                // 디테일 격자 → 타일 좌표. 디테일 맵은 [y, x] 순서다(높이맵과 같다).
+                float tx = (float)i / DetailRes * map.width;
+                float ty = (float)j / DetailRes * map.height;
+                int cx = Mathf.Clamp(Mathf.FloorToInt(tx), 0, map.width - 1);
+                int cy = Mathf.Clamp(Mathf.FloorToInt(ty), 0, map.height - 1);
+
+                if (map.TileAt(cx, cy) != MapTile.Ground) continue;
+
+                // 절벽에 닿은 칸은 통째로 비운다. 벽 바로 앞은 풀이 벽면에 파고든 것처럼 보이고,
+                // 그 자리는 절벽 프리팹(<see cref="PlaceCliffs"/>)이 채운다.
+                if (NextTo(map, cx, cy, MapTile.Cliff)) continue;
+
+                // 지형이 솟은 곳도 제외 — 미세 굴곡을 넘어서면 이미 경사다
+                if (SampleHeightAt(height, tx, ty, map) > 0.3f) continue;
+
+                // 풀은 <b>빈 곳 없이</b> 깔되 밀도만 흔든다. 임계값으로 자르면 노이즈 모양 그대로
+                // 구멍이 뚫려, 잔디밭이 아니라 얼룩으로 보인다.
+                float patch = Mathf.PerlinNoise(tx * 0.06f, ty * 0.06f);
+                int amount = patch > 0.55f ? 2 : 1;
+                layers[Hash(i, j, 17) % grassCount][j, i] = amount;
+
+                // 꽃 — 셀 단위로 흩뿌린다. 칸 좌표로 종류를 고르면 같은 칸이 통째로 한 색이 되고,
+                // 그 칸들이 규칙적으로 늘어서 <b>줄무늬</b>가 생긴다(꽃밭이 아니라 격자무늬가 됐던 이유).
+                if (flowerCount > 0)
+                {
+                    float bloom = Mathf.PerlinNoise(tx * 0.04f + 31.7f, ty * 0.04f + 12.9f);
+                    if (bloom > 0.66f && Hash(i, j, 91) % 24 == 0)
+                        layers[flowerStart + Hash(i, j, 53) % flowerCount][j, i] = 1;
+                }
+            }
+
+        for (int i = 0; i < layers.Length; i++) data.SetDetailLayer(0, 0, i, layers[i]);
+    }
+
+    /// <summary>위치를 잘 섞인 값으로 바꾼다 — 좌표를 곱해 더하는 식은 대각선 줄무늬를 만든다.</summary>
+    static int Hash(int x, int y, int salt)
+    {
+        unchecked
+        {
+            int h = x * 374761393 + y * 668265263 + salt * 1442695041;
+            h = (h ^ (h >> 13)) * 1274126177;
+            return (h ^ (h >> 16)) & 0x7fffffff;
+        }
+    }
+
+    static void AddProto(List<DetailPrototype> into, string prefabName, float min, float max)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/{prefabName}.prefab");
+        if (prefab == null)
+        {
+            Debug.LogWarning($"[WorldTerrainGenerator] 디테일 프리팹 없음: {prefabName}");
+            return;
+        }
+
+        into.Add(new DetailPrototype
+        {
+            prototype = prefab,
+            usePrototypeMesh = true,
+            renderMode = DetailRenderMode.VertexLit,
+            useInstancing = true,        // 수만 개가 깔리므로 인스턴싱이 아니면 감당이 안 된다
+            minWidth = min, maxWidth = max,
+            minHeight = min, maxHeight = max,
+            noiseSpread = 20f,
+            density = 1f,
+            healthyColor = HealthyTint,
+            dryColor = DryTint,
+        });
+    }
+
+    /// <summary>정규화 높이맵을 타일 좌표에서 읽어 미터로 돌려준다 — 경사면 판정용.</summary>
+    static float SampleHeightAt(float[,] height, float tx, float ty, MapDataSO map)
+    {
+        int res = height.GetLength(0);
+        int i = Mathf.Clamp(Mathf.RoundToInt(tx / map.width * (res - 1)), 0, res - 1);
+        int j = Mathf.Clamp(Mathf.RoundToInt(ty / map.height * (res - 1)), 0, res - 1);
+        return height[j, i] * TerrainHeightRange - RiverDepth;
+    }
+
+    static bool NextTo(MapDataSO map, int x, int y, MapTile tile)
+    {
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+                if (map.TileAt(x + dx, y + dy) == tile) return true;
+        return false;
+    }
+
+    // ── 절벽 ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 절벽 타일에 암벽 프리팹을 세운다. <b>지형을 솟구치게 하지 않는 이유</b>는
+    /// 높이맵으로 만든 벽이 결국 늘어난 텍스처 덩어리이기 때문이다 — 가까이서 보면
+    /// 풀이 벽면에 발려 있고, 실루엣도 매끄러운 언덕에 가깝다.
+    /// 프리팹은 제 형태와 노멀을 갖고 있어 그 자리에서 바로 암벽으로 읽힌다.
+    ///
+    /// 콜라이더는 <b>남긴다</b> — 이제 이것이 플레이어를 막고 총알을 받는 실체다
+    /// (예전에는 Terrain 경사가 그 일을 했다). 길찾기는 여전히 타일이 정한다.
+    ///
+    /// 프리팹이 칸보다 훨씬 크므로(5~18m) 칸마다 놓지 않고 <b>일정 간격으로</b> 놓아
+    /// 서로 겹치게 한다. 겹친 덩어리가 이어져 하나의 능선이 된다.
+    /// </summary>
+    static void PlaceCliffs(MapDataSO map, World world, Transform root)
+    {
+        var prefabs = new List<GameObject>();
+        foreach (var n in CliffSet)
+        {
+            var p = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/{n}.prefab");
+            if (p != null) prefabs.Add(p);
+        }
+        if (prefabs.Count == 0)
+        {
+            Debug.LogWarning("[WorldTerrainGenerator] 절벽 프리팹을 찾지 못해 절벽을 세우지 못했습니다.");
+            return;
+        }
+
+        var parent = new GameObject("Cliffs").transform;
+        parent.SetParent(root, false);
+
+        // 프리팹 하나가 덮는 폭(월드 m) 기준으로 간격을 잡는다
+        float spacing = Mathf.Max(1f, CliffSpacingMeters / world.CellSize);
+        int step = Mathf.Max(1, Mathf.RoundToInt(spacing));
+
+        int placed = 0;
+        for (int y = 0; y < map.height; y += step)
+            for (int x = 0; x < map.width; x += step)
+            {
+                // 이 구획에 절벽 칸이 있는지 보고, 그 무게중심에 세운다
+                float sx = 0f, sy = 0f; int n = 0;
+                for (int dy = 0; dy < step; dy++)
+                    for (int dx = 0; dx < step; dx++)
+                        if (map.TileAt(x + dx, y + dy) == MapTile.Cliff) { sx += x + dx; sy += y + dy; n++; }
+
+                if (n == 0) continue;
+
+                var cell = new Vector2Int(Mathf.RoundToInt(sx / n), Mathf.RoundToInt(sy / n));
+                int pick = Hash(cell.x, cell.y, 23) % prefabs.Count;
+                var cliff = (GameObject)PrefabUtility.InstantiatePrefab(prefabs[pick], parent);
+
+                Vector3 pos = world.CellToWorldCenter(cell);
+                // 바닥을 지면 아래로 조금 묻는다 — 딱 얹으면 밑이 떠 보인다
+                pos.y = world.Origin.y - CliffSink;
+
+                cliff.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, Hash(cell.x, cell.y, 89) % 360, 0f));
+
+                // 절벽 덩어리가 클수록 크게 — 구획을 얼마나 채웠는지로 가늠한다
+                float fill = (float)n / (step * step);
+                float s = Mathf.Lerp(CliffScaleMin, CliffScaleMax, fill) * world.CellSize;
+                cliff.transform.localScale = new Vector3(s, s * CliffHeightScale, s);
+                placed++;
+            }
+
+        Debug.Log($"[WorldTerrainGenerator] 절벽 프리팹 {placed}개 (간격 {step}칸)");
     }
 
     /// <summary>URP 지형 머티리얼 — 렌더 파이프라인의 기본값을 쓰되, 없으면 셰이더로 직접 만든다.</summary>
@@ -409,50 +656,54 @@ public static class WorldTerrainGenerator
         return mat;
     }
 
-    /// <summary>지면·절벽·강바닥 3종 레이어. 텍스처가 준비되기 전이라 단색으로 굽는다.</summary>
-    static TerrainLayer[] BuildLayers() => new[]
+    /// <summary>
+    /// 지면·절벽·강바닥 3종 레이어 — Idyllic Fantasy Nature의 것을 그대로 쓴다.
+    /// <b>순서가 곧 스플랫 채널</b>이다(0 지면 / 1 절벽 / 2 강바닥) — <see cref="PaintSplat"/>과 맞물려 있으니
+    /// 순서를 바꾸면 칠이 뒤바뀐다.
+    ///
+    /// 예전에는 단색 텍스처를 구워 썼다. 에셋의 레이어는 노멀맵까지 들어 있어 같은 조명에서
+    /// 굴곡이 살고, 무엇보다 나무·풀 프리팹과 같은 팔레트라 지형만 따로 노는 일이 없다.
+    /// </summary>
+    static TerrainLayer[] BuildLayers()
     {
-        MakeLayer("Ground", new Color(0.42f, 0.55f, 0.33f)),
-        MakeLayer("Cliff",  new Color(0.45f, 0.42f, 0.38f)),
-        MakeLayer("Riverbed", new Color(0.38f, 0.36f, 0.28f)),
-    };
+        const string LayerFolder = "Assets/ThirdParty/Idyllic Fantasy Nature/Terrain Layer";
 
-    static TerrainLayer MakeLayer(string name, Color color)
-    {
-        string path = $"{AssetFolder}/Layer_{name}.terrainlayer";
-        var existing = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
-        if (existing != null) return existing;
-
-        var tex = new Texture2D(8, 8);
-        var pixels = new Color[64];
-        for (int i = 0; i < pixels.Length; i++) pixels[i] = color;
-        tex.SetPixels(pixels);
-        tex.Apply();
-
-        string texPath = $"{AssetFolder}/Tex_{name}.png";
-        System.IO.File.WriteAllBytes(texPath, tex.EncodeToPNG());
-        Object.DestroyImmediate(tex);
-        AssetDatabase.ImportAsset(texPath);
-
-        var layer = new TerrainLayer
+        var layers = new[]
         {
-            diffuseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath),
-            tileSize = new Vector2(4f, 4f),
+            Load($"{LayerFolder}/Grass_Layer.terrainlayer"),   // 지면
+            Load($"{LayerFolder}/Rock_Layer.terrainlayer"),    // 절벽
+            Load($"{LayerFolder}/Sand_Layer.terrainlayer"),    // 강바닥
         };
-        AssetDatabase.CreateAsset(layer, path);
-        return layer;
+
+        foreach (var l in layers)
+            if (l == null) return System.Array.Empty<TerrainLayer>();
+
+        return layers;
+
+        static TerrainLayer Load(string path)
+        {
+            var layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
+            if (layer == null)
+                Debug.LogError($"[WorldTerrainGenerator] 지형 레이어를 찾지 못했습니다: {path}\n" +
+                               "Idyllic Fantasy Nature 에셋이 지워졌거나 옮겨졌습니다.");
+            return layer;
+        }
     }
 
     /// <summary>
-    /// 표면 칠하기 — 타일이 아니라 <b>실제 높이·경사</b>로 정한다.
-    /// 그래야 워핑으로 흐트러진 경계와 텍스처가 어긋나지 않는다.
+    /// 표면 칠하기. 강바닥은 <b>실제 높이</b>로 정한다 — 워핑으로 흐트러진 물가와 텍스처가
+    /// 어긋나지 않는다. 절벽은 이제 지형이 아니라 프리팹이라 높이로 알 수 없으므로
+    /// <b>타일</b>로 칠한다(프리팹 사이 틈으로 풀밭이 비치지 않게 하는 것이 목적).
     /// </summary>
     static void PaintSplat(TerrainData data, MapDataSO map, float[,] height)
     {
         int res = data.alphamapResolution;
         int hres = height.GetLength(0);
         var alphas = new float[res, res, 3];
-        float total = CliffHeight + RiverDepth;
+        float total = TerrainHeightRange;
+
+        // 절벽 타일에서 바깥으로 번지는 정도(칸) — 딱 자르면 칸 경계가 그대로 드러난다
+        var cliffField = SignedDistance(map, MapTile.Cliff);
 
         for (int j = 0; j < res; j++)
             for (int i = 0; i < res; i++)
@@ -463,10 +714,11 @@ public static class WorldTerrainGenerator
 
                 float world = height[hj, hi] * total - RiverDepth;   // 월드 높이(m)
 
-                // 절벽 표면은 "지면보다 확실히 솟은 곳" — 임계값을 높이에 비례시켜
-                // CliffHeight를 조절해도 칠이 따라오게 한다
+                float tx = (float)i / (res - 1) * map.width;
+                float ty = (float)j / (res - 1) * map.height;
                 float cliff = Mathf.SmoothStep(0f, 1f,
-                    Mathf.InverseLerp(CliffHeight * 0.15f, CliffHeight * 0.6f, world));
+                    Mathf.InverseLerp(0.4f, -0.3f, SampleField(cliffField, map, tx, ty)));
+
                 float bed = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.05f, -0.4f, world));
                 float ground = Mathf.Max(0f, 1f - cliff - bed);
 
