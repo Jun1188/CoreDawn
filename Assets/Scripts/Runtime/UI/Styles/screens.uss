@@ -874,6 +874,26 @@
 .combat-cross__bar--w { top: 12px; left: 0; width: 9px; height: 3px; }
 .combat-cross__bar--e { top: 12px; right: 0; width: 9px; height: 3px; }
 
+.combat-death {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.combat-death__text {
+    color: var(--danger);
+    font-size: 54px;
+    letter-spacing: 4.5px;
+    -unity-font-style: bold;
+    -unity-font-definition: var(--font-display);
+    -unity-text-align: middle-center;
+}
+
 /* 좌하단 — 체력은 큰 숫자로 세우고 바는 얇게. 급할 때 읽는 건 바가 아니라 숫자다 */
 .combat-vitals {
     position: absolute;
@@ -991,6 +1011,30 @@
     color: var(--text-faint);
     -unity-font-definition: var(--font-data);
     padding-bottom: 1.5px;
+}
+
+/* 탄종·예비탄 줄 — 실소비 세계의 "인벤토리에 몇 발 남았나". V = 탄종 전환 */
+.combat-ammo__typeline {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 1px;
+}
+
+.combat-ammo__type {
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+.combat-ammo__reserve {
+    font-size: 14px;
+    color: var(--text);
+    -unity-font-definition: var(--font-data);
+    margin-left: 6px;
+}
+
+/* 재장전 중 — 큰 숫자를 죽여 "지금은 못 쏜다"를 말한다 */
+.combat-ammo__now--reloading {
+    color: var(--text-faint);
 }
 
 /* 하단 중앙 — 핫바. 인벤토리 패널의 핫바와 정확히 같은 자리(같은 손 위치).

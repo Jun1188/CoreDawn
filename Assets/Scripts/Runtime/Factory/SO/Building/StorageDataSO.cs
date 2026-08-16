@@ -47,8 +47,7 @@ public class StorageBehavior : IBuildingBehavior, IInteractiveBehavior
     public void Interact(PlayerController player)
     {
         // 보관함 = 입력 버퍼. 벨트가 넣는 곳과 같아서 화면에 보이는 것이 곧 저장소의 전부다.
-        if (InventoryManager.Instance != null)
-            InventoryManager.Instance.OpenContainerScreen(_b.Input);
+        GameScreens.OpenContainer(_b.Input);
     }
 
     public void Tick(float dt)

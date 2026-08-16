@@ -476,3 +476,45 @@ GameUI.unity는 Build Settings에 등록돼 있어야 한다 — 없으면 경�
   날아갔다 — 에디터에 열려 있던 씬이 낡은 상태였음. git HEAD에서 복원 후 씬을 디스크에서
   다시 열고 진행. **씬을 고치는 스크립트는 저장 전에 대상이 실제로 있는지 확인하고,
   없으면 저장하지 말 것**
+
+---
+
+## 2026-08-14 — UIBootstrap → GameBootstrap 일반화 (기능 부트스트랩 로더)
+
+### 조사 (전 씬 전수 스캔 + PR 타임라인)
+씬 12개를 전수 스캔한 결과, `InputManager`·`Building`(Factory 4종)·`PlayerControl`
+(플레이어+매니저+uGUI)·`CombatSystem`(전투 6종) 4덩어리가 씬마다 **프리팹도 아닌
+씬 로컬 복사본**으로 복붙돼 있었다 (7~9개 씬씩). 드리프트 실증: UITest의 PlayerControl은
+UI가 빠져 있고, ItemTree의 Player만 최신 무기 리그, MainScene은 그 중간. UIBootstrap이
+경고한 "씬마다 복사본" 문제가 UI 밖 전 기능에서 진행 중이었다.
+
+### GameBootstrap (Runtime/Manager) — UIBootstrap 흡수
+- 로더 하나가 entries 순서대로 additive 탑재 — RuntimeInitializeOnLoadMethod가 기능마다
+  흩어지면 실행 순서를 보장할 수 없다. 순서 = 의존 순서.
+- 항목: **Systems**(InputManager·GameManager·TimeManager — 씬 참조 없는 순수 매니저만)
+  → **GameUI**(기존 그대로).
+- 멱등 2중: 조건(대표 타입 부재)이 로드를 피하고, 매니저 각각의 Awake 자가 중복
+  제거("있으면 자폭" — 3종 모두 확인)가 공존을 보장. **기존 씬은 안 고쳐도 그대로 돈다** —
+  씬에서 복사본을 지우는 순간부터 부트스트랩이 대신 얹는 게 마이그레이션의 전부.
+- 플레이어 없는 씬(순수 테스트)에는 아무것도 얹지 않는다 (기존 UI 조건을 로더 전역으로).
+
+### 신규 씬
+- `Scenes/Systems.unity` — 매니저 3종 (값은 PlayLoopTest 원본에서 CopySerialized 승계).
+- `Scenes/Test/BootstrapTest.unity` — 바닥+조명+Player 프리팹만. 매니저 0개 씬이
+  부트스트랩만으로 완전해지는 증명이자 최소 씬 템플릿.
+- Build Settings: GameUI + Systems.
+
+### 검증 (플레이 실측)
+- BootstrapTest(매니저 0) → Systems·GameUI 자동 탑재, Input/Game/Time 싱글톤 전부 활성,
+  HUD 표시, 플레이어 무기 시스템 동작.
+- PlayLoopTest(복사본 보유) → Systems 스킵(각 1개 유지), GameUI만 탑재. 중복 없음.
+
+### 다음 단계 (미착수 — 참조 풀기가 선행)
+- Factory 덩어리(FactoryBootstrap·PlacementSystem·BuildController): 씬 참조는 없어 보이나
+  카메라·그리드 결합 확인 필요.
+- Combat 덩어리: BattleManager가 GridManager·FlowFieldManager를 인스펙터 참조 —
+  씬 경계를 넘을 수 없으므로 런타임 디스커버리로 바꿔야 추출 가능. GridManager·Core·
+  타워·둥지는 맵 소유라 씬에 남는 게 맞다.
+- PlayerControl 덩어리: InventoryManager가 PlayerController를 인스펙터 참조 + uGUI와
+  얽힘. uGUI 폐기(구 이슈)와 함께 풀 것. Player.prefab은 이미 최신 리그 완전체.
+- 팀원 씬의 복사본 제거는 각 소유자가 — 로더가 멱등이라 강제할 필요 없음.

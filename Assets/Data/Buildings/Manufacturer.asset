@@ -53,3 +53,5 @@ MonoBehaviour:
   maxHp: 320
   availableRecipes:
   - {fileID: 11400000, guid: 190440ae95df16548b9f9fd14e20fe4b, type: 2}
+  - {fileID: 11400000, guid: 7875079e52e5585489a4451fb39ec608, type: 2}
+  - {fileID: 11400000, guid: ffcb5b240bd2cd048b843863d50240ee, type: 2}

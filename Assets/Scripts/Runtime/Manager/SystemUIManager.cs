@@ -144,6 +144,11 @@ public class SystemUIManager : MonoBehaviour, IInputReceiver
     ///
     /// 구 패널은 9개 씬에 각각 복사돼 있어 지우려면 씬 파일을 전부 건드려야 한다.
     /// 팀의 씬 병합 작업과 충돌하므로 지우지 않고 런타임에 숨기기만 한다.
+    ///
+    /// 구 패널에 있던 것은 UITK 쪽에 전부 자리가 있어야 숨겨도 잃는 게 없다:
+    /// 저장·불러오기는 PauseMenuView, 볼륨 슬라이더(Master/BGM/SFX)는
+    /// SettingsPanelView의 사운드 탭이다. 구 패널에 새 기능을 붙일 일이 생기면
+    /// 여기가 아니라 그쪽에 붙일 것 — 안 그러면 숨겨진 채로 사라진다.
     /// </summary>
     public void TogglePauseMenu()
     {

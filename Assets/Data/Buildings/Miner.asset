@@ -18,7 +18,7 @@ MonoBehaviour:
     \uAD11\uB9E5\uC774 \uC5B4\uB824\uC6B8\uC218\uB85D \uB290\uB9AC\uB2E4."
   icon: {fileID: 0}
   category: 0
-  prefab: {fileID: 8416679944086038086, guid: 687143ae40f3c5041a38fa275fc61709, type: 3}
+  prefab: {fileID: 1941327714935223113, guid: 687143ae40f3c5041a38fa275fc61709, type: 3}
   size: {x: 1, y: 1}
   ports:
   - LocalOffset: {x: 0, y: 0}

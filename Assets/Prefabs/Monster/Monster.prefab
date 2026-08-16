@@ -163,9 +163,11 @@ MonoBehaviour:
   movement:
     moveSpeed: 5
     rotateSpeed: 720
-    separationRadius: 0.8
-    separationWeight: 1.5
+    crowdRadius: 0.4
+    knockbackDamping: 8
   combat:
-    attackDamage: 10
     attackRange: 1.5
     attackCooldown: 2
+    attackEffects:
+    - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+      value: 10

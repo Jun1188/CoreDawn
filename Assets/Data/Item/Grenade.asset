@@ -1,5 +1,30 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-5311943639642210421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702d344e9408d614e8bfeda54bd0b855, type: 3}
+  m_Name: AmmoModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 70
+  - effect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+    value: 2
+  speed: 25
+  gravity: 9.8
+  explosionRadius: 3
+  lifetime: 6
+  pierce: 0
+  bulletPrefab: {fileID: 6104304068761616416, guid: 6fb28be86ecaf034ab6b3bde5d9a3ad2, type: 3}
+  muzzleFlashPrefab: {fileID: 1569006322450168, guid: c970c55aaa68fda439fa7efa01c4545d, type: 3}
+  hitEffectPrefab: {fileID: 1822773341328252, guid: 9a6234d093d15ac4c8b4b52e4c6be97f, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9,7 +34,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0e07f66bd29af546bfd695364c0f610, type: 3}
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
   m_Name: Grenade
   m_EditorClassIdentifier: Assembly-CSharp::AmmoItemSO
   id: Item:Grenade
@@ -19,4 +44,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 1
-  damage: 10
+  modules:
+  - {fileID: -5311943639642210421}

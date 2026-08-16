@@ -21,6 +21,13 @@ public class DayCycle
     /// <summary>현재 페이즈의 남은 시간(초).</summary>
     public float PhaseRemaining { get; private set; }
 
+    /// <summary>
+    /// When enabled, elapsed night time reaches zero but cannot start the next day.
+    /// An external objective (for example a finite monster wave) must call EndNightEarly.
+    /// Defaults to false so legacy scenes keep their timed-night behaviour.
+    /// </summary>
+    public bool IsNightCompletionControlled { get; set; }
+
     /// <summary>현재 페이즈의 전체 길이(초).</summary>
     public float PhaseDuration => Phase == DayPhase.Day ? _dayDuration : _nightDuration;
 
@@ -64,6 +71,12 @@ public class DayCycle
         if (!_started) return;
         PhaseRemaining -= dt;
         if (PhaseRemaining > 0f) return;
+
+        if (Phase == DayPhase.Night && IsNightCompletionControlled)
+        {
+            PhaseRemaining = 0f;
+            return;
+        }
 
         float overshoot = -PhaseRemaining;   // 페이즈 경계를 넘긴 시간은 다음 페이즈로 이월
         if (Phase == DayPhase.Day) BeginNight(overshoot);

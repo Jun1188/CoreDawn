@@ -327,22 +327,8 @@ public class InventoryManager : MonoBehaviour
             mouseCarriageSlot.ClearSlot();
     }
 
-    public void CheckWeaponEquip(ItemContainer hotbarContainer, int activeSlotIndex = -1)
-    {
-        if (playerController == null || playerController.weaponManager == null || hotbarContainer == null) return;
-
-        if (activeSlotIndex == -1 && HotbarController.Instance != null)
-            activeSlotIndex = HotbarController.Instance.CurrentHotbarIndex;
-
-        if (hotbarContainer.SlotCount > activeSlotIndex && activeSlotIndex >= 0)
-        {
-            ItemStack activeSlot = hotbarContainer.PeekAt(activeSlotIndex);
-            if (activeSlot != null && activeSlot.item is WeaponItemSO weaponItem)
-                playerController.weaponManager.EquipWeapon(weaponItem.gunData);
-            else
-                playerController.weaponManager.UnequipWeapon();
-        }
-    }
+    // (구 CheckWeaponEquip 삭제 — 핫바→무기 장착 브리지는 HotbarController.EquipFromActiveSlot이
+    //  유일한 집이다. 화면 매니저가 게임플레이 로직을 들고 있으면 uGUI 없는 씬에서 장착이 죽는다.)
 
     public void DropMouseCarriageItem()
     {
@@ -360,8 +346,8 @@ public class InventoryManager : MonoBehaviour
 
     public void RefreshAllGameUIs()
     {
-        var holder = PlayerInventoryHolder.Instance;
-        if (holder != null) CheckWeaponEquip(holder.HotbarContainer);
+        // 인벤 내용이 바뀌었을 수 있으니 활성 슬롯 무기 재동기화 — 장착 브리지는 핫바 컨트롤러 소유
+        if (HotbarController.Instance != null) HotbarController.Instance.EquipFromActiveSlot();
 
         InventoryUI[] allActiveUIs = FindObjectsByType<InventoryUI>(FindObjectsSortMode.None);
         foreach (InventoryUI ui in allActiveUIs)

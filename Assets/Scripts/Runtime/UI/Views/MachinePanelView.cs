@@ -103,6 +103,8 @@ public class MachinePanelView : UITKPopup
 
         tooltip = new UITooltip(r);
 
+        RecipeRewardUnlockService.RecipeUnlocked += OnRecipeRewardUnlocked;
+
         HookContainers();
         shownState = (MachineState)(-1);
         RebuildAll();
@@ -113,6 +115,7 @@ public class MachinePanelView : UITKPopup
         if (btnClose != null) btnClose.clicked -= Close;
         if (btnToggle != null) btnToggle.clicked -= TogglePaused;
         if (searchField != null) searchField.UnregisterValueChangedCallback(OnSearchChanged);
+        RecipeRewardUnlockService.RecipeUnlocked -= OnRecipeRewardUnlocked;
 
         tooltip?.Dispose();
         tooltip = null;
@@ -142,6 +145,8 @@ public class MachinePanelView : UITKPopup
         search = e.newValue ?? "";
         RebuildRecipes();
     }
+
+    void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
 
     void TogglePaused()
     {

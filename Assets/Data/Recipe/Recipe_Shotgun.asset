@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3a1f886187afd348a50049a653e8110, type: 3}
+  m_Name: Recipe_Shotgun
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeDataSO
+  id: Recipe:Recipe_Shotgun
+  displayName: "\uC0F7\uAC74 \uC81C\uC791"
+  description: "\uADFC\uC811\uC5D0\uC11C \uD55C \uBC88\uC5D0 \uC4F8\uC5B4\uB0B8\uB2E4."
+  icon: {fileID: 0}
+  tier: 2
+  inputs:
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 10
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 4
+  outputs:
+  - item: {fileID: 11400000, guid: ec0bbffefc3668f4791690246010aab6, type: 2}
+    amount: 1
+  craftTime: 10

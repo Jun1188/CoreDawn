@@ -150,9 +150,8 @@ public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBe
     public void Interact(PlayerController player)
     {
         // 씬에 UITK 코어 패널이 있으면 그쪽을 연다. 없으면 기존 uGUI 화면으로 —
-        // 씬 내용만으로 전환이 결정되므로 이관 중에도 두 경로가 공존한다.
-        if (CorePanelView.TryOpen(this)) return;
-        InventoryManager.Instance?.OpenCoreScreen(this);
+        // "UITK 먼저, uGUI 폴백" 정책은 GameScreens가 소유한다 — 여기 있던 원조 패턴의 일반화.
+        GameScreens.OpenCore(this);
     }
 
     /// <summary>현재 티어 요구 아이템별 (아이템, 필요량, 현재량) — 진행률 UI용.</summary>

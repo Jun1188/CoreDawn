@@ -36,10 +36,13 @@ public class Entity : MonoBehaviour
     [SerializeField] private float deathDelay = 2f;
     [Tooltip("true면 사망 연출 후 Destroy로 완전 소멸, false면 SetActive(false)로 비활성화만 한다.")]
     [SerializeField] private bool destroyOnDeath = true;
-
     [SerializeField] private HealthComponent health = new HealthComponent();
 
     public HealthComponent Health => health;
+
+    // 활성 지속 효과(감속·DoT 등) 관리 — Awake 전에 맞아도 안전하게 지연 생성
+    private EffectController effects;
+    public EffectController Effects => effects ??= new EffectController(this);
 
     // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null)
     public virtual MovementComponent Movement => null;
@@ -69,24 +72,50 @@ public class Entity : MonoBehaviour
     protected virtual void Awake()
     {
         health.Initialize();
+        health.OnDeath += Effects.Clear; // 사망 즉시 지속 효과 종료 (HandleDeath보다 먼저)
         health.OnDeath += HandleDeath;
     }
 
     protected virtual void Start() { }
 
-    protected virtual void Update() { /*
-        if (!health.IsDead && (int)(health.CurrentHealth)%7 == 0 
+    protected virtual void Update()
+    {
+        Effects.Tick(Time.deltaTime);
+        if (Movement != null) Movement.SpeedMultiplier = Effects.MoveSpeedMultiplier;
+
+        // (팀) 체력 디버그 로그는 비활성화됨
+        /*
+        if (!health.IsDead && (int)(health.CurrentHealth)%7 == 0
             && (this.GetType() == typeof(BattleTower)
             || this.GetType() == typeof(Player)
             || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);*/
     }
 
-    public virtual void TakeDamage(float damageAmount) => health.TakeDamage(damageAmount);
+    /// <summary>
+    /// 공격 명중의 단일 진입점 — 효과 항목 목록을 이 엔티티에 적용한다.
+    /// 시전측 배율(공격 버프·포탑 배율)은 시전자가 보낼 때 이미 항목에 구워져(bake) 있다.
+    /// </summary>
+    public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
+                             Entity source, Vector3 hitPoint)
+        => Effects.ApplyAll(entries, source, hitPoint);
+
+    /// <summary>
+    /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.
+    /// 피해를 주는 효과 구현(DamageEffectSO·DoT)이 Health.TakeDamage 대신 이걸 호출한다.
+    /// </summary>
+    public void ReceiveDamage(float amount)
+    {
+        float final = amount * Effects.IncomingDamageMultiplier;
+        if (final > 0f) health.TakeDamage(final);
+    }
+
+    // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.
+    public virtual void TakeDamage(float damageAmount) => ReceiveDamage(damageAmount);
 
     // 즉시 사망 — HP를 0으로 만들고 사망 흐름(OnDeath → HandleDeath)을 태운다
     public void Die() => health.Kill();
 
-    // 런타임 부착 시 사망 방식 변경용 (예: FPS 플레이어는 카메라 보존을 위해 비활성화만)
+    // 런타임 부착 시 사망 방식 변경용 (예: FPS 플레이어는 Destroy 대신 비활성화)
     public void SetDeathBehavior(bool destroy, float delay)
     {
         destroyOnDeath = destroy;

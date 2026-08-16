@@ -13,10 +13,9 @@ public class Chest : Interactable
 
     public override void OnInteract(PlayerController player)
     {
-        // Inventory 컴포넌트가 쥐고 있는 Container를 그대로 넘겨줌!
-        if (InventoryManager.Instance != null && inventory != null)
-        {
-            InventoryManager.Instance.OpenContainerScreen(inventory.Container);
-        }
+        // Inventory 컴포넌트가 쥐고 있는 Container를 그대로 넘겨줌.
+        // 어느 UI 체계로 여는지는 GameScreens의 정책 — 상자는 모른다.
+        if (inventory != null)
+            GameScreens.OpenContainer(inventory.Container);
     }
 }

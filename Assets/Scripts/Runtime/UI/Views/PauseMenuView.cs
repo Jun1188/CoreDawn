@@ -16,7 +16,7 @@ public class PauseMenuView : UITKPopup
     static PauseMenuView cached;
 
     Label statusDay, statusPlay;
-    Button btnClose, btnResume, btnSave, btnLoad, btnTitle;
+    Button btnClose, btnResume, btnSave, btnLoad, btnSettings, btnTitle;
 
     /// <summary>씬에 이 패널이 있으면 열고 true. 없으면 false — 호출부가 구 uGUI로 넘어간다.</summary>
     public static bool TryOpen()
@@ -73,12 +73,14 @@ public class PauseMenuView : UITKPopup
         btnResume = r.Q<Button>("btn-resume");
         btnSave = r.Q<Button>("btn-save");
         btnLoad = r.Q<Button>("btn-load");
+        btnSettings = r.Q<Button>("btn-settings");
         btnTitle = r.Q<Button>("btn-title");
 
         btnClose.clicked += Close;
         btnResume.clicked += Close;
         btnSave.clicked += OpenSave;
         btnLoad.clicked += OpenLoad;
+        btnSettings.clicked += OpenSettings;
         btnTitle.clicked += ReturnToTitle;
 
         Refresh();
@@ -90,6 +92,7 @@ public class PauseMenuView : UITKPopup
         if (btnResume != null) btnResume.clicked -= Close;
         if (btnSave != null) btnSave.clicked -= OpenSave;
         if (btnLoad != null) btnLoad.clicked -= OpenLoad;
+        if (btnSettings != null) btnSettings.clicked -= OpenSettings;
         if (btnTitle != null) btnTitle.clicked -= ReturnToTitle;
     }
 
@@ -125,6 +128,13 @@ public class PauseMenuView : UITKPopup
     {
         if (!SaveLoadPanelView.TryOpen(SaveLoadPanelView.Mode.Load))
             Debug.LogWarning("[UI] 씬에 SaveLoadPanel이 없어 불러오기 창을 열지 못했습니다.");
+    }
+
+    /// <summary>설정 창. 슬롯 창과 같은 규칙으로 이 창을 닫지 않고 그 위에 겹쳐 띄운다.</summary>
+    void OpenSettings()
+    {
+        if (!SettingsPanelView.TryOpen())
+            Debug.LogWarning("[UI] 씬에 SettingsPanel이 없어 설정 창을 열지 못했습니다.");
     }
 
     void ReturnToTitle()

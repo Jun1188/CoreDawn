@@ -22,9 +22,10 @@ public class GameplayHUDView : MonoBehaviour
 {
     [SerializeField] UIDocument document;
 
-    VisualElement root, compass, crosshair, coreLine, ammoBox, hotbarRow, enemyLine;
+    VisualElement root, compass, crosshair, deathOverlay, coreLine, ammoBox, hotbarRow, enemyLine;
     VisualElement hpFill, coreFill;
     Label dayValue, phaseLabel, phaseTime, hpNow, hpMax, corePct, ammoName, ammoNow, ammoCap, enemyCount;
+    Label ammoType, ammoReserve;
 
     PlayerController player;
     Entity playerEntity;
@@ -61,6 +62,7 @@ public class GameplayHUDView : MonoBehaviour
         root       = r.Q("hud");
         compass    = r.Q("compass");
         crosshair  = r.Q("crosshair");
+        deathOverlay = r.Q("death-overlay");
         coreLine   = r.Q("core-line");
         ammoBox    = r.Q("ammo");
         hotbarRow  = r.Q("hotbar");
@@ -77,6 +79,8 @@ public class GameplayHUDView : MonoBehaviour
         ammoName   = r.Q<Label>("ammo-name");
         ammoNow    = r.Q<Label>("ammo-now");
         ammoCap    = r.Q<Label>("ammo-cap");
+        ammoType   = r.Q<Label>("ammo-type");
+        ammoReserve = r.Q<Label>("ammo-reserve");
         enemyCount = r.Q<Label>("enemy-count");
 
         root.pickingMode = PickingMode.Ignore;   // HUD는 클릭을 먹으면 안 된다 — 월드로 통과
@@ -90,13 +94,8 @@ public class GameplayHUDView : MonoBehaviour
             enemyLine.Insert(0, glyph);
         }
 
-        player = FindFirstObjectByType<PlayerController>();
-        playerEntity = player != null ? player.GetComponent<Entity>() : null;
-        if (playerEntity != null)
-        {
-            playerEntity.OnHealthChanged += OnPlayerHp;
-            OnPlayerHp(playerEntity.Health.CurrentHealth, playerEntity.Health.MaxHealth);
-        }
+        Show(deathOverlay, false);
+        BindPlayerIfNeeded();
 
         hotbar = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
         if (hotbar != null) hotbar.Changed += RebuildHotbar;
@@ -109,6 +108,8 @@ public class GameplayHUDView : MonoBehaviour
     void OnDisable()
     {
         if (playerEntity != null) playerEntity.OnHealthChanged -= OnPlayerHp;
+        playerEntity = null;
+        player = null;
         if (core != null) { core.OnHealthChanged -= OnCoreHp; core = null; }
         if (hotbar != null) hotbar.Changed -= RebuildHotbar;
 
@@ -117,6 +118,7 @@ public class GameplayHUDView : MonoBehaviour
 
     void Update()
     {
+        BindPlayerIfNeeded();
         UpdateTime();
         UpdateCompass();
         UpdateAmmo();
@@ -283,11 +285,26 @@ public class GameplayHUDView : MonoBehaviour
 
     // ───────────────────── 체력 · 코어 ─────────────────────
 
+    void BindPlayerIfNeeded()
+    {
+        if (playerEntity != null) return;
+
+        if (player == null)
+            player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
+        // PlayerController에는 호환용 Entity가 함께 있을 수 있으므로 실제 전투 Player를 명시한다.
+        playerEntity = player != null ? player.GetComponent<Player>() : null;
+        if (playerEntity == null) return;
+
+        playerEntity.OnHealthChanged += OnPlayerHp;
+        OnPlayerHp(playerEntity.Health.CurrentHealth, playerEntity.Health.MaxHealth);
+    }
+
     void OnPlayerHp(float current, float max)
     {
         hpNow.text = Mathf.CeilToInt(current).ToString();
         hpMax.text = $"/ {Mathf.CeilToInt(max)}";
         Fill(hpFill, max > 0f ? current / max : 0f);
+        Show(deathOverlay, current <= 0f);
     }
 
     /// <summary>코어는 나중에 생길 수도, 부서질 수도 있다 — 없으면 줄을 숨기고 매 프레임 다시 찾는다.</summary>
@@ -322,9 +339,18 @@ public class GameplayHUDView : MonoBehaviour
         Show(ammoBox, has);
         if (!has) return;
 
-        ammoName.text = weapon.gunData.gunName.ToUpperInvariant();
+        ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
         ammoNow.text = weapon.CurrentAmmo.ToString();
         ammoCap.text = $" / {weapon.gunData.magSize}";
+        ammoNow.EnableInClassList("combat-ammo__now--reloading", weapon.IsReloading);
+
+        // 탄종 + 인벤토리 예비탄 (실소비). 인벤토리 없는 씬은 ReserveAmmo -1 = 무한 보급.
+        var item = weapon.CurrentAmmoItem;
+        ammoType.text = item != null ? item.displayName : "";
+        int reserve = weapon.ReserveAmmo;
+        ammoReserve.text = weapon.IsReloading ? "장전 중"
+                         : reserve < 0 ? "∞"
+                         : $"× {reserve}";
     }
 
     // ───────────────────── 적 수 ─────────────────────

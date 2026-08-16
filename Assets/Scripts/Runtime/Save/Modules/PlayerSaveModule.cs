@@ -77,9 +77,7 @@ public class PlayerSaveModule : ISaveModule
             dto.Carried = SaveStackDto.From(InventoryManager.Instance.MouseCarriage);
 
         var weapons = Object.FindFirstObjectByType<WeaponManager>();
-        if (weapons != null && weapons.weapons != null)
-            foreach (var w in weapons.weapons)
-                dto.Ammo.Add(w != null ? w.CurrentAmmo : 0);
+        if (weapons != null) dto.Ammo.AddRange(weapons.CaptureAmmo());
 
         return dto;
     }
@@ -115,9 +113,7 @@ public class PlayerSaveModule : ISaveModule
             InventoryManager.Instance.RestoreMouseCarriage(dto.Carried?.ToStack());
 
         var weapons = Object.FindFirstObjectByType<WeaponManager>();
-        if (weapons?.weapons != null && dto.Ammo != null)
-            for (int i = 0; i < weapons.weapons.Length && i < dto.Ammo.Count; i++)
-                if (weapons.weapons[i] != null) weapons.weapons[i].RestoreAmmo(dto.Ammo[i]);
+        if (weapons != null) weapons.RestoreAmmo(dto.Ammo);
 
         // 소지품이 제자리를 찾은 뒤에 선택 칸을 되돌려야 그 칸의 무기가 올바로 장착된다
         if (HotbarController.Instance != null) HotbarController.Instance.RestoreSelection(dto.HotbarIndex);
