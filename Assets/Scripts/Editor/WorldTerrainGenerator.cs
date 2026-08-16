@@ -558,11 +558,18 @@ public static class WorldTerrainGenerator
         return height[j, i] * TerrainHeightRange - RiverDepth;
     }
 
+    /// <summary>
+    /// 이웃 8칸에 해당 타일이 있는가. <b>맵 밖은 세지 않는다</b> — TileAt이 맵 밖을 절벽으로
+    /// 돌려주는 탓에, 그대로 쓰면 맵 가장자리 지면이 전부 "절벽 옆"으로 판정돼 풀이 빠진다.
+    /// </summary>
     static bool NextTo(MapDataSO map, int x, int y, MapTile tile)
     {
         for (int dy = -1; dy <= 1; dy++)
             for (int dx = -1; dx <= 1; dx++)
+            {
+                if (!map.InBounds(x + dx, y + dy)) continue;
                 if (map.TileAt(x + dx, y + dy) == tile) return true;
+            }
         return false;
     }
 
@@ -605,11 +612,16 @@ public static class WorldTerrainGenerator
         for (int y = 0; y < map.height; y += step)
             for (int x = 0; x < map.width; x += step)
             {
-                // 이 구획에 절벽 칸이 있는지 보고, 그 무게중심에 세운다
+                // 이 구획에 절벽 칸이 있는지 보고, 그 무게중심에 세운다.
+                // 맵 밖은 반드시 걸러야 한다 — TileAt은 길찾기 편의를 위해 <b>맵 밖을 절벽으로</b>
+                // 돌려주므로(경계 검사를 없애려는 규약), 그대로 세면 테두리를 따라 벽이 둘러쳐진다.
                 float sx = 0f, sy = 0f; int n = 0;
                 for (int dy = 0; dy < step; dy++)
                     for (int dx = 0; dx < step; dx++)
+                    {
+                        if (!map.InBounds(x + dx, y + dy)) continue;
                         if (map.TileAt(x + dx, y + dy) == MapTile.Cliff) { sx += x + dx; sy += y + dy; n++; }
+                    }
 
                 if (n == 0) continue;
 

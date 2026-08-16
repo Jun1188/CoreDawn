@@ -10345,6 +10345,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::World
   map: {fileID: 11400000, guid: 253590482de214d4d995d338b695d8bc, type: 2}
   cellSize: 2
+  resourceNodePrefab: {fileID: 8478676915281728500, guid: ea0756f9af96a5a439fc911b4cb48825, type: 3}
+  nestPrefab: {fileID: 4760263801846313922, guid: c0eb0ac1195a4a441b10b27d04a22b78, type: 3}
 --- !u!4 &1463672732
 Transform:
   m_ObjectHideFlags: 0
