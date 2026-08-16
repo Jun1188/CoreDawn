@@ -34,6 +34,10 @@ public static class WorldTerrainGenerator
     const float RiverDepth = 0.85f;
     const float WaterLevel = -0.15f;   // 물 표면 높이(m)
 
+    // ── 섬 ──────────────────────────────────────────────────────
+    const float ShoreWidth = 1f;    // 맵 가장자리에서 물에 잠기는 폭(칸)
+    const float SeaMargin = 1.5f;   // 물을 맵 밖으로 얼마나 더 깔지 (맵 한 변의 배수)
+
     // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 몇 칸 들어가야 제 높이가 되는가.
     // 짧아야 한다. 경사를 칸 하나에 걸쳐 눕히면 폭 1~2칸짜리 절벽·물길은 제 높이에 닿기도
     // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
@@ -147,6 +151,13 @@ public static class WorldTerrainGenerator
                 // 더 들어가면 제 깊이 — 발치가 타일 안이라 지면은 평평하게 남는다.
                 float dig = Mathf.SmoothStep(0f, 1f,
                     Mathf.InverseLerp(-ShapeInset, -ShapeInset - RiverFalloff, river)) * RiverDepth;
+
+                // 맵 가장자리도 같은 깊이로 깎아 물에 잠근다 — 바다에 뜬 섬으로 보이게.
+                // 타일은 건드리지 않으므로 길찾기·건설 판정은 그대로다(외형만 바뀐다).
+                float edge = Mathf.Min(Mathf.Min(tx, ty), Mathf.Min(map.width - tx, map.height - ty));
+                dig = Mathf.Max(dig, Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(ShoreWidth, ShoreWidth - RiverFalloff, edge)) * RiverDepth);
+
                 h -= dig;
 
                 height[j, i] = h;   // 아직 미터 단위, 형상만
@@ -750,22 +761,28 @@ public static class WorldTerrainGenerator
     {
         float w = map.width * world.CellSize, h = map.height * world.CellSize;
 
+        // 맵 밖으로 한참 더 깔아 <b>바다</b>로 쓴다 — 지형이 물 한가운데 뜬 섬으로 보인다.
+        // 맵 크기의 배수라 큰 맵에서도 수평선이 같은 비율로 물러난다.
+        float margin = Mathf.Max(w, h) * SeaMargin;
+
         var mesh = new Mesh { name = $"{map.Id.Replace(':', '_')}_Water" };
         mesh.vertices = new[]
         {
-            new Vector3(0, 0, 0), new Vector3(w, 0, 0),
-            new Vector3(0, 0, h), new Vector3(w, 0, h),
+            new Vector3(-margin, 0, -margin), new Vector3(w + margin, 0, -margin),
+            new Vector3(-margin, 0, h + margin), new Vector3(w + margin, 0, h + margin),
         };
         mesh.triangles = new[] { 0, 2, 1, 2, 3, 1 };
         mesh.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
-        mesh.uv = new[] { Vector2.zero, new Vector2(map.width, 0), new Vector2(0, map.height), new Vector2(map.width, map.height) };
+        // UV는 칸 단위로 — 바다까지 같은 밀도로 이어져야 물결 타일링이 끊기지 않는다
+        float uw = (w + margin * 2f) / world.CellSize, uh = (h + margin * 2f) / world.CellSize;
+        mesh.uv = new[] { Vector2.zero, new Vector2(uw, 0), new Vector2(0, uh), new Vector2(uw, uh) };
         mesh.RecalculateBounds();
 
         string meshPath = $"{AssetFolder}/{mesh.name}.asset";
         if (AssetDatabase.LoadAssetAtPath<Mesh>(meshPath) != null) AssetDatabase.DeleteAsset(meshPath);
         AssetDatabase.CreateAsset(mesh, meshPath);
 
-        var go = new GameObject("Water");
+        var go = new GameObject("Water (Sea)");
         go.transform.SetParent(root, false);
         go.transform.localPosition = new Vector3(0f, WaterLevel, 0f);
         go.AddComponent<MeshFilter>().sharedMesh = mesh;
