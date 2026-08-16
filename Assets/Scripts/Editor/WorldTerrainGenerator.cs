@@ -38,6 +38,12 @@ public static class WorldTerrainGenerator
     const float ShoreWidth = 1f;    // 맵 가장자리에서 물에 잠기는 폭(칸)
     const float SeaMargin = 1.5f;   // 물을 맵 밖으로 얼마나 더 깔지 (맵 한 변의 배수)
 
+    /// <summary>수면 정점 간격(m). 물 셰이더가 정점을 흔들므로 파도 주기보다 촘촘해야 한다.</summary>
+    const float WaterVertexSpacing = 2f;
+
+    /// <summary>이 수심(m)보다 얕으면 거품이 낀다. 정점 컬러의 빨강 채널이 곧 거품 세기다.</summary>
+    const float FoamDepth = 0.35f;
+
     // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 몇 칸 들어가야 제 높이가 되는가.
     // 짧아야 한다. 경사를 칸 하나에 걸쳐 눕히면 폭 1~2칸짜리 절벽·물길은 제 높이에 닿기도
     // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
@@ -94,7 +100,7 @@ public static class WorldTerrainGenerator
 
         var height = BuildHeightmap(map);
         CreateTerrain(map, world, root.transform, height);
-        CreateWater(map, world, root.transform);
+        CreateWater(map, world, root.transform, height);
         PlaceCliffs(map, world, root.transform);
 
         // 디스크에 굳힌다. SetDirty만으로는 부족하다 — 디테일(풀)과 스캐터 모드는
@@ -757,25 +763,69 @@ public static class WorldTerrainGenerator
     // ── 물 ──────────────────────────────────────────────────────
 
     /// <summary>맵을 덮는 사각형 한 장 — 지형이 파인 곳(강)에서만 보이고 가장자리는 저절로 얕아진다.</summary>
-    static void CreateWater(MapDataSO map, World world, Transform root)
+    static void CreateWater(MapDataSO map, World world, Transform root, float[,] height)
     {
         float w = map.width * world.CellSize, h = map.height * world.CellSize;
 
         // 맵 밖으로 한참 더 깔아 <b>바다</b>로 쓴다 — 지형이 물 한가운데 뜬 섬으로 보인다.
         // 맵 크기의 배수라 큰 맵에서도 수평선이 같은 비율로 물러난다.
         float margin = Mathf.Max(w, h) * SeaMargin;
+        float x0 = -margin, z0 = -margin;
+        float sizeX = w + margin * 2f, sizeZ = h + margin * 2f;
+
+        // <b>격자로 쪼갠다.</b> 물 셰이더가 정점을 흔들어 파도를 만들기 때문에, 사각형 네 점으로는
+        // 흔들 것이 없어 수면이 판판한 판때기로 남는다. 파도 주기가 몇 미터 단위라
+        // 정점 간격도 그 정도여야 물결이 산다.
+        int cols = Mathf.Clamp(Mathf.CeilToInt(sizeX / WaterVertexSpacing), 1, 512);
+        int rows = Mathf.Clamp(Mathf.CeilToInt(sizeZ / WaterVertexSpacing), 1, 512);
+
+        var verts = new Vector3[(cols + 1) * (rows + 1)];
+        var uvs = new Vector2[verts.Length];
+        var norms = new Vector3[verts.Length];
+        var colors = new Color[verts.Length];
+
+        for (int j = 0; j <= rows; j++)
+            for (int i = 0; i <= cols; i++)
+            {
+                int v = j * (cols + 1) + i;
+                float fx = (float)i / cols, fz = (float)j / rows;
+                float wx = x0 + fx * sizeX, wz = z0 + fz * sizeZ;
+
+                verts[v] = new Vector3(wx, 0f, wz);
+                norms[v] = Vector3.up;
+                // UV는 칸 단위로 — 바다까지 같은 밀도로 이어져야 물결 타일링이 끊기지 않는다
+                uvs[v] = new Vector2(fx * sizeX / world.CellSize, fz * sizeZ / world.CellSize);
+
+                // <b>정점 컬러가 거품을 정한다</b> — 빨강이 거품, 검정이 맑은 물이다.
+                // 채우지 않으면 Unity 기본값인 흰색이 들어가 수면 전체가 거품 최대치로 렌더돼,
+                // 바다가 통째로 흰 판때기가 된다.
+                //
+                // 거품은 <b>수심</b>으로 정한다. 경계선까지의 거리로 재면 섬 안쪽 수면(강)이
+                // 전부 거품이 되고 띠도 두꺼워진다 — 물가가 어디인지는 결국 물이 얕은 곳이다.
+                float ttx = wx / world.CellSize, ttz = wz / world.CellSize;
+                bool overMap = ttx >= 0f && ttz >= 0f && ttx <= map.width && ttz <= map.height;
+                float bed = overMap ? SampleHeightAt(height, ttx, ttz, map) : -99f;   // 맵 밖은 먼 바다
+                float depth = WaterLevel - bed;
+                colors[v] = new Color(Mathf.Clamp01(1f - depth / FoamDepth), 0f, 0f, 1f);
+            }
+
+        var tris = new int[cols * rows * 6];
+        int ti = 0;
+        for (int j = 0; j < rows; j++)
+            for (int i = 0; i < cols; i++)
+            {
+                int a = j * (cols + 1) + i, b = a + 1, c = a + cols + 1, d = c + 1;
+                tris[ti++] = a; tris[ti++] = c; tris[ti++] = b;
+                tris[ti++] = c; tris[ti++] = d; tris[ti++] = b;
+            }
 
         var mesh = new Mesh { name = $"{map.Id.Replace(':', '_')}_Water" };
-        mesh.vertices = new[]
-        {
-            new Vector3(-margin, 0, -margin), new Vector3(w + margin, 0, -margin),
-            new Vector3(-margin, 0, h + margin), new Vector3(w + margin, 0, h + margin),
-        };
-        mesh.triangles = new[] { 0, 2, 1, 2, 3, 1 };
-        mesh.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
-        // UV는 칸 단위로 — 바다까지 같은 밀도로 이어져야 물결 타일링이 끊기지 않는다
-        float uw = (w + margin * 2f) / world.CellSize, uh = (h + margin * 2f) / world.CellSize;
-        mesh.uv = new[] { Vector2.zero, new Vector2(uw, 0), new Vector2(0, uh), new Vector2(uw, uh) };
+        if (verts.Length > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.vertices = verts;
+        mesh.triangles = tris;
+        mesh.normals = norms;
+        mesh.uv = uvs;
+        mesh.colors = colors;
         mesh.RecalculateBounds();
 
         string meshPath = $"{AssetFolder}/{mesh.name}.asset";
@@ -790,28 +840,30 @@ public static class WorldTerrainGenerator
         // 콜라이더 없음 — 물은 건너다니는 것이고, 바닥은 Terrain이 받는다
     }
 
+    /// <summary>
+    /// 물 머티리얼 — Bitgem StylisedWater의 것을 <b>복제해서</b> 쓴다.
+    ///
+    /// 원본을 직접 참조하지 않는 이유는 색·파도를 우리 맵에 맞게 만지게 되는데,
+    /// 그러면 서드파티 에셋을 고치는 셈이라 업데이트 때 덮이거나 예제 씬이 함께 바뀐다.
+    ///
+    /// 에셋의 WaterVolume 컴포넌트는 쓰지 않는다 — 그쪽은 타일 볼륨(최대 100×100)을 굽는
+    /// 방식이라 수백 미터짜리 바다를 담지 못한다. 우리는 메시를 직접 굽고 셰이더만 빌린다.
+    /// </summary>
     static Material WaterMaterial()
     {
         string path = $"{AssetFolder}/Water.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (mat != null) return mat;
 
-        var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-        mat = new Material(shader) { name = "Water" };
+        const string SourcePath = "Assets/ThirdParty/Bitgem/StylisedWater/URP/Materials/example-water-01.mat";
+        var source = AssetDatabase.LoadAssetAtPath<Material>(SourcePath);
+        if (source == null)
+        {
+            Debug.LogError($"[WorldTerrainGenerator] 물 머티리얼 원본을 찾지 못했습니다: {SourcePath}");
+            return null;
+        }
 
-        // URP Lit 반투명 설정 — 얕은 물에서 바닥이 비친다
-        var color = new Color(0.18f, 0.45f, 0.62f, 0.72f);
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-        if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
-        if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.9f);
-        if (mat.HasProperty("_Surface")) mat.SetFloat("_Surface", 1f);          // Transparent
-        if (mat.HasProperty("_Blend")) mat.SetFloat("_Blend", 0f);              // Alpha
-        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        mat.SetInt("_ZWrite", 0);
-        mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-        mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-
+        mat = new Material(source) { name = "Water" };
         AssetDatabase.CreateAsset(mat, path);
         return mat;
     }
