@@ -432,11 +432,18 @@ public static class WorldTerrainGenerator
     const float DetailDistance = 120f;  // 이 거리 밖에서는 그리지 않는다
 
     // ── 절벽 프리팹 배치 ────────────────────────────────────────
-    const float CliffSpacingMeters = 6f;   // 프리팹을 놓는 간격(m). 프리팹 폭보다 좁아야 서로 겹쳐 이어진다
-    const float CliffSink = 1.2f;          // 지면 아래로 묻는 깊이(m) — 밑동이 떠 보이지 않게
-    const float CliffScaleMin = 0.35f;     // 구획을 조금만 채운 곳(능선 끝자락)
-    const float CliffScaleMax = 0.7f;      // 구획이 절벽으로 꽉 찬 곳
-    const float CliffHeightScale = 1.3f;   // 가로보다 세로로 더 늘려 벽처럼 세운다
+    // 칸마다 하나씩 세운다. 크기는 프리팹 실측 폭에서 역산하므로 여기 값은 전부 <b>칸에 대한 비율</b>이다.
+    // 칸 대비 폭. 가장자리는 칸을 살짝만 채워 풀밭을 침범하지 않고,
+    // 안쪽은 크게 키워 이웃과 겹치게 한다 — 겹쳐야 덩어리가 이어져 벽으로 보인다.
+    const float CliffFillEdge = 1.2f;
+    const float CliffFillInner = 2.6f;
+    const float CliffSink = 0.4f;          // 바닥을 지면에 맞춘 뒤 더 묻는 깊이(m) — 밑동이 떠 보이지 않을 만큼만
+    // 절벽의 실제 높이(m). <b>배율이 아니라 목표 높이</b>다 — 프리팹 원본이 3~18m로
+    // 제각각이라 배율로 다루면 그 차이가 증폭돼 기둥 숲이 된다.
+    // 최저값은 플레이어 점프(1.3m)로 올라설 수 없는 선, 폭은 능선이 단조롭지 않을 만큼만.
+    const float CliffHeightLow = 5f;
+    const float CliffHeightHigh = 10f;
+    const float CliffJitter = 0.18f;       // 칸 안에서 흔드는 폭(칸 대비). 자로 잰 듯한 배치를 깬다
 
     /// <summary>지면을 덮는 풀.</summary>
     static readonly string[] GrassSet = { "Grass_01", "Grass_02", "Grass_03" };
@@ -602,16 +609,28 @@ public static class WorldTerrainGenerator
     /// 콜라이더는 <b>남긴다</b> — 이제 이것이 플레이어를 막고 총알을 받는 실체다
     /// (예전에는 Terrain 경사가 그 일을 했다). 길찾기는 여전히 타일이 정한다.
     ///
-    /// 프리팹이 칸보다 훨씬 크므로(5~18m) 칸마다 놓지 않고 <b>일정 간격으로</b> 놓아
-    /// 서로 겹치게 한다. 겹친 덩어리가 이어져 하나의 능선이 된다.
+    /// <b>칸마다 하나씩, 칸 크기에 맞춰</b> 세운다. 프리팹 원본이 5~18m로 제각각이라
+    /// 고정 배율을 곱하면 어떤 것은 칸을 넘고 어떤 것은 못 채운다 —
+    /// 실제 크기를 재서 필요한 배율을 역산해야 격자에 맞는다.
+    /// 회전은 90° 단위다. 임의 각도로 돌리면 축정렬 바운드가 커져 다시 칸을 넘는다.
     /// </summary>
     static void PlaceCliffs(MapDataSO map, World world, Transform root)
     {
+        // 프리팹과 그 실측 크기를 함께 들고 다닌다
         var prefabs = new List<GameObject>();
+        var widths = new List<float>();
+        var bottoms = new List<float>();
+        var heights = new List<float>();
         foreach (var n in CliffSet)
         {
             var p = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/{n}.prefab");
-            if (p != null) prefabs.Add(p);
+            if (p == null) continue;
+            if (!PrefabBounds(p, out float wide, out float bottom, out float tallness)) continue;
+
+            prefabs.Add(p);
+            widths.Add(wide);
+            bottoms.Add(bottom);
+            heights.Add(tallness);
         }
         if (prefabs.Count == 0)
         {
@@ -622,45 +641,87 @@ public static class WorldTerrainGenerator
         var parent = new GameObject("Cliffs").transform;
         parent.SetParent(root, false);
 
-        // 프리팹 하나가 덮는 폭(월드 m) 기준으로 간격을 잡는다
-        float spacing = Mathf.Max(1f, CliffSpacingMeters / world.CellSize);
-        int step = Mathf.Max(1, Mathf.RoundToInt(spacing));
-
         int placed = 0;
-        for (int y = 0; y < map.height; y += step)
-            for (int x = 0; x < map.width; x += step)
+        for (int y = 0; y < map.height; y++)
+            for (int x = 0; x < map.width; x++)
             {
-                // 이 구획에 절벽 칸이 있는지 보고, 그 무게중심에 세운다.
-                // 맵 밖은 반드시 걸러야 한다 — TileAt은 길찾기 편의를 위해 <b>맵 밖을 절벽으로</b>
-                // 돌려주므로(경계 검사를 없애려는 규약), 그대로 세면 테두리를 따라 벽이 둘러쳐진다.
-                float sx = 0f, sy = 0f; int n = 0;
-                for (int dy = 0; dy < step; dy++)
-                    for (int dx = 0; dx < step; dx++)
-                    {
-                        if (!map.InBounds(x + dx, y + dy)) continue;
-                        if (map.TileAt(x + dx, y + dy) == MapTile.Cliff) { sx += x + dx; sy += y + dy; n++; }
-                    }
+                // 맵 밖은 TileAt이 절벽으로 돌려주므로(경계 검사를 없애려는 규약) 반드시 거른다
+                if (!map.InBounds(x, y) || map.TileAt(x, y) != MapTile.Cliff) continue;
 
-                if (n == 0) continue;
-
-                var cell = new Vector2Int(Mathf.RoundToInt(sx / n), Mathf.RoundToInt(sy / n));
-                int pick = Hash(cell.x, cell.y, 23) % prefabs.Count;
+                int pick = Hash(x, y, 23) % prefabs.Count;
                 var cliff = (GameObject)PrefabUtility.InstantiatePrefab(prefabs[pick], parent);
 
-                Vector3 pos = world.CellToWorldCenter(cell);
-                // 바닥을 지면 아래로 조금 묻는다 — 딱 얹으면 밑이 떠 보인다
-                pos.y = world.Origin.y - CliffSink;
+                // 이웃이 절벽인 만큼 크게 키운다.
+                // <b>넘치면 안 되는 것은 지면 쪽이지 절벽끼리가 아니다</b> — 안쪽 칸은 사방이
+                // 절벽이니 이웃을 덮어도 무방하고, 오히려 겹쳐야 덩어리가 이어져 벽이 된다.
+                // 가장자리 칸만 칸 안에 얌전히 들어가면 풀밭을 침범하지 않는다.
+                int neighbours = 0;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        if (dx == 0 && dy == 0) continue;
+                        if (map.InBounds(x + dx, y + dy) && map.TileAt(x + dx, y + dy) == MapTile.Cliff) neighbours++;
+                    }
 
-                cliff.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, Hash(cell.x, cell.y, 89) % 360, 0f));
+                float fill = Mathf.Lerp(CliffFillEdge, CliffFillInner, neighbours / 8f);
+                float scale = world.CellSize * fill / widths[pick];
 
-                // 절벽 덩어리가 클수록 크게 — 구획을 얼마나 채웠는지로 가늠한다
-                float fill = (float)n / (step * step);
-                float s = Mathf.Lerp(CliffScaleMin, CliffScaleMax, fill) * world.CellSize;
-                cliff.transform.localScale = new Vector3(s, s * CliffHeightScale, s);
+                // 가로는 ±15%로 흔든다
+                scale *= Mathf.Lerp(0.85f, 1.15f, Hash(x, y, 13) % 1000 / 1000f);
+
+                // 세로는 <b>목표 높이(m)를 정하고 배율을 역산</b>한다.
+                // 배율을 곱하는 방식으로는 안 된다 — 프리팹 원본 높이가 3~18m로 6배 차이라
+                // 같은 배율을 줘도 결과가 6배 벌어져, 삐죽삐죽한 기둥 숲이 된다.
+                // 최저값은 플레이어 점프(1.3m)로 올라설 수 없는 선이다: 통행 차단은 타일이
+                // 정하는데 넘어갈 수 있게 생겼으면 규칙과 보이는 것이 어긋난다.
+                float wantHeight = Mathf.Lerp(CliffHeightLow, CliffHeightHigh, Hash(x, y, 31) % 1000 / 1000f);
+                float tall = wantHeight / heights[pick];
+
+                // 다만 가로와 너무 벌어지면 원래 형태가 뭉개진다 — 늘이고 줄이는 데 한계를 둔다.
+                // 그 한계가 최소 높이를 깎는 것은 허용하지 않는다: 폭이 좁은 가장자리 칸이
+                // 클램프에 걸려 낮아지면 거기만 넘어갈 수 있는 구멍이 된다.
+                tall = Mathf.Clamp(tall, scale * 0.7f, scale * 3.4f);
+                tall = Mathf.Max(tall, CliffHeightLow / heights[pick]);
+
+                // 바닥을 지면에 맞춘 뒤 CliffSink만큼만 묻는다.
+                // 그냥 원점에 놓으면 중심이 지면에 오므로 절반이 땅에 잠긴다 — 키울수록 더 잠겨서
+                // "높이 배율을 올렸는데 여전히 납작한" 상태가 된다.
+                Vector3 pos = world.CellToWorldCenter(new Vector2Int(x, y));
+                pos.y = world.Origin.y - bottoms[pick] * tall - CliffSink;
+                // 칸 안에서만 살짝 흔든다 — 격자에 자로 잰 듯 놓이면 인공물로 보인다
+                pos.x += (Hash(x, y, 41) % 1000 / 1000f - 0.5f) * world.CellSize * CliffJitter;
+                pos.z += (Hash(x, y, 67) % 1000 / 1000f - 0.5f) * world.CellSize * CliffJitter;
+
+                cliff.transform.SetPositionAndRotation(
+                    pos, Quaternion.Euler(0f, 90f * (Hash(x, y, 89) % 4), 0f));
+                cliff.transform.localScale = new Vector3(scale, tall, scale);
                 placed++;
             }
 
-        Debug.Log($"[WorldTerrainGenerator] 절벽 프리팹 {placed}개 (간격 {step}칸)");
+        Debug.Log($"[WorldTerrainGenerator] 절벽 프리팹 {placed}개 (칸당 1개, 칸 {world.CellSize}m)");
+    }
+
+    /// <summary>
+    /// 프리팹의 폭(가로·세로 중 큰 쪽)과 <b>바닥이 원점보다 얼마나 아래인지</b>를 잰다.
+    ///
+    /// 바닥을 따로 재는 이유: 이 암벽들은 중심이 원점에 있어서 그냥 지면에 놓으면
+    /// 절반이 땅에 묻힌다. 스케일을 키울수록 더 묻히므로, 바닥을 기준으로 올려줘야
+    /// "키운 만큼 높아진다"가 성립한다.
+    /// </summary>
+    static bool PrefabBounds(GameObject prefab, out float width, out float bottom, out float height)
+    {
+        width = 0f; bottom = 0f; height = 0f;
+
+        var rends = prefab.GetComponentsInChildren<MeshRenderer>(true);
+        if (rends.Length == 0) return false;
+
+        var b = rends[0].bounds;
+        for (int i = 1; i < rends.Length; i++) b.Encapsulate(rends[i].bounds);
+
+        width = Mathf.Max(b.size.x, b.size.z);
+        bottom = b.min.y;              // 보통 음수 — 원점 아래로 내려간 깊이
+        height = b.size.y;
+        return width > 0.01f && height > 0.01f;
     }
 
     /// <summary>URP 지형 머티리얼 — 렌더 파이프라인의 기본값을 쓰되, 없으면 셰이더로 직접 만든다.</summary>
