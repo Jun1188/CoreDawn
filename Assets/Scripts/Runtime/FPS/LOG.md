@@ -178,6 +178,25 @@ Player            요(yaw) + 물리 + 이동 FSM      PlayerController
 감쇠도 선형에서 smoothstep으로 — 선형이면 끝까지 진폭이 남아 있다가 뚝 끊긴다.
 발사 흔들림 자체도 12Hz → 7Hz.
 
-주의: 이 컴포넌트는 **Overlay Camera**(무기 뷰모델 레이어)에 배선돼 있다. 화면 전체를
-흔드는 것은 RecoilHolder의 `ProceduralRecoil`이다 — 둘이 같은 사건(발사)에 서로 다른
-수학으로 반응하므로, 손을 댈 때 어느 쪽이 보이는 흔들림인지 먼저 확인해야 한다.
+### 흔들림은 Base 카메라에 걸어야 한다
+
+카메라를 Base(Main, 월드) / Overlay(무기 레이어)로 쪼개면서 `CameraShakeManager`가
+**Overlay Camera**에 딸려 내려가 있었다. Overlay는 무기 레이어(12)만 렌더하므로 그 결과가
+이랬다:
+
+| | 반동 (RecoilHolder) | 셰이크 (Overlay) |
+|---|---|---|
+| 월드 | 흔들림 | **안 흔들림** |
+| 무기 | 흔들림 | 흔들림 |
+
+같은 사건(발사)인데 하나는 화면 전체를, 하나는 무기만 흔들어 **총이 월드에 대해 미끄러졌다**.
+Main Camera로 옮기면 Overlay가 그 자식이라 함께 흔들려 둘이 같은 양으로 움직인다.
+덤으로 `AudioListener`가 Main·Overlay 양쪽에 있어 Unity가 경고하던 것도 정리했다
+(흔들리는 쪽에 리스너가 있으면 3D 정위가 미세하게 떨린다).
+
+배선은 `Assets/Prefabs/Player.prefab`에 있다 — 씬이 아니라 프리팹이라 한 번 고치면 전부 따라온다.
+RecoilHolder(반동) 아래에 Main(셰이크)이 있으므로 **두 흔들림은 계층으로 누적**된다.
+세면 `globalIntensityScale`로 줄인다.
+
+검증: 셰이크 대상=Main Camera · AudioListener 1개 · Main이 흔들릴 때 Overlay 월드 좌표가
+Main과 완전히 일치(함께 움직인다).
