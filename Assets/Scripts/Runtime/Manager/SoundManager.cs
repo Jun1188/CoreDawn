@@ -51,6 +51,14 @@ public class SoundManager : MonoBehaviour
     [Header("=== BGM Library (Enum/Dictionary) ===")]
     [SerializeField] private List<BGMData> bgmList;
 
+    [Header("=== 3D Audio Pooling ===")]
+    [SerializeField] private int poolSize = 10;
+    private readonly List<AudioSource> sfx3DPool = new();
+    private int currentPoolIndex = 0;
+    [Header("=== AudioMixer Snapshots ===")]
+    [SerializeField] private AudioMixerSnapshot normalSnapshot;
+    [SerializeField] private AudioMixerSnapshot pausedSnapshot;
+
     // 런타임에 $O(1)$ 속도로 찾기 위한 딕셔너리
     private readonly Dictionary<CommonSFX, AudioClip> commonSFXDict = new Dictionary<CommonSFX, AudioClip>();
     private readonly Dictionary<BGMType, AudioClip> bgmDict = new Dictionary<BGMType, AudioClip>();
@@ -72,6 +80,7 @@ public class SoundManager : MonoBehaviour
             InitAudioSources();
             InitCommonSoundDictionary(); // Inspector 리스트를 Dictionary로 변환
             InitBGMDictionary(); // BGM 리스트를 Dictionary로 변환
+            Init3DPool(); // 3D 사운드 풀링 초기화
         }
         else
         {
@@ -119,6 +128,22 @@ public class SoundManager : MonoBehaviour
             }
         }
     }
+    private void Init3DPool()
+    {
+        GameObject poolParent = new GameObject("3D_SFX_Pool");
+        poolParent.transform.SetParent(transform);
+
+        for (int i = 0; i < poolSize; i++)
+        {
+            AudioSource src = poolParent.AddComponent<AudioSource>();
+            src.spatialBlend = 1.0f; // 100% 3D 사운드 (거리감/방향감 적용)
+            src.minDistance = 2f;    // 소리가 최고로 크게 들리는 거리
+            src.maxDistance = 25f;   // 소리가 완전히 안 들리는 거리
+            src.rolloffMode = AudioRolloffMode.Logarithmic;
+            src.outputAudioMixerGroup = sfxMixerGroup; // SFX 믹서 그룹 연결
+            sfx3DPool.Add(src);
+        }
+    }
     // ========================================================================
     // 객체 직접 호출용
     // ========================================================================
@@ -138,6 +163,19 @@ public class SoundManager : MonoBehaviour
         // 미세 피치 조절 (발소리/총소리 피로감 완화)
         sfxSource.pitch = randomizePitch ? UnityEngine.Random.Range(0.9f, 1.1f) : 1.0f;
         sfxSource.PlayOneShot(clip, volume);
+    }
+    /// <summary> 지정한 3D 좌표 위치에서 효과음 재생 </summary>
+    public void Play3DSFX(AudioClip clip, Vector3 position, float volume = 1.0f)
+    {
+        if (clip == null || sfx3DPool.Count == 0) return;
+
+        // 순환형 풀링 (가장 오래된 AudioSource 재사용)
+        AudioSource source = sfx3DPool[currentPoolIndex];
+        currentPoolIndex = (currentPoolIndex + 1) % poolSize;
+
+        source.transform.position = position;
+        source.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
+        source.PlayOneShot(clip, volume);
     }
 
     // ========================================================================
@@ -212,6 +250,14 @@ public class SoundManager : MonoBehaviour
         if (audioMixer == null) return;
         float dB = Mathf.Log10(Mathf.Clamp(linearValue, 0.0001f, 1f)) * 20f;
         audioMixer.SetFloat(parameterName, dB);
+    }
+    /// <summary> 게임 일시정지 / 해제 시 사운드 연출 전환 </summary>
+    public void SetPauseEffect(bool isPaused, float transitionTime = 0.2f)
+    {
+        if (isPaused)
+            pausedSnapshot.TransitionTo(transitionTime);
+        else
+            normalSnapshot.TransitionTo(transitionTime);
     }
 
     public void SetMasterVolume(float val) => SetVolume("MasterVolume", val);
