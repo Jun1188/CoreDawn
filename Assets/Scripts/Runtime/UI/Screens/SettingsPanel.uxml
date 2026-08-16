@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- 설정 — 일시정지 메뉴의 "설정"에서 열린다.
+
+         탭으로 나눈 이유: 설정은 종류가 계속 늘어나는 화면이다(사운드·그래픽·조작·언어…).
+         한 줄로 쌓으면 항목이 늘 때마다 스크롤이 길어지고 "어디 있더라"가 된다.
+         탭은 늘어나는 방향이 세로가 아니라 가로라, 새 분류가 생겨도 기존 화면이 안 밀린다.
+
+         지금 실제로 동작하는 것은 사운드와 그래픽 두 탭이다. 새 분류를 넣을 때는
+         여기에 .ui-tab 버튼 하나와 .settings-page 하나를 더하고, SettingsPanelView의
+         pages 배열에 짝을 등록하면 된다 — 전환 코드는 건드릴 필요가 없다.
+
+         조작부에 유니티 기본 드롭다운/토글을 쓰지 않은 이유는 settings.uss 머리말 참고. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+    <Style src="../Styles/saveload.uss" />
+    <Style src="../Styles/settings.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="settings-panel" class="ui-panel settings-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="SETTINGS" class="ui-panel__tag" />
+                <ui:Label text="설정" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="tabs" class="ui-tabs settings-panel__tabs">
+                <ui:Button name="tab-sound" text="사운드" class="ui-tab ui-tab--active" />
+                <ui:Button name="tab-graphics" text="그래픽" class="ui-tab" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body settings-panel__body">
+
+                <!-- ── 사운드 ────────────────────────────────────────
+                     세 슬라이더는 AudioMixer의 노출 파라미터(MasterVolume·BGMVolume·
+                     SFXVolume)로 곧장 간다. 값은 놓는 순간이 아니라 끄는 동안 계속
+                     반영된다 — 소리는 들어봐야 정하는 것이라 미리보기가 곧 조작이다. -->
+                <ui:VisualElement name="page-sound" class="settings-page">
+
+                    <ui:VisualElement class="set-row">
+                        <ui:Label text="마스터" class="set-row__label" />
+                        <ui:VisualElement class="set-row__control">
+                            <ui:Slider name="slider-master" low-value="0" high-value="1" value="0.8" class="set-slider" />
+                            <ui:Label name="value-master" text="80%" class="set-row__value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="set-row">
+                        <ui:Label text="배경음악" class="set-row__label" />
+                        <ui:VisualElement class="set-row__control">
+                            <ui:Slider name="slider-bgm" low-value="0" high-value="1" value="0.8" class="set-slider" />
+                            <ui:Label name="value-bgm" text="80%" class="set-row__value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="set-row">
+                        <ui:Label text="효과음" class="set-row__label" />
+                        <ui:VisualElement class="set-row__control">
+                            <ui:Slider name="slider-sfx" low-value="0" high-value="1" value="0.8" class="set-slider" />
+                            <ui:Label name="value-sfx" text="80%" class="set-row__value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:Label name="sound-note" text="볼륨은 조절하는 즉시 저장됩니다." class="set-note" />
+
+                </ui:VisualElement>
+
+                <!-- ── 그래픽 ────────────────────────────────────────
+                     품질 칸은 QualitySettings의 레벨 이름으로 런타임에 채운다 —
+                     프로젝트가 레벨을 늘리거나 이름을 바꿔도 이 파일은 그대로다. -->
+                <ui:VisualElement name="page-graphics" class="settings-page">
+
+                    <ui:VisualElement class="set-row">
+                        <ui:Label text="품질" class="set-row__label" />
+                        <ui:VisualElement name="seg-quality" class="set-seg" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="set-row">
+                        <ui:Label text="화면 모드" class="set-row__label" />
+                        <ui:VisualElement name="seg-screen" class="set-seg" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="set-row">
+                        <ui:Label text="수직 동기화" class="set-row__label" />
+                        <ui:VisualElement name="seg-vsync" class="set-seg" />
+                    </ui:VisualElement>
+
+                    <ui:Label name="graphics-note" text="에디터에서는 화면 모드가 적용되지 않습니다." class="set-note" />
+
+                </ui:VisualElement>
+
+                <ui:VisualElement class="settings-footer">
+                    <ui:Button name="btn-reset" text="기본값으로" class="ui-btn ui-btn--ghost" />
+                    <ui:VisualElement class="settings-footer__spacer" />
+                    <ui:Button name="btn-back" text="닫기" class="ui-btn ui-btn--primary" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

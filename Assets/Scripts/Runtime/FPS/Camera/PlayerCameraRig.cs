@@ -93,6 +93,17 @@ public class PlayerCameraRig : MonoBehaviour
     }
 
     /// <summary>자세 전환 곡선에서 유도된 눈높이(로컬 Y). 콜라이더와 같은 값에서 나온다.</summary>
+    /// <summary>
+    /// 세이브 복원 전용 — 시선 상하각을 저장된 값으로 되돌린다.
+    /// 표시용 각도까지 함께 맞춰야 부드럽게 따라오는 보간이 로드 직후 한 번 휙 돌지 않는다.
+    /// </summary>
+    public void RestorePitch(float pitch)
+    {
+        _pitch = pitch;
+        _displayPitch = pitch;
+        transform.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+    }
+
     public void SetEyeHeight(float localY)
     {
         _eyeHeight = localY;

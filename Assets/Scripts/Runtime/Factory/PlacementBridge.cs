@@ -8,11 +8,13 @@ public static class PlacementBridge
 {
     /// <param name="portOverride">인스턴스별 포트 형상 (벨트 커브 등). null이면 SO 포트 사용.</param>
     /// <param name="prefabOverride">인스턴스별 프리팹 (벨트 커브 메시 등). null이면 SO 프리팹 사용.</param>
+    /// <param name="shape">벨트 모양. 세이브가 그대로 되살릴 수 있도록 심에도 기록된다.</param>
     public static Building Place(BuildingDataSO so, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
-        PortDefinition[] portOverride = null, GameObject prefabOverride = null)
+        PortDefinition[] portOverride = null, GameObject prefabOverride = null,
+        BeltShape shape = BeltShape.Straight)
     {
         var boot = FactoryBootstrap.Instance;
-        var b = boot.Sim.Place(so, origin, rotSteps, portOverride);
+        var b = boot.Sim.Place(so, origin, rotSteps, portOverride, shape);
 
         // 뷰 생성
         var prefab = prefabOverride != null ? prefabOverride : so.prefab;

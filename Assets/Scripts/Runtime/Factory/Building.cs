@@ -26,6 +26,14 @@ public class Building
     // 인스턴스별 포트 형상 (벨트 커브 등). null이면 SO의 회전 포트 사용.
     public PortDefinition[] PortOverride { get; }
 
+    /// <summary>
+    /// 벨트 모양 (직선/커브L/커브R) — 배치 시 결정되는 인스턴스 상태. 벨트가 아닌 건물에는 의미가 없다.
+    ///
+    /// 포트는 PortOverride로도 알 수 있지만 커브 메시 프리팹은 모양으로만 고를 수 있어서
+    /// (BeltDataSO.PrefabFor), 세이브가 이 값을 그대로 되살릴 수 있게 여기 남겨둔다.
+    /// </summary>
+    public BeltShape Shape { get; }
+
     // 런타임 상태 — 입력/출력 버퍼 분리 (슬롯 기반, 플레이어 인벤토리와 같은 모델)
     public ItemContainer Input  { get; }
     public ItemContainer Output { get; }
@@ -40,13 +48,14 @@ public class Building
     readonly IBuildingBehavior _behavior;
 
     public Building(FactorySim sim, BuildingDataSO data, Vector2Int origin, int rotSteps,
-        PortDefinition[] portOverride = null)
+        PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight)
     {
         Sim           = sim;
         Data          = data;
         Origin        = origin;
         RotationSteps = rotSteps;
         PortOverride  = portOverride;
+        Shape         = shape;
         Input         = new ItemContainer(data.inputSlots,  data.bufferStackCap);
         Output        = new ItemContainer(data.outputSlots, data.bufferStackCap);
         _behavior     = data.CreateBehavior(this);

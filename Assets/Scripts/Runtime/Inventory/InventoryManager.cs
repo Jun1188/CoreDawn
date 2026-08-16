@@ -9,6 +9,18 @@ public class InventoryManager : MonoBehaviour
     public ItemSocket mouseCarriageSlot;
     private ItemStack mouseCarriageItem = null;
 
+    /// <summary>
+    /// 지금 마우스에 들려 있는 스택 — 어느 컨테이너에도 속하지 않는다.
+    /// 세이브가 이것을 빠뜨리면 창을 연 채로 저장했을 때 그 아이템이 그대로 사라진다.
+    /// </summary>
+    public ItemStack MouseCarriage => mouseCarriageItem;
+
+    /// <summary>세이브 복원 전용 — 들고 있던 스택을 되돌린다.</summary>
+    public void RestoreMouseCarriage(ItemStack stack)
+    {
+        mouseCarriageItem = stack != null && stack.item != null && stack.amount > 0 ? stack : null;
+    }
+
     [Header("Player References")]
     public PlayerController playerController;
 

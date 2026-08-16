@@ -45,6 +45,15 @@ public class FactorySim
     /// <summary>시뮬레이션 누적 시간(초). 틱마다 틱 간격씩 증가한다.</summary>
     public float Now { get; private set; }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 심 시계를 저장 시점으로 되돌린다. 건물을 배치하기 전에 호출할 것.
+    ///
+    /// 이게 없으면 채굴/조합 타이머가 전부 어긋난다. 각 행동은 완료 시각을 이 시계 기준
+    /// 절대값(_readyAt)으로 들고 있어서, 시계만 0으로 되돌아가면 예약이 아득한 미래가 되어
+    /// 공장 전체가 멈춘 것처럼 보인다.
+    /// </summary>
+    public void RestoreClock(float now) => Now = now;
+
     /// <summary>마이너가 채굴 대상을 결정하는 서비스 포인트 (ResourceGrid 등에서 주입).</summary>
     public Func<Vector2Int, ItemDataSO> GetResourceAt;
 
@@ -84,9 +93,9 @@ public class FactorySim
     // ── 배치/제거 (외부 진입점 — 뷰 생성은 PlacementBridge가 별도로)
 
     public Building Place(BuildingDataSO so, Vector2Int origin, int rotSteps = 0,
-        PortDefinition[] portOverride = null)
+        PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight)
     {
-        var b = new Building(this, so, origin, rotSteps, portOverride);
+        var b = new Building(this, so, origin, rotSteps, portOverride, shape);
 
         var size = so.GetRotatedSize(rotSteps);
         for (int x = 0; x < size.x; x++)

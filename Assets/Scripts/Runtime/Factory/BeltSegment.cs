@@ -52,6 +52,9 @@ public class BeltSegment
         _items.Insert(i, (item, pos));
     }
 
+    /// <summary>세이브 복원 전용 — 벨트 위 아이템을 전부 치운다. 저장된 배치를 얹기 직전에 부른다.</summary>
+    public void ClearItems() => _items.Clear();
+
     public void Tick(float dt)
     {
         float advance = SpeedTilesPerSec * dt;

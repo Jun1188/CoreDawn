@@ -194,6 +194,11 @@ public class MonsterNest : Entity
     {
         if (spawnPoints == null) return;
 
+        // 세이브 복원 중이면 아무것도 만들지 않는다 — 저장된 보스를 곧 되살릴 참이라
+        // 여기서 만들면 두 배가 된다. Start와 Update 양쪽에서 불리므로 호출부가 아니라
+        // 이 안에서 막아야 복원이 끝나기 전에 Update가 먼저 도는 경우까지 덮인다.
+        if (SaveLoadContext.IsRestoring) return;
+
         foreach (var sp in spawnPoints)
         {
             if (sp.isDestroyed || sp.point == null || sp.bossPrefab == null) continue;
@@ -313,6 +318,74 @@ public class MonsterNest : Entity
                 }
             }
         }
+    }
+
+    // ── 세이브 복원 표면 ─────────────────────────────────────────
+    //
+    // 둥지의 파괴/복구는 "며칠에 부쉈는가"로 굴러간다(destroyedDay + recoveryDays).
+    // 그래서 파괴 여부만 저장하면 안 되고 날짜를 함께 남겨야 복구 카운트다운이 이어진다.
+
+    public IReadOnlyList<NestSpawnPoint> Points =>
+        spawnPoints ?? (IReadOnlyList<NestSpawnPoint>)System.Array.Empty<NestSpawnPoint>();
+
+    public int DestroyedDay => destroyedDay;
+    public bool HasWarned => hasWarned;
+
+    /// <summary>세이브 복원 전용 — 둥지 자체의 파괴 상태와 외형을 되돌린다.</summary>
+    public void RestoreSaveState(bool isDestroyed, int day, bool warned)
+    {
+        IsDestroyed = isDestroyed;
+        destroyedDay = day;
+        hasWarned = warned;
+
+        // 외형은 파괴 처리(HandleDeath)와 복구(OnNightStarted)가 켜고 끄는 것과 같은 대상이다
+        if (destructibleVisuals != null)
+            foreach (var go in destructibleVisuals)
+                if (go != null) go.SetActive(!isDestroyed);
+    }
+
+    /// <summary>세이브 복원 전용 — 스폰 포인트 한 곳의 파괴 상태를 되돌린다.</summary>
+    public void RestoreSpawnPoint(int index, bool destroyed, int day)
+    {
+        if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return;
+
+        var sp = spawnPoints[index];
+        sp.isDestroyed = destroyed;
+        sp.destroyedDay = day;
+        if (sp.point != null) sp.point.gameObject.SetActive(!destroyed);
+    }
+
+    /// <summary>
+    /// 세이브 복원 전용 — 스폰 포인트의 보스를 저장된 위치에 되살린다.
+    /// 이미 보스가 붙어 있으면(중복 스폰) 먼저 치운다.
+    /// </summary>
+    public Monster RestoreBoss(int index, Vector3 position, Quaternion rotation)
+    {
+        if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return null;
+
+        var sp = spawnPoints[index];
+        if (sp.bossPrefab == null) return null;
+
+        if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
+
+        var go = Instantiate(sp.bossPrefab, position, rotation, transform);
+        sp.linkedBoss = go.GetComponent<Monster>();
+
+        // 평시 스폰(SpawnBossAtPoint)과 같은 계약으로 마무리한다 — 이걸 빠뜨리면 되살아난
+        // 보스가 보스 취급을 받지 못하고 교전 구역에도 묶이지 않아, 불러온 게임에서만
+        // 다르게 행동하게 된다. 위치만 저장값을 쓰고 나머지는 평시와 동일하다.
+        sp.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        return sp.linkedBoss;
+    }
+
+    /// <summary>세이브 복원 전용 — 스폰 포인트에 붙어 있는 보스를 치운다 (저장 당시 죽어 있던 경우).</summary>
+    public void ClearBoss(int index)
+    {
+        if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return;
+
+        var sp = spawnPoints[index];
+        if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
+        sp.linkedBoss = null;
     }
 
     /// <summary>

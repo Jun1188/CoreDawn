@@ -66,6 +66,36 @@ public class Monster : Entity
         defendRadius = zone != null ? zone.LeashRange : defendRadius;
     }
 
+    /// <summary>보스인가 — 세이브가 읽는다.</summary>
+    public bool IsBoss => isBoss;
+
+    /// <summary>보스가 공격을 받아 깨어났는가 — 저장하지 않으면 로드 후 다시 잠들어 버린다.</summary>
+    public bool HasBeenAttacked => hasBeenAttacked;
+
+    public bool IsNestDefender => isNestDefender;
+    public Vector3 DefendOrigin => defendOrigin;
+
+    /// <summary>
+    /// 세이브 복원 전용 — 정체성(보스/방어자)과 각성 여부를 되돌린다.
+    ///
+    /// AI 상태는 되돌리지 않고 Idle에서 다시 시작한다. 추적 대상은 씬 오브젝트 참조라
+    /// 저장할 수 없고, 이동 경로도 지형이 같으면 곧바로 다시 계산된다 —
+    /// 플레이어 센서가 다음 스캔에서 어그로를 다시 걸어 주므로 몇 프레임이면 제자리를 찾는다.
+    /// </summary>
+    public void RestoreSaveState(bool boss, bool awakened, bool nestDefender, Vector3 origin)
+    {
+        EnsureInitialized();
+
+        isBoss = boss;
+        hasBeenAttacked = awakened;
+        isNestDefender = nestDefender;
+        defendOrigin = origin;
+
+        aggroOnPlayer = false;
+        currentTarget = null;
+        StateMachine.SetState(new IdleState());
+    }
+
     protected override void Awake()
     {
         base.Awake();

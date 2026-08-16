@@ -50,6 +50,8 @@ public class Inventory : MonoBehaviour
     private void SeedInitialItems()
     {
         if (slots == null) return;
+        // 세이브 복원 중이면 저장된 내용물이 들어올 자리다 — 초기 내용물을 얹으면 상자가 두 배로 찬다
+        if (SaveLoadContext.IsRestoring) return;
         for (int i = 0; i < slots.Length && i < container.SlotCount; i++)
         {
             var s = slots[i];

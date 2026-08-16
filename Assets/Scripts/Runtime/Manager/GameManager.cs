@@ -23,6 +23,26 @@ public class GameManager : MonoBehaviour
         TierUnlocked?.Invoke(UnlockedTier);
     }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 티어를 저장된 값으로 되돌린다 (내려가는 것도 허용).
+    /// 진화 연출 로그는 남기지 않지만 구독자에게는 알린다 — 빌드 메뉴·레시피 목록이 다시 그려져야 한다.
+    /// </summary>
+    public void RestoreTier(int tier)
+    {
+        UnlockedTier = Mathf.Max(0, tier);
+        TierUnlocked?.Invoke(UnlockedTier);
+    }
+
+    /// <summary>
+    /// 씬을 넘어 살아남는 진행도를 초기 상태로. 새 게임·다른 세이브 불러오기 직전에 호출된다.
+    /// 이게 없으면 이전 세션의 티어가 새로 시작한 게임에 그대로 따라붙는다.
+    /// </summary>
+    public void ResetProgress()
+    {
+        UnlockedTier = 0;
+        TierUnlocked?.Invoke(UnlockedTier);
+    }
+
     private void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
@@ -42,18 +62,26 @@ public class GameManager : MonoBehaviour
     public bool IsBuildingAllowed() =>
         TimeManager.Instance == null || TimeManager.Instance.IsBuildingAllowed;
 
-    // ── 세이브/로드 훅 (뼈대 — 세이브 시스템 작업 시 구현)
+    // ── 세이브/로드 훅 — 실제 작업은 SaveManager가 한다
 
+    /// <summary>아침마다 불리는 자동 저장. 정책(켬/끔, 슬롯 순환)은 SaveManager가 판단한다.</summary>
     public void SaveGame()
     {
+        if (SaveManager.Instance == null) return;
+
         int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 0;
-        Debug.Log($"====== 💾 [{day - 1}일차 완료] 데이터 자동 저장 중... ======");
-        // TODO: 세이브 시스템 연동 (심 상태는 plain 데이터라 직렬화 준비됨)
+        if (SaveManager.Instance.AutoSaveOnDayStart())
+            Debug.Log($"====== 💾 [{day - 1}일차 완료] 자동 저장 완료 ======");
     }
 
+    /// <summary>
+    /// 구 uGUI 일시정지 메뉴의 Load 버튼 호환 경로 — 슬롯을 고를 수 없으므로 가장 최근 세이브를 연다.
+    /// 새 UI(SaveLoadPanelView)는 슬롯을 직접 지정해 SaveManager.Load를 호출한다.
+    /// </summary>
     public void LoadGame()
     {
-        Debug.Log("====== 📂 세이브 데이터 불러오는 중... ======");
-        // TODO: 세이브 시스템 연동
+        if (SaveManager.Instance == null) return;
+        if (!SaveManager.Instance.LoadMostRecent())
+            Debug.LogWarning("[시스템] 불러올 세이브가 없습니다.");
     }
 }

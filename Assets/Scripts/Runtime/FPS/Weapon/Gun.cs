@@ -39,6 +39,16 @@ public class Gun : MonoBehaviour
     /// <summary>재장전 중인가 — 읽기 전용. 진행은 StartReload로만 시작된다.</summary>
     public bool IsReloading { get; private set; }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 장전된 탄수를 되돌린다. 재장전 중이었다면 그 상태는 취소한다.
+    /// 예비탄은 인벤토리가 곧 복원되므로 여기서 건드리지 않는다.
+    /// </summary>
+    public void RestoreAmmo(int ammo)
+    {
+        CurrentAmmo = Mathf.Max(0, ammo);
+        IsReloading = false;
+    }
+
     private float lastFireTime;
     private float currentSpread;
     private Rigidbody playerRb; // 이동 속도에 따른 탄퍼짐 가중치용

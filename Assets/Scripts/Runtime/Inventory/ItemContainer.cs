@@ -204,6 +204,22 @@ public class ItemContainer
         return true;
     }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 규칙 검사를 건너뛰고 슬롯 배열을 통째로 덮어쓴다.
+    ///
+    /// 규칙(수용 필터·종류당 1스택)을 우회하는 이유: 저장 시점에는 이미 규칙을 통과한 배치였고,
+    /// 로드 직후에는 필터를 다시 설치할 행동(어셈블러·코어 등)이 아직 돌지 않아
+    /// 정상 경로로 넣으면 멀쩡한 아이템이 거절된다.
+    /// </summary>
+    /// <param name="slots">SlotCount 길이의 배열. 짧으면 나머지는 비고, 길면 초과분은 버린다.</param>
+    public void RestoreSlotsRaw(ItemStack[] slots)
+    {
+        for (int i = 0; i < _slots.Length; i++)
+            _slots[i] = slots != null && i < slots.Length ? slots[i] : null;
+
+        Touch();
+    }
+
     /// <summary>아이템 종류별 (item, 총 개수) 목록 — 순회 중 컨테이너 수정에 안전한 사본.</summary>
     public List<(ItemDataSO item, int n)> Snapshot()
     {
