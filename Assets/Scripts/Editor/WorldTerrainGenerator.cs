@@ -39,6 +39,12 @@ public static class WorldTerrainGenerator
     const float CliffFalloff = 0.12f;
     const float RiverFalloff = 0.08f;
 
+    // 형상을 타일 경계에서 이만큼 <b>안쪽으로</b> 물려 시작한다. 경사면이 남의 땅이 아니라
+    // 제 타일을 깎으며 생기게 하는 장치다 — 경계에 딱 맞춰 세우면 다듬는 과정에서 높이가
+    // 옆 지면으로 흘러넘쳐, 절벽이 깎이는 게 아니라 땅이 차오르는 모양이 된다.
+    // 덤으로 경계선이 칸 격자를 벗어나 거리장의 매끈한 등고선 위에 놓인다.
+    const float ShapeInset = 0.15f;
+
     // ── 해상도 ──────────────────────────────────────────────────
     const int FieldSubDiv = 4;      // 거리장을 칸의 몇 배 격자로 뜨는가 — 계단이 1/4로 잘게 쪼개진다
     const int SamplesPerCell = 4;   // 높이맵 샘플 밀도(칸당). 2ⁿ+1로 올림된다
@@ -53,9 +59,6 @@ public static class WorldTerrainGenerator
     // 칸 격자에서 일어나 모서리가 되살아나므로, 격자를 떠난 뒤 한 번 더 편다.
     const int HeightSmoothRadius = SamplesPerCell / 2;   // 0.5칸
     const int HeightSmoothPasses = 2;
-    // 타일 경계에서 이만큼 밖으로 나가면 원래 높이를 그대로 지킨다 — 건물 놓을 땅은 평평해야 한다.
-    // 인접 칸 중심이 경계에서 0.5칸이므로 그보다 짧아야 옆 칸이 온전히 지켜진다.
-    const float GroundGuard = 0.3f;
 
     // ── 불규칙성 ────────────────────────────────────────────────
     const float WarpStrength = 3.2f;   // 경계를 흔드는 세기(타일). 직각을 깨는 주역
@@ -128,12 +131,14 @@ public static class WorldTerrainGenerator
                 float river = Mathf.Max(SampleField(riverField, map, wx, wy),
                                         SampleField(riverField, map, tx, ty));
 
-                // 경계(0)에서 지면 높이, 안쪽으로 falloff만큼 들어가면 제 높이.
-                // 밖(양수)에서는 아예 0이라 건설 가능한 땅은 평평하게 남는다.
-                float h = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, -CliffFalloff, cliff)) * CliffHeight;
+                // 경계에서 ShapeInset만큼 안쪽에 발치가 있고, 거기서 falloff만큼 더 들어가면 제 높이.
+                // 발치가 이미 타일 안이라 지면은 어떤 경우에도 평평하게 남는다.
+                float h = Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(-ShapeInset, -ShapeInset - CliffFalloff, cliff)) * CliffHeight;
 
                 // 강: 안쪽으로 들어갈수록 파이고, 절벽과 겹치면 절벽이 이긴다
-                float dig = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, -RiverFalloff, river)) * RiverDepth;
+                float dig = Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(-ShapeInset, -ShapeInset - RiverFalloff, river)) * RiverDepth;
                 h -= dig;
 
                 height[j, i] = h;   // 아직 미터 단위, 형상만
@@ -163,9 +168,9 @@ public static class WorldTerrainGenerator
 
     /// <summary>
     /// 높이맵 다듬기 — 칸 경계에 남은 직각을 편다.
-    /// 다만 블러는 절벽·강을 옆 지면으로 흘려보내므로, 지면에서는 원래 높이로 되돌린다.
-    /// 되돌리는 세기는 <b>타일 경계로부터의 거리</b>로 잰다 — 칸 중심/경계로 재면 그 되돌림이
-    /// 칸 주기로 반복돼 물가에 가리비 같은 물결이 새로 생긴다(격자를 지우려다 다시 그리는 꼴).
+    /// 다만 블러는 절벽·강을 옆 지면으로 흘려보내므로, 타일 밖에서는 원래 높이로 되돌린다.
+    /// 되돌림 여부는 <b>거리장</b>으로 판정한다 — 칸 중심/경계로 재면 그 되돌림이 칸 주기로
+    /// 반복돼 물가에 가리비 같은 물결이 새로 생긴다(격자를 지우려다 다시 그리는 꼴).
     /// </summary>
     static void SmoothHeight(float[,] height, int res, MapDataSO map, float[,] cliffField, float[,] riverField)
     {
@@ -200,13 +205,12 @@ public static class WorldTerrainGenerator
                 float tx = (float)i / (res - 1) * map.width;
                 float ty = (float)j / (res - 1) * map.height;
 
-                // 절벽·강 밖으로 얼마나 나왔는가(거리장은 안이 음수) — 안쪽은 자유롭게 뭉갠다
+                // 절벽·강 밖이면 원래 높이 그대로. 블러는 형상을 옆으로 흘려보내는데,
+                // 그러면 절벽이 깎이는 게 아니라 옆 땅이 차오르는 모양이 된다.
+                // 형상은 이미 ShapeInset만큼 안에서 시작하므로 여기서 잘라도 잃을 높이가 없다.
                 float outside = Mathf.Min(SampleField(cliffField, map, tx, ty),
                                           SampleField(riverField, map, tx, ty));
-                if (outside <= 0f) continue;
-
-                float hold = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, GroundGuard, outside));
-                height[j, i] = Mathf.Lerp(height[j, i], original[j, i], hold);
+                if (outside > 0f) height[j, i] = original[j, i];
             }
     }
 
@@ -227,9 +231,9 @@ public static class WorldTerrainGenerator
     ///
     /// 칸이 아니라 <b>칸을 FieldSubDiv로 쪼갠 격자</b>에서 뜬다. 칸 단위로 뜨면 계단 하나가
     /// 곧 한 칸이라 아무리 보간해도 마인크래프트 같은 직각이 남는다.
-    /// 뜬 뒤에는 블러로 그 직각을 뭉개되(<see cref="Smooth"/>), 뭉개진 형상이 타일 <b>밖으로</b>
-    /// 번지지는 못하게 잘라낸다 — 지면은 건물을 짓는 땅이라 깎이면 안 되기 때문이다.
-    /// 결과적으로 다듬기는 언제나 자기 쪽을 깎는 방향으로만 일어난다.
+    /// 뜬 뒤에는 블러로 그 직각을 뭉갠다(<see cref="Smooth"/>). 타일 밖을 잘라내지 않는 이유는
+    /// 그 자르기가 칸 격자에서 일어나 경계선을 도로 칸 모서리에 붙여놓기 때문이다 —
+    /// 대신 형상 자체를 <see cref="ShapeInset"/>만큼 안쪽에서 시작해 지면을 침범하지 않게 한다.
     /// </summary>
     static float[,] SignedDistance(MapDataSO map, MapTile tile)
     {
@@ -254,13 +258,6 @@ public static class WorldTerrainGenerator
                 signed[x, y] = (outside[x, y] - inside[x, y]) / FieldSubDiv;   // 안이면 음수, 칸 단위
 
         Smooth(signed, w, h);
-
-        // 타일 밖은 음수로 내려가지 못한다 = 어떤 다듬기도 남의 땅을 파지 않는다
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-                if (map.TileAt(x / FieldSubDiv, y / FieldSubDiv) != tile)
-                    signed[x, y] = Mathf.Max(signed[x, y], 0f);
-
         return signed;
     }
 
