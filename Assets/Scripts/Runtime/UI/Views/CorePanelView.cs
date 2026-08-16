@@ -35,6 +35,7 @@ public class CorePanelView : UITKPopup
     Label waveNext, waveNumber, waveIncoming, waveNests;
     RadarScope radar;
     BuildingEntity coreEntity;   // 내구도 원본 — 심(Building)이 아니라 씬 껍데기가 갖고 있다
+    WaveSpawnManager subscribedWaveSpawner;
 
     /// <summary>레이더 해금 단계. 설계상 게이트②(항법·제어 복구) 완료 시 켜진다.</summary>
     const int RadarUnlockTier = 2;
@@ -126,12 +127,14 @@ public class CorePanelView : UITKPopup
         CloseConfirm();
         ShowDeliverTab();
         Subscribe();
+        SubscribeWaveStatus();
         builtForTier = -1;   // 강제 재구성
         Refresh();
     }
 
     protected override void Unbind()
     {
+        UnsubscribeWaveStatus();
         Unsubscribe();
 
         if (btnClose != null) btnClose.clicked -= Close;
@@ -299,6 +302,32 @@ public class CorePanelView : UITKPopup
     {
         const string Unknown = "???";
 
+        var battle = BattleManager.Instance;
+        if (battle != null && battle.UsesQuantityBasedNightWaves)
+        {
+            var time = TimeManager.Instance;
+            bool night = time != null && time.Phase == DayPhase.Night;
+            if (waveNext != null) waveNext.text = night ? "전멸 시 종료" : "다음 밤 대기";
+            if (waveNumber != null) waveNumber.text = time != null ? time.DayNumber.ToString() : "-";
+            if (waveIncoming != null)
+                waveIncoming.text = radarUnlocked
+                    ? (night ? battle.Spawner.RemainingThisWave.ToString() : "대기")
+                    : Unknown;
+
+            if (waveNests != null)
+            {
+                var nests = FindObjectsByType<MonsterNest>(FindObjectsSortMode.None);
+                int destroyed = 0;
+                foreach (var nest in nests) if (nest != null && nest.IsDestroyed) destroyed++;
+                waveNests.text = radarUnlocked ? $"{destroyed} / {nests.Length}" : Unknown;
+            }
+
+            ToggleClass(waveIncoming, "core-wave__danger", radarUnlocked && night);
+            ToggleClass(waveIncoming, "core-wave__unknown", !radarUnlocked);
+            ToggleClass(waveNests, "core-wave__unknown", !radarUnlocked);
+            return;
+        }
+
         if (waveNext != null) waveNext.text = CoreInfoDummyData.WaveNextIn;
         if (waveNumber != null) waveNumber.text = CoreInfoDummyData.WaveNumber;
 
@@ -315,6 +344,30 @@ public class CorePanelView : UITKPopup
         ToggleClass(waveIncoming, "core-wave__unknown", !radarUnlocked);
         ToggleClass(waveNests, "core-wave__unknown", !radarUnlocked);
     }
+
+    void SubscribeWaveStatus()
+    {
+        UnsubscribeWaveStatus();
+        var battle = BattleManager.Instance;
+        if (battle == null || !battle.UsesQuantityBasedNightWaves) return;
+        subscribedWaveSpawner = battle.Spawner;
+        subscribedWaveSpawner.QuantityWaveStarted += OnQuantityWaveStarted;
+        subscribedWaveSpawner.QuantityWaveProgressChanged += OnQuantityWaveProgressChanged;
+        subscribedWaveSpawner.QuantityWaveCompleted += OnQuantityWaveCompleted;
+    }
+
+    void UnsubscribeWaveStatus()
+    {
+        if (subscribedWaveSpawner == null) return;
+        subscribedWaveSpawner.QuantityWaveStarted -= OnQuantityWaveStarted;
+        subscribedWaveSpawner.QuantityWaveProgressChanged -= OnQuantityWaveProgressChanged;
+        subscribedWaveSpawner.QuantityWaveCompleted -= OnQuantityWaveCompleted;
+        subscribedWaveSpawner = null;
+    }
+
+    void OnQuantityWaveStarted(int _) { if (infoTabActive) RefreshInfo(); }
+    void OnQuantityWaveProgressChanged(int _, int __, int ___) { if (infoTabActive) RefreshInfo(); }
+    void OnQuantityWaveCompleted(int _) { if (infoTabActive) RefreshInfo(); }
 
     void RefreshRadar(bool unlocked)
     {
