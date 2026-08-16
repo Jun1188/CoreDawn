@@ -330,9 +330,12 @@ public static class ProjectileSystem
         var pool = GetPool(prefab);
         var go = pool.Get();
 
-        // 부모는 매번 다시 잡는다. 반환 시의 부모 복구는 믿을 수 없다 —
-        // 무기를 집어넣을 때(SetActive(false)) 일어나는 반환은 Unity가 계층을 순회하는
-        // 도중이라 그 안에서 한 SetParent가 먹지 않고, 이펙트가 총 밑에 얹힌 채로 남는다.
+        // 풀에 든 인스턴스가 총구에 붙은 채 무기·씬과 함께 파괴됐을 수 있다(반환 시점에
+        // 부모를 되돌릴 수 없기 때문이다 — 아래 GetPool 참고). 죽은 참조는 버리고 다시 꺼낸다.
+        if (go == null) go = pool.Get();
+        if (go == null) return;
+
+        // 부모는 꺼낼 때마다 다시 잡는다 — 반환 쪽에서는 잡을 수 없다.
         go.transform.SetParent(parent != null ? parent : PoolRoot(), false);
         go.transform.SetPositionAndRotation(position, rotation);
 
@@ -494,13 +497,11 @@ public static class ProjectileSystem
                 return go;
             },
             actionOnGet: go => go.SetActive(true),
-            actionOnRelease: go =>
-            {
-                go.SetActive(false);
-                // 총구에 붙여 재생한 이펙트는 부모를 되돌린다 — 무기가 파괴·비활성화될 때
-                // 풀 안의 오브젝트가 함께 사라져 죽은 참조가 남는 것을 막는다
-                if (go.transform.parent != poolRoot) go.transform.SetParent(PoolRoot(), false);
-            },
+            // 여기서 부모를 되돌리지 않는다. 총구에 붙은 이펙트는 무기를 집어넣을 때
+            // 반환되는데, 그 순간은 Unity가 계층을 비활성화하는 중이라 SetParent가
+            // 거부당하며 에러가 난다("Cannot set the parent ... while activating or
+            // deactivating"). 부모는 PlayEffect가 꺼낼 때마다 다시 잡는다.
+            actionOnRelease: go => go.SetActive(false),
             actionOnDestroy: Object.Destroy,
             collectionCheck: true,
             defaultCapacity: 20,

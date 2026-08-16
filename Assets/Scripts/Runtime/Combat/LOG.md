@@ -562,9 +562,13 @@ BindAll이 이름으로 자동 매핑하므로 enum·액션 이름만 일치시�
   전부 꺼버린다. 재생 시점은 오직 `Play()`가 정한다.
 - `OnDisable`에서 입자를 지우고 풀에 반환한다. 부모가 꺼지면 `Update`가 멈춰
   영영 반환되지 않기 때문이다.
-- **반환 시의 부모 복구는 믿을 수 없다.** `SetActive(false)`가 계층을 순회하는 중이라
-  그 안에서 한 `SetParent`가 먹지 않는다(실측: `live=false`인데 부모는 그대로 총구).
-  그래서 `PlayEffect`가 꺼낼 때마다 부모를 다시 잡는다 — 부모가 없으면 풀 루트로.
+- **반환할 때는 부모를 되돌릴 수 없다.** `SetActive(false)`가 계층을 순회하는 중이라
+  Unity가 그 안의 `SetParent`를 거부한다 — 조용히 실패하는 게 아니라 **에러를 뱉는다**:
+  `Cannot set the parent of the GameObject 'X(Clone)' while activating or deactivating
+  the parent GameObject 'MuzzlePoint'`. 총을 쏘고 무기를 바꿀 때마다 나던 에러가 이것이다.
+  그래서 부모는 `PlayEffect`가 **꺼낼 때마다** 다시 잡는다(없으면 풀 루트로).
+  대신 풀에 든 인스턴스가 총구에 붙은 채 씬과 함께 파괴될 수 있으므로, 꺼낸 것이
+  죽은 참조면 버리고 다시 꺼낸다.
 - 풀 배선(`SetPool`)도 매번 한다. 프리팹에 `PooledEffect`가 미리 달려 있으면 예전 코드는
   배선을 건너뛰어, 그 인스턴스가 풀을 모른 채 스스로 Destroy했다(풀에 죽은 참조).
 

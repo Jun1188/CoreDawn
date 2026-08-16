@@ -481,10 +481,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6652096104688218203, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: fireBufferWindow
-      value: 0.1
-      objectReference: {fileID: 0}
     - target: {fileID: 7498640336194902235, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_Name
       value: Player
@@ -525,18 +521,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TestCombatBootstrap
   startingWeapon: {fileID: 0}
   startingItems:
+  - item: {fileID: 11400000, guid: 67b60f73b753fdd46b70a78b3cb04c60, type: 2}
+    amount: 1
   - item: {fileID: 11400000, guid: 59085cd7adfb1e94baf26c6d7796ddb7, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: ec0bbffefc3668f4791690246010aab6, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: ea551c6dfe9887c48b352c6cdb4af230, type: 2}
     amount: 1
   - item: {fileID: 11400000, guid: 3956c3e5a8910a34fa6fa8895890eba0, type: 2}
     amount: 1
+  - item: {fileID: 11400000, guid: e17b9bc7dbf8648459fd1b9b42945fe1, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
+    amount: 12
+  - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+    amount: 100
   - item: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
     amount: 100
   - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
     amount: 500
-  - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
-    amount: 12
-  - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
-    amount: 500
+  - item: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
+    amount: 100
+  - item: {fileID: 11400000, guid: e5a738777b5d0c6439fe96693c249825, type: 2}
+    amount: 100
+  - item: {fileID: 11400000, guid: fb4b36fa8fcb05248a3cf6d0c0d1a668, type: 2}
+    amount: 100
 --- !u!4 &1370461697
 Transform:
   m_ObjectHideFlags: 0
