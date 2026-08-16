@@ -93,13 +93,7 @@ public class GameplayHUDView : MonoBehaviour
             enemyLine.Insert(0, glyph);
         }
 
-        player = FindFirstObjectByType<PlayerController>();
-        playerEntity = player != null ? player.GetComponent<Entity>() : null;
-        if (playerEntity != null)
-        {
-            playerEntity.OnHealthChanged += OnPlayerHp;
-            OnPlayerHp(playerEntity.Health.CurrentHealth, playerEntity.Health.MaxHealth);
-        }
+        BindPlayerIfNeeded();
 
         hotbar = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
         if (hotbar != null) hotbar.Changed += RebuildHotbar;
@@ -120,6 +114,7 @@ public class GameplayHUDView : MonoBehaviour
 
     void Update()
     {
+        BindPlayerIfNeeded();
         UpdateTime();
         UpdateCompass();
         UpdateAmmo();
@@ -293,7 +288,30 @@ public class GameplayHUDView : MonoBehaviour
         Fill(hpFill, max > 0f ? current / max : 0f);
     }
 
-    /// <summary>코어는 나중에 생길 수도, 부서질 수도 있다 — 없으면 줄을 숨기고 매 프레임 다시 찾는다.</summary>
+    /// <summary>
+    /// 플레이어 엔티티는 <b>BattleManager가 런타임에 부착</b>한다(씬 에셋에는 없다).
+    /// HUD가 먼저 켜지면 OnEnable 시점엔 아직 컴포넌트가 없어, 한 번만 찾으면 체력이
+    /// 영영 갱신되지 않는다 — 붙을 때까지 매 프레임 다시 찾는다(코어와 같은 규칙).
+    /// </summary>
+    void BindPlayerIfNeeded()
+    {
+        if (playerEntity != null) return;
+
+        if (player == null) player = FindFirstObjectByType<PlayerController>();
+        if (player == null) return;
+
+        playerEntity = player.GetComponent<Entity>();
+        if (playerEntity == null) return;
+
+        playerEntity.OnHealthChanged += OnPlayerHp;
+        OnPlayerHp(playerEntity.Health.CurrentHealth, playerEntity.Health.MaxHealth);
+    }
+
+    /// <summary>
+    /// 코어는 나중에 생길 수도, 부서질 수도 있다 — 붙을 때까지 매 프레임 다시 찾는다.
+    /// <b>없다고 줄을 숨기지는 않는다</b>: 코어가 부서진 순간은 체력바가 사라질 때가 아니라
+    /// 0%가 되어야 하는 때다. 사라지면 무슨 일이 일어났는지가 화면에서 지워진다.
+    /// </summary>
     void BindCoreIfNeeded()
     {
         if (core != null) return;
@@ -301,8 +319,7 @@ public class GameplayHUDView : MonoBehaviour
         foreach (var e in BuildingEntity.All)
             if (e != null && e.IsCore) { core = e; break; }
 
-        Show(coreLine, core != null);
-        if (core == null) return;
+        if (core == null) { OnCoreHp(0f, 1f); return; }
 
         core.OnHealthChanged += OnCoreHp;
         OnCoreHp(core.Health.CurrentHealth, core.Health.MaxHealth);

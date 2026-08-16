@@ -84,7 +84,7 @@ public static class ProjectileSystem
     /// 날려 눈에 보인다. 프리팹이 없으면 연출만 생략되고 판정은 그대로다(헤드리스 안전).
     /// </summary>
     /// <summary>총구 출발 탄이 조준선에 합류하는 지점 — 총구의 조준선상 투영점 기준 전방 거리.</summary>
-    private const float MuzzleJoinDistance = 1f;
+    private const float MuzzleJoinDistance = 2f;
 
     public static void Fire(Vector3 origin, Vector3 direction, in ProjectileShot shot)
     {
@@ -122,7 +122,22 @@ public static class ProjectileSystem
             // 저작돼 있으면 "원점 기준 1m"는 총구 뒤가 되어 탄이 역주행한다.
             // 총구를 조준선에 투영한 지점에서 1m 앞을 합류점으로.
             float muzzleAlongRay = Mathf.Max(0f, Vector3.Dot(spec.Muzzle - origin, direction));
-            Vector3 join = origin + direction * (muzzleAlongRay + MuzzleJoinDistance);
+            float joinDistance = muzzleAlongRay + MuzzleJoinDistance;
+            Vector3 join = origin + direction * joinDistance;
+
+            // 합류 구간의 표적은 조준선에서 미리 판정한다.
+            // 탄의 몸은 총구에서 태어나므로 <b>총구보다 가까운 것은 이미 지나쳐 있다</b> —
+            // 벽에 붙어 쏘거나 몬스터가 코앞에 붙으면 탄이 그것을 통과해 날아가던 원인이다.
+            // 판정 축이 조준선이라는 원칙 그대로, 근접 표적은 여기서 즉시 착탄시킨다.
+            if (body.TargetMask != 0)
+            {
+                Transform ignore = spec.Source != null ? spec.Source.transform.root : null;
+                if (TryClosestHit(origin, direction, joinDistance, 0f, ignore, out RaycastHit near))
+                {
+                    Impact(near.collider, near.point, spec);
+                    return;
+                }
+            }
 
             // 탄두는 스폰부터 최종 진행 방향(조준선)을 본다 — 합류점 쪽을 보면 탄이
             // 비스듬히 나는 것처럼 보인다. 합류 구간의 실제 이동은 Bullet이 velocity로 처리.
@@ -314,16 +329,19 @@ public static class ProjectileSystem
 
         var pool = GetPool(prefab);
         var go = pool.Get();
-        if (parent != null) go.transform.SetParent(parent, false);
+
+        // 부모는 매번 다시 잡는다. 반환 시의 부모 복구는 믿을 수 없다 —
+        // 무기를 집어넣을 때(SetActive(false)) 일어나는 반환은 Unity가 계층을 순회하는
+        // 도중이라 그 안에서 한 SetParent가 먹지 않고, 이펙트가 총 밑에 얹힌 채로 남는다.
+        go.transform.SetParent(parent != null ? parent : PoolRoot(), false);
         go.transform.SetPositionAndRotation(position, rotation);
 
-        // 반환기는 시스템이 붙인다 — 아트 프리팹은 파티클만 갖고 있으면 된다
+        // 반환기는 시스템이 붙인다 — 아트 프리팹은 파티클만 갖고 있으면 된다.
+        // 풀 배선은 매번 해야 한다: 프리팹에 PooledEffect가 미리 달려 있으면 여기를 건너뛰어
+        // 풀을 모르는 채 스스로 Destroy해, 풀에 죽은 참조가 남는다.
         var effect = go.GetComponent<PooledEffect>();
-        if (effect == null)
-        {
-            effect = go.AddComponent<PooledEffect>();
-            effect.SetPool(pool);
-        }
+        if (effect == null) effect = go.AddComponent<PooledEffect>();
+        effect.SetPool(pool);
         effect.Play();
     }
 
