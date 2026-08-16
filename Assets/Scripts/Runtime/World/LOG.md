@@ -183,3 +183,56 @@ URP 함정 셋 — 전부 "조용히 아무 일도 안 일어나는" 종류다:
 **절벽에 인접한 지면 396칸의 최대 높이 0.11m**(미세 굴곡 범위 — 땅이 차오르지 않았다는 증거) /
 강 362칸 중 295칸 수몰(나머지는 물길 끝단) / 물 콜라이더 없음 / 지형 콜라이더 레이어=Ground /
 높이맵 513 · 알파맵 1024.
+
+---
+
+## 2026-08-16 — 둥지·광맥을 맵이 세운다 (TestNest 머지 후)
+
+main의 TestNest(PR #62)가 둥지·밤 웨이브를 들고 왔다. 그쪽은 **씬에 손으로 배선**하는
+전제였고 우리는 같은 정보를 맵 데이터로 갖고 있었다. 맵이 소유하는 쪽으로 합쳤다 —
+씬에 박아두면 맵을 갈아끼울 때 배치가 따라오지 않아 "새 맵인데 옛 둥지가 서 있는" 상태가 된다.
+
+### 늘어난 맵 스키마
+
+```jsonc
+"nests": [{
+  "x": 40, "y": 80,
+  "warningRange": 25, "triggerRange": 15,
+  "defenseSpawnAmount": 3, "defenseSpawnCooldown": 10,
+  "spawnPoints": [{ "x": 1, "y": 0, "hasBoss": true }],
+
+  // 교전 규칙 — 안쪽부터 min ≤ max ≤ chase ≤ leash. 생략(0)하면 교전 구역을 두지 않는다
+  "engageMinRange": 7, "engageMaxRange": 15,
+  "chaseRange": 25, "leashRange": 30,
+  "engageDayOnly": true,
+
+  "bossRecoveryDays": 2, "nestRecoveryDays": 3
+}],
+
+// 밤 웨이브 진입로 — 둥지의 스폰 지점과 <b>별개</b>다
+"nightSpawnPoints": [{ "x": 0, "y": 60 }]
+```
+
+**밤 진입로를 둥지와 나눈 이유**: 둥지의 스폰 지점은 낮에 플레이어가 다가왔을 때 방어
+몬스터가 튀어나오는 자리이고, 밤 진입로는 코어를 향해 밀려드는 대문이다. 하나로 합치면
+낮의 보스 자리가 밤의 대문이 된다(main의 `NightSpawnPointProvider` 주석이 같은 지적을 한다).
+
+### 세우는 쪽 — `WorldPopulator`
+
+`GameBootstrap.AssembleCombat`이 부른다. 맵의 nodes·nests·nightSpawnPoints를 읽어
+프리팹을 세우고, 밤 진입로 제공자를 `BattleManager`에 주입한다. 생성물은 월드 아래
+`Spawned` 노드에 모은다 — 지형과 같은 원칙으로 다시 만들 때 통째로 지운다.
+
+프리팹은 `World`가 들고 있다(맵이 "무엇을" 정하고 월드가 "어떤 껍데기로"). 수치는 전부
+맵이 정하므로 프리팹은 껍데기다.
+
+**컴포넌트에 `Configure`를 낸 이유**: `ResourceNode`·`MonsterNest`의 수치가 전부
+`private [SerializeField]`라 밖에서 넣을 수 없었다. 인스펙터 전용으로 설계된 것들인데
+이제 맵이 정하므로 통로가 필요하다. 0 이하는 "프리팹 값을 그대로 둔다"는 뜻이라,
+맵이 일부만 지정해도 나머지는 프리팹 기본값이 산다.
+
+### 인스턴스 소유는 부트스트랩으로 통일
+
+main이 들고 온 `preferSceneInstance`(씬 인스턴스가 부트스트랩 것을 런타임에 밀어냄)를
+제거했다. `GameBootstrap`이 탐색을 독점하고 씬에는 미리 두지 않는 방식과 정반대라,
+두 방식이 공존하면 "누가 인스턴스를 소유하는가"의 답이 씬마다 달라진다.

@@ -67,6 +67,16 @@ public class BattleManager : MonoBehaviour
         if (flowFieldManager == null) flowFieldManager = flowField;
     }
 
+    /// <summary>
+    /// 밤 진입로 주입 — 맵이 정한 자리를 부트스트랩이 세워서 건넨다(WorldPopulator).
+    /// 씬에 손으로 놓은 것이 있으면 그쪽을 존중한다.
+    /// </summary>
+    public void Inject(NightSpawnPointProvider provider)
+    {
+        if (provider == null || nightSpawnPointProvider != null) return;
+        nightSpawnPointProvider = provider;
+    }
+
     // 코어 파괴로 게임이 끝났는지 여부. UI/연출은 GameOver 이벤트를 구독하면 된다.
     public bool IsGameOver { get; private set; }
     public event System.Action GameOver;

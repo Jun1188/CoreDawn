@@ -67,6 +67,19 @@ public class ResourceNode : MonoBehaviour
     /// <summary>다음 생산 시각(심 클럭). 음수면 아직 초기화 전.</summary>
     private float nextProduceAt = -1f;
 
+    /// <summary>
+    /// 맵 데이터로 세울 때 쓴다. 인스펙터 전용(private) 필드라 밖에서 못 넣으므로 통로를 낸다 —
+    /// 광맥은 씬에 손으로 놓는 것이 아니라 맵이 정하는 것이기 때문이다.
+    /// 0 이하는 "프리팹 값을 그대로 둔다"는 뜻이다.
+    /// </summary>
+    public void Configure(ItemDataSO item, int footprint, float extractSeconds, int stockCap)
+    {
+        if (item != null) resource = item;
+        if (footprint > 0) size = new Vector2Int(footprint, footprint);
+        if (extractSeconds > 0f) extractInterval = extractSeconds;
+        if (stockCap > 0) maxStock = stockCap;
+    }
+
     // ── 공개 조회 ────────────────────────────────────────────────
 
     /// <summary>이 광맥에서 나오는 아이템. 비어 있으면 채굴 불가 광맥으로 취급한다.</summary>

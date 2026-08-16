@@ -37,6 +37,15 @@ public class MapDataSO : GameDataSO
     public ResourceNodeSpec[] nodes;
     public NestSpec[] nests;
 
+    /// <summary>
+    /// 밤 웨이브가 맵으로 들어오는 자리들.
+    ///
+    /// <b>둥지의 스폰 지점과 일부러 나눠 둔다.</b> 둥지 것은 낮에 플레이어가 다가왔을 때
+    /// 방어 몬스터가 튀어나오는 자리이고, 이쪽은 밤에 코어를 향해 밀려드는 진입로다.
+    /// 하나로 합치면 낮의 보스 자리가 밤의 대문이 되어 버린다.
+    /// </summary>
+    public Vector2Int[] nightSpawnPoints;
+
     // ── 타일 조회 ───────────────────────────────────────────────
 
     public bool InBounds(int x, int y) => x >= 0 && y >= 0 && x < width && y < height;
@@ -90,7 +99,7 @@ public struct ResourceNodeSpec
     public int maxStock;
 }
 
-/// <summary>몬스터 둥지 하나 — 낮의 습격 조건과 밤 웨이브의 출구를 함께 정의한다.</summary>
+/// <summary>몬스터 둥지 하나 — 낮의 습격 조건과 방어 몬스터가 나오는 자리를 정의한다.</summary>
 [Serializable]
 public struct NestSpec
 {
@@ -105,8 +114,35 @@ public struct NestSpec
     public int defenseSpawnAmount;
     public float defenseSpawnCooldown;
 
-    [Tooltip("밤 웨이브가 나오는 자리들 — 둥지 기준 상대 좌표라 둥지를 옮겨도 배치가 유지된다.")]
+    [Tooltip("방어 몬스터가 나오는 자리들 — 둥지 기준 상대 좌표라 둥지를 옮겨도 배치가 유지된다.")]
     public SpawnPointSpec[] spawnPoints;
+
+    // ── 교전 규칙 (NestEngagementZone) ──────────────────────────
+    // 둥지가 "언제 얼마나 달려드는가"를 맵이 정한다. 같은 프리팹을 쓰면서도
+    // 초반 둥지는 얌전하고 안쪽 둥지는 사납게 만들 수 있다.
+
+    [Tooltip("이보다 가까우면 추가 스폰을 멈춘다 — 코앞에서 무한히 쏟아지지 않게. 0이면 교전 구역을 두지 않는다.")]
+    public float engageMinRange;
+
+    [Tooltip("이 밖이면 아예 반응하지 않는다.")]
+    public float engageMaxRange;
+
+    [Tooltip("이미 교전한 몬스터가 쫓아오는 한계. 최대 반경보다 넓어야 한다.")]
+    public float chaseRange;
+
+    [Tooltip("이보다 멀어지면 둥지로 돌아간다.")]
+    public float leashRange;
+
+    [Tooltip("낮에만 이 규칙을 적용할지. 밤에는 웨이브가 주도하므로 보통 true.")]
+    public bool engageDayOnly;
+
+    // ── 복구 ────────────────────────────────────────────────────
+
+    [Tooltip("보스를 잡은 뒤 다시 나올 때까지의 일수.")]
+    public int bossRecoveryDays;
+
+    [Tooltip("둥지를 부순 뒤 다시 설 때까지의 일수.")]
+    public int nestRecoveryDays;
 }
 
 [Serializable]

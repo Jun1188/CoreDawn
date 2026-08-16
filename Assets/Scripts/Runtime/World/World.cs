@@ -20,8 +20,17 @@ public class World : MonoBehaviour
              "둘이 어긋나면 몬스터가 건물을 통과하거나 못 지나간다.")]
     [SerializeField] private float cellSize = 1f;
 
+    [Header("맵대로 세울 것들")]
+    [Tooltip("광맥 프리팹 — 아이템·크기·채굴 속도는 맵이 정하고, 이건 껍데기다.")]
+    [SerializeField] private GameObject resourceNodePrefab;
+
+    [Tooltip("둥지 프리팹 — 반경·방어 수치는 맵이 정한다.")]
+    [SerializeField] private GameObject nestPrefab;
+
     public MapDataSO Map => map;
     public float CellSize => cellSize;
+    public GameObject ResourceNodePrefab => resourceNodePrefab;
+    public GameObject NestPrefab => nestPrefab;
 
     /// <summary>맵 (0,0) 타일이 놓이는 월드 좌표.</summary>
     public Vector3 Origin => transform.position;

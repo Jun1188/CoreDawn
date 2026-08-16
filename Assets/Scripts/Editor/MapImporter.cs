@@ -34,6 +34,9 @@ public static class MapImporter
         public string[] tiles;       // 행마다 한 줄, 한 글자가 한 칸
         public NodeDto[] nodes;
         public NestDto[] nests;
+
+        /// <summary>밤 웨이브 진입로 — 둥지의 스폰 지점과 별개다(낮의 보스 자리가 밤의 대문이 되면 안 된다).</summary>
+        public CellDto[] nightSpawnPoints;
     }
 
     [Serializable] class CellDto { public int x, y; }
@@ -54,6 +57,12 @@ public static class MapImporter
         public int defenseSpawnAmount;
         public float defenseSpawnCooldown;
         public SpawnDto[] spawnPoints;
+
+        // 교전 규칙 — 생략하면 0이라 "교전 구역 없음"(둥지 기본 동작)이 된다
+        public float engageMinRange, engageMaxRange, chaseRange, leashRange;
+        public bool engageDayOnly;
+
+        public int bossRecoveryDays, nestRecoveryDays;
     }
 
     [Serializable] class SpawnDto { public int x, y; public bool hasBoss; }
@@ -138,6 +147,7 @@ public static class MapImporter
         map.EditorSetTiles(BakeTiles(dto, ref errors));
         map.nodes = ResolveNodes(dto, byId, ref errors);
         map.nests = ResolveNests(dto);
+        map.nightSpawnPoints = ResolveNightSpawns(dto);
 
         EditorUtility.SetDirty(map);
         if (isNew) created++; else updated++;
@@ -208,6 +218,20 @@ public static class MapImporter
         return list.ToArray();
     }
 
+    /// <summary>밤 웨이브 진입로. 맵 밖이나 통행 불가 칸은 버린다 — 거기서 나오면 즉시 갇힌다.</summary>
+    static Vector2Int[] ResolveNightSpawns(MapDto dto)
+    {
+        if (dto.nightSpawnPoints == null) return Array.Empty<Vector2Int>();
+
+        var list = new List<Vector2Int>(dto.nightSpawnPoints.Length);
+        foreach (var p in dto.nightSpawnPoints)
+        {
+            if (p == null) continue;
+            list.Add(new Vector2Int(p.x, p.y));
+        }
+        return list.ToArray();
+    }
+
     static NestSpec[] ResolveNests(MapDto dto)
     {
         if (dto.nests == null) return Array.Empty<NestSpec>();
@@ -226,6 +250,19 @@ public static class MapImporter
                 Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): triggerRange가 warningRange보다 큽니다 — " +
                                  "경고 없이 습격당합니다.");
 
+            // 교전 구역은 안쪽부터 바깥으로 min ≤ max ≤ chase ≤ leash 여야 뜻이 통한다.
+            // 어긋나면 "쫓아오다 말고 되돌아가는" 식으로 조용히 이상해지므로 여기서 잡는다.
+            if (nest.engageMinRange > 0f || nest.engageMaxRange > 0f)
+            {
+                if (nest.engageMaxRange < nest.engageMinRange)
+                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): engageMaxRange가 engageMinRange보다 작습니다.");
+                if (nest.chaseRange > 0f && nest.chaseRange < nest.engageMaxRange)
+                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): chaseRange가 engageMaxRange보다 작습니다 — " +
+                                     "교전하자마자 추적을 포기합니다.");
+                if (nest.leashRange > 0f && nest.leashRange < nest.chaseRange)
+                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): leashRange가 chaseRange보다 작습니다.");
+            }
+
             list.Add(new NestSpec
             {
                 cell = new Vector2Int(nest.x, nest.y),
@@ -234,6 +271,15 @@ public static class MapImporter
                 defenseSpawnAmount = nest.defenseSpawnAmount,
                 defenseSpawnCooldown = nest.defenseSpawnCooldown,
                 spawnPoints = points.ToArray(),
+
+                engageMinRange = nest.engageMinRange,
+                engageMaxRange = nest.engageMaxRange,
+                chaseRange = nest.chaseRange,
+                leashRange = nest.leashRange,
+                engageDayOnly = nest.engageDayOnly,
+
+                bossRecoveryDays = nest.bossRecoveryDays,
+                nestRecoveryDays = nest.nestRecoveryDays,
             });
         }
         return list.ToArray();

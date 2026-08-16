@@ -106,6 +106,12 @@ public static class GameBootstrap
         if (battle == null) return;
 
         battle.Inject(grid, Object.FindFirstObjectByType<FlowFieldManager>());
+
+        // 둥지·광맥·밤 진입로는 맵이 정한다. 씬에 미리 놓지 않고 여기서 세우는 이유는
+        // 맵을 갈아끼우면 배치도 함께 갈려야 하기 때문이다 — 씬에 박아두면 맵과 배치가
+        // 따로 놀다가 "새 맵인데 옛 둥지가 서 있는" 상태가 된다.
+        if (world != null && world.Map != null)
+            battle.Inject(WorldPopulator.Populate(world, battle.transform));
     }
 
     /// <summary>이 씬의 월드 — 맵 데이터의 출처. 없으면 맵 없는 구성(테스트 씬)이다.</summary>
