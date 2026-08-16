@@ -31,10 +31,27 @@ public class TimeManager : MonoBehaviour
     /// <summary>건축 가능한 타이밍(낮)인지 체크.</summary>
     public bool IsBuildingAllowed => Cycle.Phase == DayPhase.Day;
 
+    public bool IsNightCompletionControlled => Cycle != null && Cycle.IsNightCompletionControlled;
+
+    /// <summary>
+    /// Opt-in gate used by objective-based nights. False preserves the original timed night.
+    /// </summary>
+    public void SetNightCompletionControlled(bool controlled)
+    {
+        if (Cycle != null) Cycle.IsNightCompletionControlled = controlled;
+    }
+
     void Awake()
     {
-        if (Instance != null) { Destroy(gameObject); return; }
-        Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        else
+        {
+            Instance = this;
+        }
         transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
 
@@ -44,6 +61,11 @@ public class TimeManager : MonoBehaviour
     }
 
     void Start() => Cycle.Begin();   // 다른 시스템의 구독(Awake/Start)이 끝난 뒤 1일차 시작 알림
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     void Update() => Cycle.Advance(Time.deltaTime);
 

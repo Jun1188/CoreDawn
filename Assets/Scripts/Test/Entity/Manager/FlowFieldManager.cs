@@ -28,10 +28,15 @@ public class FlowFieldManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            // FlowFieldManager가 타워·둥지와 같은 통합 루트에 붙을 수 있으므로
+            // 중복 정리 시 GameObject 전체를 파괴하면 안 된다 — 컴포넌트만 뗀다.
+            Destroy(this);
             return;
         }
-        Instance = this;
+        else
+        {
+            Instance = this;
+        }
     }
 
     private void Start()

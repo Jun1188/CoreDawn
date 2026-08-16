@@ -21,5 +21,6 @@ public class RecipeDatabaseSO : ScriptableObject
 
     /// <summary>이 레시피가 현재 코어 티어에서 해금됐는가. GameManager 없는 씬은 전부 해금 취급 (건설 메뉴와 같은 규칙).</summary>
     public static bool IsUnlocked(RecipeDataSO r) =>
-        r != null && (GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.tier));
+        r != null && ((GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.tier)) ||
+                      RecipeRewardUnlockService.IsUnlocked(r));
 }

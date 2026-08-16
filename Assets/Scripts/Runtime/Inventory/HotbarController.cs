@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[DefaultExecutionOrder(100)]
 public class HotbarController : MonoBehaviour, IInputReceiver
 {
     public static HotbarController Instance { get; private set; }
@@ -26,7 +27,7 @@ public class HotbarController : MonoBehaviour, IInputReceiver
 
     private ItemContainer watched;
 
-    private void Start()
+    private System.Collections.IEnumerator Start()
     {
         if (InputManager.Instance != null) InputManager.Instance.Register(this);
 
@@ -35,6 +36,11 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         // 호출을 한 군데라도 빠뜨리면 손에 든 무기와 핫바가 어긋나던 문제도 함께 사라진다.
         watched = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
         if (watched != null) watched.Changed += EquipFromActiveSlot;
+
+        // 첫 장착은 한 프레임 미룬다. PlayerInventoryHolder는 Awake에 시작 핫바를 채우는데
+        // WeaponManager는 Start에서 무기 모델을 전부 끄기 때문에, 지금 장착하면 그 뒤에
+        // 꺼져 맨손으로 시작한다. 모든 Start가 끝난 다음에 걸어야 손에 남는다.
+        yield return null;
         EquipFromActiveSlot();
     }
 

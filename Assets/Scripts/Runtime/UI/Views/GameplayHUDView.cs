@@ -22,7 +22,7 @@ public class GameplayHUDView : MonoBehaviour
 {
     [SerializeField] UIDocument document;
 
-    VisualElement root, compass, crosshair, coreLine, ammoBox, hotbarRow, enemyLine;
+    VisualElement root, compass, crosshair, deathOverlay, coreLine, ammoBox, hotbarRow, enemyLine;
     VisualElement hpFill, coreFill;
     Label dayValue, phaseLabel, phaseTime, hpNow, hpMax, corePct, ammoName, ammoNow, ammoCap, enemyCount;
     Label ammoType, ammoReserve;
@@ -62,6 +62,7 @@ public class GameplayHUDView : MonoBehaviour
         root       = r.Q("hud");
         compass    = r.Q("compass");
         crosshair  = r.Q("crosshair");
+        deathOverlay = r.Q("death-overlay");
         coreLine   = r.Q("core-line");
         ammoBox    = r.Q("ammo");
         hotbarRow  = r.Q("hotbar");
@@ -93,6 +94,7 @@ public class GameplayHUDView : MonoBehaviour
             enemyLine.Insert(0, glyph);
         }
 
+        Show(deathOverlay, false);
         BindPlayerIfNeeded();
 
         hotbar = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
@@ -106,6 +108,8 @@ public class GameplayHUDView : MonoBehaviour
     void OnDisable()
     {
         if (playerEntity != null) playerEntity.OnHealthChanged -= OnPlayerHp;
+        playerEntity = null;
+        player = null;
         if (core != null) { core.OnHealthChanged -= OnCoreHp; core = null; }
         if (hotbar != null) hotbar.Changed -= RebuildHotbar;
 
@@ -281,13 +285,6 @@ public class GameplayHUDView : MonoBehaviour
 
     // ───────────────────── 체력 · 코어 ─────────────────────
 
-    void OnPlayerHp(float current, float max)
-    {
-        hpNow.text = Mathf.CeilToInt(current).ToString();
-        hpMax.text = $"/ {Mathf.CeilToInt(max)}";
-        Fill(hpFill, max > 0f ? current / max : 0f);
-    }
-
     /// <summary>
     /// 플레이어 엔티티는 <b>BattleManager가 런타임에 부착</b>한다(씬 에셋에는 없다).
     /// HUD가 먼저 켜지면 OnEnable 시점엔 아직 컴포넌트가 없어, 한 번만 찾으면 체력이
@@ -297,14 +294,22 @@ public class GameplayHUDView : MonoBehaviour
     {
         if (playerEntity != null) return;
 
-        if (player == null) player = FindFirstObjectByType<PlayerController>();
-        if (player == null) return;
-
-        playerEntity = player.GetComponent<Entity>();
+        if (player == null)
+            player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
+        // PlayerController에는 호환용 Entity가 함께 있을 수 있으므로 실제 전투 Player를 명시한다.
+        playerEntity = player != null ? player.GetComponent<Player>() : null;
         if (playerEntity == null) return;
 
         playerEntity.OnHealthChanged += OnPlayerHp;
         OnPlayerHp(playerEntity.Health.CurrentHealth, playerEntity.Health.MaxHealth);
+    }
+
+    void OnPlayerHp(float current, float max)
+    {
+        hpNow.text = Mathf.CeilToInt(current).ToString();
+        hpMax.text = $"/ {Mathf.CeilToInt(max)}";
+        Fill(hpFill, max > 0f ? current / max : 0f);
+        Show(deathOverlay, current <= 0f);
     }
 
     /// <summary>
