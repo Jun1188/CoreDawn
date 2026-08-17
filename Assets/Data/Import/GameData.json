@@ -1847,6 +1847,8 @@
       "damageMultiplier": 0,
       "range": 0,
       "fireRate": 0,
+      "turnSpeed": 0,
+      "aimTolerance": 3,
       "ammoFilter": []
     },
     {
@@ -1918,6 +1920,8 @@
       "damageMultiplier": 1,
       "range": 9,
       "fireRate": 2,
+      "turnSpeed": 360,
+      "aimTolerance": 3,
       "ammoFilter": [
         "Item:BasicAmmo",
         "Item:DenseAmmo",
@@ -1966,6 +1970,8 @@
       "damageMultiplier": 2.2,
       "range": 11,
       "fireRate": 4,
+      "turnSpeed": 120,
+      "aimTolerance": 3,
       "ammoFilter": [
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
@@ -2013,6 +2019,8 @@
       "damageMultiplier": 3.5,
       "range": 18,
       "fireRate": 0.5,
+      "turnSpeed": 60,
+      "aimTolerance": 3,
       "ammoFilter": [
         "Item:Grenade"
       ]
@@ -2059,6 +2067,8 @@
       "damageMultiplier": 2.8,
       "range": 14,
       "fireRate": 3,
+      "turnSpeed": 200,
+      "aimTolerance": 3,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
       ]
@@ -2101,6 +2111,8 @@
       "damageMultiplier": 0,
       "range": 7,
       "fireRate": 0.2,
+      "turnSpeed": 0,
+      "aimTolerance": 3,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
       ]

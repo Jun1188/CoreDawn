@@ -10,40 +10,42 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1a0b54e958ccc974cbbda0f9a5f5016c, type: 3}
-  m_Name: HeavyTurret
+  m_Name: BasicTurret
   m_EditorClassIdentifier: Assembly-CSharp::TowerDataSO
-  id: Building:HeavyTurret
-  displayName: "\uC911\uAE30\uAD00 \uD3EC\uD0D1"
-  description: "\uACE0\uBC00\uB3C4 \uD0C4\uC57D\uC744 \uC4F0\uB294 \uC5F0\uC0AC \uD3EC\uD0D1."
+  id: Building:BasicTurret
+  displayName: "\uAE30\uBCF8 \uD3EC\uD0D1"
+  description: "\uAE30\uBCF8 \uD0C4\uC57D\uC744 \uC18C\uBE44\uD574 \uC0AC\uACA9\uD55C\uB2E4.
+    \uBCA8\uD2B8\uB85C \uBCF4\uAE09\uD560 \uC218 \uC788\uB2E4."
   icon: {fileID: 0}
   category: 3
-  prefab: {fileID: 7276461332977000175, guid: 63049ff461071ed4596438f0ebbc617b, type: 3}
-  size: {x: 2, y: 2}
+  prefab: {fileID: 5029460367566490423, guid: f50c1af3e0d06944fabe0d34dc16aac3, type: 3}
+  size: {x: 1, y: 1}
   ports:
   - LocalOffset: {x: 0, y: 0}
     Direction: 3
     IsInput: 1
   inputSlots: 1
   outputSlots: 0
-  bufferStackCap: 30
-  requiredCoreTier: 2
+  bufferStackCap: 20
+  requiredCoreTier: 1
   hideFromBuildMenu: 0
   buildCost:
   - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
-    amount: 14
+    amount: 8
   - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
-    amount: 10
-  - item: {fileID: 11400000, guid: a1135b33ec184ee49b0aa1c217acda9e, type: 2}
-    amount: 4
-  maxHp: 320
+    amount: 6
+  maxHp: 200
   fireMode: 0
-  damageMultiplier: 2.2
-  range: 11
+  damageMultiplier: 1
+  range: 9
   minRange: 0
-  fireRate: 4
-  muzzleHeight: 1.2
+  fireRate: 2
+  muzzleHeight: 0.855
   preferHighArc: 0
+  turnSpeed: 360
+  aimTolerance: 3
   ammoFilter:
+  - {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
   - {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
   - {fileID: 11400000, guid: e5a738777b5d0c6439fe96693c249825, type: 2}
-  defaultAmmo: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
+  defaultAmmo: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}

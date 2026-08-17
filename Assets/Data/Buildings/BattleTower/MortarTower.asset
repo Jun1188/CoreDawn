@@ -42,8 +42,10 @@ MonoBehaviour:
   range: 18
   minRange: 5
   fireRate: 0.5
-  muzzleHeight: 1.8
+  muzzleHeight: 2.366
   preferHighArc: 0
+  turnSpeed: 60
+  aimTolerance: 3
   ammoFilter:
   - {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
   defaultAmmo: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}

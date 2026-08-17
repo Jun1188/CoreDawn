@@ -138,6 +138,8 @@ public static class GameDataImporter
         public string   fireMode;                            // Tower — Projectile | Hitscan | Aura | None
         public float    muzzleHeight = -1f;                  // Tower — 0 정당, 음수 = 생략(유지)
         public bool     preferHighArc;                       // Tower — 곡사 시 고각 선택(박격포). bool은 항상 명시
+        public float    turnSpeed = -1f;                     // Tower — 포탑 선회 속도(도/초). 0 정당(포탑 없음), 음수 = 생략(유지)
+        public float    aimTolerance = -1f;                  // Tower — 조준 완료 허용 오차(도). 0 정당, 음수 = 생략(유지)
         public string   defaultAmmo;                         // Tower — 무공급(씬 배치) 폴백 탄 아이템 id. 생략 시 유지
         public string[] ammoFilter;                          // Tower
         public TierDto[] tiers;                              // Core
@@ -719,6 +721,8 @@ public static class GameDataImporter
                 }
                 if (dto.muzzleHeight >= 0f) tower.muzzleHeight = dto.muzzleHeight;   // 0 정당 — 음수가 생략 신호
                 tower.preferHighArc = dto.preferHighArc;   // bool은 생략 판별 불가 — json이 항상 명시한다
+                if (dto.turnSpeed >= 0f) tower.turnSpeed = dto.turnSpeed;         // 0 정당(포탑 없는 타워)
+                if (dto.aimTolerance >= 0f) tower.aimTolerance = dto.aimTolerance;
                 if (!string.IsNullOrEmpty(dto.defaultAmmo))
                 {
                     if (byId.TryGetValue(dto.defaultAmmo, out var da) && da is ItemDataSO defAmmo)
