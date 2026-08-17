@@ -35,7 +35,7 @@ public static class WorldTerrainGenerator
     const float WaterLevel = -0.15f;   // 물 표면 높이(m)
 
     // ── 섬 ──────────────────────────────────────────────────────
-    const float ShoreWidth = 1f;    // 맵 가장자리에서 물에 잠기는 폭(칸)
+    const float ShoreWidth = 1.8f;  // 맵 가장자리에서 물에 잠기는 폭(칸)
     const float SeaMargin = 1.5f;   // 물을 맵 밖으로 얼마나 더 깔지 (맵 한 변의 배수)
 
     // ── 경계벽 ──────────────────────────────────────────────────
@@ -54,7 +54,17 @@ public static class WorldTerrainGenerator
     // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
     // 절벽·강 타일은 어차피 건설 불가라 칸 안에서는 마음껏 깎아도 된다. 경계선 자체는 이미
     // 블러로 매끈한 곡선이므로, 짧게 세울수록 그 곡선이 또렷한 벼랑·물길이 된다.
-    const float RiverFalloff = 0.16f;   // 크면 완만하다 — 경사를 절반으로 눕히려면 거리를 두 배로
+    const float RiverFalloff = 0.30f;   // 크면 완만하다 — 경사를 절반으로 눕히려면 거리를 두 배로
+
+    // 물가는 벼랑이 아니라 <b>여울</b>로 들어간다 — 물 앞에서 넓고 얕게 눕다가, 그 다음에
+    // 골이 파인다. 한 단짜리 곡선으로는 이 둘을 함께 얻을 수 없다: 짧게 잡으면 물가가
+    // 벽이 되고, 길게 잡으면 폭 3칸짜리 물길이 제 깊이에 닿기 전에 반대편을 만나 말라버린다.
+    //
+    // 두 폭의 합은 <b>강 반폭(1.5칸)에서 한참 모자라야</b> 한다. 다듬기(거리장 블러 + 높이맵
+    // 블러)가 좁은 골의 바닥을 들어올리기 때문이다 — 실측으로 유효 침투 거리가 기대치의
+    // 약 2/3(1.35칸 → 0.9칸)로 줄었고, 합을 1.25칸으로 잡았을 때 수심이 16cm까지 말랐다.
+    const float ShelfWidth = 0.45f;  // 여울 폭(칸) — 물가 경사를 정한다
+    const float ShelfDepth = 0.3f;   // 여울 끝의 파임(m). WaterLevel보다 깊어야 물이 덮는다
 
     // 형상을 타일 경계에서 이만큼 <b>안쪽으로</b> 물려 시작한다. 경사면이 남의 땅이 아니라
     // 제 타일을 깎으며 생기게 하는 장치다 — 경계에 딱 맞춰 세우면 다듬는 과정에서 높이가
@@ -78,7 +88,11 @@ public static class WorldTerrainGenerator
     const int HeightSmoothPasses = 2;
 
     // ── 불규칙성 ────────────────────────────────────────────────
-    const float WarpStrength = 3.2f;   // 경계를 흔드는 세기(타일). 직각을 깨는 주역
+    // 경계를 흔드는 세기(칸). 직각을 깨는 주역이지만 <b>형상 반폭보다 작아야</b> 한다.
+    // 워프 파장(18칸)이 물길 폭(3칸)보다 훨씬 길어서 물길 양쪽이 <b>같은 방향</b>으로 밀리는데,
+    // 아래의 "바깥쪽 택하기"는 그 이동분을 양쪽에서 깎아낸다 — 세기가 반폭(1.5칸)을 넘던
+    // 3.2칸에서는 그 깎임이 물길을 통째로 지워, 강이 중간중간 웅덩이로 끊겼다.
+    const float WarpStrength = 0.8f;
     const float WarpFrequency = 0.055f;
     const float DetailAmplitude = 0.14f;  // 지면 미세 굴곡(m)
     const float DetailFrequency = 0.09f;
@@ -126,6 +140,21 @@ public static class WorldTerrainGenerator
     // ── 높이맵 ──────────────────────────────────────────────────
 
     /// <summary>
+    /// 물가에서 <paramref name="into"/>칸 들어간 지점이 얼마나 파이는가(m). 뭍이면 0.
+    ///
+    /// 두 단으로 나눈다 — 넓고 완만한 <b>여울</b>이 먼저 물속으로 눕고, 그 뒤에 골이 파인다.
+    /// 여울은 걸어 들어갈 수 있는 완경사라 물가가 벼랑으로 보이지 않고,
+    /// 골은 짧아서 폭 3칸짜리 물길도 제 깊이에 닿는다.
+    /// </summary>
+    static float Submerge(float into)
+    {
+        float shelf = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, ShelfWidth, into)) * ShelfDepth;
+        float trough = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(ShelfWidth, ShelfWidth + RiverFalloff, into))
+                     * (RiverDepth - ShelfDepth);
+        return shelf + trough;
+    }
+
+    /// <summary>
     /// 타일 → 높이맵. 거리장을 부드러운 곡선으로 매핑하고 워핑·노이즈로 격자 흔적을 지운다.
     /// Terrain 높이맵은 0~1 정규화 값이라 마지막에 전체 높이로 나눈다.
     /// </summary>
@@ -163,16 +192,14 @@ public static class WorldTerrainGenerator
                 // 높이맵으로 세운 벽은 결국 늘어난 텍스처라 가까이서 암벽으로 보이지 않는다.
                 float h = 0f;
 
-                // 강만 판다. 경계에서 ShapeInset만큼 안쪽에 물가가 있고, 거기서 falloff만큼
-                // 더 들어가면 제 깊이 — 발치가 타일 안이라 지면은 평평하게 남는다.
-                float dig = Mathf.SmoothStep(0f, 1f,
-                    Mathf.InverseLerp(-ShapeInset, -ShapeInset - RiverFalloff, river)) * RiverDepth;
+                // 강만 판다. 경계에서 ShapeInset만큼 안쪽이 물가고, 거기서부터 여울·골 순으로
+                // 들어간다 — 발치가 타일 안이라 지면은 평평하게 남는다.
+                float dig = Submerge(-river - ShapeInset);
 
-                // 맵 가장자리도 같은 깊이로 깎아 물에 잠근다 — 바다에 뜬 섬으로 보이게.
+                // 맵 가장자리도 같은 곡선으로 깎아 물에 잠근다 — 바다에 뜬 섬으로 보이게.
                 // 타일은 건드리지 않으므로 길찾기·건설 판정은 그대로다(외형만 바뀐다).
                 float edge = Mathf.Min(Mathf.Min(tx, ty), Mathf.Min(map.width - tx, map.height - ty));
-                dig = Mathf.Max(dig, Mathf.SmoothStep(0f, 1f,
-                    Mathf.InverseLerp(ShoreWidth, ShoreWidth - RiverFalloff, edge)) * RiverDepth);
+                dig = Mathf.Max(dig, Submerge(ShoreWidth - edge));
 
                 h -= dig;
 
@@ -422,7 +449,7 @@ public static class WorldTerrainGenerator
         // 스플랫은 반드시 에셋으로 굳힌 뒤에 칠한다. TerrainData를 CreateAsset 하는 순간
         // 알파맵 텍스처가 새로 만들어지면서 그 전에 칠한 내용이 전부 첫 레이어로 초기화된다.
         PaintSplat(data, map, height);
-        PaintDetails(data, map, height);
+        PaintDetails(data, map, height, world.CellSize);
         EditorUtility.SetDirty(data);
 
         // 여기서 디스크에 굳힌다. 뒤이어 물 메시를 CreateAsset 하는 순간, 아직 저장되지 않은
@@ -445,8 +472,9 @@ public static class WorldTerrainGenerator
     // 칸마다 하나씩 세운다. 크기는 프리팹 실측 폭에서 역산하므로 여기 값은 전부 <b>칸에 대한 비율</b>이다.
     // 칸 대비 폭. 가장자리는 칸을 살짝만 채워 풀밭을 침범하지 않고,
     // 안쪽은 크게 키워 이웃과 겹치게 한다 — 겹쳐야 덩어리가 이어져 벽으로 보인다.
-    const float CliffFillEdge = 1.2f;
-    const float CliffFillInner = 2.6f;
+    // 1이 곧 "칸에 꽉 참"이다.
+    const float CliffFillEdge = 1f;      // 지면에 닿은 칸 — 넘으면 건설 가능한 땅을 덮는다
+    const float CliffFillInner = 2.6f;   // 사방이 절벽 — 이웃을 덮어야 덩어리가 이어진다
     const float CliffSink = 0.4f;          // 바닥을 지면에 맞춘 뒤 더 묻는 깊이(m) — 밑동이 떠 보이지 않을 만큼만
     // 절벽의 실제 높이(m). <b>배율이 아니라 목표 높이</b>다 — 프리팹 원본이 3~18m로
     // 제각각이라 배율로 다루면 그 차이가 증폭돼 기둥 숲이 된다.
@@ -474,12 +502,23 @@ public static class WorldTerrainGenerator
     static readonly Color HealthyTint = new Color(0.263f, 0.976f, 0.165f);
     static readonly Color DryTint = new Color(0.804f, 0.737f, 0.102f);
 
+    /// <summary>물가에서 풀이 멈추는 높이(m). 수면보다 조금 위여야 물속에 잠긴 풀이 없다.</summary>
+    const float GrassWaterLine = WaterLevel + 0.08f;
+
+    /// <summary>여기까지만 풀이 자란다. 여울 경사(약 0.17)는 넘고 골 경사는 못 넘는 값.</summary>
+    const float GrassMaxSlope = 0.45f;
+
     /// <summary>
-    /// 풀·꽃·갈대를 심는다. 심는 자리는 <b>타일이 정한다</b> — 지면에만 풀이 자라고,
-    /// 갈대는 물가(강에 닿은 지면)에만 선다. 절벽과 강 위에는 아무것도 두지 않는다.
+    /// 풀·꽃을 심는다. 심는 자리는 <b>실제 지형이 정한다</b> — 물가 위쪽의 완경사 지면에만
+    /// 자란다. 타일로 자르면 안 된다: 워핑·블러를 거친 실제 물가는 타일 경계를 넘나들기
+    /// 때문에, 같은 강이라도 한쪽은 물 앞에서 풀이 끊기고 반대쪽은 물속까지 풀이 자란다.
+    /// 게다가 잘린 자국이 칸 격자를 그대로 드러낸다.
+    ///
+    /// 타일을 보는 곳은 절벽 하나뿐이다 — 그 자리는 암벽 프리팹이 덮으므로 비운다.
+    /// 절벽에 <b>닿은</b> 칸은 건설 가능한 멀쩡한 지면이므로 비우지 않는다.
     /// 디테일은 콜라이더가 없어 길찾기·건설·사격 판정에 전혀 관여하지 않는다.
     /// </summary>
-    static void PaintDetails(TerrainData data, MapDataSO map, float[,] height)
+    static void PaintDetails(TerrainData data, MapDataSO map, float[,] height, float cellSize)
     {
         // 크기는 프리팹 원본에 곱해지는 배율이다. 1인칭 게임이라 무릎 높이여야 시야가 열린다 —
         // Demo 값(0.5~1)을 그대로 쓰면 눈높이를 덮어 앞이 안 보인다.
@@ -521,14 +560,15 @@ public static class WorldTerrainGenerator
                 int cx = Mathf.Clamp(Mathf.FloorToInt(tx), 0, map.width - 1);
                 int cy = Mathf.Clamp(Mathf.FloorToInt(ty), 0, map.height - 1);
 
-                if (map.TileAt(cx, cy) != MapTile.Ground) continue;
+                // 암벽 프리팹이 서는 자리 — 풀을 심어도 벽 속에 묻힌다
+                if (map.TileAt(cx, cy) == MapTile.Cliff) continue;
 
-                // 절벽에 닿은 칸은 통째로 비운다. 벽 바로 앞은 풀이 벽면에 파고든 것처럼 보이고,
-                // 그 자리는 절벽 프리팹(<see cref="PlaceCliffs"/>)이 채운다.
-                if (NextTo(map, cx, cy, MapTile.Cliff)) continue;
+                // 물가 아래는 비운다. 판정을 실제 높이로 하므로 풀이 끊기는 선이
+                // 칸 모서리가 아니라 물가 곡선을 그대로 따라간다.
+                if (SampleHeightAt(height, tx, ty, map) < GrassWaterLine) continue;
 
-                // 지형이 솟은 곳도 제외 — 미세 굴곡을 넘어서면 이미 경사다
-                if (SampleHeightAt(height, tx, ty, map) > 0.3f) continue;
+                // 급경사에도 두지 않는다 — 비탈에 선 풀은 지면을 뚫고 나온 것처럼 보인다
+                if (SlopeAt(height, tx, ty, map, cellSize) > GrassMaxSlope) continue;
 
                 // 풀은 <b>빈 곳 없이</b> 깔되 밀도만 흔든다. 임계값으로 자르면 노이즈 모양 그대로
                 // 구멍이 뚫려, 잔디밭이 아니라 얼룩으로 보인다.
@@ -594,18 +634,15 @@ public static class WorldTerrainGenerator
     }
 
     /// <summary>
-    /// 이웃 8칸에 해당 타일이 있는가. <b>맵 밖은 세지 않는다</b> — TileAt이 맵 밖을 절벽으로
-    /// 돌려주는 탓에, 그대로 쓰면 맵 가장자리 지면이 전부 "절벽 옆"으로 판정돼 풀이 빠진다.
+    /// 그 지점의 지면 기울기(높이차 ÷ 수평거리). 45°가 1이다.
+    /// 높이맵 한 칸 간격의 중앙 차분이라, 실제로 심는 해상도에서 느끼는 경사와 같다.
     /// </summary>
-    static bool NextTo(MapDataSO map, int x, int y, MapTile tile)
+    static float SlopeAt(float[,] height, float tx, float ty, MapDataSO map, float cellSize)
     {
-        for (int dy = -1; dy <= 1; dy++)
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                if (!map.InBounds(x + dx, y + dy)) continue;
-                if (map.TileAt(x + dx, y + dy) == tile) return true;
-            }
-        return false;
+        float d = 1f / SamplesPerCell;   // 높이맵 한 칸(타일 단위)
+        float dx = SampleHeightAt(height, tx + d, ty, map) - SampleHeightAt(height, tx - d, ty, map);
+        float dy = SampleHeightAt(height, tx, ty + d, map) - SampleHeightAt(height, tx, ty - d, map);
+        return Mathf.Sqrt(dx * dx + dy * dy) / (2f * d * cellSize);
     }
 
     // ── 절벽 ────────────────────────────────────────────────────
@@ -661,23 +698,34 @@ public static class WorldTerrainGenerator
                 int pick = Hash(x, y, 23) % prefabs.Count;
                 var cliff = (GameObject)PrefabUtility.InstantiatePrefab(prefabs[pick], parent);
 
-                // 이웃이 절벽인 만큼 크게 키운다.
-                // <b>넘치면 안 되는 것은 지면 쪽이지 절벽끼리가 아니다</b> — 안쪽 칸은 사방이
-                // 절벽이니 이웃을 덮어도 무방하고, 오히려 겹쳐야 덩어리가 이어져 벽이 된다.
-                // 가장자리 칸만 칸 안에 얌전히 들어가면 풀밭을 침범하지 않는다.
-                int neighbours = 0;
-                for (int dy = -1; dy <= 1; dy++)
+                // <b>넘치면 안 되는 것은 지면 쪽이지 절벽끼리가 아니다.</b> 지면과 한 칸이라도
+                // 맞닿았으면 제 칸 안에 들어가야 하고, 사방이 절벽인 칸만 크게 키운다.
+                //
+                // 이웃 절벽 수로 보간하면 안 된다 — 8칸 중 5칸이 절벽인 칸도 fill 2.1을 받아
+                // 남은 지면 쪽으로 1m 넘쳐서, 건설 가능한 땅을 암벽이 덮었다.
+                //
+                // 지면 반대쪽으로 물러서는 방법도 안 된다. 암벽 바운드는 사방으로 뻗으므로
+                // 물러서는 <b>축</b>만 해결되고 직교 축은 그대로 넘친다(실측 최대 1.00m).
+                //
+                // 앞 겹이 칸에 맞아 성겨 보이지는 않는다 — 절벽 542칸 중 212칸이 사방 절벽이라
+                // 뒤가 두툼하게 채워진다.
+                bool exposed = false;
+                for (int dy = -1; dy <= 1 && !exposed; dy++)
                     for (int dx = -1; dx <= 1; dx++)
                     {
                         if (dx == 0 && dy == 0) continue;
-                        if (map.InBounds(x + dx, y + dy) && map.TileAt(x + dx, y + dy) == MapTile.Cliff) neighbours++;
+                        if (!map.InBounds(x + dx, y + dy) || map.TileAt(x + dx, y + dy) != MapTile.Cliff)
+                        { exposed = true; break; }
                     }
 
-                float fill = Mathf.Lerp(CliffFillEdge, CliffFillInner, neighbours / 8f);
+                float fill = exposed ? CliffFillEdge : CliffFillInner;
                 float scale = world.CellSize * fill / widths[pick];
 
-                // 가로는 ±15%로 흔든다
-                scale *= Mathf.Lerp(0.85f, 1.15f, Hash(x, y, 13) % 1000 / 1000f);
+                // 가로를 흔든다 — 지면에 닿은 칸에서는 <b>줄이는 쪽으로만</b>, 그것도 살짝.
+                // 크게 줄이면(0.78~1.0을 썼을 때 평균 0.89) 암벽 사이가 벌어져 기둥 울타리가 된다.
+                scale *= exposed
+                    ? Mathf.Lerp(0.94f, 1f, Hash(x, y, 13) % 1000 / 1000f)
+                    : Mathf.Lerp(0.88f, 1.12f, Hash(x, y, 13) % 1000 / 1000f);
 
                 // 세로는 <b>목표 높이(m)를 정하고 배율을 역산</b>한다.
                 // 배율을 곱하는 방식으로는 안 된다 — 프리팹 원본 높이가 3~18m로 6배 차이라
@@ -698,9 +746,17 @@ public static class WorldTerrainGenerator
                 // "높이 배율을 올렸는데 여전히 납작한" 상태가 된다.
                 Vector3 pos = world.CellToWorldCenter(new Vector2Int(x, y));
                 pos.y = world.Origin.y - bottoms[pick] * tall - CliffSink;
-                // 칸 안에서만 살짝 흔든다 — 격자에 자로 잰 듯 놓이면 인공물로 보인다
-                pos.x += (Hash(x, y, 41) % 1000 / 1000f - 0.5f) * world.CellSize * CliffJitter;
-                pos.z += (Hash(x, y, 67) % 1000 / 1000f - 0.5f) * world.CellSize * CliffJitter;
+                // 격자에 자로 잰 듯 놓이면 인공물로 보이므로 흔든다. 지면에 닿은 칸에서는
+                // <b>칸 안에 남은 여유만큼만</b> — 폭을 칸에 맞춰놓고 그만큼 밀면 헛일이다.
+                float jitter = world.CellSize * CliffJitter;
+                float room = jitter;
+                if (exposed)
+                {
+                    float halfSpan = scale * widths[pick] * 0.5f;   // 실제 반폭(m)
+                    room = Mathf.Min(jitter, Mathf.Max(0f, world.CellSize * 0.5f - halfSpan));
+                }
+                pos.x += (Hash(x, y, 41) % 1000 / 1000f - 0.5f) * 2f * room;
+                pos.z += (Hash(x, y, 67) % 1000 / 1000f - 0.5f) * 2f * room;
 
                 cliff.transform.SetPositionAndRotation(
                     pos, Quaternion.Euler(0f, 90f * (Hash(x, y, 89) % 4), 0f));
