@@ -378,7 +378,6 @@ public static class TowerRigBuilder
         so.FindProperty("destroyVfx").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<GameObject>(DestroyVfx);
 
-        so.FindProperty("view").objectReferenceValue = view;
         so.FindProperty("yawPivot").objectReferenceValue = view.Find("Anim/YawPivot");
         so.FindProperty("pitchPivot").objectReferenceValue =
             recoil != null ? view.Find("Anim/YawPivot/PitchPivot") : null;

@@ -108,9 +108,12 @@ public static class TowerAnimationBuilder
     private static AnimatorController BuildController(AnimationClip deploy, AnimationClip active, AnimationClip starved)
     {
         string path = Dir + "/TowerCommon.controller";
-        AssetDatabase.DeleteAsset(path);
 
-        var controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+        // 지우고 새로 만들지 않는다 — 그러면 타워 프리팹 6개가 이 컨트롤러 참조를 잃는다.
+        // 자세한 사정은 GeneratedAnimationAssets 주석 참고.
+        var controller = GeneratedAnimationAssets.LoadOrCreateController(path);
+        GeneratedAnimationAssets.ClearController(controller);
+
         controller.AddParameter("Starved", AnimatorControllerParameterType.Bool);
 
         var sm = controller.layers[0].stateMachine;
@@ -183,13 +186,12 @@ public static class TowerAnimationBuilder
         SetCurve(clip, path, "m_LocalRotation", 'w', Key(0f, 1f), Key(0.5f, 1f));
     }
 
+    /// <summary>
+    /// 같은 에셋에 덮어쓴다. 지우고 새로 만들면 이 클립을 물고 있는 컨트롤러·프리팹의 참조가
+    /// 끊긴다 — GeneratedAnimationAssets 주석 참고.
+    /// </summary>
     private static AnimationClip Save(AnimationClip clip)
-    {
-        string path = $"{Dir}/{clip.name}.anim";
-        AssetDatabase.DeleteAsset(path);
-        AssetDatabase.CreateAsset(clip, path);
-        return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
-    }
+        => GeneratedAnimationAssets.SaveClip(clip, $"{Dir}/{clip.name}.anim");
 
     private static void EnsureFolder(string path)
     {
