@@ -16,10 +16,11 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class TowerVisualController : MonoBehaviour
 {
-    [Header("리그 — 비우면 해당 연출을 건너뛴다")]
-    [Tooltip("Animator가 등장(Deploy) 연출로 움직이는 루트. 이 스크립트는 건드리지 않는다.")]
-    [SerializeField] private Transform view;
+    // View 노드는 Animator(등장 연출)의 것이라 이 스크립트가 참조할 일이 없다.
+    // 예전엔 쓰지도 않는 view 필드를 빌더가 배선해 두었는데, "이 스크립트도 View를 만진다"는
+    // 오해만 부르므로 걷어냈다.
 
+    [Header("리그 — 비우면 해당 연출을 건너뛴다")]
     [Tooltip("좌우 선회 축. 비우면 조준 회전이 없는 타워로 취급하고 항상 '조준 완료'로 답한다.")]
     [SerializeField] private Transform yawPivot;
 

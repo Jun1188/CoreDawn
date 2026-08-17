@@ -10,6 +10,7 @@ public class Monster : Entity
     [SerializeField] private CombatComponent combat = new CombatComponent();
 
     private StateMachineComponent stateMachine;
+    private MonsterVisualController visual; // 연출 담당 — 없을 수 있다(자리표시 프리팹)
     private bool aggroOnPlayer;
     private bool isNestDefender;
     private Vector3 defendOrigin;
@@ -41,6 +42,7 @@ public class Monster : Entity
         movement.Initialize(transform);
         combat.Initialize(this); // 효과 시스템 — 공격의 출처(Source)·버프 베이크 주입
         stateMachine = new StateMachineComponent(this);
+        visual = GetComponent<MonsterVisualController>();
         Health.OnDeath += HandleMonsterDeath;
 
         Health.OnHealthChanged += (current, max) =>
@@ -245,6 +247,7 @@ public class Monster : Entity
         if (isNestDefender && engagementZone != null && !engagementZone.CanChase(nestOrigin, player.transform.position)) return;
         aggroOnPlayer = true;
         currentTarget = player;
+        visual?.PlayAlert(); // 발견 모션 — 연출만, 추적 시작을 지연시키지 않는다
         StateMachine.SetState(new ChaseState(player));
     }
 
