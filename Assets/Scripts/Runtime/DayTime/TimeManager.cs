@@ -18,9 +18,6 @@ public class TimeManager : MonoBehaviour
     [SerializeField] float dayDuration = 60f;   // 낮 유지 시간
     [SerializeField] float nightDuration = 40f; // 밤 유지 시간
 
-    [Tooltip("게임플레이 씬의 시계가 먼저 실행된 Bootstrap/Systems 시계를 교체하고 1일차 낮부터 시작합니다.")]
-    [SerializeField] bool preferSceneInstance;
-
     /// <summary>낮/밤 주기 심 코어. 이벤트 구독/시간 조회는 이쪽으로.</summary>
     public DayCycle Cycle { get; private set; }
 
@@ -48,15 +45,8 @@ public class TimeManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            if (!preferSceneInstance)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            var bootstrapInstance = Instance;
-            Instance = this;
-            Destroy(bootstrapInstance.gameObject);
+            Destroy(gameObject);
+            return;
         }
         else
         {

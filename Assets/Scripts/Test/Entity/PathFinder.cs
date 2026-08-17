@@ -65,7 +65,12 @@ public static class PathFinder
                     neighbourPathNode = new pathNode(neighbour);
                     pathNodes.Add(neighbour, neighbourPathNode);
                 }
-                int newCostToNeighbour = currentPathNode.gCost + GetDistance(currentPathNode.targetNode, neighbour);
+                // 이동 비용에 지형을 싣는다 — 거리만 재면 추적이 강을 첨벙 건너간다.
+                // 위 IsWalkable과 같은 파라미터를 넘겨 판정과 비용의 기준을 일치시킨다.
+                int enter = GridManager.Instance.EnterCost(neighbour.gridCoord, ignoreBuildings);
+                if (enter >= TileRules.Blocked) continue;
+                int stepCost = GetDistance(currentPathNode.targetNode, neighbour) * enter / TileRules.BaseCost;
+                int newCostToNeighbour = currentPathNode.gCost + stepCost;
                 if (newCostToNeighbour < neighbourPathNode.gCost || !openSet.Contains(neighbourPathNode))
                 {
                     neighbourPathNode.gCost = newCostToNeighbour;

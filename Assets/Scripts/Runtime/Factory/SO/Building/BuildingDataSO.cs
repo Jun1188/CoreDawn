@@ -159,6 +159,12 @@ public abstract class BuildingDataSO : GameDataSO
     [Tooltip("버퍼 스택 상한. 0 = 아이템 기본값(64). 기계는 5~10 권장 — 과잉 보관 방지.")]
     public int bufferStackCap = 0;
 
+    [Header("위협도 — 몬스터가 무엇부터 노리는가")]
+    [Tooltip("플로우필드 목표의 시드 비용(칸=10 단위). 낮을수록 먼저 노린다.\n" +
+             "코어 0 = 최종 목표 · 공격 타워 10 = 가는 길에 먼저 부순다 · 일반 건물 80 = 굳이 돌아가지 않는다.\n" +
+             "어떤 칸에서 코어까지 100·타워까지 50이면 타워 경로가 50+10=60이라 타워를 먼저 친다.")]
+    public int threatSeedCost = 80;
+
     [Header("진행도 게이트 — 코어 티어")]
     [Tooltip("이 값보다 GameManager.UnlockedTier가 낮으면 빌드 메뉴에서 숨겨진다.")]
     public int requiredCoreTier = 0;

@@ -15,9 +15,6 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private WaveSpawnManager spawnManager = new WaveSpawnManager();
     [SerializeField] private NightSpawnPointProvider nightSpawnPointProvider;
 
-    [Tooltip("맵에 직접 배선된 전투 매니저가 빈 Bootstrap/Combat 인스턴스를 교체합니다.")]
-    [SerializeField] private bool preferSceneInstance;
-
     [Header("Night Wave Completion")]
     [Tooltip("MainScene opt-in. When enabled, night ends only after the finite WaveDataSO.baseAmount quota is defeated. Legacy scenes keep timed nights by default.")]
     [SerializeField] private bool quantityBasedNightWaves;
@@ -44,33 +41,40 @@ public class BattleManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            if (preferSceneInstance && !Instance.preferSceneInstance)
-            {
-                var bootstrapInstance = Instance;
-                Instance = this;
-                // 다른 시스템·타워·둥지와 같은 루트일 수 있으므로 중복 컴포넌트만 제거한다.
-                Destroy(bootstrapInstance);
-            }
-            else
-            {
-                // BattleManager가 다른 시스템과 같은 루트에 붙어 있을 수 있으므로
-                // 중복 컴포넌트만 제거하고 형제 시스템은 보존한다.
-                Destroy(this);
-                return;
-            }
-        }
-        else
-        {
-            Instance = this;
+            // BattleManager가 다른 시스템과 같은 루트에 붙어 있을 수 있으므로
+            // 중복 컴포넌트만 제거하고 형제 시스템은 보존한다.
+            Destroy(this);
+            return;
         }
 
-        // 인스펙터에서 비워두면 씬에서 자동 해결
-        if (gridManager == null)
-            gridManager = GridManager.Instance != null ? GridManager.Instance : FindFirstObjectByType<GridManager>();
-        if (flowFieldManager == null)
-            flowFieldManager = FlowFieldManager.Instance != null ? FlowFieldManager.Instance : FindFirstObjectByType<FlowFieldManager>();
+        Instance = this;
+
+        // 밤 스폰 지점은 <b>자기 자식</b>이라 씬 경계를 넘지 않는다 — 여기서 직접 잡는다.
+        // 씬을 건너 찾아야 하는 것(그리드·플로우필드)만 GameBootstrap이 주입한다.
         if (nightSpawnPointProvider == null)
             nightSpawnPointProvider = GetComponentInChildren<NightSpawnPointProvider>(true);
+    }
+
+    /// <summary>
+    /// 길찾기 그리드·플로우필드 주입 — 둘 다 <b>월드(맵)가 소유</b>하므로, 전투를 별도 씬
+    /// (Combat 부트스트랩)으로 얹으면 인스펙터 참조가 씬 경계를 넘지 못한다. GameBootstrap이
+    /// 월드에서 찾아 꽂아준다. 씬에 직접 둔 경우엔 인스펙터 배선이 이미 있어 덮지 않는다.
+    /// 그리드가 없는 씬(아이템 테스트 등)에서는 스폰만 쉬고 나머지 전투는 정상 동작한다.
+    /// </summary>
+    public void Inject(GridManager grid, FlowFieldManager flowField)
+    {
+        if (gridManager == null) gridManager = grid;
+        if (flowFieldManager == null) flowFieldManager = flowField;
+    }
+
+    /// <summary>
+    /// 밤 진입로 주입 — 맵이 정한 자리를 부트스트랩이 세워서 건넨다(WorldPopulator).
+    /// 씬에 손으로 놓은 것이 있으면 그쪽을 존중한다.
+    /// </summary>
+    public void Inject(NightSpawnPointProvider provider)
+    {
+        if (provider == null || nightSpawnPointProvider != null) return;
+        nightSpawnPointProvider = provider;
     }
 
     // 코어 파괴로 게임이 끝났는지 여부. UI/연출은 GameOver 이벤트를 구독하면 된다.

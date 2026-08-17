@@ -71,7 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6617990701592304859}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -103,7 +103,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3037317979394911781}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: YawPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -135,7 +135,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1564593162151939817}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Recoil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -167,7 +167,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3744175745421238802}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -198,7 +198,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8271395568747266839}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -229,7 +229,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3602041026211053598}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Droop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -261,7 +261,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1818960411972002998}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -382,7 +382,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 770248630055216389}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Anim
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -415,7 +415,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7164912199372142626}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -565,7 +565,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6617990701592304859}
@@ -724,7 +724,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 497046961432270828}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: PitchPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}

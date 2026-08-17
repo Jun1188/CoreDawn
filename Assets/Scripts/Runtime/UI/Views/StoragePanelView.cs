@@ -144,7 +144,6 @@ public class StoragePanelView : PlayerItemPanelView
         foreach (var item in order)
             storage.TryAdd(item, entries.First(e => e.item == item).n);
 
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 
     /// <summary>보관소에 이미 있는 종류만 가방·핫바에서 올려 보낸다. 넘치는 만큼은 남긴다.</summary>
@@ -158,7 +157,6 @@ public class StoragePanelView : PlayerItemPanelView
             PushKind(Hotbar, item);
         }
 
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 
     void PushKind(ItemContainer src, ItemDataSO item)

@@ -30,8 +30,9 @@ public class PlayerSaveModule : ISaveModule
 
         [JsonProperty("hotbar")] public SaveContainerDto Hotbar;
         [JsonProperty("main")] public SaveContainerDto Main;
-        [JsonProperty("craftIn")] public SaveContainerDto CraftingInput;
-        [JsonProperty("craftOut")] public SaveContainerDto CraftingOutput;
+        // craftIn·craftOut은 없다 — 제작 4+1 그릇이 사라졌다(53f6889).
+        // UITK 인벤토리가 가방·핫바에서 직접 소모·지급하므로 재료를 맡아둘 그릇이 필요 없다.
+        // 옛 세이브에 남아 있는 두 필드는 역직렬화에서 그냥 버려진다.
 
         [JsonProperty("hotbarIndex")] public int HotbarIndex;
 
@@ -69,8 +70,6 @@ public class PlayerSaveModule : ISaveModule
         {
             dto.Hotbar = SaveContainerDto.From(holder.HotbarContainer);
             dto.Main = SaveContainerDto.From(holder.MainContainer);
-            dto.CraftingInput = SaveContainerDto.From(holder.CraftingInputContainer);
-            dto.CraftingOutput = SaveContainerDto.From(holder.CraftingOutputContainer);
         }
 
         if (InventoryManager.Instance != null)
@@ -105,8 +104,6 @@ public class PlayerSaveModule : ISaveModule
         {
             dto.Hotbar?.ApplyTo(holder.HotbarContainer);
             dto.Main?.ApplyTo(holder.MainContainer);
-            dto.CraftingInput?.ApplyTo(holder.CraftingInputContainer);
-            dto.CraftingOutput?.ApplyTo(holder.CraftingOutputContainer);
         }
 
         if (InventoryManager.Instance != null)

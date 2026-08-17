@@ -29,6 +29,15 @@ public static class GameDataImporter
     const string RecipeFolder   = "Assets/Data/Recipe";
     const string BuildingFolder = "Assets/Data/Buildings";
     const string PrefabFolder   = "Assets/Prefabs/Buildings";
+
+    /// <summary>
+    /// 칸 하나의 한 변(m). <b>씬의 World.cellSize와 같아야 한다</b> — 여기서 구운 프리팹의
+    /// 크기와 배치 격자가 어긋나면 건물이 칸을 덜 채우거나 넘친다.
+    /// </summary>
+    const float CellSize = 2f;
+
+    /// <summary>건물 높이(m). 풋프린트 콜라이더의 높이이자 큐브 폴백의 키다.</summary>
+    const float BuildingHeight = 2f;
     const string ModelFolder    = "Assets/Art/Models";
     const string EffectFolder   = "Assets/Data/Effects";
     const string GunFolder      = "Assets/Data/Guns";
@@ -934,7 +943,7 @@ public static class GameDataImporter
         //    콜라이더가 자식에 있는 모델 프리팹도 있으므로 Default인 자식까지 함께 옮긴다 —
         //    일부러 다른 레이어를 준 자식(장애물 등)은 건드리지 않는다.
         changed |= EnsureEntityLayer(root, so);
-        changed |= NormalizeRootScale(root);
+        changed |= EnsureRootScale(root);
 
         // 1) Entity — 포탑만 사격 로직을 가진 BattleTower가 필요하다
         var entity = root.GetComponent<Entity>();
@@ -1006,11 +1015,23 @@ public static class GameDataImporter
 
         string path = $"{PrefabFolder}/{so.name}{suffix}.prefab";
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            // 이미 있어도 칸 크기는 맞춰준다 — 커브는 본체와 달리 EnsureContract를 거치지 않아
+            // 여기서 손보지 않으면 벨트만 반쪽 크기로 남는다
+            var contents = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                if (EnsureRootScale(contents)) PrefabUtility.SaveAsPrefabAsset(contents, path);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(contents); }
+            return existing;
+        }
 
         var root = MakeBody(modelFile, so.size, so.name + suffix);
         root.name = so.name + suffix;
         AddFootprintCollider(root, so.size);
+        EnsureRootScale(root);
 
         Directory.CreateDirectory(PrefabFolder);
         var saved = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -1035,7 +1056,7 @@ public static class GameDataImporter
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cube.name = "Mesh";
         cube.transform.SetParent(root.transform, false);
-        cube.transform.localScale = new Vector3(size.x * 0.9f, 0.6f, size.y * 0.9f);
+        cube.transform.localScale = new Vector3(size.x * 0.9f, BuildingHeight / CellSize, size.y * 0.9f);
         UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // 아래에서 풋프린트 기준으로 다시 붙인다
 
         if (!string.IsNullOrEmpty(modelFile))
@@ -1044,38 +1065,19 @@ public static class GameDataImporter
     }
 
     /// <summary>
-    /// 프리팹 루트의 스케일을 1로 되돌린다. 루트가 커져 있으면 그 위에 붙은 콜라이더 크기까지
-    /// 곱해져 충돌 영역이 통째로 부풀어 오른다 — 3×3 코어가 8×8로 잡히던 원인이다.
-    /// 스케일은 메시를 담은 자식으로 내린다 (보이는 모양은 그대로).
+    /// 프리팹 루트의 스케일을 <b>칸 크기</b>에 맞춘다.
+    ///
+    /// 모델과 풋프린트는 "1칸 = 1"이라는 로컬 단위로 저작돼 있다. 칸이 몇 미터인지는
+    /// 월드가 정하므로(<see cref="World"/>.cellSize), 그 배율을 루트가 한 번에 받는다 —
+    /// 모델도 콜라이더도 함께 곱해져 서로 어긋날 수가 없다.
+    /// 콜라이더를 월드 미터로 따로 계산하면 둘이 각자 놀다가 조준·철거가 빗나간다.
     /// </summary>
-    static bool NormalizeRootScale(GameObject root)
+    static bool EnsureRootScale(GameObject root)
     {
-        var scale = root.transform.localScale;
-        if ((scale - Vector3.one).sqrMagnitude < 0.0001f) return false;
+        var want = Vector3.one * CellSize;
+        if ((root.transform.localScale - want).sqrMagnitude < 0.0001f) return false;
 
-        var mf = root.GetComponent<MeshFilter>();
-        var mr = root.GetComponent<MeshRenderer>();
-        if (mf == null || mr == null)
-        {
-            // 메시가 자식에 있는 모델 프리팹 — 스케일만 내리면 모양이 바뀌므로 손대지 않는다
-            Debug.LogWarning($"[GameDataImporter] '{root.name}': 루트 스케일이 {scale} 입니다. " +
-                             "콜라이더가 그만큼 부풀어 오르니 모델 프리팹 쪽에서 스케일을 1로 맞추세요.");
-            return false;
-        }
-
-        var body = new GameObject("Mesh");
-        body.transform.SetParent(root.transform, false);
-        body.transform.localScale = scale;
-        body.layer = root.layer;
-
-        var bmf = body.AddComponent<MeshFilter>();
-        bmf.sharedMesh = mf.sharedMesh;
-        var bmr = body.AddComponent<MeshRenderer>();
-        bmr.sharedMaterials = mr.sharedMaterials;
-
-        UnityEngine.Object.DestroyImmediate(mr);
-        UnityEngine.Object.DestroyImmediate(mf);
-        root.transform.localScale = Vector3.one;
+        root.transform.localScale = want;
         return true;
     }
 
@@ -1087,7 +1089,8 @@ public static class GameDataImporter
         col.center = FootprintColliderCenter;
     }
 
-    static Vector3 FootprintColliderSize(Vector2Int size) => new(size.x, 1f, size.y);
+    // 로컬 단위(1칸 = 1)로 준다 — 루트 스케일이 CellSize라 월드에서는 저절로 미터로 환산된다.
+    static Vector3 FootprintColliderSize(Vector2Int size) => new(size.x, BuildingHeight / CellSize, size.y);
 
     /// <summary>
     /// 콜라이더 중심은 로컬 원점 바로 위다.
@@ -1097,7 +1100,7 @@ public static class GameDataImporter
     /// ((size-1)/2) 만큼 밀면 멀티타일 건물의 콜라이더가 통째로 어긋난다 —
     /// 3×3 코어는 (1, 1)칸만큼 빗나가서 조준도 철거도 엉뚱한 자리에서 걸린다.
     /// </summary>
-    static Vector3 FootprintColliderCenter => new(0f, 0.5f, 0f);
+    static Vector3 FootprintColliderCenter => new(0f, BuildingHeight / CellSize * 0.5f, 0f);
 
     static T FindAsset<T>(string name, string folder) where T : UnityEngine.Object
     {

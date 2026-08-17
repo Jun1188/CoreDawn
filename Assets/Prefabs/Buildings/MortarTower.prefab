@@ -40,7 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3491532215609209158}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: YawPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -93,7 +93,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 942298423487035049}
@@ -228,7 +228,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7915229217156537406}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -290,7 +290,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5390339368830621846}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -321,7 +321,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8091131197736076730}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: PitchPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -353,7 +353,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 942298423487035049}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -385,7 +385,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8165984488289111256}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -416,7 +416,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3940030026499591085}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Anim
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -511,7 +511,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8495535279298195776}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Droop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -543,7 +543,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5652078999708814168}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Recoil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -575,7 +575,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 77402809356191175}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -727,7 +727,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4012783037709359845}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}

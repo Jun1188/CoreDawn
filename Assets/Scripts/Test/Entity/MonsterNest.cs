@@ -49,6 +49,22 @@ public class MonsterNest : Entity
     private float lastDefenseSpawnTime;
     private NestEngagementZone engagementZone;
 
+    /// <summary>
+    /// 맵 데이터로 세울 때 쓴다. 복구 일수는 인스펙터 전용(private)이라 밖에서 못 넣으므로
+    /// 여기로 통로를 낸다 — 부트스트랩이 맵마다 다른 둥지를 만들 수 있어야 한다.
+    /// 0 이하는 "프리팹 값을 그대로 둔다"는 뜻이다.
+    /// </summary>
+    public void Configure(float warning, float trigger, int defenseAmount, float defenseCooldown,
+                          int bossDays, int nestDays)
+    {
+        if (warning > 0f) warningRange = warning;
+        if (trigger > 0f) triggerRange = trigger;
+        if (defenseAmount > 0) defenseSpawnAmount = defenseAmount;
+        if (defenseCooldown > 0f) defenseSpawnCooldown = defenseCooldown;
+        if (bossDays > 0) bossRecoveryDays = bossDays;
+        if (nestDays > 0) nestRecoveryDays = nestDays;
+    }
+
 
     public bool IsDestroyed { get; private set; }
     private int destroyedDay = -1;

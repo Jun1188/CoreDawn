@@ -25,6 +25,10 @@ public class GridManager : MonoBehaviour
 
     // GridSystem 로직을 래핑할 변수
     private GridSystem gridSystem;
+    // 주입된 맵 — 절벽 칸을 통행 불가로 굽는다. 없으면 물리 장애물만으로 판정한다.
+    private MapDataSO map;
+    private bool baked;
+
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -35,9 +39,37 @@ public class GridManager : MonoBehaviour
             Debug.LogWarning($"[GridManager] '{obstacleLayerName}' 레이어를 찾지 못했습니다. " +
                 $"정적 장애물이 전부 walkable로 처리됩니다. Project Settings > Tags and Layers에서 레이어를 확인하세요.");
 
-        // 맵 바운즈가 지정되면 그리드 크기/원점을 맵에 맞춘다 → 경로가 맵 밖으로 나가는 것을 방지.
+        // 씬에 직접 두고 인스펙터로 바운즈를 배선한 구성(구 방식)은 여기서 바로 굽는다.
+        // 부트스트랩 구성은 월드의 맵을 주입받은 뒤 굽는다 — Inject 참조.
+        if (mapBounds != null) Bake();
+    }
+
+    /// <summary>
+    /// 월드의 맵 주입 — 격자는 지형의 함수지만 GridManager는 시스템이라 별도 씬으로 온다.
+    /// <see cref="GameBootstrap"/>이 월드 씬의 <see cref="World"/>에서 맵을 읽어 넘긴다.
+    /// 이미 구웠으면(인스펙터 배선된 기존 씬) 무시한다.
+    /// </summary>
+    public void Inject(MapDataSO worldMap, Vector3 origin, float tileSize)
+    {
+        if (baked || worldMap == null) return;
+
+        map = worldMap;
+        cellSize = tileSize;
+        originPosition = origin;
+        gridSize = new Vector2Int(worldMap.width, worldMap.height);
+        SurfaceY = origin.y;
+        Bake();
+    }
+
+    /// <summary>격자를 굽는다 — 한 번만 실행된다.</summary>
+    private void Bake()
+    {
+        if (baked) return;
+        baked = true;
+
+        // 맵 주입이 없고 바운즈만 있으면 바운즈로 크기를 잡는다 (구 씬 호환).
         // FloorToInt: 맵에 완전히 포함되는 셀만 그리드에 넣는다 (걸치는 가장자리 셀 제외)
-        if (mapBounds != null)
+        if (map == null && mapBounds != null)
         {
             Bounds b = mapBounds.bounds;
             SurfaceY = b.max.y;
@@ -48,16 +80,27 @@ public class GridManager : MonoBehaviour
             Debug.Log($"[GridManager] 맵 바운즈({mapBounds.name})로 그리드 자동 설정: " +
                 $"origin={originPosition}, gridSize={gridSize}, cellSize={cellSize}");
         }
+        else if (map != null)
+        {
+            Debug.Log($"[GridManager] 맵 '{map.Id}'로 그리드 설정: " +
+                $"origin={originPosition}, gridSize={gridSize}, cellSize={cellSize}");
+        }
         else
         {
             SurfaceY = originPosition.y;
-            Debug.LogWarning("[GridManager] mapBounds가 비어 있어 수동 gridSize/originPosition을 사용합니다. " +
+            Debug.LogWarning("[GridManager] 맵도 바운즈도 없어 수동 gridSize/originPosition을 사용합니다. " +
                 "그리드가 맵보다 크면 경로가 맵 밖으로 설정될 수 있습니다.");
         }
 
         // GridSystem 초기화
         gridSystem = new GridSystem(cellSize, originPosition);
         CreateGrid();
+    }
+
+    /// <summary>주입도 바운즈 배선도 없었으면 수동 값으로라도 굽는다 — 격자 없이 남지 않게.</summary>
+    void LateUpdate()
+    {
+        if (!baked) Bake();
     }
     void CreateGrid()
     {
@@ -70,8 +113,11 @@ public class GridManager : MonoBehaviour
                 Vector2Int cell = new Vector2Int(x, y);
                 Vector3 worldCenter = gridSystem.GridToWorldCenter(cell);
 
-                // 장애물 체크 (반지름은 cellSize의 절반)
-                bool walkable = !Physics.CheckSphere(worldCenter, cellSize * 0.5f, unwalkableMask);
+                // 통행 불가 조건 두 가지:
+                //   ① 물리 장애물(Obstacle 레이어) — 씬에 놓인 바위·구조물
+                //   ② 맵의 절벽 타일 — 강은 건널 수 있으므로 막지 않는다(비용만 비싸다).
+                bool walkable = !Physics.CheckSphere(worldCenter, cellSize * 0.5f, unwalkableMask)
+                                && (map == null || TileRules.EnterCost(map.TileAt(cell)) < TileRules.Blocked);
 
                 grid[x, y] = new Node(walkable, worldCenter, cell);
             }
@@ -94,30 +140,74 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // 정적 장애물(Awake에서 구운 값) + 런타임 설치 건물(심의 GridIndex)을 함께 판정
-    public bool IsWalkable(Node node, bool ignoreBuildings = false)
+    [Header("진입 비용 (플로우필드 전용)")]
+    [Tooltip("건물을 뚫고 지나가는 비용을 HP에 비례시키는 계수. 약한 건물부터 뚫리게 한다.\n" +
+             "지면 10 기준 — 계수 0.5면 벨트(HP60)=30, 울타리(HP250)=125.")]
+    [SerializeField] private float buildingCostPerHp = 0.5f;
+
+    [Tooltip("건물 비용 상한. 맵 대각 횡단이 약 1700(121칸)이라 이보다 크면 사실상 통행 불가가 되어 " +
+             "봉쇄가 성립한다 — 유한하게 묶어 둔다. 200 = 20칸 우회할 값어치.")]
+    [SerializeField] private int buildingCostCap = 200;
+
+    /// <summary>
+    /// 이 칸에 발을 들이는 비용 — <b>길찾기의 정본</b>. 통행 가부도 여기서 파생된다
+    /// (<see cref="TileRules.Blocked"/> 이상 = 못 감).
+    ///
+    /// 질문이 둘이라 <paramref name="passBuildings"/>로 갈린다:
+    ///   <b>진격</b>(플로우필드) — "건물을 뚫고 갈 때 얼마?" → 유한 비용.
+    ///     무한대로 두면 목표가 아닌 건물(벨트)로 길을 막았을 때 몬스터가 갈 곳을 잃고 굳는다.
+    ///     비싸지만 유한하면 "여길 뚫어라"는 방향이 나오고, 도달한 몬스터가 사거리 판정으로 부순다.
+    ///     비용이 HP에 비례하므로 약한 곳부터 뚫린다 — 방어 설계가 의미를 갖는다.
+    ///   <b>보행</b>(A*·군중·스폰) — "건물을 놔두고 갈 때 얼마?" → 못 간다.
+    ///     실제로 걸어갈 수 있는 길이어야 하고, 막히면 ChaseState가 진격 경로와 비교해
+    ///     범인 건물을 찾아 부순다 — 그 대비가 성립하려면 여기서 막아야 한다.
+    /// </summary>
+    public int EnterCost(Vector2Int cell, bool passBuildings = false)
     {
-        if (node == null || !node.walkable) return false;
-        if (!ignoreBuildings)
-        {
-            var boot = FactoryBootstrap.Instance;
-            if (boot != null && boot.Sim != null)
-            {
-                // 심 그리드는 PlacementSystem 좌표계 — 변환기가 있으면 월드 좌표 경유로 셀을 맞춘다
-                Vector2Int simCell = simGridSystem != null
-                    ? simGridSystem.WorldToGrid(node.worldPosition)
-                    : node.gridCoord;
-                if (boot.Sim.Grid.IsOccupied(simCell)) return false;
-            }
-        }
-        return true;
+        if (cell.x < 0 || cell.x >= gridSize.x || cell.y < 0 || cell.y >= gridSize.y)
+            return TileRules.Blocked;
+
+        var node = grid?[cell.x, cell.y];
+        if (node == null || !node.walkable) return TileRules.Blocked;   // 절벽·물리 장애물
+
+        int cost = map != null ? TileRules.EnterCost(map.TileAt(cell)) : TileRules.BaseCost;
+        if (cost >= TileRules.Blocked) return TileRules.Blocked;
+
+        var building = BuildingAt(node);
+        if (building == null) return cost;
+
+        if (!passBuildings) return TileRules.Blocked;
+
+        int hp = building.Data != null ? building.Data.maxHp : 100;
+        return cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
     }
 
-    public bool IsWalkable(Vector2Int cell, bool ignoreBuildings = false)
+    /// <summary>이 칸의 지형 이동 속도 배율 — 강은 느리다. 맵이 없으면 1.</summary>
+    public float TerrainSpeed(Vector2Int cell) =>
+        map != null ? TileRules.SpeedMultiplier(map.TileAt(cell)) : 1f;
+
+    /// <summary>이 칸을 점유한 심 건물 — 좌표계가 달라 월드 좌표를 경유한다. 없으면 null.</summary>
+    private Building BuildingAt(Node node)
     {
-        if (cell.x < 0 || cell.x >= gridSize.x || cell.y < 0 || cell.y >= gridSize.y) return false;
-        return IsWalkable(grid[cell.x, cell.y], ignoreBuildings);
+        var boot = FactoryBootstrap.Instance;
+        if (boot == null || boot.Sim == null) return null;
+
+        Vector2Int simCell = simGridSystem != null
+            ? simGridSystem.WorldToGrid(node.worldPosition)
+            : node.gridCoord;
+        return boot.Sim.Grid.GetAt(simCell);
     }
+
+    // 정적 장애물(Awake에서 구운 값) + 런타임 설치 건물(심의 GridIndex)을 함께 판정
+    /// <summary>
+    /// 설 수 있는 칸인가 — <see cref="EnterCost"/>의 얇은 별칭이다(비용이 정본).
+    /// 가부만 필요한 곳(A*·군중 분리·스폰 위치)이 읽기 좋으라고 남겨둔 이름이다.
+    /// </summary>
+    public bool IsWalkable(Node node, bool ignoreBuildings = false) =>
+        node != null && EnterCost(node.gridCoord, ignoreBuildings) < TileRules.Blocked;
+
+    public bool IsWalkable(Vector2Int cell, bool ignoreBuildings = false) =>
+        EnterCost(cell, ignoreBuildings) < TileRules.Blocked;
 
     public Node GetNode(Vector2Int cell)
     {

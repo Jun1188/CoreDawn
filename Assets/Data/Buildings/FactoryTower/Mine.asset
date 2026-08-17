@@ -25,6 +25,7 @@ MonoBehaviour:
   inputSlots: 0
   outputSlots: 0
   bufferStackCap: 0
+  threatSeedCost: 80
   requiredCoreTier: 2
   hideFromBuildMenu: 0
   buildCost:
@@ -38,6 +39,8 @@ MonoBehaviour:
   fireRate: 1
   muzzleHeight: 1.2
   preferHighArc: 0
+  turnSpeed: 180
+  aimTolerance: 3
   ammoFilter:
   - {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
   defaultAmmo: {fileID: 0}

@@ -23,6 +23,19 @@ public static class MotionSpring
     public static Quaternion Damp(Quaternion current, Quaternion target, float sharpness, float dt)
         => Quaternion.Slerp(current, target, 1f - Mathf.Exp(-Mathf.Max(0f, sharpness) * dt));
 
+    /// <summary>진동 한 주기가 최소 몇 프레임에 걸쳐야 곡선으로 보이는가.</summary>
+    private const float MinFramesPerCycle = 8f;
+
+    /// <summary>
+    /// 화면에서 실제로 진동으로 보이는 최대 진동수로 낮춘다.
+    ///
+    /// 해석해가 아무리 정확해도 <b>보이는 것은 프레임에 찍힌 표본뿐</b>이다. 13Hz를 60fps로
+    /// 그리면 한 주기가 4.6프레임이라 중간이 없는 순간이동처럼 보인다(반동이 '탁탁' 끊기던 원인).
+    /// 프레임률이 높은 기기에서는 상한도 함께 올라가므로, 여유가 있으면 원래의 날카로움이 살아난다.
+    /// </summary>
+    public static float Visible(float frequencyHz, float dt)
+        => dt > 0f ? Mathf.Min(frequencyHz, 1f / (dt * MinFramesPerCycle)) : frequencyHz;
+
     /// <summary>(value, velocity)를 감쇠 스프링 해석해로 dt만큼 전진시킨다.</summary>
     public static void Step(ref Vector3 value, ref Vector3 velocity, float frequencyHz, float dampingRatio, float dt)
     {

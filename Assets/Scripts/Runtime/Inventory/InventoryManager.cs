@@ -125,11 +125,8 @@ public class InventoryManager : MonoBehaviour
 
     public void CloseScreen()
     {
-        // 1. 조합 입력창에 올려둔 재료 가방으로 회수
-        if (PlayerInventoryHolder.Instance != null)
-            PlayerInventoryHolder.Instance.ReturnCraftingInputsToPlayer();
-
-        // 2. 마우스로 들고 있던 아이템 바닥에 투척
+        // 마우스로 들고 있던 아이템 바닥에 투척
+        // (구 "조합 입력창 재료 회수"는 제작 4+1 컨테이너와 함께 제거됨)
         DropMouseCarriageItem();
 
         boundContainer = null;
@@ -259,12 +256,8 @@ public class InventoryManager : MonoBehaviour
         bool isChestOpen = playerController != null && playerController.inventoryUIPanel != null && playerController.inventoryUIPanel.activeSelf && playerController.chestInventoryUI != null && playerController.chestInventoryUI.gameObject.activeSelf;
         ItemContainer chestContainer = isChestOpen ? playerController.chestInventoryUI.TargetContainer : null;
 
-        if (srcContainer == holder.CraftingInputContainer || srcContainer == holder.CraftingOutputContainer)
-        {
-            TryMoveStackToContainer(srcSlot, holder.MainContainer);
-            if (srcSlot.amount > 0) TryMoveStackToContainer(srcSlot, holder.HotbarContainer);
-        }
-        else if (isChestOpen && srcContainer == chestContainer)
+        // (구 제작 4+1 컨테이너 분기 제거 — 그 그릇들이 사라졌다)
+        if (isChestOpen && srcContainer == chestContainer)
         {
             TryMoveStackToContainer(srcSlot, holder.MainContainer);
             if (srcSlot.amount > 0) TryMoveStackToContainer(srcSlot, holder.HotbarContainer);

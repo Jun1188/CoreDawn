@@ -262,6 +262,35 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     #region [5. Unity Lifecycle]
 
+    /// <summary>
+    /// 몸통 콜라이더에 씌우는 <b>마찰 0</b> 재질 — 벽이나 적에 몸이 붙어 끼이는 것을 막는다.
+    ///
+    /// 이 컨트롤러는 이동을 속도로 직접 제어하고 지면 감속도 groundFriction이 따로 하므로,
+    /// 콜라이더 마찰은 이동에 아무 도움이 되지 않는다. 하는 일은 벽에 밀착했을 때 몸을
+    /// 붙잡아 미끄러져 빠져나오지 못하게 만드는 것뿐이다(재질을 비워두면 Unity 기본값 0.6).
+    /// Minimum 조합이라 상대가 어떤 재질이든 접점 마찰은 0이 된다.
+    ///
+    /// 접지 중에는 중력을 끄므로(<see cref="UpdateGroundState"/>) 비탈에서 미끄러지지 않는다.
+    /// </summary>
+    private static PhysicsMaterial slipperyBody;
+
+    private static PhysicsMaterial SlipperyBody()
+    {
+        if (slipperyBody == null)
+        {
+            slipperyBody = new PhysicsMaterial("Player (Frictionless)")
+            {
+                dynamicFriction = 0f,
+                staticFriction = 0f,
+                bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Minimum,
+                bounceCombine = PhysicsMaterialCombine.Minimum,
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+        }
+        return slipperyBody;
+    }
+
     private void Awake()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
@@ -278,6 +307,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
             standHeight = bodyCollider.height;      // 씬에 세팅된 값을 정본으로 삼는다
             _baseCenter = bodyCollider.center;
             _currentHeight = standHeight;
+            bodyCollider.sharedMaterial = SlipperyBody();
         }
 
         if (playerCamera != null)
@@ -380,8 +410,15 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         float yaw = _lookInput.x * mouseSensitivity * 0.1f;
         float pitch = _lookInput.y * mouseSensitivity * 0.1f;
 
-        // 요는 몸이, 피치는 카메라 리그가 소유한다
-        if (Mathf.Abs(yaw) > 0f) transform.Rotate(Vector3.up * yaw, Space.Self);
+        // 요는 몸이, 피치는 카메라 리그가 소유한다.
+        // Transform만 돌리면 물리 엔진이 <b>자기가 기억하는 회전으로 매 스텝 되돌린다</b> —
+        // 좌우로 돌려도 제자리로 끌려오는 증상이 이것이다(FreezeRotation이라 각속도는 0인데도).
+        // 피치가 멀쩡한 이유는 그쪽은 Rigidbody가 없는 자식 노드이기 때문이다.
+        if (Mathf.Abs(yaw) > 0f)
+        {
+            transform.Rotate(Vector3.up * yaw, Space.Self);
+            if (rb != null) rb.rotation = transform.rotation;
+        }
 
         if (cameraRig != null) cameraRig.ApplyLook(pitch, MAX_CAMERA_ROTATION_X);
         else if (playerCamera != null) ApplyLookFallback(pitch);

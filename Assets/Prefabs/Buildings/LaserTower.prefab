@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1764541344840577688}
@@ -188,7 +188,7 @@ GameObject:
   - component: {fileID: 368180089695915837}
   - component: {fileID: 943698122416248102}
   - component: {fileID: 2622571053691389548}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -276,7 +276,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1764541344840577688}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -308,7 +308,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7210625865073224703}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: PitchPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -340,7 +340,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7465586269613482385}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: YawPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -374,7 +374,7 @@ GameObject:
   - component: {fileID: 8206811078189084189}
   - component: {fileID: 3921338941167623471}
   - component: {fileID: 8835023307199382571}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -464,7 +464,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5552121124186510235}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Recoil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -496,7 +496,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4377277305609159679}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Droop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -528,7 +528,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7698189137477323158}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -559,7 +559,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2007485816269412071}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Anim
   m_TagString: Untagged
   m_Icon: {fileID: 0}

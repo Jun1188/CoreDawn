@@ -187,7 +187,6 @@ public class InventoryPanelView : PlayerItemPanelView
                 DropToWorld(output.item, output.amount);
         }
 
-        InventoryManager.Instance?.RefreshAllGameUIs();   // uGUI 핫바 HUD·무기 장착 동기화
     }
 
     int CountAll(ItemDataSO item) =>

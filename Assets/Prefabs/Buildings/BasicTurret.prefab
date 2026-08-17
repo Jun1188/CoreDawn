@@ -40,7 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4897416557500567526}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: PitchPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -193,7 +193,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6522390458157077529}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Droop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -340,7 +340,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4248501747897575253}
@@ -479,7 +479,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4762081558359967825}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -510,7 +510,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6372968468946119493}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Recoil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -542,7 +542,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4505480547166425893}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Anim
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -575,7 +575,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4248501747897575253}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -607,7 +607,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2728359605190913902}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: YawPivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -639,7 +639,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8172529984735801931}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Muzzle_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
