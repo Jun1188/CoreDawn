@@ -24,6 +24,29 @@ public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance { get; private set; }
 
+    /// <summary>
+    /// 씬에 SoundManager가 없으면 Resources의 프리팹으로 하나 띄운다.
+    ///
+    /// 이게 없으면 SoundTest 씬 밖에서는 소리가 전혀 나지 않는다 — 지금 SoundManager를
+    /// 들고 있는 씬은 그 하나뿐이다. 씬마다 수동으로 넣게 하면 새 씬을 만들 때마다 잊어버리고,
+    /// 조용한 이유를 찾느라 시간을 쓴다. 씬에 이미 있으면 Awake의 중복 검사가 이 사본을
+    /// 정리하므로 기존 씬의 설정이 항상 우선한다.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void EnsureInstance()
+    {
+        if (Instance != null) return;
+        if (FindAnyObjectByType<SoundManager>() != null) return;
+
+        var prefab = Resources.Load<GameObject>("SoundManager");
+        if (prefab == null)
+        {
+            Debug.LogWarning("[SoundManager] Resources/SoundManager 프리팹이 없어 소리가 재생되지 않습니다.");
+            return;
+        }
+        Instantiate(prefab).name = prefab.name;
+    }
+
     [Serializable]
     public struct CommonSoundData
     {
@@ -90,8 +113,22 @@ public class SoundManager : MonoBehaviour
 
     private void Start()
     {
+        // 저장해 둔 볼륨을 먼저 믹서에 넣는다 — 이게 없으면 설정 창(SettingsPanelView)을
+        // 한 번 열기 전까지 지난번에 줄여 둔 볼륨이 무시되고 기본값으로 소리가 난다.
+        // 믹서 파라미터는 Awake 시점엔 아직 안 잡힐 수 있어 Start에서 민다.
+        ApplySavedVolumes();
+
         // 게임 시작 시 메인 BGM을 1.5초 동안 은은하게 재생
         PlayBGM(BGMType.Main, 1.5f);
+    }
+
+    /// <summary>저장된 볼륨(audio_settings.json)을 믹서에 반영한다.</summary>
+    private void ApplySavedVolumes()
+    {
+        AudioSettingsData settings = AudioSaveSystem.LoadSettings();
+        SetMasterVolume(settings.masterVolume);
+        SetBGMVolume(settings.bgmVolume);
+        SetSFXVolume(settings.sfxVolume);
     }
 
     private void InitAudioSources()

@@ -27,6 +27,33 @@ public class WeaponManager : MonoBehaviour
     /// <summary>정조준 중인가 — 조준 상태의 원본. 연출(ADS·킥백)은 이 값을 받아 반응한다.</summary>
     public bool IsAiming { get; private set; }
 
+    // ── 세이브 표면 ───────────────────────────────────────────────
+    //
+    // weapons 배열을 밖으로 열지 않고 여기서 훑는다 — 이 클래스의 접근 규칙(공개 API만)을
+    // 세이브 때문에 깨면, 무기 스택 구성이 바뀔 때마다 세이브 모듈까지 따라 고쳐야 한다.
+    // 순서는 인스펙터에 꽂힌 배열 순서다: 무기를 중간에 끼워 넣으면 옛 세이브의 탄수가
+    // 한 칸씩 밀린다 — 탄수뿐이라 치명적이지 않지만, 무기 목록을 손볼 때 알고 있을 것.
+
+    /// <summary>세이브 저장 전용 — 무기별 장전 탄수를 배열 순서대로 읽는다.</summary>
+    public int[] CaptureAmmo()
+    {
+        if (weapons == null) return System.Array.Empty<int>();
+
+        var result = new int[weapons.Length];
+        for (int i = 0; i < weapons.Length; i++)
+            result[i] = weapons[i] != null ? weapons[i].CurrentAmmo : 0;
+        return result;
+    }
+
+    /// <summary>세이브 복원 전용 — <see cref="CaptureAmmo"/>가 남긴 순서대로 장전 탄수를 되돌린다.</summary>
+    public void RestoreAmmo(System.Collections.Generic.IReadOnlyList<int> ammo)
+    {
+        if (weapons == null || ammo == null) return;
+
+        for (int i = 0; i < weapons.Length && i < ammo.Count; i++)
+            if (weapons[i] != null) weapons[i].RestoreAmmo(ammo[i]);
+    }
+
     private void Start()
     {
         // 시작할 때 모든 무기를 꺼둔다 (맨손 상태로 시작)

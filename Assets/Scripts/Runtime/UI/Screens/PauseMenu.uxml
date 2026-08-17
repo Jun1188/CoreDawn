@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- 일시정지 메뉴.
+
+         ESC로 열고 닫는다 — 입력 처리는 UIPopup이 이미 갖고 있어 여기서는 화면만 그린다.
+         구 uGUI 창에는 저장/불러오기 두 개뿐이라 "돌아가기"조차 없었다.
+
+         버튼 순서는 손이 가는 빈도순이다: 계속하기가 맨 위(대부분 실수로 연 것),
+         타이틀 복귀가 맨 아래(되돌릴 수 없는 이동이라 멀리 둔다). -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+    <Style src="../Styles/saveload.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="pause-panel" class="ui-panel pause-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="PAUSE" class="ui-panel__tag" />
+                <ui:Label text="일시정지" />
+                <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body pause-panel__body">
+
+                <!-- 지금 어느 세계에 있는지 — 슬롯을 고를 때 헷갈리지 않게 미리 보여준다 -->
+                <ui:VisualElement name="status" class="pause-status">
+                    <ui:Label name="status-day" text="Day 1" class="pause-status__day" />
+                    <ui:Label name="status-play" text="00:00:00" class="pause-status__play" />
+                </ui:VisualElement>
+
+                <ui:Button name="btn-resume" text="계속하기" class="ui-btn ui-btn--primary pause-btn" />
+                <ui:Button name="btn-save" text="저장" class="ui-btn pause-btn" />
+                <ui:Button name="btn-load" text="불러오기" class="ui-btn pause-btn" />
+                <ui:Button name="btn-settings" text="설정" class="ui-btn pause-btn" />
+                <ui:Button name="btn-title" text="저장하고 타이틀로" class="ui-btn ui-btn--danger pause-btn" />
+
+                <ui:Label name="hint" text="ESC — 닫기" class="pause-hint" />
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

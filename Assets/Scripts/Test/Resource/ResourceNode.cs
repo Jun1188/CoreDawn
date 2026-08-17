@@ -88,6 +88,9 @@ public class ResourceNode : MonoBehaviour
     /// <summary>현재 재고.</summary>
     public int CurrentStock => currentStock;
 
+    /// <summary>다음 생산 시각(심 클럭 기준 절대값). 세이브가 그대로 보존해야 주기가 어긋나지 않는다.</summary>
+    public float NextProduceAt => nextProduceAt;
+
     /// <summary>재고 상한.</summary>
     public int MaxStock => Mathf.Max(1, maxStock);
 
@@ -187,6 +190,19 @@ public class ResourceNode : MonoBehaviour
 
     /// <summary>재고를 꺼내가고 꺼낸 개수만 돌려주는 간편형 (0 = 재고 없음).</summary>
     public int Extract(int amount) => TryExtract(amount, out int taken) ? taken : 0;
+
+    /// <summary>
+    /// 세이브 복원 전용 — 재고와 다음 생산 시각, 누적 채굴량을 저장된 값으로 되돌린다.
+    ///
+    /// nextProduceAt은 심 클럭 기준 절대 시각이라 FactorySim.Now를 되돌린 뒤에 넣어야 한다.
+    /// (OnEnable이 -1로 리셋해 두므로, 복원하지 않으면 첫 Accrue에서 주기가 통째로 미뤄진다)
+    /// </summary>
+    public void RestoreState(int stock, float nextAt, int totalExtracted)
+    {
+        currentStock = Mathf.Clamp(stock, 0, MaxStock);
+        nextProduceAt = nextAt;
+        TotalExtracted = Mathf.Max(0, totalExtracted);
+    }
 
     // ── 생명주기 ─────────────────────────────────────────────────
 

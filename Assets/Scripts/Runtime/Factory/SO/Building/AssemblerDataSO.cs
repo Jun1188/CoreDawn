@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 /// <summary>조합기. 입력 버퍼에 재료가 모이면 레시피대로 조합해 출력한다.</summary>
@@ -44,7 +46,7 @@ public class AssemblerDataSO : BuildingDataSO
 /// </summary>
 public enum MachineState { Running, WaitingInput, OutputBlocked, Stopped }
 
-public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior
+public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
 {
     readonly Building _b;
     readonly AssemblerDataSO _data;
@@ -247,5 +249,50 @@ public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior
     {
         foreach (var i in _recipe.inputs)
             _b.Input.TryConsume(i.item, i.amount);
+    }
+
+    // ── 세이브 ────────────────────────────────────────────────────
+
+    public class SaveState
+    {
+        [JsonProperty("recipe")] public string RecipeId;
+        [JsonProperty("craftingRecipe")] public string CraftingRecipeId;
+        [JsonProperty("readyAt")] public float ReadyAt;
+        [JsonProperty("crafting")] public bool Crafting;
+        [JsonProperty("pausedRemaining")] public float PausedRemaining;
+        [JsonProperty("paused")] public bool Paused;
+    }
+
+    public object CaptureState() => new SaveState
+    {
+        RecipeId = SaveRefs.IdOf(_recipe),
+        CraftingRecipeId = SaveRefs.IdOf(_craftingRecipe),
+        ReadyAt = _readyAt,
+        Crafting = _crafting,
+        PausedRemaining = _pausedRemaining,
+        Paused = Paused,
+    };
+
+    public void RestoreState(JToken state)
+    {
+        var s = SaveJson.FromToken<SaveState>(state);
+        if (s == null) return;
+
+        // SetRecipe를 거치지 않는다 — 그쪽은 티어 해금을 검사해서 거절할 수 있는데,
+        // 저장된 레시피는 저장 당시 이미 유효했던 것이고 티어도 함께 복원된다.
+        _recipe = SaveRefs.Recipe(s.RecipeId);
+        _craftingRecipe = SaveRefs.Recipe(s.CraftingRecipeId);
+        _readyAt = s.ReadyAt;
+        _crafting = s.Crafting && _craftingRecipe != null;
+        _pausedRemaining = s.PausedRemaining;
+        Paused = s.Paused;
+
+        // 입력 필터는 현재 레시피를 따라간다 — 생성자에서 건 것이 옛 레시피 기준일 수 있다
+        _b.Input.AcceptFilter = IsIngredient;
+
+        if (_crafting && !Paused)
+            _b.Sim.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Sim.Now));
+        else
+            _b.Sim.MarkDirty(_b);
     }
 }

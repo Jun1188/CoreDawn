@@ -86,7 +86,9 @@ public class FactoryBootstrap : MonoBehaviour
 
     void Start()
     {
-        if (_autoPlaceCore) AutoPlaceCore();
+        // 복원 중에는 세이브에 적힌 코어를 그대로 세우므로 자동 설치가 끼어들면 안 된다
+        // (씬에 미리 놓인 코어를 잇는 CoreBootstrap은 그대로 둔다 — 복원이 그 뷰를 재사용한다)
+        if (_autoPlaceCore && !SaveLoadContext.IsRestoring) AutoPlaceCore();
     }
 
     void Update() => Sim.Advance(Time.deltaTime);
@@ -141,6 +143,12 @@ public class FactoryBootstrap : MonoBehaviour
     }
 
     // ── Building ↔ View 매핑 (PlacementBridge가 등록/해제)
+
+    /// <summary>
+    /// 배치된 모든 건물 — 세이브가 순회하는 정본 목록.
+    /// 그리드(GridIndex)를 훑으면 안 되는 이유: 멀티타일 건물은 여러 칸이 같은 Building을 가리켜 중복된다.
+    /// </summary>
+    public IEnumerable<Building> Buildings => _views.Keys;
 
     public void RegisterView(Building b, BuildingEntity v) => _views[b] = v;
     public void UnregisterView(Building b) => _views.Remove(b);

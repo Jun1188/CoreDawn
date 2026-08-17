@@ -333,14 +333,19 @@ public class PlacementSystem : MonoBehaviour
         if (!BuildCost.TryCharge(current))
         {
             Debug.Log($"[Placement] 재료가 부족해 '{current.name}' 을 지을 수 없습니다.");
+            // 왜 아무 일도 안 일어났는지 소리로 알린다 — 로그는 플레이어가 못 본다
+            if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Warning);
             return;
         }
 
         if (current is BeltDataSO belt)
             PlacementBridge.Place(current, origin, pos, rotation,
-                BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape));
+                BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape), beltShape);
         else
             PlacementBridge.Place(current, origin, pos, rotation);
+
+        // 벨트 한 칸까지 포함해 무엇을 짓든 같은 설치음이 난다 — 공장을 짓는 리듬이 손에 붙는다
+        if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Construct);
 
         portFlow.NotifyGridChanged();   // 새 건물이 이웃 포트를 막았을 수 있다
     }
@@ -350,9 +355,10 @@ public class PlacementSystem : MonoBehaviour
     /// 프리뷰만 건너뛸 뿐 지형 높이·겹침·광맥 판정은 조준 배치와 완전히 같은 규칙을 쓴다
     /// (그리드 수학이 두 벌로 갈라지지 않게 여기 한 곳에 둔다).
     /// </summary>
+    /// <param name="shape">벨트 모양. 벨트가 아닌 건물에서는 무시된다.</param>
     /// <returns>배치 성공 여부. 실패 사유는 reason으로 돌려준다.</returns>
     public bool TryPlaceAt(BuildingDataSO so, Vector2Int origin, int rotSteps,
-        out Building placed, out string reason)
+        out Building placed, out string reason, BeltShape shape = BeltShape.Straight)
     {
         placed = null;
         reason = null;
@@ -373,7 +379,11 @@ public class PlacementSystem : MonoBehaviour
         Vector3 pos = grid.GetFootprintCenter(origin, size);
         pos.y = groundY + SurfaceLift(so, origin);
 
-        placed = PlacementBridge.Place(so, origin, pos, rotSteps);
+        // 조준 배치(Place)와 같은 규칙 — 벨트는 모양에 맞는 포트·커브 메시로 세운다
+        placed = so is BeltDataSO belt
+            ? PlacementBridge.Place(so, origin, pos, rotSteps,
+                BeltDataSO.BuildPorts(shape, rotSteps), belt.PrefabFor(shape), shape)
+            : PlacementBridge.Place(so, origin, pos, rotSteps);
         return placed != null;
     }
 
@@ -436,6 +446,10 @@ public class PlacementSystem : MonoBehaviour
 
         PlacementBridge.Remove(b);
         BuildCost.Refund(data, dropAt);   // 전액 환급
+
+        // 자진 철거는 전투 파괴와 다른 소리여야 한다 — 파괴는 사고, 철거는 의도다.
+        // 뷰가 이미 사라졌으므로 아까 잡아둔 좌표에서 낸다.
+        if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Destroy, 0.7f);
 
         if (portFlow != null) portFlow.NotifyGridChanged();   // 막혀 있던 이웃 포트가 열린다
     }
@@ -633,7 +647,34 @@ public class PlacementSystem : MonoBehaviour
         preview = Instantiate(prefab);
         foreach (var col in preview.GetComponentsInChildren<Collider>())
             col.enabled = false;
+
+        StripLogic(preview);
+
         previewRenderers = preview.GetComponentsInChildren<Renderer>().ToList();
+    }
+
+    /// <summary>
+    /// 프리뷰는 <b>진짜 건물 프리팹</b>을 그대로 Instantiate한 것이라, 손대지 않으면 살아 움직인다 —
+    /// 타워 프리뷰가 커서를 따라다니며 몬스터를 조준하고, 발사음을 내고, 등장 파티클을 터뜨린다.
+    /// 게다가 Entity는 OnEnable에서 전역 레지스트리에 자기를 등록해, 아직 짓지도 않은 건물이
+    /// 사거리 계산과 사망 처리의 대상이 된다.
+    ///
+    /// 그래서 유령에게서 논리와 소리를 걷어낸다. Destroy는 프레임 끝에 처리되지만
+    /// OnDisable이 레지스트리 등록을 되돌리므로 한 프레임 이상 남지 않는다.
+    /// </summary>
+    private static void StripLogic(GameObject ghost)
+    {
+        foreach (var entity in ghost.GetComponentsInChildren<Entity>(true)) Destroy(entity);
+        foreach (var visual in ghost.GetComponentsInChildren<TowerVisualController>(true)) Destroy(visual);
+
+        foreach (var animator in ghost.GetComponentsInChildren<Animator>(true)) animator.enabled = false;
+        foreach (var audio in ghost.GetComponentsInChildren<AudioSource>(true)) audio.enabled = false;
+        foreach (var ps in ghost.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var emission = ps.emission;
+            emission.enabled = false;
+        }
     }
 
     private void SetPreviewColor(bool valid)

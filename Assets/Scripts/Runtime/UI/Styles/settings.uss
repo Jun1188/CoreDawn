@@ -1,0 +1,153 @@
+/* 설정 화면 전용 스타일.
+ *
+ * saveload.uss와 같은 규칙 — 색·간격·모서리·글꼴은 전부 tokens.uss의 변수를 쓰고,
+ * 공용 컴포넌트(.ui-panel/.ui-btn/.ui-tabs/.ui-row)로 해결되는 것은 여기 적지 않는다.
+ * 이 파일에 있는 것은 "설정 화면에만 있는 배치"와, 디자인 시스템에 없던 두 가지다:
+ *
+ *   1. 슬라이더 — 유니티 기본 런타임 테마의 회색 트랙/핸들이 그대로 나오면
+ *      이 화면만 다른 프로젝트에서 온 것처럼 보인다. .ui-bar의 생김새
+ *      (bg-inset 트랙 + copper 채움)에 맞춰 다시 칠한다.
+ *   2. 세그먼트 — 선택지가 두셋뿐인 항목(화면 모드·품질)에 드롭다운을 쓰면
+ *      역시 기본 테마가 튀어나온다. .ui-tab과 같은 "고른 것만 copper" 규칙의
+ *      버튼 줄로 대신한다.
+ */
+
+.settings-panel {
+    width: 620px;
+}
+
+.settings-panel__tabs {
+    margin: 0 var(--space-4);
+}
+
+.settings-panel__body {
+    flex-direction: column;
+    min-height: 330px;
+}
+
+/* 탭 하나 = 페이지 하나. 한 번에 하나만 보인다 (타이틀 화면과 같은 방식) */
+.settings-page {
+    flex-direction: column;
+}
+
+/* ── 항목 한 줄 — 왼쪽에 이름, 오른쪽에 조작부 ────────────── */
+
+.set-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.set-row__label {
+    width: 132px;
+    flex-shrink: 0;
+    font-size: var(--fs-body);
+    color: var(--text-dim);
+}
+
+.set-row__control {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+}
+
+/* 지금 값 — 폭을 고정해야 슬라이더를 끌 때 숫자가 자릿수 따라 들썩이지 않는다 */
+.set-row__value {
+    width: 72px;
+    flex-shrink: 0;
+    margin-left: var(--space-3);
+    -unity-font-definition: var(--font-data);
+    font-size: var(--fs-cap);
+    color: var(--text);
+    -unity-text-align: middle-right;
+}
+
+.set-note {
+    margin-top: var(--space-1);
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+}
+
+/* ── 슬라이더 ─────────────────────────────────────────────
+   유니티 Slider의 내부 구조에 맞춰 덮어쓴다:
+     .unity-base-slider__input → 트랙이 사는 칸
+     .unity-base-slider__tracker → 트랙(홈)
+     .unity-base-slider__dragger → 손잡이
+   채워진 구간을 보여주는 요소가 없어서 색으로는 못 나눈다 — 손잡이 위치가
+   곧 값이라 .ui-bar처럼 채우지 않고 트랙 + copper 손잡이로만 표현한다. */
+
+.set-slider {
+    flex-grow: 1;
+    margin: 0;
+}
+
+/* 라벨 칸은 .set-row__label이 대신하므로 비워 둔다 */
+.set-slider .unity-base-field__label {
+    display: none;
+}
+
+.set-slider .unity-base-slider__input {
+    margin: 0;
+}
+
+.set-slider .unity-base-slider__tracker {
+    height: 9px;
+    margin-top: -4.5px;
+    border-radius: 4.5px;
+    background-color: var(--bg-inset);
+    border-width: 1.5px;
+    border-color: var(--line);
+}
+
+.set-slider .unity-base-slider__dragger {
+    width: 21px;
+    height: 21px;
+    margin-top: -10.5px;
+    border-radius: 10.5px;
+    background-color: var(--copper);
+    border-width: 0;
+}
+
+.set-slider:hover .unity-base-slider__dragger {
+    background-color: var(--text);
+}
+
+.set-slider:disabled {
+    opacity: 0.35;
+}
+
+/* ── 세그먼트 — 선택지가 몇 개뿐인 항목 ───────────────────── */
+
+.set-seg {
+    flex-direction: row;
+    flex-grow: 1;
+    margin-right: -6px;
+}
+
+/* .ui-btn 위에 얹는 수식 — 고르지 않은 칸은 테두리만, 고른 칸만 copper */
+.set-seg__opt {
+    flex-grow: 1;
+    margin-right: 6px;
+    justify-content: center;
+}
+
+.set-seg__opt--on {
+    color: var(--copper);
+    border-color: var(--copper);
+    background-color: var(--copper-a08);
+}
+
+/* ── 바닥 줄 ──────────────────────────────────────────────── */
+
+.settings-footer {
+    flex-direction: row;
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--space-3);
+    border-top-width: 1.5px;
+    border-top-color: var(--line);
+}
+
+.settings-footer__spacer {
+    flex-grow: 1;
+}

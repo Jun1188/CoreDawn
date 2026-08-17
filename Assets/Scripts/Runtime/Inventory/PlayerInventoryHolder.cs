@@ -40,6 +40,8 @@ public class PlayerInventoryHolder : MonoBehaviour
     private void SeedStartingItems()
     {
         if (startingItems == null) return;
+        // 세이브를 불러오는 중이면 곧 저장된 소지품으로 덮어쓴다 — 시작 아이템까지 얹으면 중복 지급이 된다
+        if (SaveLoadContext.IsRestoring) return;
 
         foreach (var stack in startingItems)
         {

@@ -1,0 +1,195 @@
+/* 타이틀 · 일시정지 · 세이브 슬롯 전용 스타일.
+ *
+ * 색·간격·모서리·글꼴은 전부 tokens.uss의 변수를 쓴다 — 이 프로젝트의 UI에는
+ * 스프라이트가 없고 모든 화면이 색과 테두리만으로 그려지므로, 여기서 값을 직접 적으면
+ * 이 세 화면만 나머지와 미묘하게 달라 보이게 된다.
+ *
+ * 공용 컴포넌트(.ui-panel/.ui-btn/.ui-row)로 해결되는 것은 여기 적지 않는다.
+ * 이 파일에 있는 것은 "이 세 화면에만 있는 배치" 뿐이다.
+ */
+
+/* ── 일시정지 ────────────────────────────────────────────── */
+
+.pause-panel {
+    width: 340px;
+}
+
+.pause-panel__body {
+    flex-direction: column;
+}
+
+/* 지금 어느 세계인지 — 슬롯을 고르기 전에 확인하는 줄 */
+.pause-status {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
+    background-color: var(--bg-inset);
+    border-radius: var(--r-sm);
+    border-width: 1px;
+    border-color: var(--line);
+}
+
+.pause-status__day {
+    -unity-font-definition: var(--font-display);
+    font-size: var(--fs-sub);
+    color: var(--text);
+}
+
+.pause-status__play {
+    -unity-font-definition: var(--font-data);
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+}
+
+/* 세로로 쌓이는 메뉴 — 버튼 폭을 꽉 채워 조준할 필요가 없게 한다 */
+.pause-btn {
+    width: 100%;
+    margin-bottom: var(--space-2);
+    justify-content: center;
+}
+
+.pause-hint {
+    margin-top: var(--space-2);
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+    -unity-text-align: middle-center;
+}
+
+/* ── 세이브 슬롯 목록 ────────────────────────────────────── */
+
+.slots-panel {
+    width: 520px;
+}
+
+.slots-panel__body {
+    flex-direction: column;
+}
+
+.slots-list {
+    max-height: 340px;
+    margin-bottom: var(--space-3);
+}
+
+/* 슬롯 한 줄 — .ui-row 위에 얹는 배치만 담당한다 */
+.slot-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+}
+
+.slot-row__left {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.slot-row__name {
+    -unity-font-definition: var(--font-display);
+    font-size: var(--fs-body);
+    color: var(--text);
+}
+
+.slot-row__scene {
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+}
+
+.slot-row__right {
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.slot-row__day {
+    -unity-font-definition: var(--font-data);
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+}
+
+.slot-row__time {
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+}
+
+/* 빈 슬롯은 글자만 흐리게 — 줄 자체는 남겨야 "여기에 저장할 수 있다"가 보인다 */
+.slot-row--empty .slot-row__name {
+    color: var(--text-faint);
+}
+
+.slots-empty {
+    padding: var(--space-5);
+    font-size: var(--fs-cap);
+    color: var(--text-faint);
+    -unity-text-align: middle-center;
+}
+
+.slots-footer {
+    flex-direction: row;
+    align-items: center;
+}
+
+.slots-footer__spacer {
+    flex-grow: 1;
+}
+
+/* ── 타이틀 ──────────────────────────────────────────────── */
+
+.title-root {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-void);
+}
+
+/* 메뉴와 슬롯 목록이 같은 자리를 번갈아 쓴다 — 한 번에 하나만 보인다 */
+.title-page {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.title-head {
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.title-head__tag {
+    -unity-font-definition: var(--font-data);
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+    letter-spacing: 4px;
+}
+
+.title-head__name {
+    -unity-font-definition: var(--font-display);
+    font-size: 64px;
+    color: var(--text);
+    margin-top: var(--space-2);
+}
+
+.title-head__sub {
+    font-size: var(--fs-cap);
+    color: var(--text-dim);
+    margin-top: var(--space-1);
+}
+
+.title-menu {
+    width: 280px;
+    flex-direction: column;
+}
+
+.title-btn {
+    width: 100%;
+    margin-bottom: var(--space-2);
+    justify-content: center;
+}
+
+.title-recent {
+    margin-top: var(--space-4);
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+    -unity-text-align: middle-center;
+}

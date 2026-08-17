@@ -429,6 +429,30 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     }
 
     // 카메라 리그가 없는 씬(구 프리팹)에서도 최소한 시점은 돌아가야 한다
+    /// <summary>카메라 리그 — 시선 상하각의 원본. 세이브가 읽고 되돌린다.</summary>
+    public PlayerCameraRig CameraRig => cameraRig;
+
+    /// <summary>
+    /// 세이브 복원 전용 — 위치와 몸 방향(요)을 되돌린다.
+    ///
+    /// 속도를 0으로 만드는 이유: 저장은 달리던 중에도 일어나는데, 남은 속도를 그대로 두면
+    /// 불러오자마자 플레이어가 저 혼자 미끄러진다. 시선 상하각은 카메라 리그가 따로 갖고 있다.
+    /// </summary>
+    public void RestoreTransform(Vector3 position, float yawDegrees)
+    {
+        var rotation = Quaternion.Euler(0f, yawDegrees, 0f);
+        transform.SetPositionAndRotation(position, rotation);
+
+        if (rb == null) return;
+
+        // Rigidbody에도 같은 값을 넣어야 한다. 다음 물리 스텝이 트랜스폼을 리지드바디 값으로
+        // 되돌리므로, 위치만 맞추고 회전을 빼먹으면 불러온 직후 시선이 정면(0°)으로 튄다.
+        rb.position = position;
+        rb.rotation = rotation;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+    }
+
     private float _fallbackPitch;
     private void ApplyLookFallback(float pitchDelta)
     {

@@ -81,6 +81,16 @@ public class BattleManager : MonoBehaviour
     public bool IsGameOver { get; private set; }
     public event System.Action GameOver;
 
+    /// <summary>
+    /// 세이브 복원 전용 — 게임오버 여부를 저장된 값으로 되돌린다.
+    /// GameOver 이벤트를 발화시키지 않는다 (사망 연출이 로드할 때마다 다시 도는 것을 막는다).
+    /// </summary>
+    public void RestoreGameOver(bool isGameOver)
+    {
+        IsGameOver = isGameOver;
+        if (isGameOver) spawnManager.SetSpawningEnabled(false);
+    }
+
     private void Start()
     {
         EnsurePlayerEntity();
