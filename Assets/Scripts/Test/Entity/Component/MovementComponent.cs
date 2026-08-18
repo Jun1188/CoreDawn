@@ -98,6 +98,21 @@ public class MovementComponent
         }
         currentPath = path;
         targetIndex = 0;
+
+        // 등 뒤의 웨이포인트는 건너뛴다. A*는 현재 <b>칸 중심</b>에서 경로를 시작하는데,
+        // 추적(ChaseState)이 주기적으로 경로를 다시 깔 때마다 그 중심으로 한 걸음
+        // 되돌아가는 진동이 생긴다 — 칸이 클수록 뒷걸음이 길어져 순간이동처럼 보인다.
+        // 다음 구간의 진행 방향과 반대쪽에 있는 동안만 건너뛰므로 경로 이탈은 없다.
+        Vector3 pos = transform != null ? transform.position : Vector3.zero;
+        while (targetIndex < currentPath.Count - 1)
+        {
+            Vector3 toCurrent = currentPath[targetIndex].worldPosition - pos;
+            Vector3 segment = currentPath[targetIndex + 1].worldPosition - currentPath[targetIndex].worldPosition;
+            toCurrent.y = 0f;
+            segment.y = 0f;
+            if (Vector3.Dot(toCurrent, segment) > 0f) break;
+            targetIndex++;
+        }
     }
 
     // 플로우필드 방향 이동. 매 프레임 갱신 호출을 전제로 한다 (zero면 정지).

@@ -226,6 +226,15 @@ public static class MonsterAnimationBuilder
 
         ApplyFallbacks(resolved);
 
+        // 전진이 구워진 클립은 제자리(in-place) 사본으로 바꾼다 — 위치·회전의 주인은
+        // MovementComponent다(파일 머리 주석). 원본 클립이 스켈레톤 루트를 실제로 이동시키면
+        // 루트모션 없이 재생될 때 클립 루프마다 시작점으로 스냅해, 걷는 몬스터가
+        // "조금씩 끊기며 뒤로 순간이동"하는 것처럼 보인다 (Grenadier 걷기 실측 초속 2m).
+        var slotKeys = new List<string>(resolved.Keys);
+        foreach (string slot in slotKeys)
+            if (resolved[slot] != null)
+                resolved[slot] = MakeInPlace(species, resolved[slot]);
+
         // 공용 컨트롤러와 같은 이유로 제자리 수정한다 — 지우고 새로 만들면 이 에셋을 물고 있는
         // 몬스터 프리팹의 참조가 그 세션 동안 null이 되어, 애니메이션 없는 몬스터가 조용히 생긴다.
         string path = species.OverrideController;
@@ -254,6 +263,51 @@ public static class MonsterAnimationBuilder
 
         string warn = missing.Count > 0 ? $"  (못 찾음: {string.Join(", ", missing)})" : "";
         return $"[{species.Id}] 오버라이드 {filled}/{resolved.Count} 슬롯 → {path}{warn}";
+    }
+
+    /// <summary>
+    /// 루트 전진이 구워진 클립을 제자리 사본으로 바꾼다. 사본에서 지우는 것은
+    ///   · RootT.x/z — 임포터가 추출한 루트모션 수평 성분
+    ///   · 순 이동(drift)이 있는 본의 m_LocalPosition.x/z — 아바타 해석이 안 될 때
+    ///     문자 그대로 재생되는 루트 본 위치 커브 (제자리 흔들림은 순 이동이 0이라 살아남는다)
+    /// 수직(y)은 걸음의 들썩임이므로 남긴다. 이미 제자리인 클립은 원본을 그대로 쓴다.
+    /// </summary>
+    private static AnimationClip MakeInPlace(MonsterCatalog.Species species, AnimationClip source)
+    {
+        Vector3 horizontal = source.averageSpeed;
+        horizontal.y = 0f;
+        if (horizontal.magnitude < 0.05f) return source;
+
+        string folder = MonsterCatalog.AnimRoot + "/InPlace";
+        MonsterCatalog.EnsureFolder(folder);
+        string path = $"{folder}/{species.Id}_{source.name}.anim";
+
+        var copy = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        if (copy == null)
+        {
+            copy = new AnimationClip();
+            AssetDatabase.CreateAsset(copy, path);
+        }
+        EditorUtility.CopySerialized(source, copy);
+        copy.name = $"{species.Id}_{source.name}";
+
+        foreach (var binding in AnimationUtility.GetCurveBindings(copy))
+        {
+            bool strip = binding.propertyName == "RootT.x" || binding.propertyName == "RootT.z";
+
+            if (!strip && (binding.propertyName == "m_LocalPosition.x" ||
+                           binding.propertyName == "m_LocalPosition.z"))
+            {
+                var curve = AnimationUtility.GetEditorCurve(copy, binding);
+                strip = curve != null && curve.length >= 2 &&
+                        Mathf.Abs(curve.keys[curve.length - 1].value - curve.keys[0].value) > 0.1f;
+            }
+
+            if (strip) AnimationUtility.SetEditorCurve(copy, binding, null);
+        }
+
+        EditorUtility.SetDirty(copy);
+        return copy;
     }
 
     /// <summary>

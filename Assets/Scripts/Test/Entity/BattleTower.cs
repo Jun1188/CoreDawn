@@ -57,8 +57,9 @@ public class BattleTower : BuildingEntity
     private Collider targetCollider;
     private float nextScanTime;
 
-    /// <summary>이 타워의 데이터 — 심 배치면 Sim.Data, 씬 배치면 인스펙터 폴백.</summary>
-    private TowerDataSO Data => Sim?.Data as TowerDataSO ?? fallbackData;
+    /// <summary>이 타워의 데이터 — 심 배치면 Sim.Data, 씬 배치면 인스펙터 폴백.
+    /// BuildingEntity.Data(BuildingDataSO)를 타워 전용 타입으로 좁혀 가린다(의도된 가림).</summary>
+    private new TowerDataSO Data => Sim?.Data as TowerDataSO ?? fallbackData;
 
     /// <summary>
     /// 배치된 뒤 한 번, SO의 사거리·연사를 전투 컴포넌트에 주입한다.

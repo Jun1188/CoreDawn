@@ -57,17 +57,23 @@ public static class WorldPopulator
         {
             if (spec.item == null) continue;
 
-            var go = Object.Instantiate(world.ResourceNodePrefab, root);
-            go.name = $"Node_{spec.item.name}_{spec.cell.x}_{spec.cell.y}";
-
             // 오브젝트 위치가 풋프린트 <b>중앙</b>이다(ResourceNode의 규약) — 왼쪽 아래 칸에서
             // 크기의 절반만큼 밀어야 칸에 맞는다. 1칸짜리는 그대로 칸 중앙이다.
+            // 위치는 Instantiate에 함께 넘긴다 — 생성 후에 옮기면 OnEnable의 레지스트리 등록이
+            // 프리팹 기본 위치의 셀에서 일어나, 모든 광맥이 같은 셀에 겹쳐 서로를 덮어쓴다.
             int size = Mathf.Max(1, spec.size);
             Vector3 corner = world.CellToWorld(spec.cell);
-            go.transform.position = corner + new Vector3(size, 0f, size) * (0.5f * world.CellSize);
+            Vector3 center = corner + new Vector3(size, 0f, size) * (0.5f * world.CellSize);
+
+            var go = Object.Instantiate(world.ResourceNodePrefab, center, Quaternion.identity, root);
+            go.name = $"Node_{spec.item.name}_{spec.cell.x}_{spec.cell.y}";
 
             var node = go.GetComponent<ResourceNode>();
-            if (node != null) node.Configure(spec.item, size, spec.extractInterval, spec.maxStock);
+            if (node != null)
+            {
+                node.Configure(spec.item, size, spec.extractInterval, spec.maxStock);
+                node.Refresh();   // 크기가 바뀌었을 수 있다 — 점유 셀을 새 풋프린트로 재등록
+            }
             placed++;
         }
         return placed;
@@ -118,30 +124,46 @@ public static class WorldPopulator
 
     /// <summary>
     /// 둥지의 스폰 자리를 맵대로 다시 놓는다. 프리팹에 이미 자식(SpawnPoint_1…)이 있으면
-    /// 그것을 옮겨 쓰고, 모자라면 새로 만든다 — 프리팹이 들고 있는 보스 배선을 잃지 않기 위해서다.
+    /// 그것을 옮겨 쓰고, 모자라면 새로 만든다.
+    ///
+    /// 보스 유무는 맵(hasBoss)이 정한다 — 프리팹 배선은 "무슨 보스인가"의 출처일 뿐이다.
+    /// 프리팹 배선을 그대로 두면 맵이 점을 늘리거나 보스를 빼도 반영되지 않아,
+    /// json과 실제 스폰 수가 어긋난다.
     /// </summary>
     static void ApplySpawnPoints(World world, MonsterNest nest, in NestSpec spec)
     {
         if (spec.spawnPoints == null || spec.spawnPoints.Length == 0) return;
         if (nest.spawnPoints == null) nest.spawnPoints = new List<MonsterNest.NestSpawnPoint>();
 
+        GameObject bossTemplate = null;
+        foreach (var existing in nest.spawnPoints)
+            if (existing != null && existing.bossPrefab != null) { bossTemplate = existing.bossPrefab; break; }
+
         for (int i = 0; i < spec.spawnPoints.Length; i++)
         {
             var point = spec.spawnPoints[i];
             Vector3 pos = world.CellToWorldCenter(spec.cell + point.offset);
 
+            MonsterNest.NestSpawnPoint slot;
             if (i < nest.spawnPoints.Count && nest.spawnPoints[i] != null && nest.spawnPoints[i].point != null)
             {
-                nest.spawnPoints[i].point.position = pos;
-                continue;
+                slot = nest.spawnPoints[i];
+                slot.point.position = pos;
+            }
+            else
+            {
+                var t = new GameObject($"SpawnPoint_{i + 1}").transform;
+                t.SetParent(nest.transform, false);
+                t.position = pos;
+
+                if (i < nest.spawnPoints.Count && nest.spawnPoints[i] != null) { slot = nest.spawnPoints[i]; slot.point = t; }
+                else { slot = new MonsterNest.NestSpawnPoint { point = t }; nest.spawnPoints.Add(slot); }
             }
 
-            var t = new GameObject($"SpawnPoint_{i + 1}").transform;
-            t.SetParent(nest.transform, false);
-            t.position = pos;
-
-            if (i < nest.spawnPoints.Count && nest.spawnPoints[i] != null) nest.spawnPoints[i].point = t;
-            else nest.spawnPoints.Add(new MonsterNest.NestSpawnPoint { point = t });
+            slot.bossPrefab = point.hasBoss ? bossTemplate : null;
+            if (point.hasBoss && bossTemplate == null)
+                Debug.LogWarning($"[WorldPopulator] 둥지({spec.cell.x},{spec.cell.y}) 스폰 포인트 {i + 1}: " +
+                                 "hasBoss인데 프리팹에 보스 배선이 없어 보스를 세울 수 없습니다.", nest);
         }
 
         // 맵이 정한 것보다 많으면 남는 자리는 버린다 — 옛 배치가 유령처럼 남지 않게
