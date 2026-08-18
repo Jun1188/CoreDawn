@@ -39,7 +39,7 @@ AudioMixerSnapshotController:
   m_SnapshotID: dcdbf60e08672c24aa83d48cf3134d29
   m_FloatValues:
     4c65e4828e7eaca44a0e3c61c0f5a266: 1000
-    839963cdc9b80254d835374aa1850eb6: 0.10800299
+    839963cdc9b80254d835374aa1850eb6: 3.1596465
   m_TransitionOverrides: {}
 --- !u!243 &-5171941599447520822
 AudioMixerGroupController:
@@ -69,8 +69,7 @@ AudioMixerGroupController:
   m_Name: BGM
   m_AudioMixer: {fileID: 24100000}
   m_GroupID: 0efc7de7c5b26ca4ebeb84d83a6b41cf
-  m_Children:
-  - {fileID: -5171941599447520822}
+  m_Children: []
   m_Volume: f5677843badcd5045a4092d275c47e91
   m_Pitch: 34c0182a0824c084ba92910afe307ace
   m_Send: 00000000000000000000000000000000
@@ -137,7 +136,7 @@ AudioMixerController:
     - 9f4b6493566e7b24a93c60291bacbf07
     name: View
   m_CurrentViewIndex: 0
-  m_TargetSnapshot: {fileID: -145546018725350686}
+  m_TargetSnapshot: {fileID: -5327659295115041125}
 --- !u!243 &24300002
 AudioMixerGroupController:
   m_ObjectHideFlags: 0
@@ -149,6 +148,7 @@ AudioMixerGroupController:
   m_GroupID: 7cfc8034829813044b36a1191512085c
   m_Children:
   - {fileID: -5091422680750340307}
+  - {fileID: -5171941599447520822}
   m_Volume: 839963cdc9b80254d835374aa1850eb6
   m_Pitch: 04b77e6af1868dd4790294e60702c03d
   m_Send: 00000000000000000000000000000000

@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using UnityEngine.UIElements;
 /// <summary>
 /// 일시정지 패널(pausePanel)에 부착하는 파이프라인 어댑터.
 /// timeScale·커서 처리를 패널의 Enter/Exit(활성/비활성)에 집중시킨다 —
@@ -12,15 +12,16 @@ public class PausePopup : UIPopup
     {
         base.OnEnable();   // 리시버 등록 + UI 맵 Push
         Time.timeScale = 0f;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+
     }
 
     protected override void OnDisable()
     {
         Time.timeScale = 1f;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        UnityEngine.Cursor.lockState = CursorLockMode.Locked;
+        UnityEngine.Cursor.visible = false;
         base.OnDisable();  // 리시버 해제 + UI 맵 Pop
     }
 }

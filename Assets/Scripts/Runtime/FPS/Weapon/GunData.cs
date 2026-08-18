@@ -47,6 +47,14 @@ public class GunData : GameDataSO
 
     /// <summary>기본 탄종의 명중 효과 — 없으면 null (발사해도 아무 일도 없음).</summary>
     public EffectEntry[] AmmoEffects => AmmoModule?.attackEffects;
+    
+    [Header("사운드 (Audio)")]
+    [Tooltip("총기 발사 음향")]
+    public AudioClip fireSound;
+    [Tooltip("재장전 시작/진행 음향")]
+    public AudioClip reloadSound;
+    [Range(0f, 1f)] public float fireVolume = 0.8f;
+    [Range(0f, 1f)] public float reloadVolume = 0.7f;
 
     [Header("탄창")]
     public int magSize = 30;
