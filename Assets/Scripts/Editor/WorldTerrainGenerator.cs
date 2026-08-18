@@ -46,8 +46,10 @@ public static class WorldTerrainGenerator
     /// <summary>수면 정점 간격(m). 물 셰이더가 정점을 흔들므로 파도 주기보다 촘촘해야 한다.</summary>
     const float WaterVertexSpacing = 2f;
 
-    /// <summary>이 수심(m)보다 얕으면 거품이 낀다. 정점 컬러의 빨강 채널이 곧 거품 세기다.</summary>
-    const float FoamDepth = 0.35f;
+    /// <summary>이 수심(m)보다 얕으면 거품이 낀다. 정점 컬러의 빨강 채널이 곧 거품 세기다.
+    /// 0.35로 두면 작은 웅덩이는 수면 대부분이 거품 범위에 들어가 흰 원반처럼 렌더된다 —
+    /// 물가에 좁은 띠만 남도록 얕게 잡는다.</summary>
+    const float FoamDepth = 0.15f;
 
     // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 몇 칸 들어가야 제 높이가 되는가.
     // 짧아야 한다. 경사를 칸 하나에 걸쳐 눕히면 폭 1~2칸짜리 절벽·물길은 제 높이에 닿기도
@@ -221,6 +223,12 @@ public static class WorldTerrainGenerator
                 // 물 밑은 잔잔하게 — 파임을 흐리지 않도록
                 float detail = (Mathf.PerlinNoise(tx * DetailFrequency, ty * DetailFrequency) - 0.5f) * 2f * DetailAmplitude;
                 float h = height[j, i] + detail * (height[j, i] < -0.05f ? 0.35f : 1f);
+
+                // 마른 지면은 노이즈가 아래로 파지 못하게 막는다. 굴곡 폭(±0.14m)이 잔디
+                // 컷라인(수면+0.08m)과 수면(-0.15m) 사이 틈보다 커서, 평지 곳곳이 "잔디는 안
+                // 자라는데 물도 안 덮이는" 깊이로 파였다 — 잔디 빈 얼룩과 모래 색 웅덩이의 원인.
+                // 형상(강·여울)으로 파인 곳은 원래 음수라 이 클램프에 걸리지 않는다.
+                if (height[j, i] > -0.02f) h = Mathf.Max(h, -0.02f);
 
                 height[j, i] = Mathf.Clamp01((h + RiverDepth) / total);
             }
@@ -934,7 +942,9 @@ public static class WorldTerrainGenerator
                 float cliff = Mathf.SmoothStep(0f, 1f,
                     Mathf.InverseLerp(0.4f, -0.3f, SampleField(cliffField, map, tx, ty)));
 
-                float bed = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.05f, -0.4f, world));
+                // 모래는 수면(-0.15m) 아래에서 시작한다. -0.05부터 깔면 물 위의 마른 물가까지
+                // 모래가 덮여, 밝은 모래 텍스처가 웅덩이마다 흰 테두리 원반처럼 보인다.
+                float bed = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.12f, -0.45f, world));
                 float ground = Mathf.Max(0f, 1f - cliff - bed);
 
                 float sum = cliff + bed + ground;
@@ -992,7 +1002,12 @@ public static class WorldTerrainGenerator
                 bool overMap = ttx >= 0f && ttz >= 0f && ttx <= map.width && ttz <= map.height;
                 float bed = overMap ? SampleHeightAt(height, ttx, ttz, map) : -99f;   // 맵 밖은 먼 바다
                 float depth = WaterLevel - bed;
-                colors[v] = new Color(Mathf.Clamp01(1f - depth / FoamDepth), 0f, 0f, 1f);
+
+                // 얕을수록 거품 — 다만 수심 0 부근에서는 다시 0으로 죽인다. 수면과 거의 같은
+                // 높이의 지형 위에서는 물 한 겹 없이 거품 100%가 그대로 얹혀, 물가의 얕은
+                // 둔덕이 흰색 원반처럼 렌더되던 원인이다. 거품 띠는 물가에서 살짝 떨어져 남는다.
+                float foam = Mathf.Clamp01(1f - depth / FoamDepth) * Mathf.Clamp01(depth / 0.05f);
+                colors[v] = new Color(foam, 0f, 0f, 1f);
             }
 
         var tris = new int[cols * rows * 6];

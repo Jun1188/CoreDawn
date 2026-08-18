@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class AttackState : IEntityState
 {
+    // 추적 복귀 히스테리시스 — 진입(사거리)과 이탈 기준이 같으면 사거리 경계에서
+    // Attack↔Chase가 매 프레임 진동해 이동이 서다 가다를 반복한다(애니메이션 끊김의 주범).
+    // 이탈은 사거리보다 이만큼 여유를 두고 판정한다.
+    private const float ExitRangeBuffer = 1.15f;
+
     private Entity target;
 
     public Entity Target => target;
@@ -26,7 +31,7 @@ public class AttackState : IEntityState
         }
 
         float distance = target.DistanceTo(stateMachine.Transform.position);
-        if (stateMachine.Combat == null || distance > stateMachine.Combat.AttackRange)
+        if (stateMachine.Combat == null || distance > stateMachine.Combat.AttackRange * ExitRangeBuffer)
         {
             // 같은 타겟을 유지한 채 재추적
             stateMachine.SetState(new ChaseState(target));
