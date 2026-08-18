@@ -67,6 +67,19 @@ public class ResourceNode : MonoBehaviour
     /// <summary>다음 생산 시각(심 클럭). 음수면 아직 초기화 전.</summary>
     private float nextProduceAt = -1f;
 
+    /// <summary>
+    /// 맵 데이터로 세울 때 쓴다. 인스펙터 전용(private) 필드라 밖에서 못 넣으므로 통로를 낸다 —
+    /// 광맥은 씬에 손으로 놓는 것이 아니라 맵이 정하는 것이기 때문이다.
+    /// 0 이하는 "프리팹 값을 그대로 둔다"는 뜻이다.
+    /// </summary>
+    public void Configure(ItemDataSO item, int footprint, float extractSeconds, int stockCap)
+    {
+        if (item != null) resource = item;
+        if (footprint > 0) size = new Vector2Int(footprint, footprint);
+        if (extractSeconds > 0f) extractInterval = extractSeconds;
+        if (stockCap > 0) maxStock = stockCap;
+    }
+
     // ── 공개 조회 ────────────────────────────────────────────────
 
     /// <summary>이 광맥에서 나오는 아이템. 비어 있으면 채굴 불가 광맥으로 취급한다.</summary>
@@ -74,6 +87,9 @@ public class ResourceNode : MonoBehaviour
 
     /// <summary>현재 재고.</summary>
     public int CurrentStock => currentStock;
+
+    /// <summary>다음 생산 시각(심 클럭 기준 절대값). 세이브가 그대로 보존해야 주기가 어긋나지 않는다.</summary>
+    public float NextProduceAt => nextProduceAt;
 
     /// <summary>재고 상한.</summary>
     public int MaxStock => Mathf.Max(1, maxStock);
@@ -174,6 +190,19 @@ public class ResourceNode : MonoBehaviour
 
     /// <summary>재고를 꺼내가고 꺼낸 개수만 돌려주는 간편형 (0 = 재고 없음).</summary>
     public int Extract(int amount) => TryExtract(amount, out int taken) ? taken : 0;
+
+    /// <summary>
+    /// 세이브 복원 전용 — 재고와 다음 생산 시각, 누적 채굴량을 저장된 값으로 되돌린다.
+    ///
+    /// nextProduceAt은 심 클럭 기준 절대 시각이라 FactorySim.Now를 되돌린 뒤에 넣어야 한다.
+    /// (OnEnable이 -1로 리셋해 두므로, 복원하지 않으면 첫 Accrue에서 주기가 통째로 미뤄진다)
+    /// </summary>
+    public void RestoreState(int stock, float nextAt, int totalExtracted)
+    {
+        currentStock = Mathf.Clamp(stock, 0, MaxStock);
+        nextProduceAt = nextAt;
+        TotalExtracted = Mathf.Max(0, totalExtracted);
+    }
 
     // ── 생명주기 ─────────────────────────────────────────────────
 

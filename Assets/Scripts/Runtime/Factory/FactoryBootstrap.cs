@@ -39,10 +39,20 @@ public class FactoryBootstrap : MonoBehaviour
     [Tooltip("세울 코어 데이터. 비워두면 BuildingDatabase에서 CoreDataSO를 찾아 쓴다.")]
     [SerializeField] CoreDataSO _coreData;
 
-    [Tooltip("코어를 세울 그리드 좌표.")]
+    [Tooltip("코어를 세울 그리드 좌표. 월드(맵)가 있으면 맵이 정한 자리로 덮인다 — Inject 참조.")]
     [SerializeField] Vector2Int _coreOrigin = Vector2Int.zero;
 
     [SerializeField] int _coreRotationSteps = 0;
+
+    /// <summary>
+    /// 코어 자리 주입 — 코어가 어디 서는지는 맵이 정한다(MapDataSO.core).
+    /// 공장 심은 별도 씬으로 오므로 GameBootstrap이 월드에서 읽어 넘긴다.
+    /// 자동 설치는 Start에서 일어나고 주입은 그 전(씬 로드 직후)이라 제때 반영된다.
+    /// </summary>
+    public void Inject(Vector2Int coreOrigin)
+    {
+        _coreOrigin = coreOrigin;
+    }
 
     public FactorySim Sim { get; private set; }
 
@@ -76,7 +86,9 @@ public class FactoryBootstrap : MonoBehaviour
 
     void Start()
     {
-        if (_autoPlaceCore) AutoPlaceCore();
+        // 복원 중에는 세이브에 적힌 코어를 그대로 세우므로 자동 설치가 끼어들면 안 된다
+        // (씬에 미리 놓인 코어를 잇는 CoreBootstrap은 그대로 둔다 — 복원이 그 뷰를 재사용한다)
+        if (_autoPlaceCore && !SaveLoadContext.IsRestoring) AutoPlaceCore();
     }
 
     void Update() => Sim.Advance(Time.deltaTime);
@@ -131,6 +143,12 @@ public class FactoryBootstrap : MonoBehaviour
     }
 
     // ── Building ↔ View 매핑 (PlacementBridge가 등록/해제)
+
+    /// <summary>
+    /// 배치된 모든 건물 — 세이브가 순회하는 정본 목록.
+    /// 그리드(GridIndex)를 훑으면 안 되는 이유: 멀티타일 건물은 여러 칸이 같은 Building을 가리켜 중복된다.
+    /// </summary>
+    public IEnumerable<Building> Buildings => _views.Keys;
 
     public void RegisterView(Building b, BuildingEntity v) => _views[b] = v;
     public void UnregisterView(Building b) => _views.Remove(b);

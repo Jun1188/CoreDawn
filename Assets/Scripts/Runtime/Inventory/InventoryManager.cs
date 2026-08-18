@@ -9,6 +9,18 @@ public class InventoryManager : MonoBehaviour
     public ItemSocket mouseCarriageSlot;
     private ItemStack mouseCarriageItem = null;
 
+    /// <summary>
+    /// 지금 마우스에 들려 있는 스택 — 어느 컨테이너에도 속하지 않는다.
+    /// 세이브가 이것을 빠뜨리면 창을 연 채로 저장했을 때 그 아이템이 그대로 사라진다.
+    /// </summary>
+    public ItemStack MouseCarriage => mouseCarriageItem;
+
+    /// <summary>세이브 복원 전용 — 들고 있던 스택을 되돌린다.</summary>
+    public void RestoreMouseCarriage(ItemStack stack)
+    {
+        mouseCarriageItem = stack != null && stack.item != null && stack.amount > 0 ? stack : null;
+    }
+
     [Header("Player References")]
     public PlayerController playerController;
 
@@ -113,11 +125,8 @@ public class InventoryManager : MonoBehaviour
 
     public void CloseScreen()
     {
-        // 1. 조합 입력창에 올려둔 재료 가방으로 회수
-        if (PlayerInventoryHolder.Instance != null)
-            PlayerInventoryHolder.Instance.ReturnCraftingInputsToPlayer();
-
-        // 2. 마우스로 들고 있던 아이템 바닥에 투척
+        // 마우스로 들고 있던 아이템 바닥에 투척
+        // (구 "조합 입력창 재료 회수"는 제작 4+1 컨테이너와 함께 제거됨)
         DropMouseCarriageItem();
 
         boundContainer = null;
@@ -247,12 +256,8 @@ public class InventoryManager : MonoBehaviour
         bool isChestOpen = playerController != null && playerController.inventoryUIPanel != null && playerController.inventoryUIPanel.activeSelf && playerController.chestInventoryUI != null && playerController.chestInventoryUI.gameObject.activeSelf;
         ItemContainer chestContainer = isChestOpen ? playerController.chestInventoryUI.TargetContainer : null;
 
-        if (srcContainer == holder.CraftingInputContainer || srcContainer == holder.CraftingOutputContainer)
-        {
-            TryMoveStackToContainer(srcSlot, holder.MainContainer);
-            if (srcSlot.amount > 0) TryMoveStackToContainer(srcSlot, holder.HotbarContainer);
-        }
-        else if (isChestOpen && srcContainer == chestContainer)
+        // (구 제작 4+1 컨테이너 분기 제거 — 그 그릇들이 사라졌다)
+        if (isChestOpen && srcContainer == chestContainer)
         {
             TryMoveStackToContainer(srcSlot, holder.MainContainer);
             if (srcSlot.amount > 0) TryMoveStackToContainer(srcSlot, holder.HotbarContainer);

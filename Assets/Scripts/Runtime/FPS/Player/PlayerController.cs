@@ -262,6 +262,35 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     #region [5. Unity Lifecycle]
 
+    /// <summary>
+    /// 몸통 콜라이더에 씌우는 <b>마찰 0</b> 재질 — 벽이나 적에 몸이 붙어 끼이는 것을 막는다.
+    ///
+    /// 이 컨트롤러는 이동을 속도로 직접 제어하고 지면 감속도 groundFriction이 따로 하므로,
+    /// 콜라이더 마찰은 이동에 아무 도움이 되지 않는다. 하는 일은 벽에 밀착했을 때 몸을
+    /// 붙잡아 미끄러져 빠져나오지 못하게 만드는 것뿐이다(재질을 비워두면 Unity 기본값 0.6).
+    /// Minimum 조합이라 상대가 어떤 재질이든 접점 마찰은 0이 된다.
+    ///
+    /// 접지 중에는 중력을 끄므로(<see cref="UpdateGroundState"/>) 비탈에서 미끄러지지 않는다.
+    /// </summary>
+    private static PhysicsMaterial slipperyBody;
+
+    private static PhysicsMaterial SlipperyBody()
+    {
+        if (slipperyBody == null)
+        {
+            slipperyBody = new PhysicsMaterial("Player (Frictionless)")
+            {
+                dynamicFriction = 0f,
+                staticFriction = 0f,
+                bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Minimum,
+                bounceCombine = PhysicsMaterialCombine.Minimum,
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+        }
+        return slipperyBody;
+    }
+
     private void Awake()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
@@ -278,6 +307,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
             standHeight = bodyCollider.height;      // 씬에 세팅된 값을 정본으로 삼는다
             _baseCenter = bodyCollider.center;
             _currentHeight = standHeight;
+            bodyCollider.sharedMaterial = SlipperyBody();
         }
 
         if (playerCamera != null)
@@ -380,8 +410,15 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         float yaw = _lookInput.x * mouseSensitivity * 0.1f;
         float pitch = _lookInput.y * mouseSensitivity * 0.1f;
 
-        // 요는 몸이, 피치는 카메라 리그가 소유한다
-        if (Mathf.Abs(yaw) > 0f) transform.Rotate(Vector3.up * yaw, Space.Self);
+        // 요는 몸이, 피치는 카메라 리그가 소유한다.
+        // Transform만 돌리면 물리 엔진이 <b>자기가 기억하는 회전으로 매 스텝 되돌린다</b> —
+        // 좌우로 돌려도 제자리로 끌려오는 증상이 이것이다(FreezeRotation이라 각속도는 0인데도).
+        // 피치가 멀쩡한 이유는 그쪽은 Rigidbody가 없는 자식 노드이기 때문이다.
+        if (Mathf.Abs(yaw) > 0f)
+        {
+            transform.Rotate(Vector3.up * yaw, Space.Self);
+            if (rb != null) rb.rotation = transform.rotation;
+        }
 
         if (cameraRig != null) cameraRig.ApplyLook(pitch, MAX_CAMERA_ROTATION_X);
         else if (playerCamera != null) ApplyLookFallback(pitch);
@@ -392,6 +429,30 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     }
 
     // 카메라 리그가 없는 씬(구 프리팹)에서도 최소한 시점은 돌아가야 한다
+    /// <summary>카메라 리그 — 시선 상하각의 원본. 세이브가 읽고 되돌린다.</summary>
+    public PlayerCameraRig CameraRig => cameraRig;
+
+    /// <summary>
+    /// 세이브 복원 전용 — 위치와 몸 방향(요)을 되돌린다.
+    ///
+    /// 속도를 0으로 만드는 이유: 저장은 달리던 중에도 일어나는데, 남은 속도를 그대로 두면
+    /// 불러오자마자 플레이어가 저 혼자 미끄러진다. 시선 상하각은 카메라 리그가 따로 갖고 있다.
+    /// </summary>
+    public void RestoreTransform(Vector3 position, float yawDegrees)
+    {
+        var rotation = Quaternion.Euler(0f, yawDegrees, 0f);
+        transform.SetPositionAndRotation(position, rotation);
+
+        if (rb == null) return;
+
+        // Rigidbody에도 같은 값을 넣어야 한다. 다음 물리 스텝이 트랜스폼을 리지드바디 값으로
+        // 되돌리므로, 위치만 맞추고 회전을 빼먹으면 불러온 직후 시선이 정면(0°)으로 튄다.
+        rb.position = position;
+        rb.rotation = rotation;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+    }
+
     private float _fallbackPitch;
     private void ApplyLookFallback(float pitchDelta)
     {

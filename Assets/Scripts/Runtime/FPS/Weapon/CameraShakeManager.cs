@@ -36,9 +36,17 @@ public class CameraShakeManager : MonoBehaviour
         public float seed;
     }
 
+    [Header("추종")]
+    [Tooltip("계산된 흔들림을 따라가는 속도. 프레임 사이의 점프를 메워 '탁탁' 끊기는 것을 막는다.")]
+    public float followSharpness = 28f;
+
     private readonly ActiveImpulse[] impulsePool = new ActiveImpulse[8];
     private int impulseCount = 0;
     private float perlinTime = 0f;
+
+    // 화면에 실제로 적용 중인 값 — 목표(totalPos/Rot)를 스프링으로 뒤쫓는다
+    private Vector3 shownPos;
+    private Vector3 shownRot;
 
     private void Awake()
     {
@@ -55,15 +63,17 @@ public class CameraShakeManager : MonoBehaviour
     {
         if (cameraTransform == null) return;
 
-        // 흔들림이 꺼져있거나 진행 중인 임펄스가 없으면, 카메라를 완벽한 원점(0,0,0)으로 고정
+        float dt = Time.deltaTime;
+
+        // 흔들림이 꺼져있거나 진행 중인 임펄스가 없으면 원점으로 — 다만 <b>끌어당겨서</b> 돌아온다.
+        // 즉시 0으로 스냅하면 마지막 임펄스가 끝나는 프레임에 화면이 한 번 튄다.
         if (globalIntensityScale <= 0f || impulseCount == 0)
         {
-            cameraTransform.localPosition = Vector3.zero;
-            cameraTransform.localRotation = Quaternion.identity;
+            Settle(Vector3.zero, Vector3.zero, dt);
             return;
         }
 
-        perlinTime += Time.deltaTime;
+        perlinTime += dt;
 
         Vector3 totalPos = Vector3.zero;
         Vector3 totalRot = Vector3.zero;
@@ -75,8 +85,12 @@ public class CameraShakeManager : MonoBehaviour
             imp.remainingTime -= Time.deltaTime;
             if (imp.remainingTime <= 0f) continue;
 
+            // 감쇠를 곡선으로 — 선형(t)이면 끝날 때까지 진폭이 남아 있다가 뚝 끊긴다
             float t = imp.remainingTime / imp.totalDuration;
-            float freq = imp.frequency * perlinTime + imp.seed;
+            t = t * t * (3f - 2f * t);
+
+            // 프레임률이 감당하는 진동수로 제한 — 넘어서면 진동이 아니라 덜컹거림이 된다
+            float freq = MotionSpring.Visible(imp.frequency, dt) * perlinTime + imp.seed;
 
             float px = (Mathf.PerlinNoise(freq, imp.seed + 13.7f) - 0.5f) * 2f;
             float py = (Mathf.PerlinNoise(freq + 31.3f, imp.seed + 47.1f) - 0.5f) * 2f;
@@ -92,9 +106,24 @@ public class CameraShakeManager : MonoBehaviour
         totalPos = Vector3.ClampMagnitude(totalPos * globalIntensityScale, maxPositionOffset);
         totalRot = Vector3.ClampMagnitude(totalRot * globalIntensityScale, maxRotationOffset);
 
+        Settle(totalPos, totalRot, dt);
+    }
+
+    /// <summary>
+    /// 목표 흔들림을 스프링으로 뒤쫓아 적용한다.
+    ///
+    /// 펄린 노이즈를 그대로 트랜스폼에 꽂으면 카메라가 순간이동하듯 튄다. 12Hz 진동을
+    /// 60fps로 샘플링하면 한 주기가 <b>다섯 프레임</b>이라, 값 자체는 연속이어도 화면에는
+    /// 계단으로 찍히기 때문이다. 여기서 한 겹 걸러야 사이가 메워진다.
+    /// </summary>
+    private void Settle(Vector3 targetPos, Vector3 targetRot, float dt)
+    {
+        shownPos = MotionSpring.Damp(shownPos, targetPos, followSharpness, dt);
+        shownRot = MotionSpring.Damp(shownRot, targetRot, followSharpness, dt);
+
         // 카메라는 오직 "흔들림"만을 위해 움직이므로 항상 0,0,0을 기준으로 동작합니다.
-        cameraTransform.localPosition = totalPos;
-        cameraTransform.localRotation = Quaternion.Euler(totalRot);
+        cameraTransform.localPosition = shownPos;
+        cameraTransform.localRotation = Quaternion.Euler(shownRot);
     }
 
     public void Impulse(ImpulseRequest req)
@@ -121,7 +150,9 @@ public class CameraShakeManager : MonoBehaviour
             positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n),
             rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n),
             duration = Mathf.Lerp(0.15f, 0.35f, n),
-            frequency = 12f
+            // 7Hz — 60fps에서 한 주기가 8~9프레임이라 곡선으로 보인다. 12Hz는 다섯 프레임뿐이라
+            // 아무리 필터를 걸어도 진동이라기보다 덜컹거림으로 읽혔다.
+            frequency = 7f
         });
     }
 

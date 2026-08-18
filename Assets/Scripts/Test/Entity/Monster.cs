@@ -10,6 +10,7 @@ public class Monster : Entity
     [SerializeField] private CombatComponent combat = new CombatComponent();
 
     private StateMachineComponent stateMachine;
+    private MonsterVisualController visual; // 연출 담당 — 없을 수 있다(자리표시 프리팹)
     private bool aggroOnPlayer;
     private bool isNestDefender;
     private Vector3 defendOrigin;
@@ -41,6 +42,7 @@ public class Monster : Entity
         movement.Initialize(transform);
         combat.Initialize(this); // 효과 시스템 — 공격의 출처(Source)·버프 베이크 주입
         stateMachine = new StateMachineComponent(this);
+        visual = GetComponent<MonsterVisualController>();
         Health.OnDeath += HandleMonsterDeath;
 
         Health.OnHealthChanged += (current, max) =>
@@ -64,6 +66,36 @@ public class Monster : Entity
         nestOrigin = ownerNestOrigin;
         engagementZone = zone;
         defendRadius = zone != null ? zone.LeashRange : defendRadius;
+    }
+
+    /// <summary>보스인가 — 세이브가 읽는다.</summary>
+    public bool IsBoss => isBoss;
+
+    /// <summary>보스가 공격을 받아 깨어났는가 — 저장하지 않으면 로드 후 다시 잠들어 버린다.</summary>
+    public bool HasBeenAttacked => hasBeenAttacked;
+
+    public bool IsNestDefender => isNestDefender;
+    public Vector3 DefendOrigin => defendOrigin;
+
+    /// <summary>
+    /// 세이브 복원 전용 — 정체성(보스/방어자)과 각성 여부를 되돌린다.
+    ///
+    /// AI 상태는 되돌리지 않고 Idle에서 다시 시작한다. 추적 대상은 씬 오브젝트 참조라
+    /// 저장할 수 없고, 이동 경로도 지형이 같으면 곧바로 다시 계산된다 —
+    /// 플레이어 센서가 다음 스캔에서 어그로를 다시 걸어 주므로 몇 프레임이면 제자리를 찾는다.
+    /// </summary>
+    public void RestoreSaveState(bool boss, bool awakened, bool nestDefender, Vector3 origin)
+    {
+        EnsureInitialized();
+
+        isBoss = boss;
+        hasBeenAttacked = awakened;
+        isNestDefender = nestDefender;
+        defendOrigin = origin;
+
+        aggroOnPlayer = false;
+        currentTarget = null;
+        StateMachine.SetState(new IdleState());
     }
 
     protected override void Awake()
@@ -215,6 +247,7 @@ public class Monster : Entity
         if (isNestDefender && engagementZone != null && !engagementZone.CanChase(nestOrigin, player.transform.position)) return;
         aggroOnPlayer = true;
         currentTarget = player;
+        visual?.PlayAlert(); // 발견 모션 — 연출만, 추적 시작을 지연시키지 않는다
         StateMachine.SetState(new ChaseState(player));
     }
 

@@ -269,6 +269,54 @@ public class WaveSpawnManager
         Debug.Log($"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
     }
 
+    // ── 세이브 복원 표면 ─────────────────────────────────────────
+
+    /// <summary>
+    /// 다음 스폰까지 남은 시간(초). nextSpawnTime은 Time.time 기준 절대값이라
+    /// 그대로 저장하면 다음 실행에서 의미가 없다 — 남은 시간으로 환산해 저장한다.
+    /// </summary>
+    public float NextSpawnDelay => Mathf.Max(0f, nextSpawnTime - Time.time);
+
+    /// <summary>세이브 복원 전용 — 스폰 진행 상태를 되돌린다.</summary>
+    public void RestoreState(bool enabled, float spawnDelay)
+    {
+        spawningEnabled = enabled;
+        nextSpawnTime = Time.time + Mathf.Max(0f, spawnDelay);
+
+        if (!enabled) return;
+        DetermineCurrentWave();
+        FindActiveNests();
+    }
+
+    /// <summary>
+    /// 세이브 복원 전용 — 저장된 자리에 몬스터를 되살린다.
+    /// 지형 스냅을 하지 않는 이유: 저장된 좌표가 이미 지형 위에 있던 값이고,
+    /// 다시 스냅하면 경사면에서 조금씩 위치가 밀린다.
+    /// </summary>
+    public Monster RestoreMonster(Vector3 position, Quaternion rotation)
+    {
+        GameObject go = monsterPrefab != null
+            ? UnityEngine.Object.Instantiate(monsterPrefab, position, rotation, parent)
+            : CreateFallbackMonster(position);
+
+        go.SetActive(true);
+        go.transform.SetPositionAndRotation(position, rotation);
+
+        int monsterLayer = LayerMask.NameToLayer("Monster");
+        if (monsterLayer >= 0 && go.layer == 0)
+            SetLayerRecursively(go.transform, monsterLayer);
+
+        var rb = go.GetComponent<Rigidbody>();
+        if (rb == null) rb = go.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        var monster = go.GetComponent<Monster>();
+        if (monster == null) monster = go.AddComponent<Monster>();
+        monsters.Add(monster);
+        return monster;
+    }
+
     private void CleanupDead()
     {
         for (int i = monsters.Count - 1; i >= 0; i--)

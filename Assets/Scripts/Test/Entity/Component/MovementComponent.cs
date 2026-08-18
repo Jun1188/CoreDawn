@@ -18,7 +18,14 @@ public class MovementComponent
     [Tooltip("넉백 감쇠율(초당). 클수록 짧고 굵게 밀린다. 총 밀림 거리는 감쇠율과 무관하게 효과가 정한다.")]
     [SerializeField] private float knockbackDamping = 8f;
 
+    [Header("Ground (접지)")]
+    [Tooltip("매 프레임 발을 지면 높이에 맞춘다. 끄면 스폰 당시 높이를 그대로 유지한다(비행 유닛용).")]
+    [SerializeField] private bool stickToGround = true;
+
     private Transform transform;
+
+    /// <summary>루트 피벗에서 콜라이더 바닥까지의 거리 — 발을 지면에 놓을 때 더해 줄 값.</summary>
+    private float pivotToBottom;
     private List<Node> currentPath;
     private int targetIndex;
     private Vector3 flowDirection; // 방향 이동 모드 (플로우필드)
@@ -32,13 +39,54 @@ public class MovementComponent
     /// <summary>효과 시스템의 이동 속도 배율(감속 등) — Entity.Update가 매 프레임 밀어 넣는다.</summary>
     public float SpeedMultiplier { get; set; } = 1f;
 
-    // 실제 이동에 쓰는 속도 — 기본 속도 × 효과 배율
-    private float EffectiveSpeed => moveSpeed * SpeedMultiplier;
+    /// <summary>
+    /// 지금 밟고 있는 칸의 지형 배율(강 0.5 등) — 효과와 달리 <b>위치의 성질</b>이라
+    /// 칸을 벗어나는 즉시 원복된다. 그래서 효과 시스템(시간 기반)에 얹지 않고 따로 곱한다.
+    /// 감속탄과 강이 겹치면 자연스럽게 함께 곱해진다 (0.5 × 0.5 = 0.25).
+    /// </summary>
+    private float TerrainMultiplier
+    {
+        get
+        {
+            var grid = GridManager.Instance;
+            if (grid == null || transform == null) return 1f;
+
+            var node = grid.NodeFromWorldPoint(transform.position);
+            return node != null ? grid.TerrainSpeed(node.gridCoord) : 1f;
+        }
+    }
+
+    // 실제 이동에 쓰는 속도 — 기본 속도 × 효과 배율 × 지형 배율
+    private float EffectiveSpeed => moveSpeed * SpeedMultiplier * TerrainMultiplier;
 
     public event Action OnDestinationReached;
     public event Action OnPathBlocked;
 
-    public void Initialize(Transform ownerTransform) => transform = ownerTransform;
+    public void Initialize(Transform ownerTransform)
+    {
+        transform = ownerTransform;
+        pivotToBottom = MeasurePivotToBottom(ownerTransform);
+    }
+
+    /// <summary>
+    /// 피벗에서 콜라이더 바닥까지 얼마나 내려가는지. 몬스터의 피벗은 캡슐 <i>중앙</i>이라
+    /// 이 값을 더해 줘야 발이 지면에 놓인다.
+    ///
+    /// <c>Collider.bounds</c>(월드 AABB)를 쓰지 않고 치수에서 직접 계산한다 —
+    /// bounds는 물리 동기화 전에는 낡은 값을 주는데, 이 함수는 Awake에서 불린다.
+    /// </summary>
+    private static float MeasurePivotToBottom(Transform t)
+    {
+        float scale = Mathf.Abs(t.lossyScale.y);
+
+        var capsule = t.GetComponent<CapsuleCollider>();
+        if (capsule != null) return (capsule.height * 0.5f - capsule.center.y) * scale;
+
+        var box = t.GetComponent<BoxCollider>();
+        if (box != null) return (box.size.y * 0.5f - box.center.y) * scale;
+
+        return 0f;
+    }
 
     public void StartMoving(List<Node> path)
     {
@@ -76,6 +124,28 @@ public class MovementComponent
         // 개체 간 겹침 해소는 여기서 하지 않는다 — 모든 이동이 끝난 뒤 CrowdSystem이
         // 중앙 한 패스(LateUpdate)로 처리한다. 넉백만 개체 소관.
         TickKnockback(deltaTime);
+
+        // 접지는 XZ가 전부 정해진 뒤 마지막에 한다
+        if (stickToGround) StickToGround();
+    }
+
+    /// <summary>
+    /// 발을 지면에 붙인다.
+    ///
+    /// 이게 없으면 개체는 <b>스폰 당시의 Y에 영원히 고정</b>된다(경로 추종·플로우필드 모두
+    /// waypoint.y를 현재 y로 덮어쓰기 때문이다). 스폰 높이는 맵 전체에 하나뿐인
+    /// <see cref="GridManager.SurfaceY"/>인데 지형은 1m 가까이 오르내리므로,
+    /// 지형이 그 값보다 높은 곳(실측 표본의 24%)에서는 개체가 땅에 파묻힌 채로 걸어온다.
+    /// 키가 큰 보스는 티가 안 나지만 키 1m짜리 일반몹은 다리가 통째로 사라진다.
+    /// </summary>
+    private void StickToGround()
+    {
+        Vector3 position = transform.position;
+        float target = GroundSampler.HeightAt(position) + pivotToBottom;
+        if (Mathf.Approximately(position.y, target)) return;
+
+        position.y = target;
+        transform.position = position;
     }
 
     // ── 넉백 — 효과 시스템(KnockbackEffectSO)이 주입하는 외부 충격 ──

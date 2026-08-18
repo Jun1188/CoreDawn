@@ -16,6 +16,10 @@ public class TowerDataSO : BuildingDataSO
              "어느 방식이든 효과는 소비한 탄약/연료(AmmoModuleSO)가 정의한다.")]
     public FireMode fireMode = FireMode.Projectile;
 
+    // 쏘는 건물은 몬스터에게 위협이라 먼저 노려진다 — 비전투 구조물(인펜스 등)은 일반 건물과 같다.
+    // (BuildingDataSO.threatSeedCost의 기본값을 타워에서만 낮춘다)
+    private void Reset() => threatSeedCost = 10;
+
     [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 감속 같은 부가 효과는 그대로.")]
     public float damageMultiplier = 1f;
 
@@ -34,6 +38,14 @@ public class TowerDataSO : BuildingDataSO
 
     [Tooltip("중력 있는 탄을 쏠 때 고각 궤적을 고른다 — 박격포는 장애물을 넘겨 쏘고, 직사 발사기는 저각으로 빨리 닿는다.")]
     public bool preferHighArc;
+
+    [Tooltip("포탑 선회 속도(도/초). 0이면 포탑이 없거나 즉시 조준 — 그 경우 조준 대기 없이 바로 쏜다.\n" +
+             "연출이 아니라 밸런스 수치다: 느린 포탑은 목표가 바뀔 때마다 실질 연사가 떨어진다.")]
+    public float turnSpeed = 180f;
+
+    [Tooltip("조준 완료로 인정하는 좌우 오차(도). 이 안에 들어와야 발사한다.\n" +
+             "요(좌우)만 본다 — 피치는 탄종의 중력에 따라 달라져서 발사 전에는 확정할 수 없다.")]
+    public float aimTolerance = 3f;
 
     [Header("보급")]
     [Tooltip("이 포탑이 받을 수 있는 탄약·연료. 비우면 아무것도 소비하지 않는다.\n" +

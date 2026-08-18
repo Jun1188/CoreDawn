@@ -51,7 +51,7 @@ public class ProceduralRecoil : MonoBehaviour, ICameraMotionModule
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
-        MotionSpring.Step(ref _value, ref _velocity, frequency, damping, dt);
+        MotionSpring.Step(ref _value, ref _velocity, MotionSpring.Visible(frequency, dt), damping, dt);
 
         // 스프링 위에 얹는 완만한 복원 — 연사로 쌓인 각을 서서히 되돌린다
         _value = MotionSpring.Damp(_value, Vector3.zero, returnSpeed, dt);
@@ -75,9 +75,12 @@ public class ProceduralRecoil : MonoBehaviour, ICameraMotionModule
             scale *= 1f + speedInfluence * Mathf.Clamp01(m.SpeedRatio);
         }
 
-        _velocity.x += MotionSpring.SolveImpulseVelocity(-recoilX * scale, frequency, damping);
-        _velocity.y += MotionSpring.SolveImpulseVelocity(Random.Range(-recoilY, recoilY) * scale, frequency, damping);
-        _velocity.z += MotionSpring.SolveImpulseVelocity(Random.Range(-recoilZ, recoilZ) * scale, frequency, damping);
+        // 임펄스 역산도 Update와 같은 진동수를 써야 "딱 그만큼 튄다"가 성립한다
+        float f = MotionSpring.Visible(frequency, Time.deltaTime);
+
+        _velocity.x += MotionSpring.SolveImpulseVelocity(-recoilX * scale, f, damping);
+        _velocity.y += MotionSpring.SolveImpulseVelocity(Random.Range(-recoilY, recoilY) * scale, f, damping);
+        _velocity.z += MotionSpring.SolveImpulseVelocity(Random.Range(-recoilZ, recoilZ) * scale, f, damping);
     }
 
 #if UNITY_EDITOR

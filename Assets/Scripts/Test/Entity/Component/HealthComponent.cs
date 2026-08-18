@@ -47,6 +47,21 @@ public class HealthComponent
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 최대/현재 체력과 사망 여부를 저장된 값으로 되돌린다.
+    ///
+    /// SetMaxHealth와 달리 현재 체력을 채워주지 않는다. 또 OnDeath를 발화시키지 않는다 —
+    /// 복원은 사망이라는 사건이 아니라 사망해 있던 상태로 옮겨 앉는 것이고,
+    /// 발화시키면 사망 연출·드롭·전멸 판정이 로드할 때마다 다시 돈다.
+    /// </summary>
+    public void RestoreState(float max, float current, bool isDead)
+    {
+        maxHealth = Mathf.Max(1f, max);
+        currentHealth = Mathf.Clamp(current, 0f, maxHealth);
+        IsDead = isDead;
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
     public void Heal(float healAmount)
     {
         if (IsDead) return;

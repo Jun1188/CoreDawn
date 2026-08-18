@@ -10,19 +10,17 @@ public class PlayerInventoryHolder : MonoBehaviour
     [Header("Slot Size Settings")]
     [SerializeField] private int hotbarSize = 7;
     [SerializeField] private int mainInventorySize = 18;
-    [SerializeField] private int craftingInputSize = 4;
-    [SerializeField] private int craftingOutputSize = 1;
 
     [Header("Starting Items (Inspector)")]
     [SerializeField] private ItemStack[] startingItems;
+
     // C# 데이터 메모리 공간
+    // (구 제작 4+1 컨테이너 제거 — uGUI 손제작 화면 전용이었다. UITK 인벤토리 패널은
+    //  가방·핫바에서 직접 재료를 소모하고 결과를 돌려주므로 별도 그릇이 필요 없다)
     public ItemContainer HotbarContainer { get; private set; }
     public ItemContainer MainContainer { get; private set; }
-    public ItemContainer CraftingInputContainer { get; private set; }
-    public ItemContainer CraftingOutputContainer { get; private set; }
 
     [Header("References")]
-    public InventoryProcessor inventoryProcessor;
     public PlayerController playerController; // 플레이어 컨트롤러 참조
 
     private void Awake()
@@ -33,8 +31,6 @@ public class PlayerInventoryHolder : MonoBehaviour
         // 인스펙터에서 지정한 개수로 컨테이너 생성
         HotbarContainer = new ItemContainer(hotbarSize);
         MainContainer = new ItemContainer(mainInventorySize);
-        CraftingInputContainer = new ItemContainer(craftingInputSize);
-        CraftingOutputContainer = new ItemContainer(craftingOutputSize);
 
         // 2. 인스펙터에 등록된 시작 아이템 주입
         SeedStartingItems();
@@ -44,6 +40,8 @@ public class PlayerInventoryHolder : MonoBehaviour
     private void SeedStartingItems()
     {
         if (startingItems == null) return;
+        // 세이브를 불러오는 중이면 곧 저장된 소지품으로 덮어쓴다 — 시작 아이템까지 얹으면 중복 지급이 된다
+        if (SaveLoadContext.IsRestoring) return;
 
         foreach (var stack in startingItems)
         {
@@ -82,26 +80,7 @@ public class PlayerInventoryHolder : MonoBehaviour
         return false;
     }
 
-    /// <summary>제작 버튼 클릭 시 실행</summary>
-    public void StartHandCrafting(RecipeDataSO recipe)
-    {
-        if (inventoryProcessor != null)
-        {
-            inventoryProcessor.SetRecipeAndStart(recipe);
-        }
-    }
-
-    public void ReturnCraftingInputsToPlayer()
-    {
-        if (CraftingInputContainer == null) return;
-
-        for (int i = 0; i < CraftingInputContainer.SlotCount; i++)
-        {
-            ItemStack stack = CraftingInputContainer.TakeAt(i);
-            if (stack != null && stack.item != null && stack.amount > 0)
-            {
-                AddItemToPlayer(stack.item, stack.amount);
-            }
-        }
-    }
+    // (구 StartHandCrafting / ReturnCraftingInputsToPlayer 제거 — uGUI 손제작 화면 전용이었다.
+    //  UITK 인벤토리 패널이 가방·핫바에서 직접 소모·지급하므로 재료를 맡아두는 그릇도,
+    //  화면을 닫을 때 돌려주는 절차도 필요 없다)
 }

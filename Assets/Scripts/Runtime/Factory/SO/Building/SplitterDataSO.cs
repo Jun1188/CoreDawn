@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -30,7 +33,7 @@ public enum OutletState
     Blocked,
 }
 
-public class SplitterBehavior : IBuildingBehavior, IInteractiveBehavior
+public class SplitterBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
 {
     readonly Building _b;
     int _next;   // 라운드로빈 커서 — 다음에 밀어볼 출력 연결 인덱스
@@ -221,5 +224,71 @@ public class SplitterBehavior : IBuildingBehavior, IInteractiveBehavior
             return true;
         }
         return false;   // 갈 곳이 없다 → 대기(stall). 하류가 소비하면 NotifyUpstream으로 깨어난다
+    }
+
+    // ── 세이브 ────────────────────────────────────────────────────
+    //
+    // 필터는 사람이 손으로 설정한 값이라 반드시 보존돼야 한다 —
+    // 라인을 다시 이어 붙이는 것보다 필터를 다시 찍는 쪽이 훨씬 성가시다.
+    // 집합은 순회 순서가 보장되지 않으므로 저장할 때 정렬한다 (같은 상태 → 같은 파일).
+
+    public class SaveState
+    {
+        [JsonProperty("next")] public int Next;
+        [JsonProperty("filters")] public List<DirFilter> Filters = new();
+        [JsonProperty("blocked")] public List<Direction> Blocked = new();
+        [JsonProperty("passed")] public List<string> Passed = new();
+
+        public class DirFilter
+        {
+            [JsonProperty("dir")] public Direction Direction;
+            [JsonProperty("items")] public List<string> ItemIds = new();
+        }
+    }
+
+    public object CaptureState()
+    {
+        var s = new SaveState { Next = _next };
+
+        foreach (var kv in _itemsByDir.OrderBy(k => (int)k.Key))
+            s.Filters.Add(new SaveState.DirFilter
+            {
+                Direction = kv.Key,
+                ItemIds = kv.Value.Select(SaveRefs.IdOf).Where(id => id != null).OrderBy(id => id).ToList(),
+            });
+
+        s.Blocked = _blocked.OrderBy(d => (int)d).ToList();
+        s.Passed = _passed.Select(SaveRefs.IdOf).Where(id => id != null).OrderBy(id => id).ToList();
+        return s;
+    }
+
+    public void RestoreState(JToken state)
+    {
+        var s = SaveJson.FromToken<SaveState>(state);
+        if (s == null) return;
+
+        _dirsByItem.Clear();
+        _itemsByDir.Clear();
+        _blocked.Clear();
+        _passed.Clear();
+
+        _next = s.Next;
+
+        // AddFilter를 거치면 두 딕셔너리의 역인덱스 불변식이 저절로 지켜진다
+        if (s.Filters != null)
+            foreach (var f in s.Filters)
+                if (f?.ItemIds != null)
+                    foreach (var id in f.ItemIds)
+                        AddFilter(f.Direction, SaveRefs.Item(id));
+
+        if (s.Blocked != null)
+            foreach (var d in s.Blocked) _blocked.Add(d);
+
+        if (s.Passed != null)
+            foreach (var id in s.Passed)
+            {
+                var item = SaveRefs.Item(id);
+                if (item != null) _passed.Add(item);
+            }
     }
 }

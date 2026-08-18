@@ -39,6 +39,16 @@ public class Gun : MonoBehaviour
     /// <summary>재장전 중인가 — 읽기 전용. 진행은 StartReload로만 시작된다.</summary>
     public bool IsReloading { get; private set; }
 
+    /// <summary>
+    /// 세이브 복원 전용 — 장전된 탄수를 되돌린다. 재장전 중이었다면 그 상태는 취소한다.
+    /// 예비탄은 인벤토리가 곧 복원되므로 여기서 건드리지 않는다.
+    /// </summary>
+    public void RestoreAmmo(int ammo)
+    {
+        CurrentAmmo = Mathf.Max(0, ammo);
+        IsReloading = false;
+    }
+
     private float lastFireTime;
     private float currentSpread;
     private Rigidbody playerRb; // 이동 속도에 따른 탄퍼짐 가중치용
@@ -72,11 +82,19 @@ public class Gun : MonoBehaviour
         float targetSpread = gunData.baseSpread * speedFactor;
 
         currentSpread = Mathf.Lerp(currentSpread, targetSpread, Time.deltaTime * gunData.spreadRecoveryRate);
+
+        // 빈 탄창은 알아서 채운다. 특정 시점(Start·장착)에 한 번 거는 대신 여기서 보는 이유는,
+        // 초기화 중 무기가 껐다 켜지면 OnDisable의 StopAllCoroutines가 재장전을 끊어버리기
+        // 때문이다 — 그 경합에서 살아남으려면 상태를 계속 확인하는 편이 맞다.
+        // 인벤토리에 탄이 없으면 StartReload가 조용히 물러나므로 헛돌지 않는다.
+        if (CurrentAmmo <= 0 && !IsReloading) StartReload();
     }
 
     private void OnEnable()
     {
-        // 무기를 스왑해서 꺼낼 때마다 상태 초기화
+        // 무기를 스왑해서 꺼낼 때마다 상태 초기화.
+        // 집어넣을 때 OnDisable이 재장전 코루틴을 끊으므로 여기서 반드시 풀어줘야 한다
+        // (안 풀면 재장전 중에 바꾼 총이 영영 '재장전 중'으로 굳어 쏘지 못한다).
         IsReloading = false;
     }
 
@@ -107,6 +125,10 @@ public class Gun : MonoBehaviour
 
         Fire(rounds);
         Fired?.Invoke(this);
+
+        // 마지막 탄을 쐈으면 방아쇠를 다시 당길 것 없이 알아서 채운다.
+        // 인벤토리에 탄이 없으면 StartReload가 조용히 물러나므로 헛돌지 않는다.
+        if (CurrentAmmo <= 0) StartReload();
         return true;
     }
 

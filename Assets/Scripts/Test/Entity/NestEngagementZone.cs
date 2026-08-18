@@ -19,6 +19,16 @@ public sealed class NestEngagementZone : MonoBehaviour
 
     public bool IsActivePhase => !dayOnly || TimeManager.Instance == null || TimeManager.Instance.Phase == DayPhase.Day;
 
+    /// <summary>맵 데이터로 세울 때 쓴다 — 같은 프리팹이라도 둥지마다 사나움이 다를 수 있다.</summary>
+    public void Configure(float min, float max, float chase, float leash, bool dayOnlyRule)
+    {
+        minimumRange = Mathf.Max(0f, min);
+        maximumRange = Mathf.Max(minimumRange, max);
+        chaseRange = Mathf.Max(maximumRange, chase);
+        leashRange = Mathf.Max(1f, leash);
+        dayOnly = dayOnlyRule;
+    }
+
     public bool CanSpawnFor(Vector3 nestPosition, Vector3 targetPosition)
     {
         if (!IsActivePhase) return false;

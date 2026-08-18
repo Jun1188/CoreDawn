@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 /// <summary>채굴기. 주기적으로 아이템을 생산해 출력 포트로 내보낸다.</summary>
@@ -25,7 +27,7 @@ public class MinerDataSO : BuildingDataSO
 /// 출력 버퍼가 가득 차면 채굴을 멈추고(stall), 하류가 아이템을 소비해
 /// NotifyUpstream으로 깨워줄 때 재개한다 → 아이템 유실 없음.
 /// </summary>
-public class MinerBehavior : IBuildingBehavior
+public class MinerBehavior : IBuildingBehavior, ISaveableBehavior
 {
     readonly Building    _b;
     readonly MinerDataSO _data;
@@ -82,5 +84,32 @@ public class MinerBehavior : IBuildingBehavior
             _readyAt = sim.Now + interval;
             sim.ScheduleWake(_b, interval);
         }
+    }
+
+    // ── 세이브 ────────────────────────────────────────────────────
+
+    public class SaveState
+    {
+        [JsonProperty("target")] public string TargetItemId;
+        [JsonProperty("readyAt")] public float ReadyAt;
+    }
+
+    public object CaptureState() => new SaveState
+    {
+        TargetItemId = SaveRefs.IdOf(_target),
+        ReadyAt = _readyAt,
+    };
+
+    public void RestoreState(JToken state)
+    {
+        var s = SaveJson.FromToken<SaveState>(state);
+        if (s == null) return;
+
+        // 배치 직후 OnAfterPlaced가 광맥에서 이미 대상을 정했겠지만, 저장된 값이 정본이다
+        if (!string.IsNullOrEmpty(s.TargetItemId)) _target = SaveRefs.Item(s.TargetItemId);
+        _readyAt = s.ReadyAt;
+
+        // 기상 예약은 심의 힙에 있던 것이라 저장 대상이 아니다 — 완료 시각으로부터 다시 건다
+        if (_readyAt >= 0f) _b.Sim.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Sim.Now));
     }
 }

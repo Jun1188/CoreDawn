@@ -14,11 +14,8 @@ public class FlowFieldManager : MonoBehaviour
     [Tooltip("주기 갱신 간격(초). 1~3초 권장.")]
     [SerializeField, Range(1f, 3f)] private float rebuildInterval = 2f;
 
-    [Tooltip("타워 목표의 시드 비용. 코어(0)보다 크게 주면 몬스터가 코어를 우선 목표로 삼는다. 10 = 한 칸 거리.")]
-    [SerializeField] private int towerGoalCost = 30;
-
-    [Tooltip("맵에 직접 배선된 인스턴스가 먼저 열린 다른 씬의 FlowFieldManager를 승계합니다.")]
-    [SerializeField] private bool preferSceneInstance;
+    [Tooltip("건물 데이터에 위협도가 없을 때 쓰는 시드 비용(구 씬 호환). 10 = 한 칸 거리.")]
+    [SerializeField] private int fallbackGoalCost = 80;
 
     private readonly FlowField field = new FlowField();
     private readonly List<FlowField.Goal> goalBuffer = new List<FlowField.Goal>();
@@ -31,19 +28,10 @@ public class FlowFieldManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            if (preferSceneInstance && !Instance.preferSceneInstance)
-            {
-                var previous = Instance;
-                Instance = this;
-                // FlowFieldManager가 타워·둥지와 같은 통합 루트에 붙을 수 있으므로
-                // 중복 정리 시 GameObject 전체를 파괴하면 안 된다.
-                Destroy(previous);
-            }
-            else
-            {
-                Destroy(this);
-                return;
-            }
+            // FlowFieldManager가 타워·둥지와 같은 통합 루트에 붙을 수 있으므로
+            // 중복 정리 시 GameObject 전체를 파괴하면 안 된다 — 컴포넌트만 뗀다.
+            Destroy(this);
+            return;
         }
         else
         {
@@ -108,7 +96,12 @@ public class FlowFieldManager : MonoBehaviour
         {
             if (!building.IsValidTarget()) continue;
             if (building.Data is BeltDataSO) continue; // 벨트만 목표 제외
-            int seedCost = building.IsCore ? 0 : towerGoalCost;
+
+            // 무엇부터 노릴지는 건물이 정한다 — 코어 0(최종 목표), 공격 타워는 낮게(먼저 부순다),
+            // 일반 건물은 높게(굳이 돌아가지 않는다). 시드가 작을수록 그 목표가 가깝게 계산된다.
+            int seedCost = building.IsCore ? 0
+                         : building.Data != null ? building.Data.threatSeedCost
+                         : fallbackGoalCost;
 
             var col = building.GetComponentInChildren<Collider>();
             if (col != null)

@@ -16,6 +16,19 @@ public class HotbarController : MonoBehaviour, IInputReceiver
     private int currentHotbarIndex;
     public int CurrentHotbarIndex => currentHotbarIndex;
 
+    /// <summary>
+    /// 세이브 복원 전용 — 선택 칸을 되돌리고 그 칸에 맞는 무기를 다시 장착시킨다.
+    /// (장착 상태는 핫바 선택에서 유도되므로 무기 쪽을 따로 저장할 필요가 없다)
+    /// </summary>
+    public void RestoreSelection(int index)
+    {
+        currentHotbarIndex = Mathf.Max(0, index);
+
+        EquipFromActiveSlot();
+
+        if (HotbarUI.Instance != null) HotbarUI.Instance.RefreshHotbar();
+    }
+
     public int Priority => InputPriority.HudWidget;
     public bool IsInputActive => isActiveAndEnabled;
 
@@ -25,14 +38,21 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         if (player == null) player = FindFirstObjectByType<PlayerController>();
     }
 
+    private ItemContainer watched;
+
     private System.Collections.IEnumerator Start()
     {
         if (InputManager.Instance != null) InputManager.Instance.Register(this);
 
-        // PlayerInventoryHolder seeds the starting hotbar in Awake, while
-        // WeaponManager disables every weapon model in Start. Wait until all
-        // Start callbacks have finished, then equip slot 0 so a configured
-        // starting gun is visible and usable immediately.
+        // 핫바 내용이 바뀌면(인벤 조작·제작·줍기·드롭 무엇이든) 장착을 스스로 맞춘다.
+        // 바꾸는 쪽이 "장착도 갱신해 달라"고 부르던 호출들(구 RefreshAllGameUIs)이 전부 사라진다 —
+        // 호출을 한 군데라도 빠뜨리면 손에 든 무기와 핫바가 어긋나던 문제도 함께 사라진다.
+        watched = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
+        if (watched != null) watched.Changed += EquipFromActiveSlot;
+
+        // 첫 장착은 한 프레임 미룬다. PlayerInventoryHolder는 Awake에 시작 핫바를 채우는데
+        // WeaponManager는 Start에서 무기 모델을 전부 끄기 때문에, 지금 장착하면 그 뒤에
+        // 꺼져 맨손으로 시작한다. 모든 Start가 끝난 다음에 걸어야 손에 남는다.
         yield return null;
         EquipFromActiveSlot();
     }
@@ -40,6 +60,7 @@ public class HotbarController : MonoBehaviour, IInputReceiver
     private void OnDisable()
     {
         if (InputManager.Instance != null) InputManager.Instance.Unregister(this);
+        if (watched != null) { watched.Changed -= EquipFromActiveSlot; watched = null; }
     }
 
     public bool OnInput(in InputEvent e)
@@ -120,9 +141,7 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         DroppedItem.Spawn(slot.item, 1, spawnPos, player.playerCamera.forward);
 
         slot.amount--;
-        container.Touch();
+        container.Touch();   // Changed → 위 구독이 장착을, HUD가 표시를 스스로 맞춘다
         if (slot.amount <= 0) container.TakeAt(currentHotbarIndex);
-
-        if (InventoryManager.Instance != null) InventoryManager.Instance.RefreshAllGameUIs();
     }
 }
