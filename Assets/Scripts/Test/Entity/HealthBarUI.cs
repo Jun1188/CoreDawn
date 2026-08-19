@@ -12,6 +12,25 @@ public class HealthBarUI : MonoBehaviour
             entity = GetComponentInParent<Entity>();
     }
 
+    /// <summary>
+    /// 런타임 생성 바(WorldHealthBar)용 배선 — 인스펙터를 못 쓰는 경우의 통로.
+    /// 이미 활성화된 뒤라면 구독을 새 대상으로 옮긴다.
+    /// </summary>
+    public void Bind(Entity target, Image fill)
+    {
+        if (isActiveAndEnabled && entity != null)
+            entity.OnHealthChanged -= UpdateHealthBar;
+
+        entity = target;
+        fillImage = fill;
+
+        if (isActiveAndEnabled && entity != null)
+        {
+            entity.OnHealthChanged += UpdateHealthBar;
+            UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+        }
+    }
+
     private void OnEnable()
     {
         if (entity != null)

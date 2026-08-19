@@ -138,6 +138,10 @@ public class Monster : Entity
         base.Start();
         if (StateMachine.CurrentState == null)
             StateMachine.SetState(new IdleState());
+
+        // 머리 위 HP 바 — 보스는 크게. SetAsBoss가 Instantiate 직후(Start 이전)에 불리므로
+        // 여기서 isBoss는 이미 확정돼 있다.
+        WorldHealthBar.Attach(this, large: isBoss);
     }
 
     protected override void Update()
