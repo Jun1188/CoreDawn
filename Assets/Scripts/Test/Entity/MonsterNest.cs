@@ -11,8 +11,29 @@ public class MonsterNest : Entity
         public Transform point;
         public Monster linkedBoss;
         public GameObject bossPrefab;
+        [Tooltip("이 포인트에서 낮에 나오는 방어 몬스터의 최대 HP. 0 이하면 프리팹 기본값을 쓴다.")]
+        public float daySpawnMonsterMaxHp = 0f;
+        [Tooltip("이 포인트 보스의 최대 HP. 0 이하면 보스 프리팹 기본값을 쓴다.")]
+        public float bossMaxHp = 0f;
         [HideInInspector] public bool isDestroyed = false;
         [HideInInspector] public int destroyedDay = -1;
+    }
+
+    /// <summary>
+    /// 낮 방어 스폰 한 자리 — 위치와 그 자리에서 태어날 몬스터의 최대 HP.
+    /// 위치만 넘기면 어느 포인트의 HP 설정인지 알 수 없어 자리 단위로 묶는다.
+    /// </summary>
+    public readonly struct DefenderSpawnSlot
+    {
+        public readonly Vector3 position;
+        /// <summary>0 이하 = 프리팹 기본값 유지.</summary>
+        public readonly float monsterMaxHp;
+
+        public DefenderSpawnSlot(Vector3 position, float monsterMaxHp)
+        {
+            this.position = position;
+            this.monsterMaxHp = monsterMaxHp;
+        }
     }
 
     [Header("Nest Settings")]
@@ -265,7 +286,7 @@ public class MonsterNest : Entity
 
             if (dist <= SensorRange)
             {
-                List<Vector3> spawnable = null;
+                List<DefenderSpawnSlot> spawnable = null;
                 bool canSpawn;
                 if (engagementZone != null)
                 {
@@ -278,7 +299,7 @@ public class MonsterNest : Entity
                 }
                 else
                 {
-                    spawnable = GetDaySpawnablePositions(player);
+                    spawnable = GetDaySpawnableSlots(player);
                     canSpawn = spawnable.Count > 0;
                 }
 
@@ -345,6 +366,8 @@ public class MonsterNest : Entity
         SnapBossToGround(go);
         spawnPoint.linkedBoss = go.GetComponent<Monster>();
         spawnPoint.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        if (spawnPoint.linkedBoss != null && spawnPoint.bossMaxHp > 0f)
+            spawnPoint.linkedBoss.Health.SetMaxHealth(spawnPoint.bossMaxHp);
         Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
     }
 
@@ -503,6 +526,10 @@ public class MonsterNest : Entity
         // 보스가 보스 취급을 받지 못하고 교전 구역에도 묶이지 않아, 불러온 게임에서만
         // 다르게 행동하게 된다. 위치만 저장값을 쓰고 나머지는 평시와 동일하다.
         sp.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        // 포인트별 보스 HP도 평시 스폰과 같게 맞춘다 — 저장된 현재/최대 HP는
+        // 세이브 모듈이 이 뒤에 덮어쓰므로 순서상 안전하다.
+        if (sp.linkedBoss != null && sp.bossMaxHp > 0f)
+            sp.linkedBoss.Health.SetMaxHealth(sp.bossMaxHp);
         return sp.linkedBoss;
     }
 
@@ -526,9 +553,9 @@ public class MonsterNest : Entity
     ///     거리와 무관하게 그 포인트만 멈춘다 — 눈앞 팝인 방지.
     ///     화면 밖(옆·뒤)이거나 벽·절벽에 가려져 있으면 계속 나온다.
     /// </summary>
-    public List<Vector3> GetDaySpawnablePositions(Player player)
+    public List<DefenderSpawnSlot> GetDaySpawnableSlots(Player player)
     {
-        var result = new List<Vector3>();
+        var result = new List<DefenderSpawnSlot>();
         if (player == null) return result;
         Vector3 playerPos = player.transform.position;
         Camera eye = Camera.main;   // 플레이어 시점 카메라 — 시야각 판정의 기준
@@ -543,18 +570,18 @@ public class MonsterNest : Entity
                 if (d > daySpawnMaxRange) continue;
                 if (d <= daySpawnMinRange) continue;
                 if (IsOnPlayerScreen(pos, player, eye)) continue;
-                result.Add(pos);
+                result.Add(new DefenderSpawnSlot(pos, sp.daySpawnMonsterMaxHp));
             }
 
         // 포인트가 하나도 <b>배선되지 않은</b> 둥지만 둥지 중심을 같은 규칙으로 판정한다
-        // (GetAllActiveSpawnPositions의 폴백과 짝). 포인트가 있었는데 전부 파괴된 둥지는
+        // (GetAllActiveDefenderSlots의 폴백과 짝). 포인트가 있었는데 전부 파괴된 둥지는
         // 여기로 오면 안 된다 — 보스를 잡아 포인트를 없앤 보상이 낮 스폰 중단이다.
         if (!HasConfiguredSpawnPoints)
         {
             float d = Vector3.Distance(transform.position, playerPos);
             if (d <= daySpawnMaxRange && d > daySpawnMinRange &&
                 !IsOnPlayerScreen(transform.position, player, eye))
-                result.Add(transform.position);
+                result.Add(new DefenderSpawnSlot(transform.position, 0f));
         }
         return result;
     }
@@ -584,6 +611,25 @@ public class MonsterNest : Entity
 
         int mask = Physics.DefaultRaycastLayers & ~LayerMask.GetMask("Monster", "Player", "Character");
         return !Physics.Raycast(probe, dir / dist, dist - 0.3f, mask);
+    }
+
+    /// <summary>
+    /// 활성화된 모든 스폰 포인트를 낮 방어 스폰 자리(위치 + 포인트별 몬스터 HP)로 반환.
+    /// 유효한 포인트가 없으면 둥지 중심을 기본 HP(0 = 프리팹 값)로 돌려준다.
+    /// </summary>
+    public List<DefenderSpawnSlot> GetAllActiveDefenderSlots()
+    {
+        var slots = new List<DefenderSpawnSlot>();
+        if (spawnPoints != null)
+            foreach (var sp in spawnPoints)
+            {
+                if (sp == null || sp.isDestroyed || sp.point == null) continue;
+                slots.Add(new DefenderSpawnSlot(sp.point.position, sp.daySpawnMonsterMaxHp));
+            }
+
+        if (slots.Count == 0)
+            slots.Add(new DefenderSpawnSlot(transform.position, 0f));
+        return slots;
     }
 
     /// <summary>

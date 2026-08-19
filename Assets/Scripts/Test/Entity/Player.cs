@@ -11,7 +11,9 @@ public class Player : Entity
 {
     [SerializeField] private SensorComponent sensor = new SensorComponent();
 
-    [Tooltip("근접 자동 반격 — 사거리 안의 몬스터를 쿨다운마다 공격한다. 원거리는 총기(Bullet 피격)가 담당.")]
+    // 근접 자동 반격은 제거됐다 — 눈에 보이는 공격 동작 없이 몬스터 HP가 깎여
+    // "보스가 자기 자신을 공격한다"로 보이는 혼란을 만들었다. 피해는 총기(Bullet)만 준다.
+    // CombatComponent 자체는 엔티티 계약(Entity.Combat) 유지용으로만 남긴다.
     [SerializeField] private CombatComponent combat = new CombatComponent();
 
     public override SensorComponent Sensor => sensor;
@@ -33,18 +35,6 @@ public class Player : Entity
         base.Update();
         if (IsDead) return;
         ScanForMonsters();
-        MeleeAttack();
-    }
-
-    // 사거리 안까지 접근한 몬스터에 대한 근접 자동 반격
-    private void MeleeAttack()
-    {
-        if (!combat.CanAttack()) return;
-        Entity target = sensor.GetClosestTarget(combat.AttackRange);
-        if (target.IsValidTarget())
-        {
-            combat.TryAttack(target);
-        }
     }
 
     private void ScanForMonsters()
