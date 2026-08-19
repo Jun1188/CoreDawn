@@ -92,8 +92,12 @@ public static class WorldTerrainGenerator
     // 워프 파장(18칸)이 물길 폭(3칸)보다 훨씬 길어서 물길 양쪽이 <b>같은 방향</b>으로 밀리는데,
     // 아래의 "바깥쪽 택하기"는 그 이동분을 양쪽에서 깎아낸다 — 세기가 반폭(1.5칸)을 넘던
     // 3.2칸에서는 그 깎임이 물길을 통째로 지워, 강이 중간중간 웅덩이로 끊겼다.
-    const float WarpStrength = 0.8f;
+    const float WarpStrength = 1.1f;
     const float WarpFrequency = 0.055f;
+    // 잔물결 옥타브 — 긴 파장 하나로는 흔들림이 너무 완만해 안 흔든 것처럼 보인다.
+    // 두 진폭의 합(1.45칸)은 여전히 물길 반폭(1.5칸) 안이다.
+    const float WarpFineStrength = 0.35f;
+    const float WarpFineFrequency = 0.23f;
     const float DetailAmplitude = 0.14f;  // 지면 미세 굴곡(m)
     const float DetailFrequency = 0.09f;
 
@@ -176,9 +180,12 @@ public static class WorldTerrainGenerator
                 float tx = (float)i / (res - 1) * map.width;
                 float ty = (float)j / (res - 1) * map.height;
 
-                // 도메인 워핑 — 조회 좌표를 흔들어 경계의 직선을 깬다
-                float wx = tx + (Mathf.PerlinNoise(tx * WarpFrequency, ty * WarpFrequency) - 0.5f) * 2f * WarpStrength;
-                float wy = ty + (Mathf.PerlinNoise(tx * WarpFrequency + 37.7f, ty * WarpFrequency + 12.3f) - 0.5f) * 2f * WarpStrength;
+                // 도메인 워핑 — 조회 좌표를 흔들어 경계의 직선을 깬다.
+                // 긴 파장(큰 굽이) + 잔물결 두 옥타브.
+                float wx = tx + (Mathf.PerlinNoise(tx * WarpFrequency, ty * WarpFrequency) - 0.5f) * 2f * WarpStrength
+                              + (Mathf.PerlinNoise(tx * WarpFineFrequency + 91.7f, ty * WarpFineFrequency + 45.3f) - 0.5f) * 2f * WarpFineStrength;
+                float wy = ty + (Mathf.PerlinNoise(tx * WarpFrequency + 37.7f, ty * WarpFrequency + 12.3f) - 0.5f) * 2f * WarpStrength
+                              + (Mathf.PerlinNoise(tx * WarpFineFrequency + 7.9f, ty * WarpFineFrequency + 63.1f) - 0.5f) * 2f * WarpFineStrength;
 
                 // 워핑된 좌표와 원래 좌표 중 <b>바깥쪽</b>을 택한다(거리장은 안이 음수).
                 // 워핑이 형상을 밖으로 밀어 지면을 파는 일을 막는 장치 —
@@ -198,7 +205,10 @@ public static class WorldTerrainGenerator
 
                 // 맵 가장자리도 같은 곡선으로 깎아 물에 잠근다 — 바다에 뜬 섬으로 보이게.
                 // 타일은 건드리지 않으므로 길찾기·건설 판정은 그대로다(외형만 바뀐다).
-                float edge = Mathf.Min(Mathf.Min(tx, ty), Mathf.Min(map.width - tx, map.height - ty));
+                // 해안선은 <b>워핑된 좌표</b>로 잰다 — 원좌표로 재면 맵 테두리를 따라가는
+                // 자로 그은 직선이 된다. 워핑 최대 진폭(1.45칸) < 잠김 폭(1.8칸)이라
+                // 맵 최외곽은 언제나 물에 잠긴 채로 남는다(지형 절단면 노출 없음).
+                float edge = Mathf.Min(Mathf.Min(wx, wy), Mathf.Min(map.width - wx, map.height - wy));
                 dig = Mathf.Max(dig, Submerge(ShoreWidth - edge));
 
                 h -= dig;
@@ -568,8 +578,9 @@ public static class WorldTerrainGenerator
                 int cx = Mathf.Clamp(Mathf.FloorToInt(tx), 0, map.width - 1);
                 int cy = Mathf.Clamp(Mathf.FloorToInt(ty), 0, map.height - 1);
 
-                // 암벽 프리팹이 서는 자리 — 풀을 심어도 벽 속에 묻힌다
-                if (map.TileAt(cx, cy) == MapTile.Cliff) continue;
+                // 절벽 타일에도 심는다 — 암벽이 벽면 후퇴 노이즈로 물러난 자리는 절벽
+                // 타일의 앞부분이 드러나는데, 여기를 건너뛰면 그 띠가 맨땅으로 남는다.
+                // 바위 밑에 깔리는 풀은 어차피 가려지고, 디테일이라 판정에도 안 낀다.
 
                 // 물가 아래는 비운다. 판정을 실제 높이로 하므로 풀이 끊기는 선이
                 // 칸 모서리가 아니라 물가 곡선을 그대로 따라간다.
@@ -799,31 +810,78 @@ public static class WorldTerrainGenerator
                     0.6f * Mathf.PerlinNoise(x * 0.23f + 61.7f, y * 0.23f + 8.9f)
                   + 0.4f * (Hash(x, y, 47) % 1000 / 1000f));
 
+                // 회전 흐름 필드 — 이웃 바위끼리 <b>비슷한 각도로 천천히 도는</b> 연속
+                // 노이즈. 칸별 독립 각도는 벽면을 모자이크로 만들고, 고정 각도는 격자를
+                // 드러낸다. 흐름을 따라 돌면 벽 전체가 워핑된 것처럼 굽이쳐 보인다.
+                float flow = Mathf.PerlinNoise(x * 0.07f + 12.3f, y * 0.07f + 71.9f);
+
                 float yaw, scaleX, scaleZ, tall;
                 float rockHeight;
+                float? fixedX = null, fixedZ = null;   // 가장자리 줄의 지면 축 — 후퇴 위치로 고정
 
                 if (depth == 0)
                 {
-                    // ── 가장자리 줄: 90° 단위 회전 + 비균등 스케일 ──
+                    // ── 가장자리 줄: 90° 기본 + 흐름 기울임(±14°) + 비균등 스케일 ──
                     // 원인 규명이 끝난 틈의 마지막 근원은 <b>둥근 옆구리</b>다 — AABB끼리
                     // 닿아도 실제 메시는 안쪽으로 굽어 V자 틈이 남는다. 답은 벽 방향으로
-                    // 이웃 칸 위까지 늘려 서로 파묻는 것. 비균등 스케일은 회전과 섞이면
-                    // 형상이 기울어지므로 여기서는 회전을 축 정렬(90° 단위)로 제한한다.
-                    yaw = 90f * (Hash(x, y, 89) % 4);
-                    bool swap = (Hash(x, y, 89) % 4) % 2 == 1;
+                    // 이웃 칸 위까지 늘려 서로 파묻는 것.
+                    // 기울인 바위의 축정렬 점유 폭은 두 발자국이 섞인 값이 된다 —
+                    //   가로 점유 = cosδ·a + sinδ·b,  세로 점유 = sinδ·a + cosδ·b
+                    // 원하는 점유(벽 방향 alongSize, 지면 방향 acrossBudget)를 넣고
+                    // a·b를 역산하면, 기울여도 예산에 정확히 맞는 배율이 나온다.
+                    // 펄린은 0.5 근처를 맴돌아 ±14로 곱해도 실제로는 ±4°쯤만 나온다 —
+                    // 눈에 띄려면 배율을 크게 잡고 칸별 지터를 얹은 뒤 한도로 자른다.
+                    // 한도 20°는 역산 안전선(tanδ ≤ 지면축/벽축 최악비 0.42 → 22.8°) 안이다.
+                    float tiltYaw = Mathf.Clamp(
+                        (flow - 0.5f) * 2f * 34f + (Hash(x, y, 167) % 1000 / 1000f - 0.5f) * 14f,
+                        -20f, 20f);
+                    int quarter = Hash(x, y, 89) % 4;
+                    yaw = 90f * quarter + tiltYaw;
+                    bool swap = quarter % 2 == 1;
                     float footX = swap ? footprints[pick].y : footprints[pick].x;
                     float footZ = swap ? footprints[pick].x : footprints[pick].y;
 
                     // 벽이 달리는 축(직사각형이 긴 쪽)으로는 겹치도록 크게,
-                    // 지면을 마주보는 축으로는 예산에 꽉 차게.
+                    // 지면을 마주보는 축으로는 예산에서 <b>후퇴량</b>을 뺀 만큼.
+                    //
+                    // 후퇴가 이 벽의 "일자" 를 깨는 장치다: 침범 금지 탓에 앞면이 밖으로는
+                    // 못 나가므로, 전부 경계선에 딱 붙으면 자로 그은 벽이 된다. 대신 바위마다
+                    // 앞면을 0~0.9m 파도치듯 안으로 물리고(파장 ≈ 8칸), 뒷면은 절벽 쪽에
+                    // 밀착시켜 두께만 얇아지게 한다 — 벽을 관통하는 구멍은 생기지 않는다.
                     bool alongX = rectW >= rectH;
-                    float acrossBudget = (alongX ? rectH : rectW) * Mathf.Lerp(0.94f, 1f, Hash(x, y, 43) % 1000 / 1000f);
+                    float recede = Mathf.Lerp(0f, 0.9f,
+                        0.7f * Mathf.PerlinNoise(x * 0.13f + 21.2f, y * 0.13f + 55.8f)
+                      + 0.3f * (Hash(x, y, 163) % 1000 / 1000f));
+                    float acrossBudget = Mathf.Max((alongX ? rectH : rectW) * 0.98f - recede, c * 0.8f);
                     float alongSize = Mathf.Min(alongX ? rectW : rectH,
                                                 c * Mathf.Lerp(1.25f, 1.9f, Mathf.PerlinNoise(x * 0.31f + 3.1f, y * 0.31f + 44.9f)));
-                    float scaleAcross = acrossBudget * 0.98f / (alongX ? footZ : footX);
-                    float scaleAlong = alongSize / (alongX ? footX : footZ);
-                    scaleX = alongX ? scaleAlong : scaleAcross;
-                    scaleZ = alongX ? scaleAcross : scaleAlong;
+
+                    // 지면이 어느 쪽인가 — 후퇴는 지면 쪽에서만 일어나고 반대쪽은 밀착한다.
+                    // 양쪽 다 지면(폭 1칸 능선)이면 가운데 두고 양쪽으로 균등하게 얇아진다.
+                    bool groundNeg = alongX ? !RowCliff(y0 - 1, x0, x1) : !ColumnCliff(x0 - 1, y0, y1);
+                    bool groundPos = alongX ? !RowCliff(y1 + 1, x0, x1) : !ColumnCliff(x1 + 1, y0, y1);
+                    float rectLo = (alongX ? y0 - y : x0 - x) - 0.5f;   // 칸 중심 기준 직사각형 범위(칸)
+                    float rectHi = (alongX ? y1 - y : x1 - x) + 0.5f;
+                    float acrossCenter;
+                    if (groundNeg && !groundPos) acrossCenter = rectHi * c - acrossBudget * 0.5f;
+                    else if (groundPos && !groundNeg) acrossCenter = rectLo * c + acrossBudget * 0.5f;
+                    else acrossCenter = (rectLo + rectHi) * 0.5f * c;
+                    if (alongX) fixedZ = acrossCenter; else fixedX = acrossCenter;
+
+                    float cs = Mathf.Cos(tiltYaw * Mathf.Deg2Rad), sn = Mathf.Abs(Mathf.Sin(tiltYaw * Mathf.Deg2Rad));
+                    float det = cs * cs - sn * sn;   // δ≤14°라 0.88 이상 — 역산은 항상 안전
+                    float wantX = alongX ? alongSize : acrossBudget;
+                    float wantZ = alongX ? acrossBudget : alongSize;
+                    float extentX = (cs * wantX - sn * wantZ) / det;   // 월드 X를 향한 발자국의 실제 크기
+                    float extentZ = (cs * wantZ - sn * wantX) / det;
+                    // 역산이 음수로 떨어지면(짧은 축 대비 기울임이 과할 때) 기울임을 포기한다
+                    if (extentX <= 0.05f || extentZ <= 0.05f)
+                    {
+                        yaw = 90f * quarter;
+                        extentX = wantX; extentZ = wantZ;
+                    }
+                    scaleX = extentX / footX;
+                    scaleZ = extentZ / footZ;
 
                     // 최저 높이를 보장하되, <b>최저선 자체가 노이즈</b>다 — 상수로 두면
                     // 자연 높이가 그보다 낮은 바위들이 전부 정확히 같은 높이에 들러붙어
@@ -837,9 +895,10 @@ public static class WorldTerrainGenerator
                 }
                 else
                 {
-                    // ── 안쪽: 자유각 + 균등 발판 ── 회전한 바위의 축정렬 점유 폭은 원본의
-                    // √2배까지 커지므로 배율은 그 실제 점유 폭에서 역산한다.
-                    yaw = Hash(x, y, 89) % 360;
+                    // ── 안쪽: 흐름을 따라 도는 자유각 + 균등 발판 ── 흐름 필드가 큰 방향을
+                    // 정하고 칸별 해시가 ±25°만 얹는다. 회전한 바위의 축정렬 점유 폭은
+                    // 원본의 √2배까지 커지므로 배율은 그 실제 점유 폭에서 역산한다.
+                    yaw = flow * 720f + (Hash(x, y, 89) % 1000 / 1000f - 0.5f) * 50f;
                     float span = RotatedSpan(footprints[pick], yaw);
                     float scaleForTop = (wantTop - baseY) / (heights[pick] * stretch);
                     float scaleForBudget = Mathf.Min(rectW, rectH) * 0.98f / span * sizeNoise;
@@ -851,13 +910,24 @@ public static class WorldTerrainGenerator
                     baseY = Mathf.Min(wantTop - rockHeight, 2.4f + (depth - 1) * 1.2f);
                 }
 
-                // 축별 실제 반폭(m) — 90° 회전이면 발자국 축이 바뀐 것을 위에서 이미 반영했다
-                float halfX = depth == 0
-                    ? scaleX * ((Hash(x, y, 89) % 4) % 2 == 1 ? footprints[pick].y : footprints[pick].x) * 0.5f
-                    : scaleX * RotatedSpan(footprints[pick], yaw) * 0.5f;
-                float halfZ = depth == 0
-                    ? scaleZ * ((Hash(x, y, 89) % 4) % 2 == 1 ? footprints[pick].x : footprints[pick].y) * 0.5f
-                    : halfX;
+                // 축별 실제 반폭(m). 가장자리 줄은 역산의 목표가 곧 월드 점유 폭이라
+                // (기울임 포함) 회전각별 재계산이 필요 없다 — 기울임 반폭까지 정확하다.
+                float halfX, halfZ;
+                if (depth == 0)
+                {
+                    float cs2 = Mathf.Abs(Mathf.Cos((yaw - 90f * (Hash(x, y, 89) % 4)) * Mathf.Deg2Rad));
+                    bool swap2 = (Hash(x, y, 89) % 4) % 2 == 1;
+                    float fx = (swap2 ? footprints[pick].y : footprints[pick].x) * scaleX;
+                    float fz = (swap2 ? footprints[pick].x : footprints[pick].y) * scaleZ;
+                    float sn2 = Mathf.Sqrt(Mathf.Max(0f, 1f - cs2 * cs2));
+                    halfX = (cs2 * fx + sn2 * fz) * 0.5f;
+                    halfZ = (sn2 * fx + cs2 * fz) * 0.5f;
+                }
+                else
+                {
+                    halfX = scaleX * RotatedSpan(footprints[pick], yaw) * 0.5f;
+                    halfZ = halfX;
+                }
 
                 // 중심의 이동 범위는 두 조건의 교집합이다:
                 //   ① 직사각형 안 — 지면 타일을 침범하지 않는다
@@ -876,10 +946,10 @@ public static class WorldTerrainGenerator
                 // 연속 노이즈(벽면의 큰 물결) + 칸별 해시(낱개 어긋남). 크기가 줄어든 만큼
                 // 여유가 생겨 클램프에 깎이지 않는다 — 크기 노이즈가 위치 노이즈를 살린다.
                 Vector3 pos = world.CellToWorldCenter(new Vector2Int(x, y));
-                pos.x += Mathf.Clamp(waveX * 3f * c + (Hash(x, y, 57) % 1000 / 1000f - 0.5f) * 1.4f,
-                                     minX, Mathf.Max(minX, maxX));
-                pos.z += Mathf.Clamp(waveZ * 3f * c + (Hash(x, y, 63) % 1000 / 1000f - 0.5f) * 1.4f,
-                                     minZ, Mathf.Max(minZ, maxZ));
+                pos.x += fixedX ?? Mathf.Clamp(waveX * 3f * c + (Hash(x, y, 57) % 1000 / 1000f - 0.5f) * 1.4f,
+                                               minX, Mathf.Max(minX, maxX));
+                pos.z += fixedZ ?? Mathf.Clamp(waveZ * 3f * c + (Hash(x, y, 63) % 1000 / 1000f - 0.5f) * 1.4f,
+                                               minZ, Mathf.Max(minZ, maxZ));
                 pos.y = world.Origin.y + baseY - bottoms[pick] * tall;
 
                 // 안쪽 바위는 살짝 기울인다 — 데모도 일부를 기울여 놓았다. 수직 이음매가
@@ -940,6 +1010,27 @@ public static class WorldTerrainGenerator
 
                     Vector3 pos = world.CellToWorld(new Vector2Int(x, y))
                                 + new Vector3((dx + 1) * 0.5f * world.CellSize, 0f, (dy + 1) * 0.5f * world.CellSize);
+
+                    // 벽면 후퇴 노이즈를 큰 바위와 공유한다 — 이음새가 경계선에 남아 있으면
+                    // 물러난 벽의 홈을 도로 메워 일자 벽이 되살아난다. 물러날 방향(지면 반대)의
+                    // 두 칸이 절벽일 때만, 그 안으로 들어간다.
+                    float rec = Mathf.Min(0.6f * world.CellSize, Mathf.Lerp(0f, 0.9f,
+                        0.7f * Mathf.PerlinNoise(x * 0.13f + 21.2f, y * 0.13f + 55.8f)
+                      + 0.3f * (Hash(x, y, 163) % 1000 / 1000f)));
+                    if (dx == 1)   // 동서 쌍 — 남북으로 물린다
+                    {
+                        if (!CliffAt(x, y - 1) || !CliffAt(x + 1, y - 1))
+                        { if (CliffAt(x, y + 1) && CliffAt(x + 1, y + 1)) pos.z += rec; }
+                        else if (!CliffAt(x, y + 1) || !CliffAt(x + 1, y + 1))
+                        { if (CliffAt(x, y - 1) && CliffAt(x + 1, y - 1)) pos.z -= rec; }
+                    }
+                    else           // 남북 쌍 — 동서로 물린다
+                    {
+                        if (!CliffAt(x - 1, y) || !CliffAt(x - 1, y + 1))
+                        { if (CliffAt(x + 1, y) && CliffAt(x + 1, y + 1)) pos.x += rec; }
+                        else if (!CliffAt(x + 1, y) || !CliffAt(x + 1, y + 1))
+                        { if (CliffAt(x - 1, y) && CliffAt(x - 1, y + 1)) pos.x -= rec; }
+                    }
                     pos.y = world.Origin.y - CliffBaseSink - bottoms[pick] * tall;
 
                     var chink = (GameObject)PrefabUtility.InstantiatePrefab(prefabs[pick], parent);
