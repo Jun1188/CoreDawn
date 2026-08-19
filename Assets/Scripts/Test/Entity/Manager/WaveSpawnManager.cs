@@ -238,7 +238,8 @@ public class WaveSpawnManager
     /// null이면 모든 활성 포인트를 쓴다(레거시 호출).
     /// </summary>
     public void SpawnNestDefenders(MonsterNest nest, Player target, int amount,
-                                   List<MonsterNest.DefenderSpawnSlot> spawnSlots = null)
+                                   List<MonsterNest.DefenderSpawnSlot> spawnSlots = null,
+                                   Monster escortBoss = null)
     {
         if (spawnSlots == null) spawnSlots = nest.GetAllActiveDefenderSlots();
         if (spawnSlots.Count == 0 || amount <= 0) return;
@@ -270,14 +271,18 @@ public class WaveSpawnManager
             if (slot.monsterMaxHp > 0f)
                 monster.Health.SetMaxHealth(slot.monsterMaxHp);
 
-            // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정
+            // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정.
+            // escortBoss가 있으면(보스전 지원군) 교전 구역의 거리 규칙을 건너뛰고
+            // 보스의 교전에 종속시킨다 — 태어나자마자 거리를 이유로 되돌아가면 스폰이 낭비다.
             var zone = nest.GetComponent<NestEngagementZone>();
-            if (zone != null)
-                monster.SetAsNestDefender(target, nest.transform.position, zone);
+            if (zone != null || escortBoss != null)
+                monster.SetAsNestDefender(target, nest.transform.position, zone, escortBoss);
             else
                 monster.SetAsNestDefender(target);
         }
-        Debug.Log($"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
+        Debug.Log(escortBoss != null
+            ? $"[WaveSpawnManager] 보스 교전 지원군 {amount}마리를 스폰했습니다."
+            : $"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
     }
 
     // ── 세이브 복원 표면 ─────────────────────────────────────────

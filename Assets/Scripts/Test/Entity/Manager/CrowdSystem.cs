@@ -53,6 +53,12 @@ public static class CrowdSystem
     public static void Unregister(Monster monster) => members.Remove(monster);
 
     /// <summary>
+    /// 살아 있는 몬스터 전역 등록부 — 개체별 물리 쿼리 없이 후보를 훑어야 하는 쪽이 읽는다
+    /// (HostileIntentProbe의 보스 도발 판정 등). 등록은 Monster.OnEnable/OnDisable이 맡는다.
+    /// </summary>
+    public static IReadOnlyList<Monster> Members => members;
+
+    /// <summary>
     /// 겹침 해소 한 패스 — 모든 몬스터의 이동(Update)이 끝난 뒤(LateUpdate) 러너가 호출한다.
     /// 보정을 전부 모아 마지막에 한 번 적용해 순회 순서에 따른 편향을 없앤다.
     /// </summary>
