@@ -482,6 +482,9 @@ public static class WorldTerrainGenerator
     // 지면을 덮은 <b>잔디 메시</b>에서 온다 — 바닥이 평평한 그림에서 풀이 선 그림으로 바뀐다.
 
     const string PrefabFolder = "Assets/ThirdParty/Idyllic Fantasy Nature/Prefabs";
+    // 풀·꽃은 <b>우리 변형</b>을 심는다 — 머티리얼이 Art/Materials/Vegetation의 우리 사본이라,
+    // 시간대 틴트(SkyboxTimeView)가 서드파티 에셋을 건드리지 않고 색을 만질 수 있다.
+    const string VegPrefabFolder = "Assets/Prefabs/Vegetation";
     const int DetailRes = 512;          // 디테일 격자(맵 전체). 121칸 맵이면 칸당 약 4점
     const int DetailPatch = 32;         // 패치 단위 — Demo와 같은 값
     const float DetailDistance = 120f;  // 이 거리 밖에서는 그리지 않는다
@@ -629,10 +632,11 @@ public static class WorldTerrainGenerator
 
     static void AddProto(List<DetailPrototype> into, string prefabName, float min, float max)
     {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/{prefabName}.prefab");
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{VegPrefabFolder}/{prefabName}.prefab");
         if (prefab == null)
         {
-            Debug.LogWarning($"[WorldTerrainGenerator] 디테일 프리팹 없음: {prefabName}");
+            Debug.LogWarning($"[WorldTerrainGenerator] 디테일 프리팹 없음: {VegPrefabFolder}/{prefabName} — " +
+                             "우리 소유 변형이 필요하다(머티리얼 틴트 대상). 원본만 있다면 변형을 먼저 만들 것.");
             return;
         }
 
