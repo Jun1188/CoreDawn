@@ -18,7 +18,14 @@ public class MovementComponent
     [Tooltip("넉백 감쇠율(초당). 클수록 짧고 굵게 밀린다. 총 밀림 거리는 감쇠율과 무관하게 효과가 정한다.")]
     [SerializeField] private float knockbackDamping = 8f;
 
+    [Header("Ground (접지)")]
+    [Tooltip("매 프레임 발을 지면 높이에 맞춘다. 끄면 스폰 당시 높이를 그대로 유지한다(비행 유닛용).")]
+    [SerializeField] private bool stickToGround = true;
+
     private Transform transform;
+
+    /// <summary>루트 피벗에서 콜라이더 바닥까지의 거리 — 발을 지면에 놓을 때 더해 줄 값.</summary>
+    private float pivotToBottom;
     private List<Node> currentPath;
     private int targetIndex;
     private Vector3 flowDirection; // 방향 이동 모드 (플로우필드)
@@ -55,7 +62,31 @@ public class MovementComponent
     public event Action OnDestinationReached;
     public event Action OnPathBlocked;
 
-    public void Initialize(Transform ownerTransform) => transform = ownerTransform;
+    public void Initialize(Transform ownerTransform)
+    {
+        transform = ownerTransform;
+        pivotToBottom = MeasurePivotToBottom(ownerTransform);
+    }
+
+    /// <summary>
+    /// 피벗에서 콜라이더 바닥까지 얼마나 내려가는지. 몬스터의 피벗은 캡슐 <i>중앙</i>이라
+    /// 이 값을 더해 줘야 발이 지면에 놓인다.
+    ///
+    /// <c>Collider.bounds</c>(월드 AABB)를 쓰지 않고 치수에서 직접 계산한다 —
+    /// bounds는 물리 동기화 전에는 낡은 값을 주는데, 이 함수는 Awake에서 불린다.
+    /// </summary>
+    private static float MeasurePivotToBottom(Transform t)
+    {
+        float scale = Mathf.Abs(t.lossyScale.y);
+
+        var capsule = t.GetComponent<CapsuleCollider>();
+        if (capsule != null) return (capsule.height * 0.5f - capsule.center.y) * scale;
+
+        var box = t.GetComponent<BoxCollider>();
+        if (box != null) return (box.size.y * 0.5f - box.center.y) * scale;
+
+        return 0f;
+    }
 
     public void StartMoving(List<Node> path)
     {
@@ -67,6 +98,21 @@ public class MovementComponent
         }
         currentPath = path;
         targetIndex = 0;
+
+        // 등 뒤의 웨이포인트는 건너뛴다. A*는 현재 <b>칸 중심</b>에서 경로를 시작하는데,
+        // 추적(ChaseState)이 주기적으로 경로를 다시 깔 때마다 그 중심으로 한 걸음
+        // 되돌아가는 진동이 생긴다 — 칸이 클수록 뒷걸음이 길어져 순간이동처럼 보인다.
+        // 다음 구간의 진행 방향과 반대쪽에 있는 동안만 건너뛰므로 경로 이탈은 없다.
+        Vector3 pos = transform != null ? transform.position : Vector3.zero;
+        while (targetIndex < currentPath.Count - 1)
+        {
+            Vector3 toCurrent = currentPath[targetIndex].worldPosition - pos;
+            Vector3 segment = currentPath[targetIndex + 1].worldPosition - currentPath[targetIndex].worldPosition;
+            toCurrent.y = 0f;
+            segment.y = 0f;
+            if (Vector3.Dot(toCurrent, segment) > 0f) break;
+            targetIndex++;
+        }
     }
 
     // 플로우필드 방향 이동. 매 프레임 갱신 호출을 전제로 한다 (zero면 정지).
@@ -93,6 +139,28 @@ public class MovementComponent
         // 개체 간 겹침 해소는 여기서 하지 않는다 — 모든 이동이 끝난 뒤 CrowdSystem이
         // 중앙 한 패스(LateUpdate)로 처리한다. 넉백만 개체 소관.
         TickKnockback(deltaTime);
+
+        // 접지는 XZ가 전부 정해진 뒤 마지막에 한다
+        if (stickToGround) StickToGround();
+    }
+
+    /// <summary>
+    /// 발을 지면에 붙인다.
+    ///
+    /// 이게 없으면 개체는 <b>스폰 당시의 Y에 영원히 고정</b>된다(경로 추종·플로우필드 모두
+    /// waypoint.y를 현재 y로 덮어쓰기 때문이다). 스폰 높이는 맵 전체에 하나뿐인
+    /// <see cref="GridManager.SurfaceY"/>인데 지형은 1m 가까이 오르내리므로,
+    /// 지형이 그 값보다 높은 곳(실측 표본의 24%)에서는 개체가 땅에 파묻힌 채로 걸어온다.
+    /// 키가 큰 보스는 티가 안 나지만 키 1m짜리 일반몹은 다리가 통째로 사라진다.
+    /// </summary>
+    private void StickToGround()
+    {
+        Vector3 position = transform.position;
+        float target = GroundSampler.HeightAt(position) + pivotToBottom;
+        if (Mathf.Approximately(position.y, target)) return;
+
+        position.y = target;
+        transform.position = position;
     }
 
     // ── 넉백 — 효과 시스템(KnockbackEffectSO)이 주입하는 외부 충격 ──

@@ -231,9 +231,15 @@ public class WaveSpawnManager
         nightWaveMonsters.Clear();
     }
 
-    public void SpawnNestDefenders(MonsterNest nest, Player target, int amount)
+    /// <summary>
+    /// 둥지 방어 몬스터 스폰. <paramref name="spawnPositions"/>는 둥지가 판정한
+    /// "지금 스폰 가능한 포인트들"(MonsterNest.GetDaySpawnablePositions) — 거리·가림 규칙은
+    /// 반경 값을 소유한 둥지 쪽에 있다. null이면 모든 활성 포인트를 쓴다(레거시 호출).
+    /// </summary>
+    public void SpawnNestDefenders(MonsterNest nest, Player target, int amount,
+                                   List<Vector3> spawnPositions = null)
     {
-        var spawnPositions = nest.GetAllActiveSpawnPositions();
+        if (spawnPositions == null) spawnPositions = nest.GetAllActiveSpawnPositions();
         if (spawnPositions.Count == 0 || amount <= 0) return;
 
         for (int i = 0; i < amount; i++)

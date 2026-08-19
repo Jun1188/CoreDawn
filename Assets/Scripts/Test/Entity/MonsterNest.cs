@@ -44,10 +44,79 @@ public class MonsterNest : Entity
     [Tooltip("방어 몬스터 스폰 쿨타임")]
     public float defenseSpawnCooldown = 10f;
 
-    private SensorComponent sensor = new SensorComponent();
+    [Header("Day Spawn Culling")]
+    [Tooltip("스폰 금지 반경(m) — 플레이어가 이 거리 안이면 보이든 안 보이든 그 포인트는 스폰하지 않는다 " +
+             "(플레이어와 겹쳐 태어나는 것 방지). NestEngagementZone이 붙어 있으면 그쪽 값이 우선한다.")]
+    [SerializeField] private float daySpawnMinRange = 2f;
+    [Tooltip("스폰 시작 반경(m) — 플레이어가 스폰 포인트에서 이 거리 안으로 들어오면 " +
+             "그 포인트가 낮 방어 스폰을 시작한다. 단, 포인트가 플레이어 화면에 실제로 보이는 동안" +
+             "(시야각 안 + 가림 없음)은 팝인 방지를 위해 그 포인트만 멈춘다. " +
+             "NestEngagementZone이 붙어 있으면 그쪽 값이 우선한다.")]
+    [SerializeField] private float daySpawnMaxRange = 15f;
+
     private bool hasWarned;
-    private float lastDefenseSpawnTime;
+    // 음의 무한대 — 플레이어가 스폰 범위에 처음 들어오면 쿨타임 없이 즉시 첫 스폰이 나가야 한다
+    // (0으로 두면 플레이 시작 후 쿨타임만큼은 범위에 들어와도 스폰이 안 나간다).
+    private float lastDefenseSpawnTime = float.NegativeInfinity;
     private NestEngagementZone engagementZone;
+
+    // 둥지마다 OverlapSphere를 돌리지 않는다 — 플레이어는 하나뿐이라 참조를 캐시해 두고
+    // 거리 계산(산술)만으로 감지한다. Monster가 "플레이어가 몬스터를 찾아 콜백"으로
+    // 개체별 물리 쿼리를 없앤 것과 같은 방향의 최적화다.
+    private Player cachedPlayer;
+    private float nextPlayerSearch;   // 플레이어 사망·교체 대비 저빈도 재탐색 타이머
+
+    /// <summary>
+    /// 감지는 경고·스폰에 쓰는 모든 반경을 덮어야 한다 — 감지가 좁으면 스폰 판정 자체가 늦는다.
+    /// 스폰 포인트는 둥지 중심에서 수십 m 떨어질 수 있으므로(맵 오프셋 최대 10칸 = 20m),
+    /// 그 거리만큼 감지를 넓혀야 포인트 근처의 플레이어를 놓치지 않는다.
+    /// </summary>
+    private float SensorRange => Mathf.Max(warningRange, Mathf.Max(triggerRange,
+        engagementZone != null ? engagementZone.MaximumRange : daySpawnMaxRange)) + MaxSpawnPointOffset;
+
+    /// <summary>유효한 플레이어 참조. 캐시가 죽으면 1초에 한 번만 다시 찾는다.</summary>
+    private Player FindPlayer()
+    {
+        if (cachedPlayer != null && cachedPlayer.IsValidTarget()) return cachedPlayer;
+        if (Time.time < nextPlayerSearch) return null;
+
+        nextPlayerSearch = Time.time + 1f;
+        cachedPlayer = FindFirstObjectByType<Player>();
+        return cachedPlayer != null && cachedPlayer.IsValidTarget() ? cachedPlayer : null;
+    }
+
+    /// <summary>스폰 포인트가 둥지 중심에서 가장 멀리 떨어진 거리.</summary>
+    private float MaxSpawnPointOffset
+    {
+        get
+        {
+            float max = 0f;
+            if (spawnPoints != null)
+                foreach (var sp in spawnPoints)
+                    if (sp != null && sp.point != null)
+                        max = Mathf.Max(max, Vector3.Distance(transform.position, sp.point.position));
+            return max;
+        }
+    }
+
+    /// <summary>
+    /// 플레이어와 가장 가까운 스폰 앵커(둥지 중심 또는 살아 있는 스폰 포인트)의 위치.
+    /// 스폰·경고 판정을 둥지 중심으로만 재면, 중심에서 먼 포인트 옆에 서 있는 플레이어를
+    /// 한참 못 보다가 중심 반경에 들어서는 순간 갑자기 쏟아내는 것처럼 보인다.
+    /// </summary>
+    private Vector3 NearestSpawnAnchor(Vector3 playerPos)
+    {
+        Vector3 best = transform.position;
+        float bestDist = Vector3.Distance(best, playerPos);
+        if (spawnPoints != null)
+            foreach (var sp in spawnPoints)
+            {
+                if (sp == null || sp.isDestroyed || sp.point == null) continue;
+                float d = Vector3.Distance(sp.point.position, playerPos);
+                if (d < bestDist) { bestDist = d; best = sp.point.position; }
+            }
+        return best;
+    }
 
     /// <summary>
     /// 맵 데이터로 세울 때 쓴다. 복구 일수는 인스펙터 전용(private)이라 밖에서 못 넣으므로
@@ -58,7 +127,7 @@ public class MonsterNest : Entity
                           int bossDays, int nestDays)
     {
         if (warning > 0f) warningRange = warning;
-        if (trigger > 0f) triggerRange = trigger;
+        if (trigger > 0f) { triggerRange = trigger; daySpawnMaxRange = trigger; }
         if (defenseAmount > 0) defenseSpawnAmount = defenseAmount;
         if (defenseCooldown > 0f) defenseSpawnCooldown = defenseCooldown;
         if (bossDays > 0) bossRecoveryDays = bossDays;
@@ -75,9 +144,6 @@ public class MonsterNest : Entity
         // 파괴 연출 지연시간 0, Entity의 기본 파괴 시 Destroy 방지용
         SetDeathBehavior(destroy: false, delay: 0f);
         
-        sensor.Initialize(this);
-        sensor.SetTargetLayer("Player", "Character");
-        sensor.SetDetectionRange(Mathf.Max(warningRange, triggerRange));
         engagementZone = GetComponent<NestEngagementZone>();
     }
 
@@ -158,17 +224,26 @@ public class MonsterNest : Entity
 
         if (IsDestroyed) return;
 
-        Entity detectedEntity = sensor.GetClosestTarget(warningRange);
-        if (detectedEntity != null && !detectedEntity.IsDead)
+        // 물리 쿼리 없는 감지 — 캐시한 플레이어와의 거리(산술)로만 판정한다.
+        Player player = FindPlayer();
+        if (player != null && !player.IsDead)
         {
-            Player player = detectedEntity.GetComponent<Player>();
-            if (player != null)
-            {
-                float dist = Vector3.Distance(transform.position, player.transform.position);
+            Vector3 anchor = NearestSpawnAnchor(player.transform.position);
+            float dist = Vector3.Distance(anchor, player.transform.position);
 
-                bool canSpawn = engagementZone != null
-                    ? engagementZone.CanSpawnFor(transform.position, player.transform.position)
-                    : dist <= triggerRange;
+            if (dist <= SensorRange)
+            {
+                List<Vector3> spawnable = null;
+                bool canSpawn;
+                if (engagementZone != null)
+                {
+                    canSpawn = engagementZone.CanSpawnFor(anchor, player.transform.position);
+                }
+                else
+                {
+                    spawnable = GetDaySpawnablePositions(player);
+                    canSpawn = spawnable.Count > 0;
+                }
 
                 if (canSpawn)
                 {
@@ -178,7 +253,7 @@ public class MonsterNest : Entity
                         lastDefenseSpawnTime = Time.time;
                         if (BattleManager.Instance != null && BattleManager.Instance.Spawner != null)
                         {
-                            BattleManager.Instance.Spawner.SpawnNestDefenders(this, player, defenseSpawnAmount);
+                            BattleManager.Instance.Spawner.SpawnNestDefenders(this, player, defenseSpawnAmount, spawnable);
                         }
                     }
                 }
@@ -402,6 +477,76 @@ public class MonsterNest : Entity
         var sp = spawnPoints[index];
         if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
         sp.linkedBoss = null;
+    }
+
+    /// <summary>
+    /// 낮 방어 스폰이 지금 가능한 포인트들.
+    ///
+    /// 규칙(포인트별):
+    ///   · 플레이어가 스폰 시작 반경(daySpawnMaxRange) 안 → 스폰한다
+    ///   · 스폰 금지 반경(daySpawnMinRange) 안 → 무조건 멈춘다 (플레이어와 겹쳐 태어남 방지)
+    ///   · 포인트가 플레이어 <b>화면에 실제로 보이는 동안</b>(카메라 시야각 안 + 가림 없음)은
+    ///     거리와 무관하게 그 포인트만 멈춘다 — 눈앞 팝인 방지.
+    ///     화면 밖(옆·뒤)이거나 벽·절벽에 가려져 있으면 계속 나온다.
+    /// </summary>
+    public List<Vector3> GetDaySpawnablePositions(Player player)
+    {
+        var result = new List<Vector3>();
+        if (player == null) return result;
+        Vector3 playerPos = player.transform.position;
+        Camera eye = Camera.main;   // 플레이어 시점 카메라 — 시야각 판정의 기준
+
+        bool anyPoint = false;
+        if (spawnPoints != null)
+            foreach (var sp in spawnPoints)
+            {
+                if (sp == null || sp.isDestroyed || sp.point == null) continue;
+                anyPoint = true;
+
+                Vector3 pos = sp.point.position;
+                float d = Vector3.Distance(pos, playerPos);
+                if (d > daySpawnMaxRange) continue;
+                if (d <= daySpawnMinRange) continue;
+                if (IsOnPlayerScreen(pos, player, eye)) continue;
+                result.Add(pos);
+            }
+
+        // 포인트가 하나도 없는 둥지는 둥지 중심을 같은 규칙으로 판정한다 (GetAllActiveSpawnPositions의 폴백과 짝)
+        if (!anyPoint)
+        {
+            float d = Vector3.Distance(transform.position, playerPos);
+            if (d <= daySpawnMaxRange && d > daySpawnMinRange &&
+                !IsOnPlayerScreen(transform.position, player, eye))
+                result.Add(transform.position);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 스폰 포인트가 플레이어 <b>화면에 실제로 보이는가</b> — 두 단계로 판정한다:
+    ///   ① 카메라 시야각(뷰포트) 안인가 — 옆·뒤에 있으면 화면에 없으니 스폰해도 팝인이 아니다
+    ///   ② 시야각 안이라면, 벽·절벽에 가려져 있지는 않은가(포인트 눈높이 → 플레이어 머리 레이캐스트)
+    /// 몬스터·플레이어 콜라이더는 벽이 아니므로 마스크에서 뺀다.
+    /// </summary>
+    private static bool IsOnPlayerScreen(Vector3 spawnPos, Player player, Camera eye)
+    {
+        Vector3 probe = spawnPos + Vector3.up * 1.2f;   // 스폰될 몬스터의 몸통 높이
+
+        if (eye != null)
+        {
+            Vector3 vp = eye.WorldToViewportPoint(probe);
+            // 뷰포트 살짝 밖까지 여유를 둔다 — 화면 가장자리에서 태어나는 것도 팝인으로 보인다
+            if (vp.z <= 0f || vp.x < -0.1f || vp.x > 1.1f || vp.y < -0.1f || vp.y > 1.1f)
+                return false;   // 시야각 밖
+        }
+
+        Vector3 head = player.transform.position + Vector3.up * 1.6f;
+        Vector3 dir = head - probe;
+        float dist = dir.magnitude;
+        if (dist <= 0.5f) return true;   // 사실상 겹친 위치 — 가릴 것이 없다
+
+        int mask = Physics.DefaultRaycastLayers & ~LayerMask.GetMask("Monster", "Player", "Character");
+        return !Physics.Raycast(probe, dir / dist, dist - 0.3f, mask);
     }
 
     /// <summary>

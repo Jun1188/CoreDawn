@@ -19,6 +19,11 @@ public static class CrowdSystem
     private const float MovingWeight = 3f;
     private const float IdleWeight = 1f;
 
+    // 프레임당 밀림을 이 속도(m/s)로 제한한다. 겹침을 한 프레임에 전부 되돌리면
+    // 수십 cm를 즉시 워프해 "뒤로 순간이동"으로 보인다 — 특히 여러 마리가 플레이어
+    // 앞에 몰릴 때. 몇 프레임에 걸쳐 풀어도 결과는 같고 눈에는 밀려나는 걸음으로 보인다.
+    private const float MaxSeparationSpeed = 4f;
+
     private static readonly List<Monster> members = new List<Monster>();
     private static readonly List<Vector3> corrections = new List<Vector3>();
     private static CrowdSystemRunner runner;
@@ -100,10 +105,14 @@ public static class CrowdSystem
             }
         }
 
+        float maxStep = MaxSeparationSpeed * Time.deltaTime;
         for (int i = 0; i < n; i++)
         {
             Vector3 c = corrections[i];
             if (c == Vector3.zero) continue;
+
+            float len = c.magnitude;
+            if (len > maxStep) c *= maxStep / len;
 
             var m = members[i];
             Vector3 next = m.transform.position + c;

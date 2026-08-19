@@ -76,6 +76,18 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     [Tooltip("착지 직전에 누른 점프를 기억하는 시간(초).")]
     [SerializeField] private float jumpBufferTime = 0.15f;
 
+    [Header("Player Sounds")]
+    [SerializeField] private AudioClip[] walkSounds; // 걷기 발소리 배열
+    [SerializeField] private AudioClip[] runSounds;  // 달리기 발소리 배열
+    [SerializeField] private AudioClip slideSound;    // 슬라이딩 소리
+    [SerializeField] private AudioClip jumpSound;
+    [SerializeField] private AudioClip landSound;
+
+    [SerializeField, Range(0f, 1f)] private float footstepVolume = 0.4f;
+    [SerializeField, Range(0f, 1f)] private float jumpVolume = 0.7f;
+    [SerializeField, Range(0f, 1f)] private float landVolume = 0.7f;
+    [SerializeField, Range(0f, 1f)] private float slideVolume = 0.6f;
+
     [Header("Ground Probe")]
     [SerializeField] private LayerMask groundMask = ~0;
     [Tooltip("발밑 탐지 거리(m). 너무 크면 계단 아래에서 뜬 채로 접지 판정된다.")]
@@ -345,6 +357,8 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         Motion.Stance = PlayerStance.Stand;
 
         if (InputManager.Instance != null) InputManager.Instance.Register(this);
+
+        Motion.Stepped += OnPlayerStepped; // 발걸음 이벤트 연결
     }
 
     private void OnDisable()
@@ -363,6 +377,8 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         UpdateStanceGeometry();
 
         if (InputManager.Instance != null) InputManager.Instance.Unregister(this);
+
+        Motion.Stepped -= OnPlayerStepped; // 해제
     }
 
     private void OnDestroy()
@@ -517,6 +533,30 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         Motion.StrideCycle = Mathf.Repeat(next, Mathf.PI * 2f);
     }
 
+    private void OnPlayerStepped(float amplitude)
+    {
+        // 1. 달리는 중이면 runSounds, 아니면 walkSounds 선택
+        bool isRunning = Motion.SpeedRatio > 1.1f; // 기본 속도보다 빠르면 달리기
+        AudioClip[] targetClips = (isRunning && runSounds != null && runSounds.Length > 0) 
+                                ? runSounds 
+                                : walkSounds;
+
+        if (targetClips == null || targetClips.Length == 0) return;
+
+        // 2. 랜덤 클립 선택
+        AudioClip clip = targetClips[Random.Range(0, targetClips.Length)];
+        float finalVolume = footstepVolume * amplitude;
+
+        // 3. 웅크린 상태일 때는 걷기 소리를 더 작고 죽은 소리로 조절
+        if (Motion.Stance == PlayerStance.Crouch)
+        {
+            finalVolume *= 0.4f; 
+        }
+
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.Play3DSFX(clip, transform.position, finalVolume);
+    }
+
     #endregion
 
     #region [8. Ground & Stance]
@@ -542,7 +582,16 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         {
             float impact = Mathf.Clamp01(-_fallSpeed / Mathf.Max(1f, hardLandSpeed));
             Motion.TimeSinceLanded = 0f;
-            if (impact > 0.02f) Motion.RaiseLanded(impact);
+            if (impact > 0.02f) 
+            {
+                Motion.RaiseLanded(impact);
+
+                if (landSound != null)
+                {
+                    if (SoundManager.Instance != null)
+                        SoundManager.Instance.Play3DSFX(landSound, transform.position, landVolume * impact);
+                }
+            }
         }
 
         Motion.IsGrounded = grounded;
@@ -641,6 +690,12 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
         PlayerStance prev = Motion.Stance;
         Motion.Stance = stance;
+
+        if (stance == PlayerStance.Slide && slideSound != null)
+        {
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play3DSFX(slideSound, transform.position, slideVolume);
+        }
 
         float target = stance switch
         {
@@ -778,6 +833,12 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         _coyoteTimer = 0f;
 
         Motion.RaiseJumped(launch);
+
+        if (jumpSound != null)
+        {
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play3DSFX(jumpSound, transform.position, jumpVolume);
+        }
     }
 
     /// <summary>선입력 버퍼를 소비한다. true를 반환했을 때만 소비된다.</summary>

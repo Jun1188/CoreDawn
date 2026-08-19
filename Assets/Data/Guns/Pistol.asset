@@ -28,6 +28,10 @@ MonoBehaviour:
   ammoFilter:
   - {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
   damageMultiplier: 1
+  fireSound: {fileID: 8300000, guid: fd3895a2d40b7c0438eb055779a0f92a, type: 3}
+  reloadSound: {fileID: 8300000, guid: 406c929b7299afb469c82778f8d15d5b, type: 3}
+  fireVolume: 0.8
+  reloadVolume: 0.7
   magSize: 12
   reloadTime: 1.2
   zoomFOV: 40
