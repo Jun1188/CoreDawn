@@ -85,6 +85,30 @@ public class MonsterNest : Entity
         return cachedPlayer != null && cachedPlayer.IsValidTarget() ? cachedPlayer : null;
     }
 
+    /// <summary>맵·에디터가 배선한 스폰 포인트가 하나라도 있는가 — 파괴 여부와 무관.</summary>
+    private bool HasConfiguredSpawnPoints
+    {
+        get
+        {
+            if (spawnPoints != null)
+                foreach (var sp in spawnPoints)
+                    if (sp != null && sp.point != null) return true;
+            return false;
+        }
+    }
+
+    /// <summary>파괴되지 않은 스폰 포인트가 남아 있는가.</summary>
+    private bool HasLiveSpawnPoint
+    {
+        get
+        {
+            if (spawnPoints != null)
+                foreach (var sp in spawnPoints)
+                    if (sp != null && !sp.isDestroyed && sp.point != null) return true;
+            return false;
+        }
+    }
+
     /// <summary>스폰 포인트가 둥지 중심에서 가장 멀리 떨어진 거리.</summary>
     private float MaxSpawnPointOffset
     {
@@ -160,6 +184,12 @@ public class MonsterNest : Entity
         // 출현/추적 거리만 제어하며, 보스의 초기 배치를 막으면 플레이어가 선공할
         // 비선공 보스 자체가 존재하지 않게 된다.
         EnsureBossesSpawned();
+
+        // 코어 머리 위 HP 바 — 둥지가 파괴돼도 남는 코어(indestructibleVisuals[0]) 위에 띄운다.
+        Transform core = indestructibleVisuals != null && indestructibleVisuals.Length > 0
+                         && indestructibleVisuals[0] != null
+            ? indestructibleVisuals[0].transform : transform;
+        WorldHealthBar.Attach(this, core, large: true);
     }
 
     private void SnapBossToGround(GameObject boss)
@@ -183,14 +213,16 @@ public class MonsterNest : Entity
         }
     }
 
-    public override void TakeDamage(float damageAmount)
+    // TakeDamage가 아니라 수렴점(ReceiveDamage)을 막는다 — 총알·몬스터 공격 같은
+    // 효과 경로는 TakeDamage를 거치지 않고 ReceiveDamage로 직행하기 때문이다.
+    public override void ReceiveDamage(float amount)
     {
-        if (IsInvulnerable()) 
+        if (IsInvulnerable())
         {
             // Debug.Log("[MonsterNest] 둥지가 무적 상태입니다! (보스 또는 스폰포인트가 살아있음)");
             return;
         }
-        base.TakeDamage(damageAmount);
+        base.ReceiveDamage(amount);
     }
 
     private bool IsInvulnerable()
@@ -237,7 +269,12 @@ public class MonsterNest : Entity
                 bool canSpawn;
                 if (engagementZone != null)
                 {
-                    canSpawn = engagementZone.CanSpawnFor(anchor, player.transform.position);
+                    // 포인트가 배선된 둥지는 전부 파괴되면 낮 스폰이 멈춰야 한다 —
+                    // 교전 구역은 거리 규칙만 알므로 포인트 생존 여부는 여기서 걸러야 한다.
+                    // (안 걸르면 SpawnNestDefenders가 GetAllActiveSpawnPositions의
+                    //  둥지 중심 폴백을 타고 계속 스폰한다.)
+                    canSpawn = (!HasConfiguredSpawnPoints || HasLiveSpawnPoint)
+                               && engagementZone.CanSpawnFor(anchor, player.transform.position);
                 }
                 else
                 {
@@ -496,12 +533,10 @@ public class MonsterNest : Entity
         Vector3 playerPos = player.transform.position;
         Camera eye = Camera.main;   // 플레이어 시점 카메라 — 시야각 판정의 기준
 
-        bool anyPoint = false;
         if (spawnPoints != null)
             foreach (var sp in spawnPoints)
             {
                 if (sp == null || sp.isDestroyed || sp.point == null) continue;
-                anyPoint = true;
 
                 Vector3 pos = sp.point.position;
                 float d = Vector3.Distance(pos, playerPos);
@@ -511,8 +546,10 @@ public class MonsterNest : Entity
                 result.Add(pos);
             }
 
-        // 포인트가 하나도 없는 둥지는 둥지 중심을 같은 규칙으로 판정한다 (GetAllActiveSpawnPositions의 폴백과 짝)
-        if (!anyPoint)
+        // 포인트가 하나도 <b>배선되지 않은</b> 둥지만 둥지 중심을 같은 규칙으로 판정한다
+        // (GetAllActiveSpawnPositions의 폴백과 짝). 포인트가 있었는데 전부 파괴된 둥지는
+        // 여기로 오면 안 된다 — 보스를 잡아 포인트를 없앤 보상이 낮 스폰 중단이다.
+        if (!HasConfiguredSpawnPoints)
         {
             float d = Vector3.Distance(transform.position, playerPos);
             if (d <= daySpawnMaxRange && d > daySpawnMinRange &&

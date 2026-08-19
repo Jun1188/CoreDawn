@@ -102,8 +102,10 @@ public class Entity : MonoBehaviour
     /// <summary>
     /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.
     /// 피해를 주는 효과 구현(DamageEffectSO·DoT)이 Health.TakeDamage 대신 이걸 호출한다.
+    /// 무적·보호막 같은 받는 쪽 규칙은 여기를 override해야 한다 — TakeDamage만 override하면
+    /// 효과 경로(총알·몬스터 공격 = ApplyEffects → ReceiveDamage)가 그 규칙을 그냥 지나친다.
     /// </summary>
-    public void ReceiveDamage(float amount)
+    public virtual void ReceiveDamage(float amount)
     {
         float final = amount * Effects.IncomingDamageMultiplier;
         if (final > 0f) health.TakeDamage(final);
