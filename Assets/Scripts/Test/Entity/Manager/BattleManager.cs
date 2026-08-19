@@ -16,17 +16,15 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private NightSpawnPointProvider nightSpawnPointProvider;
 
     [Header("Night Wave Completion")]
-    [Tooltip("MainScene opt-in. When enabled, night ends only after the finite WaveDataSO.baseAmount quota is defeated. Legacy scenes keep timed nights by default.")]
-    [SerializeField] private bool quantityBasedNightWaves;
+    [Tooltip("기본 동작: 밤은 시간이 아니라 웨이브 물량(WaveDataSO.baseAmount)을 전멸시켜야 끝난다. " +
+             "낮은 기존대로 시간제. 끄면 레거시 시간제 밤으로 돌아간다.")]
+    [SerializeField] private bool quantityBasedNightWaves = true;
 
     [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 HealthComponent 기본값(100)을 쓴다.")]
     [SerializeField] private float playerMaxHealth = 300f;
 
     [Tooltip("런타임 부착 Player의 몬스터 감지 범위. 기본값(10)이면 밤에 몬스터 전원이 플레이어에게 몰리므로 좁힌다. 0 이하면 기본값 유지.")]
     [SerializeField] private float playerDetectionRange = 5f;
-
-    [Tooltip("런타임 부착 플레이어의 근접 자동 반격 피해 (공격 정의를 인스펙터로 못 만지므로 여기서).")]
-    [SerializeField] private float playerMeleeDamage = 10f;
 
     private Player playerEntity; // 아침 부활 처리용 캐시
     private GameObject playerSceneRoot;
@@ -152,13 +150,8 @@ public class BattleManager : MonoBehaviour
         if (playerDetectionRange > 0f && player.Sensor != null)
             player.Sensor.SetDetectionRange(playerDetectionRange);
 
-        // 근접 자동 반격의 공격 정의 — 런타임 부착이라 인스펙터 배선이 불가능해 여기서 만든다.
-        // 효과 에셋은 EffectDatabase(Resources)에서 집는다 — 개별 에셋을 Resources에 두지 않는다.
-        var damageEffect = EffectDatabaseSO.LoadDefault()?.FindFirst<DamageEffectSO>();
-        if (damageEffect != null && player.Combat != null)
-            player.Combat.SetAttackEffects(new[] { new EffectEntry(damageEffect, playerMeleeDamage) });
-        else if (damageEffect == null)
-            Debug.LogWarning("[BattleManager] EffectDatabase에서 피해 효과를 찾지 못해 플레이어 근접 공격이 무효과입니다.");
+        // 근접 자동 반격 배선은 제거됐다 — 보이지 않는 자동 타격이 "보스가 자기 자신을
+        // 공격해 HP가 준다"는 혼란(버그 리포트)의 원인이었다. 플레이어 피해는 총기만 준다.
         playerEntity = player;
         if (attachedNow)
             Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");

@@ -18,4 +18,7 @@ public class WaveDataSO : GameDataSO
 
     [Tooltip("스폰 시도 간격(초)")]
     public float spawnInterval;
+
+    [Tooltip("이 웨이브 몬스터의 최대 HP. 0 이하면 wave_settings.json → 프리팹 기본값 순으로 폴백한다.")]
+    public float monsterMaxHp;
 }
