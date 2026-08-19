@@ -135,6 +135,13 @@ public class Gun : MonoBehaviour
     // 발사 — 스펙(ProjectileShot)을 만들어 공용 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
     private void Fire(int rounds)
     {
+        if (gunData != null && gunData.fireSound != null)
+        {
+            Vector3 soundPos = muzzlePoint != null ? muzzlePoint.position : transform.position;
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play3DSFX(gunData.fireSound, soundPos, gunData.fireVolume);
+        }
+
         // 탄도(속도·중력·폭발·수명·외형)는 장전된 탄종의 성질 — 총은 각도(조준·탄퍼짐)만 정한다
         var round = CurrentAmmoItem != null ? CurrentAmmoItem.GetModule<AmmoModuleSO>() : null;
         if (round == null)
@@ -199,6 +206,12 @@ public class Gun : MonoBehaviour
     private IEnumerator ReloadRoutine()
     {
         IsReloading = true;
+
+        if (gunData != null && gunData.reloadSound != null)
+        {
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play3DSFX(gunData.reloadSound, transform.position, gunData.reloadVolume);
+        }
         yield return new WaitForSeconds(gunData.reloadTime);
 
         var holder = PlayerInventoryHolder.Instance;
