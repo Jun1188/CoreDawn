@@ -64,6 +64,8 @@ public class MonsterNest : Entity
     public int defenseSpawnAmount = 3;
     [Tooltip("방어 몬스터 스폰 쿨타임")]
     public float defenseSpawnCooldown = 10f;
+    [Tooltip("보스가 교전 중일 때의 지원군 스폰 쿨타임 — 평시보다 짧아야 압박이 이어진다.")]
+    public float bossFightSpawnCooldown = 6f;
 
     [Header("Day Spawn Culling")]
     [Tooltip("스폰 금지 반경(m) — 플레이어가 이 거리 안이면 보이든 안 보이든 그 포인트는 스폰하지 않는다 " +
@@ -161,6 +163,71 @@ public class MonsterNest : Entity
                 if (d < bestDist) { bestDist = d; best = sp.point.position; }
             }
         return best;
+    }
+
+    /// <summary>
+    /// 지금 플레이어와 교전 중인(각성한) 보스. 없으면 null.
+    /// 둥지가 보스의 상태를 모르면, 제 대장이 두들겨 맞는 동안 쫄몹이 "플레이어가 멀다"는
+    /// 이유로 한 마리도 안 나오는 그림이 된다.
+    /// </summary>
+    public Monster EngagedBoss
+    {
+        get
+        {
+            if (spawnPoints == null) return null;
+            foreach (var sp in spawnPoints)
+            {
+                if (sp == null || sp.linkedBoss == null) continue;
+                var boss = sp.linkedBoss;
+                if (!boss.IsDead && boss.IsBoss && boss.HasBeenAttacked) return boss;
+            }
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 보스 교전 중 지원군이 나올 자리 — 거리 규칙은 전부 무시하고 <b>보스에게 가장 가까운</b>
+    /// 살아 있는 스폰 포인트를 쓴다. 다만 그 포인트가 플레이어 화면에 실제로 보이면
+    /// 다음으로 가까운 안 보이는 포인트로 넘어간다(눈앞 팝인 방지). 전부 보이면
+    /// 플레이어에게서 가장 먼 포인트를 쓴다 — 스폰 자체는 절대 멈추지 않는다.
+    /// </summary>
+    private List<DefenderSpawnSlot> GetBossReinforcementSlots(Monster boss, Player player)
+    {
+        var result = new List<DefenderSpawnSlot>();
+        if (spawnPoints == null || boss == null) return result;
+
+        Vector3 bossPos = boss.transform.position;
+        Vector3 playerPos = player != null ? player.transform.position : bossPos;
+        Camera eye = Camera.main;
+
+        NestSpawnPoint bestHidden = null;   // 보스에게 가장 가까운, 화면에 안 보이는 포인트
+        float bestHiddenDist = float.MaxValue;
+        NestSpawnPoint farthestVisible = null;  // 폴백 — 플레이어에게서 가장 먼 포인트
+        float farthestVisibleDist = -1f;
+
+        foreach (var sp in spawnPoints)
+        {
+            if (sp == null || sp.isDestroyed || sp.point == null) continue;
+
+            Vector3 pos = sp.point.position;
+
+            if (player == null || !IsOnPlayerScreen(pos, player, eye))
+            {
+                float d = Vector3.Distance(pos, bossPos);
+                if (d < bestHiddenDist) { bestHiddenDist = d; bestHidden = sp; }
+            }
+            else
+            {
+                float d = Vector3.Distance(pos, playerPos);
+                if (d > farthestVisibleDist) { farthestVisibleDist = d; farthestVisible = sp; }
+            }
+        }
+
+        var chosen = bestHidden ?? farthestVisible;
+        if (chosen != null)
+            result.Add(new DefenderSpawnSlot(chosen.point.position, chosen.daySpawnMonsterMaxHp));
+
+        return result;
     }
 
     /// <summary>
@@ -279,6 +346,30 @@ public class MonsterNest : Entity
 
         // 물리 쿼리 없는 감지 — 캐시한 플레이어와의 거리(산술)로만 판정한다.
         Player player = FindPlayer();
+
+        // 보스가 교전 중이면 거리 규칙 전부(SensorRange·CanSpawnFor·daySpawnMaxRange)를
+        // 우회한다. 대장이 맞고 있는데 "플레이어가 둥지에서 멀다"는 이유로 지원군을 안 보내는 건
+        // 둥지가 제 보스를 버리는 것과 같다. 자리 선정은 보스 기준(GetBossReinforcementSlots).
+        if (player != null && !player.IsDead)
+        {
+            Monster engagedBoss = EngagedBoss;
+            if (engagedBoss != null)
+            {
+                hasWarned = false;
+                if (Time.time >= lastDefenseSpawnTime + bossFightSpawnCooldown)
+                {
+                    lastDefenseSpawnTime = Time.time;
+                    if (BattleManager.Instance != null && BattleManager.Instance.Spawner != null)
+                    {
+                        BattleManager.Instance.Spawner.SpawnNestDefenders(
+                            this, player, defenseSpawnAmount,
+                            GetBossReinforcementSlots(engagedBoss, player), engagedBoss);
+                    }
+                }
+                return;
+            }
+        }
+
         if (player != null && !player.IsDead)
         {
             Vector3 anchor = NearestSpawnAnchor(player.transform.position);

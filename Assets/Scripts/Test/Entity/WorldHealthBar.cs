@@ -11,6 +11,8 @@ public class WorldHealthBar : MonoBehaviour
     const float BarWidth = 1.1f;        // 일반 몬스터 바 폭(m)
     const float BossBarWidth = 1.8f;    // 보스·둥지 코어 바 폭(m)
     const float BarHeight = 0.14f;
+    const float SecondaryBarHeight = 0.07f; // 보조 게이지(인내심)는 체력바보다 얇게
+    const float BarGap = 0.03f;             // 두 바 사이 간격(m)
     const float MaxVisibleDistance = 45f;   // 이보다 멀면 숨김 — 원거리 픽셀 노이즈·드로우 절약
 
     private Entity entity;
@@ -19,6 +21,14 @@ public class WorldHealthBar : MonoBehaviour
     private GameObject visualRoot;  // 표시/숨김 토글 대상 (컴포넌트 자신은 계속 살아 판정한다)
     private Camera cam;
     private float nextCameraSearch; // 카메라 교체(사망 리스폰 등) 대비 저빈도 재탐색
+    private float barWidth;         // 보조 바를 같은 폭으로 세우기 위해 기억해 둔다
+
+    // 보조 게이지(인내심 등) — 값의 출처는 소유자가 넘긴 델리게이트다.
+    // 체력처럼 이벤트로 밀어 넣지 않고 폴링하는 이유는, 인내심이 매 프레임 연속적으로
+    // 변해 이벤트를 쏘면 오히려 낭비이기 때문이다. 바는 하나뿐이라 폴링이 더 싸다.
+    private System.Func<float> secondaryRatio;
+    private GameObject secondaryRoot;
+    private Image secondaryFill;
 
     // Image에 스프라이트가 없으면 Filled 타입 채우기가 그려지지 않으므로 1x1 흰색을 만들어 공유한다
     private static Sprite whiteSprite;
@@ -65,8 +75,47 @@ public class WorldHealthBar : MonoBehaviour
         return bar;
     }
 
+    /// <summary>
+    /// 체력바 바로 아래에 보조 게이지를 단다(보스의 인내심 등). ratio01이 1이면 자동으로 숨는다 —
+    /// 평시엔 만땅이라 계속 떠 있으면 잡음일 뿐이고, 닳기 시작할 때 나타나야 의미가 전달된다.
+    /// 같은 바에 두 번 부르면 마지막 것으로 갱신된다.
+    /// </summary>
+    public void EnableSecondaryBar(System.Func<float> ratio01, Color color)
+    {
+        if (ratio01 == null) return;
+        secondaryRatio = ratio01;
+
+        if (secondaryRoot == null) BuildSecondary(color);
+        else if (secondaryFill != null) secondaryFill.color = color;
+    }
+
+    private void BuildSecondary(Color color)
+    {
+        secondaryRoot = new GameObject("SecondaryCanvas");
+        secondaryRoot.transform.SetParent(transform, false);
+        // 메인 캔버스와 같은 로컬 스케일(0.01)이므로 오프셋은 m 단위 그대로 쓴다.
+        secondaryRoot.transform.localPosition = new Vector3(0f, -(BarHeight * 0.5f + BarGap + SecondaryBarHeight * 0.5f), 0f);
+
+        var canvas = secondaryRoot.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+
+        var canvasRect = secondaryRoot.GetComponent<RectTransform>();
+        canvasRect.sizeDelta = new Vector2(barWidth * 100f, SecondaryBarHeight * 100f);
+        canvasRect.localScale = Vector3.one * 0.01f;   // 100px = 1m
+
+        var bg = CreateImage(secondaryRoot.transform, "BG", new Color(0f, 0f, 0f, 0.55f));
+        Stretch(bg.rectTransform, 0f);
+
+        secondaryFill = CreateImage(secondaryRoot.transform, "Fill", color);
+        Stretch(secondaryFill.rectTransform, 1.5f);
+        secondaryFill.type = Image.Type.Filled;
+        secondaryFill.fillMethod = Image.FillMethod.Horizontal;
+        secondaryFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+    }
+
     private void Build(float width)
     {
+        barWidth = width;
         visualRoot = new GameObject("Canvas");
         visualRoot.transform.SetParent(transform, false);
 
@@ -134,5 +183,19 @@ public class WorldHealthBar : MonoBehaviour
 
         if (visualRoot != null && visualRoot.activeSelf != visible)
             visualRoot.SetActive(visible);
+
+        UpdateSecondary(visible);
+    }
+
+    private void UpdateSecondary(bool ownerVisible)
+    {
+        if (secondaryRoot == null) return;
+
+        float ratio = secondaryRatio != null ? Mathf.Clamp01(secondaryRatio()) : 1f;
+        // 만땅이면 보여줄 게 없다 — 메인 바가 숨을 때도 같이 숨는다.
+        bool show = ownerVisible && ratio < 0.999f;
+
+        if (secondaryRoot.activeSelf != show) secondaryRoot.SetActive(show);
+        if (show && secondaryFill != null) secondaryFill.fillAmount = ratio;
     }
 }
