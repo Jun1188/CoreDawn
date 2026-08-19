@@ -514,6 +514,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:#0B1220}
     <button class="tab" data-pane="building">건물</button>
     <button class="tab" data-pane="combat">전투</button>
     <button class="tab" data-pane="map">맵</button>
+    <button class="tab" data-pane="wave">웨이브</button>
     <span class="sp"></span>
     <span id="shared-stat" style="font-size:12px;color:#5C6E8C;white-space:nowrap;flex-shrink:0"></span>
     <span class="shared">
@@ -717,6 +718,64 @@ html,body{height:100%;margin:0;overflow:hidden;background:#0B1220}
         <div id="c-detail"></div>
       </div>
     </div>
+  </div>
+  <div class="pane" id="pane-wave">
+<style>
+/* ══════════ 웨이브 탭 ══════════ */
+#pane-wave{font:14px/1.5 'Segoe UI','Malgun Gothic',sans-serif;color:#D9E4F5}
+#wv-top{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid #223350;
+  background:#0E1727;flex-shrink:0;flex-wrap:wrap}
+#wv-top .title{font-weight:700}
+#wv-top .title small{color:#5C6E8C;font-weight:400;margin-left:8px;font-size:12px}
+#wv-top .sp{flex:1}
+#wv-stat{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5C6E8C}
+#pane-wave button{background:#111B2E;border:1px solid #2E4266;color:#D9E4F5;border-radius:6px;
+  padding:6px 12px;cursor:pointer;font-size:13px;font-family:inherit}
+#pane-wave button:hover{border-color:#4FD8E0}
+#pane-wave button.primary{border-color:#4FD8E0;color:#4FD8E0}
+#pane-wave button.warn{border-color:rgba(255,93,115,.5);color:#FF5D73}
+#pane-wave button.mini{padding:3px 10px;font-size:12px}
+#wv-wrap{flex:1;overflow:auto;padding:14px}
+#wv-table{border-collapse:collapse;min-width:820px}
+#wv-table th{font-size:11.5px;color:#5C6E8C;text-transform:uppercase;letter-spacing:.06em;
+  text-align:left;padding:6px 8px;border-bottom:1px solid #223350;white-space:nowrap}
+#wv-table td{padding:5px 8px;border-bottom:1px solid #16233A;vertical-align:middle}
+#wv-table input{background:#0E1727;border:1px solid #2E4266;color:#D9E4F5;border-radius:5px;
+  padding:5px 8px;font-size:13px;width:100%;min-width:0;font-family:inherit}
+#wv-table input:focus{outline:none;border-color:#4FD8E0}
+#wv-table input.mono{font-family:'IBM Plex Mono',Consolas,monospace}
+#wv-table td.num input{width:84px;text-align:right}
+#wv-empty{color:#5C6E8C;font-size:13px;padding:20px 4px}
+#wv-warn{color:#FF5D73;font-size:12px;padding:6px 4px;white-space:pre-line}
+#pane-wave .hint{font-size:12px;color:#5C6E8C;line-height:1.7;margin-top:12px;max-width:820px}
+#pane-wave .hint b{color:#8FA3C0}
+#pane-wave .hint .mono{font-family:'IBM Plex Mono',Consolas,monospace}
+</style>
+<div id="wv-top">
+  <span class="title">웨이브 에디터<small>일차(Day)별 밤 공세 옵션</small></span>
+  <button class="mini primary" id="wv-add">+ 웨이브 추가</button>
+  <span style="width:1px;height:18px;background:#223350;margin:0 4px"></span>
+  <button class="mini" id="wv-import">WaveData 불러오기</button>
+  <button class="mini primary" id="wv-export">WaveData 내보내기</button>
+  <span class="sp"></span>
+  <span id="wv-stat"></span>
+</div>
+<div id="wv-wrap">
+  <table id="wv-table"></table>
+  <div id="wv-empty" style="display:none">웨이브가 없습니다 — "+ 웨이브 추가"로 시작하세요.</div>
+  <div id="wv-warn"></div>
+  <div class="hint">
+    <b>Day</b>부터 그 웨이브가 적용되고, 코어 티어가 모자라면 이전 웨이브가 반복된다.
+    밤은 <b>총 마리수</b>를 전멸시켜야 끝난다(물량제).<br>
+    <b>몬스터 HP</b> = 그 웨이브 몬스터의 최대 HP.
+    <span class="mono">0</span>이면 <span class="mono">StreamingAssets/wave_settings.json</span> →
+    프리팹 기본값 순으로 폴백한다.<br>
+    전투 탭의 웨이브 서브탭과 <b>같은 데이터</b>다 — 어느 쪽에서 고쳐도 함께 반영되고,
+    <span class="mono">GameData 내보내기</span>에도 waves 섹션으로 함께 나간다.
+    내보낸 JSON은 <span class="mono">Assets/Data/Import/</span>에 두고
+    <span class="mono">Tools/Factory/Import Game Data (JSON)</span>로 구우면 WaveDataSO에 반영된다.
+  </div>
+</div>
   </div>
   <div class="pane" id="pane-map">
 
@@ -1954,6 +2013,7 @@ document.querySelectorAll("#tabs .tab").forEach(btn => btn.onclick = () => {
   if(btn.dataset.pane === "building") window.BuildingEditor?.refresh();
   if(btn.dataset.pane === "combat") window.CombatData?.refresh();
   if(btn.dataset.pane === "map") window.MapData?.refresh();
+  if(btn.dataset.pane === "wave") window.WaveTab?.refresh();
   window.dispatchEvent(new Event("resize"));
 });
 
@@ -2009,7 +2069,7 @@ const openS = (title, text, showApply, kind = "gamedata") => {
   document.getElementById("s-dl").style.display   = showApply ? "none" : "";
   const t = document.getElementById("s-text");
   t.readOnly = !showApply;
-  t.placeholder = showApply ? (kind === "map" ? "MapData.json" : "GameData.json") + " 내용을 붙여넣으세요" : "";
+  t.placeholder = showApply ? (kind === "map" ? "MapData.json" : kind === "wave" ? "WaveData.json" : "GameData.json") + " 내용을 붙여넣으세요" : "";
   document.getElementById("s-msg").textContent = "";
   sModal.style.display = "flex";
 };
@@ -2025,11 +2085,21 @@ document.getElementById("s-apply").onclick = () => {
       updateSharedStat(); sModal.style.display = "none";
       return;
     }
+    if(sKind === "wave"){
+      // {"waves":[...]} 와 맨 배열 [...] 둘 다 받는다 — 임포터는 waves 섹션만 읽는다
+      const wv = Array.isArray(obj) ? obj : obj.waves;
+      if(!Array.isArray(wv)) throw new Error("waves 배열이 없습니다");
+      window.CombatData?.load({ waves: wv });
+      window.WaveTab?.refresh();
+      updateSharedStat(); sModal.style.display = "none";
+      return;
+    }
     if(obj.items || obj.recipes) window.GameData.loadGraph({ items:obj.items||[], recipes:obj.recipes||[] });
     if(obj.buildings) window.BuildingEditor.loadBuildings({ buildings:obj.buildings });
     if(obj.effects || obj.guns || obj.waves)
       window.CombatData?.load({ effects:obj.effects, guns:obj.guns, waves:obj.waves });
     window.BuildingEditor?.refresh();
+    window.WaveTab?.refresh();
     updateSharedStat(); sModal.style.display = "none";
   } catch(e){ document.getElementById("s-msg").textContent = "JSON 파싱 실패: " + e.message; }
 };
@@ -2041,7 +2111,7 @@ document.getElementById("s-copy").onclick = async () => {
 document.getElementById("s-dl").onclick = () => {
   const blob = new Blob([document.getElementById("s-text").value], {type:"application/json"});
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = sKind === "map" ? "MapData.json" : "GameData.json";
+  a.href = URL.createObjectURL(blob); a.download = sKind === "map" ? "MapData.json" : sKind === "wave" ? "WaveData.json" : "GameData.json";
   a.click(); URL.revokeObjectURL(a.href);
 };
 document.getElementById("s-close").onclick = () => sModal.style.display = "none";
@@ -3166,13 +3236,14 @@ window.CombatData = {
     id:w.id, displayName:w.displayName, description:w.description||"",
     day:w.day, requiredCoreTier:w.requiredCoreTier,
     baseAmount:w.baseAmount, maxAliveAmount:w.maxAliveAmount, spawnInterval:w.spawnInterval,
+    monsterMaxHp:w.monsterMaxHp||0,   // 0 = wave_settings.json → 프리팹 폴백 (임포터가 무조건 덮으므로 항상 내보낸다)
   })),
   load: obj => {
     if(Array.isArray(obj.waves)) waves = obj.waves.map(w => ({
       id:w.id||"", displayName:w.displayName||"", description:w.description||"",
       day:w.day??1, requiredCoreTier:w.requiredCoreTier??0,
       baseAmount:w.baseAmount??4, maxAliveAmount:w.maxAliveAmount??4,
-      spawnInterval:w.spawnInterval??2 })).sort((a,b)=>a.day-b.day);
+      spawnInterval:w.spawnInterval??2, monsterMaxHp:w.monsterMaxHp??0 })).sort((a,b)=>a.day-b.day);
     if(Array.isArray(obj.effects)) effects = obj.effects.map(e => ({
       id:e.id||"", displayName:e.displayName||"", description:e.description||"",
       kind:e.kind||"Damage", duration:e.duration??0, stacking:e.stacking||"Refresh",
@@ -3311,6 +3382,7 @@ function renderDetail(){
         ${numCell("총 마리수", "w-base", w.baseAmount, 1, "둥지 파괴 전 기준 총량")}
         ${numCell("동시 상한", "w-alive", w.maxAliveAmount, 1, "한 번에 살아 있을 수 있는 수")}
         ${numCell("스폰 간격", "w-int", w.spawnInterval, .1, "초")}
+        ${numCell("몬스터 HP", "w-hp", w.monsterMaxHp, 1, "0 = wave_settings.json → 프리팹 기본값 폴백")}
       </div></div>` +
       `<div class="dpsbox">
         <span>최소 소요 <b>${dur.toFixed(0)}s</b></span>
@@ -3324,7 +3396,7 @@ function renderDetail(){
     bindText("c-name", v => { w.displayName = v; renderList(); });
     bindText("c-desc", v => { w.description = v; });
     for(const [id, key] of Object.entries({ "w-day":"day","w-tier":"requiredCoreTier",
-        "w-base":"baseAmount","w-alive":"maxAliveAmount","w-int":"spawnInterval" }))
+        "w-base":"baseAmount","w-alive":"maxAliveAmount","w-int":"spawnInterval","w-hp":"monsterMaxHp" }))
       bindNum(id, v => { w[key] = v; renderDetail(); renderList(); });
   } else {
     const g = guns[curG];
@@ -3547,7 +3619,8 @@ function boot(){
         day: last ? last.day + 1 : 1, requiredCoreTier: last ? last.requiredCoreTier : 0,
         baseAmount: last ? last.baseAmount + 2 : 4,
         maxAliveAmount: last ? last.maxAliveAmount + 2 : 4,
-        spawnInterval: last ? last.spawnInterval : 2 });
+        spawnInterval: last ? last.spawnInterval : 2,
+        monsterMaxHp: last ? last.monsterMaxHp : 0 });
       curW = waves.length - 1;
     } else {
       guns.push({ id:"", displayName:"새 화기", description:"", isAutomatic:true, fireMode:"Projectile",
@@ -3588,6 +3661,107 @@ window.CombatData.load({"effects": [{"id": "Effect:Damage", "displayName": "피�
 
 })();
 
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  웨이브 탭 — Day별 웨이브 옵션을 표 하나로 편집한다.
+//  데이터 정본은 전투 탭(CombatData)의 waves 배열 — 여기는 같은 배열을
+//  getWaves/load 통로로 읽고 쓰는 또 하나의 뷰다 (저장소를 둘로 쪼개지 않는다).
+// ═══════════════════════════════════════════════════════════
+(function(){
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+const getWaves = () => { try { return window.CombatData?.getWaves() || []; } catch { return []; } };
+const setWaves = wv => { window.CombatData?.load({ waves: wv }); };   // load()가 day 순 정렬까지 한다
+
+const COLS = [
+  { key:"day",            th:"Day",       num:true, step:1,  title:"이 웨이브가 적용되기 시작하는 일차" },
+  { key:"requiredCoreTier",th:"코어 티어", num:true, step:1,  title:"코어 티어가 낮으면 이전 웨이브가 반복된다" },
+  { key:"baseAmount",     th:"총 마리수", num:true, step:1,  title:"밤에 전멸시켜야 하는 총량 (물량제 밤의 길이)" },
+  { key:"maxAliveAmount", th:"동시 상한", num:true, step:1,  title:"한 번에 살아 있을 수 있는 수" },
+  { key:"spawnInterval",  th:"스폰 간격", num:true, step:.1, title:"스폰 시도 간격(초)" },
+  { key:"monsterMaxHp",   th:"몬스터 HP", num:true, step:1,  title:"0 = wave_settings.json → 프리팹 기본값 폴백" },
+];
+
+function render(){
+  const waves = getWaves();
+  const table = document.getElementById("wv-table");
+  const empty = document.getElementById("wv-empty");
+  if(!table) return;
+
+  empty.style.display = waves.length ? "none" : "";
+  table.innerHTML = !waves.length ? "" :
+    `<tr><th>Id</th><th>이름</th>${COLS.map(c=>`<th title="${esc(c.title)}">${c.th}</th>`).join("")}<th></th></tr>` +
+    waves.map((w, i) => `<tr>
+      <td style="min-width:130px"><input class="mono" data-i="${i}" data-k="id"
+        value="${esc((w.id||"").replace(/^Wave:/,""))}" placeholder="Day${w.day}" title="Wave: 접두는 자동으로 붙는다"></td>
+      <td style="min-width:130px"><input data-i="${i}" data-k="displayName" value="${esc(w.displayName)}"></td>
+      ${COLS.map(c=>`<td class="num"><input type="number" step="${c.step}" min="0"
+        data-i="${i}" data-k="${c.key}" value="${w[c.key] ?? 0}" title="${esc(c.title)}"></td>`).join("")}
+      <td><button class="mini warn" data-del="${i}">삭제</button></td>
+    </tr>`).join("");
+
+  table.querySelectorAll("input").forEach(el => el.onchange = () => {
+    const rows = getWaves();
+    const w = rows[+el.dataset.i];
+    if(!w) return;
+    const k = el.dataset.k;
+    if(k === "id") w.id = el.value ? "Wave:" + el.value.replace(/^Wave:/,"").replace(/[^A-Za-z0-9_가-힣]/g,"") : "";
+    else if(k === "displayName") w.displayName = el.value;
+    else w[k] = Math.max(0, parseFloat(el.value) || 0);
+    setWaves(rows);
+    render();
+  });
+  table.querySelectorAll("[data-del]").forEach(el => el.onclick = () => {
+    const rows = getWaves();
+    rows.splice(+el.dataset.del, 1);
+    setWaves(rows);
+    render();
+  });
+
+  const stat = document.getElementById("wv-stat");
+  if(stat) stat.textContent = waves.length
+    ? `웨이브 ${waves.length}개 · Day ${waves[0].day}~${waves[waves.length-1].day}`
+    : "";
+
+  const warn = [];
+  const seen = new Set();
+  for(const w of waves){
+    if(!w.id) warn.push(`Day ${w.day}: id가 비어 있습니다 — 임포트에서 스킵됩니다`);
+    const key = w.day + "/" + w.requiredCoreTier;
+    if(seen.has(key)) warn.push(`Day ${w.day} · 티어 ${w.requiredCoreTier} 조합이 중복입니다 — 뒤 항목만 적용됩니다`);
+    seen.add(key);
+    if(w.maxAliveAmount > w.baseAmount) warn.push(`Day ${w.day}: 동시 상한이 총량보다 큽니다 — 상한이 의미 없습니다`);
+    if(!(w.spawnInterval > 0)) warn.push(`Day ${w.day}: 스폰 간격은 0보다 커야 합니다`);
+  }
+  document.getElementById("wv-warn").textContent = warn.join("\n");
+}
+
+function boot(){
+  document.getElementById("wv-add").onclick = () => {
+    const rows = getWaves();
+    const last = rows[rows.length-1];
+    rows.push({ id:"", displayName:"새 웨이브", description:"",
+      day: last ? last.day + 1 : 1, requiredCoreTier: last ? last.requiredCoreTier : 0,
+      baseAmount: last ? last.baseAmount + 2 : 4,
+      maxAliveAmount: last ? last.maxAliveAmount + 2 : 4,
+      spawnInterval: last ? last.spawnInterval : 2,
+      monsterMaxHp: last ? last.monsterMaxHp : 0 });
+    setWaves(rows);
+    render();
+  };
+  document.getElementById("wv-export").onclick = () =>
+    window.openDataModal("WaveData.json — 내보내기", JSON.stringify({ waves: getWaves() }, null, 2), false, "wave");
+  document.getElementById("wv-import").onclick = () =>
+    window.openDataModal("WaveData.json — 붙여넣고 적용", "", true, "wave");
+  render();
+}
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+window.WaveTab = { refresh: render };
+})();
 </script>
 <script>
 // ═══════════════════════════════════════════════════════════

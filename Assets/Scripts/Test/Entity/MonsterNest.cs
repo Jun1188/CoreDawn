@@ -11,8 +11,29 @@ public class MonsterNest : Entity
         public Transform point;
         public Monster linkedBoss;
         public GameObject bossPrefab;
+        [Tooltip("이 포인트에서 낮에 나오는 방어 몬스터의 최대 HP. 0 이하면 프리팹 기본값을 쓴다.")]
+        public float daySpawnMonsterMaxHp = 0f;
+        [Tooltip("이 포인트 보스의 최대 HP. 0 이하면 보스 프리팹 기본값을 쓴다.")]
+        public float bossMaxHp = 0f;
         [HideInInspector] public bool isDestroyed = false;
         [HideInInspector] public int destroyedDay = -1;
+    }
+
+    /// <summary>
+    /// 낮 방어 스폰 한 자리 — 위치와 그 자리에서 태어날 몬스터의 최대 HP.
+    /// 위치만 넘기면 어느 포인트의 HP 설정인지 알 수 없어 자리 단위로 묶는다.
+    /// </summary>
+    public readonly struct DefenderSpawnSlot
+    {
+        public readonly Vector3 position;
+        /// <summary>0 이하 = 프리팹 기본값 유지.</summary>
+        public readonly float monsterMaxHp;
+
+        public DefenderSpawnSlot(Vector3 position, float monsterMaxHp)
+        {
+            this.position = position;
+            this.monsterMaxHp = monsterMaxHp;
+        }
     }
 
     [Header("Nest Settings")]
@@ -43,6 +64,8 @@ public class MonsterNest : Entity
     public int defenseSpawnAmount = 3;
     [Tooltip("방어 몬스터 스폰 쿨타임")]
     public float defenseSpawnCooldown = 10f;
+    [Tooltip("보스가 교전 중일 때의 지원군 스폰 쿨타임 — 평시보다 짧아야 압박이 이어진다.")]
+    public float bossFightSpawnCooldown = 6f;
 
     [Header("Day Spawn Culling")]
     [Tooltip("스폰 금지 반경(m) — 플레이어가 이 거리 안이면 보이든 안 보이든 그 포인트는 스폰하지 않는다 " +
@@ -85,6 +108,30 @@ public class MonsterNest : Entity
         return cachedPlayer != null && cachedPlayer.IsValidTarget() ? cachedPlayer : null;
     }
 
+    /// <summary>맵·에디터가 배선한 스폰 포인트가 하나라도 있는가 — 파괴 여부와 무관.</summary>
+    private bool HasConfiguredSpawnPoints
+    {
+        get
+        {
+            if (spawnPoints != null)
+                foreach (var sp in spawnPoints)
+                    if (sp != null && sp.point != null) return true;
+            return false;
+        }
+    }
+
+    /// <summary>파괴되지 않은 스폰 포인트가 남아 있는가.</summary>
+    private bool HasLiveSpawnPoint
+    {
+        get
+        {
+            if (spawnPoints != null)
+                foreach (var sp in spawnPoints)
+                    if (sp != null && !sp.isDestroyed && sp.point != null) return true;
+            return false;
+        }
+    }
+
     /// <summary>스폰 포인트가 둥지 중심에서 가장 멀리 떨어진 거리.</summary>
     private float MaxSpawnPointOffset
     {
@@ -116,6 +163,71 @@ public class MonsterNest : Entity
                 if (d < bestDist) { bestDist = d; best = sp.point.position; }
             }
         return best;
+    }
+
+    /// <summary>
+    /// 지금 플레이어와 교전 중인(각성한) 보스. 없으면 null.
+    /// 둥지가 보스의 상태를 모르면, 제 대장이 두들겨 맞는 동안 쫄몹이 "플레이어가 멀다"는
+    /// 이유로 한 마리도 안 나오는 그림이 된다.
+    /// </summary>
+    public Monster EngagedBoss
+    {
+        get
+        {
+            if (spawnPoints == null) return null;
+            foreach (var sp in spawnPoints)
+            {
+                if (sp == null || sp.linkedBoss == null) continue;
+                var boss = sp.linkedBoss;
+                if (!boss.IsDead && boss.IsBoss && boss.HasBeenAttacked) return boss;
+            }
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 보스 교전 중 지원군이 나올 자리 — 거리 규칙은 전부 무시하고 <b>보스에게 가장 가까운</b>
+    /// 살아 있는 스폰 포인트를 쓴다. 다만 그 포인트가 플레이어 화면에 실제로 보이면
+    /// 다음으로 가까운 안 보이는 포인트로 넘어간다(눈앞 팝인 방지). 전부 보이면
+    /// 플레이어에게서 가장 먼 포인트를 쓴다 — 스폰 자체는 절대 멈추지 않는다.
+    /// </summary>
+    private List<DefenderSpawnSlot> GetBossReinforcementSlots(Monster boss, Player player)
+    {
+        var result = new List<DefenderSpawnSlot>();
+        if (spawnPoints == null || boss == null) return result;
+
+        Vector3 bossPos = boss.transform.position;
+        Vector3 playerPos = player != null ? player.transform.position : bossPos;
+        Camera eye = Camera.main;
+
+        NestSpawnPoint bestHidden = null;   // 보스에게 가장 가까운, 화면에 안 보이는 포인트
+        float bestHiddenDist = float.MaxValue;
+        NestSpawnPoint farthestVisible = null;  // 폴백 — 플레이어에게서 가장 먼 포인트
+        float farthestVisibleDist = -1f;
+
+        foreach (var sp in spawnPoints)
+        {
+            if (sp == null || sp.isDestroyed || sp.point == null) continue;
+
+            Vector3 pos = sp.point.position;
+
+            if (player == null || !IsOnPlayerScreen(pos, player, eye))
+            {
+                float d = Vector3.Distance(pos, bossPos);
+                if (d < bestHiddenDist) { bestHiddenDist = d; bestHidden = sp; }
+            }
+            else
+            {
+                float d = Vector3.Distance(pos, playerPos);
+                if (d > farthestVisibleDist) { farthestVisibleDist = d; farthestVisible = sp; }
+            }
+        }
+
+        var chosen = bestHidden ?? farthestVisible;
+        if (chosen != null)
+            result.Add(new DefenderSpawnSlot(chosen.point.position, chosen.daySpawnMonsterMaxHp));
+
+        return result;
     }
 
     /// <summary>
@@ -160,6 +272,12 @@ public class MonsterNest : Entity
         // 출현/추적 거리만 제어하며, 보스의 초기 배치를 막으면 플레이어가 선공할
         // 비선공 보스 자체가 존재하지 않게 된다.
         EnsureBossesSpawned();
+
+        // 코어 머리 위 HP 바 — 둥지가 파괴돼도 남는 코어(indestructibleVisuals[0]) 위에 띄운다.
+        Transform core = indestructibleVisuals != null && indestructibleVisuals.Length > 0
+                         && indestructibleVisuals[0] != null
+            ? indestructibleVisuals[0].transform : transform;
+        WorldHealthBar.Attach(this, core, large: true);
     }
 
     private void SnapBossToGround(GameObject boss)
@@ -183,14 +301,16 @@ public class MonsterNest : Entity
         }
     }
 
-    public override void TakeDamage(float damageAmount)
+    // TakeDamage가 아니라 수렴점(ReceiveDamage)을 막는다 — 총알·몬스터 공격 같은
+    // 효과 경로는 TakeDamage를 거치지 않고 ReceiveDamage로 직행하기 때문이다.
+    public override void ReceiveDamage(float amount)
     {
-        if (IsInvulnerable()) 
+        if (IsInvulnerable())
         {
             // Debug.Log("[MonsterNest] 둥지가 무적 상태입니다! (보스 또는 스폰포인트가 살아있음)");
             return;
         }
-        base.TakeDamage(damageAmount);
+        base.ReceiveDamage(amount);
     }
 
     private bool IsInvulnerable()
@@ -226,6 +346,30 @@ public class MonsterNest : Entity
 
         // 물리 쿼리 없는 감지 — 캐시한 플레이어와의 거리(산술)로만 판정한다.
         Player player = FindPlayer();
+
+        // 보스가 교전 중이면 거리 규칙 전부(SensorRange·CanSpawnFor·daySpawnMaxRange)를
+        // 우회한다. 대장이 맞고 있는데 "플레이어가 둥지에서 멀다"는 이유로 지원군을 안 보내는 건
+        // 둥지가 제 보스를 버리는 것과 같다. 자리 선정은 보스 기준(GetBossReinforcementSlots).
+        if (player != null && !player.IsDead)
+        {
+            Monster engagedBoss = EngagedBoss;
+            if (engagedBoss != null)
+            {
+                hasWarned = false;
+                if (Time.time >= lastDefenseSpawnTime + bossFightSpawnCooldown)
+                {
+                    lastDefenseSpawnTime = Time.time;
+                    if (BattleManager.Instance != null && BattleManager.Instance.Spawner != null)
+                    {
+                        BattleManager.Instance.Spawner.SpawnNestDefenders(
+                            this, player, defenseSpawnAmount,
+                            GetBossReinforcementSlots(engagedBoss, player), engagedBoss);
+                    }
+                }
+                return;
+            }
+        }
+
         if (player != null && !player.IsDead)
         {
             Vector3 anchor = NearestSpawnAnchor(player.transform.position);
@@ -233,15 +377,20 @@ public class MonsterNest : Entity
 
             if (dist <= SensorRange)
             {
-                List<Vector3> spawnable = null;
+                List<DefenderSpawnSlot> spawnable = null;
                 bool canSpawn;
                 if (engagementZone != null)
                 {
-                    canSpawn = engagementZone.CanSpawnFor(anchor, player.transform.position);
+                    // 포인트가 배선된 둥지는 전부 파괴되면 낮 스폰이 멈춰야 한다 —
+                    // 교전 구역은 거리 규칙만 알므로 포인트 생존 여부는 여기서 걸러야 한다.
+                    // (안 걸르면 SpawnNestDefenders가 GetAllActiveSpawnPositions의
+                    //  둥지 중심 폴백을 타고 계속 스폰한다.)
+                    canSpawn = (!HasConfiguredSpawnPoints || HasLiveSpawnPoint)
+                               && engagementZone.CanSpawnFor(anchor, player.transform.position);
                 }
                 else
                 {
-                    spawnable = GetDaySpawnablePositions(player);
+                    spawnable = GetDaySpawnableSlots(player);
                     canSpawn = spawnable.Count > 0;
                 }
 
@@ -308,6 +457,8 @@ public class MonsterNest : Entity
         SnapBossToGround(go);
         spawnPoint.linkedBoss = go.GetComponent<Monster>();
         spawnPoint.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        if (spawnPoint.linkedBoss != null && spawnPoint.bossMaxHp > 0f)
+            spawnPoint.linkedBoss.Health.SetMaxHealth(spawnPoint.bossMaxHp);
         Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
     }
 
@@ -466,6 +617,10 @@ public class MonsterNest : Entity
         // 보스가 보스 취급을 받지 못하고 교전 구역에도 묶이지 않아, 불러온 게임에서만
         // 다르게 행동하게 된다. 위치만 저장값을 쓰고 나머지는 평시와 동일하다.
         sp.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        // 포인트별 보스 HP도 평시 스폰과 같게 맞춘다 — 저장된 현재/최대 HP는
+        // 세이브 모듈이 이 뒤에 덮어쓰므로 순서상 안전하다.
+        if (sp.linkedBoss != null && sp.bossMaxHp > 0f)
+            sp.linkedBoss.Health.SetMaxHealth(sp.bossMaxHp);
         return sp.linkedBoss;
     }
 
@@ -489,35 +644,35 @@ public class MonsterNest : Entity
     ///     거리와 무관하게 그 포인트만 멈춘다 — 눈앞 팝인 방지.
     ///     화면 밖(옆·뒤)이거나 벽·절벽에 가려져 있으면 계속 나온다.
     /// </summary>
-    public List<Vector3> GetDaySpawnablePositions(Player player)
+    public List<DefenderSpawnSlot> GetDaySpawnableSlots(Player player)
     {
-        var result = new List<Vector3>();
+        var result = new List<DefenderSpawnSlot>();
         if (player == null) return result;
         Vector3 playerPos = player.transform.position;
         Camera eye = Camera.main;   // 플레이어 시점 카메라 — 시야각 판정의 기준
 
-        bool anyPoint = false;
         if (spawnPoints != null)
             foreach (var sp in spawnPoints)
             {
                 if (sp == null || sp.isDestroyed || sp.point == null) continue;
-                anyPoint = true;
 
                 Vector3 pos = sp.point.position;
                 float d = Vector3.Distance(pos, playerPos);
                 if (d > daySpawnMaxRange) continue;
                 if (d <= daySpawnMinRange) continue;
                 if (IsOnPlayerScreen(pos, player, eye)) continue;
-                result.Add(pos);
+                result.Add(new DefenderSpawnSlot(pos, sp.daySpawnMonsterMaxHp));
             }
 
-        // 포인트가 하나도 없는 둥지는 둥지 중심을 같은 규칙으로 판정한다 (GetAllActiveSpawnPositions의 폴백과 짝)
-        if (!anyPoint)
+        // 포인트가 하나도 <b>배선되지 않은</b> 둥지만 둥지 중심을 같은 규칙으로 판정한다
+        // (GetAllActiveDefenderSlots의 폴백과 짝). 포인트가 있었는데 전부 파괴된 둥지는
+        // 여기로 오면 안 된다 — 보스를 잡아 포인트를 없앤 보상이 낮 스폰 중단이다.
+        if (!HasConfiguredSpawnPoints)
         {
             float d = Vector3.Distance(transform.position, playerPos);
             if (d <= daySpawnMaxRange && d > daySpawnMinRange &&
                 !IsOnPlayerScreen(transform.position, player, eye))
-                result.Add(transform.position);
+                result.Add(new DefenderSpawnSlot(transform.position, 0f));
         }
         return result;
     }
@@ -547,6 +702,25 @@ public class MonsterNest : Entity
 
         int mask = Physics.DefaultRaycastLayers & ~LayerMask.GetMask("Monster", "Player", "Character");
         return !Physics.Raycast(probe, dir / dist, dist - 0.3f, mask);
+    }
+
+    /// <summary>
+    /// 활성화된 모든 스폰 포인트를 낮 방어 스폰 자리(위치 + 포인트별 몬스터 HP)로 반환.
+    /// 유효한 포인트가 없으면 둥지 중심을 기본 HP(0 = 프리팹 값)로 돌려준다.
+    /// </summary>
+    public List<DefenderSpawnSlot> GetAllActiveDefenderSlots()
+    {
+        var slots = new List<DefenderSpawnSlot>();
+        if (spawnPoints != null)
+            foreach (var sp in spawnPoints)
+            {
+                if (sp == null || sp.isDestroyed || sp.point == null) continue;
+                slots.Add(new DefenderSpawnSlot(sp.point.position, sp.daySpawnMonsterMaxHp));
+            }
+
+        if (slots.Count == 0)
+            slots.Add(new DefenderSpawnSlot(transform.position, 0f));
+        return slots;
     }
 
     /// <summary>

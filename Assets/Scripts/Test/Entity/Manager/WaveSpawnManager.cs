@@ -232,19 +232,22 @@ public class WaveSpawnManager
     }
 
     /// <summary>
-    /// 둥지 방어 몬스터 스폰. <paramref name="spawnPositions"/>는 둥지가 판정한
-    /// "지금 스폰 가능한 포인트들"(MonsterNest.GetDaySpawnablePositions) — 거리·가림 규칙은
-    /// 반경 값을 소유한 둥지 쪽에 있다. null이면 모든 활성 포인트를 쓴다(레거시 호출).
+    /// 둥지 방어 몬스터 스폰. <paramref name="spawnSlots"/>는 둥지가 판정한
+    /// "지금 스폰 가능한 자리들"(MonsterNest.GetDaySpawnableSlots) — 거리·가림 규칙은
+    /// 반경 값을 소유한 둥지 쪽에 있고, 자리마다 포인트별 몬스터 최대 HP가 실려 온다.
+    /// null이면 모든 활성 포인트를 쓴다(레거시 호출).
     /// </summary>
     public void SpawnNestDefenders(MonsterNest nest, Player target, int amount,
-                                   List<Vector3> spawnPositions = null)
+                                   List<MonsterNest.DefenderSpawnSlot> spawnSlots = null,
+                                   Monster escortBoss = null)
     {
-        if (spawnPositions == null) spawnPositions = nest.GetAllActiveSpawnPositions();
-        if (spawnPositions.Count == 0 || amount <= 0) return;
+        if (spawnSlots == null) spawnSlots = nest.GetAllActiveDefenderSlots();
+        if (spawnSlots.Count == 0 || amount <= 0) return;
 
         for (int i = 0; i < amount; i++)
         {
-            Vector3 position = spawnPositions[i % spawnPositions.Count];
+            MonsterNest.DefenderSpawnSlot slot = spawnSlots[i % spawnSlots.Count];
+            Vector3 position = slot.position;
             GameObject go = monsterPrefab != null
                 ? UnityEngine.Object.Instantiate(monsterPrefab, position, Quaternion.identity, parent)
                 : CreateFallbackMonster(position);
@@ -264,15 +267,22 @@ public class WaveSpawnManager
             var monster = go.GetComponent<Monster>();
             if (monster == null) monster = go.AddComponent<Monster>();
             monsters.Add(monster);
-            
-            // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정
+
+            if (slot.monsterMaxHp > 0f)
+                monster.Health.SetMaxHealth(slot.monsterMaxHp);
+
+            // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정.
+            // escortBoss가 있으면(보스전 지원군) 교전 구역의 거리 규칙을 건너뛰고
+            // 보스의 교전에 종속시킨다 — 태어나자마자 거리를 이유로 되돌아가면 스폰이 낭비다.
             var zone = nest.GetComponent<NestEngagementZone>();
-            if (zone != null)
-                monster.SetAsNestDefender(target, nest.transform.position, zone);
+            if (zone != null || escortBoss != null)
+                monster.SetAsNestDefender(target, nest.transform.position, zone, escortBoss);
             else
                 monster.SetAsNestDefender(target);
         }
-        Debug.Log($"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
+        Debug.Log(escortBoss != null
+            ? $"[WaveSpawnManager] 보스 교전 지원군 {amount}마리를 스폰했습니다."
+            : $"[WaveSpawnManager] 둥지 근처에 방어 몬스터 {amount}마리를 스폰했습니다.");
     }
 
     // ── 세이브 복원 표면 ─────────────────────────────────────────
@@ -393,6 +403,15 @@ public class WaveSpawnManager
         spawnedMonster = go.GetComponent<Monster>();
         if (spawnedMonster == null) spawnedMonster = go.AddComponent<Monster>();
         monsters.Add(spawnedMonster);
+
+        // 밤 웨이브 몬스터 최대 HP — 웨이브 데이터(JSON→WaveDataSO)가 1순위,
+        // 없으면 wave_settings.json의 일차별 값, 그것도 없으면 프리팹 기본값.
+        int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 1;
+        float maxHp = currentWave != null && currentWave.monsterMaxHp > 0f
+            ? currentWave.monsterMaxHp
+            : WaveBalanceSettings.GetNightMonsterMaxHp(day);
+        if (maxHp > 0f)
+            spawnedMonster.Health.SetMaxHealth(maxHp);
 
         return true;
     }

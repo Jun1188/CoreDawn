@@ -178,6 +178,7 @@ public static class GameDataImporter
         public int baseAmount;
         public int maxAliveAmount;
         public float spawnInterval;
+        public float monsterMaxHp;   // 0 = wave_settings.json → 프리팹 기본값 폴백
     }
 
     /// <summary>
@@ -628,6 +629,7 @@ public static class GameDataImporter
         wave.baseAmount       = dto.baseAmount;
         wave.maxAliveAmount   = dto.maxAliveAmount;
         wave.spawnInterval    = dto.spawnInterval;
+        wave.monsterMaxHp     = dto.monsterMaxHp;
 
         EditorUtility.SetDirty(wave);
         if (isNew) created++; else updated++;

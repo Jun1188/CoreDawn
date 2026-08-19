@@ -184,6 +184,10 @@ public class Gun : MonoBehaviour
         if (muzzlePoint != null)
             ProjectileSystem.PlayEffect(round.muzzleFlashPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
 
+        // 빗맞아도 명백히 겨눈 사격이면 적의로 친다 — 조준선(카메라 축)이 정해진 지금이
+        // 유일한 판정 시점이다. 탄이 실제로 맞으면 어차피 피해 경로가 각성을 처리한다.
+        HostileIntentProbe.Report(origin, forward, OwnerEntity);
+
         // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것.
         // 전달 방식(투사체/히트스캔)은 스펙에 실려 있다 — 분기는 ProjectileSystem이 한다.
         for (int i = 0; i < rounds; i++)
