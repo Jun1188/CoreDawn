@@ -61,7 +61,14 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
     public void SetupWeapon(Transform sightPoint, float weaponZoomFov)
     {
         zoomFov = weaponZoomFov;
-        if (sightPoint == null) return;
+
+        // 가늠자가 없는 무기(근접 등) — 이전 무기의 정렬 오프셋을 물려받으면 안 된다
+        if (sightPoint == null)
+        {
+            _targetPosOffset = Vector3.zero;
+            _targetRotOffset = Quaternion.identity;
+            return;
+        }
 
         // 순수 오프셋을 구하려면 홀더가 원점에 있어야 한다 — WeaponManager.SwapTo가 잠시 초기화한 상태로 부른다
         Vector3 relativePos = transform.InverseTransformPoint(sightPoint.position);
