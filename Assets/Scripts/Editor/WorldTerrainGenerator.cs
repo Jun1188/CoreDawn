@@ -629,9 +629,24 @@ public static class WorldTerrainGenerator
                 int cx = Mathf.Clamp(Mathf.FloorToInt(tx), 0, map.width - 1);
                 int cy = Mathf.Clamp(Mathf.FloorToInt(ty), 0, map.height - 1);
 
-                // 절벽 타일에도 심는다 — 암벽이 벽면 후퇴 노이즈로 물러난 자리는 절벽
-                // 타일의 앞부분이 드러나는데, 여기를 건너뛰면 그 띠가 맨땅으로 남는다.
-                // 바위 밑에 깔리는 풀은 어차피 가려지고, 디테일이라 판정에도 안 낀다.
+                // 절벽 타일은 <b>경계 0.1칸 띠만</b> 심는다 — 벽면 후퇴 노이즈로 암벽이
+                // 물러난 자리는 절벽 타일 앞부분이 드러나므로 띠가 필요하지만, 안쪽은
+                // 바위가 빈틈없이 덮어(관통 구멍 해결 후) 심어도 보이지 않는 낭비다.
+                // 절벽이 맵의 상당분이라 디테일 인스턴스가 그만큼 줄어든다.
+                if (map.TileAt(cx, cy) == MapTile.Cliff)
+                {
+                    const float Fringe = 0.1f;   // 칸 단위 — 벽면 후퇴 최대(0.45칸)보다 얕은 앞줄만
+                    bool nearOpen = false;
+                    for (int oy = -1; oy <= 1 && !nearOpen; oy++)
+                        for (int ox = -1; ox <= 1; ox++)
+                        {
+                            if (ox == 0 && oy == 0) continue;
+                            int nx = Mathf.FloorToInt(tx + ox * Fringe);
+                            int nz = Mathf.FloorToInt(ty + oy * Fringe);
+                            if (map.InBounds(nx, nz) && map.TileAt(nx, nz) != MapTile.Cliff) { nearOpen = true; break; }
+                        }
+                    if (!nearOpen) continue;
+                }
 
                 // 물가 아래는 비운다. 판정을 실제 높이로 하므로 풀이 끊기는 선이
                 // 칸 모서리가 아니라 물가 곡선을 그대로 따라간다.
