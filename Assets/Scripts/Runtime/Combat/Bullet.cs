@@ -199,10 +199,12 @@ public class Bullet : MonoBehaviour
         float linger = 0f;
         for (int i = 0; i < meshes.Length; i++) meshes[i].enabled = false;
         for (int i = 0; i < trails.Length; i++) linger = Mathf.Max(linger, trails[i].time);
+        // 파티클은 여운 없이 즉시 지운다 — 탄의 발광체가 파티클이라, 살려두면 죽은 자리에
+        // 빛나는 구슬이 파티클 수명만큼(최대 2초) 떠 있는다. 여운은 트레일만 맡는다.
         for (int i = 0; i < particles.Length; i++)
         {
             particles[i].Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            linger = Mathf.Max(linger, particles[i].main.startLifetime.constantMax);
+            particles[i].Clear(true);
         }
 
         age = 0f;

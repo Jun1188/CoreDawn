@@ -419,10 +419,12 @@ Shader "Evets/Skybox"
                     ComputeSolarEclipse(sunMoonDot2, _SunRadius, _MoonRadius2, _MoonOn2));
                 sunColor *= _SunIntensity;
 
-                // lunar eclipse
-                moon0.color *= ComputeLunarEclipseColor(sunViewDot, sunMoonDot,  _SunRadius, 1.0, _MoonOn);
-                moon1.color *= ComputeLunarEclipseColor(sunViewDot, sunMoonDot1, _SunRadius, 0.5, _MoonOn1);
-                moon2.color *= ComputeLunarEclipseColor(sunViewDot, sunMoonDot2, _SunRadius, 0.25, _MoonOn2);
+                // lunar eclipse — 프로젝트 수정: 제거. 이 게임의 달은 밤 내내 해와 거의
+                // 정반대라(보름달 배치) 월식 판정이 수시로 걸려 달이 붉게/시커멓게 먹힌다.
+                // (에셋 업데이트 시 이 수정이 덮일 수 있음 — 그때 다시 지울 것)
+                // moon0.color *= ComputeLunarEclipseColor(sunViewDot, sunMoonDot,  _SunRadius, 1.0, _MoonOn);
+                // moon1.color *= ComputeLunarEclipseColor(sunViewDot, sunMoonDot1, _SunRadius, 0.5, _MoonOn1);
+                // moon2.color *= ComputeLunarEclipseColor(sunViewDot, sunMoonDot2, _SunRadius, 0.25, _MoonOn2);
 
                 float3 moonColor = moon0.color * ComputeIsolatedMoonMask(moon0.mask, moon1.mask + moon2.mask)
                 + moon1.color * ComputeIsolatedMoonMask(moon1.mask, moon2.mask)
@@ -432,8 +434,10 @@ Shader "Evets/Skybox"
                 #endif
                 
                 // clouds block sun, moon, stars
+                // 프로젝트 수정: 달은 구름이 완전히 지우지 않고 65%만 가린다 — 구름 실루엣이
+                // 달을 통째로 물어뜯은 것처럼 보이던 것을, 구름 뒤로 은은히 비치게 바꾼다.
                 sunColor = sunColor * cloudBlocking;
-                moonColor = moonColor * cloudBlocking;
+                moonColor = moonColor * (cloudBlocking * 0.65 + 0.35);
                 starColor = starColor * cloudBlocking;
                 // darken clouds for night
                 #if _CLOUDS
