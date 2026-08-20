@@ -75,6 +75,7 @@ public static class GameDataImporter
         public string displayName;   // 필수
         public string description;
         public bool   isAutomatic;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것
+        public bool   unlimitedAmmo; // 탄을 소비하지 않는 무기(근접). 위와 같은 이유로 항상 명시할 것
         public string fireMode;      // Projectile | Hitscan | Aura. 생략 시 유지
         public float  fireRate, range, reloadTime, zoomFOV;   // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
         public int    magSize, pellets;                       // >0일 때만 덮음. pellets = 방아쇠당 탄 수(샷건 8)
@@ -414,6 +415,7 @@ public static class GameDataImporter
         gun.displayName = dto.displayName;
         gun.description = dto.description ?? "";
         gun.isAutomatic = dto.isAutomatic;   // bool은 생략 판별 불가 — json이 항상 명시한다 (DTO 주석 참조)
+        gun.unlimitedAmmo = dto.unlimitedAmmo;
 
         if (!string.IsNullOrEmpty(dto.fireMode))
         {

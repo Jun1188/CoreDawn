@@ -32,6 +32,7 @@ MonoBehaviour:
   reloadSound: {fileID: 8300000, guid: 3cfe0927ccb7ede4691b5433aedf2289, type: 3}
   fireVolume: 0.8
   reloadVolume: 0.7
+  unlimitedAmmo: 0
   magSize: 4
   reloadTime: 2.5
   zoomFOV: 40

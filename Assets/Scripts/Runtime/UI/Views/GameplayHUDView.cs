@@ -347,16 +347,20 @@ public class GameplayHUDView : MonoBehaviour
         Show(ammoBox, has);
         if (!has) return;
 
+        // 근접무기(무한 탄약)는 셀 탄이 없다 — 탄창 칸을 ∞로 접어 장전 수/최대치를 지운다.
+        bool unlimited = weapon.gunData.unlimitedAmmo;
+
         ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
-        ammoNow.text = weapon.CurrentAmmo.ToString();
-        ammoCap.text = $" / {weapon.gunData.magSize}";
+        ammoNow.text = unlimited ? "∞" : weapon.CurrentAmmo.ToString();
+        ammoCap.text = unlimited ? "" : $" / {weapon.gunData.magSize}";
         ammoNow.EnableInClassList("combat-ammo__now--reloading", weapon.IsReloading);
 
         // 탄종 + 인벤토리 예비탄 (실소비). 인벤토리 없는 씬은 ReserveAmmo -1 = 무한 보급.
         var item = weapon.CurrentAmmoItem;
-        ammoType.text = item != null ? item.displayName : "";
+        ammoType.text = unlimited ? "근접" : item != null ? item.displayName : "";
         int reserve = weapon.ReserveAmmo;
-        ammoReserve.text = weapon.IsReloading ? "장전 중"
+        ammoReserve.text = unlimited ? ""              // 장전 수 칸이 이미 ∞다 — 두 번 말하지 않는다
+                         : weapon.IsReloading ? "장전 중"
                          : reserve < 0 ? "∞"
                          : $"× {reserve}";
     }

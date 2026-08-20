@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7be05d876c35f7a499414f3d43c683b7, type: 3}
+  m_Name: PlasmaCutter
+  m_EditorClassIdentifier: Assembly-CSharp::GunData
+  id: Gun:PlasmaCutter
+  displayName: "\uD50C\uB77C\uC988\uB9C8 \uCEE4\uD130"
+  description: "\uC794\uD574 \uD574\uCCB4\uC6A9 \uC808\uB2E8\uAE30. \uC0AC\uAC70\uB9AC\uB294
+    \uCF54\uC55E\uBFD0\uC774\uC9C0\uB9CC \uD0C4\uC57D\uC774 \uD544\uC694 \uC5C6\uACE0,
+    \uD55C \uBC88 \uD718\uB450\uB974\uBA74 \uC8FC\uBCC0\uAE4C\uC9C0 \uD568\uAED8
+    \uAC08\uB9B0\uB2E4."
+  icon: {fileID: 0}
+  isAutomatic: 1
+  fireMode: 0
+  fireRate: 0.55
+  range: 0.35
+  pellets: 1
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 18432
+  ammoFilter:
+  - {fileID: 11400000, guid: ddf45d9797d454f44879b6745cc477e3, type: 2}
+  damageMultiplier: 1
+  fireSound: {fileID: 8300000, guid: be64544bade297e4d872dd74c66256d2, type: 3}
+  reloadSound: {fileID: 0}
+  fireVolume: 0.7
+  reloadVolume: 0.7
+  unlimitedAmmo: 1
+  magSize: 1
+  reloadTime: 0.1
+  zoomFOV: 55
+  xRecoil: 1.5
+  yRecoil: 1
+  zRecoil: 0.5
+  visualKickbackZ: 0.55
+  visualKickbackRot: {x: 18, y: 10, z: 8}
+  baseSpread: 0
+  maxSpread: 0
+  spreadIncreasePerShot: 0
+  spreadRecoveryRate: 8

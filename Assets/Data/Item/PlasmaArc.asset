@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-2536490608755648729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702d344e9408d614e8bfeda54bd0b855, type: 3}
+  m_Name: AmmoModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::AmmoModuleSO
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 40
+  - effect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+    value: 1.5
+  speed: 6
+  gravity: 0
+  explosionRadius: 2.2
+  lifetime: 0.4
+  pierce: 0
+  bulletPrefab: {fileID: 4925474407012076622, guid: ce9e3d6125abed14ebdebe370e018f5e, type: 3}
+  muzzleFlashPrefab: {fileID: 80564509999709114, guid: 48d47704b5fd74d49974a5f5be411926, type: 3}
+  hitEffectPrefab: {fileID: 8123500623578600021, guid: d7456e1f6e5242540b63b9042a2e3915, type: 3}
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
+  m_Name: PlasmaArc
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
+  id: Item:PlasmaArc
+  displayName: "\uD50C\uB77C\uC988\uB9C8 \uC544\uD06C"
+  description: "\uD50C\uB77C\uC988\uB9C8 \uCEE4\uD130\uAC00 \uD718\uB458\uB9B4 \uB54C
+    \uCE7C\uB05D\uC5D0 \uC11C\uB294 \uC544\uD06C. \uC190\uC5D0 \uC958 \uC218 \uC5C6\uB294
+    \uD0C4 \u2014 \uC778\uBCA4\uD1A0\uB9AC\uB97C \uAC70\uCE58\uC9C0 \uC54A\uACE0
+    \uD718\uB450\uB984 \uADF8 \uC790\uCCB4\uB85C \uC18C\uBAA8\uB41C\uB2E4."
+  icon: {fileID: 0}
+  type: 4
+  line: 1
+  modules:
+  - {fileID: -2536490608755648729}

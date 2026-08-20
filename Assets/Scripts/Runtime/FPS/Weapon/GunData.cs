@@ -56,6 +56,12 @@ public class GunData : GameDataSO
     [Range(0f, 1f)] public float fireVolume = 0.8f;
     [Range(0f, 1f)] public float reloadVolume = 0.7f;
 
+    [Header("소비")]
+    [Tooltip("탄약을 소비하지 않는 무기인가 — 근접무기처럼 인벤토리의 탄이 필요 없다. " +
+             "탄창은 늘 가득이고 재장전도 하지 않는다. 탄종(ammoFilter)은 그대로 효과·탄도의 주인이다 — " +
+             "근접무기의 '탄'은 보이지 않는 짧은 사거리의 광역탄, 즉 휘두름 그 자체다.")]
+    public bool unlimitedAmmo;
+
     [Header("탄창")]
     public int magSize = 30;
     public float reloadTime = 1.5f;
