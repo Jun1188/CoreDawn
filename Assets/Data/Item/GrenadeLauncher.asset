@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item:GrenadeLauncher
   displayName: "\uC720\uD0C4 \uBC1C\uC0AC\uAE30"
   description: "\uC720\uD0C4\uC744 \uACE1\uC0AC\uB85C \uB0A0\uB9B0\uB2E4."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 9773aecee1ac0ff439cd79ecdab562f4, type: 3}
   type: 5
   line: 1
   modules:

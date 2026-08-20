@@ -428,7 +428,7 @@
       "description": "잔해로 만든 호신용 권총.",
       "type": "Weapon",
       "line": "Iron",
-      "icon": "",
+      "icon": "Pistol",
       "gun": "Gun:Pistol"
     },
     {
@@ -437,7 +437,7 @@
       "description": "연사가 가능한 주력 화기.",
       "type": "Weapon",
       "line": "Iron",
-      "icon": "",
+      "icon": "Rifle",
       "gun": "Gun:Rifle"
     },
     {
@@ -446,7 +446,7 @@
       "description": "근접에서 한 번에 쓸어낸다.",
       "type": "Weapon",
       "line": "Iron",
-      "icon": "",
+      "icon": "Shotgun",
       "gun": "Gun:Shotgun"
     },
     {
@@ -455,7 +455,7 @@
       "description": "먼 거리의 단일 대상을 정확히 노린다.",
       "type": "Weapon",
       "line": "Copper",
-      "icon": "",
+      "icon": "Sniper",
       "gun": "Gun:Sniper"
     },
     {
@@ -464,7 +464,7 @@
       "description": "유탄을 곡사로 날린다.",
       "type": "Weapon",
       "line": "Iron",
-      "icon": "",
+      "icon": "GrenadeLauncher",
       "gun": "Gun:GrenadeLauncher"
     },
     {
@@ -473,7 +473,7 @@
       "description": "일직선의 적을 관통한다.",
       "type": "Weapon",
       "line": "Crystal",
-      "icon": "",
+      "icon": "EnergyRifle",
       "gun": "Gun:EnergyRifle"
     }
   ],
