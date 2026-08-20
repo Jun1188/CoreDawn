@@ -51,13 +51,14 @@ public class GameDataEditorWindow : EditorWindow
     void CreateGUI()
     {
         saveChangesMessage = "GameData.json에 저장하지 않은 변경이 있습니다. 저장할까요?";
+        var combat = new GdCombatTab(this);
         tabs = new GdTab[]
         {
             new GdGraphTab(this),
             new GdPlaceholderTab(this, "건물", "Building 에디터 이식 중 — 다음 단계"),
-            new GdPlaceholderTab(this, "전투", "전투 에디터 이식 중 — 다음 단계"),
+            combat,
             new GdPlaceholderTab(this, "맵", "맵 에디터 이식 중 — 다음 단계"),
-            new GdPlaceholderTab(this, "웨이브", "웨이브 에디터 이식 중 — 다음 단계"),
+            new GdWaveTab(this, combat),   // 웨이브 데이터의 정본은 전투 탭 — 같은 배열의 표 뷰
         };
         LoadFile();
         BuildShell();
@@ -106,26 +107,41 @@ public class GameDataEditorWindow : EditorWindow
         rootVe.Clear();
         tabButtons.Clear();
 
+        // 공용 테마(USS) + 원본 폰트 (body: 'Segoe UI','Malgun Gothic' / .mono: 'IBM Plex Mono',Consolas)
+        rootVe.AddToClassList("gd-root");
+        var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>(
+            "Assets/Scripts/Editor/GameDataEditor/GdEditor.uss");
+        if (uss != null && !rootVe.styleSheets.Contains(uss)) rootVe.styleSheets.Add(uss);
+        gdFont ??= Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Malgun Gothic" }, 14);
+        // 첫 이름이 미설치면 페이스가 무효가 되어 글자가 아예 안 그려진다 — 설치된 것을 골라 준다
+        monoFont ??= Font.CreateDynamicFontFromOSFont(
+            Array.IndexOf(Font.GetOSInstalledFontNames(), "IBM Plex Mono") >= 0 ? "IBM Plex Mono" : "Consolas", 13);
+        if (gdFont != null) rootVe.style.unityFontDefinition = FontDefinition.FromFont(gdFont);
+
+        // #tabs — padding 8×14 · 밑줄 #223350 · 브랜드 14px + small 11.5px
         var bar = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center,
-            paddingLeft = 10, paddingRight = 10, paddingTop = 5, paddingBottom = 5,
-            borderBottomWidth = 1, borderBottomColor = new Color(0, 0, 0, 0.35f) } };
+            paddingLeft = 14, paddingRight = 14, paddingTop = 8, paddingBottom = 8,
+            borderBottomWidth = 1, borderBottomColor = (Color)new Color32(0x22, 0x33, 0x50, 0xFF) } };
         rootVe.Add(bar);
 
-        var brand = new Label("GameData 에디터") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginRight = 4 } };
+        var brand = new Label("GameData 에디터") { style = { unityFontStyleAndWeight = FontStyle.Bold,
+            fontSize = 14, marginRight = 12 } };
         bar.Add(brand);
-        bar.Add(new Label("LevelUpProj26") { style = { opacity = 0.5f, fontSize = 10, marginRight = 10,
-            unityTextAlign = TextAnchor.MiddleLeft } });
+        bar.Add(new Label("LevelUpProj26") { style = { color = (Color)new Color32(0x5C, 0x6E, 0x8C, 0xFF),
+            fontSize = 11.5f, marginRight = 8, unityTextAlign = TextAnchor.MiddleLeft } });
 
         for (int i = 0; i < tabs.Length; i++)
         {
             int idx = i;
             var b = new Button(() => SelectTab(idx)) { text = tabs[i].Title };
+            b.AddToClassList("gd-tabbtn");
             bar.Add(b);
             tabButtons.Add(b);
         }
 
         bar.Add(new VisualElement { style = { flexGrow = 1 } });
-        sharedStat = new Label { style = { opacity = 0.6f, marginRight = 8, unityTextAlign = TextAnchor.MiddleRight } };
+        sharedStat = new Label { style = { marginRight = 8, unityTextAlign = TextAnchor.MiddleRight } };
+        sharedStat.AddToClassList("gd-stat");
         bar.Add(sharedStat);
 
         bar.Add(new Button(() =>
@@ -136,11 +152,18 @@ public class GameDataEditorWindow : EditorWindow
         }) { text = "다시 불러오기" });
         bar.Add(new Button(() => Save(false)) { text = "저장" });
         var si = new Button(() => Save(true)) { text = "저장 + 임포트" };
-        si.style.unityFontStyleAndWeight = FontStyle.Bold;
+        si.AddToClassList("gd-btn-primary");   // button.primary — 시안 테두리·글자
         bar.Add(si);
 
-        paneHost = new VisualElement { style = { flexGrow = 1 } };
+        paneHost = new VisualElement { style = { flexGrow = 1 }, focusable = true };
         rootVe.Add(paneHost);
+
+        // 포커스를 항상 창 안에 둔다 — 패널 안에 포커스가 없으면 Ctrl+Z 가 우리 창을
+        // 거치지 않고 유니티 전역 Undo(씬!)로 흘러간다. 텍스트 필드 클릭은 방해하지 않는다.
+        paneHost.RegisterCallback<PointerDownEvent>(e =>
+        {
+            if (!InTextInput(e.target)) paneHost.Focus();
+        }, TrickleDown.TrickleDown);
 
         // 전역 키 — Ctrl+Z/Y 는 현재 탭의 스택으로, Ctrl+S 는 저장으로.
         // 텍스트 필드 입력 중의 Z/Y 는 필드 자체 편집 취소에 양보한다.
@@ -158,13 +181,16 @@ public class GameDataEditorWindow : EditorWindow
         RefreshSharedStat();
     }
 
+    static Font gdFont;
+    internal static Font monoFont;
+
     GdTab CurrentTab => tabs[Mathf.Clamp(tabIndex, 0, tabs.Length - 1)];
 
     void SelectTab(int idx)
     {
         tabIndex = idx;
         for (int i = 0; i < tabButtons.Count; i++)
-            tabButtons[i].style.unityFontStyleAndWeight = i == idx ? FontStyle.Bold : FontStyle.Normal;
+            tabButtons[i].EnableInClassList("gd-tabbtn--on", i == idx);
         paneHost.Clear();
         if (root == null)
         {
@@ -172,6 +198,7 @@ public class GameDataEditorWindow : EditorWindow
             return;
         }
         tabs[idx].Build(paneHost);
+        paneHost.Focus();   // 키(Ctrl+Z/Y/S)가 유니티 전역이 아니라 이 창으로 오게
         RefreshSharedStat();
     }
 
@@ -220,31 +247,142 @@ abstract class GdTab
     public virtual void Redo() { }
     public virtual bool DeleteSelection() => false;
 
-    // ── 공용 폼 조각 (원본 EdUtil.field 대응) ──
+    // ── 공용 폼 조각 — 원본 EdUtil.field 와 동일한 구조: 라벨이 위, 입력칸이 전체 폭 ──
 
-    protected static TextField Text(string label, string value, Action<string> set, bool multiline = false)
+    protected static VisualElement Field(string label, VisualElement input, string tooltip = null)
     {
-        var f = new TextField(label) { value = value ?? "", multiline = multiline };
-        f.RegisterValueChangedCallback(e => set(e.newValue));
-        return f;
+        var box = new VisualElement();
+        box.AddToClassList("gd-field");
+        if (tooltip != null) box.tooltip = tooltip;
+        var lbl = new Label(label);
+        lbl.AddToClassList("gd-field-label");
+        box.Add(lbl);
+        input.AddToClassList("gd-field-input");
+        box.Add(input);
+        return box;
     }
 
-    protected static FloatField Num(string label, float value, Action<float> set)
+    protected static VisualElement Text(string label, string value, Action<string> set, bool multiline = false)
     {
-        var f = new FloatField(label) { value = value };
+        var f = new TextField { value = value ?? "", multiline = multiline };
+        if (multiline)
+        {
+            // multiline 플래그만으로는 한 줄 높이 그대로다 — 높이는 USS(.gd-multiline)가 준다
+            f.AddToClassList("gd-multiline");
+            f.verticalScrollerVisibility = ScrollerVisibility.Auto;
+        }
         f.RegisterValueChangedCallback(e => set(e.newValue));
-        return f;
+        return Field(label, f);
     }
 
-    protected static IntegerField Int(string label, int value, Action<int> set)
+    protected static VisualElement Num(string label, float value, Action<float> set)
     {
-        var f = new IntegerField(label) { value = value };
+        var f = new FloatField { value = value };
         f.RegisterValueChangedCallback(e => set(e.newValue));
-        return f;
+        return Field(label, f);
     }
 
-    protected static Label Hint(string text) => new(text)
-    { style = { opacity = 0.55f, whiteSpace = WhiteSpace.Normal, marginTop = 8, fontSize = 11 } };
+    protected static VisualElement Int(string label, int value, Action<int> set)
+    {
+        var f = new IntegerField { value = value };
+        f.RegisterValueChangedCallback(e => set(e.newValue));
+        return Field(label, f);
+    }
+
+    /// <summary>라벨 위 드롭다운 — 원본 field(label, select) 대응.</summary>
+    protected static VisualElement Drop(string label, List<string> choices, int index,
+        Action<int> set, string tooltip = null)
+    {
+        var f = new DropdownField(choices, Mathf.Clamp(index, 0, Mathf.Max(0, choices.Count - 1)));
+        f.RegisterValueChangedCallback(e =>
+        {
+            int i = choices.IndexOf(e.newValue);
+            if (i >= 0) set(i);
+        });
+        return Field(label, f, tooltip);
+    }
+
+    /// <summary>격자 속 작은 칸 — 원본 .gcell/.bcell (라벨 위 + 좁은 입력).</summary>
+    protected static VisualElement MiniCell(string label, float value, Action<float> set,
+        string tooltip = null, float widthPercent = 33f)
+    {
+        var box = new VisualElement { style = { width = Length.Percent(widthPercent),
+            paddingRight = 6, marginBottom = 4 } };
+        if (tooltip != null) box.tooltip = tooltip;
+        var lbl = new Label(label);
+        lbl.AddToClassList("gd-field-label");
+        box.Add(lbl);
+        var f = new FloatField { value = value };
+        f.AddToClassList("gd-field-input");   // 마진 0 — 칸 밖으로 안 나가게
+        f.RegisterValueChangedCallback(e => set(e.newValue));
+        box.Add(f);
+        return box;
+    }
+
+    /// <summary>전투·건물·맵 탭의 .field — 라벨 왼쪽(110px) + 입력칸 오른쪽 2열.</summary>
+    protected static VisualElement Field2(string label, VisualElement input, string tooltip = null)
+    {
+        var box = new VisualElement();
+        box.AddToClassList("gd-field2");
+        if (tooltip != null) box.tooltip = tooltip;
+        var lbl = new Label(label);
+        lbl.AddToClassList("gd-field-label");
+        box.Add(lbl);
+        input.AddToClassList("gd-field-input");
+        box.Add(input);
+        return box;
+    }
+
+    /// <summary>그룹 제목 (.field.wide>label) — 우퍼케이스 시안 + 밑줄.</summary>
+    protected static Label GroupTitle(string text)
+    {
+        var l = new Label(text.ToUpperInvariant());
+        l.AddToClassList("gd-groupttl");
+        return l;
+    }
+
+    protected static Label H3(string text)
+    {
+        var l = new Label(text);
+        l.AddToClassList("gd-h3");
+        return l;
+    }
+
+    /// <summary>원본 .mono — 'IBM Plex Mono',Consolas,monospace.</summary>
+    protected static T Mono<T>(T el) where T : VisualElement
+    {
+        if (GameDataEditorWindow.monoFont != null)
+            el.style.unityFontDefinition = FontDefinition.FromFont(GameDataEditorWindow.monoFont);
+        return el;
+    }
+
+    protected static VisualElement DividerEl()
+    {
+        var d = new VisualElement();
+        d.AddToClassList("gd-divider");
+        return d;
+    }
+
+    protected static Label WarnItem(string text)
+    {
+        var l = new Label(text);
+        l.AddToClassList("gd-warn");
+        return l;
+    }
+
+    protected static Label OkMsg(string text)
+    {
+        var l = new Label(text);
+        l.AddToClassList("gd-okmsg");
+        return l;
+    }
+
+    protected static Label Hint(string text)
+    {
+        var l = new Label(text);
+        l.AddToClassList("gd-hint");
+        return l;
+    }
 }
 
 /// <summary>원본 EdHistory — 스냅샷 스택. 바뀐 게 없으면 쌓지 않는다.</summary>

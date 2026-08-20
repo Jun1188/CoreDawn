@@ -136,7 +136,7 @@ class GdGraphTab : GdTab
     VisualElement edgeLayer;
     VisualElement stickyCols, stickyRows;
     Label statLabel, sideTitle;
-    ScrollView sideBody;
+    VisualElement sideBody;
     VisualElement warnBox;
     Button expandBtn;
     readonly Dictionary<string, VisualElement> nodeEls = new();
@@ -564,13 +564,15 @@ class GdGraphTab : GdTab
         host.style.backgroundColor = GdEnum.Bg;
 
         // ── topbar ──
-        var top = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center,
-            paddingLeft = 12, paddingRight = 12, paddingTop = 6, paddingBottom = 6,
-            borderBottomWidth = 1, borderBottomColor = GdEnum.Border, backgroundColor = GdEnum.Bg } };
+        var top = new VisualElement();
+        top.AddToClassList("gd-topbar");
         host.Add(top);
-        top.Add(new Label("GameData 노드 에디터") { style = { unityFontStyleAndWeight = FontStyle.Bold, color = GdEnum.Text } });
-        top.Add(new Label("아이템 · 레시피") { style = { color = GdEnum.Faint, marginLeft = 8, fontSize = 11,
-            unityTextAlign = TextAnchor.MiddleLeft } });
+        var title = new Label("GameData 노드 에디터");
+        title.AddToClassList("gd-topbar-title");
+        top.Add(title);
+        var small = new Label("아이템 · 레시피");
+        small.AddToClassList("gd-topbar-small");
+        top.Add(small);
         top.Add(TopBtn("↶", () => Undo(), "실행 취소 (Ctrl+Z)"));
         top.Add(TopBtn("↷", () => Redo(), "다시 실행 (Ctrl+Y)"));
         top.Add(new VisualElement { style = { flexGrow = 1 } });
@@ -578,7 +580,8 @@ class GdGraphTab : GdTab
         top.Add(expandBtn);
         top.Add(TopBtn("자동 정렬", () => { AutoLayout(); Render(); Push(); }, null));
         top.Add(new VisualElement { style = { flexGrow = 1 } });
-        statLabel = new Label { style = { color = GdEnum.Faint, fontSize = 11, unityTextAlign = TextAnchor.MiddleRight } };
+        statLabel = new Label();
+        statLabel.AddToClassList("gd-stat");
         top.Add(statLabel);
 
         // ── main = 캔버스 + 사이드 ──
@@ -614,20 +617,26 @@ class GdGraphTab : GdTab
             style = { position = Position.Absolute, left = 0, top = 24, bottom = 0, width = 170 } };
         wrap.Add(stickyRows);
 
-        side = new VisualElement { style = { width = 320, borderLeftWidth = 1, borderLeftColor = GdEnum.Border,
-            backgroundColor = GdEnum.Panel } };
+        // #side — width 300 · border-left --line · bg --panel2 · overflow-y:auto · padding 14.
+        // 원본은 패널 전체가 하나의 스크롤 컬럼이다(제목·폼·검증·힌트가 한 흐름) —
+        // 스크롤을 쪼개면 폼 마지막 요소가 경계에서 잘려 겹쳐 보인다.
+        side = new VisualElement { style = { width = 300, borderLeftWidth = 1, borderLeftColor = GdEnum.Line,
+            backgroundColor = GdEnum.Panel2 } };
         main.Add(side);
-        sideTitle = new Label("선택 없음") { style = { unityFontStyleAndWeight = FontStyle.Bold, color = GdEnum.Text,
-            paddingLeft = 12, paddingTop = 10 } };
-        side.Add(sideTitle);
-        sideBody = new ScrollView { style = { flexGrow = 1, paddingLeft = 10, paddingRight = 10, paddingTop = 4 } };
-        side.Add(sideBody);
-        warnBox = new VisualElement { style = { paddingLeft = 12, paddingRight = 10, paddingBottom = 8, maxHeight = 180 } };
-        var warnScroll = new ScrollView();
-        warnScroll.Add(warnBox);
-        warnScroll.style.maxHeight = 190;
-        side.Add(warnScroll);
-        side.Add(Hint("조작 — 휠클릭 드래그: 이동 · 휠: 줌 · 노드 헤더 드래그: 노드 이동 · " +
+        var sideScroll = new ScrollView { style = { flexGrow = 1 } };
+        sideScroll.contentContainer.style.paddingLeft = 14;
+        sideScroll.contentContainer.style.paddingRight = 14;
+        sideScroll.contentContainer.style.paddingTop = 14;
+        sideScroll.contentContainer.style.paddingBottom = 14;
+        side.Add(sideScroll);
+        sideTitle = new Label("선택 없음") { style = { unityFontStyleAndWeight = FontStyle.Bold,
+            fontSize = 13, color = GdEnum.Faint, letterSpacing = 1, marginBottom = 10 } };
+        sideScroll.Add(sideTitle);
+        sideBody = new VisualElement();
+        sideScroll.Add(sideBody);
+        warnBox = new VisualElement { style = { paddingBottom = 8, marginTop = 8 } };
+        sideScroll.Add(warnBox);
+        sideScroll.Add(Hint("조작 — 휠클릭 드래그: 이동 · 휠: 줌 · 노드 헤더 드래그: 노드 이동 · " +
             "간선 라벨 클릭(더블클릭: 수량 편집) · Delete: 선택 삭제 · 우클릭: 추가 메뉴\n" +
             "노드에 커서를 올리면 그 노드에 연결된 간선만 남고 나머지는 흐려진다.\n\n" +
             "id 규칙 — \"Item:이름\" / \"Recipe:이름\" 자동 접두. id가 기본 키(멱등 재임포트)이므로 임포트 후에는 바꾸지 말 것.\n\n" +
@@ -1013,7 +1022,10 @@ class GdGraphTab : GdTab
                 r.Add(new Label(it?.data.displayName ?? "?") { pickingMode = PickingMode.Ignore, style = {
                     color = GdEnum.Text, fontSize = 11, flexGrow = 1,
                     unityFontStyleAndWeight = strong ? FontStyle.Bold : FontStyle.Normal } });
-                r.Add(new Label(e.amount.ToString()) { pickingMode = PickingMode.Ignore, style = { color = GdEnum.Muted, fontSize = 11 } });
+                var amtL = new Label(e.amount.ToString()) { pickingMode = PickingMode.Ignore,
+                    style = { color = GdEnum.Text, fontSize = 11.5f } };
+                Mono(amtL);
+                r.Add(amtL);
                 body.Add(r);
             }
             foreach (var e in ins) Mat(e, e.from, false);
@@ -1027,8 +1039,10 @@ class GdGraphTab : GdTab
         }
 
         // idline + 경고
-        el.Add(new Label((n.kind == "item" ? "Item:" : "Recipe:") + Sanitize(n.data.name)) { pickingMode = PickingMode.Ignore,
-            style = { color = GdEnum.Faint, fontSize = 9, paddingLeft = 8, paddingBottom = 3 } });
+        var idLbl = new Label((n.kind == "item" ? "Item:" : "Recipe:") + Sanitize(n.data.name)) { pickingMode = PickingMode.Ignore,
+            style = { color = GdEnum.Faint, fontSize = 11, paddingLeft = 10, paddingRight = 10, paddingBottom = 8 } };
+        Mono(idLbl);
+        el.Add(idLbl);
         var warn = NodeWarning(n);
         if (!string.IsNullOrEmpty(warn))
             el.Add(new Label("⚠ " + warn) { pickingMode = PickingMode.Ignore, style = { color = GdEnum.Warn, fontSize = 9,
@@ -1364,11 +1378,13 @@ class GdGraphTab : GdTab
             sideTitle.text = isIn ? "재료 연결 (input)" : "결과물 연결 (output)";
             sideBody.Add(new Label(isIn ? "아이템 → 레시피" : "레시피 → 아이템") { style = { color = GdEnum.Faint, fontSize = 11 } });
             sideBody.Add(new Label($"{f.data.displayName} → {t.data.displayName}") { style = { color = GdEnum.Muted, fontSize = 12, marginBottom = 6 } });
-            var amount = new FloatField("amount (수량)") { value = e.amount };
+            var amount = new FloatField { value = e.amount };
             amount.RegisterValueChangedCallback(ev => { e.amount = Mathf.Max(1, Mathf.RoundToInt(ev.newValue)); Render(); });
-            sideBody.Add(amount);
+            sideBody.Add(Field("amount (수량)", amount));
             amountField = amount;
-            sideBody.Add(new Button(RemoveSelection) { text = "연결 삭제 (Delete)" });
+            var delE = new Button(RemoveSelection) { text = "연결 삭제 (Delete)" };
+            delE.AddToClassList("gd-btn-warn");
+            sideBody.Add(delE);
             return;
         }
 
@@ -1386,27 +1402,21 @@ class GdGraphTab : GdTab
             var typeChoices = GdEnum.ItemTypes.Select(t => $"{t.v} — {t.ko} · {t.desc}").ToList();
             int typeIdx = Array.FindIndex(GdEnum.ItemTypes, t => t.v == d.type);
             if (typeIdx < 0) { typeChoices.Add($"{d.type} — 알 수 없음"); typeIdx = typeChoices.Count - 1; }
-            var typeF = new DropdownField("type — ItemType", typeChoices, typeIdx);
-            typeF.RegisterValueChangedCallback(ev =>
+            sideBody.Add(Drop("type — enum ItemType (분류 태그)", typeChoices, typeIdx, i =>
             {
-                int i = typeChoices.IndexOf(ev.newValue);
-                if (i >= 0 && i < GdEnum.ItemTypes.Length) d.type = GdEnum.ItemTypes[i].v;
+                if (i < GdEnum.ItemTypes.Length) d.type = GdEnum.ItemTypes[i].v;
                 Render();
                 RenderSide();   // 모듈 섹션이 즉시 나타나거나 사라져야 한다
-            });
-            sideBody.Add(typeF);
+            }));
 
             var lineChoices = GdEnum.ItemLines.Select(l => $"{l.v} — {l.ko}").ToList();
             int lineIdx = Array.FindIndex(GdEnum.ItemLines, l => l.v == (d.line ?? "None"));
             if (lineIdx < 0) { lineChoices.Add($"{d.line} — 알 수 없음"); lineIdx = lineChoices.Count - 1; }
-            var lineF = new DropdownField("line — ItemLine (계통)", lineChoices, lineIdx);
-            lineF.RegisterValueChangedCallback(ev =>
+            sideBody.Add(Drop("line — enum ItemLine (계통)", lineChoices, lineIdx, i =>
             {
-                int i = lineChoices.IndexOf(ev.newValue);
-                if (i >= 0 && i < GdEnum.ItemLines.Length) d.line = GdEnum.ItemLines[i].v;
+                if (i < GdEnum.ItemLines.Length) d.line = GdEnum.ItemLines[i].v;
                 Render();
-            });
-            sideBody.Add(lineF);
+            }));
 
             // icon — 이름 텍스트가 진실이고, 스프라이트 픽커는 이름을 채워주는 편의
             var iconRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
@@ -1431,7 +1441,9 @@ class GdGraphTab : GdTab
             sideBody.Add(Num("craftTime (초)", d.craftTime, v => { d.craftTime = Mathf.Max(0, v); Render(); }));
         }
 
-        sideBody.Add(new Button(RemoveSelection) { text = "노드 삭제 (Delete)", style = { marginTop = 8 } });
+        var delN = new Button(RemoveSelection) { text = "노드 삭제 (Delete)", style = { marginTop = 8 } };
+        delN.AddToClassList("gd-btn-warn");
+        sideBody.Add(delN);
     }
 
     // 아이템 역할 모듈 — type 이 Ammo/Weapon 이면 해당 모듈 필드가 붙는다 (moduleSection)
@@ -1439,8 +1451,9 @@ class GdGraphTab : GdTab
     {
         if (d.type == "Ammo")
         {
-            sideBody.Add(new Label("AmmoModule · 1발 명중 효과") { style = { color = GdEnum.Muted, fontSize = 11,
-                unityFontStyleAndWeight = FontStyle.Bold, marginTop = 8 } });
+            var ammoTtl = new Label("AMMOMODULE · 1발 명중 효과");
+            ammoTtl.AddToClassList("gd-groupttl");
+            sideBody.Add(ammoTtl);
             var effectIds = (win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>())
                 .Select(e => e.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
             var holder = new VisualElement();
@@ -1483,18 +1496,22 @@ class GdGraphTab : GdTab
             }
             Rebuild();
 
-            sideBody.Add(new Label("탄도 · 발사기가 아니라 탄이 갖는다") { style = { color = GdEnum.Muted, fontSize = 11,
-                unityFontStyleAndWeight = FontStyle.Bold, marginTop = 8 } });
-            sideBody.Add(Num("속도 (m/s, 0이면 Projectile 총이 못 쏜다)", d.speed, v => d.speed = Mathf.Max(0, v)));
-            sideBody.Add(Num("중력 (0 = 직선, 유탄은 9.8)", d.gravity, v => d.gravity = Mathf.Max(0, v)));
-            sideBody.Add(Num("폭발 반경 (0 = 단일 대상)", d.explosionRadius, v => d.explosionRadius = Mathf.Max(0, v)));
-            sideBody.Add(Num("수명 (초)", d.lifetime, v => d.lifetime = Mathf.Max(0, v)));
-            sideBody.Add(Int("관통 (첫 대상 뒤로 더 뚫는 수)", d.pierce, v => d.pierce = Mathf.Max(0, v)));
+            var balTtl = new Label("탄도 · 발사기가 아니라 탄이 갖는다");
+            balTtl.AddToClassList("gd-groupttl");
+            sideBody.Add(balTtl);
+            var balGrid = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap } };
+            balGrid.Add(MiniCell("속도", d.speed, v => d.speed = Mathf.Max(0, v), "m/s. 0 이면 Projectile 총이 못 쏜다", 50f));
+            balGrid.Add(MiniCell("중력", d.gravity, v => d.gravity = Mathf.Max(0, v), "0 = 직선. 유탄은 9.8 로 포물선", 50f));
+            balGrid.Add(MiniCell("폭발 R", d.explosionRadius, v => d.explosionRadius = Mathf.Max(0, v), "0 = 단일 대상", 50f));
+            balGrid.Add(MiniCell("수명", d.lifetime, v => d.lifetime = Mathf.Max(0, v), "초. 이 시간이 지나면 사라진다", 50f));
+            balGrid.Add(MiniCell("관통", d.pierce, v => d.pierce = Mathf.Max(0, Mathf.RoundToInt(v)), "첫 대상 뒤로 더 뚫는 수. 0 = 맞으면 멈춤", 50f));
+            sideBody.Add(balGrid);
         }
         if (d.type == "Weapon")
         {
-            sideBody.Add(new Label("WeaponModule · 장착할 총") { style = { color = GdEnum.Muted, fontSize = 11,
-                unityFontStyleAndWeight = FontStyle.Bold, marginTop = 8 } });
+            var wpnTtl = new Label("WEAPONMODULE · 장착할 총");
+            wpnTtl.AddToClassList("gd-groupttl");
+            sideBody.Add(wpnTtl);
             var guns = (win.root.guns ?? Array.Empty<GameDataImporter.GunDto>())
                 .Select(g => g.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
             var choices = new List<string> { "(없음)" };
@@ -1562,12 +1579,12 @@ class GdGraphTab : GdTab
             if (!string.IsNullOrEmpty(w)) ws.Add($"[{(n.kind == "item" ? "아이템" : "레시피")}] {n.data.displayName}: {w}");
         }
         if (ws.Count == 0)
-            warnBox.Add(new Label("✓ 검증 통과 — 임포터 안전장치에 걸릴 항목 없음") { style = { color = GdEnum.FromHex("#69D58C"), fontSize = 11 } });
+            warnBox.Add(OkMsg("✓ 검증 통과 — 임포터 안전장치에 걸릴 항목 없음"));
         else
         {
-            warnBox.Add(new Label("경고") { style = { color = GdEnum.Warn, fontSize = 11, unityFontStyleAndWeight = FontStyle.Bold } });
+            warnBox.Add(H3("경고"));
             foreach (var w in ws)
-                warnBox.Add(new Label(w) { style = { color = GdEnum.Warn, fontSize = 10.5f, whiteSpace = WhiteSpace.Normal } });
+                warnBox.Add(WarnItem(w));
         }
     }
 }
