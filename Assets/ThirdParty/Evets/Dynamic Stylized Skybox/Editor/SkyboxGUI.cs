@@ -298,7 +298,7 @@ namespace Evets
                 EditorGUI.indentLevel++;
                 EditorGUILayout.Space();
                 EditorGUILayout.PropertyField(moonCount);
-                if (moonTurnOn.boolValue)
+                if (moonCount.intValue > 0)
                 {
                     EditorGUI.indentLevel++;
                     moonFoldout = EditorGUILayout.Foldout(moonFoldout, "Moon 0", true);
@@ -315,7 +315,7 @@ namespace Evets
                     EditorGUI.indentLevel--;
                 }
                 
-                if (moonTurnOn1.boolValue)
+                if (moonCount.intValue > 1)
                 {
                     EditorGUI.indentLevel++;
                     moon1Foldout = EditorGUILayout.Foldout(moon1Foldout, "Moon 1", true);
@@ -332,7 +332,7 @@ namespace Evets
                     EditorGUI.indentLevel--;
                 }
                 
-                if (moonTurnOn2.boolValue)
+                if (moonCount.intValue > 2)
                 {
                     EditorGUI.indentLevel++;
                     moon2Foldout = EditorGUILayout.Foldout(moon2Foldout, "Moon 2", true);

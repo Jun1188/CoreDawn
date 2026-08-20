@@ -36,8 +36,10 @@ public class SkyboxTimeView : MonoBehaviour
     [SerializeField] float sunYaw = 30f;
 
     [Tooltip("달 궤도면을 해와 어긋나게 하는 방위 오프셋(도). 0이면 달이 항상 해의 정반대라 " +
-             "에셋의 개기월식 판정(해·달 정반대)이 걸려 달이 지기 직전 시커멓게 먹힌다.")]
-    [SerializeField] float moonOrbitYawOffset = 18f;
+             "에셋의 개기월식 판정(정렬 1.1° 이내)이 걸려 달이 지기 직전 시커멓게 먹힌다. " +
+             "반대로 크게 어긋내면 달에 위상(이지러짐)이 생긴다 — 달은 해와 정반대일 때만 보름달이다. " +
+             "월식 원뿔(1.1°) 바로 밖, 위상은 눈에 안 띄는 4°가 적정.")]
+    [SerializeField] float moonOrbitYawOffset = 4f;
 
     [Tooltip("시간(0~1)에 따른 햇빛 색. 0=일출, 0.25=정오, 0.5=일몰.")]
     [SerializeField] Gradient lightColor;

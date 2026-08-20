@@ -175,12 +175,12 @@ MonoBehaviour:
   synthwaveSun: 0
   synthSunBottom: 0.5
   synthSunLines: 64
-  moonCount: 3
+  moonCount: 1
   moonTexture: {fileID: 8900000, guid: 2c994b41ee22a30418ad058f51c49aeb, type: 3}
   moonRadius: 0.1
   moonEdgeStrength: 0.4
   moonExposure: 0
-  moonDarkside: 0
+  moonDarkside: 1
   moonTexture1: {fileID: 8900000, guid: 8b6763a3e47f58849bc7a9e22444d6d5, type: 3}
   moonRadius1: 0.1
   moonEdgeStrength1: 0.4

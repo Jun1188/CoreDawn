@@ -20,7 +20,7 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.6150042, g: 0.53937817, b: 0.50312686, a: 1}
+  m_AmbientSkyColor: {r: 0.5800054, g: 0.51250416, b: 0.48750243, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
@@ -121468,7 +121468,7 @@ Light:
   serializedVersion: 12
   m_Type: 1
   m_Color: {r: 0.55, g: 0.65, b: 0.9, a: 1}
-  m_Intensity: 0.10129924
+  m_Intensity: 0.14595018
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -121530,7 +121530,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 815550419}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.9125313, y: -0.019160116, z: 0.40628514, w: -0.043034323}
+  m_LocalRotation: {x: -0.95441777, y: -0.018358175, z: 0.29179475, w: -0.06004689}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -129349,7 +129349,7 @@ Light:
   m_Enabled: 0
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 0.8874973, g: 0.5750006, b: 0.4875033, a: 1}
+  m_Color: {r: 0.8499963, g: 0.58333415, b: 0.5333379, a: 1}
   m_Intensity: 0
   m_Range: 10
   m_SpotAngle: 30
@@ -129412,7 +129412,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 874524889}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.04146577, y: -0.25858045, z: -0.011110719, w: -0.9650354}
+  m_LocalRotation: {x: 0.07094434, y: -0.25812003, z: -0.01900948, w: -0.96331704}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -221253,35 +221253,39 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.043034323
+      value: -0.06004689
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.9125313
+      value: -0.95441777
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.019160116
+      value: -0.018358175
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.40628514
+      value: 0.29179475
+      objectReference: {fileID: 0}
+    - target: {fileID: 7078340303185125795, guid: 036545facce72c1409578f24faec4033, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.9650354
+      value: -0.96331704
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.04146577
+      value: 0.07094434
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.25858045
+      value: -0.25812003
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.011110719
+      value: -0.01900948
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -221323,7 +221327,7 @@ MonoBehaviour:
   sunLight: {fileID: 874524890}
   moonLight: {fileID: 815550420}
   sunYaw: 30
-  moonOrbitYawOffset: 18
+  moonOrbitYawOffset: 4
   lightColor:
     serializedVersion: 2
     key0: {r: 1, g: 0.55, b: 0.35, a: 1}
