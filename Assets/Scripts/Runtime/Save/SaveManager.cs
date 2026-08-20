@@ -146,9 +146,27 @@ public class SaveManager : MonoBehaviour
         return AutoSave();
     }
 
+    /// <summary>
+    /// 밤이 시작될 때 GameManager가 부르는 자동 저장.
+    ///
+    /// 밤은 코어가 부서질 수 있는 유일한 시간이다. 여기서 한 번 저장해 두면 게임오버 화면의
+    /// "마지막 지점에서 다시"가 항상 그날 밤의 시작으로 돌아간다 — 아침 저장만 있으면
+    /// 밤을 통째로 다시 살아야 하고, 첫날 밤에 죽으면 돌아갈 곳이 아예 없다.
+    /// </summary>
+    /// <returns>실제로 저장했으면 true.</returns>
+    public bool AutoSaveOnNightStart()
+    {
+        if (!Config.autoSaveOnNightStart) return false;
+        if (IsTitleScene(SceneManager.GetActiveScene())) return false;
+        return AutoSave();
+    }
+
     /// <summary>자동 저장 슬롯을 순환하며 저장한다.</summary>
     public bool AutoSave()
     {
+        // 여기 한 곳이면 아침·밤 자동 저장, 종료 시 저장, 타이틀 복귀 시 저장이 전부 덮인다
+        if (ShouldSuppressAutoSave()) return false;
+
         int count = Mathf.Max(1, Config.autoSlotCount);
         string slotId = SaveSystemConfig.AutoSlotId(_autoSlotCursor % count);
         _autoSlotCursor = (_autoSlotCursor + 1) % count;
@@ -312,7 +330,8 @@ public class SaveManager : MonoBehaviour
     /// <summary>저장하고 타이틀로 돌아간다. saveFirst=false면 저장 없이 나간다.</summary>
     public bool ReturnToTitle(bool saveFirst = true)
     {
-        if (saveFirst && Config.autoSaveOnQuit && !IsTitleScene(SceneManager.GetActiveScene()))
+        if (saveFirst && Config.autoSaveOnQuit && !ShouldSuppressAutoSave()
+            && !IsTitleScene(SceneManager.GetActiveScene()))
         {
             if (!string.IsNullOrEmpty(_currentSlotId)) Save(_currentSlotId);
             else AutoSave();
@@ -377,6 +396,29 @@ public class SaveManager : MonoBehaviour
         return best != null && Load(best);
     }
 
+    /// <summary>
+    /// 가장 최근에 저장된 슬롯의 요약. 세이브가 하나도 없으면 null.
+    /// "이어하기"·게임오버 화면이 어느 지점으로 돌아가는지 미리 보여주는 데 쓴다 —
+    /// <see cref="LoadMostRecent"/>가 실제로 여는 그 슬롯과 같은 기준으로 고른다.
+    /// </summary>
+    public SaveMeta LatestMeta()
+    {
+        SaveMeta best = null;
+        DateTime bestTime = DateTime.MinValue;
+
+        foreach (var (_, meta) in AllSlots())
+        {
+            if (meta == null || meta.IsEmpty) continue;
+            if (!DateTime.TryParse(meta.SavedAtUtc, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out var t)) continue;
+            if (t <= bestTime) continue;
+
+            bestTime = t;
+            best = meta;
+        }
+        return best;
+    }
+
     public bool DeleteSlot(string slotId)
     {
         bool ok = SaveStorage.Delete(slotId);
@@ -404,6 +446,19 @@ public class SaveManager : MonoBehaviour
 
     bool IsTitleScene(Scene scene)
         => scene.path == Config.titleScenePath || scene.name == SceneNameOf(Config.titleScenePath);
+
+    /// <summary>
+    /// 지금 상태를 자동으로 저장하면 안 되는가.
+    ///
+    /// 게임오버 상태를 자동 저장에 남기면 타이틀의 "이어하기"가 죽은 세계로 들어간다 —
+    /// 플레이어가 명시적으로 고른 것도 아닌데 되돌릴 수 없는 상태가 기록으로 굳는다.
+    /// 복원 중(IsRestoring)에는 아직 절반만 복원된 세계라 저장할 것이 없다.
+    /// </summary>
+    bool ShouldSuppressAutoSave()
+    {
+        if (SaveLoadContext.IsRestoring) return true;
+        return BattleManager.Instance != null && BattleManager.Instance.IsGameOver;
+    }
 
     // ── 디버그 ────────────────────────────────────────────────────
 

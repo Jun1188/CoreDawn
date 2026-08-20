@@ -53,9 +53,14 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        if (TimeManager.Instance == null) return;
+
         // 기획: 밤을 넘겨 아침이 밝으면 자동 저장 (1일차 시작은 제외)
-        if (TimeManager.Instance != null)
-            TimeManager.Instance.Cycle.DayStarted += day => { if (day > 1) SaveGame(); };
+        TimeManager.Instance.Cycle.DayStarted += day => { if (day > 1) SaveGame(); };
+
+        // 밤이 시작될 때도 저장한다 — 코어가 부서질 수 있는 유일한 시간이라,
+        // 게임오버 후 되돌아갈 지점이 여기여야 밤을 통째로 다시 살지 않는다.
+        TimeManager.Instance.Cycle.NightStarted += _ => SaveNightfall();
     }
 
     // ── 기존 코드 호환용 (시간 관련 조회는 TimeManager로 위임)
@@ -72,6 +77,16 @@ public class GameManager : MonoBehaviour
         int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 0;
         if (SaveManager.Instance.AutoSaveOnDayStart())
             Debug.Log($"====== 💾 [{day - 1}일차 완료] 자동 저장 완료 ======");
+    }
+
+    /// <summary>밤이 시작될 때마다 불리는 자동 저장. 정책(켬/끔, 슬롯 순환)은 SaveManager가 판단한다.</summary>
+    public void SaveNightfall()
+    {
+        if (SaveManager.Instance == null) return;
+
+        int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 0;
+        if (SaveManager.Instance.AutoSaveOnNightStart())
+            Debug.Log($"====== 💾 [{day}일차 밤 시작] 자동 저장 완료 ======");
     }
 
     /// <summary>

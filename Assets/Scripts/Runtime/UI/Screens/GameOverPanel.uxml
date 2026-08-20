@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- 게임오버 — 코어가 파괴됐을 때.
+
+         닫을 수 있는 창이 아니다. ✕도 "계속하기"도 없고 ESC도 먹지 않는다
+         (GameOverPanelView가 Cancel을 삼킨다). 여기서 나가는 길은 아래 세 버튼뿐이다.
+
+         버튼 순서는 일시정지 메뉴와 같은 규칙 — 손이 가는 빈도순이고, 되돌릴 수 없는
+         이동(타이틀 복귀)이 맨 아래 위험(danger) 스타일로 멀리 놓인다.
+
+         "마지막 지점에서 다시"는 가장 최근 세이브를 그대로 연다. 밤이 시작될 때 자동 저장이
+         돌기 때문에(GameManager) 대개 그날 밤의 시작으로 돌아간다 — 재시도가 의미 있는 지점이다.
+         더 이전으로 가려는 사람만 "불러오기"로 슬롯을 고른다. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/screens.uss" />
+    <Style src="../Styles/saveload.uss" />
+
+    <ui:VisualElement name="screen-root" class="screen-root">
+        <ui:VisualElement name="gameover-panel" class="ui-panel gameover-panel">
+
+            <ui:VisualElement class="ui-panel__title">
+                <ui:Label text="GAME OVER" class="ui-panel__tag ui-panel__tag--danger" />
+                <ui:Label text="코어 파괴" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ui-panel__body pause-panel__body">
+
+                <ui:Label name="headline" text="코어가 파괴되었습니다" class="gameover-headline" />
+                <ui:Label name="lede" text="공장은 멈췄다. 마지막 기록으로 돌아가거나 관제소로 나갈 수 있다."
+                          class="gameover-lede" />
+
+                <!-- 어느 시점에서 끝났는지 — 일시정지 메뉴와 같은 줄을 그대로 쓴다 -->
+                <ui:VisualElement name="status" class="pause-status">
+                    <ui:Label name="status-day" text="Day 1" class="pause-status__day" />
+                    <ui:Label name="status-play" text="00:00:00" class="pause-status__play" />
+                </ui:VisualElement>
+
+                <ui:Button name="btn-retry" text="마지막 지점에서 다시" class="ui-btn ui-btn--primary pause-btn" />
+                <ui:Button name="btn-load" text="불러오기" class="ui-btn pause-btn" />
+                <ui:Button name="btn-title" text="타이틀로 나가기" class="ui-btn ui-btn--danger pause-btn" />
+
+                <ui:Label name="recent" text="" class="gameover-recent" />
+                <ui:Label name="error" text="" class="gameover-error ui-hidden" />
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
