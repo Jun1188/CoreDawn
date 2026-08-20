@@ -188,6 +188,7 @@
       "displayName": "플라즈마 커터",
       "isAutomatic": true,
       "unlimitedAmmo": true,
+      "blockAim": true,
       "fireMode": "Projectile",
       "description": "잔해 해체용 절단기. 사거리는 코앞뿐이지만 탄약이 필요 없고, 한 번 휘두르면 주변까지 함께 갈린다.",
       "fireRate": 0.55,
@@ -197,12 +198,25 @@
       "xRecoil": 1.5,
       "yRecoil": 1,
       "zRecoil": 0.5,
-      "visualKickbackZ": 0.55,
+      "visualKickbackZ": 0,
       "visualKickbackRot": [
-        18,
-        10,
-        8
+        0,
+        0,
+        0
       ],
+      "swingTime": 0.42,
+      "swingRotation": [
+        22,
+        -30,
+        26
+      ],
+      "swingPosition": [
+        -0.06,
+        0.025,
+        0.06
+      ],
+      "swingWindup": 0.18,
+      "swingAlternate": true,
       "baseSpread": 0,
       "maxSpread": 0,
       "spreadIncreasePerShot": 0,

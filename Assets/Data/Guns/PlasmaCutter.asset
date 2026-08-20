@@ -30,19 +30,25 @@ MonoBehaviour:
   ammoFilter:
   - {fileID: 11400000, guid: ddf45d9797d454f44879b6745cc477e3, type: 2}
   damageMultiplier: 1
-  fireSound: {fileID: 8300000, guid: be64544bade297e4d872dd74c66256d2, type: 3}
+  fireSound: {fileID: 8300000, guid: 1961437f402f70a40a52757ecf78801d, type: 3}
   reloadSound: {fileID: 0}
-  fireVolume: 0.7
+  fireVolume: 0.55
   reloadVolume: 0.7
   unlimitedAmmo: 1
   magSize: 1
   reloadTime: 0.1
   zoomFOV: 55
+  blockAim: 1
+  swingTime: 0.42
+  swingRotation: {x: 22, y: -30, z: 26}
+  swingPosition: {x: -0.06, y: 0.025, z: 0.06}
+  swingWindup: 0.18
+  swingAlternate: 1
   xRecoil: 1.5
   yRecoil: 1
   zRecoil: 0.5
-  visualKickbackZ: 0.55
-  visualKickbackRot: {x: 18, y: 10, z: 8}
+  visualKickbackZ: 0
+  visualKickbackRot: {x: 0, y: 0, z: 0}
   baseSpread: 0
   maxSpread: 0
   spreadIncreasePerShot: 0

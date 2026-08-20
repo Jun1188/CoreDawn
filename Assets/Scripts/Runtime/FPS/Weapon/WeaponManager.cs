@@ -18,6 +18,7 @@ public class WeaponManager : MonoBehaviour
     [SerializeField] private WeaponADS adsModule;
     [SerializeField] private WeaponKickback kickbackModule;
     [SerializeField] private ProceduralRecoil recoilManager;
+    [SerializeField] private WeaponSwing swingModule;
 
     private int currentIndex = -1; // -1이면 현재 맨손 상태
 
@@ -96,10 +97,20 @@ public class WeaponManager : MonoBehaviour
         SetAiming(false);
     }
 
-    /// <summary>조준 시작/해제 — 입력(WeaponController)이 호출한다. 연출 반영은 여기서 전파.</summary>
+    /// <summary>
+    /// 지금 든 무기로 조준할 수 있는가 — 가늠자가 없는 무기(근접)는 false.
+    /// 입력(WeaponController)은 이 값이 false면 조준 입력을 소비하지 않고 흘려보낸다.
+    /// </summary>
+    public bool CanAim => CurrentWeapon != null && CurrentWeapon.gunData != null && !CurrentWeapon.gunData.blockAim;
+
+    /// <summary>
+    /// 조준 시작/해제 — 입력(WeaponController)이 호출한다. 연출 반영은 여기서 전파.
+    /// 조준 불가 무기는 여기서 한 번에 막는다: 줌(FOV)·이동속도 감속·스웨이 억제·달리기 금지가
+    /// 전부 WeaponADS가 게시하는 AimWeight 하나를 보고 있어서, 이 관문이면 전부 함께 멈춘다.
+    /// </summary>
     public void SetAiming(bool aiming)
     {
-        if (CurrentWeapon == null) aiming = false;
+        if (!CanAim) aiming = false;
         IsAiming = aiming;
         if (adsModule != null) adsModule.SetAiming(aiming);
     }
@@ -143,5 +154,10 @@ public class WeaponManager : MonoBehaviour
             recoilManager.FireRecoil(data.xRecoil, data.yRecoil, data.zRecoil);
         if (kickbackModule != null)
             kickbackModule.Fire(data.visualKickbackZ, data.visualKickbackRot, IsAiming);
+        // 근접무기는 킥백(뒤로 밀림) 대신 호를 그린다 — 어느 쪽인지는 무기 수치가 정한다
+        // (swingTime 0 = 스윙 없음, 킥백 0 = 반동 없음). 코드에는 총/근접 분기가 없다.
+        if (swingModule != null && data.swingTime > 0f)
+            swingModule.Swing(data.swingTime, data.swingRotation, data.swingPosition,
+                              data.swingWindup, data.swingAlternate);
     }
 }

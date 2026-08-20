@@ -70,6 +70,23 @@ public class GunData : GameDataSO
     [Tooltip("정조준 시 시야각.")]
     public float zoomFOV = 50f;
 
+    [Tooltip("조준을 막는가 — 가늠자가 없는 무기(근접무기)는 우클릭해도 아무 일도 일어나지 않는다. " +
+             "이 값 하나로 줌·이동속도 감속·스웨이 억제·달리기 금지가 전부 함께 꺼진다 " +
+             "(전부 WeaponADS가 게시하는 AimWeight 하나를 보고 있기 때문).")]
+    public bool blockAim;
+
+    [Header("근접 스윙 (휘두르기 — swingTime 0이면 스윙 없음)")]
+    [Tooltip("스윙 한 번의 전체 길이(초). 연사 간격(fireRate)보다 짧아야 다음 스윙과 겹치지 않는다.")]
+    public float swingTime;
+    [Tooltip("휘두름의 최대 회전(도) — 무기를 든 손이 그리는 호.")]
+    public Vector3 swingRotation = new Vector3(35f, -55f, 40f);
+    [Tooltip("휘두름의 최대 이동(m).")]
+    public Vector3 swingPosition = new Vector3(-0.1f, 0.04f, 0.1f);
+    [Tooltip("되감기(백스윙) 비율 — 반대 방향으로 살짝 당겼다 휘두른다. 0이면 바로 휘두른다.")]
+    [Range(0f, 0.5f)] public float swingWindup = 0.18f;
+    [Tooltip("스윙마다 좌우를 뒤집는가 — 좌→우 다음엔 우→좌. 같은 궤적 반복의 기계감을 없앤다.")]
+    public bool swingAlternate = true;
+
     [Header("반동 (Recoil — 카메라 회전)")]
     public float xRecoil = 3f;
     public float yRecoil = 2f;

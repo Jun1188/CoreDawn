@@ -76,6 +76,7 @@ public static class GameDataImporter
         public string description;
         public bool   isAutomatic;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것
         public bool   unlimitedAmmo; // 탄을 소비하지 않는 무기(근접). 위와 같은 이유로 항상 명시할 것
+        public bool   blockAim;      // 조준 불가(근접). 생략 = false = 조준 가능이라 기존 총은 안전
         public string fireMode;      // Projectile | Hitscan | Aura. 생략 시 유지
         public float  fireRate, range, reloadTime, zoomFOV;   // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
         public int    magSize, pellets;                       // >0일 때만 덮음. pellets = 방아쇠당 탄 수(샷건 8)
@@ -89,6 +90,11 @@ public static class GameDataImporter
         public float  visualKickbackZ = -1f;
         public float[] visualKickbackRot;                                  // [x,y,z]. null = 유지
         public float  baseSpread = -1f, maxSpread = -1f, spreadIncreasePerShot = -1f, spreadRecoveryRate = -1f;
+
+        // 근접 스윙 — swingTime > 0일 때만 스윙한다(총기는 생략하면 그만)
+        public float   swingTime = -1f, swingWindup = -1f;
+        public float[] swingRotation, swingPosition;   // [x,y,z]. null = 유지
+        public bool    swingAlternate;                 // bool이라 생략 판별 불가 — 스윙 무기는 항상 명시할 것
     }
 
     [Serializable] class ItemDto
@@ -416,6 +422,8 @@ public static class GameDataImporter
         gun.description = dto.description ?? "";
         gun.isAutomatic = dto.isAutomatic;   // bool은 생략 판별 불가 — json이 항상 명시한다 (DTO 주석 참조)
         gun.unlimitedAmmo = dto.unlimitedAmmo;
+        gun.blockAim = dto.blockAim;
+        gun.swingAlternate = dto.swingAlternate;
 
         if (!string.IsNullOrEmpty(dto.fireMode))
         {
@@ -441,6 +449,13 @@ public static class GameDataImporter
         if (dto.maxSpread             >= 0f) gun.maxSpread             = dto.maxSpread;
         if (dto.spreadIncreasePerShot >= 0f) gun.spreadIncreasePerShot = dto.spreadIncreasePerShot;
         if (dto.spreadRecoveryRate    >= 0f) gun.spreadRecoveryRate    = dto.spreadRecoveryRate;
+
+        if (dto.swingTime   >= 0f) gun.swingTime   = dto.swingTime;
+        if (dto.swingWindup >= 0f) gun.swingWindup = dto.swingWindup;
+        if (dto.swingRotation != null && dto.swingRotation.Length == 3)
+            gun.swingRotation = new Vector3(dto.swingRotation[0], dto.swingRotation[1], dto.swingRotation[2]);
+        if (dto.swingPosition != null && dto.swingPosition.Length == 3)
+            gun.swingPosition = new Vector3(dto.swingPosition[0], dto.swingPosition[1], dto.swingPosition[2]);
 
         if (dto.damageMultiplier >= 0f) gun.damageMultiplier = dto.damageMultiplier;
         // ammo(아이템 참조)는 아이템 패스가 끝난 뒤 2차로 해석한다 — ResolveGunAmmo

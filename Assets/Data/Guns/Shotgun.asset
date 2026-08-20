@@ -35,6 +35,12 @@ MonoBehaviour:
   magSize: 8
   reloadTime: 2.5
   zoomFOV: 40
+  blockAim: 0
+  swingTime: 0
+  swingRotation: {x: 35, y: -55, z: 40}
+  swingPosition: {x: -0.1, y: 0.04, z: 0.1}
+  swingWindup: 0.18
+  swingAlternate: 0
   xRecoil: 8
   yRecoil: 5
   zRecoil: 2

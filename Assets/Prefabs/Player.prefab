@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 6901295241664568780}
   - component: {fileID: 6652096104688218203}
   - component: {fileID: 3069826180716430105}
+  - component: {fileID: 5206136052188048441}
   m_Layer: 12
   m_Name: Weapon_Holder
   m_TagString: Untagged
@@ -100,6 +101,7 @@ MonoBehaviour:
   adsModule: {fileID: 3775902399488542646}
   kickbackModule: {fileID: 7096013060996383979}
   recoilManager: {fileID: 7667058029735366538}
+  swingModule: {fileID: 5206136052188048441}
 --- !u!114 &6820147174586236112
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -228,6 +230,20 @@ MonoBehaviour:
   slidePunchPitch: -9
   aimSuppression: 1
   sharpness: 14
+--- !u!114 &5206136052188048441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396995298283521722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ee3aac45714307419ba63f9941d539f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponSwing
+  strikeRatio: 0.45
+  maxRotation: 90
 --- !u!1 &452123137726881323
 GameObject:
   m_ObjectHideFlags: 0
