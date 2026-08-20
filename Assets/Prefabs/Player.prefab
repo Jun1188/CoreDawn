@@ -145,6 +145,7 @@ MonoBehaviour:
   aimAmountMultiplier: 0.45
   aimFrequencyMultiplier: 1.25
   aimDampingMultiplier: 1.35
+  aimRotationScale: 0
   perShotVariance: 0.08
   horizontalWanderSpeed: 3
   rollCoupling: 0.35
@@ -998,7 +999,7 @@ MonoBehaviour:
   lateralLean: 0.02
   forwardLean: 0.025
   sharpness: 9
-  aimSuppression: 0.75
+  aimSuppression: 1
 --- !u!114 &7941117149232242425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1015,7 +1016,7 @@ MonoBehaviour:
   bobX: 0.016
   bobRoll: 0.55
   crouchScale: 0.55
-  aimSuppression: 0.8
+  aimSuppression: 1
   bobSharpness: 12
   landDip: 0.13
   landPitch: 4.5
