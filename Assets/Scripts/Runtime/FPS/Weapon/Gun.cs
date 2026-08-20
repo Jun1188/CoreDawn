@@ -84,6 +84,18 @@ public class Gun : MonoBehaviour
 
     private void Update()
     {
+        // 플레이어가 죽었으면 무기 기능 전체 정지
+        if (OwnerEntity != null && OwnerEntity.IsDead)
+        {
+            if (IsReloading)
+            {
+                StopAllCoroutines();
+                IsReloading = false;
+            }
+
+            return;
+        }
+
         // 안 쏠 때는 에임이 다시 모임 (이동 속도에 따라 기본 탄퍼짐 증가 — 달리면 2배)
         float speedFactor = (playerRb != null && playerRb.linearVelocity.magnitude > 1f) ? 2f : 1f;
         float targetSpread = gunData.baseSpread * speedFactor;
@@ -114,6 +126,19 @@ public class Gun : MonoBehaviour
     /// <summary>사격 시도 — 재장전·탄약·연사 간격을 통과하면 발사하고 true.</summary>
     public bool TryFire()
     {
+        Debug.Log(
+        $"[Gun] TryFire / gun={name} / owner={OwnerEntity} / ownerDead={OwnerEntity?.IsDead}"
+    );
+        // 사망 중에는 발사 금지
+        if (OwnerEntity != null && OwnerEntity.IsDead)
+            return false;
+
+        Entity owner = OwnerEntity;
+
+        // 플레이어가 죽어 있으면 발사 금지
+        if (owner != null && owner.IsDead)
+            return false;
+
         if (IsReloading) return false;
 
         if (CurrentAmmo <= 0)
@@ -144,6 +169,9 @@ public class Gun : MonoBehaviour
     // 발사 — 스펙(ProjectileShot)을 만들어 공용 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
     private void Fire(int rounds)
     {
+        Debug.Log(
+    $"[Gun] 실제 Fire 실행 / gun={name} / owner={OwnerEntity} / ownerDead={OwnerEntity?.IsDead}"
+);
         if (gunData != null && gunData.fireSound != null)
         {
             Vector3 soundPos = muzzlePoint != null ? muzzlePoint.position : transform.position;
@@ -213,8 +241,13 @@ public class Gun : MonoBehaviour
 
     public void StartReload()
     {
-        if (Unlimited) return;   // 근접무기 — 채울 탄창이 없다
-        if (IsReloading || CurrentAmmo == gunData.magSize || !gameObject.activeSelf) return;
+	// 사망 중에는 장전 금지
+    	if (OwnerEntity != null && OwnerEntity.IsDead)
+        	return;
+
+    	if (Unlimited) return;   // 근접무기 — 채울 탄창이 없다 
+	       
+	if (IsReloading || CurrentAmmo == gunData.magSize || !gameObject.activeSelf) return;
 
         // 실소비 — 인벤토리에 현재 탄종이 하나도 없으면 재장전 자체가 시작되지 않는다
         if (PlayerInventoryHolder.Instance != null && CountInInventory(CurrentAmmoItem) <= 0) return;

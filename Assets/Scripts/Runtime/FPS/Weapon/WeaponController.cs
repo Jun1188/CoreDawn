@@ -49,6 +49,22 @@ public class WeaponController : MonoBehaviour, IInputReceiver
 
     private void Update()
     {
+        if (player != null && player.IsDeadOrDying)
+        {
+            ReleaseHeldStates();
+
+            var deadWeapon = weaponManager != null
+                ? weaponManager.CurrentWeapon
+                : null;
+
+            if (deadWeapon != null && deadWeapon.IsReloading)
+            {
+                // Gun 내부에서도 정리되지만,
+                // WeaponController에서 사격 상태를 먼저 끊는다.
+            }
+
+            return;
+        }
         var weapon = weaponManager != null ? weaponManager.CurrentWeapon : null;
         if (weapon == null) return;
 
@@ -66,6 +82,13 @@ public class WeaponController : MonoBehaviour, IInputReceiver
 
     public bool OnInput(in InputEvent e)
     {
+        // 사망 중에는 공격/조준/재장전/탄종 전환 전부 무시
+        if (player != null && player.IsDeadOrDying)
+        {
+            ReleaseHeldStates();
+            return true;
+        }
+
         var weapon = weaponManager.CurrentWeapon;
 
         switch (e.Id)
@@ -114,5 +137,10 @@ public class WeaponController : MonoBehaviour, IInputReceiver
         isFiringHeld = false;
         lastFireInputTime = -1f;
         if (weaponManager != null) weaponManager.SetAiming(false);
+    }
+
+    public void ForceReleaseInput()
+    {
+        ReleaseHeldStates();
     }
 }

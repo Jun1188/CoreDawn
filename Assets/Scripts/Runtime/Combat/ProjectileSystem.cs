@@ -356,7 +356,13 @@ public static class ProjectileSystem
 
         Entity entity = hit.GetComponentInParent<Entity>();
         if (entity != null && !entity.IsDead)
+        {
             entity.ApplyEffects(shot.Effects, shot.Source, point);
+            if (shot.Source != null && shot.Source.GetComponent<PlayerController>() != null)
+            {
+                CombatEvents.OnPlayerHitEnemy?.Invoke();
+            }
+        }
     }
 
     // ── 오라(펄스) — 세 번째 전달 방식 ──────────────────────────
@@ -377,6 +383,9 @@ public static class ProjectileSystem
         int count = Physics.OverlapSphereNonAlloc(origin, radius, pulseBuffer, shot.TargetMask);
         pulseSeen.Clear();
         int applied = 0;
+
+        bool playerHitTriggered = false;
+
         for (int i = 0; i < count; i++)
         {
             Entity entity = pulseBuffer[i].GetComponentInParent<Entity>();
@@ -385,6 +394,13 @@ public static class ProjectileSystem
 
             entity.ApplyEffects(shot.Effects, shot.Source, origin);
             applied++;
+
+            if (!playerHitTriggered && shot.Source != null && shot.Source.GetComponent<PlayerController>() != null)
+            {
+                CombatEvents.OnPlayerHitEnemy?.Invoke();
+                playerHitTriggered = true;
+            }
+
         }
         return applied;
     }

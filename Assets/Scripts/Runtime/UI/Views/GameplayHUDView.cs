@@ -310,8 +310,40 @@ public class GameplayHUDView : MonoBehaviour
         hpMax.text = $"/ {Mathf.CeilToInt(max)}";
         Fill(hpFill, max > 0f ? current / max : 0f);
         Show(deathOverlay, current <= 0f);
-    }
 
+        Debug.Log(
+                $"[GameplayHUD] HP 갱신 = {current} / {max}" +
+                $" | playerEntity={playerEntity?.GetInstanceID()}" +
+                $" | health={playerEntity?.Health.GetHashCode()}"
+            );
+    }
+    public void RefreshPlayerHp()
+    {
+        if (playerEntity == null)
+        {
+            BindPlayerIfNeeded();
+        }
+
+        if (playerEntity == null)
+            return;
+
+        Debug.Log(
+        $"[GameplayHUD] Refresh 대상" +
+        $" | Entity={playerEntity.GetInstanceID()}" +
+        $" | Player={playerEntity.GetInstanceID()}" +
+        $" | Health={playerEntity.Health.GetHashCode()}" +
+        $" | HP={playerEntity.Health.CurrentHealth}/{playerEntity.Health.MaxHealth}"
+    );
+
+        OnPlayerHp(
+            playerEntity.Health.CurrentHealth,
+            playerEntity.Health.MaxHealth
+        );
+    }
+    public void HideDeathOverlay()
+    {
+        Show(deathOverlay, false);
+    }
     /// <summary>
     /// 코어는 나중에 생길 수도, 부서질 수도 있다 — 붙을 때까지 매 프레임 다시 찾는다.
     /// <b>없다고 줄을 숨기지는 않는다</b>: 코어가 부서진 순간은 체력바가 사라질 때가 아니라

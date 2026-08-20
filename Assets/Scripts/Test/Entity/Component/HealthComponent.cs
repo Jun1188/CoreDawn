@@ -22,6 +22,7 @@ public class HealthComponent
     {
         currentHealth = maxHealth;
         IsDead = false;
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
@@ -29,10 +30,15 @@ public class HealthComponent
     {
         if (IsDead) return;
 
-        currentHealth = Mathf.Clamp(currentHealth - damageAmount, 0, maxHealth);
+        currentHealth = Mathf.Clamp(
+            currentHealth - damageAmount,
+            0f,
+            maxHealth
+        );
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
-        if (currentHealth <= 0)
+        if (currentHealth <= 0f)
         {
             Die();
         }
@@ -42,8 +48,12 @@ public class HealthComponent
     public void SetMaxHealth(float newMaxHealth, bool refill = true)
     {
         maxHealth = Mathf.Max(1f, newMaxHealth);
-        if (refill && !IsDead) currentHealth = maxHealth;
-        else currentHealth = Mathf.Min(currentHealth, maxHealth);
+
+        if (refill && !IsDead)
+            currentHealth = maxHealth;
+        else
+            currentHealth = Mathf.Min(currentHealth, maxHealth);
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
@@ -59,14 +69,21 @@ public class HealthComponent
         maxHealth = Mathf.Max(1f, max);
         currentHealth = Mathf.Clamp(current, 0f, maxHealth);
         IsDead = isDead;
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     public void Heal(float healAmount)
     {
-        if (IsDead) return;
+        if (IsDead)
+            return;
 
-        currentHealth = Mathf.Clamp(currentHealth + healAmount, 0, maxHealth);
+        currentHealth = Mathf.Clamp(
+            currentHealth + healAmount,
+            0f,
+            maxHealth
+        );
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
@@ -74,8 +91,11 @@ public class HealthComponent
     public void Kill()
     {
         if (IsDead) return;
-        currentHealth = 0;
+
+        currentHealth = 0f;
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
         Die();
     }
 

@@ -1,6 +1,8 @@
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 /// <summary>
 /// 플레이어 아바타 조작 — 입력 파이프라인의 Player 리시버(최하위 우선순위)이자
@@ -141,6 +143,26 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     public InventoryUI chestInventoryUI;
     public GameObject crosshairUI;      // 표시/숨김은 InventoryPopup의 Enter/Exit가 수행
 
+    [Header("Death & Respawn")]
+    [Tooltip("부활할 코어의 위치. 씬에 있는 코어 오브젝트를 할당하세요.")]
+    public float respawnTime = 3f;
+    private Player playerEntity;
+
+    [Header("Damage Vignette")]
+    public Volume postProcessVolume;
+    [SerializeField] private Vignette vignette;
+    public Color damageColor = Color.red;
+    public float maxVignetteIntensity = 0.5f;
+
+    public bool IsDeadOrDying =>
+    _isDead ||
+    (playerEntity != null && playerEntity.IsDead);
+
+
+    private bool _isDead;
+    private Tween _respawnTween;
+    private Tween _damageVignetteTween;
+
     #endregion
 
     #region [2. Variables - Runtime]
@@ -227,6 +249,12 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     public bool OnInput(in InputEvent e)
     {
+        if (playerEntity == null)
+            BindPlayerEntityIfNeeded();
+
+        if (IsDeadOrDying)
+            return false;
+
         // 상태가 먼저 볼 기회를 준다 (탈것/사다리 등 상태 고유 입력이 생길 자리)
         if (_state != null && _state.HandleInput(this, e)) return true;
 
@@ -335,6 +363,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         _state = _grounded;
         _state.Enter(this, PlayerLocomotion.Grounded);
         Motion.Locomotion = PlayerLocomotion.Grounded;
+
     }
 
     private void Start()
@@ -351,18 +380,26 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         // 시작 시 핫바 활성 슬롯의 무기를 장착 — 장착 브리지는 핫바 컨트롤러가 유일 소유
         if (HotbarController.Instance != null)
             HotbarController.Instance.EquipFromActiveSlot();
+
+        if (postProcessVolume != null && postProcessVolume.profile != null)
+        {
+            postProcessVolume.profile.TryGet(out vignette);
+        }
+
+        if(playerEntity == null)
+            BindPlayerEntityIfNeeded();
     }
 
     private void OnEnable()
     {
-        // 사망 후 부활 등으로 다시 켜질 때 FSM을 기립 상태로 되돌린다 (Register는 중복 안전)
         _state = _grounded;
         Motion.Locomotion = PlayerLocomotion.Grounded;
         Motion.Stance = PlayerStance.Stand;
 
-        if (InputManager.Instance != null) InputManager.Instance.Register(this);
+        if (InputManager.Instance != null)
+            InputManager.Instance.Register(this);
 
-        Motion.Stepped += OnPlayerStepped; // 발걸음 이벤트 연결
+        Motion.Stepped += OnPlayerStepped;
     }
 
     private void OnDisable()
@@ -383,6 +420,12 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         if (InputManager.Instance != null) InputManager.Instance.Unregister(this);
 
         Motion.Stepped -= OnPlayerStepped; // 해제
+
+        _damageVignetteTween?.Kill();
+        _damageVignetteTween = null;
+
+        _respawnTween?.Kill();
+        _respawnTween = null;
     }
 
     private void OnDestroy()
@@ -393,6 +436,13 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     private void Update()
     {
+        if (playerEntity == null)
+        BindPlayerEntityIfNeeded();
+
+        if (_isDead) return;
+
+        if (playerEntity != null && playerEntity.IsDead) return;
+
         float dt = Time.deltaTime;
 
         // 연속 입력 폴링 — 소속 맵이 비활성(팝업 열림)이면 0이 읽힌다
@@ -412,6 +462,10 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     private void FixedUpdate()
     {
+        if (_isDead) return;
+
+        if (playerEntity != null && playerEntity.IsDead) return;
+
         float dt = Time.fixedDeltaTime;
 
         SyncVelocity();
@@ -884,7 +938,12 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     /// <summary>화면이 열리는 순간 수평 관성 제거 — 열림 중 이동 입력은 맵 비활성으로 이미 0</summary>
     public void HaltMomentum()
     {
-        if (rb != null) rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
         ReleaseHeldInputs();
     }
 
@@ -916,4 +975,295 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         stepFrequency = Mathf.Max(0.1f, stepFrequency);
     }
 #endif
+
+#region [Combat & VFX Methods & Respawn]
+
+    private void PlayDamageVignette()
+    {
+        Debug.Log(
+            $"[PlayerController] PlayDamageVignette / vignette = {vignette}"
+        );
+
+        if (vignette == null)
+            return;
+
+        _damageVignetteTween?.Kill();
+
+        vignette.color.Override(damageColor);
+        vignette.intensity.Override(0f);
+
+        _damageVignetteTween = DOTween.To(
+            () => vignette.intensity.value,
+            x => vignette.intensity.Override(x),
+            maxVignetteIntensity,
+            0.1f
+        )
+        .SetEase(Ease.OutQuad)
+        .OnComplete(() =>
+        {
+            _damageVignetteTween = DOTween.To(
+                () => vignette.intensity.value,
+                x => vignette.intensity.Override(x),
+                0f,
+                0.3f
+            )
+            .SetEase(Ease.OutQuad);
+        });
+    }
+
+    private void RespawnAtCore()
+    {
+        Debug.Log("[PlayerController] ===== Respawn 시작 =====");
+
+        BindPlayerEntityIfNeeded();
+
+        if (playerEntity == null)
+        {
+            Debug.LogError(
+                "[PlayerController] Respawn 시점에도 Player 엔티티가 없습니다."
+            );
+            return;
+        }
+
+        BuildingEntity core = FindCore();
+
+        if (core == null)
+        {
+            Debug.LogError(
+                "[PlayerController] 씬에서 Core를 찾지 못했습니다."
+            );
+            return;
+        }
+
+        if (!TryFindCoreRespawnPosition(
+                core,
+                out Vector3 respawnPosition))
+        {
+            Debug.LogError(
+                "[PlayerController] Core 주변에 유효한 부활 위치가 없습니다."
+            );
+            return;
+        }
+
+        float respawnYaw = core.transform.eulerAngles.y;
+
+        Debug.Log(
+            $"[PlayerController] Respawn Point = {respawnPosition}"
+        );
+
+        rb.isKinematic = false;
+        rb.useGravity = true;
+
+        Debug.Log("[PlayerController] Rigidbody 복구 완료");
+
+        playerEntity.Revive(respawnPosition);
+
+        Debug.Log("[PlayerController] Player.Revive 완료");
+
+        RestoreTransform(
+            respawnPosition,
+            respawnYaw
+        );
+
+        Debug.Log("[PlayerController] RestoreTransform 완료");
+
+        ReleaseHeldInputs();
+        _isDead = false;
+
+        Debug.Log(
+            $"[PlayerController] 부활 직후 HP = " +
+            $"{playerEntity.Health.CurrentHealth} / " +
+            $"{playerEntity.Health.MaxHealth}"
+        );
+
+        GameplayHUDView hud =
+            FindFirstObjectByType<GameplayHUDView>();
+
+        if (hud != null)
+        {
+            hud.RefreshPlayerHp();
+            hud.HideDeathOverlay();
+        }
+
+        WeaponController weaponController =
+            GetComponentInChildren<WeaponController>();
+
+        if (weaponController != null)
+            weaponController.ForceReleaseInput();
+
+        Debug.Log("[PlayerController] ===== Respawn 완료 =====");
+    }
+    public void HandlePlayerDamaged(float oldHealth, float newHealth)
+    {
+        Debug.Log(
+            $"[PlayerController] Player Damaged : {oldHealth} -> {newHealth}"
+        );
+
+        if (newHealth < oldHealth)
+        {
+            PlayDamageVignette();
+        }
+    }
+
+    public void HandlePlayerDeath()
+    {
+        Debug.Log(
+            "[PlayerController] ===== DEATH EVENT RECEIVED ====="
+        );
+
+        _isDead = true;
+
+        ReleaseHeldInputs();
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
+
+        _respawnTween?.Kill();
+
+        _respawnTween = DOVirtual.DelayedCall(
+            respawnTime,
+            RespawnAtCore
+        );
+    }
+
+    private void BindPlayerEntityIfNeeded()
+    {
+        if (playerEntity != null)
+            return;
+
+        playerEntity = GetComponent<Player>();
+
+        if (playerEntity != null)
+        {
+            Debug.Log(
+                $"[PlayerController] Player 엔티티 바인딩 완료 / " +
+                $"Player={playerEntity.GetInstanceID()} / " +
+                $"Health={playerEntity.Health.GetHashCode()}"
+            );
+        }
+    }
+
+    private BuildingEntity FindCore()
+    {
+        foreach (var entity in BuildingEntity.All)
+        {
+            if (entity != null && entity.IsCore)
+                return entity;
+        }
+
+        return null;
+    }
+    private bool TryFindCoreRespawnPosition(BuildingEntity core, out Vector3 respawnPosition)
+    {
+        respawnPosition = default;
+
+        if (core == null)
+            return false;
+
+        GridManager gridManager = GridManager.Instance;
+
+        if (gridManager == null)
+        {
+            Debug.LogError(
+                "[PlayerController] GridManager.Instance가 없습니다."
+            );
+            return false;
+        }
+
+        Node coreNode = gridManager.NodeFromWorldPoint(core.transform.position);
+
+        if (coreNode == null)
+        {
+            Debug.LogError(
+                "[PlayerController] Core의 월드 위치를 Grid Node로 변환하지 못했습니다."
+            );
+            return false;
+        }
+
+        Vector2Int coreCell = coreNode.gridCoord;
+
+        // 코어에서 가까운 칸부터 탐색
+        for (int radius = 3; radius <= 6; radius++)
+        {
+            for (int x = -radius; x <= radius; x++)
+            {
+                for (int y = -radius; y <= radius; y++)
+                {
+                    // 같은 반경의 사각형 테두리만 검사
+                    if (Mathf.Abs(x) != radius &&
+                        Mathf.Abs(y) != radius)
+                        continue;
+
+                    Vector2Int candidateCell =
+                        coreCell + new Vector2Int(x, y);
+
+                    Node candidate =
+                        gridManager.GetNode(candidateCell);
+
+                    if (candidate == null)
+                        continue;
+                    if (gridManager.GetTile(candidateCell) != MapTile.Ground)
+                        continue;
+                    if (!gridManager.IsWalkable(candidate))
+                        continue;
+
+                    respawnPosition = candidate.worldPosition;
+
+                    Vector3 rayOrigin =
+                        new(
+                            candidate.worldPosition.x,
+                            candidate.worldPosition.y + 10f,
+                            candidate.worldPosition.z
+                        );
+
+                    if (Physics.Raycast(
+                            rayOrigin,
+                            Vector3.down,
+                            out RaycastHit groundHit,
+                            20f,
+                            groundMask,
+                            QueryTriggerInteraction.Ignore))
+                    {
+                        respawnPosition.y =
+                            groundHit.point.y;
+                    }
+                    else
+                    {
+                        Debug.LogWarning(
+                            $"[PlayerController] 부활 셀의 실제 바닥을 찾지 못했습니다: " +
+                            $"cell={candidateCell}"
+                        );
+
+                        continue;
+                    }
+
+                    Debug.Log(
+                        $"[PlayerController] Core 주변 부활 위치 발견: " +
+                        $"cell={candidateCell}, " +
+                        $"world={respawnPosition}, " +
+                        $"radius={radius}"
+                    );
+                    Debug.Log(
+                        $"[PlayerController] Respawn Ground Hit = " +
+                        $"point={groundHit.point}, " +
+                        $"normal={groundHit.normal}"
+                    );
+                    return true;
+                }
+            }
+        }
+
+        Debug.LogWarning(
+            "[PlayerController] Core 주변에서 부활 가능한 칸을 찾지 못했습니다."
+        );
+
+        return false;
+    }
+    #endregion
 }
