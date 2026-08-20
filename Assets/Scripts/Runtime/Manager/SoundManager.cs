@@ -20,6 +20,7 @@ public enum BGMType
     Factory         // 공장 내부음
 }
 
+[RequireComponent(typeof(UISoundHandler))]
 public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance { get; private set; }

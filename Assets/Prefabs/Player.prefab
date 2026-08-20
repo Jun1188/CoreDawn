@@ -1202,9 +1202,30 @@ MonoBehaviour:
   lowJumpGravityScale: 2.6
   coyoteTime: 0.12
   jumpBufferTime: 0.15
+  walkSounds:
+  - {fileID: 8300000, guid: fc32c6fd07980144996b811e5d1f2971, type: 3}
+  - {fileID: 8300000, guid: cee5e6c416359ef4cbb722f0cd3a5a14, type: 3}
+  - {fileID: 8300000, guid: 5ad92c54c3f49654db8d62382e5f559b, type: 3}
+  runSounds:
+  - {fileID: 8300000, guid: d3ea0567dbe95714eb0ca07f43a37a96, type: 3}
+  - {fileID: 8300000, guid: 161d5a427e88d594f9906708ccdc5663, type: 3}
+  - {fileID: 8300000, guid: 7a5ff4a806216b14ab9dba35a4fb258c, type: 3}
+  - {fileID: 8300000, guid: bd5653e52c4636e4aa3b0ced8f49a18d, type: 3}
+  - {fileID: 8300000, guid: 6c8508d96905ea749ae50b49916fde55, type: 3}
+  - {fileID: 8300000, guid: 35bda0c39b1fbe64196a669bfb99757d, type: 3}
+  - {fileID: 8300000, guid: 6259119f201fafa4ca80646eff6b4b1f, type: 3}
+  - {fileID: 8300000, guid: b04914b5801123b4dafba88cbcb5bc74, type: 3}
+  - {fileID: 8300000, guid: 3ec9ef3892d02044a9d62e412eb45ffb, type: 3}
+  slideSound: {fileID: 8300000, guid: a4006d315d7b9224b874cc9406ae72b9, type: 3}
+  jumpSound: {fileID: 8300000, guid: d3d29f80378ba8e4e9c00f92fc5b5d4e, type: 3}
+  landSound: {fileID: 8300000, guid: f2bc9c36f73ea50419060ec6eb40c246, type: 3}
+  footstepVolume: 0.4
+  jumpVolume: 0.7
+  landVolume: 0.7
+  slideVolume: 0.6
   groundMask:
     serializedVersion: 2
-    m_Bits: 16375
+    m_Bits: 1281
   groundProbeDistance: 0.3
   maxSlopeAngle: 50
   groundStick: 2.2
@@ -1275,7 +1296,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryHolder
   hotbarSize: 7
   mainInventorySize: 18
-  startingItems: []
+  startingItems:
+  - item: {fileID: 11400000, guid: 67b60f73b753fdd46b70a78b3cb04c60, type: 2}
+    amount: 1
+    maxStackSize: 1
+  - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
+    amount: 50
+    maxStackSize: 50
+  - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
+    amount: 50
+    maxStackSize: 50
+  - item: {fileID: 11400000, guid: 83f4ee507995fa440805d5d52d4819fd, type: 2}
+    amount: 50
+    maxStackSize: 50
+  - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
+    amount: 60
+    maxStackSize: 64
+  - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
+    amount: 12
+    maxStackSize: 64
   playerController: {fileID: 6442160254612740854}
 --- !u!114 &3702532305778674119
 MonoBehaviour:
@@ -1369,7 +1408,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 28663
+    m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1413,7 +1452,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
