@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item:RefinedCrystal
   displayName: "\uC815\uC81C \uD06C\uB9AC\uC2A4\uD0C8"
   description: "\uC5D0\uB108\uC9C0\uB97C \uB2F4\uB294 \uB9E4\uC9C8."
-  icon: {fileID: 0}
+  icon: {fileID: 400049508, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 1
   line: 3
   modules: []

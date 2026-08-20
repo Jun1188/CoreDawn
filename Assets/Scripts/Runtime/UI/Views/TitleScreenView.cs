@@ -147,25 +147,7 @@ public class TitleScreenView : MonoBehaviour
     }
 
     /// <summary>가장 최근 세이브의 요약. 하나도 없으면 null.</summary>
-    static SaveMeta LatestMeta()
-    {
-        if (SaveManager.Instance == null) return null;
-
-        SaveMeta best = null;
-        System.DateTime bestTime = System.DateTime.MinValue;
-
-        foreach (var (_, meta) in SaveManager.Instance.AllSlots())
-        {
-            if (meta == null || meta.IsEmpty) continue;
-            if (!System.DateTime.TryParse(meta.SavedAtUtc, null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out var t)) continue;
-            if (t <= bestTime) continue;
-
-            bestTime = t;
-            best = meta;
-        }
-        return best;
-    }
+    static SaveMeta LatestMeta() => SaveManager.Instance != null ? SaveManager.Instance.LatestMeta() : null;
 
     // ───────────────────────── 동작 ─────────────────────────
 

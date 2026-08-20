@@ -154,7 +154,7 @@ public abstract class PlayerItemPanelView : UITKPopup
 
         var icon = new VisualElement();
         icon.AddToClassList("ui-slot__icon");
-        if (!empty) icon.style.backgroundColor = UIFlowColors.Of(stack.item.line);
+        if (!empty) UIItemIcon.Apply(icon, stack.item);
         slot.Add(icon);
 
         if (!empty)
@@ -347,7 +347,7 @@ public abstract class PlayerItemPanelView : UITKPopup
         carry.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
         if (!has) return;
 
-        carryIcon.style.backgroundColor = UIFlowColors.Of(carried.item.line);
+        UIItemIcon.Apply(carryIcon, carried.item);
         carryCount.text = carried.amount.ToString();
     }
 

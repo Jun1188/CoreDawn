@@ -204,9 +204,13 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     #region [3. Tuning Accessors — FSM이 읽는 창구]
 
-    public float WalkSpeed => moveSpeed;
-    public float SprintSpeed => sprintSpeed;
-    public float CrouchSpeed => crouchSpeed;
+    // 조준 중에는 절반 속도로 — FSM이 읽는 접근자에서 곱하므로 모든 지상 상태에 일괄 적용된다.
+    // AimWeight가 0~1 연속값이라 조준을 올리고 내리는 동안 속도도 부드럽게 따라간다.
+    private float AimSpeedFactor => Mathf.Lerp(1f, 0.5f, Mathf.Clamp01(Motion.AimWeight));
+
+    public float WalkSpeed => moveSpeed * AimSpeedFactor;
+    public float SprintSpeed => sprintSpeed * AimSpeedFactor;
+    public float CrouchSpeed => crouchSpeed * AimSpeedFactor;
     public float GroundAccel => groundAccel;
     public float GroundFriction => groundFriction;
     public float SlideImpulse => slideImpulse;

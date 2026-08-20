@@ -10,6 +10,8 @@ using UnityEngine;
 /// 실제로 소모한다 — 포탑이 벨트 보급 탄을 소비하는 것과 같은 원칙. 탄종 전환
 /// (TrySwitchAmmo)은 gunData.ammoFilter 안에서 돌며, 장전돼 있던 탄은 인벤토리로 반환한다.
 /// 인벤토리가 없는 씬(테스트)에서는 추상 탄창으로 폴백한다 — 무한 보급.
+/// <b>근접무기</b>(GunData.unlimitedAmmo)는 이 소비 경로를 통째로 건너뛴다: 탄창은 늘 가득이고
+/// 재장전도 없다. 근접무기의 '탄'은 보이지 않는 짧은 사거리의 광역탄 — 휘두름 그 자체다.
 ///
 /// 연출(반동·킥백·셰이크)은 모른다 — 발사하면 <see cref="Fired"/>만 알리고,
 /// 반응은 WeaponManager가 연출 모듈들로 팬아웃한다. 실제 발사(투사체·히트스캔·명중 효과)는
@@ -33,8 +35,11 @@ public class Gun : MonoBehaviour
     /// <summary>지금 장전된 탄종 — 발사 스펙(효과·탄도)의 출처. 기본은 gunData.ammo.</summary>
     public ItemDataSO CurrentAmmoItem { get; private set; }
 
-    /// <summary>인벤토리에 남은 현재 탄종 수 — HUD 예비탄 표시용. 인벤토리 없는 씬은 -1(무한).</summary>
-    public int ReserveAmmo => PlayerInventoryHolder.Instance != null ? CountInInventory(CurrentAmmoItem) : -1;
+    /// <summary>인벤토리에 남은 현재 탄종 수 — HUD 예비탄 표시용. 무한 탄약(근접)·인벤토리 없는 씬은 -1(무한).</summary>
+    public int ReserveAmmo => Unlimited || PlayerInventoryHolder.Instance == null ? -1 : CountInInventory(CurrentAmmoItem);
+
+    /// <summary>탄을 소비하지 않는 무기인가 — 근접무기. 재장전·인벤토리 소비 경로를 통째로 건너뛴다.</summary>
+    private bool Unlimited => gunData != null && gunData.unlimitedAmmo;
 
     /// <summary>재장전 중인가 — 읽기 전용. 진행은 StartReload로만 시작된다.</summary>
     public bool IsReloading { get; private set; }
@@ -52,6 +57,7 @@ public class Gun : MonoBehaviour
     private float lastFireTime;
     private float currentSpread;
     private Rigidbody playerRb; // 이동 속도에 따른 탄퍼짐 가중치용
+    private IPlayerMotionProvider motionProvider; // 조준 가중치(AimWeight) — 조준하면 탄퍼짐 절반
     private Camera aimCamera;   // 조준점(화면 중앙)의 기준 — 총알은 총구에서 나와 조준점으로 수렴한다
 
     // 효과의 출처(Source)로 전달할 플레이어 엔티티.
@@ -63,6 +69,7 @@ public class Gun : MonoBehaviour
     private void Awake()
     {
         playerRb = GetComponentInParent<Rigidbody>();
+        motionProvider = GetComponentInParent<IPlayerMotionProvider>();
         aimCamera = transform.root.GetComponentInChildren<Camera>(); // 뷰모델 홀더는 카메라의 형제라 부모 탐색이 안 닿는다
     }
 
@@ -71,8 +78,8 @@ public class Gun : MonoBehaviour
         CurrentAmmoItem = gunData != null ? gunData.DefaultAmmo : null;
 
         // 실소비 세계에서는 빈 탄창으로 시작한다 — 첫 발도 인벤토리의 탄에서 나와야 한다.
-        // 인벤토리가 없는 씬(테스트)만 공짜 만장전.
-        CurrentAmmo = PlayerInventoryHolder.Instance != null ? 0 : gunData.magSize;
+        // 무한 탄약(근접무기)과 인벤토리가 없는 씬(테스트)만 공짜 만장전.
+        CurrentAmmo = Unlimited || PlayerInventoryHolder.Instance == null ? gunData.magSize : 0;
     }
 
     private void Update()
@@ -142,9 +149,11 @@ public class Gun : MonoBehaviour
 
         if (Time.time < lastFireTime + gunData.fireRate) return false;
 
-        // 샷건은 방아쇠 한 번에 펠릿 수만큼 탄을 소비한다 — 탄창이 모자라면 남은 만큼만 나간다
-        int rounds = Mathf.Min(CurrentAmmo, Mathf.Max(1, gunData.pellets));
-        CurrentAmmo -= rounds;
+        // 샷건은 방아쇠 한 번에 펠릿 수만큼 탄을 소비한다 — 탄창이 모자라면 남은 만큼만 나간다.
+        // 근접무기(무한 탄약)는 휘두를 뿐이라 탄창이 줄지 않는다 — 재장전도 영영 오지 않는다.
+        int rounds = Unlimited ? Mathf.Max(1, gunData.pellets)
+                               : Mathf.Min(CurrentAmmo, Mathf.Max(1, gunData.pellets));
+        if (!Unlimited) CurrentAmmo -= rounds;
         lastFireTime = Time.time;
         currentSpread = Mathf.Min(currentSpread + gunData.spreadIncreasePerShot, gunData.maxSpread);
 
@@ -218,20 +227,27 @@ public class Gun : MonoBehaviour
 
         // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것.
         // 전달 방식(투사체/히트스캔)은 스펙에 실려 있다 — 분기는 ProjectileSystem이 한다.
+        // 조준(ADS)하면 탄퍼짐 절반 — 누적된 currentSpread에 사용 시점에서 곱한다.
+        // AimWeight가 연속값이라 조준을 올리는 중에도 부드럽게 조여진다.
+        float aim = motionProvider?.Motion != null ? Mathf.Clamp01(motionProvider.Motion.AimWeight) : 0f;
+        float spread = currentSpread * Mathf.Lerp(1f, 0.5f, aim);
+
         for (int i = 0; i < rounds; i++)
         {
-            Vector3 direction = forward + UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
+            Vector3 direction = forward + UnityEngine.Random.insideUnitSphere * (spread / 100f);
             ProjectileSystem.Fire(origin, direction, shot);
         }
     }
 
     public void StartReload()
     {
-        // 사망 중에는 장전 금지
-        if (OwnerEntity != null && OwnerEntity.IsDead)
-            return;
+	// 사망 중에는 장전 금지
+    	if (OwnerEntity != null && OwnerEntity.IsDead)
+        	return;
 
-        if (IsReloading || CurrentAmmo == gunData.magSize || !gameObject.activeSelf) return;
+    	if (Unlimited) return;   // 근접무기 — 채울 탄창이 없다 
+	       
+	if (IsReloading || CurrentAmmo == gunData.magSize || !gameObject.activeSelf) return;
 
         // 실소비 — 인벤토리에 현재 탄종이 하나도 없으면 재장전 자체가 시작되지 않는다
         if (PlayerInventoryHolder.Instance != null && CountInInventory(CurrentAmmoItem) <= 0) return;
@@ -268,7 +284,8 @@ public class Gun : MonoBehaviour
         var filter = gunData.ammoFilter;
         if (filter == null || filter.Length <= 1 || IsReloading) return false;
 
-        var holder = PlayerInventoryHolder.Instance;
+        // 무한 탄약(근접)은 인벤토리를 아예 보지 않는다 — 없는 탄을 반환하거나 요구하면 안 된다
+        var holder = Unlimited ? null : PlayerInventoryHolder.Instance;
         int idx = System.Array.IndexOf(filter, CurrentAmmoItem);
 
         for (int step = 1; step <= filter.Length; step++)
@@ -281,9 +298,9 @@ public class Gun : MonoBehaviour
             if (holder != null && CurrentAmmo > 0 && CurrentAmmoItem != null)
                 holder.AddItemToPlayer(CurrentAmmoItem, CurrentAmmo);
 
-            CurrentAmmo = 0;
+            CurrentAmmo = Unlimited ? gunData.magSize : 0;
             CurrentAmmoItem = candidate;
-            StartReload();
+            StartReload();   // 무한 탄약이면 조용히 물러난다
             return true;
         }
         return false;

@@ -130,3 +130,4 @@ Material:
     - _SynthSunLines: 64
     m_Colors: []
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

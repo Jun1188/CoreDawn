@@ -107,7 +107,8 @@ public class WeaponController : MonoBehaviour, IInputReceiver
                 return false;
 
             case InputActionId.Aim:
-                if (weapon == null) return false;
+                // 가늠자 없는 무기(근접)는 조준 자체가 없다 — 소비하지 않고 하류로 흘려보낸다
+                if (weapon == null || !weaponManager.CanAim) return false;
                 if (e.Phase == InputActionPhase.Performed)
                 {
                     weaponManager.SetAiming(true); // 줌 FOV는 스왑 때 매니저가 무기 데이터로 이미 설정

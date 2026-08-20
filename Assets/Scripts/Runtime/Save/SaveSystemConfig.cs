@@ -34,6 +34,10 @@ public class SaveSystemConfig : ScriptableObject
     [Tooltip("인게임 날짜가 넘어갈 때(아침) 자동 저장.")]
     public bool autoSaveOnDayStart = true;
 
+    [Tooltip("밤이 시작될 때 자동 저장. 코어가 부서질 수 있는 유일한 시간이라, 게임오버 후 " +
+             "'마지막 지점에서 다시'가 돌아갈 지점이 된다.")]
+    public bool autoSaveOnNightStart = true;
+
     [Tooltip("메뉴로 돌아가거나 게임을 종료하기 직전에 자동 저장.")]
     public bool autoSaveOnQuit = true;
 

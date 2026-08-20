@@ -31,6 +31,13 @@ public class Bullet : MonoBehaviour
 
     private ParticleSystem[] particles;
     private TrailRenderer[] trails;
+    private MeshRenderer[] meshes;
+
+    // 시체 모드 — 착탄한 탄을 즉시 반환하지 않고, 궤적(트레일)과 파티클 여운이
+    // 눈에서 사라질 때까지 그 자리에 세워 둔다. 즉시 반환(SetActive(false))하면
+    // 총구 코앞에 맞은 탄의 꼬리가 태어나자마자 뚝 끊겨 없던 것처럼 보인다.
+    private bool dying;
+    private float dieAt;
 
     private void Awake()
     {
@@ -44,6 +51,7 @@ public class Bullet : MonoBehaviour
         // 파티클 기반 탄 프리팹(아트 에셋)을 풀에서 재사용하기 위한 캐시 — Launch가 되살린다
         particles = GetComponentsInChildren<ParticleSystem>(true);
         trails = GetComponentsInChildren<TrailRenderer>(true);
+        meshes = GetComponentsInChildren<MeshRenderer>(true);
     }
 
 #if UNITY_EDITOR
@@ -87,6 +95,8 @@ public class Bullet : MonoBehaviour
         velocity = transform.forward * shot.Speed;
         age = 0f;
         joining = false; // 풀 재사용 — 이전 발사의 합류 상태 초기화
+        dying = false;   // 시체로 반환됐던 탄 되살리기
+        for (int i = 0; i < meshes.Length; i++) meshes[i].enabled = true;
 
         // 파티클·트레일은 SetActive(true)만으로 되살아나지 않는다 (playOnAwake는 최초 1회뿐).
         // 되살리지 않으면 풀의 두 번째 발사부터 탄이 날아가도 아무것도 보이지 않는다.
@@ -110,6 +120,14 @@ public class Bullet : MonoBehaviour
     private void Update()
     {
         float dt = Time.deltaTime;
+
+        // 시체 모드 — 움직임·판정 없이 여운(트레일 페이드, 남은 파티클)만 재생하다 반환
+        if (dying)
+        {
+            age += dt;
+            if (age >= dieAt) ReleaseToPool();
+            return;
+        }
 
         // 조준선 합류 구간 — 합류점을 향해 날고, 이번 프레임에 닿으면 조준선 방향으로 꺾는다
         if (joining)
@@ -142,7 +160,8 @@ public class Bullet : MonoBehaviour
             ProjectileSystem.TryClosestHit(pos, step / dist, dist, sweepRadius, shooterRoot, out RaycastHit hit))
         {
             ProjectileSystem.Impact(hit.collider, hit.point, shot); // 폭발탄은 착탄점 Pulse
-            ReleaseToPool();
+            transform.position = hit.point;   // 여운은 착탄점에 남는다
+            BeginDeath();
             return;
         }
 
@@ -162,8 +181,35 @@ public class Bullet : MonoBehaviour
                 ProjectileSystem.PlayEffect(shot.HitEffect, transform.position, Quaternion.identity);
                 ProjectileSystem.Pulse(transform.position, shot.ExplosionRadius, shot);
             }
-            ReleaseToPool();
+            BeginDeath();
         }
+    }
+
+    /// <summary>
+    /// 탄을 죽이되 바로 반환하지 않는다 — 새 파티클 방출만 멈추고(이미 나온 것은 살게),
+    /// 탄두 메시만 숨긴 채 트레일·파티클 여운이 제일 오래 남는 시간만큼 기다린다.
+    /// 풀은 반환 전까지 이 인스턴스를 다시 내주지 않으므로 재사용과 충돌하지 않는다.
+    /// </summary>
+    private void BeginDeath()
+    {
+        if (dying) return;
+        dying = true;
+        velocity = Vector3.zero;
+
+        float linger = 0f;
+        for (int i = 0; i < meshes.Length; i++) meshes[i].enabled = false;
+        for (int i = 0; i < trails.Length; i++) linger = Mathf.Max(linger, trails[i].time);
+        // 파티클은 여운 없이 즉시 지운다 — 탄의 발광체가 파티클이라, 살려두면 죽은 자리에
+        // 빛나는 구슬이 파티클 수명만큼(최대 2초) 떠 있는다. 여운은 트레일만 맡는다.
+        for (int i = 0; i < particles.Length; i++)
+        {
+            particles[i].Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            particles[i].Clear(true);
+        }
+
+        age = 0f;
+        dieAt = Mathf.Min(linger, 2f);   // 안전 상한 — 여운이 아무리 길어도 풀을 2초 넘게 붙잡지 않는다
+        if (dieAt <= 0f) ReleaseToPool();
     }
 
     private void ReleaseToPool()

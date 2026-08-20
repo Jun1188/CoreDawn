@@ -34,6 +34,13 @@ public static class GameScreens
         Missing("코어 화면");
     }
 
+    /// <summary>게임오버 — 코어가 파괴됐을 때. 닫을 수 없는 창이라 여는 쪽만 있다.</summary>
+    public static void OpenGameOver()
+    {
+        if (GameOverPanelView.TryOpen()) return;
+        Missing("게임오버 화면");
+    }
+
     static void Missing(string what) =>
         Debug.LogWarning($"[GameScreens] {what}을(를) 열지 못했습니다 — UI(GameUI 씬)가 탑재되지 않았거나 " +
                          "플레이어 인벤토리가 준비되지 않았습니다.");

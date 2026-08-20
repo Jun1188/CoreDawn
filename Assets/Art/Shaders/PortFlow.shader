@@ -32,6 +32,10 @@ Shader "LevelUp/PortFlow"
             // 전부 가산으로 두면 겹친 자리의 알파가 더해져 채널이 1에 물리고 흰색으로 날아간다.
             Blend One [_DstBlend]
             ZWrite Off
+            // 배치 보조 UI다 — 잔디(뎁스를 쓰는 컷아웃)가 바닥 쿼드를 가려서 힌트가
+            // 풀숲에 통째로 묻혔다. 깊이를 무시하고 항상 위에 그린다. 건물 뒤 포트가
+            // 비쳐 보이는 것은 감수가 아니라 덤이다 — 배치 중엔 그게 더 유용하다.
+            ZTest Always
             Cull Off                 // 뒤에서 봐도 보여야 한다
 
             HLSLPROGRAM

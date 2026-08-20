@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 971e30e0b1b4991408df8b8185b62e8a, type: 3}
+  m_Name: PlasmaCutter
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDataSO
+  id: Item:PlasmaCutter
+  displayName: "\uD50C\uB77C\uC988\uB9C8 \uCEE4\uD130"
+  description: "\uD0C4\uC57D\uC774 \uD544\uC694 \uC5C6\uB294 \uADFC\uC811 \uC808\uB2E8\uAE30.
+    \uCF54\uC55E\uC758 \uC5EC\uB7EC \uB9C8\uB9AC\uB97C \uD55C \uBC88\uC5D0 \uBCA4\uB2E4."
+  icon: {fileID: 21300000, guid: ffdbf5143bcd651499a9f3a01ec2336c, type: 3}
+  type: 5
+  line: 1
+  modules:
+  - {fileID: 8425728119517499969}
+--- !u!114 &8425728119517499969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6313d71248690c4eb70ba6c111d2c38, type: 3}
+  m_Name: WeaponModuleSO
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponModuleSO
+  gun: {fileID: 11400000, guid: fc4913d0dadebb340b5b78c2e44420af, type: 2}

@@ -21,3 +21,4 @@ MonoBehaviour:
   baseAmount: 6
   maxAliveAmount: 6
   spawnInterval: 2
+  monsterMaxHp: 0

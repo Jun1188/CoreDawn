@@ -67,6 +67,12 @@
     border-color: var(--crystal-a50);
 }
 
+/* 게임오버처럼 좋지 않은 소식을 전하는 패널 — 태그가 먼저 그 사실을 말한다 */
+.ui-panel__tag--danger {
+    color: var(--danger);
+    border-color: var(--danger-a50);
+}
+
 .ui-panel__x {
     width: 33px;
     height: 33px;
@@ -327,8 +333,8 @@
 }
 
 .ui-slot__icon {
-    width: 39px;
-    height: 39px;
+    width: 62px;
+    height: 62px;
     border-radius: 4.5px;
     background-color: var(--line-strong);
     -unity-background-scale-mode: scale-to-fit;
@@ -366,7 +372,7 @@
 
 /* 크기 변형 — 표·요약에서 쓰는 축소 슬롯 */
 .ui-slot--sm { width: 60px; height: 60px; }
-.ui-slot--sm .ui-slot__icon { width: 30px; height: 30px; }
+.ui-slot--sm .ui-slot__icon { width: 46px; height: 46px; }
 .ui-slot__icon--xs { width: 30px; height: 30px; }
 
 /* ───────────────────── ROW 리스트 행 ───────────────────── */
