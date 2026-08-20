@@ -3,179 +3,189 @@
     {
       "id": "Effect:Damage",
       "displayName": "피해",
+      "description": "value 만큼 체력을 깎는다. 모든 공격의 기본 항목.",
       "kind": "Damage",
-      "description": "value 만큼 체력을 깎는다. 모든 공격의 기본 항목."
+      "duration": 0.0,
+      "tickInterval": 0.0
     },
     {
       "id": "Effect:Knockback",
       "displayName": "넉백",
+      "description": "value = 밀어내는 거리(타일). 유탄·샷건이 쓴다.",
       "kind": "Knockback",
-      "description": "value = 밀어내는 거리(타일). 유탄·샷건이 쓴다."
+      "duration": 0.0,
+      "tickInterval": 0.0
     },
     {
       "id": "Effect:Burn",
       "displayName": "발화",
-      "kind": "DamageOverTime",
       "description": "value = 틱당 피해. 크리스탈 탄약의 잔여 피해.",
-      "duration": 4,
+      "kind": "DamageOverTime",
+      "duration": 4.0,
       "stacking": "Refresh",
       "tickInterval": 0.5
     },
     {
       "id": "Effect:SlowField",
       "displayName": "감속 필드",
-      "kind": "MoveSpeed",
       "description": "value = 이동속도 배율 (0.5 = 절반). 감속 필드 타워의 오라.",
-      "duration": 6,
-      "stacking": "Refresh"
+      "kind": "MoveSpeed",
+      "duration": 6.0,
+      "stacking": "Refresh",
+      "tickInterval": 0.0
     }
   ],
   "guns": [
     {
       "id": "Gun:Pistol",
       "displayName": "기본 권총",
+      "description": "시작 화기. 느리지만 탄약이 싸다.",
       "isAutomatic": false,
       "fireMode": "Projectile",
-      "description": "시작 화기. 느리지만 탄약이 싸다.",
       "fireRate": 0.33,
-      "range": 60,
+      "range": 60.0,
       "reloadTime": 1.2,
-      "zoomFOV": 40,
-      "xRecoil": 2,
-      "yRecoil": 1.5,
-      "zRecoil": 1,
-      "visualKickbackZ": 0.25,
-      "baseSpread": 0.6,
-      "maxSpread": 4,
-      "spreadIncreasePerShot": 0.8,
-      "spreadRecoveryRate": 5,
+      "zoomFOV": 40.0,
       "magSize": 12,
+      "pellets": 0,
       "ammoFilter": [
         "Item:BasicAmmo"
       ],
-      "damageMultiplier": 1
+      "damageMultiplier": 1.0,
+      "xRecoil": 2.0,
+      "yRecoil": 1.5,
+      "zRecoil": 1.0,
+      "visualKickbackZ": 0.25,
+      "baseSpread": 0.6,
+      "maxSpread": 4.0,
+      "spreadIncreasePerShot": 0.8,
+      "spreadRecoveryRate": 5.0
     },
     {
       "id": "Gun:Rifle",
       "displayName": "라이플",
+      "description": "주력 화기. 탄약 소모가 빠르다.",
       "isAutomatic": true,
       "fireMode": "Projectile",
-      "description": "주력 화기. 탄약 소모가 빠르다.",
       "fireRate": 0.1,
-      "range": 99,
-      "reloadTime": 2,
-      "zoomFOV": 40,
-      "xRecoil": 3,
-      "yRecoil": 2,
-      "zRecoil": 1,
-      "visualKickbackZ": 0.3,
-      "baseSpread": 0.5,
-      "maxSpread": 5,
-      "spreadIncreasePerShot": 1,
-      "spreadRecoveryRate": 5,
+      "range": 99.0,
+      "reloadTime": 2.0,
+      "zoomFOV": 40.0,
       "magSize": 30,
+      "pellets": 0,
       "ammoFilter": [
         "Item:BasicAmmo"
       ],
-      "damageMultiplier": 1.4
+      "damageMultiplier": 1.4,
+      "xRecoil": 3.0,
+      "yRecoil": 2.0,
+      "zRecoil": 1.0,
+      "visualKickbackZ": 0.3,
+      "baseSpread": 0.5,
+      "maxSpread": 5.0,
+      "spreadIncreasePerShot": 1.0,
+      "spreadRecoveryRate": 5.0
     },
     {
       "id": "Gun:Shotgun",
       "displayName": "샷건",
+      "description": "근접 다수. 한 번에 8발을 소비한다.",
       "isAutomatic": false,
       "fireMode": "Hitscan",
-      "description": "근접 다수. 한 번에 8발을 소비한다.",
       "fireRate": 0.83,
-      "range": 25,
+      "range": 25.0,
       "reloadTime": 2.5,
-      "zoomFOV": 40,
-      "xRecoil": 8,
-      "yRecoil": 5,
-      "zRecoil": 2,
-      "visualKickbackZ": 0.6,
-      "baseSpread": 4,
-      "maxSpread": 8,
-      "spreadIncreasePerShot": 1.5,
-      "spreadRecoveryRate": 4,
+      "zoomFOV": 40.0,
       "magSize": 8,
       "pellets": 8,
       "ammoFilter": [
         "Item:DenseAmmo"
       ],
-      "damageMultiplier": 0.5
+      "damageMultiplier": 0.5,
+      "xRecoil": 8.0,
+      "yRecoil": 5.0,
+      "zRecoil": 2.0,
+      "visualKickbackZ": 0.6,
+      "baseSpread": 4.0,
+      "maxSpread": 8.0,
+      "spreadIncreasePerShot": 1.5,
+      "spreadRecoveryRate": 4.0
     },
     {
       "id": "Gun:Sniper",
       "displayName": "스나이퍼",
+      "description": "원거리 단일 대상. 한 발의 무게가 크다.",
       "isAutomatic": false,
       "fireMode": "Hitscan",
-      "description": "원거리 단일 대상. 한 발의 무게가 크다.",
       "fireRate": 1.25,
-      "range": 150,
-      "reloadTime": 3,
-      "zoomFOV": 30,
-      "xRecoil": 10,
-      "yRecoil": 6,
-      "zRecoil": 3,
-      "visualKickbackZ": 0.8,
-      "baseSpread": 0.05,
-      "maxSpread": 3,
-      "spreadIncreasePerShot": 2,
-      "spreadRecoveryRate": 3,
+      "range": 150.0,
+      "reloadTime": 3.0,
+      "zoomFOV": 30.0,
       "magSize": 5,
+      "pellets": 0,
       "ammoFilter": [
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
       ],
-      "damageMultiplier": 4
+      "damageMultiplier": 4.0,
+      "xRecoil": 10.0,
+      "yRecoil": 6.0,
+      "zRecoil": 3.0,
+      "visualKickbackZ": 0.8,
+      "baseSpread": 0.05,
+      "maxSpread": 3.0,
+      "spreadIncreasePerShot": 2.0,
+      "spreadRecoveryRate": 3.0
     },
     {
       "id": "Gun:GrenadeLauncher",
       "displayName": "유탄 발사기",
+      "description": "범위. 박격포 타워와 탄약을 공유한다.",
       "isAutomatic": false,
       "fireMode": "Projectile",
-      "description": "범위. 박격포 타워와 탄약을 공유한다.",
-      "fireRate": 2,
-      "range": 50,
+      "fireRate": 2.0,
+      "range": 50.0,
       "reloadTime": 2.5,
-      "zoomFOV": 40,
-      "xRecoil": 6,
-      "yRecoil": 4,
-      "zRecoil": 2,
-      "visualKickbackZ": 0.5,
-      "baseSpread": 1,
-      "maxSpread": 4,
-      "spreadIncreasePerShot": 1,
-      "spreadRecoveryRate": 4,
+      "zoomFOV": 40.0,
       "magSize": 4,
+      "pellets": 0,
       "ammoFilter": [
         "Item:Grenade"
       ],
-      "damageMultiplier": 1
+      "damageMultiplier": 1.0,
+      "xRecoil": 6.0,
+      "yRecoil": 4.0,
+      "zRecoil": 2.0,
+      "visualKickbackZ": 0.5,
+      "baseSpread": 1.0,
+      "maxSpread": 4.0,
+      "spreadIncreasePerShot": 1.0,
+      "spreadRecoveryRate": 4.0
     },
     {
       "id": "Gun:EnergyRifle",
       "displayName": "에너지 소총",
+      "description": "관통. 좁은 길목에서 최강.",
       "isAutomatic": true,
       "fireMode": "Hitscan",
-      "description": "관통. 좁은 길목에서 최강.",
       "fireRate": 0.25,
-      "range": 100,
-      "reloadTime": 2,
-      "zoomFOV": 40,
-      "xRecoil": 1,
+      "range": 100.0,
+      "reloadTime": 2.0,
+      "zoomFOV": 40.0,
+      "magSize": 20,
+      "pellets": 0,
+      "ammoFilter": [
+        "Item:EnergyCellAmmo"
+      ],
+      "damageMultiplier": 1.2,
+      "xRecoil": 1.0,
       "yRecoil": 0.8,
       "zRecoil": 0.5,
       "visualKickbackZ": 0.15,
       "baseSpread": 0.2,
-      "maxSpread": 2,
+      "maxSpread": 2.0,
       "spreadIncreasePerShot": 0.4,
-      "spreadRecoveryRate": 6,
-      "magSize": 20,
-      "ammoFilter": [
-        "Item:EnergyCellAmmo"
-      ],
-      "damageMultiplier": 1.2
+      "spreadRecoveryRate": 6.0
     }
   ],
   "items": [
@@ -185,7 +195,13 @@
       "description": "추락하며 흩어진 파편. 게이트 ⓪ 납품 및 초반 수동 제작 재료.",
       "type": "Salvage",
       "line": "None",
-      "icon": "ShipDebris"
+      "icon": "ShipDebris",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:IronOre",
@@ -193,7 +209,13 @@
       "description": "구조재의 원광. Ring 1 광맥에서 채굴.",
       "type": "Ore",
       "line": "Iron",
-      "icon": "IronOre"
+      "icon": "IronOre",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:IronIngot",
@@ -201,7 +223,13 @@
       "description": "철광석을 제련한 기본 소재.",
       "type": "Ingot",
       "line": "Iron",
-      "icon": "IronIngot"
+      "icon": "IronIngot",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:IronPlate",
@@ -209,7 +237,13 @@
       "description": "선체 봉합과 회로 함체에 쓰이는 판재.",
       "type": "Part",
       "line": "Iron",
-      "icon": "IronPlate"
+      "icon": "IronPlate",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:IronGear",
@@ -217,7 +251,13 @@
       "description": "체결용 부품. 선체 패널 조립에 사용.",
       "type": "Part",
       "line": "Iron",
-      "icon": "IronGear"
+      "icon": "IronGear",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:BasicAmmo",
@@ -229,13 +269,14 @@
       "attackEffects": [
         {
           "effect": "Effect:Damage",
-          "value": 10
+          "value": 10.0
         }
       ],
-      "speed": 70,
-      "gravity": 0,
-      "explosionRadius": 0,
-      "lifetime": 3,
+      "damage": 0.0,
+      "speed": 70.0,
+      "gravity": 0.0,
+      "explosionRadius": 0.0,
+      "lifetime": 3.0,
       "pierce": 0
     },
     {
@@ -244,7 +285,13 @@
       "description": "전자 계통의 원광. Ring 1 외곽~Ring 2.",
       "type": "Ore",
       "line": "Copper",
-      "icon": "CopperOre"
+      "icon": "CopperOre",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:CopperIngot",
@@ -252,7 +299,13 @@
       "description": "구리광석을 제련한 소재.",
       "type": "Ingot",
       "line": "Copper",
-      "icon": "CopperIngot"
+      "icon": "CopperIngot",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:CopperWire",
@@ -260,7 +313,13 @@
       "description": "배선과 회로의 기초 부품.",
       "type": "Part",
       "line": "Copper",
-      "icon": "CopperWire"
+      "icon": "CopperWire",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:CrystalOre",
@@ -268,7 +327,13 @@
       "description": "동력 계통의 원광. Ring 2~3 위험 지역.",
       "type": "Ore",
       "line": "Crystal",
-      "icon": "CrystalOre"
+      "icon": "CrystalOre",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:RefinedCrystal",
@@ -276,7 +341,13 @@
       "description": "에너지를 담는 매질.",
       "type": "Ingot",
       "line": "Crystal",
-      "icon": "RefinedCrystal"
+      "icon": "RefinedCrystal",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:HullPanel",
@@ -284,7 +355,13 @@
       "description": "게이트 ① 납품 부품. 동체를 물리적으로 봉합한다.",
       "type": "RepairPart",
       "line": "Iron",
-      "icon": "HullPanel"
+      "icon": "HullPanel",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:CircuitBoard",
@@ -292,7 +369,13 @@
       "description": "배전반·제어 유닛의 기초 회로.",
       "type": "Part",
       "line": "Copper",
-      "icon": "CircuitBoard"
+      "icon": "CircuitBoard",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:Grenade",
@@ -304,17 +387,18 @@
       "attackEffects": [
         {
           "effect": "Effect:Damage",
-          "value": 70
+          "value": 70.0
         },
         {
           "effect": "Effect:Knockback",
-          "value": 2
+          "value": 2.0
         }
       ],
-      "speed": 25,
+      "damage": 0.0,
+      "speed": 25.0,
       "gravity": 9.8,
-      "explosionRadius": 3,
-      "lifetime": 6,
+      "explosionRadius": 3.0,
+      "lifetime": 6.0,
       "pierce": 0
     },
     {
@@ -327,13 +411,14 @@
       "attackEffects": [
         {
           "effect": "Effect:Damage",
-          "value": 24
+          "value": 24.0
         }
       ],
-      "speed": 100,
-      "gravity": 0,
-      "explosionRadius": 0,
-      "lifetime": 3,
+      "damage": 0.0,
+      "speed": 100.0,
+      "gravity": 0.0,
+      "explosionRadius": 0.0,
+      "lifetime": 3.0,
       "pierce": 0
     },
     {
@@ -342,7 +427,13 @@
       "description": "에너지 그릇. 동력 모듈과 T3 방어 시설이 소비.",
       "type": "Part",
       "line": "Crystal",
-      "icon": "EnergyCell"
+      "icon": "EnergyCell",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:EnergyCellAmmo",
@@ -354,17 +445,18 @@
       "attackEffects": [
         {
           "effect": "Effect:Damage",
-          "value": 30
+          "value": 30.0
         },
         {
           "effect": "Effect:SlowField",
           "value": 0.5
         }
       ],
-      "speed": 60,
-      "gravity": 0,
-      "explosionRadius": 0,
-      "lifetime": 3,
+      "damage": 0.0,
+      "speed": 60.0,
+      "gravity": 0.0,
+      "explosionRadius": 0.0,
+      "lifetime": 3.0,
       "pierce": 4
     },
     {
@@ -373,7 +465,13 @@
       "description": "게이트 ② 납품 부품. 패널로 차폐된 함체에 장착된 제어 모듈.",
       "type": "RepairPart",
       "line": "Copper",
-      "icon": "NavControlUnit"
+      "icon": "NavControlUnit",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:BeastCore",
@@ -381,7 +479,13 @@
       "description": "코어와 동일 계열의 응축 에너지. 낮 둥지 레이드로 획득, 게이트 납품 전용.",
       "type": "Salvage",
       "line": "Beast",
-      "icon": "BeastCore"
+      "icon": "BeastCore",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:ControlModule",
@@ -389,7 +493,13 @@
       "description": "연산·배선·전원을 한 덩어리로 묶은 복합 부품. 제조기에서만 만들 수 있고, 티어 3 설비의 뼈대가 된다.",
       "type": "Part",
       "line": "Copper",
-      "icon": "ControlModule"
+      "icon": "ControlModule",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:PowerModule",
@@ -397,7 +507,13 @@
       "description": "게이트 ③ 납품 부품. 엔진에 꽂는 완성형 연료·제어 통합 모듈.",
       "type": "RepairPart",
       "line": "Crystal",
-      "icon": "PowerModule"
+      "icon": "PowerModule",
+      "damage": 0.0,
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:CrystalAmmo",
@@ -409,17 +525,18 @@
       "attackEffects": [
         {
           "effect": "Effect:Damage",
-          "value": 30
+          "value": 30.0
         },
         {
           "effect": "Effect:Burn",
-          "value": 4
+          "value": 4.0
         }
       ],
-      "speed": 90,
-      "gravity": 0,
-      "explosionRadius": 0,
-      "lifetime": 3,
+      "damage": 0.0,
+      "speed": 90.0,
+      "gravity": 0.0,
+      "explosionRadius": 0.0,
+      "lifetime": 3.0,
       "pierce": 0
     },
     {
@@ -429,7 +546,13 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "Pistol",
-      "gun": "Gun:Pistol"
+      "damage": 0.0,
+      "gun": "Gun:Pistol",
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:Rifle",
@@ -438,7 +561,13 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "Rifle",
-      "gun": "Gun:Rifle"
+      "damage": 0.0,
+      "gun": "Gun:Rifle",
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:Shotgun",
@@ -447,7 +576,13 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "Shotgun",
-      "gun": "Gun:Shotgun"
+      "damage": 0.0,
+      "gun": "Gun:Shotgun",
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:Sniper",
@@ -456,7 +591,13 @@
       "type": "Weapon",
       "line": "Copper",
       "icon": "Sniper",
-      "gun": "Gun:Sniper"
+      "damage": 0.0,
+      "gun": "Gun:Sniper",
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:GrenadeLauncher",
@@ -465,7 +606,13 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "GrenadeLauncher",
-      "gun": "Gun:GrenadeLauncher"
+      "damage": 0.0,
+      "gun": "Gun:GrenadeLauncher",
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     },
     {
       "id": "Item:EnergyRifle",
@@ -474,7 +621,13 @@
       "type": "Weapon",
       "line": "Crystal",
       "icon": "EnergyRifle",
-      "gun": "Gun:EnergyRifle"
+      "damage": 0.0,
+      "gun": "Gun:EnergyRifle",
+      "speed": -1.0,
+      "gravity": -1.0,
+      "explosionRadius": -1.0,
+      "lifetime": -1.0,
+      "pierce": -1
     }
   ],
   "recipes": [
@@ -483,7 +636,7 @@
       "displayName": "철 주괴 제련",
       "description": "제련로 1입력.",
       "tier": 1,
-      "craftTime": 2,
+      "craftTime": 2.0,
       "inputs": [
         {
           "item": "Item:IronOre",
@@ -502,7 +655,7 @@
       "displayName": "철판 제작",
       "description": "제작기 1입력.",
       "tier": 1,
-      "craftTime": 3,
+      "craftTime": 3.0,
       "inputs": [
         {
           "item": "Item:IronIngot",
@@ -521,7 +674,7 @@
       "displayName": "철 기어 제작",
       "description": "제작기 1입력.",
       "tier": 1,
-      "craftTime": 3,
+      "craftTime": 3.0,
       "inputs": [
         {
           "item": "Item:IronIngot",
@@ -540,7 +693,7 @@
       "displayName": "기본 탄약 제작",
       "description": "제작기 1입력. 총기·기본 포탑 공용.",
       "tier": 1,
-      "craftTime": 2,
+      "craftTime": 2.0,
       "inputs": [
         {
           "item": "Item:IronIngot",
@@ -559,7 +712,7 @@
       "displayName": "선체 패널 조립",
       "description": "게이트 ① 납품 부품. 티어 1에서는 작업대 수동 조립.",
       "tier": 1,
-      "craftTime": 4,
+      "craftTime": 4.0,
       "inputs": [
         {
           "item": "Item:IronPlate",
@@ -582,7 +735,7 @@
       "displayName": "구리 주괴 제련",
       "description": "제련로 1입력. 구리 라인 개방.",
       "tier": 2,
-      "craftTime": 2,
+      "craftTime": 2.0,
       "inputs": [
         {
           "item": "Item:CopperOre",
@@ -601,7 +754,7 @@
       "displayName": "구리 전선 제작",
       "description": "제작기 1입력.",
       "tier": 2,
-      "craftTime": 2,
+      "craftTime": 2.0,
       "inputs": [
         {
           "item": "Item:CopperIngot",
@@ -620,7 +773,7 @@
       "displayName": "회로 기판 조립",
       "description": "조립기 2입력.",
       "tier": 2,
-      "craftTime": 4,
+      "craftTime": 4.0,
       "inputs": [
         {
           "item": "Item:CopperWire",
@@ -643,7 +796,7 @@
       "displayName": "유탄 조립",
       "description": "조립기 2입력. 유탄 발사기·박격포 타워 공용.",
       "tier": 2,
-      "craftTime": 3,
+      "craftTime": 3.0,
       "inputs": [
         {
           "item": "Item:BasicAmmo",
@@ -666,7 +819,7 @@
       "displayName": "항법 제어 유닛 조립",
       "description": "게이트 ② 납품 부품. 조립기 2입력 — 게이트① 부품(선체 패널) 재소비.",
       "tier": 2,
-      "craftTime": 6,
+      "craftTime": 6.0,
       "inputs": [
         {
           "item": "Item:CircuitBoard",
@@ -689,7 +842,7 @@
       "displayName": "크리스탈 정제",
       "description": "제련로 1입력. Ring 2~3 원정 자원.",
       "tier": 3,
-      "craftTime": 3,
+      "craftTime": 3.0,
       "inputs": [
         {
           "item": "Item:CrystalOre",
@@ -708,7 +861,7 @@
       "displayName": "고밀도 탄약 조립",
       "description": "조립기 2입력. 구리 코팅 강화 탄약.",
       "tier": 2,
-      "craftTime": 3,
+      "craftTime": 3.0,
       "inputs": [
         {
           "item": "Item:BasicAmmo",
@@ -731,7 +884,7 @@
       "displayName": "에너지 셀 조립",
       "description": "조립기 2입력.",
       "tier": 3,
-      "craftTime": 4,
+      "craftTime": 4.0,
       "inputs": [
         {
           "item": "Item:RefinedCrystal",
@@ -754,7 +907,7 @@
       "displayName": "에너지 셀 탄 제작",
       "description": "제작기 1입력.",
       "tier": 3,
-      "craftTime": 2,
+      "craftTime": 2.0,
       "inputs": [
         {
           "item": "Item:EnergyCell",
@@ -773,7 +926,7 @@
       "displayName": "동력 모듈 제조",
       "description": "게이트 ③ 납품 부품. 제조기 4입력 — 괴수 핵이 공장 라인에 합류하는 유일한 지점.",
       "tier": 3,
-      "craftTime": 10,
+      "craftTime": 10.0,
       "inputs": [
         {
           "item": "Item:NavControlUnit",
@@ -804,7 +957,7 @@
       "displayName": "크리스탈 탄약 조립",
       "description": "조립기 2입력. 고밀도 탄약에 크리스탈 첨두를 결합.",
       "tier": 3,
-      "craftTime": 3,
+      "craftTime": 3.0,
       "inputs": [
         {
           "item": "Item:DenseAmmo",
@@ -827,7 +980,7 @@
       "displayName": "기본 권총 제작",
       "description": "잔해를 깎아 만든 호신용 권총.",
       "tier": 1,
-      "craftTime": 6,
+      "craftTime": 6.0,
       "inputs": [
         {
           "item": "Item:ShipDebris",
@@ -850,7 +1003,7 @@
       "displayName": "라이플 제작",
       "description": "연사가 가능한 주력 화기.",
       "tier": 2,
-      "craftTime": 10,
+      "craftTime": 10.0,
       "inputs": [
         {
           "item": "Item:IronPlate",
@@ -873,7 +1026,7 @@
       "displayName": "샷건 제작",
       "description": "근접에서 한 번에 쓸어낸다.",
       "tier": 2,
-      "craftTime": 10,
+      "craftTime": 10.0,
       "inputs": [
         {
           "item": "Item:IronPlate",
@@ -896,7 +1049,7 @@
       "displayName": "스나이퍼 제작",
       "description": "먼 거리의 단일 대상을 정확히 노린다.",
       "tier": 2,
-      "craftTime": 12,
+      "craftTime": 12.0,
       "inputs": [
         {
           "item": "Item:CircuitBoard",
@@ -919,7 +1072,7 @@
       "displayName": "유탄 발사기 제작",
       "description": "유탄을 곡사로 날린다.",
       "tier": 2,
-      "craftTime": 12,
+      "craftTime": 12.0,
       "inputs": [
         {
           "item": "Item:IronPlate",
@@ -942,7 +1095,7 @@
       "displayName": "에너지 소총 제작",
       "description": "제어 모듈에 크리스탈 광학계를 얹는다. 제조기 전용.",
       "tier": 3,
-      "craftTime": 20,
+      "craftTime": 20.0,
       "inputs": [
         {
           "item": "Item:ControlModule",
@@ -973,7 +1126,7 @@
       "displayName": "제어 모듈 제조",
       "description": "기판·셀·배선·판을 한 번에 압착한다. 제조기 전용.",
       "tier": 3,
-      "craftTime": 8,
+      "craftTime": 8.0,
       "inputs": [
         {
           "item": "Item:CircuitBoard",
@@ -1020,6 +1173,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 0,
+      "outputSlots": 1,
+      "bufferStackCap": 10,
+      "requiredCoreTier": 1,
+      "maxHp": 150,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1030,13 +1189,16 @@
           "amount": 4
         }
       ],
-      "inputSlots": 0,
-      "outputSlots": 1,
-      "bufferStackCap": 10,
-      "maxHp": 150,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false,
-      "speedMultiplier": 1
+      "speedMultiplier": 1.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:MinerMk2",
@@ -1057,6 +1219,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 0,
+      "outputSlots": 1,
+      "bufferStackCap": 20,
+      "requiredCoreTier": 2,
+      "maxHp": 220,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1071,13 +1239,16 @@
           "amount": 4
         }
       ],
-      "inputSlots": 0,
-      "outputSlots": 1,
-      "bufferStackCap": 20,
-      "maxHp": 220,
-      "requiredCoreTier": 2,
-      "hideFromBuildMenu": false,
-      "speedMultiplier": 2
+      "speedMultiplier": 2.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Smelter",
@@ -1104,6 +1275,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 1,
+      "bufferStackCap": 10,
+      "requiredCoreTier": 1,
+      "maxHp": 180,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1114,17 +1291,21 @@
           "amount": 3
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 1,
-      "bufferStackCap": 10,
-      "maxHp": 180,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "availableRecipes": [
         "Recipe:Recipe_IronIngot",
         "Recipe:Recipe_CopperIngot",
         "Recipe:Recipe_RefinedCrystal"
-      ]
+      ],
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Constructor",
@@ -1151,6 +1332,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 1,
+      "bufferStackCap": 10,
+      "requiredCoreTier": 1,
+      "maxHp": 180,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1161,19 +1348,23 @@
           "amount": 4
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 1,
-      "bufferStackCap": 10,
-      "maxHp": 180,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "availableRecipes": [
         "Recipe:Recipe_IronPlate",
         "Recipe:Recipe_IronGear",
         "Recipe:Recipe_BasicAmmo",
         "Recipe:Recipe_CopperWire",
         "Recipe:Recipe_EnergyCellAmmo"
-      ]
+      ],
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Assembler",
@@ -1206,6 +1397,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 2,
+      "outputSlots": 1,
+      "bufferStackCap": 10,
+      "requiredCoreTier": 2,
+      "maxHp": 250,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1220,12 +1417,8 @@
           "amount": 8
         }
       ],
-      "inputSlots": 2,
-      "outputSlots": 1,
-      "bufferStackCap": 10,
-      "maxHp": 250,
-      "requiredCoreTier": 2,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "availableRecipes": [
         "Recipe:Recipe_CircuitBoard",
         "Recipe:Recipe_CrystalAmmo",
@@ -1239,7 +1432,15 @@
         "Recipe:Recipe_Rifle",
         "Recipe:Recipe_Shotgun",
         "Recipe:Recipe_Sniper"
-      ]
+      ],
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Manufacturer",
@@ -1284,6 +1485,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 4,
+      "outputSlots": 1,
+      "bufferStackCap": 10,
+      "requiredCoreTier": 3,
+      "maxHp": 320,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:HullPanel",
@@ -1302,17 +1509,21 @@
           "amount": 15
         }
       ],
-      "inputSlots": 4,
-      "outputSlots": 1,
-      "bufferStackCap": 10,
-      "maxHp": 320,
-      "requiredCoreTier": 3,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "availableRecipes": [
         "Recipe:Recipe_PowerModule",
         "Recipe:Recipe_ControlModule",
         "Recipe:Recipe_EnergyRifle"
-      ]
+      ],
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:DronePort",
@@ -1339,6 +1550,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 1,
+      "bufferStackCap": 30,
+      "requiredCoreTier": 3,
+      "maxHp": 260,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -1349,12 +1566,16 @@
           "amount": 16
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 1,
-      "bufferStackCap": 30,
-      "maxHp": 260,
-      "requiredCoreTier": 3,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0,
       "droneRange": 60,
       "carryCapacity": 20,
       "travelSpeed": 8
@@ -1384,6 +1605,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
+      "requiredCoreTier": 1,
+      "maxHp": 60,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1394,13 +1621,16 @@
           "amount": 1
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 1,
-      "maxHp": 60,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false,
-      "speedTilesPerSec": 2
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 2.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:BeltMk2",
@@ -1427,6 +1657,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
+      "requiredCoreTier": 2,
+      "maxHp": 60,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1437,13 +1673,16 @@
           "amount": 2
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 1,
-      "maxHp": 60,
-      "requiredCoreTier": 2,
-      "hideFromBuildMenu": false,
-      "speedTilesPerSec": 4
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 4.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Splitter",
@@ -1482,6 +1721,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
+      "requiredCoreTier": 1,
+      "maxHp": 80,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1492,12 +1737,16 @@
           "amount": 2
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 1,
-      "maxHp": 80,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Merger",
@@ -1536,6 +1785,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 1,
+      "requiredCoreTier": 1,
+      "maxHp": 80,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1546,12 +1801,16 @@
           "amount": 2
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 1,
-      "maxHp": 80,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Storage",
@@ -1614,6 +1873,12 @@
           "isInput": false
         }
       ],
+      "inputSlots": 12,
+      "outputSlots": 1,
+      "bufferStackCap": 0,
+      "requiredCoreTier": 1,
+      "maxHp": 300,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1624,12 +1889,16 @@
           "amount": 4
         }
       ],
-      "inputSlots": 12,
-      "outputSlots": 1,
-      "bufferStackCap": 0,
-      "maxHp": 300,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:Core",
@@ -1716,13 +1985,23 @@
           "isInput": true
         }
       ],
-      "buildCost": [],
       "inputSlots": 4,
       "outputSlots": 0,
       "bufferStackCap": 0,
-      "maxHp": 5000,
       "requiredCoreTier": 0,
+      "maxHp": 5000,
       "hideFromBuildMenu": true,
+      "buildCost": [],
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0,
       "tiers": [
         {
           "name": "잔해 회수",
@@ -1832,23 +2111,28 @@
         "y": 1
       },
       "ports": [],
+      "inputSlots": 0,
+      "outputSlots": 0,
+      "bufferStackCap": 0,
+      "requiredCoreTier": 1,
+      "maxHp": 250,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
           "amount": 2
         }
       ],
-      "inputSlots": 0,
-      "outputSlots": 0,
-      "bufferStackCap": 0,
-      "maxHp": 250,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false,
-      "damageMultiplier": 0,
-      "range": 0,
-      "fireRate": 0,
-      "turnSpeed": 0,
-      "aimTolerance": 3,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": 0.0,
+      "aimTolerance": 3.0,
       "ammoFilter": []
     },
     {
@@ -1863,21 +2147,28 @@
         "y": 1
       },
       "ports": [],
+      "inputSlots": 0,
+      "outputSlots": 0,
+      "bufferStackCap": 0,
+      "requiredCoreTier": 2,
+      "maxHp": 10,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:Grenade",
           "amount": 1
         }
       ],
-      "inputSlots": 0,
-      "outputSlots": 0,
-      "bufferStackCap": 0,
-      "maxHp": 10,
-      "requiredCoreTier": 2,
-      "hideFromBuildMenu": false,
-      "damageMultiplier": 6,
-      "range": 2,
-      "fireRate": 1,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 6.0,
+      "range": 2.0,
+      "fireRate": 1.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0,
       "ammoFilter": [
         "Item:Grenade"
       ]
@@ -1901,6 +2192,12 @@
           "isInput": true
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 20,
+      "requiredCoreTier": 1,
+      "maxHp": 200,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1911,17 +2208,16 @@
           "amount": 6
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 20,
-      "maxHp": 200,
-      "requiredCoreTier": 1,
-      "hideFromBuildMenu": false,
-      "damageMultiplier": 1,
-      "range": 9,
-      "fireRate": 2,
-      "turnSpeed": 360,
-      "aimTolerance": 3,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 1.0,
+      "range": 9.0,
+      "fireRate": 2.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": 360.0,
+      "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:BasicAmmo",
         "Item:DenseAmmo",
@@ -1947,6 +2243,12 @@
           "isInput": true
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 30,
+      "requiredCoreTier": 2,
+      "maxHp": 320,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1961,17 +2263,16 @@
           "amount": 4
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 30,
-      "maxHp": 320,
-      "requiredCoreTier": 2,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "damageMultiplier": 2.2,
-      "range": 11,
-      "fireRate": 4,
-      "turnSpeed": 120,
-      "aimTolerance": 3,
+      "range": 11.0,
+      "fireRate": 4.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": 120.0,
+      "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
@@ -1996,6 +2297,12 @@
           "isInput": true
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 20,
+      "requiredCoreTier": 2,
+      "maxHp": 300,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2010,17 +2317,16 @@
           "amount": 6
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 20,
-      "maxHp": 300,
-      "requiredCoreTier": 2,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "damageMultiplier": 3.5,
-      "range": 18,
+      "range": 18.0,
       "fireRate": 0.5,
-      "turnSpeed": 60,
-      "aimTolerance": 3,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": 60.0,
+      "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:Grenade"
       ]
@@ -2044,6 +2350,12 @@
           "isInput": true
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 20,
+      "requiredCoreTier": 3,
+      "maxHp": 280,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -2058,17 +2370,16 @@
           "amount": 12
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 20,
-      "maxHp": 280,
-      "requiredCoreTier": 3,
-      "hideFromBuildMenu": false,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
       "damageMultiplier": 2.8,
-      "range": 14,
-      "fireRate": 3,
-      "turnSpeed": 200,
-      "aimTolerance": 3,
+      "range": 14.0,
+      "fireRate": 3.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": 200.0,
+      "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
       ]
@@ -2092,6 +2403,12 @@
           "isInput": true
         }
       ],
+      "inputSlots": 1,
+      "outputSlots": 0,
+      "bufferStackCap": 10,
+      "requiredCoreTier": 3,
+      "maxHp": 180,
+      "hideFromBuildMenu": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -2102,17 +2419,16 @@
           "amount": 10
         }
       ],
-      "inputSlots": 1,
-      "outputSlots": 0,
-      "bufferStackCap": 10,
-      "maxHp": 180,
-      "requiredCoreTier": 3,
-      "hideFromBuildMenu": false,
-      "damageMultiplier": 0,
-      "range": 7,
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 7.0,
       "fireRate": 0.2,
-      "turnSpeed": 0,
-      "aimTolerance": 3,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": 0.0,
+      "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
       ]
@@ -2127,7 +2443,8 @@
       "requiredCoreTier": 0,
       "baseAmount": 4,
       "maxAliveAmount": 4,
-      "spawnInterval": 2
+      "spawnInterval": 2.0,
+      "monsterMaxHp": 0.0
     },
     {
       "id": "Wave:Day2",
@@ -2137,7 +2454,8 @@
       "requiredCoreTier": 0,
       "baseAmount": 6,
       "maxAliveAmount": 6,
-      "spawnInterval": 2
+      "spawnInterval": 2.0,
+      "monsterMaxHp": 0.0
     },
     {
       "id": "Wave:Day3",
@@ -2147,7 +2465,8 @@
       "requiredCoreTier": 1,
       "baseAmount": 8,
       "maxAliveAmount": 8,
-      "spawnInterval": 1.5
+      "spawnInterval": 1.5,
+      "monsterMaxHp": 0.0
     },
     {
       "id": "Wave:Day4",
@@ -2157,7 +2476,8 @@
       "requiredCoreTier": 1,
       "baseAmount": 10,
       "maxAliveAmount": 10,
-      "spawnInterval": 1.5
+      "spawnInterval": 1.5,
+      "monsterMaxHp": 0.0
     },
     {
       "id": "Wave:Day5",
@@ -2167,7 +2487,8 @@
       "requiredCoreTier": 2,
       "baseAmount": 15,
       "maxAliveAmount": 12,
-      "spawnInterval": 1
+      "spawnInterval": 1.0,
+      "monsterMaxHp": 0.0
     }
   ]
 }

@@ -24,7 +24,7 @@ using UnityEngine;
 // ================================================================
 public static class GameDataImporter
 {
-    const string ImportFolder   = "Assets/Data/Import";
+    internal const string ImportFolder = "Assets/Data/Import";   // GameDataEditorWindow도 이 경로를 쓴다
     const string ItemFolder     = "Assets/Data/Item";
     const string RecipeFolder   = "Assets/Data/Recipe";
     const string BuildingFolder = "Assets/Data/Buildings";
@@ -44,7 +44,19 @@ public static class GameDataImporter
 
     // ── JSON DTO (스키마 문서는 Import 폴더의 샘플 참조) ──────────
 
-    [Serializable] class Root
+    /// <summary>
+    /// 스키마에 없는 필드를 보존하는 베이스 — GameDataEditorWindow가 Newtonsoft로
+    /// 파일을 왕복 저장할 때, DTO가 모르는 필드(예: 아직 임포터가 없는 미래 건물의
+    /// 값)를 지우지 않고 그대로 되쓴다. JsonUtility(임포터 경로)는 딕셔너리를
+    /// 직렬화하지 못해 이 필드를 조용히 무시한다 — 임포터 동작에는 영향이 없다.
+    /// </summary>
+    internal class JsonDtoBase
+    {
+        [Newtonsoft.Json.JsonExtensionData]
+        public IDictionary<string, object> unknownJson;
+    }
+
+    [Serializable] internal class Root : JsonDtoBase
     {
         public EffectDto[]   effects;
         public GunDto[]      guns;
@@ -55,9 +67,9 @@ public static class GameDataImporter
     }
 
     /// <summary>공격 효과 한 항목 — EffectEntry의 json 형태. effect는 효과 id.</summary>
-    [Serializable] class EffectEntryDto { public string effect; public float value; }
+    [Serializable] internal class EffectEntryDto : JsonDtoBase { public string effect; public float value; }
 
-    [Serializable] class EffectDto
+    [Serializable] internal class EffectDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Effect:Damage"
         public string displayName;   // 필수
@@ -69,7 +81,7 @@ public static class GameDataImporter
         public string[] affects;     // AttackModifier 전용 — 증폭할 효과 id들. null = 유지
     }
 
-    [Serializable] class GunDto
+    [Serializable] internal class GunDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Gun:Rifle"
         public string displayName;   // 필수
@@ -90,7 +102,7 @@ public static class GameDataImporter
         public float  baseSpread = -1f, maxSpread = -1f, spreadIncreasePerShot = -1f, spreadRecoveryRate = -1f;
     }
 
-    [Serializable] class ItemDto
+    [Serializable] internal class ItemDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Item:IronOre"
         public string displayName;   // 필수
@@ -107,9 +119,9 @@ public static class GameDataImporter
         public int    pierce = -1;   // 추가 관통 대상 수 — 0 정당(첫 대상에서 멈춤), 음수 = 생략(유지)
     }
 
-    [Serializable] class SlotDto { public string item; public int amount; }
+    [Serializable] internal class SlotDto : JsonDtoBase { public string item; public int amount; }
 
-    [Serializable] class RecipeDto
+    [Serializable] internal class RecipeDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Recipe:Recipe_IronIngot"
         public string displayName;   // 필수
@@ -120,10 +132,10 @@ public static class GameDataImporter
         public SlotDto[] outputs;
     }
 
-    [Serializable] class Vec2Dto { public int x, y; }
-    [Serializable] class PortDto { public int x, y; public string dir; public bool isInput; }
+    [Serializable] internal class Vec2Dto : JsonDtoBase { public int x, y; }
+    [Serializable] internal class PortDto : JsonDtoBase { public int x, y; public string dir; public bool isInput; }
 
-    [Serializable] class BuildingDto
+    [Serializable] internal class BuildingDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Building:Assembler"
         public string kind;          // 필수 — 어느 서브클래스로 만들지 (KindMap 참조)
@@ -158,7 +170,7 @@ public static class GameDataImporter
     /// 코어 수리 단계. 이걸 JSON에 두는 이유 — 예전엔 에셋에만 손으로 적혀 있어서
     /// 브랜치 머지 때 조용히 덮여 사라졌다. 이제 재임포트로 항상 복구된다.
     /// </summary>
-    [Serializable] class TierDto
+    [Serializable] internal class TierDto : JsonDtoBase
     {
         public string   name;            // → CoreTierDefinition.tierLabel
         public string   description;
@@ -168,7 +180,7 @@ public static class GameDataImporter
         public bool     isFinal;
     }
 
-    [Serializable] class WaveDto
+    [Serializable] internal class WaveDto : JsonDtoBase
     {
         public string id;
         public string displayName;
@@ -185,7 +197,7 @@ public static class GameDataImporter
     /// kind → 만들 서브클래스. BuildingDataSO가 추상이라 임포터가 무엇을 CreateInstance할지
     /// 알아야 한다 — 아이템·레시피에는 없던 개념이라 별도로 둔다.
     /// </summary>
-    static readonly Dictionary<string, Type> KindMap = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, Type> KindMap = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Miner"]     = typeof(MinerDataSO),
         ["Belt"]      = typeof(BeltDataSO),
@@ -201,7 +213,7 @@ public static class GameDataImporter
     /// 효과 kind → 클래스 (건물 KindMap과 같은 패턴). 클래스 = 채널(코드), value = 크기라서
     /// json이 갖는 형태 필드는 duration·stacking·tickInterval·affects뿐이다.
     /// </summary>
-    static readonly Dictionary<string, Type> EffectKindMap = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, Type> EffectKindMap = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Damage"]         = typeof(DamageEffectSO),
         ["Heal"]           = typeof(HealEffectSO),

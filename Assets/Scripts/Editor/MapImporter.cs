@@ -17,14 +17,14 @@ using UnityEngine;
 /// </summary>
 public static class MapImporter
 {
-    const string JsonPath = "Assets/Data/Import/MapData.json";
+    internal const string JsonPath = "Assets/Data/Import/MapData.json";   // GameDataEditorWindow도 이 경로를 쓴다
     const string MapFolder = "Assets/Data/Maps";
 
     // ── DTO (JsonUtility가 채운다) ──────────────────────────────
 
-    [Serializable] class Root { public MapDto[] maps; }
+    [Serializable] internal class Root : GameDataImporter.JsonDtoBase { public MapDto[] maps; }
 
-    [Serializable] class MapDto
+    [Serializable] internal class MapDto : GameDataImporter.JsonDtoBase
     {
         public string id;            // 필수. 예: "Map:Plains01"
         public string displayName;   // 필수
@@ -39,9 +39,9 @@ public static class MapImporter
         public CellDto[] nightSpawnPoints;
     }
 
-    [Serializable] class CellDto { public int x, y; }
+    [Serializable] internal class CellDto : GameDataImporter.JsonDtoBase { public int x, y; }
 
-    [Serializable] class NodeDto
+    [Serializable] internal class NodeDto : GameDataImporter.JsonDtoBase
     {
         public string item;          // GameData의 아이템 id
         public int x, y;
@@ -50,7 +50,7 @@ public static class MapImporter
         public int maxStock;
     }
 
-    [Serializable] class NestDto
+    [Serializable] internal class NestDto : GameDataImporter.JsonDtoBase
     {
         public int x, y;
         public float warningRange, triggerRange;
@@ -65,7 +65,7 @@ public static class MapImporter
         public int bossRecoveryDays, nestRecoveryDays;
     }
 
-    [Serializable] class SpawnDto { public int x, y; public bool hasBoss; }
+    [Serializable] internal class SpawnDto : GameDataImporter.JsonDtoBase { public int x, y; public bool hasBoss; }
 
     // ── 실행 ────────────────────────────────────────────────────
 
