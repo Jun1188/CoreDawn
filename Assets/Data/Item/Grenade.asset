@@ -41,7 +41,7 @@ MonoBehaviour:
   displayName: "\uC720\uD0C4"
   description: "\uC720\uD0C4 \uBC1C\uC0AC\uAE30\uC640 \uBC15\uACA9\uD3EC \uD0C0\uC6CC\uAC00
     \uACF5\uC720\uD558\uB294 \uD3ED\uBC1C\uBB3C."
-  icon: {fileID: 0}
+  icon: {fileID: 234227774, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 4
   line: 1
   modules:

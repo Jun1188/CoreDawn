@@ -119,6 +119,55 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &668416732
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 668416734}
+  - component: {fileID: 668416733}
+  m_Layer: 0
+  m_Name: DayRegenSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &668416733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 668416732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca83a465d2589d04da631eee1273b42f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DayRegenSystem
+  playerHealAmount: 1
+  playerHealInterval: 0.5
+  playerHealRangeCells: 20
+  coreHealAmount: 10
+  coreHealInterval: 1
+--- !u!4 &668416734
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 668416732}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1186209663
 GameObject:
   m_ObjectHideFlags: 0
@@ -150,7 +199,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldManager
   rebuildInterval: 2
-  towerGoalCost: 30
+  fallbackGoalCost: 80
 --- !u!114 &1186209665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -168,6 +217,8 @@ MonoBehaviour:
   mapBounds: {fileID: 0}
   gridSize: {x: 0, y: 0}
   originPosition: {x: 0, y: 0, z: 0}
+  buildingCostPerHp: 0.5
+  buildingCostCap: 200
 --- !u!4 &1186209666
 Transform:
   m_ObjectHideFlags: 0
@@ -217,9 +268,10 @@ MonoBehaviour:
   spawnManager:
     monsterPrefab: {fileID: 1332241365330258894, guid: a0ab261b89819e4489aaf424fc926d00, type: 3}
     spawnHeight: 0
+  nightSpawnPointProvider: {fileID: 0}
+  quantityBasedNightWaves: 1
   playerMaxHealth: 300
   playerDetectionRange: 5
-  playerMeleeDamage: 10
 --- !u!4 &2019025797
 Transform:
   m_ObjectHideFlags: 0
@@ -241,3 +293,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 2019025797}
   - {fileID: 1186209666}
+  - {fileID: 668416734}

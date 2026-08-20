@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item:IronIngot
   displayName: "\uCCA0 \uC8FC\uAD34"
   description: "\uCCA0\uAD11\uC11D\uC744 \uC81C\uB828\uD55C \uAE30\uBCF8 \uC18C\uC7AC."
-  icon: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  icon: {fileID: -1786476198, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 1
   line: 1
   modules: []

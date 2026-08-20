@@ -18,7 +18,7 @@ MonoBehaviour:
     \uBB36\uC740 \uBCF5\uD569 \uBD80\uD488. \uC81C\uC870\uAE30\uC5D0\uC11C\uB9CC
     \uB9CC\uB4E4 \uC218 \uC788\uACE0, \uD2F0\uC5B4 3 \uC124\uBE44\uC758 \uBF08\uB300\uAC00
     \uB41C\uB2E4."
-  icon: {fileID: 0}
+  icon: {fileID: -1110902257, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 2
   line: 2
   modules: []

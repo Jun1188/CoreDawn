@@ -721,8 +721,8 @@
 }
 
 .inv-craft__yield .ui-slot__icon {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
 }
 
 .inv-craft__yield-name {
@@ -809,8 +809,8 @@
 }
 
 .inv-carry .ui-slot__icon {
-    width: 45px;
-    height: 45px;
+    width: 58px;
+    height: 58px;
 }
 
 /* ───────────── SCR-02 전투 HUD ───────────── */

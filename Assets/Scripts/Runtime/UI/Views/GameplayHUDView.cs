@@ -396,7 +396,7 @@ public class GameplayHUDView : MonoBehaviour
 
             var icon = new VisualElement { pickingMode = PickingMode.Ignore };
             icon.AddToClassList("ui-slot__icon");
-            if (!empty) icon.style.backgroundColor = UIFlowColors.Of(stack.item.line);
+            if (!empty) UIItemIcon.Apply(icon, stack.item);
             slot.Add(icon);
 
             if (!empty)

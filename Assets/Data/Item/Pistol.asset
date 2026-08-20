@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item:Pistol
   displayName: "\uAE30\uBCF8 \uAD8C\uCD1D"
   description: "\uC794\uD574\uB85C \uB9CC\uB4E0 \uD638\uC2E0\uC6A9 \uAD8C\uCD1D."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: edf27d1135600e245ac99153f1177507, type: 3}
   type: 5
   line: 1
   modules:
