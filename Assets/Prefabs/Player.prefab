@@ -178,7 +178,7 @@ MonoBehaviour:
   bobRoll: 1.1
   crouchBobScale: 0.55
   bobSharpness: 11
-  aimSuppression: 0.85
+  aimSuppression: 1
 --- !u!114 &6652096104688218203
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1202,6 +1202,15 @@ MonoBehaviour:
   lowJumpGravityScale: 2.6
   coyoteTime: 0.12
   jumpBufferTime: 0.15
+  walkSounds: []
+  runSounds: []
+  slideSound: {fileID: 0}
+  jumpSound: {fileID: 0}
+  landSound: {fileID: 0}
+  footstepVolume: 0.4
+  jumpVolume: 0.7
+  landVolume: 0.7
+  slideVolume: 0.6
   groundMask:
     serializedVersion: 2
     m_Bits: 16375

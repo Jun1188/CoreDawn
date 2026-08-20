@@ -23,18 +23,29 @@ public class SkyboxTimeView : MonoBehaviour
     [Tooltip("달 트랜스폼. 해의 정반대에 둔다 — 해가 지면 달이 뜬다.")]
     [SerializeField] Transform moon;
 
-    [Header("조명")]
-    [Tooltip("장면의 주 디렉셔널 라이트. 낮에는 해, 밤에는 달 방향을 따른다.")]
-    [SerializeField] Light directionalLight;
+    [Header("조명 — 해·달 라이트 두 개")]
+    [Tooltip("햇빛 디렉셔널 라이트. 항상 해 방향을 따르고, 해가 지면 강도가 0으로 죽는다. " +
+             "라이트 하나를 180° 돌려 겸용하면 교대 순간에 조명이 홱 도는 문제가 있어 둘로 나눈다. " +
+             "URP는 어느 순간이든 더 밝은 쪽을 주광(그림자 담당)으로 골라 준다.")]
+    [SerializeField] Light sunLight;
+
+    [Tooltip("달빛 디렉셔널 라이트. 항상 달 방향을 따르고, 달이 지면 강도가 0으로 죽는다.")]
+    [SerializeField] Light moonLight;
 
     [Tooltip("해가 뜨고 지는 방위(Y 회전).")]
     [SerializeField] float sunYaw = 30f;
 
-    [Tooltip("시간(0~1)에 따른 라이트 색. 0=일출, 0.25=정오, 0.5=일몰, 0.75=자정.")]
+    [Tooltip("시간(0~1)에 따른 햇빛 색. 0=일출, 0.25=정오, 0.5=일몰.")]
     [SerializeField] Gradient lightColor;
 
-    [Tooltip("시간(0~1)에 따른 라이트 강도. 밤 값은 달빛이다 — 0으로 두면 밤이 칠흑이 된다.")]
+    [Tooltip("시간(0~1)에 따른 햇빛 강도 — 밤 구간 값은 해 고도 게이트에 어차피 깎이므로 무의미.")]
     [SerializeField] AnimationCurve lightIntensity;
+
+    [Tooltip("달빛 색.")]
+    [SerializeField] Color moonColor = new(0.55f, 0.65f, 0.90f);
+
+    [Tooltip("달빛 강도(달이 높이 떴을 때).")]
+    [SerializeField] float moonIntensity = 0.18f;
 
     [Tooltip("앰비언트도 함께 조절할지. 켜면 앰비언트 모드를 Flat으로 바꾼다 — " +
              "Skybox 모드는 GI 환경을 다시 굽기 전에는 하늘을 따라오지 않아서, " +
@@ -62,10 +73,6 @@ public class SkyboxTimeView : MonoBehaviour
     // 그려서 에셋 자체를 만지는 수밖에 없는데, 복원 없이는 에디터에서 에셋이 영구히 얼룩진다.
     static readonly string[] VegColorProps = { "_Top_Color", "_Bottom_Color", "_Color" };
     readonly System.Collections.Generic.List<(Material mat, int prop, Color original)> _vegCache = new();
-
-    // 해↔달 광원 교대의 전환 폭(시간 비율). 이 구간에서 강도가 V자로 죽었다 살아난다 —
-    // 좁으면 일몰이 스위치 끄듯 뚝 떨어진다.
-    const float LightBlend = 0.06f;
 
     void OnEnable()
     {
@@ -125,9 +132,11 @@ public class SkyboxTimeView : MonoBehaviour
         if (t > 0.5f)
         {
             float p = (t - 0.5f) * 2f;   // 밤 진행도 0~1
-            float g = p < 0.15f ? p / 0.15f * 0.45f
-                    : p > 0.85f ? 0.55f + (p - 0.85f) / 0.15f * 0.45f
-                    : 0.45f + (p - 0.15f) / 0.70f * 0.10f;
+            // 구간 안에서도 smoothstep으로 눕힌다 — 선형이면 새벽에 해가 등속으로
+            // 솟구쳐 하늘이 스위치 켜듯 밝아진다(밤→낮 급변의 원인 중 하나).
+            float g = p < 0.15f ? SmoothStep01(p / 0.15f) * 0.45f
+                    : p > 0.80f ? 0.55f + SmoothStep01((p - 0.80f) / 0.20f) * 0.45f
+                    : 0.45f + (p - 0.15f) / 0.65f * 0.10f;
             sunT = 0.5f + g * 0.5f;
         }
         var sunRot  = Quaternion.Euler(sunT * 360f, sunYaw, 0f);
@@ -135,19 +144,28 @@ public class SkyboxTimeView : MonoBehaviour
         if (sun != null) sun.rotation = sunRot;
         if (moon != null) moon.rotation = moonRot;
 
-        if (directionalLight == null) return;
-
-        // 낮(t<0.5)엔 해, 밤엔 달이 주광. 교대는 <b>회전을 섞지 않는다</b> —
-        // 슬럽으로 돌리면 라이트가 몇 초 만에 하늘을 가로질러 180°를 휙 돌면서
-        // 조명·그림자가 온 맵을 훑는다(지평선 깜빡임의 정체). 대신 강도를 V자로
-        // 죽였다가, 완전히 어두운 한가운데서 방향을 스냅한다: 해가 지고 → 어둡고 → 달이 뜬다.
-        float night = Mathf.Min(SmoothStep01((t - 0.5f) / LightBlend),          // 일몰에서 달로
-                                SmoothStep01((1f - t) / LightBlend));           // 일출에서 해로
-        directionalLight.transform.rotation = night < 0.5f ? sunRot : moonRot;
-        float swapDim = Mathf.Abs(1f - 2f * night);   // 교대 한가운데(night=0.5)에서 0
-
-        if (lightColor != null) directionalLight.color = lightColor.Evaluate(t);
-        if (lightIntensity != null) directionalLight.intensity = lightIntensity.Evaluate(t) * swapDim;
+        // 라이트는 <b>둘</b>이다 — 해 라이트는 항상 해를, 달 라이트는 항상 달을 따르고,
+        // 각자 자기 천체의 고도로 강도가 죽는다. 하나를 돌려 겸용하면 교대 순간에
+        // 회전 스냅/슬럽이 필요해지고 그게 지평선 깜빡임과 급변을 만들었다.
+        // URP는 더 밝은 디렉셔널을 주광(그림자)으로 자동 선택하므로 교대도 저절로 된다.
+        if (sunLight != null)
+        {
+            sunLight.transform.rotation = sunRot;
+            float elev = Mathf.Sin(sunT * 360f * Mathf.Deg2Rad);            // 해 고도(sin)
+            float gate = SmoothStep01(elev / Mathf.Sin(10f * Mathf.Deg2Rad)); // 고도 10°까지 페이드인
+            if (lightColor != null) sunLight.color = lightColor.Evaluate(t);
+            if (lightIntensity != null) sunLight.intensity = lightIntensity.Evaluate(t) * gate;
+            sunLight.enabled = sunLight.intensity > 0.005f;
+        }
+        if (moonLight != null)
+        {
+            moonLight.transform.rotation = moonRot;
+            float elev = -Mathf.Sin(t * 360f * Mathf.Deg2Rad);              // 달 고도 = 해의 반대
+            float gate = SmoothStep01(elev / Mathf.Sin(10f * Mathf.Deg2Rad));
+            moonLight.color = moonColor;
+            moonLight.intensity = moonIntensity * gate;
+            moonLight.enabled = moonLight.intensity > 0.005f;
+        }
 
         if (driveAmbient && ambientColor != null)
         {

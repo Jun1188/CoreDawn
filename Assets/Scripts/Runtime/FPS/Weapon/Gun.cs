@@ -52,6 +52,7 @@ public class Gun : MonoBehaviour
     private float lastFireTime;
     private float currentSpread;
     private Rigidbody playerRb; // 이동 속도에 따른 탄퍼짐 가중치용
+    private IPlayerMotionProvider motionProvider; // 조준 가중치(AimWeight) — 조준하면 탄퍼짐 절반
     private Camera aimCamera;   // 조준점(화면 중앙)의 기준 — 총알은 총구에서 나와 조준점으로 수렴한다
 
     // 효과의 출처(Source)로 전달할 플레이어 엔티티.
@@ -63,6 +64,7 @@ public class Gun : MonoBehaviour
     private void Awake()
     {
         playerRb = GetComponentInParent<Rigidbody>();
+        motionProvider = GetComponentInParent<IPlayerMotionProvider>();
         aimCamera = transform.root.GetComponentInChildren<Camera>(); // 뷰모델 홀더는 카메라의 형제라 부모 탐색이 안 닿는다
     }
 
@@ -190,9 +192,14 @@ public class Gun : MonoBehaviour
 
         // 펠릿마다 따로 탄퍼짐을 굴린다 — 샷건의 확산은 같은 방아쇠의 탄들이 서로 다른 곳에 맞는 것.
         // 전달 방식(투사체/히트스캔)은 스펙에 실려 있다 — 분기는 ProjectileSystem이 한다.
+        // 조준(ADS)하면 탄퍼짐 절반 — 누적된 currentSpread에 사용 시점에서 곱한다.
+        // AimWeight가 연속값이라 조준을 올리는 중에도 부드럽게 조여진다.
+        float aim = motionProvider?.Motion != null ? Mathf.Clamp01(motionProvider.Motion.AimWeight) : 0f;
+        float spread = currentSpread * Mathf.Lerp(1f, 0.5f, aim);
+
         for (int i = 0; i < rounds; i++)
         {
-            Vector3 direction = forward + UnityEngine.Random.insideUnitSphere * (currentSpread / 100f);
+            Vector3 direction = forward + UnityEngine.Random.insideUnitSphere * (spread / 100f);
             ProjectileSystem.Fire(origin, direction, shot);
         }
     }
