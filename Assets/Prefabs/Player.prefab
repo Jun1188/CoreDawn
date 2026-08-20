@@ -1164,6 +1164,7 @@ GameObject:
   - component: {fileID: 307732148233776431}
   - component: {fileID: 8415338401495421512}
   - component: {fileID: 3702532305778674119}
+  - component: {fileID: 3486296367560002846}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -1318,6 +1319,11 @@ MonoBehaviour:
   inventoryUI: {fileID: 0}
   chestInventoryUI: {fileID: 0}
   crosshairUI: {fileID: 0}
+  respawnTime: 3
+  postProcessVolume: {fileID: 0}
+  vignette: {fileID: 0}
+  damageColor: {r: 1, g: 0, b: 0.83720446, a: 1}
+  maxVignetteIntensity: 0.5
 --- !u!114 &4783920156234871905
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1403,6 +1409,20 @@ MonoBehaviour:
   destroyOnDeath: 1
   health:
     maxHealth: 100
+--- !u!114 &3486296367560002846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7498640336194902235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe799c32dee7f224592e1abddc281090, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitMarkerHUD
+  hitMarkerName: hit-marker
+  fadeDuration: 0.2
 --- !u!1 &8683513508193775307
 GameObject:
   m_ObjectHideFlags: 0
