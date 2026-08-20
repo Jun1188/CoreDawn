@@ -1,87 +1,77 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <!-- SCR-02 전투 HUD.
-
-         팝업이 아니다 — 입력 맵을 Push하지 않고 커서도 풀지 않는다 (배치 HUD와 같은 이유).
-         나침반 눈금·마커와 핫바 슬롯은 매 프레임/컨테이너에 따라 변하므로
-         GameplayHUDView가 만든다. 여기에는 담을 자리만 둔다.
-
-         뺀 것: 웨이브 배지·남은 규모(ui-seg) — 웨이브 시스템이 아직 없다.
-         적 수(괴수 두상 + 숫자)만 실데이터(MonsterSpawnManager.AliveCount)로 잇는다. -->
-    <Style src="../Styles/tokens.uss" />
-    <Style src="../Styles/components.uss" />
-    <Style src="../Styles/screens.uss" />
-
+    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/tokens.uss?fileID=7433441132597879392&amp;guid=9db750b513ab8d340b5033a21edc4083&amp;type=3#tokens"/>
+    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/components.uss?fileID=7433441132597879392&amp;guid=f1501a2a6100e3e4a982c5a6596ab3f9&amp;type=3#components"/>
+    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/screens.uss?fileID=7433441132597879392&amp;guid=9ba5f258d5c533f4bbe056cb3b46ca4a&amp;type=3#screens"/>
     <ui:VisualElement name="hud" class="hud-root">
-
-        <!-- 상단: 나침반 + 적 수 -->
         <ui:VisualElement class="combat-top">
             <ui:VisualElement name="compass" class="ui-compass combat-compass">
-                <ui:VisualElement class="ui-compass__center" />
+                <ui:VisualElement class="ui-compass__center"/>
             </ui:VisualElement>
             <ui:VisualElement name="enemy-line" class="combat-enemyline">
-                <ui:Label name="enemy-count" text="0" class="combat-enemyline__n" />
+                <ui:Label name="enemy-count" text="0" class="combat-enemyline__n"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <!-- 좌상단: 일차 + 남은 시간 -->
         <ui:VisualElement class="combat-stats">
             <ui:VisualElement class="ui-stat">
-                <ui:Label text="DAY" class="ui-stat__label" />
-                <ui:Label name="day-value" text="—" class="ui-stat__value" />
+                <ui:Label text="DAY" class="ui-stat__label"/>
+                <ui:Label name="day-value" text="—" class="ui-stat__value"/>
             </ui:VisualElement>
             <ui:VisualElement class="ui-stat">
-                <ui:Label name="phase-label" text="NIGHT IN" class="ui-stat__label" />
-                <ui:Label name="phase-time" text="—" class="ui-stat__value" />
+                <ui:Label name="phase-label" text="NIGHT IN" class="ui-stat__label"/>
+                <ui:Label name="phase-time" text="—" class="ui-stat__value"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <!-- 중앙 크로스헤어 — 창이 열려 있으면 숨는다 (조준이 아니므로) -->
         <ui:VisualElement name="crosshair" class="combat-cross">
-            <ui:VisualElement class="combat-cross__bar combat-cross__bar--n" />
-            <ui:VisualElement class="combat-cross__bar combat-cross__bar--s" />
-            <ui:VisualElement class="combat-cross__bar combat-cross__bar--w" />
-            <ui:VisualElement class="combat-cross__bar combat-cross__bar--e" />
+            <ui:VisualElement class="combat-cross__bar combat-cross__bar--n"/>
+            <ui:VisualElement class="combat-cross__bar combat-cross__bar--s"/>
+            <ui:VisualElement class="combat-cross__bar combat-cross__bar--w"/>
+            <ui:VisualElement class="combat-cross__bar combat-cross__bar--e"/>
         </ui:VisualElement>
-
-        <ui:VisualElement name="death-overlay" class="combat-death" picking-mode="Ignore">
-            <ui:Label text="You Die" class="combat-death__text" picking-mode="Ignore" />
+        <ui:VisualElement name="death-overlay" picking-mode="Ignore" class="combat-death">
+            <ui:Label text="You Die" picking-mode="Ignore" class="combat-death__text"/>
         </ui:VisualElement>
-
-        <!-- 좌하단: 체력(큰 숫자 + 얇은 바) + 코어 -->
         <ui:VisualElement class="combat-vitals">
             <ui:VisualElement class="combat-vitals__head">
-                <ui:Label name="hp-now" text="—" class="combat-vitals__hp" />
-                <ui:Label name="hp-max" text="" class="combat-vitals__max" />
-                <ui:Label text="VITALS" class="combat-vitals__tag" />
+                <ui:Label name="hp-now" text="—" class="combat-vitals__hp"/>
+                <ui:Label name="hp-max" text="" class="combat-vitals__max"/>
+                <ui:Label text="VITALS" class="combat-vitals__tag"/>
             </ui:VisualElement>
             <ui:VisualElement class="combat-vitals__bar">
-                <ui:VisualElement name="hp-fill" class="combat-vitals__fill" />
+                <ui:VisualElement name="hp-fill" class="combat-vitals__fill"/>
             </ui:VisualElement>
             <ui:VisualElement name="core-line" class="combat-core">
-                <ui:Label text="CORE" class="combat-core__tag" />
+                <ui:Label text="CORE" class="combat-core__tag"/>
                 <ui:VisualElement class="combat-core__bar">
-                    <ui:VisualElement name="core-fill" class="combat-core__fill" />
+                    <ui:VisualElement name="core-fill" class="combat-core__fill"/>
                 </ui:VisualElement>
-                <ui:Label name="core-pct" text="—" class="combat-core__n" />
+                <ui:Label name="core-pct" text="—" class="combat-core__n"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <!-- 우하단: 장착 무기 탄약 — 탄창/탄창용량 + 탄종·예비탄(인벤토리 실소비) -->
         <ui:VisualElement name="ammo" class="combat-ammo">
-            <ui:Label name="ammo-name" text="" class="ui-stat__label" />
+            <ui:Label name="ammo-name" text="" class="ui-stat__label"/>
             <ui:VisualElement class="combat-ammo__row">
-                <ui:Label name="ammo-now" text="" class="combat-ammo__now" />
-                <ui:Label name="ammo-cap" text="" class="combat-ammo__cap" />
+                <ui:Label name="ammo-now" text="" class="combat-ammo__now"/>
+                <ui:Label name="ammo-cap" text="" class="combat-ammo__cap"/>
             </ui:VisualElement>
             <ui:VisualElement class="combat-ammo__typeline">
-                <ui:Label name="ammo-type" text="" class="combat-ammo__type" />
-                <ui:Label name="ammo-reserve" text="" class="combat-ammo__reserve" />
+                <ui:Label name="ammo-type" text="" class="combat-ammo__type"/>
+                <ui:Label name="ammo-reserve" text="" class="combat-ammo__reserve"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <!-- 하단 중앙: 핫바 — 인벤토리 패널의 핫바와 같은 자리 -->
-        <ui:VisualElement name="hotbar" class="combat-hotbar" />
-
+        <ui:VisualElement name="hotbar" class="combat-hotbar"/>
+        <ui:Label
+    name="hit-marker"
+    text="×"
+    style="
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        translate: -50% -50%;
+        color: rgb(255, 0, 0);
+        font-size: 18px;
+        -unity-font-style: bold;
+        unity-text-align: middle-center;
+    "
+/>
     </ui:VisualElement>
 </ui:UXML>

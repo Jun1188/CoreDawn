@@ -66,8 +66,35 @@ public class Player : Entity
         }
     }
 
+    // 부활 및 사망 연출은 PlayerController가 전담하도록 비워둡니다.
+    protected override void HandleDeath()
+    {
+        PlayerController controller = GetComponent<PlayerController>();
+        controller.HandlePlayerDeath(); 
+    }
+    public override void ReceiveDamage(float amount)
+    {
+        if (IsDead)
+            return;
 
+        float oldHealth = Health.CurrentHealth;
 
+        base.ReceiveDamage(amount);
+
+        float newHealth = Health.CurrentHealth;
+
+        // 죽은 경우에는 일반 피격 연출을 실행하지 않음
+        if (newHealth > 0f && newHealth < oldHealth)
+        {
+            PlayerController controller =
+                GetComponent<PlayerController>();
+
+            controller?.HandlePlayerDamaged(
+                oldHealth,
+                newHealth
+            );
+        }
+    }
     private void OnDisable()
     {
         // 플레이어가 비활성화되면(사망 등) 추적 중이던 몬스터를 모두 해제

@@ -252,6 +252,11 @@ public class GridManager : MonoBehaviour
         return neighbours;
     }
 
-
+    public MapTile GetTile(Vector2Int cell)
+    {
+        return map != null
+            ? map.TileAt(cell)
+            : MapTile.Ground;
+    }
     // GetNeighbours 메서드 등은 그대로 유지하거나 gridPos.x, gridPos.y 대신 Vector2Int를 사용하도록 개선 가능
 }
