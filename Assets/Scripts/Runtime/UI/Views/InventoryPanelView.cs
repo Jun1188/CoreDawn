@@ -263,7 +263,7 @@ public class InventoryPanelView : PlayerItemPanelView
         ic.AddToClassList("ui-slot__icon");
         ic.AddToClassList("ui-slot__icon--xs");
         var item = PrimaryOutput(r);
-        if (item != null) ic.style.backgroundColor = UIFlowColors.Of(item.line);
+        if (item != null) UIItemIcon.Apply(ic, item);
         row.Add(ic);
 
         var nm = new Label(name);
@@ -300,7 +300,7 @@ public class InventoryPanelView : PlayerItemPanelView
         var item = PrimaryOutput(selected);
         int per = selected.outputs != null && selected.outputs.Length > 0 ? selected.outputs[0].amount : 1;
 
-        yieldIcon.style.backgroundColor = item != null ? UIFlowColors.Of(item.line) : UIFlowColors.Muted;
+        UIItemIcon.Apply(yieldIcon, item);
         yieldName.text = DisplayNameOf(item);
         if (item != null) yieldName.style.color = UIFlowColors.Of(item.line);
         yieldPer.text  = $"회당 {per}개 산출";

@@ -214,7 +214,7 @@ public class MachinePanelView : UITKPopup
         var ic = new VisualElement();
         ic.AddToClassList("ui-slot__icon");
         var item = PrimaryOutput(r);
-        if (item != null) ic.style.backgroundColor = UIFlowColors.Of(item.line);
+        if (item != null) UIItemIcon.Apply(ic, item);
         row.Add(ic);
 
         var nm = new Label(name);
@@ -252,7 +252,7 @@ public class MachinePanelView : UITKPopup
         var item = PrimaryOutput(recipe);
         int per = recipe.outputs != null && recipe.outputs.Length > 0 ? recipe.outputs[0].amount : 1;
 
-        yieldIcon.style.backgroundColor = item != null ? UIFlowColors.Of(item.line) : UIFlowColors.Muted;
+        UIItemIcon.Apply(yieldIcon, item);
         yieldName.text = DisplayNameOf(item);
         if (item != null) yieldName.style.color = UIFlowColors.Of(item.line);
 
@@ -293,7 +293,7 @@ public class MachinePanelView : UITKPopup
 
             var icon = new VisualElement();
             icon.AddToClassList("ui-slot__icon");
-            if (!empty) icon.style.backgroundColor = UIFlowColors.Of(stack.item.line);
+            if (!empty) UIItemIcon.Apply(icon, stack.item);
             slot.Add(icon);
 
             if (!empty)

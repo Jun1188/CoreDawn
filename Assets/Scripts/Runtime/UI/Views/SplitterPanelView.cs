@@ -470,8 +470,8 @@ public class SplitterPanelView : UITKPopup
 
         var ic = new VisualElement();
         ic.AddToClassList("ui-allowrow__ic");
-        // 문서의 filter:grayscale는 USS에 없다 — 아이콘이 배경색이라 색 자체를 죽인다
-        ic.style.backgroundColor = on ? UIFlowColors.Of(item.line) : UIFlowColors.Muted;
+        // 문서의 filter:grayscale는 USS에 없다 — 끈 상태는 틴트(색 사각형이면 색 자체)를 죽인다
+        UIItemIcon.ApplyToggle(ic, item, on);
         row.Add(ic);
 
         var nm = new Label(name);
