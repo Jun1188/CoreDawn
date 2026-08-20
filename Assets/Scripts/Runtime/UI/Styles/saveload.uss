@@ -1,11 +1,11 @@
-/* 타이틀 · 일시정지 · 세이브 슬롯 전용 스타일.
+/* 타이틀 · 일시정지 · 세이브 슬롯 · 게임오버 전용 스타일.
  *
  * 색·간격·모서리·글꼴은 전부 tokens.uss의 변수를 쓴다 — 이 프로젝트의 UI에는
  * 스프라이트가 없고 모든 화면이 색과 테두리만으로 그려지므로, 여기서 값을 직접 적으면
- * 이 세 화면만 나머지와 미묘하게 달라 보이게 된다.
+ * 이 네 화면만 나머지와 미묘하게 달라 보이게 된다.
  *
  * 공용 컴포넌트(.ui-panel/.ui-btn/.ui-row)로 해결되는 것은 여기 적지 않는다.
- * 이 파일에 있는 것은 "이 세 화면에만 있는 배치" 뿐이다.
+ * 이 파일에 있는 것은 "이 네 화면에만 있는 배치" 뿐이다.
  */
 
 /* ── 일시정지 ────────────────────────────────────────────── */
@@ -191,5 +191,54 @@
     margin-top: var(--space-4);
     font-size: var(--fs-micro);
     color: var(--text-faint);
+    -unity-text-align: middle-center;
+}
+
+/* ── 게임오버 ────────────────────────────────────────────────
+ *
+ * 일시정지 패널의 세로 메뉴(.pause-status / .pause-btn)를 그대로 쓴다 —
+ * 두 화면 모두 "지금 상태를 보고 다음 행선지를 고르는" 같은 일을 한다.
+ * 여기 적는 것은 그 위에 얹히는 문구 세 줄과, 문구가 들어갈 만큼의 폭뿐이다.
+ */
+
+.gameover-panel {
+    width: 480px;   /* 일시정지(340)보다 넓다 — 버튼만 있는 창이 아니라 문장이 들어간다 */
+}
+
+/* 무슨 일이 일어났는지부터. 전투 HUD의 "You Die"(.combat-death__text)와 같은 계통이되,
+   패널 안이라 화면 전체를 덮을 때만큼 키우지 않는다 */
+.gameover-headline {
+    color: var(--danger);
+    font-size: var(--fs-title);
+    letter-spacing: 1.5px;
+    -unity-font-style: bold;
+    -unity-font-definition: var(--font-display);
+    -unity-text-align: middle-center;
+    margin-bottom: var(--space-1);
+}
+
+.gameover-lede {
+    color: var(--text-dim);
+    font-size: var(--fs-cap);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-bottom: var(--space-3);
+}
+
+/* 어느 지점으로 돌아가게 되는지 — 타이틀의 "최근 기록" 줄과 같은 문법 */
+.gameover-recent {
+    margin-top: var(--space-1);
+    font-size: var(--fs-micro);
+    color: var(--text-faint);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* 복구가 실패했을 때만 나타난다 — 아무 일도 안 일어난 것처럼 보이면 안 된다 */
+.gameover-error {
+    margin-top: var(--space-2);
+    font-size: var(--fs-micro);
+    color: var(--danger);
+    white-space: normal;
     -unity-text-align: middle-center;
 }

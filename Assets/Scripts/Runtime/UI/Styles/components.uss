@@ -67,6 +67,12 @@
     border-color: var(--crystal-a50);
 }
 
+/* 게임오버처럼 좋지 않은 소식을 전하는 패널 — 태그가 먼저 그 사실을 말한다 */
+.ui-panel__tag--danger {
+    color: var(--danger);
+    border-color: var(--danger-a50);
+}
+
 .ui-panel__x {
     width: 33px;
     height: 33px;
