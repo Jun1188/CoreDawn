@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\uD68C\uB85C \uAE30\uD310"
   description: "\uBC30\uC804\uBC18\xB7\uC81C\uC5B4 \uC720\uB2DB\uC758 \uAE30\uCD08
     \uD68C\uB85C."
-  icon: {fileID: 0}
+  icon: {fileID: 971242041, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 2
   line: 2
   modules: []

@@ -185,7 +185,7 @@
       "description": "추락하며 흩어진 파편. 게이트 ⓪ 납품 및 초반 수동 제작 재료.",
       "type": "Salvage",
       "line": "None",
-      "icon": ""
+      "icon": "ShipDebris"
     },
     {
       "id": "Item:IronOre",
@@ -193,7 +193,7 @@
       "description": "구조재의 원광. Ring 1 광맥에서 채굴.",
       "type": "Ore",
       "line": "Iron",
-      "icon": ""
+      "icon": "IronOre"
     },
     {
       "id": "Item:IronIngot",
@@ -201,7 +201,7 @@
       "description": "철광석을 제련한 기본 소재.",
       "type": "Ingot",
       "line": "Iron",
-      "icon": ""
+      "icon": "IronIngot"
     },
     {
       "id": "Item:IronPlate",
@@ -209,7 +209,7 @@
       "description": "선체 봉합과 회로 함체에 쓰이는 판재.",
       "type": "Part",
       "line": "Iron",
-      "icon": ""
+      "icon": "IronPlate"
     },
     {
       "id": "Item:IronGear",
@@ -217,7 +217,7 @@
       "description": "체결용 부품. 선체 패널 조립에 사용.",
       "type": "Part",
       "line": "Iron",
-      "icon": ""
+      "icon": "IronGear"
     },
     {
       "id": "Item:BasicAmmo",
@@ -225,7 +225,7 @@
       "description": "권총·라이플·기본 포탑 공용 탄약.",
       "type": "Ammo",
       "line": "Iron",
-      "icon": "",
+      "icon": "BasicAmmo",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -244,7 +244,7 @@
       "description": "전자 계통의 원광. Ring 1 외곽~Ring 2.",
       "type": "Ore",
       "line": "Copper",
-      "icon": ""
+      "icon": "CopperOre"
     },
     {
       "id": "Item:CopperIngot",
@@ -252,7 +252,7 @@
       "description": "구리광석을 제련한 소재.",
       "type": "Ingot",
       "line": "Copper",
-      "icon": ""
+      "icon": "CopperIngot"
     },
     {
       "id": "Item:CopperWire",
@@ -260,7 +260,7 @@
       "description": "배선과 회로의 기초 부품.",
       "type": "Part",
       "line": "Copper",
-      "icon": ""
+      "icon": "CopperWire"
     },
     {
       "id": "Item:CrystalOre",
@@ -268,7 +268,7 @@
       "description": "동력 계통의 원광. Ring 2~3 위험 지역.",
       "type": "Ore",
       "line": "Crystal",
-      "icon": ""
+      "icon": "CrystalOre"
     },
     {
       "id": "Item:RefinedCrystal",
@@ -276,7 +276,7 @@
       "description": "에너지를 담는 매질.",
       "type": "Ingot",
       "line": "Crystal",
-      "icon": ""
+      "icon": "RefinedCrystal"
     },
     {
       "id": "Item:HullPanel",
@@ -284,7 +284,7 @@
       "description": "게이트 ① 납품 부품. 동체를 물리적으로 봉합한다.",
       "type": "RepairPart",
       "line": "Iron",
-      "icon": ""
+      "icon": "HullPanel"
     },
     {
       "id": "Item:CircuitBoard",
@@ -292,7 +292,7 @@
       "description": "배전반·제어 유닛의 기초 회로.",
       "type": "Part",
       "line": "Copper",
-      "icon": ""
+      "icon": "CircuitBoard"
     },
     {
       "id": "Item:Grenade",
@@ -300,7 +300,7 @@
       "description": "유탄 발사기와 박격포 타워가 공유하는 폭발물.",
       "type": "Ammo",
       "line": "Iron",
-      "icon": "",
+      "icon": "Grenade",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -323,7 +323,7 @@
       "description": "구리 코팅 강화 탄약. 상위 총기·중기관 포탑용.",
       "type": "Ammo",
       "line": "Iron",
-      "icon": "",
+      "icon": "DenseAmmo",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -342,7 +342,7 @@
       "description": "에너지 그릇. 동력 모듈과 T3 방어 시설이 소비.",
       "type": "Part",
       "line": "Crystal",
-      "icon": ""
+      "icon": "EnergyCell"
     },
     {
       "id": "Item:EnergyCellAmmo",
@@ -350,7 +350,7 @@
       "description": "에너지 소총·레이저 타워용 탄.",
       "type": "Ammo",
       "line": "Crystal",
-      "icon": "",
+      "icon": "EnergyCellAmmo",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -373,7 +373,7 @@
       "description": "게이트 ② 납품 부품. 패널로 차폐된 함체에 장착된 제어 모듈.",
       "type": "RepairPart",
       "line": "Copper",
-      "icon": ""
+      "icon": "NavControlUnit"
     },
     {
       "id": "Item:BeastCore",
@@ -381,7 +381,7 @@
       "description": "코어와 동일 계열의 응축 에너지. 낮 둥지 레이드로 획득, 게이트 납품 전용.",
       "type": "Salvage",
       "line": "Beast",
-      "icon": ""
+      "icon": "BeastCore"
     },
     {
       "id": "Item:ControlModule",
@@ -389,7 +389,7 @@
       "description": "연산·배선·전원을 한 덩어리로 묶은 복합 부품. 제조기에서만 만들 수 있고, 티어 3 설비의 뼈대가 된다.",
       "type": "Part",
       "line": "Copper",
-      "icon": ""
+      "icon": "ControlModule"
     },
     {
       "id": "Item:PowerModule",
@@ -397,7 +397,7 @@
       "description": "게이트 ③ 납품 부품. 엔진에 꽂는 완성형 연료·제어 통합 모듈.",
       "type": "RepairPart",
       "line": "Crystal",
-      "icon": ""
+      "icon": "PowerModule"
     },
     {
       "id": "Item:CrystalAmmo",
@@ -405,7 +405,7 @@
       "description": "크리스탈 첨두 관통탄. T3 물리 계열 최상위 탄약 — 저격소총·중기관 포탑 상위 호환.",
       "type": "Ammo",
       "line": "Crystal",
-      "icon": "",
+      "icon": "CrystalAmmo",
       "attackEffects": [
         {
           "effect": "Effect:Damage",

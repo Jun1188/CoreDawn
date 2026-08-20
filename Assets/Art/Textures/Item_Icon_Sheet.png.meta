@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6cc7b23bf440b764893f0618ca3b9932
+guid: 22c77adfccde8ce44aa7a3b50a1acfaa
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -72,7 +72,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 2
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -93,140 +93,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: testetstsets_0
-      rect:
-        serializedVersion: 2
-        x: 8
-        y: 325
-        width: 29
-        height: 26
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9efe3d97a86a2974681464d7ca99a3fe
-      internalID: -17470339
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_1
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 296
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 815e009e961cee04590bdc40013e1c12
-      internalID: 1420670840
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_2
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 296
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 0ba8dbc93c9729f40a47fe7a503fe21c
-      internalID: 1591226062
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_3
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 296
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: acd50db6cca44c744b0a823f5a1d942a
-      internalID: 1432755263
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_4
-      rect:
-        serializedVersion: 2
-        x: 256
-        y: 296
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 39649c0c6d4231e4e9fea71ca220e09f
-      internalID: 748848829
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_5
+      name: IronOre
       rect:
         serializedVersion: 2
         x: 0
-        y: 232
-        width: 51
-        height: 44
+        y: 1280
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -235,86 +112,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: cd99f56b2de1cc94786b094852337588
-      internalID: -2059135416
+      spriteID: 44992d4d588a2ab44be78099ebbc4e74
+      internalID: 1507388747
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_6
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 232
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 586f23cd655a3ef45b0c2b731f77a58e
-      internalID: 2066084215
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_7
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 232
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: d21ea508f1473924696f4804c121f86a
-      internalID: 2053980340
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_8
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 232
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 488ec0e60a8ccd044ab7f93da00582e9
-      internalID: 1073657898
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_9
+      name: CopperOre
       rect:
         serializedVersion: 2
         x: 256
-        y: 232
-        width: 64
-        height: 64
+        y: 1280
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -323,20 +134,42 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 57a5c3352e1550f40bbb8f2aec13dc56
-      internalID: -369503787
+      spriteID: 7851024b69c269d4db10582051c9663d
+      internalID: -1480028079
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_10
+      name: CrystalOre
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 1280
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1a45da72577221e409b539d3a23b7bdb
+      internalID: 1172722530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: IronIngot
       rect:
         serializedVersion: 2
         x: 0
-        y: 168
-        width: 64
-        height: 64
+        y: 1024
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -345,86 +178,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 182ce7c5b2b7e7b4394d97a3e1efe1ac
-      internalID: -2082976057
+      spriteID: 552f447c1e82239458cfc4b9baf2bb8a
+      internalID: -1786476198
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_11
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 168
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 8d69c93ea74555b4b853d7bfb924a396
-      internalID: -350462778
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_12
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 168
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 4def9f652c7686b488fdeb45f6e7f916
-      internalID: 1314283105
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_13
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 168
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: b8e6a6186b09bfc43ab33ec4d00adb8c
-      internalID: 809866499
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_14
+      name: CopperIngot
       rect:
         serializedVersion: 2
         x: 256
-        y: 168
-        width: 64
-        height: 64
+        y: 1024
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -433,20 +200,42 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9c0b126db320c644dbdba7ce82f369e6
-      internalID: 213936295
+      spriteID: cf60da30f213e6146b4ee91c63c8f51e
+      internalID: 58408779
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_15
+      name: RefinedCrystal
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 1024
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: edfe676d36f7c684a9ed40d0b59d5468
+      internalID: 400049508
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: IronPlate
       rect:
         serializedVersion: 2
         x: 0
-        y: 104
-        width: 64
-        height: 64
+        y: 768
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -455,86 +244,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1954bc16062049c458628bedce4d3018
-      internalID: 936421120
+      spriteID: 0cce0ad0a2b9de84f926965dce64fcf4
+      internalID: -2066756299
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_16
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 104
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9202fb69ca58c4a4cafd3a379aac7497
-      internalID: -1501257188
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_17
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 104
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 3d1e6cbafc5dee743be6865d8c576d36
-      internalID: 1300405351
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_18
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 104
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a67d932b1f1f5d9478f619e7cc529d36
-      internalID: 273563260
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_19
+      name: IronGear
       rect:
         serializedVersion: 2
         x: 256
-        y: 104
-        width: 64
-        height: 64
+        y: 768
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -543,20 +266,108 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 08732edef9b25e34fa95872fcea8e129
-      internalID: 797468768
+      spriteID: add432dfc53fe5f4597569adf8e7957b
+      internalID: 1641110024
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_20
+      name: CopperWire
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 768
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da0c27704dcd4f7479e924cd366240c3
+      internalID: 951356533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CircuitBoard
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 768
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 09c28a5ac0d587743ad5cc22a7e1deab
+      internalID: 971242041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EnergyCell
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 768
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: df40e7ece57fafa479ff28749487f5fe
+      internalID: -1801086059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ControlModule
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 768
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e4083ee742ce76f4eb2b5592b04a8710
+      internalID: -1110902257
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HullPanel
       rect:
         serializedVersion: 2
         x: 0
-        y: 40
-        width: 64
-        height: 64
+        y: 512
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -565,86 +376,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 25d749a14105be143acb4e9d8e7d7043
-      internalID: 1865835945
+      spriteID: 543924a9e8a56904eb3befa1e3722071
+      internalID: -583718681
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: testetstsets_21
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 40
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a95a7e44f0a789f43a9082d967e049e3
-      internalID: -1654730716
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_22
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 40
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9b2b2c19c16f82042b6897e614953abe
-      internalID: -880690838
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_23
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 40
-        width: 64
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a57748bc213b89b4991c22b4b97daed7
-      internalID: 2118091614
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: testetstsets_24
+      name: NavControlUnit
       rect:
         serializedVersion: 2
         x: 256
-        y: 40
-        width: 64
-        height: 64
+        y: 512
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -653,8 +398,184 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4c659b9fb478fd14a89dedc52c37042e
-      internalID: -36370905
+      spriteID: 144c8afe23ab24149b2cb48cccbb1301
+      internalID: 1695248270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PowerModule
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 512
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4e2542a5b97e035418db10d036b93b5a
+      internalID: 1913199033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BasicAmmo
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 256
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: baeee8dd77bc1884baefc8801cf03480
+      internalID: -1099145482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DenseAmmo
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 256
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 491b555bf159dd34e8ff4a25271f9bcb
+      internalID: -1728149137
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CrystalAmmo
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 256
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7e648f068cc96824287948be6df85d49
+      internalID: 136700167
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EnergyCellAmmo
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 256
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f1ba129bf9a8b1940ab0c88a250754a1
+      internalID: 1151934686
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Grenade
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 256
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 40539c9fb66473044a0fb9e053711138
+      internalID: 234227774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShipDebris
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58466cc8275d7a94b99747174f304952
+      internalID: 1925702632
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BeastCore
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 25774f431a807e64ea1b5d0cd2348eeb
+      internalID: -2085933056
       vertices: []
       indices: 
       edges: []
@@ -663,7 +584,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 910716467860d7547b1e9ed2885fa727
+    spriteID: 1ee9199101f05264d9db47666971c311
     internalID: 0
     vertices: []
     indices: 
@@ -673,33 +594,31 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":6.0,"y":6.0},"gridSpriteSize":{"x":256.0,"y":256.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      testetstsets_0: -17470339
-      testetstsets_1: 1420670840
-      testetstsets_10: -2082976057
-      testetstsets_11: -350462778
-      testetstsets_12: 1314283105
-      testetstsets_13: 809866499
-      testetstsets_14: 213936295
-      testetstsets_15: 936421120
-      testetstsets_16: -1501257188
-      testetstsets_17: 1300405351
-      testetstsets_18: 273563260
-      testetstsets_19: 797468768
-      testetstsets_2: 1591226062
-      testetstsets_20: 1865835945
-      testetstsets_21: -1654730716
-      testetstsets_22: -880690838
-      testetstsets_23: 2118091614
-      testetstsets_24: -36370905
-      testetstsets_3: 1432755263
-      testetstsets_4: 748848829
-      testetstsets_5: -2059135416
-      testetstsets_6: 2066084215
-      testetstsets_7: 2053980340
-      testetstsets_8: 1073657898
-      testetstsets_9: -369503787
+      BasicAmmo: -1099145482
+      BeastCore: -2085933056
+      CircuitBoard: 971242041
+      ControlModule: -1110902257
+      CopperIngot: 58408779
+      CopperOre: -1480028079
+      CopperWire: 951356533
+      CrystalAmmo: 136700167
+      CrystalOre: 1172722530
+      DenseAmmo: -1728149137
+      EnergyCell: -1801086059
+      EnergyCellAmmo: 1151934686
+      Grenade: 234227774
+      HullPanel: -583718681
+      IronGear: 1641110024
+      IronIngot: -1786476198
+      IronOre: 1507388747
+      IronPlate: -2066756299
+      NavControlUnit: 1695248270
+      PowerModule: 1913199033
+      RefinedCrystal: 400049508
+      ShipDebris: 1925702632
+IronOre: 1507388747
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\uAD6C\uB9AC\uAD11\uC11D"
   description: "\uC804\uC790 \uACC4\uD1B5\uC758 \uC6D0\uAD11. Ring 1 \uC678\uACFD~Ring
     2."
-  icon: {fileID: 0}
+  icon: {fileID: -1480028079, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 0
   line: 2
   modules: []

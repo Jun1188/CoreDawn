@@ -42,7 +42,7 @@ MonoBehaviour:
   description: "\uD06C\uB9AC\uC2A4\uD0C8 \uCCA8\uB450 \uAD00\uD1B5\uD0C4. T3 \uBB3C\uB9AC
     \uACC4\uC5F4 \uCD5C\uC0C1\uC704 \uD0C4\uC57D \u2014 \uC800\uACA9\uC18C\uCD1D\xB7\uC911\uAE30\uAD00
     \uD3EC\uD0D1 \uC0C1\uC704 \uD638\uD658."
-  icon: {fileID: 0}
+  icon: {fileID: 136700167, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 4
   line: 3
   modules:

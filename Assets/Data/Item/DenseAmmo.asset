@@ -39,7 +39,7 @@ MonoBehaviour:
   displayName: "\uACE0\uBC00\uB3C4 \uD0C4\uC57D"
   description: "\uAD6C\uB9AC \uCF54\uD305 \uAC15\uD654 \uD0C4\uC57D. \uC0C1\uC704
     \uCD1D\uAE30\xB7\uC911\uAE30\uAD00 \uD3EC\uD0D1\uC6A9."
-  icon: {fileID: 0}
+  icon: {fileID: -1728149137, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 4
   line: 1
   modules:

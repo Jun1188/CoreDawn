@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item:CopperWire
   displayName: "\uAD6C\uB9AC \uC804\uC120"
   description: "\uBC30\uC120\uACFC \uD68C\uB85C\uC758 \uAE30\uCD08 \uBD80\uD488."
-  icon: {fileID: 0}
+  icon: {fileID: 951356533, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 2
   line: 2
   modules: []
