@@ -202377,17 +202377,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2516082347585424752, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: field of view
-      value: 70.5328
+    - target: {fileID: 37929296472219554, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: far clip plane
+      value: 10
       objectReference: {fileID: 0}
-    - target: {fileID: 2516082347585424752, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: m_FOVAxisMode
-      value: 1
+    - target: {fileID: 37929296472219554, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: near clip plane
+      value: 0.01
       objectReference: {fileID: 0}
-    - target: {fileID: 4917694170790257521, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-      propertyPath: m_RenderPostProcessing
-      value: 0
+    - target: {fileID: 3775902399488542646, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: aimDistance
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 5008654619937830270, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -220634,7 +220634,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::World
   map: {fileID: 11400000, guid: 49bae2e57a798ca48ad55e0f76345750, type: 2}
-  cellSize: 2
+  cellSize: 4
   resourceNodePrefab: {fileID: 8478676915281728500, guid: ea0756f9af96a5a439fc911b4cb48825, type: 3}
   nestPrefab: {fileID: 4760263801846313922, guid: c0eb0ac1195a4a441b10b27d04a22b78, type: 3}
 --- !u!4 &1463672732

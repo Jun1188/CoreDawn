@@ -485,7 +485,7 @@ public static class WorldTerrainGenerator
     // 풀·꽃은 <b>우리 변형</b>을 심는다 — 머티리얼이 Art/Materials/Vegetation의 우리 사본이라,
     // 시간대 틴트(SkyboxTimeView)가 서드파티 에셋을 건드리지 않고 색을 만질 수 있다.
     const string VegPrefabFolder = "Assets/Prefabs/Vegetation";
-    const int DetailRes = 512;          // 디테일 격자(맵 전체). 121칸 맵이면 칸당 약 4점
+    const int DetailRes = 1024;         // 디테일 격자(맵 전체). 셀 4m 기준 점 간격 ~0.5m — 셀을 키우면 같이 키워야 밀도가 유지된다
     const int DetailPatch = 32;         // 패치 단위 — Demo와 같은 값
     const float DetailDistance = 120f;  // 이 거리 밖에서는 그리지 않는다
 

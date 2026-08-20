@@ -34,7 +34,7 @@ public static class GameDataImporter
     /// 칸 하나의 한 변(m). <b>씬의 World.cellSize와 같아야 한다</b> — 여기서 구운 프리팹의
     /// 크기와 배치 격자가 어긋나면 건물이 칸을 덜 채우거나 넘친다.
     /// </summary>
-    const float CellSize = 2f;
+    const float CellSize = 4f;
 
     /// <summary>건물 높이(m). 풋프린트 콜라이더의 높이이자 큐브 폴백의 키다.</summary>
     const float BuildingHeight = 2f;
