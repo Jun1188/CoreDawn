@@ -31,6 +31,9 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
     public float aimFrequencyMultiplier = 1.25f;
     [Tooltip("조준 중 스프링 감쇠비 배율 (클수록 덜 흔들림)")]
     public float aimDampingMultiplier = 1.35f;
+    [Tooltip("조준 중 회전 반동(상하 피치·좌우 요·롤) 배율. 0이면 조준 중엔 뒤로만 밀린다 — " +
+             "가늠자로 겨눈 상태에서 총이 상하좌우로 튀면 조준이 아니라 난사처럼 느껴진다.")]
+    [Range(0f, 1f)] public float aimRotationScale = 0f;
 
     [Header("디테일 (자연스러움)")]
     [Tooltip("사격마다 반동 세기에 주는 미세한 무작위 편차 비율. 기계적으로 똑같이 반복되는 느낌을 없애줍니다.")]
@@ -91,13 +94,17 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
         float desiredZ = -zAmount * scaledAmount;
         _posVelocity.z += MotionSpring.SolveImpulseVelocity(desiredZ, posFreq, posDamp);
 
+        // 회전 반동(피치·요·롤)은 조준 중엔 따로 더 깎는다 — 뒤로 밀리는 킥은 남기되
+        // 총이 상하좌우로 튀는 것은 조준을 방해한다.
+        float rotScale = scaledAmount * Mathf.Lerp(1f, aimRotationScale, aim);
+
         // 위로 튕기는 피치(수직) 반동 - 결정적 값
-        float desiredPitch = -rotAmount.x * scaledAmount;
+        float desiredPitch = -rotAmount.x * rotScale;
         _rotVelocity.x += MotionSpring.SolveImpulseVelocity(desiredPitch, rotFreq, rotDamp);
 
         // 좌우 요(수평) 반동 - 완전 독립 난수 대신 펄린 노이즈로 자연스럽게 "흐르듯" 편향
         float wander = Mathf.PerlinNoise(Time.time * horizontalWanderSpeed + _noiseSeed, 0.5f) * 2f - 1f;
-        float desiredYaw = wander * rotAmount.y * scaledAmount;
+        float desiredYaw = wander * rotAmount.y * rotScale;
         _rotVelocity.y += MotionSpring.SolveImpulseVelocity(desiredYaw, rotFreq, rotDamp);
 
         // 수평 반동에 비례한 롤 - 총구가 옆으로 틀어지는 무게감 있는 비틀림

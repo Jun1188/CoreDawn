@@ -35,6 +35,10 @@ public class SkyboxTimeView : MonoBehaviour
     [Tooltip("해가 뜨고 지는 방위(Y 회전).")]
     [SerializeField] float sunYaw = 30f;
 
+    [Tooltip("달 궤도면을 해와 어긋나게 하는 방위 오프셋(도). 0이면 달이 항상 해의 정반대라 " +
+             "에셋의 개기월식 판정(해·달 정반대)이 걸려 달이 지기 직전 시커멓게 먹힌다.")]
+    [SerializeField] float moonOrbitYawOffset = 18f;
+
     [Tooltip("시간(0~1)에 따른 햇빛 색. 0=일출, 0.25=정오, 0.5=일몰.")]
     [SerializeField] Gradient lightColor;
 
@@ -140,7 +144,7 @@ public class SkyboxTimeView : MonoBehaviour
             sunT = 0.5f + g * 0.5f;
         }
         var sunRot  = Quaternion.Euler(sunT * 360f, sunYaw, 0f);
-        var moonRot = Quaternion.Euler(t * 360f + 180f, sunYaw, 0f);
+        var moonRot = Quaternion.Euler(t * 360f + 180f, sunYaw + moonOrbitYawOffset, 0f);
         if (sun != null) sun.rotation = sunRot;
         if (moon != null) moon.rotation = moonRot;
 

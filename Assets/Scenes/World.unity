@@ -20,7 +20,7 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.72, g: 0.62, b: 0.55, a: 1}
+  m_AmbientSkyColor: {r: 0.6150042, g: 0.53937817, b: 0.50312686, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
@@ -121449,6 +121449,7 @@ GameObject:
   m_Component:
   - component: {fileID: 815550421}
   - component: {fileID: 815550420}
+  - component: {fileID: 815550422}
   m_Layer: 0
   m_Name: Moon Light
   m_TagString: Untagged
@@ -121463,11 +121464,11 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 815550419}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
   m_Color: {r: 0.55, g: 0.65, b: 0.9, a: 1}
-  m_Intensity: 0
+  m_Intensity: 0.10129924
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -121529,13 +121530,42 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 815550419}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.9659259, y: 0.0000000030863865, z: 0.25881907, w: 0.000000011518551}
+  m_LocalRotation: {x: -0.9125313, y: -0.019160116, z: 0.40628514, w: -0.043034323}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &815550422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 815550419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!4 &815668007 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5586220953514933799, guid: 3165793d3ae6acb48863fa5e0f6d5ccb, type: 3}
@@ -129319,8 +129349,8 @@ Light:
   m_Enabled: 0
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 0.55, b: 0.35000002, a: 1}
-  m_Intensity: 1.0645296e-12
+  m_Color: {r: 0.8874973, g: 0.5750006, b: 0.4875033, a: 1}
+  m_Intensity: 0
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -129382,7 +129412,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 874524889}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000000084443926, y: -0.25881907, z: 0.000000022626681, w: -0.9659259}
+  m_LocalRotation: {x: 0.04146577, y: -0.25858045, z: -0.011110719, w: -0.9650354}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -221171,7 +221201,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 6.04
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalPosition.z
@@ -221179,31 +221209,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7253138
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.35742837
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.57264453
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.13506767
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: -338.66602
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -275.461
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -679.472
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5658532036081225491, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_IsActive
@@ -221214,40 +221244,44 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5800540930134880059, guid: 036545facce72c1409578f24faec4033, type: 3}
+      propertyPath: skyboxSettings
+      value: 
+      objectReference: {fileID: 11400000, guid: fee9d0a724c17334cb0c51042b01b5e3, type: 2}
+    - target: {fileID: 5800540930134880059, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: isMatchingDirectionalLightWithSun
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.3102912
+      value: -0.043034323
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.8488106
+      value: -0.9125313
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.22297461
+      value: -0.019160116
       objectReference: {fileID: 0}
     - target: {fileID: 6954085123384147585, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.3654071
+      value: 0.40628514
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.8488107
+      value: -0.9650354
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.31029114
+      value: 0.04146577
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.3654071
+      value: -0.25858045
       objectReference: {fileID: 0}
     - target: {fileID: 8649865111141265968, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.22297458
+      value: -0.011110719
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -221289,6 +221323,7 @@ MonoBehaviour:
   sunLight: {fileID: 874524890}
   moonLight: {fileID: 815550420}
   sunYaw: 30
+  moonOrbitYawOffset: 18
   lightColor:
     serializedVersion: 2
     key0: {r: 1, g: 0.55, b: 0.35, a: 1}
@@ -221443,7 +221478,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 7
     m_NumAlphaKeys: 2
-  previewTime: 1
+  previewTime: 0.25
 --- !u!1001 &1467952746
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -319879,9 +319914,9 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 874524891}
+  - {fileID: 815550421}
   - {fileID: 1784079823}
   - {fileID: 1463672732}
   - {fileID: 1347193936}
   - {fileID: 1370461697}
   - {fileID: 1467773120}
-  - {fileID: 815550421}
