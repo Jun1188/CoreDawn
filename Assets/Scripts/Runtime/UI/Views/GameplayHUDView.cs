@@ -310,12 +310,6 @@ public class GameplayHUDView : MonoBehaviour
         hpMax.text = $"/ {Mathf.CeilToInt(max)}";
         Fill(hpFill, max > 0f ? current / max : 0f);
         Show(deathOverlay, current <= 0f);
-
-        Debug.Log(
-                $"[GameplayHUD] HP 갱신 = {current} / {max}" +
-                $" | playerEntity={playerEntity?.GetInstanceID()}" +
-                $" | health={playerEntity?.Health.GetHashCode()}"
-            );
     }
     public void RefreshPlayerHp()
     {
@@ -326,14 +320,6 @@ public class GameplayHUDView : MonoBehaviour
 
         if (playerEntity == null)
             return;
-
-        Debug.Log(
-        $"[GameplayHUD] Refresh 대상" +
-        $" | Entity={playerEntity.GetInstanceID()}" +
-        $" | Player={playerEntity.GetInstanceID()}" +
-        $" | Health={playerEntity.Health.GetHashCode()}" +
-        $" | HP={playerEntity.Health.CurrentHealth}/{playerEntity.Health.MaxHealth}"
-    );
 
         OnPlayerHp(
             playerEntity.Health.CurrentHealth,

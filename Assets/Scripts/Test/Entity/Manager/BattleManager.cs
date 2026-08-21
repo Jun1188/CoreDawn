@@ -186,6 +186,9 @@ public class BattleManager : MonoBehaviour
     private void OnNightStarted(int day)
     {
         spawnManager.SetSpawningEnabled(true);
+
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayBGM(BGMType.Battle, 1.0f);
     }
 
     private void OnDayStarted(int day)
@@ -194,6 +197,9 @@ public class BattleManager : MonoBehaviour
         spawnManager.SetSpawningEnabled(false);
         spawnManager.DespawnAll();
         RevivePlayerIfDead();
+
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayBGM(BGMType.Main, 1.0f);
     }
 
     private void OnQuantityWaveCompleted(int defeatedAmount)
