@@ -915,7 +915,7 @@ public static class GameDataImporter
             var contents = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                if (EnsureContract(contents, so, isTower))
+                if (EnsureContract(contents, so, isTower, dto.model))
                 {
                     PrefabUtility.SaveAsPrefabAsset(contents, path);
                     Debug.Log($"[GameDataImporter] '{so.name}' 기존 프리팹에 빠진 항목을 채웠습니다 (모델은 유지).");
@@ -928,7 +928,7 @@ public static class GameDataImporter
 
         GameObject root = MakeBody(dto.model, so.size, so.name);
         root.name = so.name;
-        EnsureContract(root, so, isTower);
+        EnsureContract(root, so, isTower, dto.model);
 
         Directory.CreateDirectory(PrefabFolder);
         var saved = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -966,9 +966,12 @@ public static class GameDataImporter
         return changed;
     }
 
-    static bool EnsureContract(GameObject root, BuildingDataSO so, bool isTower)
+    static bool EnsureContract(GameObject root, BuildingDataSO so, bool isTower, string modelFile)
     {
         bool changed = false;
+
+        // 0-a) 모델 자식 동기화 — 레이어보다 먼저: 새로 붙은 모델 자식도 아래에서 레이어를 받는다.
+        changed |= EnsureModel(root, so, modelFile);
 
         // 0) Entity 레이어 — 플레이어의 상호작용 레이캐스트가 이 마스크로 쏜다.
         //    Default로 두면 조준해도 프롬프트가 안 뜨고 E가 먹지 않는다 (코어 열기·보관함·필터 전부).
@@ -1063,28 +1066,109 @@ public static class GameDataImporter
     }
 
     /// <summary>
-    /// 모델이 있으면 그 인스턴스, 없으면 풋프린트 크기 큐브.
+    /// 모델이 있으면 순수 루트 아래 "Model" 자식 인스턴스, 없으면 풋프린트 크기 큐브("Mesh").
+    /// 모델을 루트로 쓰면 프리팹이 모델의 변형(variant)이 되어 나중에 모델을 갈아끼울 수 없다 —
+    /// 자식이면 EnsureModel이 JSON 변경을 따라 교체한다.
     /// 아트가 늦어도 배치·연결·시뮬레이션은 먼저 굴러가야 하므로 임포트를 막지 않는다.
     /// </summary>
     static GameObject MakeBody(string modelFile, Vector2Int size, string logName)
     {
+        // 루트는 스케일 1의 순수 GO — 큐브·모델을 그대로 루트로 쓰면 그 스케일이
+        // 루트 콜라이더 크기까지 곱해져 충돌이 부풀거나, 모델 변형이 돼 교체가 막힌다.
+        var root = new GameObject("Body");
+
         var model = string.IsNullOrEmpty(modelFile) ? null
             : FindAsset<GameObject>(Path.GetFileNameWithoutExtension(modelFile), ModelFolder);
+        if (model != null)
+        {
+            AttachModelChild(root, model);
+            return root;
+        }
 
-        if (model != null) return (GameObject)PrefabUtility.InstantiatePrefab(model);
-
-        // 루트는 스케일 1로 둔다. 큐브를 그대로 루트로 쓰면 루트 스케일이 2.7 같은 값이 되고,
-        // 그 위에 붙는 풋프린트 콜라이더 크기까지 곱해져 3×3 건물의 충돌이 8×8이 된다.
-        var root = new GameObject("Body");
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cube.name = "Mesh";
         cube.transform.SetParent(root.transform, false);
         cube.transform.localScale = new Vector3(size.x * 0.9f, BuildingHeight / CellSize, size.y * 0.9f);
-        UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // 아래에서 풋프린트 기준으로 다시 붙인다
+        UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // 루트에 AABB 기준으로 다시 붙는다
 
         if (!string.IsNullOrEmpty(modelFile))
             Debug.LogWarning($"[GameDataImporter] '{logName}': 모델 '{modelFile}' 을 찾지 못해 큐브로 만들었습니다");
         return root;
+    }
+
+    static void AttachModelChild(GameObject root, GameObject model)
+    {
+        var inst = (GameObject)PrefabUtility.InstantiatePrefab(model);
+        inst.name = "Model";
+        inst.transform.SetParent(root.transform, false);
+    }
+
+    /// <summary>
+    /// "Model" 자식을 JSON(dto.model)과 일치시킨다 — 모델 파일명을 바꾸면 재임포트가 교체한다.
+    /// 큐브 플레이스홀더("Mesh")도 모델이 도착하는 순간 대체된다.
+    /// 루트 자체가 모델 인스턴스인 구 구조(모델 변형으로 저장된 프리팹)는 교체가 불가능하다 —
+    /// 경고만 남긴다: 프리팹을 지우고 재임포트하면 새 구조로 다시 만들어진다.
+    /// 모델이 실제로 바뀐 순간에는 루트 콜라이더를 새 AABB로 재적합한다 — 이전 적합은 이전 모델의 것.
+    /// </summary>
+    static bool EnsureModel(GameObject root, BuildingDataSO so, string modelFile)
+    {
+        var wanted = string.IsNullOrEmpty(modelFile) ? null
+            : FindAsset<GameObject>(Path.GetFileNameWithoutExtension(modelFile), ModelFolder);
+        if (wanted == null) return false;   // 모델 미지정·미발견 — 현 상태 유지
+
+        var current = root.transform.Find("Model");
+        if (current == null && !OnlyPlaceholderVisuals(root))
+        {
+            // "Model" 자식 없이 이미 그림이 있는 프리팹 — 구 구조(모델이 루트에 흡수됐거나
+            // 손으로 만든 것). 여기에 모델을 얹으면 이중으로 겹치므로 절대 손대지 않는다.
+            // 지금 모델과 같은 에셋에서 나온 렌더러가 하나도 없으면 파일명이 바뀐 것 — 안내만.
+            if (!AnyRendererFrom(root, wanted))
+                Debug.LogWarning($"[GameDataImporter] '{so.name}': 모델이 '{modelFile}' 로 바뀌었지만 " +
+                                 "프리팹이 구 구조(모델=루트)라 자동 교체할 수 없습니다 — " +
+                                 "프리팹을 지우고 재임포트하면 새 구조로 다시 만들어집니다.");
+            return false;
+        }
+
+        if (current != null &&
+            PrefabUtility.GetCorrespondingObjectFromOriginalSource(current.gameObject) == wanted)
+            return false;   // 이미 원하는 모델
+
+        if (current != null) UnityEngine.Object.DestroyImmediate(current.gameObject);
+        var placeholder = root.transform.Find("Mesh");   // 큐브 플레이스홀더 — 모델이 왔으니 은퇴
+        if (placeholder != null) UnityEngine.Object.DestroyImmediate(placeholder.gameObject);
+
+        AttachModelChild(root, wanted);
+
+        var col = root.GetComponent<BoxCollider>();
+        if (col != null && TryGetModelBounds(root, out var aabb))
+        {
+            col.size = aabb.size;
+            col.center = aabb.center;
+        }
+
+        Debug.Log($"[GameDataImporter] '{so.name}': 모델을 '{modelFile}' 로 교체했습니다.");
+        return true;
+    }
+
+    /// <summary>그림이 큐브 플레이스홀더("Mesh")뿐인가 — 그때만 모델을 안전하게 얹을 수 있다.</summary>
+    static bool OnlyPlaceholderVisuals(GameObject root)
+    {
+        var mesh = root.transform.Find("Mesh");
+        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+            if (mesh == null || r.transform != mesh) return false;
+        return true;   // 렌더러가 없거나 전부 플레이스홀더
+    }
+
+    /// <summary>루트 아래에 이 모델 에셋에서 나온 렌더러가 있는가 — 구 구조가 최신인지 판별용.</summary>
+    static bool AnyRendererFrom(GameObject root, GameObject modelAsset)
+    {
+        string wantedPath = AssetDatabase.GetAssetPath(modelAsset);
+        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+        {
+            var src = PrefabUtility.GetCorrespondingObjectFromOriginalSource(r.gameObject);
+            if (src != null && AssetDatabase.GetAssetPath(src) == wantedPath) return true;
+        }
+        return false;
     }
 
     /// <summary>

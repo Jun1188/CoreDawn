@@ -5,9 +5,8 @@ using UnityEngine;
 /// 포트 흐름을 **언제** 보여줄지 정하는 드라이버. 그리기 자체는 <see cref="PortFlowVisualizer"/>가 한다.
 ///
 /// 항상 켜두면 공장이 커졌을 때 화면이 흐름으로 뒤덮인다. 그래서:
-///   배치 모드      → 시야 안 모든 건물의 **열린 포트** + 프리뷰 건물의 전체 포트
-///   건물 조준      → 그 건물의 전체 포트 (연결된 것 포함)
-///   그 외          → 끔
+///   배치 모드(건설·철거) → 시야 안 모든 건물의 **열린 포트** + 프리뷰 건물의 전체 포트
+///   그 외                → 끔 — 포트 표시는 건설 모드 전용이다
 ///
 /// **열린 포트** = 이웃 칸에 맞물리는 포트가 없는 포트. 지금 무언가를 붙일 수 있는 자리다.
 /// 이미 벨트가 물린 포트는 볼 이유가 없으니 숨긴다 — 공장이 커질수록 표시가 저절로 줄어들고,
@@ -43,8 +42,6 @@ public class PortFlowOverlay : MonoBehaviour
     bool _hasCenter;
 
     PortFlowVisualizer _preview;   // 배치 프리뷰 (전체 포트)
-    PortFlowVisualizer _focus;     // 조준 중인 건물 (전체 포트)
-    Building _focusTarget;
 
     bool _placing;
 
@@ -78,7 +75,6 @@ public class PortFlowOverlay : MonoBehaviour
     {
         _placing = true;
         _hasCenter = false;          // 첫 프레임에 무조건 한 번 계산
-        ClearFocus();
     }
 
     /// <summary>
@@ -125,31 +121,6 @@ public class PortFlowOverlay : MonoBehaviour
         _placing = false;
         if (_preview != null) { Destroy(_preview.gameObject); _preview = null; }
         ClearOpen();
-        ClearFocus();
-    }
-
-    // ───────────────────────── 건물 조준 ─────────────────────────
-
-    /// <summary>조준 중인 건물의 전체 포트를 보여준다. null이면 끈다.</summary>
-    public void ShowFocus(Building b)
-    {
-        if (_placing) b = null;                 // 배치 중에는 열린 포트 표시가 우선
-        if (_focusTarget == b) return;
-
-        _focusTarget = b;
-        if (b == null || b.IsRemoved) { ClearFocus(); return; }
-
-        // ??= 는 파괴된 UnityEngine.Object(가짜 null)를 걸러내지 못한다 — 반드시 == null 로 검사
-        if (_focus == null)
-            _focus = PortFlowVisualizer.Create(transform, Source, _cellSize, inputColor, outputColor);
-        _focus.SetVisible(true);
-        _focus.Build(b.GetEffectivePorts(), CornerOf(b.Origin, GroundYOf(b, null)));
-    }
-
-    void ClearFocus()
-    {
-        _focusTarget = null;
-        if (_focus != null) { Destroy(_focus.gameObject); _focus = null; }
     }
 
     // ───────────────────────── 열린 포트 ─────────────────────────

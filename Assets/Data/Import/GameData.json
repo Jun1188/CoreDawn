@@ -1723,7 +1723,7 @@
       "displayName": "컨베이어 벨트",
       "description": "설비 사이로 아이템을 옮긴다. 배치 중 T로 모양을 바꾼다.",
       "category": "Logistics",
-      "model": "",
+      "model": "Conveyor.prefab",
       "size": {
         "x": 1,
         "y": 1

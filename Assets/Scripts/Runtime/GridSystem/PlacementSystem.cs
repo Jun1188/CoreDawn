@@ -44,10 +44,6 @@ public class PlacementSystem : MonoBehaviour
     [Tooltip("철거 모드에서 대상 건물에 입힐 하이라이트 머티리얼 (빨강 반투명 추천).")]
     [SerializeField] private Material demolishHighlightMat;
 
-    [Header("포트 흐름 표시")]
-    [Tooltip("배치 모드가 아닐 때, 조준한 건물의 포트 흐름을 보여준다.")]
-    [SerializeField] private bool showPortsOnAim = true;
-
     [Header("철거")]
     [Tooltip("철거에 필요한 누름 유지 시간(초). 클릭 한 번에 사라지면 옆 건물을 실수로 날린다.")]
     [SerializeField] private float demolishHoldSeconds = 0.4f;
@@ -165,13 +161,7 @@ public class PlacementSystem : MonoBehaviour
         {
             case BuildMode.Placing: UpdatePlacing(); break;
             case BuildMode.Demolishing: UpdateDemolishing(); break;
-            default:
-                // 조준한 건물의 포트 흐름 — 배치 중이 아닐 때만 (배치 중엔 열린 포트 표시가 우선).
-                // 창이 떠 있으면 커서는 창을 조작하는 중이라, 그 커서가 가리키는 월드 지점은
-                // 조준이 아니다 — 마우스를 옮길 때마다 엉뚱한 건물에 포트가 켜진다.
-                portFlow.ShowFocus(showPortsOnAim && !UIPopup.AnyOpen
-                    && TryGetAimedBuilding(out Building aimed) ? aimed : null);
-                break;
+            // 대기 모드에서는 포트를 그리지 않는다 — 표시는 건설 모드 전용이다.
         }
     }
 
@@ -391,8 +381,11 @@ public class PlacementSystem : MonoBehaviour
 
     private void UpdateDemolishing()
     {
-        // 건물 몸체 직접 조준 우선, 실패하면 바닥 칸 폴백
-        SetHovered(TryGetAimedBuilding(out Building target) ? target : null);
+        // 건물 몸체 직접 조준 우선, 실패하면 바닥 칸 폴백.
+        // 코어는 철거 대상이 아니다 — 기지의 심장을 실수로 밀면 그대로 게임오버다.
+        // 조준 단계에서 걸러 하이라이트도, 홀드 카운트도 아예 걸리지 않게 한다.
+        SetHovered(TryGetAimedBuilding(out Building target) && !(target.Data is CoreDataSO)
+            ? target : null);
 
         if (!holdPressed) { holdTarget = null; holdElapsed = 0f; return; }
 
@@ -427,10 +420,11 @@ public class PlacementSystem : MonoBehaviour
         holdElapsed = 0f;
     }
 
-    /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴.</summary>
+    /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴. 코어는 거부한다.</summary>
     public void Demolish(Building b)
     {
         if (b == null) return;
+        if (b.Data is CoreDataSO) return;   // 조준 필터를 우회한 외부 호출까지 방어
 
         // 하이라이트 대상이면 복원 절차 없이 참조만 비운다 (어차피 곧 파괴됨)
         if (hovered == b)
