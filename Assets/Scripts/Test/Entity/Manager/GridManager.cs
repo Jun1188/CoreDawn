@@ -20,6 +20,9 @@ public class GridManager : MonoBehaviour
     public Vector3 originPosition;    // 그리드의 시작점 (왼쪽 아래) (mapBounds 지정 시 자동 계산됨)
     private Node[,] grid;
 
+    // 길찾기 해상도 세분화 배율 — 월드 칸 하나를 몇 등분해 노드로 쓰는가. Bake에서 계산.
+    private int subdiv = 1;
+
     // 지면 윗면의 월드 y — 스폰 위치 스냅용. mapBounds가 있으면 그 콜라이더의 최상단.
     public float SurfaceY { get; private set; }
 
@@ -67,6 +70,14 @@ public class GridManager : MonoBehaviour
         if (baked) return;
         baked = true;
 
+        // 길찾기 해상도 세분화 — 월드 칸(예: 4m)이 그대로 노드가 되면 너무 성겨서,
+        // 몬스터가 목표와 "같은 칸"에 선 순간 이동이 끝나는데 공격 사거리는 안 닿는다.
+        // 칸을 반올림 값으로 등분해 노드를 약 1m로 만든다 (칸 4m → 4등분, 1m 칸은 그대로).
+        // 맵 타일·심 건물은 여전히 월드 칸 단위다 — 조회 시 subdiv로 되돌려 변환한다.
+        subdiv = Mathf.Max(1, Mathf.RoundToInt(cellSize));
+        cellSize /= subdiv;
+        gridSize = new Vector2Int(gridSize.x * subdiv, gridSize.y * subdiv);   // 바운즈 경로는 아래서 새로 계산해 덮는다
+
         // 맵 주입이 없고 바운즈만 있으면 바운즈로 크기를 잡는다 (구 씬 호환).
         // FloorToInt: 맵에 완전히 포함되는 셀만 그리드에 넣는다 (걸치는 가장자리 셀 제외)
         if (map == null && mapBounds != null)
@@ -83,7 +94,7 @@ public class GridManager : MonoBehaviour
         else if (map != null)
         {
             Debug.Log($"[GridManager] 맵 '{map.Id}'로 그리드 설정: " +
-                $"origin={originPosition}, gridSize={gridSize}, cellSize={cellSize}");
+                $"origin={originPosition}, gridSize={gridSize}, cellSize={cellSize} (칸당 {subdiv}등분)");
         }
         else
         {
@@ -117,7 +128,7 @@ public class GridManager : MonoBehaviour
                 //   ① 물리 장애물(Obstacle 레이어) — 씬에 놓인 바위·구조물
                 //   ② 맵의 절벽 타일 — 강은 건널 수 있으므로 막지 않는다(비용만 비싸다).
                 bool walkable = !Physics.CheckSphere(worldCenter, cellSize * 0.5f, unwalkableMask)
-                                && (map == null || TileRules.EnterCost(map.TileAt(cell)) < TileRules.Blocked);
+                                && (map == null || TileRules.EnterCost(map.TileAt(TileOf(cell))) < TileRules.Blocked);
 
                 grid[x, y] = new Node(walkable, worldCenter, cell);
             }
@@ -170,7 +181,7 @@ public class GridManager : MonoBehaviour
         var node = grid?[cell.x, cell.y];
         if (node == null || !node.walkable) return TileRules.Blocked;   // 절벽·물리 장애물
 
-        int cost = map != null ? TileRules.EnterCost(map.TileAt(cell)) : TileRules.BaseCost;
+        int cost = map != null ? TileRules.EnterCost(map.TileAt(TileOf(cell))) : TileRules.BaseCost;
         if (cost >= TileRules.Blocked) return TileRules.Blocked;
 
         var building = BuildingAt(node);
@@ -182,9 +193,12 @@ public class GridManager : MonoBehaviour
         return cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
     }
 
+    /// <summary>길찾기 노드 좌표 → 월드 칸(맵 타일) 좌표. 세분화 배율을 되돌린다.</summary>
+    private Vector2Int TileOf(Vector2Int cell) => new(cell.x / subdiv, cell.y / subdiv);
+
     /// <summary>이 칸의 지형 이동 속도 배율 — 강은 느리다. 맵이 없으면 1.</summary>
     public float TerrainSpeed(Vector2Int cell) =>
-        map != null ? TileRules.SpeedMultiplier(map.TileAt(cell)) : 1f;
+        map != null ? TileRules.SpeedMultiplier(map.TileAt(TileOf(cell))) : 1f;
 
     /// <summary>이 칸을 점유한 심 건물 — 좌표계가 달라 월드 좌표를 경유한다. 없으면 null.</summary>
     private Building BuildingAt(Node node)
@@ -255,7 +269,7 @@ public class GridManager : MonoBehaviour
     public MapTile GetTile(Vector2Int cell)
     {
         return map != null
-            ? map.TileAt(cell)
+            ? map.TileAt(TileOf(cell))
             : MapTile.Ground;
     }
     // GetNeighbours 메서드 등은 그대로 유지하거나 gridPos.x, gridPos.y 대신 Vector2Int를 사용하도록 개선 가능

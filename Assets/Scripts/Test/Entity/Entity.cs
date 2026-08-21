@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Object = UnityEngine.Object;
 
 // Entity 확장 유틸 — 타겟 유효성/거리 판정 (구 IInteractable 확장의 Entity 버전)
 public static class EntityExtensions
@@ -16,6 +17,13 @@ public static class EntityExtensions
     // 멀티타일 건물처럼 부피가 있는 대상은 중심점 대신 콜라이더 표면까지의 거리를 사용
     public static float DistanceTo(this Entity target, Vector3 from)
     {
+        // 심 건물은 점유 풋프린트(칸) 기준으로 잰다 — 모델(콜라이더)이 풋프린트보다 한참
+        // 작을 수 있는데(3×3칸 코어의 우주선), 몬스터의 길을 막는 것은 풋프린트라서
+        // 풋프린트 경계까지 붙은 몬스터의 공격이 닿으려면 거리의 정본도 풋프린트여야 한다.
+        if (target is BuildingEntity be && be.HasSim &&
+            TryFootprintDistance(be.Sim, from, out float footprint))
+            return footprint;
+
         var col = target.GetComponentInChildren<Collider>();
         if (col == null) return Vector3.Distance(from, target.GetPosition());
 
@@ -32,6 +40,31 @@ public static class EntityExtensions
         }
 
         return Vector3.Distance(from, col.ClosestPoint(from));
+    }
+
+    // 칸 크기·원점의 소유자 — 씬이 바뀌면 파괴돼 가짜 null이 되므로 그때 다시 찾는다
+    static PlacementSystem placementCache;
+
+    /// <summary>건물 점유 풋프린트 사각형(XZ)까지의 거리. 배치 시스템이 없는 씬이면 false.</summary>
+    static bool TryFootprintDistance(Building b, Vector3 from, out float distance)
+    {
+        distance = 0f;
+        if (b == null || b.Data == null) return false;
+        if (placementCache == null) placementCache = Object.FindFirstObjectByType<PlacementSystem>();
+        if (placementCache == null) return false;
+
+        float cell = placementCache.CellSize;
+        Vector3 origin = placementCache.GridOrigin;
+        Vector2Int size = b.RotationSteps % 2 == 0
+            ? b.Data.size
+            : new Vector2Int(b.Data.size.y, b.Data.size.x);   // 홀수 회전은 가로·세로가 바뀐다
+
+        float minX = origin.x + b.Origin.x * cell, maxX = minX + size.x * cell;
+        float minZ = origin.z + b.Origin.y * cell, maxZ = minZ + size.y * cell;
+        float dx = Mathf.Max(minX - from.x, 0f, from.x - maxX);
+        float dz = Mathf.Max(minZ - from.z, 0f, from.z - maxZ);
+        distance = Mathf.Sqrt(dx * dx + dz * dz);   // 지상전이라 높이는 무시한다
+        return true;
     }
 }
 
