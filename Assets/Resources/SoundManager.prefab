@@ -397,6 +397,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8623476766441888253}
   - component: {fileID: 7299825450688995523}
+  - component: {fileID: 624750515529675350}
   m_Layer: 0
   m_Name: SoundManager
   m_TagString: Untagged
@@ -459,3 +460,15 @@ MonoBehaviour:
   poolSize: 10
   normalSnapshot: {fileID: -145546018725350686, guid: c68ee7938566ba34486d3ade32a15dea, type: 2}
   pausedSnapshot: {fileID: -5327659295115041125, guid: c68ee7938566ba34486d3ade32a15dea, type: 2}
+--- !u!114 &624750515529675350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8282394826512866701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8503f7c21c91d1a4691ba4778cb8d534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISoundHandler

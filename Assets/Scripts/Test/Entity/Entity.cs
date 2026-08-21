@@ -108,7 +108,21 @@ public class Entity : MonoBehaviour
     public virtual void ReceiveDamage(float amount)
     {
         float final = amount * Effects.IncomingDamageMultiplier;
-        if (final > 0f) health.TakeDamage(final);
+
+        Debug.Log(
+            $"[Entity] ReceiveDamage / Entity={name} / amount={amount} / final={final}"
+        );
+
+        if (final > 0f)
+        {
+            health.TakeDamage(final);
+        }
+        else
+        {
+            Debug.Log(
+                $"[Entity] 데미지 무시됨 / final={final}"
+            );
+        }
     }
 
     // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.
@@ -116,7 +130,18 @@ public class Entity : MonoBehaviour
 
     // 즉시 사망 — HP를 0으로 만들고 사망 흐름(OnDeath → HandleDeath)을 태운다
     public void Die() => health.Kill();
-
+    public virtual void Revive(Vector3 respawnPosition)
+    {
+        print("부활");
+        // 1. 위치 이동
+        transform.position = respawnPosition;
+        
+        // 2. 꺼져있던 게임 오브젝트 다시 활성화
+        gameObject.SetActive(true);
+        
+        // 3. 체력 및 IsDead 상태 초기화 (HealthComponent.Initialize 활용)
+        health.Initialize();
+    }
     // 런타임 부착 시 사망 방식 변경용 (예: FPS 플레이어는 Destroy 대신 비활성화)
     public void SetDeathBehavior(bool destroy, float delay)
     {

@@ -2635,7 +2635,6 @@ GameObject:
   - component: {fileID: 819148127}
   - component: {fileID: 819148126}
   - component: {fileID: 819148125}
-  - component: {fileID: 819148128}
   m_Layer: 5
   m_Name: Load
   m_TagString: Untagged
@@ -2757,20 +2756,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 819148123}
   m_CullTransparentMesh: 1
---- !u!114 &819148128
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 819148123}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8503f7c21c91d1a4691ba4778cb8d534, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UISoundHandler
-  holdThreshold: 0.5
-  holdInterval: 0.1
 --- !u!1 &848274106
 GameObject:
   m_ObjectHideFlags: 0
@@ -4580,7 +4565,6 @@ GameObject:
   - component: {fileID: 1295326945}
   - component: {fileID: 1295326944}
   - component: {fileID: 1295326943}
-  - component: {fileID: 1295326946}
   m_Layer: 5
   m_Name: Save
   m_TagString: Untagged
@@ -4702,20 +4686,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1295326941}
   m_CullTransparentMesh: 1
---- !u!114 &1295326946
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1295326941}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8503f7c21c91d1a4691ba4778cb8d534, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UISoundHandler
-  holdThreshold: 0.5
-  holdInterval: 0.1
 --- !u!1 &1340414490
 GameObject:
   m_ObjectHideFlags: 0
@@ -5186,8 +5156,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8503f7c21c91d1a4691ba4778cb8d534, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UISoundHandler
-  holdThreshold: 0.5
-  holdInterval: 0.1
 --- !u!1 &1760893925
 GameObject:
   m_ObjectHideFlags: 0
@@ -5326,6 +5294,13 @@ MonoBehaviour:
     attackRange: 1.5
     attackCooldown: 2
     attackEffects: []
+  maxPatience: 3
+  patienceRadius: 0
+  outsidePatienceDrain: 2
+  rangedPokePatienceDrain: 3
+  patienceRecoverRate: 2
+  absoluteLeashMultiplier: 1
+  returnRegenPerSecond: 0.12
 --- !u!54 &1765171981
 Rigidbody:
   m_ObjectHideFlags: 0

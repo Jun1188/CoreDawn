@@ -32,9 +32,16 @@ MonoBehaviour:
   reloadSound: {fileID: 8300000, guid: 3cfe0927ccb7ede4691b5433aedf2289, type: 3}
   fireVolume: 0.8
   reloadVolume: 0.7
+  unlimitedAmmo: 0
   magSize: 4
   reloadTime: 2.5
   zoomFOV: 40
+  blockAim: 0
+  swingTime: 0
+  swingRotation: {x: 35, y: -55, z: 40}
+  swingPosition: {x: -0.1, y: 0.04, z: 0.1}
+  swingWindup: 0.18
+  swingAlternate: 0
   xRecoil: 6
   yRecoil: 4
   zRecoil: 2

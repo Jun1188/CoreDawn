@@ -49,6 +49,22 @@ public class WeaponController : MonoBehaviour, IInputReceiver
 
     private void Update()
     {
+        if (player != null && player.IsDeadOrDying)
+        {
+            ReleaseHeldStates();
+
+            var deadWeapon = weaponManager != null
+                ? weaponManager.CurrentWeapon
+                : null;
+
+            if (deadWeapon != null && deadWeapon.IsReloading)
+            {
+                // Gun 내부에서도 정리되지만,
+                // WeaponController에서 사격 상태를 먼저 끊는다.
+            }
+
+            return;
+        }
         var weapon = weaponManager != null ? weaponManager.CurrentWeapon : null;
         if (weapon == null) return;
 
@@ -66,6 +82,13 @@ public class WeaponController : MonoBehaviour, IInputReceiver
 
     public bool OnInput(in InputEvent e)
     {
+        // 사망 중에는 공격/조준/재장전/탄종 전환 전부 무시
+        if (player != null && player.IsDeadOrDying)
+        {
+            ReleaseHeldStates();
+            return true;
+        }
+
         var weapon = weaponManager.CurrentWeapon;
 
         switch (e.Id)
@@ -84,7 +107,8 @@ public class WeaponController : MonoBehaviour, IInputReceiver
                 return false;
 
             case InputActionId.Aim:
-                if (weapon == null) return false;
+                // 가늠자 없는 무기(근접)는 조준 자체가 없다 — 소비하지 않고 하류로 흘려보낸다
+                if (weapon == null || !weaponManager.CanAim) return false;
                 if (e.Phase == InputActionPhase.Performed)
                 {
                     weaponManager.SetAiming(true); // 줌 FOV는 스왑 때 매니저가 무기 데이터로 이미 설정
@@ -113,5 +137,10 @@ public class WeaponController : MonoBehaviour, IInputReceiver
         isFiringHeld = false;
         lastFireInputTime = -1f;
         if (weaponManager != null) weaponManager.SetAiming(false);
+    }
+
+    public void ForceReleaseInput()
+    {
+        ReleaseHeldStates();
     }
 }

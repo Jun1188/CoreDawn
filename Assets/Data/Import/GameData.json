@@ -59,7 +59,8 @@
       "baseSpread": 0.6,
       "maxSpread": 4.0,
       "spreadIncreasePerShot": 0.8,
-      "spreadRecoveryRate": 5.0
+      "spreadRecoveryRate": 5.0,
+      "unlimitedAmmo": false
     },
     {
       "id": "Gun:Rifle",
@@ -84,7 +85,8 @@
       "baseSpread": 0.5,
       "maxSpread": 5.0,
       "spreadIncreasePerShot": 1.0,
-      "spreadRecoveryRate": 5.0
+      "spreadRecoveryRate": 5.0,
+      "unlimitedAmmo": false
     },
     {
       "id": "Gun:Shotgun",
@@ -109,7 +111,8 @@
       "baseSpread": 4.0,
       "maxSpread": 8.0,
       "spreadIncreasePerShot": 1.5,
-      "spreadRecoveryRate": 4.0
+      "spreadRecoveryRate": 4.0,
+      "unlimitedAmmo": false
     },
     {
       "id": "Gun:Sniper",
@@ -135,7 +138,8 @@
       "baseSpread": 0.05,
       "maxSpread": 3.0,
       "spreadIncreasePerShot": 2.0,
-      "spreadRecoveryRate": 3.0
+      "spreadRecoveryRate": 3.0,
+      "unlimitedAmmo": false
     },
     {
       "id": "Gun:GrenadeLauncher",
@@ -160,7 +164,8 @@
       "baseSpread": 1.0,
       "maxSpread": 4.0,
       "spreadIncreasePerShot": 1.0,
-      "spreadRecoveryRate": 4.0
+      "spreadRecoveryRate": 4.0,
+      "unlimitedAmmo": false
     },
     {
       "id": "Gun:EnergyRifle",
@@ -185,7 +190,52 @@
       "baseSpread": 0.2,
       "maxSpread": 2.0,
       "spreadIncreasePerShot": 0.4,
-      "spreadRecoveryRate": 6.0
+      "spreadRecoveryRate": 6.0,
+      "unlimitedAmmo": false
+    },
+    {
+      "id": "Gun:PlasmaCutter",
+      "displayName": "플라즈마 커터",
+      "isAutomatic": true,
+      "unlimitedAmmo": true,
+      "blockAim": true,
+      "fireMode": "Projectile",
+      "description": "잔해 해체용 절단기. 사거리는 코앞뿐이지만 탄약이 필요 없고, 한 번 휘두르면 주변까지 함께 갈린다.",
+      "fireRate": 0.55,
+      "range": 0.35,
+      "reloadTime": 0.1,
+      "zoomFOV": 55,
+      "xRecoil": 1.5,
+      "yRecoil": 1,
+      "zRecoil": 0.5,
+      "visualKickbackZ": 0,
+      "visualKickbackRot": [
+        0,
+        0,
+        0
+      ],
+      "swingTime": 0.42,
+      "swingRotation": [
+        22,
+        -30,
+        26
+      ],
+      "swingPosition": [
+        -0.06,
+        0.025,
+        0.06
+      ],
+      "swingWindup": 0.18,
+      "swingAlternate": true,
+      "baseSpread": 0,
+      "maxSpread": 0,
+      "spreadIncreasePerShot": 0,
+      "spreadRecoveryRate": 8,
+      "magSize": 1,
+      "ammoFilter": [
+        "Item:PlasmaArc"
+      ],
+      "damageMultiplier": 1
     }
   ],
   "items": [
@@ -628,6 +678,37 @@
       "explosionRadius": -1.0,
       "lifetime": -1.0,
       "pierce": -1
+    },
+    {
+      "id": "Item:PlasmaArc",
+      "displayName": "플라즈마 아크",
+      "description": "플라즈마 커터가 휘둘릴 때 칼끝에 서는 아크. 손에 쥘 수 없는 탄 — 인벤토리를 거치지 않고 휘두름 그 자체로 소모된다.",
+      "type": "Ammo",
+      "line": "Iron",
+      "attackEffects": [
+        {
+          "effect": "Effect:Damage",
+          "value": 40
+        },
+        {
+          "effect": "Effect:Knockback",
+          "value": 1.5
+        }
+      ],
+      "speed": 6,
+      "gravity": 0,
+      "explosionRadius": 2.2,
+      "lifetime": 0.4,
+      "pierce": 0
+    },
+    {
+      "id": "Item:PlasmaCutter",
+      "displayName": "플라즈마 커터",
+      "description": "탄약이 필요 없는 근접 절단기. 코앞의 여러 마리를 한 번에 벤다.",
+      "type": "Weapon",
+      "line": "Iron",
+      "icon": "PlasmaCutter",
+      "gun": "Gun:PlasmaCutter"
     }
   ],
   "recipes": [
@@ -972,6 +1053,29 @@
         {
           "item": "Item:CrystalAmmo",
           "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "Recipe:Recipe_PlasmaCutter",
+      "displayName": "플라즈마 커터 제작",
+      "description": "잔해를 자르던 절단기를 무기로 고쳤다. 탄약이 떨어져도 남는 최후의 수단.",
+      "tier": 1,
+      "craftTime": 6,
+      "inputs": [
+        {
+          "item": "Item:ShipDebris",
+          "amount": 5
+        },
+        {
+          "item": "Item:IronPlate",
+          "amount": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "Item:PlasmaCutter",
+          "amount": 1
         }
       ]
     },

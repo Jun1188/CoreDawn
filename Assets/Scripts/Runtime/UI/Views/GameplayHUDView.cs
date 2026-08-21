@@ -310,8 +310,40 @@ public class GameplayHUDView : MonoBehaviour
         hpMax.text = $"/ {Mathf.CeilToInt(max)}";
         Fill(hpFill, max > 0f ? current / max : 0f);
         Show(deathOverlay, current <= 0f);
-    }
 
+        Debug.Log(
+                $"[GameplayHUD] HP 갱신 = {current} / {max}" +
+                $" | playerEntity={playerEntity?.GetInstanceID()}" +
+                $" | health={playerEntity?.Health.GetHashCode()}"
+            );
+    }
+    public void RefreshPlayerHp()
+    {
+        if (playerEntity == null)
+        {
+            BindPlayerIfNeeded();
+        }
+
+        if (playerEntity == null)
+            return;
+
+        Debug.Log(
+        $"[GameplayHUD] Refresh 대상" +
+        $" | Entity={playerEntity.GetInstanceID()}" +
+        $" | Player={playerEntity.GetInstanceID()}" +
+        $" | Health={playerEntity.Health.GetHashCode()}" +
+        $" | HP={playerEntity.Health.CurrentHealth}/{playerEntity.Health.MaxHealth}"
+    );
+
+        OnPlayerHp(
+            playerEntity.Health.CurrentHealth,
+            playerEntity.Health.MaxHealth
+        );
+    }
+    public void HideDeathOverlay()
+    {
+        Show(deathOverlay, false);
+    }
     /// <summary>
     /// 코어는 나중에 생길 수도, 부서질 수도 있다 — 붙을 때까지 매 프레임 다시 찾는다.
     /// <b>없다고 줄을 숨기지는 않는다</b>: 코어가 부서진 순간은 체력바가 사라질 때가 아니라
@@ -347,16 +379,20 @@ public class GameplayHUDView : MonoBehaviour
         Show(ammoBox, has);
         if (!has) return;
 
+        // 근접무기(무한 탄약)는 셀 탄이 없다 — 탄창 칸을 ∞로 접어 장전 수/최대치를 지운다.
+        bool unlimited = weapon.gunData.unlimitedAmmo;
+
         ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
-        ammoNow.text = weapon.CurrentAmmo.ToString();
-        ammoCap.text = $" / {weapon.gunData.magSize}";
+        ammoNow.text = unlimited ? "∞" : weapon.CurrentAmmo.ToString();
+        ammoCap.text = unlimited ? "" : $" / {weapon.gunData.magSize}";
         ammoNow.EnableInClassList("combat-ammo__now--reloading", weapon.IsReloading);
 
         // 탄종 + 인벤토리 예비탄 (실소비). 인벤토리 없는 씬은 ReserveAmmo -1 = 무한 보급.
         var item = weapon.CurrentAmmoItem;
-        ammoType.text = item != null ? item.displayName : "";
+        ammoType.text = unlimited ? "근접" : item != null ? item.displayName : "";
         int reserve = weapon.ReserveAmmo;
-        ammoReserve.text = weapon.IsReloading ? "장전 중"
+        ammoReserve.text = unlimited ? ""              // 장전 수 칸이 이미 ∞다 — 두 번 말하지 않는다
+                         : weapon.IsReloading ? "장전 중"
                          : reserve < 0 ? "∞"
                          : $"× {reserve}";
     }
