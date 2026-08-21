@@ -483,6 +483,23 @@ public class PlacementSystem : MonoBehaviour
 
     // ===================== 공용 헬퍼 =====================
 
+    [Tooltip("건설(배치·철거) 조준 사거리 폴백(m). 씬에 PlayerInteractionManager가 있으면 " +
+             "그쪽의 E키 상호작용 사거리를 그대로 쓴다 — 두 감각이 어긋나지 않게.")]
+    [SerializeField] private float buildRangeFallback = 4f;
+
+    private PlayerInteractionManager interaction;
+
+    /// <summary>건설 조준의 최대 거리 — E키 상호작용(interactRange)과 같은 값.
+    /// 무제한이면 맵 반대편에서도 짓고 부순다.</summary>
+    private float BuildRange
+    {
+        get
+        {
+            if (interaction == null) interaction = FindFirstObjectByType<PlayerInteractionManager>();
+            return interaction != null ? interaction.InteractRange : buildRangeFallback;
+        }
+    }
+
     /// <summary>
     /// 조준한 건물 찾기 — 공용 쿼리 (철거 하이라이트가 사용, 이후 기계 UI 열기 등도 여기로).
     /// ① 건물 콜라이더 직접 히트(몸체 조준) ② 실패 시 바닥 칸의 건물 폴백(벨트처럼 낮은 건물 대비).
@@ -492,7 +509,7 @@ public class PlacementSystem : MonoBehaviour
         building = null;
 
         // ① 몸체 직접 조준 — 건물은 Default 레이어라 마스크 없이 쏘고 엔티티 컴포넌트로 판별
-        if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, 1000f))
+        if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, BuildRange))
         {
             var view = bodyHit.collider.GetComponentInParent<BuildingEntity>();
             if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
@@ -515,7 +532,8 @@ public class PlacementSystem : MonoBehaviour
 
     private bool TryGetGroundPoint(out Vector3 point)
     {
-        if (Physics.Raycast(AimRay(), out RaycastHit hit, 1000f, groundMask))
+        // 사거리 밖 지면은 조준 실패 — 프리뷰가 숨고 배치·철거가 걸리지 않는다
+        if (Physics.Raycast(AimRay(), out RaycastHit hit, BuildRange, groundMask))
         {
             point = hit.point;
             return true;
