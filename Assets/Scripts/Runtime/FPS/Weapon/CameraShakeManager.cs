@@ -49,6 +49,10 @@ public class CameraShakeManager : MonoBehaviour
     private Vector3 shownPos;
     private Vector3 shownRot;
 
+    /// <summary>현재 적용 중인 셰이크 — 조준 중 무기를 셰이크에 잠그는 <see cref="WeaponShakeFollow"/>가 읽는다.</summary>
+    public Vector3 CurrentPositionOffset => shownPos;
+    public Quaternion CurrentRotationOffset => Quaternion.Euler(shownRot);
+
     private void Awake()
     {
         if (Instance == null) Instance = this;

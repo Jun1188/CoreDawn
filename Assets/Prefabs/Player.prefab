@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: 6652096104688218203}
   - component: {fileID: 3069826180716430105}
   - component: {fileID: 5206136052188048441}
+  - component: {fileID: 4381152907419001625}
   m_Layer: 12
   m_Name: Weapon_Holder
   m_TagString: Untagged
@@ -75,7 +76,7 @@ Transform:
   - {fileID: 3250906825666707958}
   - {fileID: 3969874424331773256}
   - {fileID: 8340997314010740118}
-  m_Father: {fileID: 7475414920367314916}
+  m_Father: {fileID: 9033849837218861637}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8239470649360977166
 MonoBehaviour:
@@ -247,6 +248,18 @@ MonoBehaviour:
   windupHold: 0.05
   strikeOvershoot: 1.18
   maxRotation: 90
+--- !u!114 &4381152907419001625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396995298283521722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf876362bcb3d6e42ad1be09bea0e6f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponShakeFollow
 --- !u!1 &452123137726881323
 GameObject:
   m_ObjectHideFlags: 0
@@ -387,7 +400,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6780044117118029167}
-  - {fileID: 7995179578143903283}
   m_Father: {fileID: 9033849837218861637}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1484987932482277592
@@ -1040,6 +1052,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7475414920367314916}
+  - {fileID: 7995179578143903283}
   m_Father: {fileID: 2425879589627415900}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7667058029735366538
