@@ -29,7 +29,7 @@ MonoBehaviour:
     m_Bits: 18432
   ammoFilter:
   - {fileID: 11400000, guid: ddf45d9797d454f44879b6745cc477e3, type: 2}
-  damageMultiplier: 1
+  damageMultiplier: 0.6
   fireSound: {fileID: 8300000, guid: 1961437f402f70a40a52757ecf78801d, type: 3}
   reloadSound: {fileID: 0}
   fireVolume: 0.55

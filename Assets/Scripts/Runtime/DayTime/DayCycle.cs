@@ -84,6 +84,16 @@ public class DayCycle
     }
 
     /// <summary>
+    /// 물량제 밤의 진행도를 시간축에 투영한다.
+    /// 0은 일몰, 1은 다음 날 일출이며 UI와 sky가 같은 PhaseProgress01을 읽는다.
+    /// </summary>
+    public void SetNightProgress01(float progress01)
+    {
+        if (!_started || Phase != DayPhase.Night) return;
+        PhaseRemaining = _nightDuration * (1f - Math.Clamp(progress01, 0f, 1f));
+    }
+
+    /// <summary>
     /// 밤 조기 종료 — 웨이브를 전멸시켰을 때 웨이브 매니저가 호출.
     /// 낮에는 아무 일도 하지 않는다.
     /// </summary>

@@ -155,10 +155,16 @@ public class GameplayHUDView : MonoBehaviour
         dayValue.text = tm.DayNumber.ToString();
 
         bool night = tm.Phase == DayPhase.Night;
-        phaseLabel.text = night ? "NIGHT ENDS" : "NIGHT IN";
+        bool quantityNight = tm.TryGetNightWaveStatus(out int remainingEnemies, out _);
+        phaseLabel.text = quantityNight ? "ENEMIES LEFT" : night ? "NIGHT ENDS" : "NIGHT IN";
 
-        float rem = Mathf.Max(0f, tm.RemainingPhaseTime);
-        phaseTime.text = $"{(int)(rem / 60f):00}:{(int)(rem % 60f):00}";
+        if (quantityNight)
+            phaseTime.text = remainingEnemies.ToString();
+        else
+        {
+            float rem = Mathf.Max(0f, tm.RemainingPhaseTime);
+            phaseTime.text = $"{(int)(rem / 60f):00}:{(int)(rem % 60f):00}";
+        }
         // 밤에는 시계가 위협의 잔여 시간이다 — 괴수색으로
         phaseTime.style.color = night ? UIFlowColors.Of(ItemLine.Beast) : StyleKeyword.Null;
     }
