@@ -159,7 +159,12 @@ public class BattleTower : BuildingEntity
         if (!combat.CanAttack()) return;
 
         // 쏘기 직전에 한 발 소비 — 효과·탄도는 소비한 탄약이 정의하고, 타워는 각도·배율만.
-        AmmoModuleSO round = NextRound(data);
+        if (!NextRound(data, out AmmoModuleSO round))
+        {
+            SetState(TowerState.Starved);
+            return;
+        }
+
         if (round == null || (data.fireMode == FireMode.Projectile && round.bulletPrefab == null))
         {
             combat.TryAttack(target); // 폴백: 즉시 적용 (탄 정의 없음 — 효과는 combat이 정의)
@@ -217,13 +222,20 @@ public class BattleTower : BuildingEntity
     }
 
     /// <summary>
-    /// 이번 발사의 탄 — 보급(심)이 있으면 실제로 한 발 소비하고, 없으면(씬 직접 배치)
-    /// defaultAmmo를 가정해 무한 사격한다. 없으면 null — 근접 폴백.
+    /// 이번 발사의 탄을 확보한다. 보급(심)이 있으면 탄약량 확인과 실제 한 발 소비가
+    /// 모두 성공해야 true다. 없으면(씬 직접 배치) defaultAmmo를 가정해 무한 사격한다.
+    /// 씬 직접 배치 타워의 round가 null인 경우만 기존 근접 폴백을 허용한다.
     /// </summary>
-    private AmmoModuleSO NextRound(TowerDataSO data)
+    private bool NextRound(TowerDataSO data, out AmmoModuleSO round)
     {
-        if (supply != null) return supply.TryConsumeRound(out var round) ? round : null;
-        return data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
+        if (supply != null)
+        {
+            round = null;
+            return supply.HasAmmo && supply.TryConsumeRound(out round);
+        }
+
+        round = data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
+        return true;
     }
 
     // 오라 — 쏘는 대신 쿨다운(fireRate 주기)마다 반경 전원에게 펄스한다.
@@ -240,7 +252,12 @@ public class BattleTower : BuildingEntity
             return;
         }
 
-        AmmoModuleSO round = NextRound(data);
+        if (!NextRound(data, out AmmoModuleSO round))
+        {
+            SetState(TowerState.Starved);
+            return;
+        }
+
         EffectEntry[] effects = round != null ? round.attackEffects : combat.AttackEffects; // 구 씬 오라 폴백
         if (effects == null || effects.Length == 0) { SetState(TowerState.Idle); return; }
 
