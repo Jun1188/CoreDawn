@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Art/Skybox.meta
+guid: f35335a1768724346a0aea82cdca0c45
+========
 guid: a1a4d0d077bf9d14e8482e9470a3524a
+>>>>>>>> origin/main:Assets/Art/Models/Generated.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

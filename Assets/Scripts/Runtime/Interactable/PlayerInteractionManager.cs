@@ -2,15 +2,13 @@ using UnityEngine;
 
 /// <summary>
 /// 상호작용 조준 서비스 — "지금 조준 중인 IInteractable" 판정의 단일 소유자.
-/// 매 프레임 판정을 Current에 캐시하고 프롬프트("[E] ...")를 그린다.
-/// E키 실행(PlayerController.TryInteract)도 같은 Current를 사용한다 —
+/// 매 프레임 판정을 Current에 캐시한다. E키 실행(PlayerController.TryInteract)과
+/// 프롬프트 표시(GameplayHUDView — "[E] ...")가 같은 Current를 사용한다 —
 /// 표시와 실행이 각자 레이캐스트하며 판정이 어긋나던 구조를 단일화.
 /// </summary>
 public class PlayerInteractionManager : MonoBehaviour
 {
     [SerializeField] private Transform playerCamera;
-
-    [SerializeField] TMPro.TextMeshProUGUI promptText;
 
     [Tooltip("상호작용 레이캐스트 대상 레이어. 여기 포함된 비상호작용 오브젝트(벽 등)는 시야를 가린다.")]
     [SerializeField] LayerMask interactableLayers;
@@ -35,14 +33,6 @@ public class PlayerInteractionManager : MonoBehaviour
     private void Update()
     {
         Current = BuildModeActive ? null : FindAimedInteractable();
-
-        string prompt = Current?.Prompt;
-        if (promptText != null)
-        {
-            bool show = !string.IsNullOrEmpty(prompt);
-            promptText.gameObject.SetActive(show);
-            if (show) promptText.text = $"[E] {prompt}";
-        }
     }
 
     private IInteractable FindAimedInteractable()

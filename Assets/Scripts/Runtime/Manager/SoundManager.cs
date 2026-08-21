@@ -173,14 +173,27 @@ public class SoundManager : MonoBehaviour
 
         for (int i = 0; i < poolSize; i++)
         {
-            AudioSource src = poolParent.AddComponent<AudioSource>();
-            src.spatialBlend = 1.0f; // 100% 3D 사운드 (거리감/방향감 적용)
-            src.minDistance = 2f;    // 소리가 최고로 크게 들리는 거리
-            src.maxDistance = 25f;   // 소리가 완전히 안 들리는 거리
-            src.rolloffMode = AudioRolloffMode.Logarithmic;
-            src.outputAudioMixerGroup = sfxMixerGroup; // SFX 믹서 그룹 연결
+            // 소스마다 전용 오브젝트 — 한 오브젝트에 모으면 Transform을 공유해서,
+            // 새 소리를 놓을 때마다 재생 중인 다른 소리까지 전부 그 좌표로 끌려간다.
+            var holder = new GameObject($"3D_SFX_{i}");
+            holder.transform.SetParent(poolParent.transform);
+            AudioSource src = holder.AddComponent<AudioSource>();
+            Setup3DSource(src);
             sfx3DPool.Add(src);
         }
+    }
+
+    /// <summary>
+    /// 3D 효과음 소스의 공통 세팅 — 풀 밖의 개별 소스(총 재장전 등)도 이걸 거쳐야
+    /// 감쇠 곡선과 SFX 믹서 그룹(볼륨 슬라이더)이 풀과 같아진다.
+    /// </summary>
+    public void Setup3DSource(AudioSource src)
+    {
+        src.spatialBlend = 1.0f; // 100% 3D 사운드 (거리감/방향감 적용)
+        src.minDistance = 2f;    // 소리가 최고로 크게 들리는 거리
+        src.maxDistance = 25f;   // 소리가 완전히 안 들리는 거리
+        src.rolloffMode = AudioRolloffMode.Logarithmic;
+        src.outputAudioMixerGroup = sfxMixerGroup; // SFX 믹서 그룹 연결
     }
     // ========================================================================
     // 객체 직접 호출용

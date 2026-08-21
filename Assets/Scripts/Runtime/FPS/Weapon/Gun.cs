@@ -26,6 +26,12 @@ public class Gun : MonoBehaviour
     [Tooltip("이 총의 가늠자(눈 위치) 앵커 — ADS가 카메라 정렬에 쓴다.")]
     public Transform sightPoint;
 
+    [Header("피해 비례 넉백")]
+    [Tooltip("탄에 얹을 넉백 효과 — 탄약이 넉백을 직접 명시하지 않았을 때만, 피해 합 × 계수만큼 밀어낸다. 비우면 꺼짐.")]
+    public KnockbackEffectSO knockbackEffect;
+    [Tooltip("피해 1당 밀어내는 거리(m). 유탄의 수동 튜닝(피해 70 · 넉백 2)과 같은 비율이 약 0.03.")]
+    public float knockbackPerDamage = 0.03f;
+
     /// <summary>발사 성공 순간 발화 — WeaponManager가 구독해 연출(반동·킥백·셰이크)을 반응시킨다.</summary>
     public event Action<Gun> Fired;
 
@@ -91,6 +97,7 @@ public class Gun : MonoBehaviour
             {
                 StopAllCoroutines();
                 IsReloading = false;
+                if (reloadSource != null && reloadSource.isPlaying) reloadSource.Stop();
             }
 
             return;
@@ -119,8 +126,9 @@ public class Gun : MonoBehaviour
 
     private void OnDisable()
     {
-        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지
+        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지 — 소리도 함께 끊는다
         StopAllCoroutines();
+        if (reloadSource != null && reloadSource.isPlaying) reloadSource.Stop();
     }
 
     /// <summary>사격 시도 — 재장전·탄약·연사 간격을 통과하면 발사하고 true.</summary>
@@ -204,6 +212,8 @@ public class Gun : MonoBehaviour
         // 공격 버프는 발사 시점에 항목별로 구워진다 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지.
         var effects = ProjectileSystem.ScaleDamage(round.attackEffects, gunData.damageMultiplier);
         if (OwnerEntity != null) effects = OwnerEntity.Effects.BakeOutgoing(effects);
+        // 피해 비례 넉백 — 배율이 구워진 최종 피해 기준. 펠릿마다 얹히므로 샷건은 맞은 수만큼 세게 민다.
+        effects = ProjectileSystem.AppendDamageKnockback(effects, knockbackEffect, knockbackPerDamage);
 
         var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
                                       effects, gunData.enemyLayer, OwnerEntity,
@@ -249,14 +259,28 @@ public class Gun : MonoBehaviour
         StartCoroutine(ReloadRoutine());
     }
 
+    // 재장전 소리는 전용 소스로 — 공용 풀의 PlayOneShot 은 개별 정지가 안 돼서,
+    // 총을 내렸다 들었다 반복하면 끊긴 재장전마다 소리가 쌓여 중첩된다.
+    private AudioSource reloadSource;
+
     private IEnumerator ReloadRoutine()
     {
         IsReloading = true;
 
         if (gunData != null && gunData.reloadSound != null)
         {
-            if (SoundManager.Instance != null)
-                SoundManager.Instance.Play3DSFX(gunData.reloadSound, transform.position, gunData.reloadVolume);
+            if (reloadSource == null)
+            {
+                reloadSource = gameObject.AddComponent<AudioSource>();
+                reloadSource.playOnAwake = false;
+                reloadSource.spatialBlend = 1f; // SoundManager 없는 씬(테스트) 폴백
+                // 공용 3D 세팅 — 안 거치면 SFX 믹서 그룹 밖이라 볼륨 슬라이더가 이 소리만 못 잡는다
+                if (SoundManager.Instance != null) SoundManager.Instance.Setup3DSource(reloadSource);
+            }
+            reloadSource.clip = gunData.reloadSound;
+            reloadSource.volume = gunData.reloadVolume;
+            reloadSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
+            reloadSource.Play();
         }
         yield return new WaitForSeconds(gunData.reloadTime);
 

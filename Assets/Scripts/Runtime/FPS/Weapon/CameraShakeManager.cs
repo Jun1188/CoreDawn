@@ -2,15 +2,16 @@ using UnityEngine;
 
 /// <summary>
 /// 카메라 흔들림(Camera Shake) 매니저.
-/// [구조 분리 방식 적용] 
-/// Main Camera의 부모(Pivot)는 FPSController가 제어하고,
-/// 이 스크립트는 Main Camera 자신의 localPosition/Rotation을 (0,0,0) 기준으로 제어합니다.
+/// 대상은 <b>ShakeHolder</b> — Main Camera 와 Weapon_Holder 의 공통 부모다.
+/// 카메라만 흔들면 무기는 제자리라 총이 조준점에 대해 덜덜거려 보인다.
+/// 공통 부모를 흔들어야 총은 화면에 붙어 있고 세상이 흔들린다.
+/// 이 스크립트는 그 노드의 localPosition/Rotation 을 (0,0,0) 기준으로 단독 소유한다.
 /// </summary>
 public class CameraShakeManager : MonoBehaviour
 {
     public static CameraShakeManager Instance { get; private set; }
 
-    [Header("대상 (Main Camera)")]
+    [Header("대상 (ShakeHolder — 카메라·무기의 공통 부모)")]
     public Transform cameraTransform;
 
     [Header("글로벌 제한")]
@@ -24,6 +25,8 @@ public class CameraShakeManager : MonoBehaviour
         public float rotationAmplitude;
         public float duration;
         public float frequency;
+        /// <summary>수직 성분을 위쪽으로 모는 비율(0=대칭, 1=전부 위). 반동성 임펄스용.</summary>
+        public float upBias;
     }
 
     private struct ActiveImpulse
@@ -34,6 +37,7 @@ public class CameraShakeManager : MonoBehaviour
         public float totalDuration;
         public float frequency;
         public float seed;
+        public float upBias;
     }
 
     [Header("추종")]
@@ -48,10 +52,18 @@ public class CameraShakeManager : MonoBehaviour
     private Vector3 shownPos;
     private Vector3 shownRot;
 
+    /// <summary>현재 적용 중인 셰이크 — 조준 중 무기를 셰이크에 잠그는 <see cref="WeaponShakeFollow"/>가 읽는다.</summary>
+    public Vector3 CurrentPositionOffset => shownPos;
+    public Quaternion CurrentRotationOffset => Quaternion.Euler(shownRot);
+
+    private IPlayerMotionProvider _provider;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(this); // 컴포넌트만 제거 — 카메라 리그에 붙어 있어 오브젝트째 지우면 위험
+
+        _provider = GetComponentInParent<IPlayerMotionProvider>();
     }
 
     private void OnDestroy()
@@ -96,8 +108,13 @@ public class CameraShakeManager : MonoBehaviour
             float py = (Mathf.PerlinNoise(freq + 31.3f, imp.seed + 47.1f) - 0.5f) * 2f;
             float pz = (Mathf.PerlinNoise(freq + 59.9f, imp.seed + 83.3f) - 0.5f) * 2f;
 
-            totalPos += new Vector3(px, py, 0f) * (imp.posAmplitude * t);
-            totalRot += new Vector3(px, py, pz) * (imp.rotAmplitude * t);
+            // 위 편향 — 발사 반동은 위로 쏠려야 한다. 대칭 노이즈면 위로 차는 반동을
+            // 무작위로 상쇄해 전방향 떨림처럼 읽힌다. 위치 y는 +가 위, 회전 x는 −가 위.
+            float upY = Mathf.Lerp(py, Mathf.Abs(py), imp.upBias);
+            float upPitch = Mathf.Lerp(px, -Mathf.Abs(px), imp.upBias);
+
+            totalPos += new Vector3(px, upY, 0f) * (imp.posAmplitude * t);
+            totalRot += new Vector3(upPitch, py, pz) * (imp.rotAmplitude * t);
 
             impulsePool[alive++] = imp;
         }
@@ -138,21 +155,32 @@ public class CameraShakeManager : MonoBehaviour
             remainingTime = req.duration,
             totalDuration = req.duration,
             frequency = req.frequency,
-            seed = Random.Range(0f, 100f)
+            seed = Random.Range(0f, 100f),
+            upBias = Mathf.Clamp01(req.upBias)
         };
     }
 
+    [Header("발사 셰이크")]
+    [Tooltip("발사 셰이크의 수직 성분을 위로 모는 비율. 0=전방향 대칭, 1=수직은 전부 위.")]
+    [Range(0f, 1f)] public float shootUpBias = 0.75f;
+    [Tooltip("조준 중 발사 셰이크 크기 배율 — 카메라 반동·킥백처럼 정조준 사격을 보상한다.")]
+    [Range(0f, 1f)] public float shootAimScale = 0.3f;
+
     public void ShakeOnPlayerShoot(float scale)
     {
-        float n = Mathf.Clamp01(scale / 10f);
+        float n = Mathf.Clamp01(scale * 0.1f);
+
+        // 조준 가중치가 연속값이라 조준 전환 도중에 쏴도 세기가 뚝 끊기지 않는다
+        float aim = _provider?.Motion != null ? Mathf.Clamp01(_provider.Motion.AimWeight) : 0f;
+        float aimMult = Mathf.Lerp(1f, shootAimScale, aim);
+
         Impulse(new ImpulseRequest
         {
-            positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n),
-            rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n),
+            positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n) * aimMult,
+            rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n) * aimMult,
             duration = Mathf.Lerp(0.15f, 0.35f, n),
-            // 7Hz — 60fps에서 한 주기가 8~9프레임이라 곡선으로 보인다. 12Hz는 다섯 프레임뿐이라
-            // 아무리 필터를 걸어도 진동이라기보다 덜컹거림으로 읽혔다.
-            frequency = 7f
+            frequency = 10f,
+            upBias = shootUpBias
         });
     }
 

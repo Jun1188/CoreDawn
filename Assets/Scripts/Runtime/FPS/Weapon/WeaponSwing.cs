@@ -16,8 +16,17 @@ using UnityEngine;
 public class WeaponSwing : MonoBehaviour, IWeaponMotionModule
 {
     [Header("구간 비율 (전체 시간을 1로 봤을 때)")]
-    [Tooltip("본 스윙(휘두르는 순간)이 차지하는 비율. 나머지는 되감기와 복귀가 나눠 갖는다.")]
-    [Range(0.2f, 0.8f)] public float strikeRatio = 0.45f;
+    [Tooltip("본 스윙(휘두르는 순간)이 차지하는 비율. 짧을수록 채찍처럼 빠르게 벤다. " +
+             "나머지는 되감기·정점 멈춤·복귀가 나눠 갖는다.")]
+    [Range(0.15f, 0.8f)] public float strikeRatio = 0.28f;
+
+    [Header("동작 형태")]
+    [Tooltip("되감기에서 반대 방향으로 당기는 비율 — 예비 동작의 크기.")]
+    [Range(0f, 1f)] public float windupPull = 0.5f;
+    [Tooltip("정점에서 멈추는 한 박자(전체 시간 비율). 예비 없는 스윙은 채찍이 아니라 문지르기다.")]
+    [Range(0f, 0.15f)] public float windupHold = 0.05f;
+    [Tooltip("본 스윙이 목표를 지나치는 배율 — 관성의 팔로스루. 복귀 구간에서 제자리로 풀린다.")]
+    [Range(1f, 1.5f)] public float strikeOvershoot = 1.18f;
 
     [Header("안전 상한")]
     [Tooltip("스윙 회전 누적이 이 값(도)을 넘지 않도록 제한.")]
@@ -49,28 +58,34 @@ public class WeaponSwing : MonoBehaviour, IWeaponMotionModule
         if (alternate) _flip = !_flip;
 
         rotation = Vector3.ClampMagnitude(rotation, maxRotation);
+        // 팔로스루가 상한을 넘지 않게 오버슈트 목표도 따로 죈다
+        Vector3 through = Vector3.ClampMagnitude(rotation * strikeOvershoot, maxRotation);
 
         float windupTime = duration * Mathf.Clamp01(windup);
+        float holdTime = duration * windupHold;
         float strikeTime = duration * strikeRatio;
-        float returnTime = Mathf.Max(0.01f, duration - windupTime - strikeTime);
+        float returnTime = Mathf.Max(0.01f, duration - windupTime - holdTime - strikeTime);
 
         _seq?.Kill();
         _seq = DOTween.Sequence().SetUpdate(false);   // 일시정지(timeScale 0) 중에는 멈춘다
 
-        // ① 되감기 — 반대로 살짝 당긴다. 짧을수록 급한 손짓으로 읽힌다.
+        // ① 되감기 — 어깨 뒤로 당기는 예비 동작. 부드럽게 들어가 정점에서 한 박자 멈춘다.
+        //    이 멈춤이 다음 구간의 속도를 "터짐"으로 읽히게 만든다.
         if (windupTime > 0.001f)
         {
-            _seq.Append(DOTween.To(() => _euler, v => _euler = v, -rotation * 0.35f, windupTime).SetEase(Ease.OutQuad));
-            _seq.Join(DOTween.To(() => _pos, v => _pos = v, -position * 0.3f, windupTime).SetEase(Ease.OutQuad));
+            _seq.Append(DOTween.To(() => _euler, v => _euler = v, -rotation * windupPull, windupTime).SetEase(Ease.InOutSine));
+            _seq.Join(DOTween.To(() => _pos, v => _pos = v, -position * 0.35f, windupTime).SetEase(Ease.InOutSine));
+            if (holdTime > 0.001f) _seq.AppendInterval(holdTime);
         }
 
-        // ② 본 스윙 — 가장 빠른 구간. 여기가 실제로 "벤" 순간이다.
-        _seq.Append(DOTween.To(() => _euler, v => _euler = v, rotation, strikeTime).SetEase(Ease.InOutQuad));
-        _seq.Join(DOTween.To(() => _pos, v => _pos = v, position, strikeTime).SetEase(Ease.InOutQuad));
+        // ② 본 스윙 — 시작이 가장 빠르다(명중 판정이 이 순간이다). 관성으로 목표를
+        //    지나쳐(팔로스루) 뻗고, 몸은 앞으로 살짝 딸려 나간다(OutBack = 런지 후 제동).
+        _seq.Append(DOTween.To(() => _euler, v => _euler = v, through, strikeTime).SetEase(Ease.OutQuart));
+        _seq.Join(DOTween.To(() => _pos, v => _pos = v, position, strikeTime).SetEase(Ease.OutBack));
 
-        // ③ 복귀 — 느슨하게 제자리로. 다음 스윙 전에 끝나야 궤적이 겹치지 않는다.
-        _seq.Append(DOTween.To(() => _euler, v => _euler = v, Vector3.zero, returnTime).SetEase(Ease.OutCubic));
-        _seq.Join(DOTween.To(() => _pos, v => _pos = v, Vector3.zero, returnTime).SetEase(Ease.OutCubic));
+        // ③ 복귀 — 뻗은 팔이 이완되며 제자리로. 급하게 돌아오면 베기가 아니라 튕김으로 보인다.
+        _seq.Append(DOTween.To(() => _euler, v => _euler = v, Vector3.zero, returnTime).SetEase(Ease.InOutSine));
+        _seq.Join(DOTween.To(() => _pos, v => _pos = v, Vector3.zero, returnTime).SetEase(Ease.InOutSine));
     }
 
     private void Update()

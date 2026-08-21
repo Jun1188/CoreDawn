@@ -20,7 +20,7 @@ MonoBehaviour:
   isAutomatic: 0
   fireMode: 1
   fireRate: 1.25
-  range: 150
+  range: 200
   pellets: 1
   enemyLayer:
     serializedVersion: 2
@@ -36,7 +36,7 @@ MonoBehaviour:
   unlimitedAmmo: 0
   magSize: 5
   reloadTime: 3
-  zoomFOV: 30
+  zoomMultiplier: 2
   blockAim: 0
   swingTime: 0
   swingRotation: {x: 35, y: -55, z: 40}
@@ -46,7 +46,7 @@ MonoBehaviour:
   xRecoil: 10
   yRecoil: 6
   zRecoil: 3
-  visualKickbackZ: 0.8
+  visualKickbackZ: 2
   visualKickbackRot: {x: 1, y: 1, z: 1}
   baseSpread: 0.05
   maxSpread: 3
