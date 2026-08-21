@@ -44,10 +44,6 @@ public class PlacementSystem : MonoBehaviour
     [Tooltip("철거 모드에서 대상 건물에 입힐 하이라이트 머티리얼 (빨강 반투명 추천).")]
     [SerializeField] private Material demolishHighlightMat;
 
-    [Header("포트 흐름 표시")]
-    [Tooltip("배치 모드가 아닐 때, 조준한 건물의 포트 흐름을 보여준다.")]
-    [SerializeField] private bool showPortsOnAim = true;
-
     [Header("철거")]
     [Tooltip("철거에 필요한 누름 유지 시간(초). 클릭 한 번에 사라지면 옆 건물을 실수로 날린다.")]
     [SerializeField] private float demolishHoldSeconds = 0.4f;
@@ -165,13 +161,7 @@ public class PlacementSystem : MonoBehaviour
         {
             case BuildMode.Placing: UpdatePlacing(); break;
             case BuildMode.Demolishing: UpdateDemolishing(); break;
-            default:
-                // 조준한 건물의 포트 흐름 — 배치 중이 아닐 때만 (배치 중엔 열린 포트 표시가 우선).
-                // 창이 떠 있으면 커서는 창을 조작하는 중이라, 그 커서가 가리키는 월드 지점은
-                // 조준이 아니다 — 마우스를 옮길 때마다 엉뚱한 건물에 포트가 켜진다.
-                portFlow.ShowFocus(showPortsOnAim && !UIPopup.AnyOpen
-                    && TryGetAimedBuilding(out Building aimed) ? aimed : null);
-                break;
+            // 대기 모드에서는 포트를 그리지 않는다 — 표시는 건설 모드 전용이다.
         }
     }
 
