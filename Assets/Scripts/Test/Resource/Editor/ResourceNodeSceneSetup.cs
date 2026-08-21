@@ -70,7 +70,6 @@ public static class ResourceNodeSceneSetup
                                interval: 2f, amount: 1, max: 10, grid: grid);
 
         EnsureTimeManager();
-        ResourceNodeAuthoring.FixDayHud();   // 밤 아이콘이 격자 밖 조각이라 깨져 보이던 것 보정
 
         // 테스트 하네스 — 광맥 참조를 직렬화로 꽂아 둔다
         var harnessGO = new GameObject("ResourceNodeSceneTest");

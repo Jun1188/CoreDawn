@@ -1381,8 +1381,6 @@ MonoBehaviour:
   chestInventoryUI: {fileID: 0}
   crosshairUI: {fileID: 0}
   respawnTime: 3
-  postProcessVolume: {fileID: 0}
-  vignette: {fileID: 0}
   damageColor: {r: 1, g: 0, b: 0.83720446, a: 1}
   maxVignetteIntensity: 0.5
 --- !u!114 &4783920156234871905
@@ -1433,6 +1431,9 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 67b60f73b753fdd46b70a78b3cb04c60, type: 2}
     amount: 1
     maxStackSize: 1
+  - item: {fileID: 11400000, guid: 48b30f225f8747a45a58557028657523, type: 2}
+    amount: 1
+    maxStackSize: 1
   - item: {fileID: 11400000, guid: dde75201273aca643ab37b005f924736, type: 2}
     amount: 50
     maxStackSize: 50
@@ -1445,12 +1446,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
     amount: 60
     maxStackSize: 64
-  - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
-    amount: 12
-    maxStackSize: 64
-  - item: {fileID: 11400000, guid: 48b30f225f8747a45a58557028657523, type: 2}
-    amount: 1
-    maxStackSize: 1
   playerController: {fileID: 6442160254612740854}
 --- !u!114 &3702532305778674119
 MonoBehaviour:

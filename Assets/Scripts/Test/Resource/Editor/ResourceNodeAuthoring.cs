@@ -76,57 +76,6 @@ public static class ResourceNodeAuthoring
         return node;
     }
 
-    /// <summary>
-    /// 낮/밤 HUD 아이콘의 "깨져 보이는" 문제를 고친다.
-    ///
-    /// 임시 아이콘(인벤토리 슬롯 테두리 시트)을 쓰는 것 자체는 문제가 아니다. 문제는 밤 아이콘으로
-    /// 꽂힌 testetstsets_0이 64px 격자 밖 조각(29x26)이라는 것 — 프레임 위쪽 일부만 걸려 있어
-    /// 흰 체커 배경 + 테두리 한 조각이 100x100으로 늘어난다. 낮 아이콘(64x64)은 멀쩡하다.
-    /// 그래서 밤 아이콘만 같은 시트의 제대로 잘린 칸으로 갈아끼운다.
-    ///
-    /// 덤으로 씬에 스프라이트를 미리 넣어 둔다 — SystemUIManager.UpdateHUD는 TimeManager가
-    /// 아직 없으면 그냥 return하므로, 실행 순서에 따라 시작 프레임에 sprite가 null(=흰 사각형)로 남는다.
-    /// </summary>
-    public static void FixDayHud()
-    {
-        var ui = Object.FindFirstObjectByType<SystemUIManager>(FindObjectsInactive.Include);
-        if (ui == null) return;
-
-        // 진짜 낮/밤 아트를 쓴다. 임시 시트(testetstsets)는 64px 격자가 그림과 어긋나 있어서
-        // 어느 칸을 골라도 체커 배경 + 테두리 조각이 나올 수 있다 (testetstsets_1만 우연히 맞았다).
-        var art   = AssetDatabase.LoadAllAssetsAtPath(DayNightArt).OfType<Sprite>().ToArray();
-        var day   = art.FirstOrDefault(s => s.name == "DayIcon");
-        var night = art.FirstOrDefault(s => s.name == "NightIcon");
-
-        if (day != null && night != null)
-        {
-            ui.morningSprite = day;
-            ui.nightSprite   = night;
-        }
-        else
-        {
-            Debug.LogWarning($"[HUD] 낮/밤 아트를 못 찾아 임시 아이콘을 유지합니다: {DayNightArt}");
-        }
-
-        if (ui.timeIconImage != null)
-        {
-            ui.timeIconImage.preserveAspect = true;                 // 비율 왜곡 방지
-            if (ui.timeIconImage.sprite == null)                    // 시작 프레임 흰 사각형 방지
-                ui.timeIconImage.sprite = ui.morningSprite;
-            EditorUtility.SetDirty(ui.timeIconImage);
-        }
-
-        if (ui.dayText != null && ui.dayText.text == "New Text")
-        {
-            ui.dayText.text = "Day 1";
-            EditorUtility.SetDirty(ui.dayText);
-        }
-
-        EditorUtility.SetDirty(ui);
-        Debug.Log($"[HUD] 낮 아이콘={(ui.morningSprite != null ? ui.morningSprite.name : "없음")}, " +
-                  $"밤 아이콘={(ui.nightSprite != null ? ui.nightSprite.name : "없음")} (격자에 맞는 칸으로 보정)");
-    }
-
     /// <summary>격자에 맞게 온전히 잘린 칸인가 — 조각이면 늘어나 깨져 보인다.</summary>
     static bool IsWholeCell(Sprite s) => s != null && s.rect.width == 64f && s.rect.height == 64f;
 

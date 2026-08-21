@@ -74,7 +74,6 @@ public static class PlayLoopTestSetup
 
         new GameObject("ResourceNodeStatusLog").AddComponent<ResourceNodeStatusLog>();
 
-        ResourceNodeAuthoring.FixDayHud();
         EnsureGlobalVolume();
 
         EditorSceneManager.MarkSceneDirty(scene);
