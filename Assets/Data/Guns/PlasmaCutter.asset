@@ -37,7 +37,7 @@ MonoBehaviour:
   unlimitedAmmo: 1
   magSize: 1
   reloadTime: 0.1
-  zoomMultiplier: 1.11
+  zoomMultiplier: 1
   blockAim: 1
   swingTime: 0.42
   swingRotation: {x: 22, y: -30, z: 26}
