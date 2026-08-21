@@ -1250,6 +1250,8 @@ class GdBuildingTab : GdTab
 
     void EnsurePreview()
     {
+        // 플레이 모드 전환이 프리뷰 씬 오브젝트를 지웠으면 통째로 다시 만든다
+        if (pr != null && pr.camera == null) CleanupPreview();
         if (pr != null) return;
         pr = new PreviewRenderUtility();
         pr.camera.fieldOfView = 45;
@@ -1283,7 +1285,7 @@ class GdBuildingTab : GdTab
         var tm = ppProfile.Add<UnityEngine.Rendering.Universal.Tonemapping>(true);
         tm.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.ACES);
         var ca = ppProfile.Add<UnityEngine.Rendering.Universal.ColorAdjustments>(true);
-        ca.postExposure.Override(1.5f);   // ACES 가 중간톤을 눌러 어두워지는 만큼 보정
+        ca.postExposure.Override(2f);   // ACES 가 중간톤을 눌러 어두워지는 만큼 보정
         vol.sharedProfile = ppProfile;
         pr.AddSingleGO(ppVolumeGo);
         ppVolumeGo.SetActive(false);

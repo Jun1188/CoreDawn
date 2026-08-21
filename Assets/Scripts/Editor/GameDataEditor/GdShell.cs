@@ -57,7 +57,7 @@ public class GameDataEditorWindow : EditorWindow
             new GdGraphTab(this),
             new GdBuildingTab(this),
             combat,
-            new GdPlaceholderTab(this, "맵", "맵 에디터 이식 중 — 다음 단계"),
+            new GdMapTab(this),
             new GdWaveTab(this, combat),   // 웨이브 데이터의 정본은 전투 탭 — 같은 배열의 표 뷰
         };
         LoadFile();
@@ -112,10 +112,21 @@ public class GameDataEditorWindow : EditorWindow
         var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>(
             "Assets/Scripts/Editor/GameDataEditor/GdEditor.uss");
         if (uss != null && !rootVe.styleSheets.Contains(uss)) rootVe.styleSheets.Add(uss);
-        gdFont ??= Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Malgun Gothic" }, 14);
-        // 첫 이름이 미설치면 페이스가 무효가 되어 글자가 아예 안 그려진다 — 설치된 것을 골라 준다
-        monoFont ??= Font.CreateDynamicFontFromOSFont(
-            Array.IndexOf(Font.GetOSInstalledFontNames(), "IBM Plex Mono") >= 0 ? "IBM Plex Mono" : "Consolas", 13);
+        // 플레이 모드 씬 전환은 DontSave 아닌 오브젝트를 지운다 — 파괴된 폰트는
+        // C# null 이 아니라 ??= 로는 못 걸러낸다. 유니티 == 로 확인하고,
+        // HideAndDontSave 를 줘서 애초에 살아남게 한다.
+        if (gdFont == null)
+        {
+            gdFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Malgun Gothic" }, 14);
+            if (gdFont != null) gdFont.hideFlags = HideFlags.HideAndDontSave;
+        }
+        if (monoFont == null)
+        {
+            // 첫 이름이 미설치면 페이스가 무효가 되어 글자가 아예 안 그려진다 — 설치된 것을 골라 준다
+            monoFont = Font.CreateDynamicFontFromOSFont(
+                Array.IndexOf(Font.GetOSInstalledFontNames(), "IBM Plex Mono") >= 0 ? "IBM Plex Mono" : "Consolas", 13);
+            if (monoFont != null) monoFont.hideFlags = HideFlags.HideAndDontSave;
+        }
         if (gdFont != null) rootVe.style.unityFontDefinition = FontDefinition.FromFont(gdFont);
 
         // #tabs — padding 8×14 · 밑줄 #223350 · 브랜드 14px + small 11.5px
