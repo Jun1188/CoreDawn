@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ee3aac45714307419ba63f9941d539f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponSwing
-  strikeRatio: 0.45
+  strikeRatio: 0.28
   maxRotation: 90
 --- !u!1 &452123137726881323
 GameObject:
