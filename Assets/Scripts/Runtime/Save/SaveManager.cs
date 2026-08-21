@@ -326,12 +326,16 @@ public class SaveManager : MonoBehaviour
     /// 게임플레이 영속 매니저를 통째로 파괴한다. 다음 게임플레이 씬이 자기 것을 새로 만들고
     /// (Awake의 중복 가드가 이때는 통과한다), 타이틀에는 아예 없는 것이 정상이다 —
     /// 시계가 타이틀에서도 돌며 이벤트를 쏘고, 새 게임에 이전 일차가 이월되던 원인.
-    /// SoundManager·InputManager·SaveManager는 게임 상태가 없어 남긴다.
+    /// InputManager도 함께 부순다 — 상태는 없지만 Systems.unity의 <b>대표 타입</b>이라
+    /// (GameBootstrap.shouldLoad), 살아 있으면 부트스트랩이 Systems를 다시 얹지 않아
+    /// 방금 부순 TimeManager·GameManager가 영영 재생성되지 않는다.
+    /// SoundManager·SaveManager는 게임 상태가 없고 씬 탑재와도 무관해 남긴다.
     /// </summary>
     static void ResetPersistentSingletons()
     {
         if (TimeManager.Instance != null) Destroy(TimeManager.Instance.gameObject);
         if (GameManager.Instance != null) Destroy(GameManager.Instance.gameObject);
+        if (InputManager.Instance != null) Destroy(InputManager.Instance.gameObject);
     }
 
     // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────

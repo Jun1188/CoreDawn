@@ -1048,6 +1048,8 @@ public static class GameDataImporter
             changed = true;
         }
 
+        int entityLayer = LayerMask.NameToLayer("Entity");
+
         foreach (var r in root.GetComponentsInChildren<Renderer>(true))
         {
             if (r is ParticleSystemRenderer || r is TrailRenderer || r is LineRenderer) continue;
@@ -1060,6 +1062,15 @@ public static class GameDataImporter
             if (mc == null) { mc = r.gameObject.AddComponent<MeshCollider>(); changed = true; }
             if (mc.sharedMesh != mesh) { mc.sharedMesh = mesh; changed = true; }
             if (mc.convex) { mc.convex = false; changed = true; }
+
+            // 콜라이더를 얹은 오브젝트는 반드시 Entity 레이어 — 조준·상호작용·몬스터 감지가
+            // 전부 이 레이어로 본다. 그림 전용이던 시절의 레이어가 남아 있으면(타워가 Ground였다)
+            // 충돌체가 엉뚱한 레이어로 나가 타워 상호작용·감지가 통째로 죽는다.
+            if (entityLayer >= 0 && r.gameObject.layer != entityLayer)
+            {
+                r.gameObject.layer = entityLayer;
+                changed = true;
+            }
         }
 
         return changed;
