@@ -136,19 +136,11 @@ public class TimeManager : MonoBehaviour
         Debug.Log(day == 1
             ? $"[게임 시작] {day}일차 낮이 시작되었습니다. (건축 가능)"
             : $"[☀️ 알림] 아침이 밝았습니다! {day}일차 — 무사 생존 완료.");
-        RefreshHUD();
     }
 
     void OnNightStarted(int day)
     {
         quantityNightCleared = false;
         Debug.Log("[⚠️ 경고] 밤이 되었습니다! 전투를 준비하세요.");
-        RefreshHUD();
-    }
-
-    static void RefreshHUD()
-    {
-        if (SystemUIManager.Instance != null)
-            SystemUIManager.Instance.UpdateHUD();
     }
 }

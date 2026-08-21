@@ -28,7 +28,7 @@ public class SaveSystemConfig : ScriptableObject
     public string titleScenePath = "Assets/Scenes/Title.unity";
 
     [Tooltip("New Game이 시작할 씬. 팀 병합이 끝나면 통합된 씬으로 바꾸면 된다.")]
-    public string newGameScenePath = "Assets/Scenes/Test/MainScene.unity";
+    public string newGameScenePath = "Assets/Scenes/World.unity";
 
     [Header("자동 저장")]
     [Tooltip("인게임 날짜가 넘어갈 때(아침) 자동 저장.")]

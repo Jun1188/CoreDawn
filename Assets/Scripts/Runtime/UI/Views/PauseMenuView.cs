@@ -7,8 +7,7 @@ using UnityEngine.UIElements;
 /// 입력·커서·중첩 창 우선순위는 <see cref="UITKPopup"/>이 이미 갖고 있으므로 여기서는
 /// 시간 정지와 버튼 배선만 맡는다. 구 <c>PausePopup</c>이 하던 일과 같은 범위다.
 ///
-/// 열리는 경로: SystemUIManager.TogglePauseMenu가 먼저 이쪽을 시도하고, 씬에 없으면
-/// 기존 uGUI 패널로 넘어간다 — 프로젝트가 이미 쓰고 있는 공존 방침 그대로다.
+/// 열리는 경로: <see cref="PauseMenuHotkey"/>(Fallback 리시버)가 ESC를 받아 연다.
 /// </summary>
 [DefaultExecutionOrder(100)]
 public class PauseMenuView : UITKPopup

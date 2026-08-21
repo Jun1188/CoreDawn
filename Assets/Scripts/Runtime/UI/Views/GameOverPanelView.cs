@@ -75,7 +75,7 @@ public class GameOverPanelView : UITKPopup
 
     /// <summary>
     /// ESC를 삼키기만 하고 닫지 않는다. 소비하는 것이 중요하다 —
-    /// 흘려보내면 뒤쪽 <see cref="SystemUIManager"/>(우선순위 Fallback)가 받아
+    /// 흘려보내면 뒤쪽 <see cref="PauseMenuHotkey"/>(우선순위 Fallback)가 받아
     /// 게임오버 위에 일시정지 메뉴가 열린다.
     /// </summary>
     public override bool OnInput(in InputEvent e)

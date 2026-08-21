@@ -534,25 +534,12 @@ public class GameplayHUDView : MonoBehaviour
 
     void ShowLegacyHud(bool show)
     {
-        var sys = FindFirstObjectByType<SystemUIManager>(FindObjectsInactive.Include);
-        if (sys != null)
-        {
-            ToggleAncestor(sys.dayText != null ? sys.dayText.transform : null, "TimeHUD_Panel", show);
-            ToggleAncestor(sys.healthSlider != null ? sys.healthSlider.transform : null, "PlayerHealth_Panel", show);
-        }
-
+        // 시간·체력 uGUI 패널은 SystemUIManager와 함께 삭제됐다 — 남은 잔재만 처리한다
         if (HotbarUI.Instance != null) HotbarUI.Instance.gameObject.SetActive(show);
 
         var pc = player != null ? player : FindFirstObjectByType<PlayerController>();
         legacyCrosshair = pc != null ? pc.crosshairUI : null;
         if (legacyCrosshair != null) legacyCrosshair.SetActive(show);
-    }
-
-    /// <summary>이름이 맞는 조상을 찾아 켜고 끈다. 못 찾으면 아무것도 안 한다 — 씬마다 구조가 다를 수 있다.</summary>
-    static void ToggleAncestor(Transform from, string name, bool active)
-    {
-        for (var t = from; t != null; t = t.parent)
-            if (t.name == name) { t.gameObject.SetActive(active); return; }
     }
 
     // ───────────────────── 잡동사니 ─────────────────────
