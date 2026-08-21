@@ -37,8 +37,9 @@ public class TowerVisualController : MonoBehaviour
     [Tooltip("부앙 가동범위(도). x=아래 한계, y=위 한계. 모델 사정이라 밸런스가 아닌 여기에 둔다.")]
     [SerializeField] private Vector2 pitchRange = new Vector2(-10f, 25f);
 
-    [Tooltip("목표가 없을 때 훑는 속도(도/초)와 좌우 폭(도).")]
+    [Tooltip("목표가 없을 때 훑는 속도(도/초) — 스윕이 가장 빠른 순간(중앙 통과)의 각속도다.")]
     [SerializeField] private float idleScanSpeed = 20f;
+    [Tooltip("훑는 좌우 폭(도). 중앙 기준으로 ±절반씩 오간다.")]
     [SerializeField] private float idleScanArc = 80f;
 
     [Header("반동")]
@@ -161,8 +162,13 @@ public class TowerVisualController : MonoBehaviour
     {
         if (yawPivot == null) return;
 
-        idlePhase += idleScanSpeed * Mathf.Deg2Rad * Time.deltaTime;
-        float sweep = Mathf.Sin(idlePhase) * (idleScanArc * 0.5f);
+        // idleScanSpeed는 "포신이 도는 속도(도/초)"다. 사인 스윕이 가장 빠른 순간은 중앙을
+        // 지날 때이고 그 각속도가 (arc/2) × 위상속도이므로, 위상속도를 여기서 역산해야
+        // 필드 이름과 실제 동작이 일치한다. 예전에는 Deg2Rad를 곱해 위상속도로 곧장 썼는데,
+        // 그러면 arc를 건드릴 때마다 실제 속도가 딸려 변해서 "속도"라는 이름이 거짓이 됐다.
+        float halfArc = Mathf.Max(1f, idleScanArc * 0.5f);
+        idlePhase += (idleScanSpeed / halfArc) * Time.deltaTime;
+        float sweep = Mathf.Sin(idlePhase) * halfArc;
 
         float step = (turnSpeed > 0f ? turnSpeed : 180f) * Time.deltaTime;
         yaw = Mathf.MoveTowardsAngle(yaw, sweep, step);
