@@ -17,8 +17,21 @@ public static class EntityExtensions
     public static float DistanceTo(this Entity target, Vector3 from)
     {
         var col = target.GetComponentInChildren<Collider>();
-        if (col != null) return Vector3.Distance(from, col.ClosestPoint(from));
-        return Vector3.Distance(from, target.GetPosition());
+        if (col == null) return Vector3.Distance(from, target.GetPosition());
+
+        // 논컨벡스 MeshCollider는 ClosestPoint를 지원하지 않는다 — 입력점을 그대로 돌려줘
+        // 거리가 항상 0이 되고, 몬스터가 맵 반대편에서 "닿았다"며 공격 상태로 굳는다.
+        // 건물(전부 논컨벡스 메시)은 전 콜라이더 AABB 합의 최근접점으로 근사한다 —
+        // 구 루트 박스 콜라이더 시절과 같은 감각의 거리라 전투 밸런스도 그대로다.
+        if (col is MeshCollider mesh && !mesh.convex)
+        {
+            var cols = target.GetComponentsInChildren<Collider>();
+            var b = cols[0].bounds;
+            for (int i = 1; i < cols.Length; i++) b.Encapsulate(cols[i].bounds);
+            return Vector3.Distance(from, b.ClosestPoint(from));
+        }
+
+        return Vector3.Distance(from, col.ClosestPoint(from));
     }
 }
 
