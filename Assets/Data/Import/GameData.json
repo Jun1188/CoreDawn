@@ -1160,7 +1160,7 @@
       "displayName": "채굴기",
       "description": "광맥 위에 놓아 자원을 캔다. 광맥이 어려울수록 느리다.",
       "category": "Production",
-      "model": "",
+      "model": "Miner.fbx",
       "size": {
         "x": 1,
         "y": 1
@@ -1256,7 +1256,7 @@
       "displayName": "제련로",
       "description": "원광을 녹여 소재로 만든다.",
       "category": "Production",
-      "model": "",
+      "model": "Smelter.fbx",
       "size": {
         "x": 1,
         "y": 1
@@ -1313,7 +1313,7 @@
       "displayName": "제작기",
       "description": "소재 한 종을 가공해 기본 부품을 만든다.",
       "category": "Production",
-      "model": "",
+      "model": "Constructor.fbx",
       "size": {
         "x": 1,
         "y": 1
@@ -1906,7 +1906,7 @@
       "displayName": "코어",
       "description": "불시착한 우주선. 어느 면으로든 부품을 받아 수리한다.",
       "category": "Production",
-      "model": "",
+      "model": "SpaceShip.fbx",
       "size": {
         "x": 3,
         "y": 3
