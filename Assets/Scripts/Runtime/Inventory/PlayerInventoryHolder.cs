@@ -43,12 +43,22 @@ public class PlayerInventoryHolder : MonoBehaviour
         // 세이브를 불러오는 중이면 곧 저장된 소지품으로 덮어쓴다 — 시작 아이템까지 얹으면 중복 지급이 된다
         if (SaveLoadContext.IsRestoring) return;
 
-        foreach (var stack in startingItems)
+        // 시작 소지품은 "주운 것"이 아니다 — 시작하자마자 획득음이 여러 번 겹쳐 울리면
+        // 무엇을 주웠다는 신호가 아니라 그냥 잡음이 된다
+        silentAdd = true;
+        try
         {
-            if (stack == null || stack.item == null || stack.amount <= 0) continue;
-            AddItemToPlayer(stack.item, stack.amount);
+            foreach (var stack in startingItems)
+            {
+                if (stack == null || stack.item == null || stack.amount <= 0) continue;
+                AddItemToPlayer(stack.item, stack.amount);
+            }
         }
+        finally { silentAdd = false; }
     }
+
+    /// <summary>true인 동안 <see cref="AddItemToPlayer"/>가 획득음을 내지 않는다 (시작 지급·세이브 복원).</summary>
+    private bool silentAdd;
 
     private void Start()
     {
@@ -66,18 +76,26 @@ public class PlayerInventoryHolder : MonoBehaviour
         }
     }
 
-    /// <summary>아이템 획득 시: 핫바 -> 메인 가방 순으로 주입</summary>
+    /// <summary>
+    /// 아이템 획득 시: 핫바 -> 메인 가방 순으로 주입.
+    ///
+    /// 획득음은 여기 한 곳에서 낸다 — 줍기·손 채굴·제작 산출·환급·저장고 회수가 전부 이 문을 지나므로,
+    /// 호출처마다 소리를 붙이면 어딘가는 빠지고 어딘가는 두 번 난다.
+    /// 실패(가득 참)에는 소리가 없다 — 들어가지 않은 것을 들어간 것처럼 들려주면 안 된다.
+    /// </summary>
     public bool AddItemToPlayer(ItemDataSO item, int amount)
     {
         if (item == null || amount <= 0) return false;
 
         // 1. 핫바 채우기 시도
-        if (HotbarContainer.TryAdd(item, amount)) return true;
-
         // 2. 핫바 공간 부족 시 메인 가방 채우기 시도
-        if (MainContainer.TryAdd(item, amount)) return true;
+        if (!HotbarContainer.TryAdd(item, amount) && !MainContainer.TryAdd(item, amount))
+            return false;
 
-        return false;
+        if (!silentAdd && !SaveLoadContext.IsRestoring)
+            SoundManager.Instance?.PlayCommonSFX(CommonSFX.ItemPickup);
+
+        return true;
     }
 
     // (구 StartHandCrafting / ReturnCraftingInputsToPlayer 제거 — uGUI 손제작 화면 전용이었다.

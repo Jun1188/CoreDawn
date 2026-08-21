@@ -10,10 +10,13 @@ using UnityEngine;
 //    ResourceNodeRegistry — 셀 → 광맥 O(1) 조회, FactorySim 훅 주입, 배치 판정
 //    ResourceNodeRuntime  — 생산 구동 + 잘못 놓인 채굴기 철거를 도는 내부 러너
 //
-//  기존 시스템과의 접점은 FactorySim의 두 델리게이트뿐이다:
+//  공장(FactorySim)과의 접점은 두 델리게이트뿐이다:
 //    ① GetResourceAt        — 채굴기가 무엇을 캘지 (없으면 null → 채굴 안 함)
 //    ② TryExtractResourceAt — 채굴 1회마다 광맥 재고를 실제로 꺼내감 (없으면 대기)
 //  ②가 아직 심에 없는 빌드에서도 ①만으로 동작한다(재고 무시, 무한 채굴).
+//
+//  플레이어와의 접점은 하나다: ResourceNode가 IHoldInteractable이라 E를 누르고 있으면
+//  손으로 캘 수 있다(느리다). 채굴기와 같은 재고에서 꺼내므로 규칙이 갈리지 않는다.
 //
 //  시간축: 생산은 FactorySim.Now(심 클럭)를 따른다 — 일시정지·배속이 공장과 같이 맞는다.
 //  심이 없는 씬에서는 Time.time으로 자동 폴백한다.
@@ -29,7 +32,7 @@ using UnityEngine;
 /// <see cref="TryExtract"/>로 그 재고를 꺼내간다 (= 생산 속도가 채굴 속도의 상한).
 /// </summary>
 [DisallowMultipleComponent]
-public class ResourceNode : MonoBehaviour
+public class ResourceNode : MonoBehaviour, IHoldInteractable
 {
     [Header("자원")]
     [Tooltip("이 광맥에서 채굴되는 아이템. 채굴기가 이 아이템을 그대로 생산한다.")]
@@ -54,6 +57,15 @@ public class ResourceNode : MonoBehaviour
     [SerializeField] private int maxStock = 20;
     [Tooltip("플레이 시작 시 미리 쌓여 있는 재고.")]
     [SerializeField] private int initialStock = 0;
+
+    [Header("손 채굴 (E 홀드)")]
+    [Tooltip("끄면 이 광맥은 채굴기로만 캘 수 있다 (조준해도 프롬프트가 뜨지 않는다).")]
+    [SerializeField] private bool allowManualMining = true;
+    [Tooltip("손으로 1회 캐는 데 걸리는 시간(초). 채굴기(extractInterval)보다 느리게 두는 것이 기본 의도다 —\n" +
+             "손 채굴은 채굴기를 지을 재료를 마련하는 수단이지, 채굴기를 대체하는 수단이 아니다.")]
+    [SerializeField] private float manualExtractSeconds = 3f;
+    [Tooltip("손으로 1회 캘 때 나오는 개수.")]
+    [SerializeField] private int manualYield = 1;
 
     [Header("상태 (읽기 전용 — 플레이 중 관찰용)")]
     [Tooltip("현재 쌓여 있는 재고. 인스펙터에서 실시간으로 늘어나는 것을 볼 수 있다.")]
@@ -204,6 +216,78 @@ public class ResourceNode : MonoBehaviour
         TotalExtracted = Mathf.Max(0, totalExtracted);
     }
 
+    // ── 손 채굴 (IHoldInteractable) ───────────────────────────────
+    //
+    //  채굴기와 같은 재고에서 꺼낸다 — 광맥에 묻힌 양은 하나뿐이라는 규칙을 손이라고 비켜갈 수 없다.
+    //  덕분에 "채굴기가 붙어 있는 광맥은 손으로 캘 것이 남지 않는다"가 저절로 성립한다.
+    //  다른 것은 속도뿐이다: manualExtractSeconds가 채굴기의 extractInterval보다 느리다.
+
+    /// <summary>손으로 1회 캐는 데 걸리는 시간(초).</summary>
+    public float ManualExtractSeconds => Mathf.Max(0.1f, manualExtractSeconds);
+
+    /// <summary>손 채굴이 열려 있는 광맥인가 (자원이 꽂혀 있어야 한다).</summary>
+    public bool ManualMiningEnabled => allowManualMining && resource != null;
+
+    string IInteractable.Prompt
+    {
+        get
+        {
+            if (!ManualMiningEnabled) return null;
+
+            string what = string.IsNullOrEmpty(resource.displayName) ? resource.name : resource.displayName;
+
+            // 재고가 비었어도 프롬프트는 남긴다 — 숨기면 "여기 캘 수 있는 곳이 맞나"부터 흔들린다.
+            // 대신 왜 진행되지 않는지를 문장이 말한다.
+            return currentStock > 0 ? $"{what} 손으로 캐기 (누르고 있기)"
+                                    : $"{what} — 재고가 차는 중";
+        }
+    }
+
+    /// <summary>탭 상호작용은 없다 — 손 채굴은 전부 홀드로만 진행한다.</summary>
+    void IInteractable.Interact(PlayerController player) { }
+
+    float IHoldInteractable.HoldSeconds => ManualExtractSeconds;
+
+    string IHoldInteractable.HoldLabel => "채굴";
+
+    /// <summary>재고가 있어야 진행한다. 비면 링이 그 자리에 멈추고, 다음 생산 주기에 저절로 이어진다.</summary>
+    bool IHoldInteractable.CanHold => ManualMiningEnabled && currentStock > 0;
+
+    /// <summary>
+    /// 한 회차를 채웠다 — 재고에서 꺼내 플레이어에게 준다.
+    /// 인벤토리가 가득 차면 바닥에 떨어뜨린다. 여기서 그냥 삼키면 캔 것이 증발한다.
+    /// </summary>
+    void IHoldInteractable.OnHoldComplete(PlayerController player)
+    {
+        int want = Mathf.Max(1, manualYield);
+        if (!TryExtract(want, out int taken)) return;
+
+        var holder = PlayerInventoryHolder.Instance;
+        bool stored = holder != null && holder.AddItemToPlayer(resource, taken);
+
+        if (!stored) DropAtHand(resource, taken, player);
+
+        // 한 덩이가 떨어져 나올 때마다 나는 소리 — 링이 한 바퀴 돈 것을 눈으로 좇지 않아도 알 수 있다.
+        // 획득음(ItemPickup)은 인벤토리에 들어갈 때 PlayerInventoryHolder가 따로 낸다.
+        SoundManager.Instance?.PlayCommonSFX(CommonSFX.Mine);
+    }
+
+    /// <summary>
+    /// 광맥 위가 아니라 플레이어 쪽 옆면에 떨군다 — 광맥 콜라이더 안에서 태어나면
+    /// 물리가 밀어내며 튀고, 슬래브 위에 놓으면 조준선에서 광맥과 겹쳐 줍기가 어려워진다.
+    /// </summary>
+    void DropAtHand(ItemDataSO item, int amount, PlayerController player)
+    {
+        Vector3 top = transform.position + Vector3.up * 0.8f;
+
+        Vector3 toPlayer = player != null ? player.transform.position - top : Vector3.zero;
+        toPlayer.y = 0f;
+        Vector3 dir = toPlayer.sqrMagnitude > 1e-4f ? toPlayer.normalized : Vector3.forward;
+
+        float reach = Mathf.Max(Size.x, Size.y) * 0.5f * ResourceNodeRegistry.Grid.CellSize + 0.4f;
+        DroppedItem.Spawn(item, amount, top + dir * reach, dir * 0.3f + Vector3.up * 0.4f);
+    }
+
     // ── 생명주기 ─────────────────────────────────────────────────
 
     void OnEnable()
@@ -244,6 +328,9 @@ public class ResourceNode : MonoBehaviour
         amountPerCycle     = Mathf.Max(1, amountPerCycle);
         maxStock           = Mathf.Max(1, maxStock);
         initialStock       = Mathf.Clamp(initialStock, 0, maxStock);
+
+        manualExtractSeconds = Mathf.Max(0.1f, manualExtractSeconds);
+        manualYield          = Mathf.Max(1, manualYield);
 
         if (Application.isPlaying || !gameObject.scene.IsValid()) return;
 

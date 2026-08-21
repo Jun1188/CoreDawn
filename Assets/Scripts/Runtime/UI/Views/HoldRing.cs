@@ -22,6 +22,24 @@ public class HoldRing : VisualElement
 
     readonly Label _label;
     float _progress;
+    Color _accent = FillColor;
+
+    /// <summary>
+    /// 차오르는 호와 가운데 글자의 색. 기본값은 철거의 붉은색(--danger)이다.
+    ///
+    /// 철거만 쓰던 때는 상수로 충분했지만, 손 채굴이 같은 링을 쓰면서 붉은색이 거짓말이 됐다 —
+    /// 색은 "무엇이 일어나는가"를 먼저 말하고, 캐는 일은 파괴가 아니다.
+    /// </summary>
+    public Color Accent
+    {
+        set
+        {
+            if (_accent == value) return;
+            _accent = value;
+            _label.style.color = value;
+            MarkDirtyRepaint();
+        }
+    }
 
     /// <summary>
     /// 가운데 글자. 링이 직접 들고 있어야 중앙에 놓인다.
@@ -77,7 +95,7 @@ public class HoldRing : VisualElement
         if (_progress <= 0f) return;
 
         // 12시에서 시작해 시계 방향 — 시계와 같은 방향이라 설명이 필요 없다
-        p.strokeColor = FillColor;
+        p.strokeColor = _accent;
         p.lineCap = LineCap.Round;
         p.BeginPath();
         p.Arc(center, Radius, -90f, -90f + 360f * _progress);
