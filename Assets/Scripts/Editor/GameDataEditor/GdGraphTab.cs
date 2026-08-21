@@ -73,6 +73,7 @@ static class GdEnum
     public static readonly Color Faint = FromHex("#5C6E8C");
     public static readonly Color Accent = FromHex("#4FD8E0");
     public static readonly Color Warn = FromHex("#FF5D73");
+    public static readonly Color Ok = FromHex("#5DD39E");
     public static readonly Color Sel = FromHex("#B48CFF");
     public static readonly Color EdgeIn = FromHex("#E8A54B");   // 아이템→레시피(재료)
     public static readonly Color EdgeOut = FromHex("#4FD8E0");  // 레시피→아이템(산출)
@@ -1421,7 +1422,8 @@ class GdGraphTab : GdTab
             // icon — 이름 텍스트가 진실이고, 스프라이트 픽커는 이름을 채워주는 편의
             var iconRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
             var iconPrev = new Image { style = { width = 34, height = 34, marginRight = 4 }, sprite = FindSprite(d.icon) };
-            var iconPick = new UnityEditor.UIElements.ObjectField { objectType = typeof(Sprite), value = FindSprite(d.icon), style = { flexGrow = 1 } };
+            var iconPick = new UnityEditor.UIElements.ObjectField { objectType = typeof(Sprite),
+                allowSceneObjects = false, value = FindSprite(d.icon), style = { flexGrow = 1 } };
             iconPick.RegisterValueChangedCallback(ev =>
             {
                 d.icon = ev.newValue == null ? "" : ev.newValue.name;

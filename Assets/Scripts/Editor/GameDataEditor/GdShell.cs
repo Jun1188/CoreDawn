@@ -55,7 +55,7 @@ public class GameDataEditorWindow : EditorWindow
         tabs = new GdTab[]
         {
             new GdGraphTab(this),
-            new GdPlaceholderTab(this, "건물", "Building 에디터 이식 중 — 다음 단계"),
+            new GdBuildingTab(this),
             combat,
             new GdPlaceholderTab(this, "맵", "맵 에디터 이식 중 — 다음 단계"),
             new GdWaveTab(this, combat),   // 웨이브 데이터의 정본은 전투 탭 — 같은 배열의 표 뷰
