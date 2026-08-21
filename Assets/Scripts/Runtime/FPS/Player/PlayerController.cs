@@ -149,8 +149,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     private Player playerEntity;
 
     [Header("Damage Vignette")]
-    public Volume postProcessVolume;
-    [SerializeField] private Vignette vignette;
+    private Vignette vignette;
     public Color damageColor = Color.red;
     public float maxVignetteIntensity = 0.5f;
 
@@ -364,6 +363,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         _state.Enter(this, PlayerLocomotion.Grounded);
         Motion.Locomotion = PlayerLocomotion.Grounded;
 
+        BindDamageVignette();
     }
 
     private void Start()
@@ -381,10 +381,6 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         if (HotbarController.Instance != null)
             HotbarController.Instance.EquipFromActiveSlot();
 
-        if (postProcessVolume != null && postProcessVolume.profile != null)
-        {
-            postProcessVolume.profile.TryGet(out vignette);
-        }
 
         if(playerEntity == null)
             BindPlayerEntityIfNeeded();
@@ -1210,6 +1206,37 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         );
 
         return false;
+    }
+    
+    private void BindDamageVignette()
+    {
+        Volume volume = FindFirstObjectByType<Volume>();
+
+        if (volume == null)
+        {
+            Debug.LogWarning("[PlayerController] Volume을 찾지 못했습니다.");
+            return;
+        }
+
+        if (!volume.isGlobal)
+        {
+            Debug.LogWarning("[PlayerController] 찾은 Volume이 Global Volume이 아닙니다.");
+            return;
+        }
+
+        if (volume.profile == null)
+        {
+            Debug.LogWarning("[PlayerController] Global Volume Profile이 없습니다.");
+            return;
+        }
+
+        if (!volume.profile.TryGet(out Vignette foundVignette))
+        {
+            Debug.LogWarning("[PlayerController] Global Volume Profile에서 Vignette를 찾지 못했습니다.");
+            return;
+        }
+
+        vignette = foundVignette;
     }
     #endregion
 }
