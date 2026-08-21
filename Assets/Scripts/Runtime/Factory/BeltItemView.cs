@@ -15,10 +15,10 @@ using UnityEngine;
 public class BeltItemView : MonoBehaviour
 {
     [Tooltip("벨트 표면 위 아이템 표시 높이")]
-    [SerializeField] private float itemHeight = 1;
+    [SerializeField] private float itemHeight = 1.5f;
 
     [Tooltip("아이템 표시 크기 배율")]
-    [SerializeField] private float itemScale = 1;
+    [SerializeField] private float itemScale = 0.5f;
 
     private readonly List<SpriteRenderer> pool = new();
     private int used;
