@@ -56,10 +56,14 @@ public class CameraShakeManager : MonoBehaviour
     public Vector3 CurrentPositionOffset => shownPos;
     public Quaternion CurrentRotationOffset => Quaternion.Euler(shownRot);
 
+    private IPlayerMotionProvider _provider;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(this); // 컴포넌트만 제거 — 카메라 리그에 붙어 있어 오브젝트째 지우면 위험
+
+        _provider = GetComponentInParent<IPlayerMotionProvider>();
     }
 
     private void OnDestroy()
@@ -159,14 +163,21 @@ public class CameraShakeManager : MonoBehaviour
     [Header("발사 셰이크")]
     [Tooltip("발사 셰이크의 수직 성분을 위로 모는 비율. 0=전방향 대칭, 1=수직은 전부 위.")]
     [Range(0f, 1f)] public float shootUpBias = 0.75f;
+    [Tooltip("조준 중 발사 셰이크 크기 배율 — 카메라 반동·킥백처럼 정조준 사격을 보상한다.")]
+    [Range(0f, 1f)] public float shootAimScale = 0.3f;
 
     public void ShakeOnPlayerShoot(float scale)
     {
         float n = Mathf.Clamp01(scale * 0.1f);
+
+        // 조준 가중치가 연속값이라 조준 전환 도중에 쏴도 세기가 뚝 끊기지 않는다
+        float aim = _provider?.Motion != null ? Mathf.Clamp01(_provider.Motion.AimWeight) : 0f;
+        float aimMult = Mathf.Lerp(1f, shootAimScale, aim);
+
         Impulse(new ImpulseRequest
         {
-            positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n),
-            rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n),
+            positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n) * aimMult,
+            rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n) * aimMult,
             duration = Mathf.Lerp(0.15f, 0.35f, n),
             frequency = 10f,
             upBias = shootUpBias
