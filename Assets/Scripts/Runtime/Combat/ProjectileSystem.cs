@@ -441,6 +441,29 @@ public static class ProjectileSystem
         return scaled;
     }
 
+    /// <summary>
+    /// 피해 비례 넉백을 효과 목록에 얹는다 — value = 즉발 피해(Damage) 합 × perDamage.
+    /// 탄약이 넉백을 직접 명시했으면(유탄 등 수동 튜닝) 그것을 존중하고 얹지 않는다.
+    /// 배율(ScaleDamage·BakeOutgoing)이 구워진 뒤에 불러야 최종 피해에 비례한다.
+    /// </summary>
+    public static EffectEntry[] AppendDamageKnockback(EffectEntry[] effects, EffectSO knockback, float perDamage)
+    {
+        if (effects == null || knockback == null || perDamage <= 0f) return effects;
+
+        float damage = 0f;
+        for (int i = 0; i < effects.Length; i++)
+        {
+            if (effects[i].effect is KnockbackEffectSO) return effects; // 명시 넉백 우선
+            if (effects[i].effect is DamageEffectSO) damage += effects[i].value;
+        }
+        if (damage <= 0f) return effects;
+
+        var result = new EffectEntry[effects.Length + 1];
+        effects.CopyTo(result, 0);
+        result[effects.Length] = new EffectEntry(knockback, damage * perDamage);
+        return result;
+    }
+
     // ── 곡사 조준 ───────────────────────────────────────────────
 
     /// <summary>

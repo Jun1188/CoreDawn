@@ -308,6 +308,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: a81aa1dbd3e26c9418b726660a157b08, type: 2}
   muzzlePoint: {fileID: 7406425420585281777}
   sightPoint: {fileID: 1648130609092778756}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &615922409236537428
 GameObject:
   m_ObjectHideFlags: 0
@@ -481,6 +483,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 845b0795164612a428f47c8252826ccd, type: 2}
   muzzlePoint: {fileID: 3860225396445204925}
   sightPoint: {fileID: 8547935275930745224}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &2012174366778705548
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,6 +564,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 2e9cf9eddeb52364e962ac0f7e649d50, type: 2}
   muzzlePoint: {fileID: 1522652994438640984}
   sightPoint: {fileID: 3120875362650585695}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &2374102354058411553
 GameObject:
   m_ObjectHideFlags: 0
@@ -829,6 +835,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 888168c433fbd284887423c707594946, type: 2}
   muzzlePoint: {fileID: 3793946336995647061}
   sightPoint: {fileID: 5005284680359517864}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &4120964208342676412
 GameObject:
   m_ObjectHideFlags: 0
@@ -939,6 +947,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: d4ec9268d7f6647468e7adc7e00e8096, type: 2}
   muzzlePoint: {fileID: 964733338719465455}
   sightPoint: {fileID: 7896087178353731070}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &5400811139303079785
 GameObject:
   m_ObjectHideFlags: 0
@@ -1018,6 +1028,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: fc4913d0dadebb340b5b78c2e44420af, type: 2}
   muzzlePoint: {fileID: 3983905114698933309}
   sightPoint: {fileID: 8121120508263541487}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &5888268749807747820
 GameObject:
   m_ObjectHideFlags: 0
@@ -1629,6 +1641,8 @@ MonoBehaviour:
   maxRotationOffset: 1.2
   globalIntensityScale: 1
   followSharpness: 28
+  shootUpBias: 0.75
+  shootAimScale: 0.3
 --- !u!1 &8952619632804571724
 GameObject:
   m_ObjectHideFlags: 0
@@ -1677,6 +1691,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 311235b2be025c74682683dc571c603a, type: 2}
   muzzlePoint: {fileID: 2236818287020144116}
   sightPoint: {fileID: 7649895154108594936}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.03
 --- !u!1 &9008189234823309990
 GameObject:
   m_ObjectHideFlags: 0

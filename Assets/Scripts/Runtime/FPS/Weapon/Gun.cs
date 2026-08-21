@@ -26,6 +26,12 @@ public class Gun : MonoBehaviour
     [Tooltip("이 총의 가늠자(눈 위치) 앵커 — ADS가 카메라 정렬에 쓴다.")]
     public Transform sightPoint;
 
+    [Header("피해 비례 넉백")]
+    [Tooltip("탄에 얹을 넉백 효과 — 탄약이 넉백을 직접 명시하지 않았을 때만, 피해 합 × 계수만큼 밀어낸다. 비우면 꺼짐.")]
+    public KnockbackEffectSO knockbackEffect;
+    [Tooltip("피해 1당 밀어내는 거리(m). 유탄의 수동 튜닝(피해 70 · 넉백 2)과 같은 비율이 약 0.03.")]
+    public float knockbackPerDamage = 0.03f;
+
     /// <summary>발사 성공 순간 발화 — WeaponManager가 구독해 연출(반동·킥백·셰이크)을 반응시킨다.</summary>
     public event Action<Gun> Fired;
 
@@ -212,6 +218,8 @@ public class Gun : MonoBehaviour
         // 공격 버프는 발사 시점에 항목별로 구워진다 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지.
         var effects = ProjectileSystem.ScaleDamage(round.attackEffects, gunData.damageMultiplier);
         if (OwnerEntity != null) effects = OwnerEntity.Effects.BakeOutgoing(effects);
+        // 피해 비례 넉백 — 배율이 구워진 최종 피해 기준. 펠릿마다 얹히므로 샷건은 맞은 수만큼 세게 민다.
+        effects = ProjectileSystem.AppendDamageKnockback(effects, knockbackEffect, knockbackPerDamage);
 
         var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
                                       effects, gunData.enemyLayer, OwnerEntity,
