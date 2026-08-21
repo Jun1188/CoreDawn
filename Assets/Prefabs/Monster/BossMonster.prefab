@@ -102,7 +102,7 @@ MonoBehaviour:
   deathDelay: 4.5
   destroyOnDeath: 1
   health:
-    maxHealth: 100
+    maxHealth: 500
   movement:
     moveSpeed: 5
     rotateSpeed: 720

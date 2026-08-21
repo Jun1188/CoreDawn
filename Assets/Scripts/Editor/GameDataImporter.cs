@@ -24,7 +24,7 @@ using UnityEngine;
 // ================================================================
 public static class GameDataImporter
 {
-    const string ImportFolder   = "Assets/Data/Import";
+    internal const string ImportFolder = "Assets/Data/Import";   // GameDataEditorWindow도 이 경로를 쓴다
     const string ItemFolder     = "Assets/Data/Item";
     const string RecipeFolder   = "Assets/Data/Recipe";
     const string BuildingFolder = "Assets/Data/Buildings";
@@ -34,7 +34,7 @@ public static class GameDataImporter
     /// 칸 하나의 한 변(m). <b>씬의 World.cellSize와 같아야 한다</b> — 여기서 구운 프리팹의
     /// 크기와 배치 격자가 어긋나면 건물이 칸을 덜 채우거나 넘친다.
     /// </summary>
-    const float CellSize = 2f;
+    const float CellSize = 4f;
 
     /// <summary>건물 높이(m). 풋프린트 콜라이더의 높이이자 큐브 폴백의 키다.</summary>
     const float BuildingHeight = 2f;
@@ -44,7 +44,19 @@ public static class GameDataImporter
 
     // ── JSON DTO (스키마 문서는 Import 폴더의 샘플 참조) ──────────
 
-    [Serializable] class Root
+    /// <summary>
+    /// 스키마에 없는 필드를 보존하는 베이스 — GameDataEditorWindow가 Newtonsoft로
+    /// 파일을 왕복 저장할 때, DTO가 모르는 필드(예: 아직 임포터가 없는 미래 건물의
+    /// 값)를 지우지 않고 그대로 되쓴다. JsonUtility(임포터 경로)는 딕셔너리를
+    /// 직렬화하지 못해 이 필드를 조용히 무시한다 — 임포터 동작에는 영향이 없다.
+    /// </summary>
+    internal class JsonDtoBase
+    {
+        [Newtonsoft.Json.JsonExtensionData]
+        public IDictionary<string, object> unknownJson;
+    }
+
+    [Serializable] internal class Root : JsonDtoBase
     {
         public EffectDto[]   effects;
         public GunDto[]      guns;
@@ -55,9 +67,9 @@ public static class GameDataImporter
     }
 
     /// <summary>공격 효과 한 항목 — EffectEntry의 json 형태. effect는 효과 id.</summary>
-    [Serializable] class EffectEntryDto { public string effect; public float value; }
+    [Serializable] internal class EffectEntryDto : JsonDtoBase { public string effect; public float value; }
 
-    [Serializable] class EffectDto
+    [Serializable] internal class EffectDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Effect:Damage"
         public string displayName;   // 필수
@@ -69,7 +81,7 @@ public static class GameDataImporter
         public string[] affects;     // AttackModifier 전용 — 증폭할 효과 id들. null = 유지
     }
 
-    [Serializable] class GunDto
+    [Serializable] internal class GunDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Gun:Rifle"
         public string displayName;   // 필수
@@ -78,7 +90,8 @@ public static class GameDataImporter
         public bool   unlimitedAmmo; // 탄을 소비하지 않는 무기(근접). 위와 같은 이유로 항상 명시할 것
         public bool   blockAim;      // 조준 불가(근접). 생략 = false = 조준 가능이라 기존 총은 안전
         public string fireMode;      // Projectile | Hitscan | Aura. 생략 시 유지
-        public float  fireRate, range, reloadTime, zoomFOV;   // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
+        public float  fireRate, range, reloadTime;            // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
+        public float  zoomMultiplier;                         // 조준 줌 배율(FOV 절대값 아님). >0일 때만 덮음
         public int    magSize, pellets;                       // >0일 때만 덮음. pellets = 방아쇠당 탄 수(샷건 8)
 
         // 명중 효과는 탄약이 정의한다 — 총은 장전 가능 탄종 목록과 배율만 갖는다
@@ -97,7 +110,7 @@ public static class GameDataImporter
         public bool    swingAlternate;                 // bool이라 생략 판별 불가 — 스윙 무기는 항상 명시할 것
     }
 
-    [Serializable] class ItemDto
+    [Serializable] internal class ItemDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Item:IronOre"
         public string displayName;   // 필수
@@ -114,9 +127,9 @@ public static class GameDataImporter
         public int    pierce = -1;   // 추가 관통 대상 수 — 0 정당(첫 대상에서 멈춤), 음수 = 생략(유지)
     }
 
-    [Serializable] class SlotDto { public string item; public int amount; }
+    [Serializable] internal class SlotDto : JsonDtoBase { public string item; public int amount; }
 
-    [Serializable] class RecipeDto
+    [Serializable] internal class RecipeDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Recipe:Recipe_IronIngot"
         public string displayName;   // 필수
@@ -127,10 +140,10 @@ public static class GameDataImporter
         public SlotDto[] outputs;
     }
 
-    [Serializable] class Vec2Dto { public int x, y; }
-    [Serializable] class PortDto { public int x, y; public string dir; public bool isInput; }
+    [Serializable] internal class Vec2Dto : JsonDtoBase { public int x, y; }
+    [Serializable] internal class PortDto : JsonDtoBase { public int x, y; public string dir; public bool isInput; }
 
-    [Serializable] class BuildingDto
+    [Serializable] internal class BuildingDto : JsonDtoBase
     {
         public string id;            // 필수. 예: "Building:Assembler"
         public string kind;          // 필수 — 어느 서브클래스로 만들지 (KindMap 참조)
@@ -165,7 +178,7 @@ public static class GameDataImporter
     /// 코어 수리 단계. 이걸 JSON에 두는 이유 — 예전엔 에셋에만 손으로 적혀 있어서
     /// 브랜치 머지 때 조용히 덮여 사라졌다. 이제 재임포트로 항상 복구된다.
     /// </summary>
-    [Serializable] class TierDto
+    [Serializable] internal class TierDto : JsonDtoBase
     {
         public string   name;            // → CoreTierDefinition.tierLabel
         public string   description;
@@ -175,7 +188,7 @@ public static class GameDataImporter
         public bool     isFinal;
     }
 
-    [Serializable] class WaveDto
+    [Serializable] internal class WaveDto : JsonDtoBase
     {
         public string id;
         public string displayName;
@@ -192,7 +205,7 @@ public static class GameDataImporter
     /// kind → 만들 서브클래스. BuildingDataSO가 추상이라 임포터가 무엇을 CreateInstance할지
     /// 알아야 한다 — 아이템·레시피에는 없던 개념이라 별도로 둔다.
     /// </summary>
-    static readonly Dictionary<string, Type> KindMap = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, Type> KindMap = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Miner"]     = typeof(MinerDataSO),
         ["Belt"]      = typeof(BeltDataSO),
@@ -208,7 +221,7 @@ public static class GameDataImporter
     /// 효과 kind → 클래스 (건물 KindMap과 같은 패턴). 클래스 = 채널(코드), value = 크기라서
     /// json이 갖는 형태 필드는 duration·stacking·tickInterval·affects뿐이다.
     /// </summary>
-    static readonly Dictionary<string, Type> EffectKindMap = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, Type> EffectKindMap = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Damage"]         = typeof(DamageEffectSO),
         ["Heal"]           = typeof(HealEffectSO),
@@ -436,7 +449,7 @@ public static class GameDataImporter
         if (dto.magSize     > 0)  gun.magSize     = dto.magSize;
         if (dto.pellets     > 0)  gun.pellets     = dto.pellets;
         if (dto.reloadTime  > 0f) gun.reloadTime  = dto.reloadTime;
-        if (dto.zoomFOV     > 0f) gun.zoomFOV     = dto.zoomFOV;
+        if (dto.zoomMultiplier > 0f) gun.zoomMultiplier = dto.zoomMultiplier;
 
         // 감각 튜닝 — 0이 정당한 값이라 음수가 "생략(유지)" 신호다
         if (dto.xRecoil >= 0f) gun.xRecoil = dto.xRecoil;
@@ -1006,21 +1019,12 @@ public static class GameDataImporter
             }
         }
 
-        // 3) 풋프린트 콜라이더 — 프리팹과 점유 칸이 어긋나는 건 배치 버그의 단골이다.
-        //    모델이 자기 콜라이더를 자식에 갖고 있어도 루트에는 풋프린트 기준이 하나 있어야 한다.
-        var want = FootprintColliderSize(so.size);
-        var center = FootprintColliderCenter;
-
-        var col = root.GetComponent<BoxCollider>();
-        if (col == null)
+        // 3) 루트 콜라이더 — 없을 때만 모델 AABB로 하나 붙인다(렌더러 없으면 풋프린트 폴백).
+        //    이미 있는 콜라이더는 절대 손대지 않는다: 손으로 조정해 둔 값(공격 타워 등)을
+        //    임포터가 재실행마다 덮으면 사람의 작업이 조용히 사라진다.
+        if (root.GetComponent<BoxCollider>() == null)
         {
-            AddFootprintCollider(root, so.size);
-            changed = true;
-        }
-        else if ((col.size - want).sqrMagnitude > 0.0001f || (col.center - center).sqrMagnitude > 0.0001f)
-        {
-            col.size = want;
-            col.center = center;
+            AddRootCollider(root, so.size);
             changed = true;
         }
 
@@ -1049,7 +1053,7 @@ public static class GameDataImporter
 
         var root = MakeBody(modelFile, so.size, so.name + suffix);
         root.name = so.name + suffix;
-        AddFootprintCollider(root, so.size);
+        AddRootCollider(root, so.size);
         EnsureRootScale(root);
 
         Directory.CreateDirectory(PrefabFolder);
@@ -1100,12 +1104,57 @@ public static class GameDataImporter
         return true;
     }
 
-    /// <summary>충돌 크기는 size에서 계산한다 — 프리팹과 풋프린트가 어긋나는 건 배치 버그의 단골이다.</summary>
-    static void AddFootprintCollider(GameObject root, Vector2Int size)
+    /// <summary>
+    /// 루트 콜라이더 부착 — 모델 렌더러들의 AABB 기준. 콜라이더가 보이는 모델과 일치해야
+    /// 총알·조준이 그림에 없는 빈 공간에 걸리지 않는다. 렌더러가 없으면 풋프린트 폴백.
+    /// 생성 시 한 번만 — 이후 값은 사람이 손봐도 임포터가 덮지 않는다(EnsureContract 참고).
+    /// </summary>
+    static void AddRootCollider(GameObject root, Vector2Int size)
     {
         var col = root.AddComponent<BoxCollider>();
-        col.size   = FootprintColliderSize(size);
-        col.center = FootprintColliderCenter;
+        if (TryGetModelBounds(root, out var aabb))
+        {
+            col.size   = aabb.size;
+            col.center = aabb.center;
+        }
+        else
+        {
+            col.size   = FootprintColliderSize(size);
+            col.center = FootprintColliderCenter;
+        }
+    }
+
+    /// <summary>
+    /// 루트 로컬 기준 렌더러 합산 AABB. 파티클·트레일은 연출이라 제외.
+    /// 월드 AABB의 꼭짓점을 루트 로컬로 되돌리므로 루트 스케일(칸 크기)이 얼마든 로컬 단위로 떨어진다.
+    /// </summary>
+    static bool TryGetModelBounds(GameObject root, out Bounds bounds)
+    {
+        bounds = default;
+        bool has = false;
+        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r is ParticleSystemRenderer || r is TrailRenderer) continue;
+            var b = r.bounds;
+            for (int i = 0; i < 8; i++)
+            {
+                var corner = new Vector3(
+                    (i & 1) == 0 ? b.min.x : b.max.x,
+                    (i & 2) == 0 ? b.min.y : b.max.y,
+                    (i & 4) == 0 ? b.min.z : b.max.z);
+                var local = root.transform.InverseTransformPoint(corner);
+                if (!has) { bounds = new Bounds(local, Vector3.zero); has = true; }
+                else bounds.Encapsulate(local);
+            }
+        }
+
+        if (has)
+        {
+            // 납작한 모델(벨트 등)도 레이캐스트에 안정적으로 잡히게 최소 두께 확보
+            var s = bounds.size;
+            bounds.size = new Vector3(Mathf.Max(s.x, 0.05f), Mathf.Max(s.y, 0.05f), Mathf.Max(s.z, 0.05f));
+        }
+        return has;
     }
 
     // 로컬 단위(1칸 = 1)로 준다 — 루트 스케일이 CellSize라 월드에서는 저절로 미터로 환산된다.

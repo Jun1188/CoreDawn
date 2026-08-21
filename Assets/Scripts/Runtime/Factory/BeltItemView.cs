@@ -15,16 +15,24 @@ using UnityEngine;
 public class BeltItemView : MonoBehaviour
 {
     [Tooltip("벨트 표면 위 아이템 표시 높이")]
-    [SerializeField] private float itemHeight = 1;
+    [SerializeField] private float itemHeight = 1.5f;
 
     [Tooltip("아이템 표시 크기 배율")]
-    [SerializeField] private float itemScale = 1;
+    [SerializeField] private float itemScale = 0.5f;
 
     private readonly List<SpriteRenderer> pool = new();
     private int used;
 
+    private PlacementSystem placement;   // 셀 크기의 소유자 — 늦게 생길 수 있어 찾을 때까지 재시도
+    private float halfCell = 0.5f;
+
     private void LateUpdate()   // 심 Advance(Update) 이후의 최신 상태를 그린다
     {
+        // 타일 중심(건물 뷰 위치)은 셀 크기를 따라 배치되는데 에지 오프셋만 고정이면
+        // 아이템이 타일마다 압축된 경로를 돌다 다음 타일로 점프한다 — 프레임당 한 번 갱신.
+        if (placement == null) placement = FindFirstObjectByType<PlacementSystem>();
+        halfCell = placement != null ? placement.CellSize * 0.5f : 0.5f;
+
         used = 0;
         var boot = FactoryBootstrap.Instance;
         if (boot != null && boot.Sim != null)
@@ -89,12 +97,12 @@ public class BeltItemView : MonoBehaviour
         if (view == null) return false;
         Vector3 center = view.transform.position;
 
-        // 포트 → 타일 에지 (그리드 y = 월드 z, 셀 크기 1 기준)
+        // 포트 → 타일 에지 (그리드 y = 월드 z). 에지 = 중심에서 반 셀 — 셀 크기를 따라간다.
         Vector3 entry = center, exit = center;
         foreach (var p in belt.GetEffectivePorts())
         {
             var v = Dir.ToVec(p.Direction);
-            var edge = center + new Vector3(v.x, 0f, v.y) * 0.5f;
+            var edge = center + new Vector3(v.x, 0f, v.y) * halfCell;
             if (p.IsInput) entry = edge;
             else exit = edge;
         }

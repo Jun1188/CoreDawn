@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: 6652096104688218203}
   - component: {fileID: 3069826180716430105}
   - component: {fileID: 5206136052188048441}
+  - component: {fileID: 4381152907419001625}
   m_Layer: 12
   m_Name: Weapon_Holder
   m_TagString: Untagged
@@ -129,7 +130,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponADS
   aimSpeed: 12
-  aimDistance: 0.3
+  aimDistance: 0.1
 --- !u!114 &7096013060996383979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,13 +168,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95f8f257baed08047aa981c7f2766e4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HandSway
-  posSwayAmount: 0.06
-  rotSwayAmount: 4
-  swaySaturation: 2.5
-  swaySharpness: 9
+  posSwayAmount: 0.03
+  rotSwayAmount: 2
+  swaySaturation: 5
+  swaySharpness: 10
   moveSwayEnabled: 1
-  movePosSway: {x: 0.022, y: 0.018, z: 0.03}
-  moveRotSway: {x: 3.2, y: 1.4, z: 2.6}
+  movePosSway: {x: 0.01, y: 0.005, z: 0.005}
+  moveRotSway: {x: 2, y: 1, z: 1.5}
   accelPosSway: {x: 0.012, y: 0.01, z: 0.02}
   accelSaturation: 30
   moveSwaySharpness: 7
@@ -211,8 +212,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f98e1696bd3a0540a62dfafd871442e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponStancePose
-  sprintPosition: {x: 0.05, y: -0.055, z: -0.06}
-  sprintRotation: {x: 18, y: -22, z: 12}
+  sprintPosition: {x: 0.29, y: 0, z: -0.3}
+  sprintRotation: {x: 10, y: -35, z: 30}
   sprintEnterTime: 0.2
   sprintExitTime: 0.13
   crouchPosition: {x: 0.012, y: -0.02, z: 0.018}
@@ -242,8 +243,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ee3aac45714307419ba63f9941d539f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponSwing
-  strikeRatio: 0.45
+  strikeRatio: 0.28
+  windupPull: 0.5
+  windupHold: 0.05
+  strikeOvershoot: 1.18
   maxRotation: 90
+--- !u!114 &4381152907419001625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396995298283521722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf876362bcb3d6e42ad1be09bea0e6f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponShakeFollow
 --- !u!1 &452123137726881323
 GameObject:
   m_ObjectHideFlags: 0
@@ -270,9 +286,9 @@ Transform:
   m_GameObject: {fileID: 452123137726881323}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0052359584, y: -0, z: -0, w: 0.9999863}
-  m_LocalPosition: {x: 0.5, y: -0.3, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.35, y: -0.2, z: 0.9}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3419844046350952251}
   m_Father: {fileID: 7995179578143903283}
@@ -292,6 +308,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: a81aa1dbd3e26c9418b726660a157b08, type: 2}
   muzzlePoint: {fileID: 7406425420585281777}
   sightPoint: {fileID: 1648130609092778756}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &615922409236537428
 GameObject:
   m_ObjectHideFlags: 0
@@ -354,6 +372,38 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3419844046350952251}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1129044060712198316
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7475414920367314916}
+  m_Layer: 0
+  m_Name: ShakeHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7475414920367314916
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1129044060712198316}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6780044117118029167}
+  m_Father: {fileID: 9033849837218861637}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1484987932482277592
 GameObject:
   m_ObjectHideFlags: 0
@@ -401,7 +451,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3570432782792640394
 Transform:
   m_ObjectHideFlags: 0
@@ -411,9 +461,9 @@ Transform:
   m_GameObject: {fileID: 1725735249222913129}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0052359584, y: -0, z: -0, w: 0.9999863}
-  m_LocalPosition: {x: 0.5, y: -0.3, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.35, y: -0.2, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5507468810578737104}
   m_Father: {fileID: 7995179578143903283}
@@ -433,6 +483,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 845b0795164612a428f47c8252826ccd, type: 2}
   muzzlePoint: {fileID: 3860225396445204925}
   sightPoint: {fileID: 8547935275930745224}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &2012174366778705548
 GameObject:
   m_ObjectHideFlags: 0
@@ -480,7 +532,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &548757090368761903
 Transform:
   m_ObjectHideFlags: 0
@@ -490,9 +542,9 @@ Transform:
   m_GameObject: {fileID: 2353703921184357156}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0052359584, y: -0, z: -0, w: 0.9999863}
-  m_LocalPosition: {x: 0.5, y: -0.3, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.35, y: -0.2, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 671481723362180520}
   m_Father: {fileID: 7995179578143903283}
@@ -512,6 +564,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 2e9cf9eddeb52364e962ac0f7e649d50, type: 2}
   muzzlePoint: {fileID: 1522652994438640984}
   sightPoint: {fileID: 3120875362650585695}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &2374102354058411553
 GameObject:
   m_ObjectHideFlags: 0
@@ -589,7 +643,7 @@ Camera:
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
-  m_FOVAxisMode: 0
+  m_FOVAxisMode: 1
   m_Iso: 200
   m_ShutterSpeed: 0.005
   m_Aperture: 16
@@ -607,9 +661,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.1
-  far clip plane: 1000
-  field of view: 40
+  near clip plane: 0.01
+  far clip plane: 10
+  field of view: 29.394958
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -624,7 +678,7 @@ Camera:
   m_AllowMSAA: 1
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
+  m_OcclusionCulling: 0
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
 --- !u!114 &1325287559020015714
@@ -749,7 +803,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2656412456476668152
 Transform:
   m_ObjectHideFlags: 0
@@ -759,9 +813,9 @@ Transform:
   m_GameObject: {fileID: 4089237502473277518}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0052359584, y: -0, z: -0, w: 0.9999863}
-  m_LocalPosition: {x: 0.5, y: -0.2, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.35, y: -0.15, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2322441379605024693}
   m_Father: {fileID: 7995179578143903283}
@@ -781,6 +835,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 888168c433fbd284887423c707594946, type: 2}
   muzzlePoint: {fileID: 3793946336995647061}
   sightPoint: {fileID: 5005284680359517864}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &4120964208342676412
 GameObject:
   m_ObjectHideFlags: 0
@@ -859,7 +915,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3250906825666707958
 Transform:
   m_ObjectHideFlags: 0
@@ -869,9 +925,9 @@ Transform:
   m_GameObject: {fileID: 5171279321672256779}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0052359584, y: -0, z: -0, w: 0.9999863}
-  m_LocalPosition: {x: 0.5, y: -0.3, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.35, y: -0.2, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5478619045519429920}
   m_Father: {fileID: 7995179578143903283}
@@ -891,6 +947,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: d4ec9268d7f6647468e7adc7e00e8096, type: 2}
   muzzlePoint: {fileID: 964733338719465455}
   sightPoint: {fileID: 7896087178353731070}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &5400811139303079785
 GameObject:
   m_ObjectHideFlags: 0
@@ -938,7 +996,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8340997314010740118
 Transform:
   m_ObjectHideFlags: 0
@@ -947,14 +1005,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5496319261266471851}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.08550863, y: -0.21389975, z: 0.14058809, w: 0.9628968}
-  m_LocalPosition: {x: 0.4, y: -0.34, z: 0.85}
-  m_LocalScale: {x: 0.85, y: 0.85, z: 0.85}
-  m_ConstrainProportionsScale: 0
+  m_LocalRotation: {x: -0.5116625, y: -0.116202295, z: 0.020913241, w: 0.8510353}
+  m_LocalPosition: {x: 0.35, y: -0.2, z: 0.85}
+  m_LocalScale: {x: 0.49999997, y: 0.49999997, z: 0.49999997}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 8654489196768286029}
   m_Father: {fileID: 7995179578143903283}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -60, y: -26, z: 18}
 --- !u!114 &3201304295260047070
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -970,6 +1028,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: fc4913d0dadebb340b5b78c2e44420af, type: 2}
   muzzlePoint: {fileID: 3983905114698933309}
   sightPoint: {fileID: 8121120508263541487}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &5888268749807747820
 GameObject:
   m_ObjectHideFlags: 0
@@ -1003,7 +1063,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6780044117118029167}
+  - {fileID: 7475414920367314916}
   - {fileID: 7995179578143903283}
   m_Father: {fileID: 2425879589627415900}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1140,8 +1200,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCameraRig
   targetCamera: {fileID: 2516082347585424752}
+  overlayCamera: {fileID: 0}
   ads: {fileID: 3775902399488542646}
-  baseFov: 60
+  baseFov: 103
   speedFovGain: 9
   slideFovGain: 10
   fovSharpness: 7
@@ -1350,7 +1411,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   playerCamera: {fileID: 6780044117118029167}
-  promptText: {fileID: 0}
   interactableLayers:
     serializedVersion: 2
     m_Bits: 8960
@@ -1451,13 +1511,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8683513508193775307}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 773885344701005}
-  m_Father: {fileID: 9033849837218861637}
+  m_Father: {fileID: 7475414920367314916}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &2516082347585424752
 Camera:
@@ -1472,7 +1532,7 @@ Camera:
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
-  m_FOVAxisMode: 0
+  m_FOVAxisMode: 1
   m_Iso: 200
   m_ShutterSpeed: 0.005
   m_Aperture: 16
@@ -1492,13 +1552,13 @@ Camera:
     height: 1
   near clip plane: 0.1
   far clip plane: 1000
-  field of view: 90
+  field of view: 70.5328
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 28663
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1542,7 +1602,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
+  m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -1575,11 +1635,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c904246da9bc874d8a25434a09f84f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraShakeManager
-  cameraTransform: {fileID: 6780044117118029167}
+  cameraTransform: {fileID: 7475414920367314916}
   maxPositionOffset: 0.06
   maxRotationOffset: 1.2
   globalIntensityScale: 1
   followSharpness: 28
+  shootUpBias: 0.75
+  shootAimScale: 0.3
 --- !u!1 &8952619632804571724
 GameObject:
   m_ObjectHideFlags: 0
@@ -1596,7 +1658,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3969874424331773256
 Transform:
   m_ObjectHideFlags: 0
@@ -1606,9 +1668,9 @@ Transform:
   m_GameObject: {fileID: 8952619632804571724}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0052359584, y: -0, z: -0, w: 0.9999863}
-  m_LocalPosition: {x: 0.5, y: -0.35, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0.35, y: -0.2, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7942168536674147515}
   m_Father: {fileID: 7995179578143903283}
@@ -1628,6 +1690,8 @@ MonoBehaviour:
   gunData: {fileID: 11400000, guid: 311235b2be025c74682683dc571c603a, type: 2}
   muzzlePoint: {fileID: 2236818287020144116}
   sightPoint: {fileID: 7649895154108594936}
+  knockbackEffect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  knockbackPerDamage: 0.2
 --- !u!1 &9008189234823309990
 GameObject:
   m_ObjectHideFlags: 0
