@@ -50,6 +50,20 @@ public class Gun : MonoBehaviour
     /// <summary>재장전 중인가 — 읽기 전용. 진행은 StartReload로만 시작된다.</summary>
     public bool IsReloading { get; private set; }
 
+    // 재장전 진행 표시용 — 코루틴의 WaitForSeconds는 남은 시간을 알려주지 않으므로
+    // 시작 시각과 길이를 따로 적어 둔다. 값의 주인은 여전히 코루틴 하나뿐이다.
+    private float reloadStartedAt;
+    private float reloadDuration;
+
+    /// <summary>
+    /// 재장전 진행도 0~1. 재장전 중이 아니면 0.
+    /// HUD가 크로스헤어 링으로 그린다 — "장전 중"이라는 글자만으로는 언제 끝나는지 알 수 없고,
+    /// 그 사이 쏠 수 없으니 남은 시간이 곧 생존에 필요한 정보다.
+    /// </summary>
+    public float ReloadProgress => IsReloading && reloadDuration > 0f
+        ? Mathf.Clamp01((Time.time - reloadStartedAt) / reloadDuration)
+        : 0f;
+
     /// <summary>
     /// 세이브 복원 전용 — 장전된 탄수를 되돌린다. 재장전 중이었다면 그 상태는 취소한다.
     /// 예비탄은 인벤토리가 곧 복원되므로 여기서 건드리지 않는다.
@@ -118,15 +132,20 @@ public class Gun : MonoBehaviour
 
     private void OnEnable()
     {
-        // 무기를 스왑해서 꺼낼 때마다 상태 초기화.
-        // 집어넣을 때 OnDisable이 재장전 코루틴을 끊으므로 여기서 반드시 풀어줘야 한다
-        // (안 풀면 재장전 중에 바꾼 총이 영영 '재장전 중'으로 굳어 쏘지 못한다).
+        // 무기를 스왑해서 꺼낼 때마다 상태 초기화 — OnDisable이 이미 풀어두지만,
+        // 비활성화를 거치지 않고 켜지는 경로(첫 생성 등)까지 덮는 이중 안전장치다.
+        // 여기서 탄을 채워주지는 않는다: 손에서 내린 순간 장전은 취소된 것이고,
+        // 부분 장전 상태였다면 다시 들고 R을 눌러야 한다 (빈 탄창만 Update가 알아서 채운다).
         IsReloading = false;
     }
 
     private void OnDisable()
     {
-        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지 — 소리도 함께 끊는다
+        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지 — 소리도 함께 끊는다.
+        // 플래그도 여기서 내린다: 코루틴이 죽은 뒤에도 IsReloading이 켜져 있으면
+        // 집어넣은 총이 "재장전 중"이라고 거짓말을 하고, 그 사이 상태를 읽는 쪽(HUD·세이브)이
+        // 영원히 끝나지 않는 장전을 보게 된다. 취소는 취소라고 말해야 한다.
+        IsReloading = false;
         StopAllCoroutines();
         if (reloadSource != null && reloadSource.isPlaying) reloadSource.Stop();
     }
@@ -266,6 +285,8 @@ public class Gun : MonoBehaviour
     private IEnumerator ReloadRoutine()
     {
         IsReloading = true;
+        reloadStartedAt = Time.time;
+        reloadDuration = gunData.reloadTime;
 
         if (gunData != null && gunData.reloadSound != null)
         {
