@@ -167,8 +167,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb219762334e4f509c87686bcc6531e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BeltItemView
-  itemHeight: 1.5
-  itemScale: 0.5
+  itemHeight: 1
+  itemScale: 1
 --- !u!4 &624921172
 Transform:
   m_ObjectHideFlags: 0

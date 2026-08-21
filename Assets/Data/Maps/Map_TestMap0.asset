@@ -72,7 +72,7 @@ MonoBehaviour:
     extractInterval: 1
     maxStock: 30
   - item: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
-    cell: {x: 73, y: 59}
+    cell: {x: 71, y: 59}
     size: 1
     extractInterval: 1
     maxStock: 20
