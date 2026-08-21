@@ -25,8 +25,8 @@ public class WeaponKickback : MonoBehaviour, IWeaponMotionModule
     public float rotationDamping = 0.6f;
 
     [Header("조준(ADS) 보정")]
-    [Tooltip("조준 중 반동 크기 배율")]
-    public float aimAmountMultiplier = 0.45f;
+    [Tooltip("조준 중 반동 크기 배율 — 절반으로 눌러 정조준 사격을 보상한다.")]
+    public float aimAmountMultiplier = 0.5f;
     [Tooltip("조준 중 스프링 진동수 배율 (클수록 더 빨리 정지 = 더 타이트한 손맛)")]
     public float aimFrequencyMultiplier = 1.25f;
     [Tooltip("조준 중 스프링 감쇠비 배율 (클수록 덜 흔들림)")]

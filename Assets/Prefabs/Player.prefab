@@ -147,7 +147,7 @@ MonoBehaviour:
   positionDamping: 0.8
   rotationFrequency: 11
   rotationDamping: 0.6
-  aimAmountMultiplier: 0.45
+  aimAmountMultiplier: 0.5
   aimFrequencyMultiplier: 1.25
   aimDampingMultiplier: 1.35
   aimRotationScale: 0
@@ -1071,7 +1071,7 @@ MonoBehaviour:
   damping: 0.62
   returnSpeed: 10
   maxAccumulated: 12
-  aimScale: 0.5
+  aimScale: 0.55
   speedInfluence: 0.35
 --- !u!114 &6102154153304141171
 MonoBehaviour:
