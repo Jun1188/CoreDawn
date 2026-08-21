@@ -508,6 +508,7 @@ public static class ProjectileSystem
             createFunc: () =>
             {
                 var go = Object.Instantiate(prefab, PoolRoot());
+                StripViewmodelFromLights(go);
                 var b = go.GetComponent<Bullet>();
                 if (b != null) b.SetPool(pools[prefab]);
                 return go;
@@ -525,6 +526,20 @@ public static class ProjectileSystem
 
         pools.Add(prefab, pool);
         return pool;
+    }
+
+    /// <summary>
+    /// 이펙트 광원이 1인칭 뷰모델(Weapon 레이어)을 비추지 않게 한다. 총알·총구 화염의
+    /// 포인트 라이트가 눈앞의 총을 순간순간 밝혀 조준 중 번쩍이는데, 광원은 서드파티
+    /// 이펙트 프리팹 수십 개에 흩어져 있으므로 프리팹 대신 풀 생성 시점에 일괄 차단한다.
+    /// 월드는 그대로 비춘다 — 뷰모델만 이펙트 조명에서 제외.
+    /// </summary>
+    private static void StripViewmodelFromLights(GameObject go)
+    {
+        int weapon = LayerMask.NameToLayer("Weapon");
+        if (weapon < 0) return;
+        foreach (var light in go.GetComponentsInChildren<Light>(true))
+            light.cullingMask &= ~(1 << weapon);
     }
 
     private static Transform PoolRoot()
