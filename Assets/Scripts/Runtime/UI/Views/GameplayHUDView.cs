@@ -25,9 +25,10 @@ public class GameplayHUDView : MonoBehaviour
     VisualElement root, compass, crosshair, deathOverlay, coreLine, ammoBox, hotbarRow, enemyLine;
     VisualElement hpFill, coreFill;
     Label dayValue, phaseLabel, phaseTime, hpNow, hpMax, corePct, ammoName, ammoNow, ammoCap, enemyCount;
-    Label ammoType, ammoReserve;
+    Label ammoType, ammoReserve, interactPrompt;
 
     PlayerController player;
+    PlayerInteractionManager interaction;
     Entity playerEntity;
     BuildingEntity core;
     ItemContainer hotbar;
@@ -82,6 +83,7 @@ public class GameplayHUDView : MonoBehaviour
         ammoType   = r.Q<Label>("ammo-type");
         ammoReserve = r.Q<Label>("ammo-reserve");
         enemyCount = r.Q<Label>("enemy-count");
+        interactPrompt = r.Q<Label>("interact-prompt");
 
         root.pickingMode = PickingMode.Ignore;   // HUD는 클릭을 먹으면 안 된다 — 월드로 통과
 
@@ -127,6 +129,7 @@ public class GameplayHUDView : MonoBehaviour
 
         // 창이 열려 있으면 커서가 조작 중 — 그 지점은 조준이 아니다 (포트 흐름과 같은 규칙)
         Show(crosshair, !UIPopup.AnyOpen);
+        UpdateInteractPrompt();
 
         // uGUI 크로스헤어는 InventoryPopup이 닫힐 때마다(첫 프레임의 CloseScreen 포함)
         // 도로 켠다 — HUD가 살아 있는 동안은 UITK 크로스헤어가 유일한 조준점이어야 한다
@@ -381,6 +384,29 @@ public class GameplayHUDView : MonoBehaviour
                          : weapon.IsReloading ? "장전 중"
                          : reserve < 0 ? "∞"
                          : $"× {reserve}";
+    }
+
+    // ───────────────────── 상호작용 프롬프트 ─────────────────────
+
+    /// <summary>
+    /// uGUI 프롬프트 텍스트가 사라진 이후 표시는 HUD 몫이다 — 판정(Current)은 그대로
+    /// PlayerInteractionManager가 소유하고, 여기는 읽어서 그리기만 한다.
+    /// 크로스헤어와 같은 규칙으로 창이 열려 있으면 숨긴다 — 그 지점은 조준이 아니다.
+    /// </summary>
+    void UpdateInteractPrompt()
+    {
+        if (interactPrompt == null) return;
+
+        if (interaction == null)
+        {
+            interaction = FindFirstObjectByType<PlayerInteractionManager>(FindObjectsInactive.Include);
+            if (interaction == null) { Show(interactPrompt, false); return; }
+        }
+
+        string prompt = interaction.Current?.Prompt;
+        bool show = !string.IsNullOrEmpty(prompt) && !UIPopup.AnyOpen;
+        Show(interactPrompt, show);
+        if (show) interactPrompt.text = $"[E] {prompt}";
     }
 
     // ───────────────────── 적 수 ─────────────────────
