@@ -874,6 +874,20 @@
 .combat-cross__bar--w { top: 12px; left: 0; width: 9px; height: 3px; }
 .combat-cross__bar--e { top: 12px; right: 0; width: 9px; height: 3px; }
 
+/* 상호작용 프롬프트("[E] …") — 크로스헤어 바로 아래, 시선을 옮기지 않고 읽는 자리 */
+.combat-interact {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% 24px;
+    display: none;
+    color: var(--text);
+    font-size: 14px;
+    letter-spacing: 1px;
+    -unity-font-definition: var(--font-data);
+    -unity-text-align: middle-center;
+}
+
 .combat-death {
     position: absolute;
     left: 0;

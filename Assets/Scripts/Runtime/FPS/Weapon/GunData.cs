@@ -67,8 +67,9 @@ public class GunData : GameDataSO
     public float reloadTime = 1.5f;
 
     [Header("조준 (ADS)")]
-    [Tooltip("정조준 시 시야각.")]
-    public float zoomFOV = 50f;
+    [Tooltip("정조준 줌 배율 — 1보다 클수록 확대. FOV 절대값이 아니라 기본 화각 대비 배율이라 " +
+             "기본 FOV를 바꿔도 총마다 다시 튜닝할 필요가 없다. (실제 화각 = 기본 화각을 tan 공간에서 ÷배율)")]
+    public float zoomMultiplier = 1.3f;
 
     [Tooltip("조준을 막는가 — 가늠자가 없는 무기(근접무기)는 우클릭해도 아무 일도 일어나지 않는다. " +
              "이 값 하나로 줌·이동속도 감속·스웨이 억제·달리기 금지가 전부 함께 꺼진다 " +

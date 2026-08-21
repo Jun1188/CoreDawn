@@ -1,0 +1,532 @@
+/* ═══════════════════════════════════════════════════════════
+   GameData 에디터 테마 — Web/css/editor.css 전사(轉寫).
+   창 루트에 .gd-root. 수치·색은 editor.css 의 해당 규칙 줄을 따른다.
+   ═══════════════════════════════════════════════════════════ */
+
+.gd-root {
+    background-color: #0B1220;
+    color: #D9E4F5;
+    font-size: 14px;
+}
+
+.gd-root Label {
+    color: #D9E4F5;
+}
+
+/* ── 버튼 (#pane-* button) ── */
+.gd-root Button {
+    background-color: #111B2E;
+    border-color: #2E4266;
+    border-width: 1px;
+    border-radius: 6px;
+    color: #D9E4F5;
+    padding: 6px 12px;
+    margin: 1px 2px;
+    font-size: 13px;
+}
+
+.gd-root Button:hover {
+    border-color: #4FD8E0;
+    background-color: #111B2E;
+}
+
+.gd-root Button:active {
+    background-color: #16233A;
+}
+
+/* 아래 버튼 변형들은 .gd-root Button(클래스+타입)보다 특이도가 높아야
+   먹는다 — 전부 .gd-root 를 앞에 붙여 클래스 2개로 만든다. */
+.gd-root .gd-btn-mini {
+    padding: 3px 10px;
+    font-size: 12px;
+}
+
+/* button.primary — 시안 테두리·글자 */
+.gd-root .gd-btn-primary {
+    border-color: #4FD8E0;
+    color: #4FD8E0;
+}
+
+/* button.warn — 삭제류: 빨강 테두리·글자 */
+.gd-root .gd-btn-warn {
+    border-color: rgba(255, 93, 115, 0.5);
+    color: #FF5D73;
+}
+
+.gd-root .gd-btn-warn:hover {
+    border-color: rgba(255, 93, 115, 0.5);
+    color: #FF5D73;
+    background-color: #111B2E;
+}
+
+/* ── 셸 탭 (#tabs button.tab) — 투명 배경, 활성 = 시안 ── */
+.gd-root .gd-tabbtn {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+    color: #8FA3C0;
+    border-radius: 6px;
+    padding: 6px 14px;
+}
+
+.gd-root .gd-tabbtn:hover {
+    color: #D9E4F5;
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.gd-root .gd-tabbtn--on {
+    color: #4FD8E0;
+    border-color: #4FD8E0;
+    background-color: rgba(79, 216, 224, 0.08);
+}
+
+.gd-root .gd-tabbtn--on:hover {
+    color: #4FD8E0;
+    border-color: #4FD8E0;
+    background-color: rgba(79, 216, 224, 0.08);
+}
+
+/* ── 입력칸 — BEM 클래스로 전 종류를 잡는다(타입 셀렉터는 파생·내장 필드를 놓친다) ── */
+.gd-root .unity-base-text-field__input {
+    background-color: #0E1727;
+    border-color: #2E4266;
+    border-radius: 5px;
+    color: #D9E4F5;
+    padding: 3px 8px;
+    font-size: 13px;
+    --unity-cursor-color: #D9E4F5;
+}
+
+.gd-root .unity-base-text-field__input:focus {
+    border-color: #4FD8E0;
+}
+
+/* DropdownField·PopupField·EnumField 공통 */
+.gd-root .unity-base-popup-field__input {
+    background-color: #0E1727;
+    border-color: #2E4266;
+    border-radius: 5px;
+    color: #D9E4F5;
+    font-size: 13px;
+}
+
+.gd-root .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: #8FA3C0;
+}
+
+.gd-root .unity-toggle__checkmark {
+    background-color: #0E1727;
+    border-color: #2E4266;
+    border-width: 1px;
+    border-radius: 3px;
+}
+
+.gd-root Toggle:checked .unity-toggle__checkmark {
+    -unity-background-image-tint-color: #4FD8E0;
+}
+
+/* ObjectField (그래프 아이콘 픽커) */
+.gd-root .unity-object-field__input {
+    background-color: #0E1727;
+    border-color: #2E4266;
+    border-radius: 5px;
+}
+
+.gd-root .unity-object-field-display__label {
+    color: #D9E4F5;
+}
+
+.gd-root .unity-object-field__selector {
+    background-color: #111B2E;
+    border-color: #2E4266;
+    -unity-background-image-tint-color: #8FA3C0;
+}
+
+.gd-root .unity-base-field__label {
+    color: #5C6E8C;
+    font-size: 11.5px;
+}
+
+/* ── 상단바 (#c-top·#topbar·#wv-top: bg panel2, 밑줄 line) ── */
+.gd-topbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: #223350;
+    background-color: #0E1727;
+    flex-shrink: 0;
+}
+
+.gd-topbar-title {
+    -unity-font-style: bold;
+    font-size: 13px;
+}
+
+.gd-topbar-small {
+    color: #5C6E8C;
+    margin-left: 8px;
+    font-size: 12px;
+    -unity-text-align: middle-left;
+}
+
+.gd-stat {
+    font-size: 11.5px;
+    color: #5C6E8C;
+    -unity-text-align: middle-right;
+}
+
+/* ── 좌측 열 · 목록 (#c-left, .blist .bitem) ── */
+.gd-leftcol {
+    background-color: #0E1727;
+    border-right-width: 1px;
+    border-right-color: #223350;
+    padding: 14px;
+}
+
+.gd-bitem {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0);
+    margin-bottom: 3px;
+}
+
+.gd-bitem:hover {
+    background-color: #111B2E;
+}
+
+.gd-bitem--sel {
+    background-color: #111B2E;
+    border-color: #4FD8E0;
+}
+
+.gd-bitem-nm {
+    font-size: 13px;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.gd-bitem-kd {
+    font-size: 10.5px;
+    color: #5C6E8C;
+    flex-shrink: 0;
+}
+
+/* ── 서브탭 (#c-subtabs) — 균등폭, 활성 시안 ── */
+.gd-subtabs {
+    flex-direction: row;
+    margin-bottom: 12px;
+}
+
+.gd-root .gd-subtab {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0);
+    border-color: #2E4266;
+    color: #8FA3C0;
+    border-radius: 6px;
+    padding: 5px 0;
+    font-size: 12.5px;
+}
+
+/* 원본은 서브탭에 별도 hover 가 없다 (#c-subtabs button 이 generic hover 를 이긴다) */
+.gd-root .gd-subtab:hover {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: #2E4266;
+}
+
+.gd-root .gd-subtab--on {
+    color: #4FD8E0;
+    border-color: #4FD8E0;
+    background-color: rgba(79, 216, 224, 0.08);
+}
+
+.gd-root .gd-subtab--on:hover {
+    color: #4FD8E0;
+    border-color: #4FD8E0;
+    background-color: rgba(79, 216, 224, 0.08);
+}
+
+/* ── 폼: 라벨 왼쪽 2열 (전투·건물·맵 .field) ── */
+.gd-field2 {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.gd-field2 > .gd-field-label {
+    width: 110px;
+    min-width: 74px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+}
+
+.gd-field2 > .gd-field-input {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+/* ── 폼: 라벨 위 (그래프 사이드 .field) ── */
+.gd-field {
+    margin-bottom: 10px;
+}
+
+.gd-field-label {
+    font-size: 11.5px;
+    color: #5C6E8C;
+    margin-bottom: 3px;
+    white-space: normal;
+}
+
+/* width:100% 를 쓰면 유니티 필드 기본 마진이 얹혀 패널 밖으로 삐져나간다 —
+   기본 stretch 에 맡기고 마진만 0 으로 만든다(웹 input 과 동일). */
+.gd-field-input {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* 그룹 제목 (.field.wide>label) — 우퍼케이스 시안 + 밑줄 (.14em ≈ 1.5px) */
+.gd-groupttl {
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    color: #4FD8E0;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(79, 216, 224, 0.22);
+    padding-bottom: 5px;
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+/* h3 — 소제목 (uppercase·faint) */
+.gd-h3 {
+    font-size: 11.5px;
+    color: #5C6E8C;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    -unity-font-style: bold;
+}
+
+.gd-divider {
+    height: 1px;
+    background-color: #223350;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+/* ── idrow — 접두 칩 + 테두리 없는 입력 ── */
+.gd-idrow {
+    flex-direction: row;
+    align-items: stretch;
+    background-color: #0E1727;
+    border-width: 1px;
+    border-color: #2E4266;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.gd-idrow-pfx {
+    padding: 4px 6px;
+    font-size: 12px;
+    color: #5C6E8C;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-right-width: 1px;
+    border-right-color: #223350;
+    -unity-text-align: middle-left;
+}
+
+.gd-idrow TextField {
+    flex-grow: 1;
+    margin: 0;
+}
+
+.gd-root .gd-idrow .unity-base-text-field__input {
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* ── 격자 칸 (.gungrid .gcell / .balgrid .bcell) ── */
+.gd-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.gd-gcell {
+    padding-right: 6px;
+    margin-bottom: 6px;
+}
+
+.gd-gcell > .gd-field-label {
+    font-size: 10.5px;
+    margin-bottom: 3px;
+}
+
+/* ── 탄종/증폭 목록 (.ammolist .ammorow) ── */
+.gd-ammolist {
+    max-height: 200px;
+    border-width: 1px;
+    border-color: #223350;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+.gd-ammorow {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 5px;
+    border-radius: 4px;
+    margin-bottom: 1px;
+}
+
+.gd-ammorow:hover {
+    background-color: #16243C;
+}
+
+.gd-ammorow--on {
+    background-color: rgba(79, 216, 224, 0.07);
+}
+
+.gd-ammorow-bar {
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    margin-right: 6px;
+}
+
+.gd-ammorow-nm {
+    font-size: 11px;
+    flex-grow: 1;
+    overflow: hidden;
+    color: #8FA3C0;
+}
+
+.gd-ammorow--on .gd-ammorow-nm {
+    color: #D9E4F5;
+}
+
+.gd-ammorow-ty {
+    font-size: 10px;
+    color: #5C6E8C;
+}
+
+.gd-root .gd-setdef {
+    background-color: rgba(0, 0, 0, 0);
+    color: #5C6E8C;
+    border-width: 1px;
+    border-color: #2E4266;
+    border-radius: 4px;
+    padding: 0 5px;
+    margin: 0;
+    font-size: 9.5px;
+}
+
+.gd-root .gd-setdef:hover {
+    background-color: rgba(0, 0, 0, 0);
+    color: #4FD8E0;
+    border-color: #4FD8E0;
+}
+
+/* ── DPS 상자 (.dpsbox) ── */
+.gd-dpsbox {
+    flex-direction: row;
+    margin-top: 14px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    background-color: rgba(79, 216, 224, 0.07);
+    border-width: 1px;
+    border-color: rgba(79, 216, 224, 0.3);
+}
+
+.gd-dpsbox Label {
+    font-size: 12px;
+    color: #8FA3C0;
+}
+
+.gd-dpsbox--off {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: #223350;
+}
+
+.gd-dpsbox--off Label {
+    color: #5C6E8C;
+}
+
+/* ── 경고 (.w / .okmsg) ── */
+.gd-warn {
+    font-size: 12px;
+    color: #FF5D73;
+    border-width: 1px;
+    border-color: rgba(255, 93, 115, 0.35);
+    border-radius: 6px;
+    padding: 6px 9px;
+    margin-bottom: 6px;
+    background-color: rgba(255, 93, 115, 0.06);
+    white-space: normal;
+}
+
+.gd-okmsg {
+    font-size: 12px;
+    color: #5DD39E;
+    white-space: normal;
+}
+
+/* ── 힌트 (.hint) — 위 점선 구분 ── */
+.gd-hint {
+    font-size: 11.5px;
+    color: #5C6E8C;
+    border-top-width: 1px;
+    border-top-color: #223350;
+    padding-top: 10px;
+    margin-top: 14px;
+    white-space: normal;
+}
+
+/* ── 웨이브 표 (#wv-table) ── */
+.gd-th {
+    font-size: 11.5px;
+    color: #5C6E8C;
+    letter-spacing: 1px;
+    padding: 6px 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #223350;
+}
+
+.gd-td-row {
+    flex-direction: row;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: #16233A;
+}
+
+/* ── 여러 줄 입력 ── */
+.gd-root .gd-multiline .unity-base-text-field__input {
+    min-height: 52px;
+    white-space: normal;
+}
+
+/* ── 스크롤바 — 웹 원본: thin, #2E4266 막대 / 투명 트랙 ── */
+.gd-root .unity-scroller--vertical,
+.gd-root .unity-scroller--horizontal {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.gd-root .unity-scroller .unity-base-slider__tracker {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.gd-root .unity-scroller .unity-base-slider__dragger {
+    background-color: #2E4266;
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.gd-root .unity-scroller .unity-scroller__low-button,
+.gd-root .unity-scroller .unity-scroller__high-button {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-background-image-tint-color: #5C6E8C;
+}

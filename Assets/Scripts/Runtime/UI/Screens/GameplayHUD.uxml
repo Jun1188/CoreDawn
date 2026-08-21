@@ -27,6 +27,7 @@
             <ui:VisualElement class="combat-cross__bar combat-cross__bar--w"/>
             <ui:VisualElement class="combat-cross__bar combat-cross__bar--e"/>
         </ui:VisualElement>
+        <ui:Label name="interact-prompt" text="" picking-mode="Ignore" class="combat-interact"/>
         <ui:VisualElement name="death-overlay" picking-mode="Ignore" class="combat-death">
             <ui:Label text="You Die" picking-mode="Ignore" class="combat-death__text"/>
         </ui:VisualElement>

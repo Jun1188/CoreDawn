@@ -44,19 +44,27 @@ public static class WorldTerrainGenerator
     const float BoundsSink = 5f;         // 바닥을 지형 아래까지 내려 물가 틈으로 새지 않게
 
     /// <summary>수면 정점 간격(m). 물 셰이더가 정점을 흔들므로 파도 주기보다 촘촘해야 한다.</summary>
-    const float WaterVertexSpacing = 2f;
+    const float WaterVertexSpacing = 1f;   // 거품 띠는 정점 보간 폭보다 얇아질 수 없다 — 띠 목표 폭보다 촘촘히
 
     /// <summary>이 수심(m)보다 얕으면 거품이 낀다. 정점 컬러의 빨강 채널이 곧 거품 세기다.
     /// 0.35로 두면 작은 웅덩이는 수면 대부분이 거품 범위에 들어가 흰 원반처럼 렌더된다 —
     /// 물가에 좁은 띠만 남도록 얕게 잡는다.</summary>
-    const float FoamDepth = 0.15f;
+    const float FoamDepth = 0.10f;
 
-    // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 몇 칸 들어가야 제 높이가 되는가.
+    // ── 스케일 불변 단위 ────────────────────────────────────────
+    // 물가·워핑·해상도는 <b>미터</b>로 선언한다. 계산은 칸 좌표계라 파생값이 Cell로 환산한다 —
+    // 셀 크기를 바꿔도 물가의 실제 형상(경사·여울 폭·해안 굴곡·블러 반경)이 유지된다.
+    // (셀 2→4m 때 칸 단위 상수가 통째로 어긋나 물가가 두 배 넓어졌던 재발 방지.
+    //  절벽은 반대로 바위 폭이 곧 칸이라 칸 비례가 자연스럽다 — 그쪽 m 상수는 셀에 맞춰 튜닝)
+    static float Cell = 2f;   // Build 시작에 world.CellSize로 갱신된다
+
+    // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 얼마 들어가야 제 높이가 되는가.
     // 짧아야 한다. 경사를 칸 하나에 걸쳐 눕히면 폭 1~2칸짜리 절벽·물길은 제 높이에 닿기도
     // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
     // 절벽·강 타일은 어차피 건설 불가라 칸 안에서는 마음껏 깎아도 된다. 경계선 자체는 이미
     // 블러로 매끈한 곡선이므로, 짧게 세울수록 그 곡선이 또렷한 벼랑·물길이 된다.
-    const float RiverFalloff = 0.30f;   // 크면 완만하다 — 경사를 절반으로 눕히려면 거리를 두 배로
+    const float RiverFalloffM = 0.6f;   // 골 경사 거리(m) — 크면 완만하다
+    static float RiverFalloff => RiverFalloffM / Cell;
 
     // 물가는 벼랑이 아니라 <b>여울</b>로 들어간다 — 물 앞에서 넓고 얕게 눕다가, 그 다음에
     // 골이 파인다. 한 단짜리 곡선으로는 이 둘을 함께 얻을 수 없다: 짧게 잡으면 물가가
@@ -65,28 +73,36 @@ public static class WorldTerrainGenerator
     // 두 폭의 합은 <b>강 반폭(1.5칸)에서 한참 모자라야</b> 한다. 다듬기(거리장 블러 + 높이맵
     // 블러)가 좁은 골의 바닥을 들어올리기 때문이다 — 실측으로 유효 침투 거리가 기대치의
     // 약 2/3(1.35칸 → 0.9칸)로 줄었고, 합을 1.25칸으로 잡았을 때 수심이 16cm까지 말랐다.
-    const float ShelfWidth = 0.45f;  // 여울 폭(칸) — 물가 경사를 정한다
+    const float ShelfWidthM = 0.9f;  // 여울 폭(m) — 물가 경사를 정한다
+    static float ShelfWidth => ShelfWidthM / Cell;
     const float ShelfDepth = 0.3f;   // 여울 끝의 파임(m). WaterLevel보다 깊어야 물이 덮는다
 
     // 형상을 타일 경계에서 이만큼 <b>안쪽으로</b> 물려 시작한다. 경사면이 남의 땅이 아니라
     // 제 타일을 깎으며 생기게 하는 장치다 — 경계에 딱 맞춰 세우면 다듬는 과정에서 높이가
     // 옆 지면으로 흘러넘쳐, 절벽이 깎이는 게 아니라 땅이 차오르는 모양이 된다.
     // 덤으로 경계선이 칸 격자를 벗어나 거리장의 매끈한 등고선 위에 놓인다.
-    const float ShapeInset = 0.15f;
+    const float ShapeInsetM = 0.3f;
+    static float ShapeInset => ShapeInsetM / Cell;
 
     // ── 해상도 ──────────────────────────────────────────────────
-    const int FieldSubDiv = 4;      // 거리장을 칸의 몇 배 격자로 뜨는가 — 계단이 1/4로 잘게 쪼개진다
-    const int SamplesPerCell = 4;   // 높이맵 샘플 밀도(칸당). 2ⁿ+1로 올림된다
+    // 픽셀·샘플 간격을 미터로 고정한다 — 셀이 커져도 곡선의 잘림·블러 반경(m)이 안 변한다.
+    const float FieldPixelM = 0.25f;     // 거리장 픽셀 크기(m) — 셀 4m 기준 칸당 16
+    static int FieldSubDiv => Mathf.Max(2, Mathf.RoundToInt(Cell / FieldPixelM));
+    const float HeightSampleM = 0.25f;   // 높이맵 샘플 간격(m). 전체는 2ⁿ+1로 올림된다
+    static int SamplesPerCell => Mathf.Max(2, Mathf.RoundToInt(Cell / HeightSampleM));
 
     // 계단 다듬기 — 타일은 네모라 거리장 등고선이 90°·45°로 꺾인다. 그 각을 뭉갠다.
-    // 반경 0.5칸 × 2겹이면 칸 단위 계단은 뭉개지면서, 폭 1~2칸짜리 형상의 속살까지
-    // 밀어버리지는 않는다(반경 1칸으로 뭉개면 좁은 물길이 통째로 평탄해진다).
-    const int SmoothRadius = FieldSubDiv / 2;
+    // 반경도 <b>미터 고정</b>이다. 칸의 절반으로 정의했더니 셀 4m에서 반경이 2m가 되어,
+    // 해상도를 올려 담은 잔물결 워핑(±0.7m)을 블러가 도로 지워 해안이 직선이 됐다.
+    // 계단은 워핑이 이미 흩뜨려 놓으므로 1m 블러로 모서리만 둥글리면 된다
+    // (더 키우면 폭이 좁은 물길·여울의 속살까지 밀린다).
+    const float SmoothRadiusM = 0.75f;
+    static int SmoothRadius => Mathf.Max(1, Mathf.RoundToInt(SmoothRadiusM / FieldPixelM));
     const int SmoothPasses = 2;             // 박스 블러를 겹쳐 가우시안에 가깝게
 
-    // 높이맵 단계의 2차 다듬기(높이맵 샘플 단위). 거리장을 아무리 뭉개도 "타일 밖은 0" 클램프가
+    // 높이맵 단계의 2차 다듬기. 거리장을 아무리 뭉개도 "타일 밖은 0" 클램프가
     // 칸 격자에서 일어나 모서리가 되살아나므로, 격자를 떠난 뒤 한 번 더 편다.
-    const int HeightSmoothRadius = SamplesPerCell / 2;   // 0.5칸
+    static int HeightSmoothRadius => Mathf.Max(1, Mathf.RoundToInt(SmoothRadiusM / HeightSampleM));
     const int HeightSmoothPasses = 2;
 
     // ── 불규칙성 ────────────────────────────────────────────────
@@ -94,14 +110,25 @@ public static class WorldTerrainGenerator
     // 워프 파장(18칸)이 물길 폭(3칸)보다 훨씬 길어서 물길 양쪽이 <b>같은 방향</b>으로 밀리는데,
     // 아래의 "바깥쪽 택하기"는 그 이동분을 양쪽에서 깎아낸다 — 세기가 반폭(1.5칸)을 넘던
     // 3.2칸에서는 그 깎임이 물길을 통째로 지워, 강이 중간중간 웅덩이로 끊겼다.
-    const float WarpStrength = 1.1f;
-    const float WarpFrequency = 0.055f;
+    const float WarpStrengthM = 2.2f;    // 진폭(m)
+    static float WarpStrength => WarpStrengthM / Cell;
+    const float WarpWavelengthM = 36f;   // 파장(m)
+    static float WarpFrequency => Cell / WarpWavelengthM;
     // 잔물결 옥타브 — 긴 파장 하나로는 흔들림이 너무 완만해 안 흔든 것처럼 보인다.
     // 두 진폭의 합(1.45칸)은 여전히 물길 반폭(1.5칸) 안이다.
-    const float WarpFineStrength = 0.35f;
-    const float WarpFineFrequency = 0.23f;
+    // 중간 옥타브 — <b>물길 폭(≈12m)보다 짧은 파장</b>이라 강에도 쓸 수 있다: 파장이 폭보다
+    // 짧으면 양쪽 기슭이 제각각 흔들려, 긴 파장처럼 물길 전체가 한쪽으로 쏠리지 않는다.
+    const float WarpMidStrengthM = 1.2f;
+    static float WarpMidStrength => WarpMidStrengthM / Cell;
+    const float WarpMidWavelengthM = 10f;
+    static float WarpMidFrequency => Cell / WarpMidWavelengthM;
+    const float WarpFineStrengthM = 0.7f;
+    static float WarpFineStrength => WarpFineStrengthM / Cell;
+    const float WarpFineWavelengthM = 4.5f;
+    static float WarpFineFrequency => Cell / WarpFineWavelengthM;
     const float DetailAmplitude = 0.14f;  // 지면 미세 굴곡(m)
-    const float DetailFrequency = 0.09f;
+    const float DetailWavelengthM = 22f;
+    static float DetailFrequency => Cell / DetailWavelengthM;
 
     [MenuItem("Tools/Factory/Build World Terrain")]
     public static void Build()
@@ -114,6 +141,7 @@ public static class WorldTerrainGenerator
         }
 
         var map = world.Map;
+        Cell = world.CellSize;   // 미터 선언 상수들의 칸 환산 기준 — 반드시 형상 계산 전에
         EnsureFolder();
 
         // 기존 생성물 정리 — 다시 구울 때 겹치지 않게
@@ -184,17 +212,25 @@ public static class WorldTerrainGenerator
 
                 // 도메인 워핑 — 조회 좌표를 흔들어 경계의 직선을 깬다.
                 // 긴 파장(큰 굽이) + 잔물결 두 옥타브.
-                float wx = tx + (Mathf.PerlinNoise(tx * WarpFrequency, ty * WarpFrequency) - 0.5f) * 2f * WarpStrength
-                              + (Mathf.PerlinNoise(tx * WarpFineFrequency + 91.7f, ty * WarpFineFrequency + 45.3f) - 0.5f) * 2f * WarpFineStrength;
-                float wy = ty + (Mathf.PerlinNoise(tx * WarpFrequency + 37.7f, ty * WarpFrequency + 12.3f) - 0.5f) * 2f * WarpStrength
-                              + (Mathf.PerlinNoise(tx * WarpFineFrequency + 7.9f, ty * WarpFineFrequency + 63.1f) - 0.5f) * 2f * WarpFineStrength;
+                float fineX = (Mathf.PerlinNoise(tx * WarpMidFrequency + 58.3f, ty * WarpMidFrequency + 24.1f) - 0.5f) * 2f * WarpMidStrength
+                            + (Mathf.PerlinNoise(tx * WarpFineFrequency + 91.7f, ty * WarpFineFrequency + 45.3f) - 0.5f) * 2f * WarpFineStrength;
+                float fineY = (Mathf.PerlinNoise(tx * WarpMidFrequency + 13.9f, ty * WarpMidFrequency + 82.7f) - 0.5f) * 2f * WarpMidStrength
+                            + (Mathf.PerlinNoise(tx * WarpFineFrequency + 7.9f, ty * WarpFineFrequency + 63.1f) - 0.5f) * 2f * WarpFineStrength;
+                float wx = tx + (Mathf.PerlinNoise(tx * WarpFrequency, ty * WarpFrequency) - 0.5f) * 2f * WarpStrength + fineX;
+                float wy = ty + (Mathf.PerlinNoise(tx * WarpFrequency + 37.7f, ty * WarpFrequency + 12.3f) - 0.5f) * 2f * WarpStrength + fineY;
 
                 // 워핑된 좌표와 원래 좌표 중 <b>바깥쪽</b>을 택한다(거리장은 안이 음수).
                 // 워핑이 형상을 밖으로 밀어 지면을 파는 일을 막는 장치 —
                 // 흔들림은 자기 영역을 깎는 방향으로만 남는다.
                 float cliff = Mathf.Max(SampleField(cliffField, map, wx, wy),
                                         SampleField(cliffField, map, tx, ty));
-                float river = Mathf.Max(SampleField(riverField, map, wx, wy),
+
+                // 강은 <b>중간+잔물결 옥타브만</b> 워핑한다. 긴 파장(36m)은 물길 폭보다 훨씬
+                // 길어 양쪽 기슭을 같은 방향으로 미는데, 바깥쪽 택하기가 밀려나간 쪽만
+                // 깎아내니 물길이 진폭(2.2m)만큼 통째로 한쪽에 쏠렸다 — 여울(0.9m)이 사라진
+                // 기슭은 잔디가 물 위에 걸린다. 파장이 폭보다 짧은 옥타브는 기슭을 따라
+                // 들쭉날쭉 번갈아 깎여 쏠림이 아니라 굴곡이 된다. 큰 굽이는 타일 경로가 그린다.
+                float river = Mathf.Max(SampleField(riverField, map, tx + fineX, ty + fineY),
                                         SampleField(riverField, map, tx, ty));
 
                 // 절벽은 지형이 아니라 프리팹이 맡는다(PlaceCliffs) — 높이맵은 평평하게 둔다.
@@ -485,7 +521,7 @@ public static class WorldTerrainGenerator
     // 풀·꽃은 <b>우리 변형</b>을 심는다 — 머티리얼이 Art/Materials/Vegetation의 우리 사본이라,
     // 시간대 틴트(SkyboxTimeView)가 서드파티 에셋을 건드리지 않고 색을 만질 수 있다.
     const string VegPrefabFolder = "Assets/Prefabs/Vegetation";
-    const int DetailRes = 512;          // 디테일 격자(맵 전체). 121칸 맵이면 칸당 약 4점
+    const float DetailPointM = 0.5f;    // 디테일 점 간격 목표(m) — 격자 크기는 맵 실측(m)에서 산정
     const int DetailPatch = 32;         // 패치 단위 — Demo와 같은 값
     const float DetailDistance = 120f;  // 이 거리 밖에서는 그리지 않는다
 
@@ -497,8 +533,10 @@ public static class WorldTerrainGenerator
     // 공중에 띄운다. 바닥은 앞줄이 가리므로 보이지 않는다. 쌓으면 이음매가 오레오처럼
     // 줄무늬가 되고, 세로로 늘리면 옆으로 넓은 바위가 콜라캔 판자가 된다 — 둘 다 겪었다.
     // 능선고(m). 최저값은 플레이어 점프(1.3m)로 올라설 수 없는 선.
-    const float CliffHeightLow = 5f;
-    const float CliffHeightHigh = 9f;
+    // 절벽 치수는 <b>칸 비례</b>다 — 바위의 xz 폭이 곧 칸 크기라, 높이·후퇴량도 같이
+    // 커져야 바위 비율이 유지된다. (물가가 미터 고정인 것과 반대 — 저긴 형상이, 여긴 비율이 불변)
+    static float CliffHeightLow => 2.5f * Cell;
+    static float CliffHeightHigh => 4.5f * Cell;
 
     // 변주는 칸별 독립 난수가 아니라 <b>위치 기반 연속 노이즈</b>로 준다. 이웃끼리 아무
     // 상관없는 크기·높이는 "쌓인 지형"이 아니라 "흩뿌린 에셋"으로 읽힌다 — 실제 절벽은
@@ -506,7 +544,7 @@ public static class WorldTerrainGenerator
     const float CliffRidgeFrequency = 0.11f;   // 높이 파장 ≈ 9칸(18m) — 몇 칸에 걸쳐 솟았다 가라앉는다
     const float CliffFaceFrequency = 0.45f;    // 벽면 굴곡 파장 ≈ 2칸 — 지그재그 대신 물결
 
-    const float CliffBaseSink = 0.6f;      // 가장자리 줄을 땅에 묻는 깊이(m) — 데모도 Y 최저 -3.4m
+    static float CliffBaseSink => 0.3f * Cell;   // 가장자리 줄을 땅에 묻는 깊이 — 데모도 Y 최저 -3.4m
     // 세로 배율은 원본 비율에서 이만큼만 벗어난다 — 변주지 왜곡이 아니다.
     // 데모는 아예 늘리지 않는다(전부 스케일 1).
     const float CliffStretchLow = 0.85f;
@@ -568,6 +606,8 @@ public static class WorldTerrainGenerator
         // 해상도·모드를 먼저 잡고 <b>프로토타입은 마지막에</b> 대입한다.
         // SetDetailResolution은 디테일 데이터를 초기화하면서 프로토타입 목록까지 비운다 —
         // 순서를 반대로 하면 심을 것이 하나도 없는 상태가 된다.
+        int DetailRes = Mathf.Min(2048, Mathf.NextPowerOfTwo(
+            Mathf.CeilToInt(Mathf.Max(map.width, map.height) * cellSize / DetailPointM)));
         data.SetDetailResolution(DetailRes, DetailPatch);
 
         // 밀도 값을 <b>셀당 개수</b>로 해석하게 한다(Demo와 같은 모드).
@@ -589,9 +629,24 @@ public static class WorldTerrainGenerator
                 int cx = Mathf.Clamp(Mathf.FloorToInt(tx), 0, map.width - 1);
                 int cy = Mathf.Clamp(Mathf.FloorToInt(ty), 0, map.height - 1);
 
-                // 절벽 타일에도 심는다 — 암벽이 벽면 후퇴 노이즈로 물러난 자리는 절벽
-                // 타일의 앞부분이 드러나는데, 여기를 건너뛰면 그 띠가 맨땅으로 남는다.
-                // 바위 밑에 깔리는 풀은 어차피 가려지고, 디테일이라 판정에도 안 낀다.
+                // 절벽 타일은 <b>경계 0.1칸 띠만</b> 심는다 — 벽면 후퇴 노이즈로 암벽이
+                // 물러난 자리는 절벽 타일 앞부분이 드러나므로 띠가 필요하지만, 안쪽은
+                // 바위가 빈틈없이 덮어(관통 구멍 해결 후) 심어도 보이지 않는 낭비다.
+                // 절벽이 맵의 상당분이라 디테일 인스턴스가 그만큼 줄어든다.
+                if (map.TileAt(cx, cy) == MapTile.Cliff)
+                {
+                    const float Fringe = 0.1f;   // 칸 단위 — 벽면 후퇴 최대(0.45칸)보다 얕은 앞줄만
+                    bool nearOpen = false;
+                    for (int oy = -1; oy <= 1 && !nearOpen; oy++)
+                        for (int ox = -1; ox <= 1; ox++)
+                        {
+                            if (ox == 0 && oy == 0) continue;
+                            int nx = Mathf.FloorToInt(tx + ox * Fringe);
+                            int nz = Mathf.FloorToInt(ty + oy * Fringe);
+                            if (map.InBounds(nx, nz) && map.TileAt(nx, nz) != MapTile.Cliff) { nearOpen = true; break; }
+                        }
+                    if (!nearOpen) continue;
+                }
 
                 // 물가 아래는 비운다. 판정을 실제 높이로 하므로 풀이 끊기는 선이
                 // 칸 모서리가 아니라 물가 곡선을 그대로 따라간다.
@@ -781,7 +836,7 @@ public static class WorldTerrainGenerator
                 // 같은 경계선까지 나오게 두면, 아랫바위의 둥근 어깨 위로 윗바위가 튀어나와
                 // 버섯처럼 걸쳐진다. 직사각형의 변이 절벽 지역의 끝(그 너머가 비절벽)인
                 // 쪽만 물린다 — 절벽으로 이어지는 쪽은 물릴 이유가 없다.
-                const float FaceInset = 0.8f;
+                float FaceInset = 0.4f * Cell;
                 float inXn = 0f, inXp = 0f, inZn = 0f, inZp = 0f;
                 if (depth > 0)
                 {
@@ -797,14 +852,14 @@ public static class WorldTerrainGenerator
                 // 몇 칸에 걸쳐 완만하게 솟았다 가라앉고, 칸별 잔결이 그 위에 얹힌다.
                 float ridge = Mathf.PerlinNoise(x * CliffRidgeFrequency + 5.3f, y * CliffRidgeFrequency + 9.1f);
                 float wantTop = Mathf.Lerp(CliffHeightLow, CliffHeightHigh, ridge)
-                              + (Hash(x, y, 31) % 1000 / 1000f - 0.5f) * 1.2f;
+                              + (Hash(x, y, 31) % 1000 / 1000f - 0.5f) * 0.6f * Cell;
 
                 // <b>쌓지 않는다.</b> 높이는 배치 고도로 만든다: 가장자리 줄(depth 0)만 땅에
                 // 서고, 안쪽 바위는 공중에 띄운다 — 바닥은 앞줄이 가리므로 보이지 않고,
                 // 띄운 만큼 꼭대기가 능선고에 닿는다. 오레오처럼 포개진 이음매가 없다.
                 float baseY = depth == 0
                     ? -CliffBaseSink
-                    : Mathf.Lerp(1.2f, 2.4f, Hash(x, y, 71) % 1000 / 1000f) + (depth - 1) * 1.2f;
+                    : (Mathf.Lerp(0.6f, 1.2f, Hash(x, y, 71) % 1000 / 1000f) + (depth - 1) * 0.6f) * Cell;
 
                 int pick = depth == 0
                     ? lofty[Hash(x, y, 23) % lofty.Count]
@@ -861,7 +916,7 @@ public static class WorldTerrainGenerator
                     // 앞면을 0~0.9m 파도치듯 안으로 물리고(파장 ≈ 8칸), 뒷면은 절벽 쪽에
                     // 밀착시켜 두께만 얇아지게 한다 — 벽을 관통하는 구멍은 생기지 않는다.
                     bool alongX = rectW >= rectH;
-                    float recede = Mathf.Lerp(0f, 0.9f,
+                    float recede = Mathf.Lerp(0f, 0.45f * Cell,
                         0.7f * Mathf.PerlinNoise(x * 0.13f + 21.2f, y * 0.13f + 55.8f)
                       + 0.3f * (Hash(x, y, 163) % 1000 / 1000f));
                     float acrossBudget = Mathf.Max((alongX ? rectH : rectW) * 0.98f - recede, c * 0.8f);
@@ -898,7 +953,7 @@ public static class WorldTerrainGenerator
                     // 최저 높이를 보장하되, <b>최저선 자체가 노이즈</b>다 — 상수로 두면
                     // 자연 높이가 그보다 낮은 바위들이 전부 정확히 같은 높이에 들러붙어
                     // 계단처럼 보인다(클램프 무더기). 하한 3.0m는 점프 차단선(1.3m)의 두 배.
-                    float minTop = Mathf.Lerp(3.0f, 4.6f,
+                    float minTop = Cell * Mathf.Lerp(1.5f, 2.3f,
                         0.5f * Mathf.PerlinNoise(x * 0.19f + 77.3f, y * 0.19f + 15.1f)
                       + 0.5f * (Hash(x, y, 151) % 1000 / 1000f));
                     tall = Mathf.Max(stretch * (scaleX + scaleZ) * 0.5f,
@@ -919,7 +974,7 @@ public static class WorldTerrainGenerator
                     scaleX = scaleZ = scale;
                     tall = scale * stretch;
                     rockHeight = heights[pick] * tall;
-                    baseY = Mathf.Min(wantTop - rockHeight, 2.4f + (depth - 1) * 1.2f);
+                    baseY = Mathf.Min(wantTop - rockHeight, (1.2f + (depth - 1) * 0.6f) * Cell);
                 }
 
                 // 축별 실제 반폭(m). 가장자리 줄은 역산의 목표가 곧 월드 점유 폭이라
@@ -958,9 +1013,9 @@ public static class WorldTerrainGenerator
                 // 연속 노이즈(벽면의 큰 물결) + 칸별 해시(낱개 어긋남). 크기가 줄어든 만큼
                 // 여유가 생겨 클램프에 깎이지 않는다 — 크기 노이즈가 위치 노이즈를 살린다.
                 Vector3 pos = world.CellToWorldCenter(new Vector2Int(x, y));
-                pos.x += fixedX ?? Mathf.Clamp(waveX * 3f * c + (Hash(x, y, 57) % 1000 / 1000f - 0.5f) * 1.4f,
+                pos.x += fixedX ?? Mathf.Clamp(waveX * 3f * c + (Hash(x, y, 57) % 1000 / 1000f - 0.5f) * 0.7f * Cell,
                                                minX, Mathf.Max(minX, maxX));
-                pos.z += fixedZ ?? Mathf.Clamp(waveZ * 3f * c + (Hash(x, y, 63) % 1000 / 1000f - 0.5f) * 1.4f,
+                pos.z += fixedZ ?? Mathf.Clamp(waveZ * 3f * c + (Hash(x, y, 63) % 1000 / 1000f - 0.5f) * 0.7f * Cell,
                                                minZ, Mathf.Max(minZ, maxZ));
                 pos.y = world.Origin.y + baseY - bottoms[pick] * tall;
 
@@ -1014,7 +1069,7 @@ public static class WorldTerrainGenerator
                     float size = world.CellSize * Mathf.Lerp(0.8f, 1f, Hash(x, y, 139) % 1000 / 1000f);
                     float sX = size / footX, sZ = size / footZ;
                     // 최저선도 노이즈 — 상수면 이음새들이 전부 같은 높이에 들러붙는다(클램프 무더기)
-                    float chinkTop = Mathf.Lerp(2.4f, 3.9f,
+                    float chinkTop = Cell * Mathf.Lerp(1.2f, 1.95f,
                         0.5f * Mathf.PerlinNoise(x * 0.19f + 33.7f, y * 0.19f + 91.3f)
                       + 0.5f * (Hash(x, y, 157) % 1000 / 1000f));
                     float tall = Mathf.Max((sX + sZ) * 0.5f * Mathf.Lerp(1.1f, 1.6f, Hash(x, y, 149) % 1000 / 1000f),
@@ -1026,7 +1081,7 @@ public static class WorldTerrainGenerator
                     // 벽면 후퇴 노이즈를 큰 바위와 공유한다 — 이음새가 경계선에 남아 있으면
                     // 물러난 벽의 홈을 도로 메워 일자 벽이 되살아난다. 물러날 방향(지면 반대)의
                     // 두 칸이 절벽일 때만, 그 안으로 들어간다.
-                    float rec = Mathf.Min(0.6f * world.CellSize, Mathf.Lerp(0f, 0.9f,
+                    float rec = Mathf.Min(0.6f * world.CellSize, Mathf.Lerp(0f, 0.45f * Cell,
                         0.7f * Mathf.PerlinNoise(x * 0.13f + 21.2f, y * 0.13f + 55.8f)
                       + 0.3f * (Hash(x, y, 163) % 1000 / 1000f)));
                     if (dx == 1)   // 동서 쌍 — 남북으로 물린다

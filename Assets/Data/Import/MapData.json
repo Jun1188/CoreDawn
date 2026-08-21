@@ -139,7 +139,7 @@
           "x": 101,
           "y": 43,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 30
         },
         {
@@ -147,7 +147,7 @@
           "x": 41,
           "y": 102,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -155,7 +155,7 @@
           "x": 102,
           "y": 31,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 30
         },
         {
@@ -163,7 +163,7 @@
           "x": 32,
           "y": 24,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 30
         },
         {
@@ -171,7 +171,7 @@
           "x": 34,
           "y": 63,
           "size": 1,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -179,7 +179,7 @@
           "x": 62,
           "y": 90,
           "size": 1,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -187,7 +187,7 @@
           "x": 78,
           "y": 47,
           "size": 1,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -195,7 +195,7 @@
           "x": 36,
           "y": 44,
           "size": 1,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -203,7 +203,7 @@
           "x": 47,
           "y": 103,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 30
         },
         {
@@ -211,7 +211,7 @@
           "x": 44,
           "y": 26,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 30
         },
         {
@@ -219,7 +219,7 @@
           "x": 71,
           "y": 59,
           "size": 1,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -227,7 +227,7 @@
           "x": 87,
           "y": 18,
           "size": 1,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         },
         {
@@ -235,7 +235,7 @@
           "x": 93,
           "y": 89,
           "size": 2,
-          "extractInterval": 1,
+          "extractInterval": 1.0,
           "maxStock": 20
         }
       ],
@@ -243,10 +243,10 @@
         {
           "x": 63,
           "y": 103,
-          "warningRange": 25,
-          "triggerRange": 15,
+          "warningRange": 25.0,
+          "triggerRange": 15.0,
           "defenseSpawnAmount": 3,
-          "defenseSpawnCooldown": 10,
+          "defenseSpawnCooldown": 10.0,
           "spawnPoints": [
             {
               "x": -1,
@@ -258,15 +258,22 @@
               "y": -7,
               "hasBoss": true
             }
-          ]
+          ],
+          "engageMinRange": 0.0,
+          "engageMaxRange": 0.0,
+          "chaseRange": 0.0,
+          "leashRange": 0.0,
+          "engageDayOnly": false,
+          "bossRecoveryDays": 0,
+          "nestRecoveryDays": 0
         },
         {
           "x": 92,
           "y": 34,
-          "warningRange": 25,
-          "triggerRange": 15,
+          "warningRange": 25.0,
+          "triggerRange": 15.0,
           "defenseSpawnAmount": 6,
-          "defenseSpawnCooldown": 10,
+          "defenseSpawnCooldown": 10.0,
           "spawnPoints": [
             {
               "x": -9,
@@ -278,15 +285,22 @@
               "y": 4,
               "hasBoss": true
             }
-          ]
+          ],
+          "engageMinRange": 0.0,
+          "engageMaxRange": 0.0,
+          "chaseRange": 0.0,
+          "leashRange": 0.0,
+          "engageDayOnly": false,
+          "bossRecoveryDays": 0,
+          "nestRecoveryDays": 0
         },
         {
           "x": 28,
           "y": 33,
-          "warningRange": 25,
-          "triggerRange": 15,
+          "warningRange": 25.0,
+          "triggerRange": 15.0,
           "defenseSpawnAmount": 5,
-          "defenseSpawnCooldown": 10,
+          "defenseSpawnCooldown": 10.0,
           "spawnPoints": [
             {
               "x": -5,
@@ -303,22 +317,36 @@
               "y": 2,
               "hasBoss": true
             }
-          ]
+          ],
+          "engageMinRange": 0.0,
+          "engageMaxRange": 0.0,
+          "chaseRange": 0.0,
+          "leashRange": 0.0,
+          "engageDayOnly": false,
+          "bossRecoveryDays": 0,
+          "nestRecoveryDays": 0
         },
         {
           "x": 41,
           "y": 70,
-          "warningRange": 25,
-          "triggerRange": 15,
+          "warningRange": 25.0,
+          "triggerRange": 15.0,
           "defenseSpawnAmount": 2,
-          "defenseSpawnCooldown": 10,
+          "defenseSpawnCooldown": 10.0,
           "spawnPoints": [
             {
               "x": 4,
               "y": -3,
               "hasBoss": true
             }
-          ]
+          ],
+          "engageMinRange": 0.0,
+          "engageMaxRange": 0.0,
+          "chaseRange": 0.0,
+          "leashRange": 0.0,
+          "engageDayOnly": false,
+          "bossRecoveryDays": 0,
+          "nestRecoveryDays": 0
         }
       ],
       "nightSpawnPoints": [
