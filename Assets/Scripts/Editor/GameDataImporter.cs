@@ -1019,21 +1019,12 @@ public static class GameDataImporter
             }
         }
 
-        // 3) 풋프린트 콜라이더 — 프리팹과 점유 칸이 어긋나는 건 배치 버그의 단골이다.
-        //    모델이 자기 콜라이더를 자식에 갖고 있어도 루트에는 풋프린트 기준이 하나 있어야 한다.
-        var want = FootprintColliderSize(so.size);
-        var center = FootprintColliderCenter;
-
-        var col = root.GetComponent<BoxCollider>();
-        if (col == null)
+        // 3) 루트 콜라이더 — 없을 때만 모델 AABB로 하나 붙인다(렌더러 없으면 풋프린트 폴백).
+        //    이미 있는 콜라이더는 절대 손대지 않는다: 손으로 조정해 둔 값(공격 타워 등)을
+        //    임포터가 재실행마다 덮으면 사람의 작업이 조용히 사라진다.
+        if (root.GetComponent<BoxCollider>() == null)
         {
-            AddFootprintCollider(root, so.size);
-            changed = true;
-        }
-        else if ((col.size - want).sqrMagnitude > 0.0001f || (col.center - center).sqrMagnitude > 0.0001f)
-        {
-            col.size = want;
-            col.center = center;
+            AddRootCollider(root, so.size);
             changed = true;
         }
 
@@ -1062,7 +1053,7 @@ public static class GameDataImporter
 
         var root = MakeBody(modelFile, so.size, so.name + suffix);
         root.name = so.name + suffix;
-        AddFootprintCollider(root, so.size);
+        AddRootCollider(root, so.size);
         EnsureRootScale(root);
 
         Directory.CreateDirectory(PrefabFolder);
@@ -1113,12 +1104,57 @@ public static class GameDataImporter
         return true;
     }
 
-    /// <summary>충돌 크기는 size에서 계산한다 — 프리팹과 풋프린트가 어긋나는 건 배치 버그의 단골이다.</summary>
-    static void AddFootprintCollider(GameObject root, Vector2Int size)
+    /// <summary>
+    /// 루트 콜라이더 부착 — 모델 렌더러들의 AABB 기준. 콜라이더가 보이는 모델과 일치해야
+    /// 총알·조준이 그림에 없는 빈 공간에 걸리지 않는다. 렌더러가 없으면 풋프린트 폴백.
+    /// 생성 시 한 번만 — 이후 값은 사람이 손봐도 임포터가 덮지 않는다(EnsureContract 참고).
+    /// </summary>
+    static void AddRootCollider(GameObject root, Vector2Int size)
     {
         var col = root.AddComponent<BoxCollider>();
-        col.size   = FootprintColliderSize(size);
-        col.center = FootprintColliderCenter;
+        if (TryGetModelBounds(root, out var aabb))
+        {
+            col.size   = aabb.size;
+            col.center = aabb.center;
+        }
+        else
+        {
+            col.size   = FootprintColliderSize(size);
+            col.center = FootprintColliderCenter;
+        }
+    }
+
+    /// <summary>
+    /// 루트 로컬 기준 렌더러 합산 AABB. 파티클·트레일은 연출이라 제외.
+    /// 월드 AABB의 꼭짓점을 루트 로컬로 되돌리므로 루트 스케일(칸 크기)이 얼마든 로컬 단위로 떨어진다.
+    /// </summary>
+    static bool TryGetModelBounds(GameObject root, out Bounds bounds)
+    {
+        bounds = default;
+        bool has = false;
+        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r is ParticleSystemRenderer || r is TrailRenderer) continue;
+            var b = r.bounds;
+            for (int i = 0; i < 8; i++)
+            {
+                var corner = new Vector3(
+                    (i & 1) == 0 ? b.min.x : b.max.x,
+                    (i & 2) == 0 ? b.min.y : b.max.y,
+                    (i & 4) == 0 ? b.min.z : b.max.z);
+                var local = root.transform.InverseTransformPoint(corner);
+                if (!has) { bounds = new Bounds(local, Vector3.zero); has = true; }
+                else bounds.Encapsulate(local);
+            }
+        }
+
+        if (has)
+        {
+            // 납작한 모델(벨트 등)도 레이캐스트에 안정적으로 잡히게 최소 두께 확보
+            var s = bounds.size;
+            bounds.size = new Vector3(Mathf.Max(s.x, 0.05f), Mathf.Max(s.y, 0.05f), Mathf.Max(s.z, 0.05f));
+        }
+        return has;
     }
 
     // 로컬 단위(1칸 = 1)로 준다 — 루트 스케일이 CellSize라 월드에서는 저절로 미터로 환산된다.
