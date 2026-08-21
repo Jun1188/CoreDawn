@@ -485,7 +485,7 @@ public class PlacementSystem : MonoBehaviour
 
     [Tooltip("건설(배치·철거) 조준 사거리 폴백(m). 씬에 PlayerInteractionManager가 있으면 " +
              "그쪽의 E키 상호작용 사거리를 그대로 쓴다 — 두 감각이 어긋나지 않게.")]
-    [SerializeField] private float buildRangeFallback = 4f;
+    [SerializeField] private float buildRangeFallback = 16f;
 
     private PlayerInteractionManager interaction;
 
@@ -496,7 +496,7 @@ public class PlacementSystem : MonoBehaviour
         get
         {
             if (interaction == null) interaction = FindFirstObjectByType<PlayerInteractionManager>();
-            return interaction != null ? interaction.InteractRange : buildRangeFallback;
+            return interaction != null ? interaction.InteractRange * 2f : buildRangeFallback;
         }
     }
 
@@ -585,6 +585,16 @@ public class PlacementSystem : MonoBehaviour
     {
         if (so == null || so.prefab == null) return 0f;
         if (pivotLiftCache.TryGetValue(so, out float cached)) return cached;
+
+        // 모델 프리팹은 "지면 = 로컬 y0" 규약으로 저작된다 — y0 아래로 내려간 부분(채굴기
+        // 드릴)은 일부러 땅에 박히는 부위다. 렌더러 최저점 기준으로 들어올리면 드릴 끝이
+        // 표면 위에 얹혀 몸체가 뜬다. 들어올림은 피벗이 중앙인 큐브 플레이스홀더("Mesh")에만
+        // 필요하다 — 모델 프리팹은 그대로 놓는 것이 맞다.
+        if (so.prefab.transform.Find("Mesh") == null)
+        {
+            pivotLiftCache[so] = 0f;
+            return 0f;
+        }
 
         float min = float.MaxValue;
         Transform root = so.prefab.transform;
