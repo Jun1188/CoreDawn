@@ -26,6 +26,7 @@ public class GameplayHUDView : MonoBehaviour
     VisualElement hpFill, coreFill;
     Label dayValue, phaseLabel, phaseTime, hpNow, hpMax, corePct, ammoName, ammoNow, ammoCap, enemyCount;
     Label ammoType, ammoReserve, interactPrompt;
+    HoldRing holdRing;
 
     PlayerController player;
     PlayerInteractionManager interaction;
@@ -87,6 +88,14 @@ public class GameplayHUDView : MonoBehaviour
 
         root.pickingMode = PickingMode.Ignore;   // HUD는 클릭을 먹으면 안 된다 — 월드로 통과
 
+        // 홀드 진행 링 — 크로스헤어를 감싸는 자리. UXML에 두지 않고 코드로 붙이는 이유는
+        // 배치 HUD(BuildModeHUDView)와 같다: 호(arc)는 Painter2D가 그리므로 어차피 코드가 만든다
+        holdRing = new HoldRing();
+        holdRing.AddToClassList("combat-holdring");
+        holdRing.Accent = ManualHoldAccent;
+        root.Add(holdRing);
+        Show(holdRing, false);
+
         BuildCompassScale();
 
         if (enemyLine != null && enemyLine.Q<MonsterGlyph>() == null)
@@ -130,6 +139,7 @@ public class GameplayHUDView : MonoBehaviour
         // 창이 열려 있으면 커서가 조작 중 — 그 지점은 조준이 아니다 (포트 흐름과 같은 규칙)
         Show(crosshair, !UIPopup.AnyOpen);
         UpdateInteractPrompt();
+        UpdateHoldRing();
 
         // uGUI 크로스헤어는 InventoryPopup이 닫힐 때마다(첫 프레임의 CloseScreen 포함)
         // 도로 켠다 — HUD가 살아 있는 동안은 UITK 크로스헤어가 유일한 조준점이어야 한다
@@ -407,6 +417,42 @@ public class GameplayHUDView : MonoBehaviour
         bool show = !string.IsNullOrEmpty(prompt) && !UIPopup.AnyOpen;
         Show(interactPrompt, show);
         if (show) interactPrompt.text = $"[E] {prompt}";
+    }
+
+    // ───────────────────── 홀드 진행 링 ─────────────────────
+
+    /// <summary>손 채굴처럼 누르고 있어야 하는 상호작용의 진행도. 캐는 일은 파괴가 아니라 산출이라 --out 색.</summary>
+    static readonly Color ManualHoldAccent = UIFlowColors.Out;
+
+    /// <summary>
+    /// 크로스헤어를 감싸는 진행 링 — 홀드 중에만 뜬다.
+    ///
+    /// 배치 HUD의 철거 링과 달리 화면 아래 카드가 아니라 조준점에 있다. 손으로 캐는 동안
+    /// 눈은 캐고 있는 광맥에 붙어 있으니, 진행도가 화면 구석에 있으면 보이지 않는다.
+    ///
+    /// 링이 뜨는 동안에는 프롬프트를 아래로 밀어 둔다 — 기본 위치(중심에서 24px)가
+    /// 링 반지름(34.5px) 안이라 글자와 호가 겹친다.
+    /// </summary>
+    void UpdateHoldRing()
+    {
+        if (holdRing == null) return;
+
+        var target = interaction != null ? interaction.HoldTarget : null;
+        bool show = target != null && !UIPopup.AnyOpen;
+
+        Show(holdRing, show);
+        ToggleClass(interactPrompt, "combat-interact--held", show);
+        if (!show) return;
+
+        holdRing.Progress = interaction.HoldProgress;
+        holdRing.Text = target.HoldLabel ?? "";
+    }
+
+    static void ToggleClass(VisualElement e, string className, bool on)
+    {
+        if (e == null) return;
+        if (on) e.AddToClassList(className);
+        else e.RemoveFromClassList(className);
     }
 
     // ───────────────────── 적 수 ─────────────────────

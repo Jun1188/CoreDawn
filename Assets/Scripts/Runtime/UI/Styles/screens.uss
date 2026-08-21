@@ -888,6 +888,22 @@
     -unity-text-align: middle-center;
 }
 
+/* 홀드 진행 링이 떠 있는 동안 — 링 반지름(34.5px) 밖으로 내려 글자와 호가 겹치지 않게 */
+.combat-interact--held {
+    translate: -50% 44px;
+}
+
+/* 홀드 진행 링(손 채굴 등) — 크로스헤어를 감싸는 자리.
+   크기·정렬은 .ui-holdring이 이미 잡으므로 여기서는 조준점 위로 옮기기만 한다.
+   철거 링과 달리 카드 안이 아니라 화면 중앙에 절대 배치된다. */
+.combat-holdring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    display: none;
+}
+
 .combat-death {
     position: absolute;
     left: 0;

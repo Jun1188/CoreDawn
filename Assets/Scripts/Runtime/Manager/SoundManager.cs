@@ -10,7 +10,9 @@ public enum CommonSFX
     Construct,      // 건물 설치
     Destroy,        // 건물 파괴
     Warning,        // 경고/에러음
-    LevelUp         // 해금/승급
+    LevelUp,        // 해금/승급
+    ItemPickup,     // 아이템이 인벤토리(핫바·가방)에 들어감
+    Mine            // 손 채굴 1회 완료 — 광맥에서 한 덩이가 떨어져 나옴
 }
 public enum BGMType
 {
