@@ -51,8 +51,9 @@ public static class ResourceNodeAuthoring
         so.FindProperty("snapToGrid").boolValue          = true;
         so.ApplyModifiedPropertiesWithoutUndo();
 
-        // 설치는 B키 빌드 메뉴로 통일한다 — 광맥은 "채굴기만 지을 수 있는 자리"일 뿐,
-        // 자체 상호작용(E)은 두지 않는다. 배치 규칙은 ResourceNodeRegistry.CanPlace가 담당.
+        // 채굴기 설치는 B키 빌드 메뉴로 통일한다 (배치 규칙은 ResourceNodeRegistry.CanPlace 담당).
+        // E 상호작용은 손 채굴 전용이다 — ResourceNode가 IHoldInteractable을 직접 구현하므로
+        // 여기서 따로 컴포넌트를 붙일 것은 없고, 아래 Obstacle 콜라이더가 그 조준 판정을 겸한다.
 
         float w = size.x * grid.CellSize * 0.95f;
         float d = size.y * grid.CellSize * 0.95f;

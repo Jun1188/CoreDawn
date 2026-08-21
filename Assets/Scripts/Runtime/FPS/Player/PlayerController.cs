@@ -149,8 +149,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     private Player playerEntity;
 
     [Header("Damage Vignette")]
-    public Volume postProcessVolume;
-    [SerializeField] private Vignette vignette;
+    private Vignette vignette;
     public Color damageColor = Color.red;
     public float maxVignetteIntensity = 0.5f;
 
@@ -283,6 +282,12 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
                 if (e.Phase == InputActionPhase.Performed) { _sprintHeld = true; return true; }
                 if (e.Phase == InputActionPhase.Canceled) _sprintHeld = false;
                 return false;
+
+            // 손 채굴이 생기면서 E도 눌림 상태형이 됐다 — 뗀 시점을 받아야 홀드가 끊긴다.
+            // 누름(Performed)의 처리는 아래 이산 입력 switch에 그대로 남긴다.
+            case InputActionId.Interact:
+                if (e.Phase == InputActionPhase.Canceled) { interaction?.EndHold(); return false; }
+                break;
         }
 
         if (e.Phase != InputActionPhase.Performed) return false;
@@ -364,6 +369,7 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         _state.Enter(this, PlayerLocomotion.Grounded);
         Motion.Locomotion = PlayerLocomotion.Grounded;
 
+        BindDamageVignette();
     }
 
     private void Start()
@@ -381,10 +387,6 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         if (HotbarController.Instance != null)
             HotbarController.Instance.EquipFromActiveSlot();
 
-        if (postProcessVolume != null && postProcessVolume.profile != null)
-        {
-            postProcessVolume.profile.TryGet(out vignette);
-        }
 
         if(playerEntity == null)
             BindPlayerEntityIfNeeded();
@@ -932,8 +934,16 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     /// <summary>
     /// 조준 중인 대상에 상호작용 (E). 판정은 PlayerInteractionManager.Current를 그대로 사용 —
     /// 프롬프트에 보이는 대상과 실행 대상이 항상 일치한다.
+    ///
+    /// 홀드형 대상(<see cref="IHoldInteractable"/> — 손 채굴)은 누른 순간에 아무 일도 하지 않고
+    /// 진행만 시작한다. 같은 키에 탭과 홀드를 함께 얹으면 "눌렀다 뗐을 뿐인데 뭔가 실행됐다"가 된다.
     /// </summary>
-    private void TryInteract() => interaction?.Current?.Interact(this);
+    private void TryInteract()
+    {
+        if (interaction == null) return;
+        if (interaction.BeginHold(this)) return;
+        interaction.Current?.Interact(this);
+    }
 
     /// <summary>화면이 열리는 순간 수평 관성 제거 — 열림 중 이동 입력은 맵 비활성으로 이미 0</summary>
     public void HaltMomentum()
@@ -1210,6 +1220,37 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
         );
 
         return false;
+    }
+    
+    private void BindDamageVignette()
+    {
+        Volume volume = FindFirstObjectByType<Volume>();
+
+        if (volume == null)
+        {
+            Debug.LogWarning("[PlayerController] Volume을 찾지 못했습니다.");
+            return;
+        }
+
+        if (!volume.isGlobal)
+        {
+            Debug.LogWarning("[PlayerController] 찾은 Volume이 Global Volume이 아닙니다.");
+            return;
+        }
+
+        if (volume.profile == null)
+        {
+            Debug.LogWarning("[PlayerController] Global Volume Profile이 없습니다.");
+            return;
+        }
+
+        if (!volume.profile.TryGet(out Vignette foundVignette))
+        {
+            Debug.LogWarning("[PlayerController] Global Volume Profile에서 Vignette를 찾지 못했습니다.");
+            return;
+        }
+
+        vignette = foundVignette;
     }
     #endregion
 }

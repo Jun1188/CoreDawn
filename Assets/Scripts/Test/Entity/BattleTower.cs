@@ -43,6 +43,13 @@ public class BattleTower : BuildingEntity
     private const float DeployDuration = 0.45f;
     private float deployUntil;
 
+    /// <summary>
+    /// 이미 잡은 목표를 놓는 사거리에 주는 여유(m) — 잡을 때보다 이만큼 더 버틴다.
+    /// 몬스터 콜라이더 반지름과 같은 값이다: 경계가 흐릿한 이유가 바로 그 반지름이기 때문이다.
+    /// 사거리 끝에서 목표가 붙었다 떨어졌다 하며 포탑이 떠는 것을 막는다.
+    /// </summary>
+    private const float TargetKeepMargin = 0.5f;
+
     private TowerState state = (TowerState)(-1);
     /// <summary>지금 무엇을 하고 있는가 — 연출과 로직이 공유하는 단일 진실.</summary>
     public TowerState State => state;
@@ -113,6 +120,13 @@ public class BattleTower : BuildingEntity
 
         // 보급 상태를 목표보다 먼저 본다. 벨트가 끊겼다는 사실이 목표 유무보다 급한 정보다 —
         // 플레이어는 이 연출/소리를 보고 공장 배관을 고치러 간다.
+        //
+        // 여기서 AimIdle을 부르지 않는 것은 의도다: 탄이 없는 포탑은 훑을 이유가 없고,
+        // 포신이 처진 채(Tower_Starved) 멈춰 있어야 "죽어 있다"가 한눈에 보인다.
+        // 다만 그 대가로 yaw와 idlePhase가 그 자리에 얼어붙으므로, HasAmmo가 빠르게
+        // 깜빡이면 스캔이 끊겼다 이어졌다 하며 떨린다. 지금은 탄 소비가 발사 시에만
+        // 일어나(TowerBehavior.TryConsumeRound) 깜빡일 수 없다 — 그 전제가 깨지면
+        // 여기에 짧은 유예를 두어야 한다.
         if (supply != null && !supply.HasAmmo)
         {
             target = null;
@@ -159,7 +173,12 @@ public class BattleTower : BuildingEntity
         if (!combat.CanAttack()) return;
 
         // 쏘기 직전에 한 발 소비 — 효과·탄도는 소비한 탄약이 정의하고, 타워는 각도·배율만.
-        AmmoModuleSO round = NextRound(data);
+        if (!NextRound(data, out AmmoModuleSO round))
+        {
+            SetState(TowerState.Starved);
+            return;
+        }
+
         if (round == null || (data.fireMode == FireMode.Projectile && round.bulletPrefab == null))
         {
             combat.TryAttack(target); // 폴백: 즉시 적용 (탄 정의 없음 — 효과는 combat이 정의)
@@ -182,8 +201,12 @@ public class BattleTower : BuildingEntity
     {
         if (target.IsValidTarget())
         {
+            // 놓는 사거리를 잡는 사거리보다 조금 넓게 둔다(히스테리시스).
+            // 경계에 딱 걸친 몬스터는 걸음마다 안팎을 오가는데, 두 기준이 같으면 그때마다
+            // 목표를 놓쳤다 다시 잡으며 포탑이 대기 스캔과 조준 사이를 홱홱 오간다.
+            // 여유를 준 만큼은 "쫓아가다 놓치기 직전" 구간이 되어 조준이 이어진다.
             float d = Vector3.Distance(transform.position, target.GetPosition());
-            if (d <= combat.AttackRange && d >= data.minRange) return; // 계속 유효 — 유지
+            if (d <= combat.AttackRange + TargetKeepMargin && d >= data.minRange) return; // 유지
         }
 
         target = null;
@@ -217,13 +240,20 @@ public class BattleTower : BuildingEntity
     }
 
     /// <summary>
-    /// 이번 발사의 탄 — 보급(심)이 있으면 실제로 한 발 소비하고, 없으면(씬 직접 배치)
-    /// defaultAmmo를 가정해 무한 사격한다. 없으면 null — 근접 폴백.
+    /// 이번 발사의 탄을 확보한다. 보급(심)이 있으면 탄약량 확인과 실제 한 발 소비가
+    /// 모두 성공해야 true다. 없으면(씬 직접 배치) defaultAmmo를 가정해 무한 사격한다.
+    /// 씬 직접 배치 타워의 round가 null인 경우만 기존 근접 폴백을 허용한다.
     /// </summary>
-    private AmmoModuleSO NextRound(TowerDataSO data)
+    private bool NextRound(TowerDataSO data, out AmmoModuleSO round)
     {
-        if (supply != null) return supply.TryConsumeRound(out var round) ? round : null;
-        return data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
+        if (supply != null)
+        {
+            round = null;
+            return supply.HasAmmo && supply.TryConsumeRound(out round);
+        }
+
+        round = data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
+        return true;
     }
 
     // 오라 — 쏘는 대신 쿨다운(fireRate 주기)마다 반경 전원에게 펄스한다.
@@ -240,7 +270,12 @@ public class BattleTower : BuildingEntity
             return;
         }
 
-        AmmoModuleSO round = NextRound(data);
+        if (!NextRound(data, out AmmoModuleSO round))
+        {
+            SetState(TowerState.Starved);
+            return;
+        }
+
         EffectEntry[] effects = round != null ? round.attackEffects : combat.AttackEffects; // 구 씬 오라 폴백
         if (effects == null || effects.Length == 0) { SetState(TowerState.Idle); return; }
 
