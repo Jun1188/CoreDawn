@@ -101,15 +101,24 @@ public class SystemUIManager : MonoBehaviour, IInputReceiver
     {
         if (TimeManager.Instance == null) return;
 
-        float remainingTime = TimeManager.Instance.RemainingPhaseTime; 
-        float progressNormalized = TimeManager.Instance.PhaseProgress; 
+        var timeManager = TimeManager.Instance;
+        float remainingTime = timeManager.RemainingPhaseTime;
+        float progressNormalized = timeManager.PhaseProgress;
 
-        // 1. 분:초 ("02:15") 형태로 표시
+        bool quantityNight = timeManager.TryGetNightWaveStatus(
+            out int remainingEnemies, out _);
+
+        // 낮/시간제 밤은 분:초, 물량제 밤은 남은 웨이브 수를 표시한다.
         if (timeText != null)
         {
-            int minutes = Mathf.FloorToInt(remainingTime / 60f);
-            int seconds = Mathf.FloorToInt(remainingTime % 60f);
-            timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            if (quantityNight)
+                timeText.text = $"{remainingEnemies}마리";
+            else
+            {
+                int minutes = Mathf.FloorToInt(remainingTime / 60f);
+                int seconds = Mathf.FloorToInt(remainingTime % 60f);
+                timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            }
         }
 
         // 2. 시간 게이지 갱신 (0.0 ~ 1.0)

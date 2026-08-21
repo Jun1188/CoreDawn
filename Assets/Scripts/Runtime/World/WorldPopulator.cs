@@ -32,11 +32,54 @@ public static class WorldPopulator
 
         int nodes = PlaceNodes(world, root);
         int nests = PlaceNests(world, root);
+        int startingDrops = PlaceStartingDrops(world, root);
         var provider = PlaceNightSpawns(world, root, battleRoot);
 
         Debug.Log($"[WorldPopulator] '{world.Map.Id}' 배치 — 광맥 {nodes} · 둥지 {nests} · " +
-                  $"밤 진입로 {(provider != null ? provider.SpawnPoints.Count : 0)}", world);
+                  $"시작 아이템 {startingDrops} · 밤 진입로 {(provider != null ? provider.SpawnPoints.Count : 0)}", world);
         return provider;
+    }
+
+    // ── 시작 드롭 아이템 ───────────────────────────────────────
+
+    /// <summary>
+    /// World 씬에 배치한 StartItem_* DroppedItem을 스폰 마커로 사용한다.
+    /// 실제 플레이 오브젝트는 공용 DroppedItem.Spawn 경로로 다시 만들어 E 픽업·세이브·
+    /// 스택 병합 규칙을 일반 드롭 아이템과 완전히 공유한다.
+    /// </summary>
+    static int PlaceStartingDrops(World world, Transform root)
+    {
+        var markers = Object.FindObjectsByType<DroppedItem>(FindObjectsInactive.Include,
+                                                             FindObjectsSortMode.None);
+        int placed = 0;
+        foreach (var marker in markers)
+        {
+            if (marker == null || marker.gameObject.scene != world.gameObject.scene ||
+                !marker.name.StartsWith("StartItem_") || marker.item == null || marker.amount <= 0)
+                continue;
+
+            var item = marker.item;
+            int amount = marker.amount;
+            Vector3 position = marker.transform.position;
+            Quaternion rotation = marker.transform.rotation;
+
+            // 같은 위치에 새 드롭을 만드는 동안 마커가 트리거 병합에 참여하면
+            // 12개 마커 + 12개 생성물이 24개로 합쳐진다. 먼저 비활성화해 템플릿으로만 쓴다.
+            marker.gameObject.SetActive(false);
+            var spawned = DroppedItem.Spawn(item, amount, position, Vector3.zero);
+            if (spawned == null)
+            {
+                marker.gameObject.SetActive(true);
+                continue;
+            }
+
+            spawned.name = marker.name;
+            spawned.transform.SetParent(root, true);
+            spawned.transform.rotation = rotation;
+            Object.Destroy(marker.gameObject);
+            placed++;
+        }
+        return placed;
     }
 
     // ── 광맥 ────────────────────────────────────────────────────
