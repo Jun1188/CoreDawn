@@ -45,7 +45,7 @@ MonoBehaviour:
   xRecoil: 6
   yRecoil: 4
   zRecoil: 2
-  visualKickbackZ: 0.5
+  visualKickbackZ: 1
   visualKickbackRot: {x: 1, y: 1, z: 1}
   baseSpread: 1
   maxSpread: 4

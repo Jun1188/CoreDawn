@@ -42,10 +42,10 @@ MonoBehaviour:
   swingPosition: {x: -0.1, y: 0.04, z: 0.1}
   swingWindup: 0.18
   swingAlternate: 0
-  xRecoil: 2
+  xRecoil: 3
   yRecoil: 1.5
   zRecoil: 1
-  visualKickbackZ: 0.25
+  visualKickbackZ: 0.5
   visualKickbackRot: {x: 1, y: 1, z: 1}
   baseSpread: 0.6
   maxSpread: 4
