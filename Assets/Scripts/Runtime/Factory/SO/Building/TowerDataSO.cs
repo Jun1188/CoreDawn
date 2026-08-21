@@ -79,7 +79,7 @@ public class TowerDataSO : BuildingDataSO
 /// 포탑이 입력 포트를 갖는다는 게 핵심이다. 벨트를 연결하면 탄약이 자동 보급되고,
 /// Building.Input 버퍼가 그대로 탄창이 된다 — 공장 배관이 그대로 보급선이 된다.
 /// </summary>
-public class TowerBehavior : IBuildingBehavior
+public class TowerBehavior : IBuildingBehavior, IInteractiveBehavior
 {
     readonly Building _b;
     readonly TowerDataSO _data;
@@ -92,6 +92,14 @@ public class TowerBehavior : IBuildingBehavior
         // 조립기가 현재 레시피의 재료만 받는 것과 같은 구조.
         // 거절된 push는 상류에 자연스러운 배압으로 전달된다.
         _b.Input.AcceptFilter = Accepts;
+    }
+
+    public string InteractPrompt => "탄약함 열기";
+
+    public void Interact(PlayerController player)
+    {
+        // 보관함 = 입력 버퍼. 벨트가 넣는 곳과 같아서 화면에 보이는 것이 곧 저장소의 전부다.
+        GameScreens.OpenContainer(_b.Input);
     }
 
     public TowerDataSO Data => _data;
