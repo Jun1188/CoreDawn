@@ -2,15 +2,16 @@ using UnityEngine;
 
 /// <summary>
 /// 카메라 흔들림(Camera Shake) 매니저.
-/// [구조 분리 방식 적용] 
-/// Main Camera의 부모(Pivot)는 FPSController가 제어하고,
-/// 이 스크립트는 Main Camera 자신의 localPosition/Rotation을 (0,0,0) 기준으로 제어합니다.
+/// 대상은 <b>ShakeHolder</b> — Main Camera 와 Weapon_Holder 의 공통 부모다.
+/// 카메라만 흔들면 무기는 제자리라 총이 조준점에 대해 덜덜거려 보인다.
+/// 공통 부모를 흔들어야 총은 화면에 붙어 있고 세상이 흔들린다.
+/// 이 스크립트는 그 노드의 localPosition/Rotation 을 (0,0,0) 기준으로 단독 소유한다.
 /// </summary>
 public class CameraShakeManager : MonoBehaviour
 {
     public static CameraShakeManager Instance { get; private set; }
 
-    [Header("대상 (Main Camera)")]
+    [Header("대상 (ShakeHolder — 카메라·무기의 공통 부모)")]
     public Transform cameraTransform;
 
     [Header("글로벌 제한")]
@@ -144,15 +145,13 @@ public class CameraShakeManager : MonoBehaviour
 
     public void ShakeOnPlayerShoot(float scale)
     {
-        float n = Mathf.Clamp01(scale / 10f);
+        float n = Mathf.Clamp01(scale * 0.1f);
         Impulse(new ImpulseRequest
         {
             positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n),
             rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n),
             duration = Mathf.Lerp(0.15f, 0.35f, n),
-            // 7Hz — 60fps에서 한 주기가 8~9프레임이라 곡선으로 보인다. 12Hz는 다섯 프레임뿐이라
-            // 아무리 필터를 걸어도 진동이라기보다 덜컹거림으로 읽혔다.
-            frequency = 7f
+            frequency = 10f
         });
     }
 

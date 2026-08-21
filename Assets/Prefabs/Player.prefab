@@ -75,7 +75,7 @@ Transform:
   - {fileID: 3250906825666707958}
   - {fileID: 3969874424331773256}
   - {fileID: 8340997314010740118}
-  m_Father: {fileID: 9033849837218861637}
+  m_Father: {fileID: 7475414920367314916}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8239470649360977166
 MonoBehaviour:
@@ -243,6 +243,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponSwing
   strikeRatio: 0.28
+  windupPull: 0.5
+  windupHold: 0.05
+  strikeOvershoot: 1.18
   maxRotation: 90
 --- !u!1 &452123137726881323
 GameObject:
@@ -353,6 +356,39 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3419844046350952251}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1129044060712198316
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7475414920367314916}
+  m_Layer: 0
+  m_Name: ShakeHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7475414920367314916
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1129044060712198316}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6780044117118029167}
+  - {fileID: 7995179578143903283}
+  m_Father: {fileID: 9033849837218861637}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1484987932482277592
 GameObject:
@@ -1003,8 +1039,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6780044117118029167}
-  - {fileID: 7995179578143903283}
+  - {fileID: 7475414920367314916}
   m_Father: {fileID: 2425879589627415900}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7667058029735366538
@@ -1140,6 +1175,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCameraRig
   targetCamera: {fileID: 2516082347585424752}
+  overlayCamera: {fileID: 0}
   ads: {fileID: 3775902399488542646}
   baseFov: 103
   speedFovGain: 9
@@ -1451,13 +1487,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8683513508193775307}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 773885344701005}
-  m_Father: {fileID: 9033849837218861637}
+  m_Father: {fileID: 7475414920367314916}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &2516082347585424752
 Camera:
@@ -1575,7 +1611,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c904246da9bc874d8a25434a09f84f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraShakeManager
-  cameraTransform: {fileID: 6780044117118029167}
+  cameraTransform: {fileID: 7475414920367314916}
   maxPositionOffset: 0.06
   maxRotationOffset: 1.2
   globalIntensityScale: 1
