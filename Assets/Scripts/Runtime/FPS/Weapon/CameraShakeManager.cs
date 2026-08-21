@@ -25,6 +25,8 @@ public class CameraShakeManager : MonoBehaviour
         public float rotationAmplitude;
         public float duration;
         public float frequency;
+        /// <summary>수직 성분을 위쪽으로 모는 비율(0=대칭, 1=전부 위). 반동성 임펄스용.</summary>
+        public float upBias;
     }
 
     private struct ActiveImpulse
@@ -35,6 +37,7 @@ public class CameraShakeManager : MonoBehaviour
         public float totalDuration;
         public float frequency;
         public float seed;
+        public float upBias;
     }
 
     [Header("추종")]
@@ -101,8 +104,13 @@ public class CameraShakeManager : MonoBehaviour
             float py = (Mathf.PerlinNoise(freq + 31.3f, imp.seed + 47.1f) - 0.5f) * 2f;
             float pz = (Mathf.PerlinNoise(freq + 59.9f, imp.seed + 83.3f) - 0.5f) * 2f;
 
-            totalPos += new Vector3(px, py, 0f) * (imp.posAmplitude * t);
-            totalRot += new Vector3(px, py, pz) * (imp.rotAmplitude * t);
+            // 위 편향 — 발사 반동은 위로 쏠려야 한다. 대칭 노이즈면 위로 차는 반동을
+            // 무작위로 상쇄해 전방향 떨림처럼 읽힌다. 위치 y는 +가 위, 회전 x는 −가 위.
+            float upY = Mathf.Lerp(py, Mathf.Abs(py), imp.upBias);
+            float upPitch = Mathf.Lerp(px, -Mathf.Abs(px), imp.upBias);
+
+            totalPos += new Vector3(px, upY, 0f) * (imp.posAmplitude * t);
+            totalRot += new Vector3(upPitch, py, pz) * (imp.rotAmplitude * t);
 
             impulsePool[alive++] = imp;
         }
@@ -143,9 +151,14 @@ public class CameraShakeManager : MonoBehaviour
             remainingTime = req.duration,
             totalDuration = req.duration,
             frequency = req.frequency,
-            seed = Random.Range(0f, 100f)
+            seed = Random.Range(0f, 100f),
+            upBias = Mathf.Clamp01(req.upBias)
         };
     }
+
+    [Header("발사 셰이크")]
+    [Tooltip("발사 셰이크의 수직 성분을 위로 모는 비율. 0=전방향 대칭, 1=수직은 전부 위.")]
+    [Range(0f, 1f)] public float shootUpBias = 0.75f;
 
     public void ShakeOnPlayerShoot(float scale)
     {
@@ -155,7 +168,8 @@ public class CameraShakeManager : MonoBehaviour
             positionAmplitude = Mathf.Lerp(0.01f, 0.045f, n),
             rotationAmplitude = Mathf.Lerp(0.3f, 0.9f, n),
             duration = Mathf.Lerp(0.15f, 0.35f, n),
-            frequency = 10f
+            frequency = 10f,
+            upBias = shootUpBias
         });
     }
 
