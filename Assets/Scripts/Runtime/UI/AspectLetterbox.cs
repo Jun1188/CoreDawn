@@ -75,8 +75,8 @@ public class AspectLetterbox : MonoBehaviour
         foreach (var cam in Camera.allCameras)
         {
             if (cam == blackout) continue;
-            // Overlay 카메라(무기 뷰모델)는 Base의 뷰포트 안에 그려진다 — 건드리면 이중 적용
-            if (cam.GetUniversalAdditionalCameraData().renderType == CameraRenderType.Overlay) continue;
+            // Overlay 카메라(무기 뷰모델)도 직접 줄인다 — URP 스택의 오버레이는 베이스의
+            // 뷰포트를 상속하지 않아서, 빼놓으면 무기만 검은 띠 위에 그려진다.
             if (cam.rect != viewport) cam.rect = viewport;
         }
     }
