@@ -273,7 +273,9 @@ public class Gun : MonoBehaviour
             {
                 reloadSource = gameObject.AddComponent<AudioSource>();
                 reloadSource.playOnAwake = false;
-                reloadSource.spatialBlend = 1f;
+                reloadSource.spatialBlend = 1f; // SoundManager 없는 씬(테스트) 폴백
+                // 공용 3D 세팅 — 안 거치면 SFX 믹서 그룹 밖이라 볼륨 슬라이더가 이 소리만 못 잡는다
+                if (SoundManager.Instance != null) SoundManager.Instance.Setup3DSource(reloadSource);
             }
             reloadSource.clip = gunData.reloadSound;
             reloadSource.volume = gunData.reloadVolume;
