@@ -207,8 +207,9 @@ public class SkyboxTimeView : MonoBehaviour
     float _moonMid;           // 2단 감쇠의 중간 단 — 이게 있어야 표시 속도가 0에서 부드럽게 출발한다
     float _moonSetStart;      // 전멸 순간의 달 각도 — 지는 구간은 여기서 180°까지 남은 밤 시간에 편다
     bool _moonCleared;        // 전멸을 감지했는가 (setStart를 한 번만 찍기 위함)
-    bool _moonNightActive;    // 밤 궤적이 켜져 있는가 — 밤 진입 순간 0°(지평선)에서 시작
+    bool _moonNightActive;    // 표시 각도(_moonShown)에 밤 궤적의 잔차가 남아 있는가 — 새벽 합류용
     bool _moonQuantityNight;  // 이번 프레임이 물량제 밤인가 — 해가 달의 정반대를 따르게 한다
+    bool _wasQuantity;        // 직전 프레임이 물량제 밤이었나 — 밤 진입(엣지) 감지는 이걸로 한다
 
     // 시간 구동 구간(뜸·짐)의 추종 강도 — 시계는 등속이라 바짝 따라가도 튀지 않는다.
     // 처치 구동 구간만 moonEase(느긋한 S자)를 쓴다.
@@ -232,21 +233,27 @@ public class SkyboxTimeView : MonoBehaviour
         _moonQuantityNight = tm != null && tm.TryGetNightWaveStatus(out remain, out total);
         if (!_moonQuantityNight)
         {
+            _wasQuantity = false;
             float raw = t * 360f + 180f;
             if (!_moonNightActive) return raw;
 
             // 밤 궤적이 남긴 잔차를 낮 궤적에 부드럽게 합류시킨다 — 새벽 순간
-            // 몇 도가 스냅으로 튀지 않게. 합류가 끝나면 원래 공식으로 되돌아간다.
+            // 몇 도가 스냅으로 튀지 않게. 완료 문턱은 움직이는 낮 목표의 정상 추적
+            // 지연(~1.5°)보다 커야 한다 — 작으면 영영 못 끝내고 잔차 추적이 낮 내내 이어진다.
             _moonShown = Mathf.Lerp(_moonShown, raw, 1f - Mathf.Exp(-2f * Time.deltaTime));
-            if (Mathf.Abs(_moonShown - raw) < 0.5f) { _moonNightActive = false; return raw; }
+            if (Mathf.Abs(Mathf.DeltaAngle(_moonShown, raw)) < 2f) { _moonNightActive = false; return raw; }
             return _moonShown;
         }
 
         float nightP = Mathf.Clamp01(tm.PhaseProgress);
         bool cleared = total > 0 && remain == 0;
 
-        if (!_moonNightActive)
+        if (!_wasQuantity)
         {
+            // 밤 진입은 "직전 프레임이 물량제 밤이 아니었다"로 감지한다 — _moonNightActive로
+            // 판정하면 새벽 합류가 덜 끝난 채 다음 밤이 오는 경우 리셋을 건너뛰어,
+            // 낮 궤적을 뒤쫓던 각도(~360°)에서 30°까지 하늘을 역주행했다.
+            _wasQuantity = true;
             _moonNightActive = true;
             _moonShown = 0f;   // 밤은 항상 지평선에서 시작한다
             _moonMid = 0f;
