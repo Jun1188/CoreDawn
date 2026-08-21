@@ -19,7 +19,7 @@ MonoBehaviour:
   isAutomatic: 1
   fireMode: 0
   fireRate: 0.1
-  range: 99
+  range: 100
   pellets: 1
   enemyLayer:
     serializedVersion: 2
@@ -34,7 +34,7 @@ MonoBehaviour:
   unlimitedAmmo: 0
   magSize: 30
   reloadTime: 2
-  zoomFOV: 40
+  zoomMultiplier: 1.59
   blockAim: 0
   swingTime: 0
   swingRotation: {x: 35, y: -55, z: 40}

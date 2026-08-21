@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 정조준(ADS) 연출 모듈 — 가늠자(sightPoint)가 카메라 중앙에 오도록 오프셋을 계산하고,
-/// "얼마나 조준했는지"(<see cref="AimWeight"/>)와 "원하는 FOV"(<see cref="AimFov"/>)를 게시한다.
+/// "얼마나 조준했는지"(<see cref="AimWeight"/>)와 "줌 배율"(<see cref="AimZoom"/>)을 게시한다.
 ///
 /// <b>카메라 FOV를 직접 쓰지 않는다</b> — 실제 FOV 합성은 <see cref="PlayerCameraRig"/>가
 /// 한 곳에서 처리한다 (이동 속도 FOV·슬라이딩 FOV와 싸우지 않기 위해서).
@@ -23,8 +23,8 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
     /// <summary>0=허리, 1=완전 조준. 카메라/무기 모듈 전체의 억제 기준.</summary>
     public float AimWeight { get; private set; }
 
-    /// <summary>PlayerCameraRig가 읽어가는 조준 FOV — 현재 무기의 zoomFOV(무기 데이터).</summary>
-    public float AimFov => zoomFov;
+    /// <summary>PlayerCameraRig가 읽어가는 조준 줌 배율 — 현재 무기의 zoomMultiplier(무기 데이터).</summary>
+    public float AimZoom => zoomMultiplier;
 
     /// <summary>달리기·슬라이딩 중이 아닌가 — 그때는 조준이 자동 해제된다.</summary>
     public bool IsAimAllowed
@@ -41,7 +41,7 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
     public Quaternion RotationOffset { get; private set; } = Quaternion.identity;
 
     private bool isAiming;
-    private float zoomFov = 50f;
+    private float zoomMultiplier = 1.3f;
     private Vector3 _targetPosOffset;
     private Quaternion _targetRotOffset = Quaternion.identity;
 
@@ -57,10 +57,10 @@ public class WeaponADS : MonoBehaviour, IWeaponMotionModule
         if (_provider?.Motion != null) _provider.Motion.AimWeight = 0f;
     }
 
-    /// <summary>WeaponManager가 무기 스왑 때 호출 — 새 무기의 가늠자와 줌 FOV 등록.</summary>
-    public void SetupWeapon(Transform sightPoint, float weaponZoomFov)
+    /// <summary>WeaponManager가 무기 스왑 때 호출 — 새 무기의 가늠자와 줌 배율 등록.</summary>
+    public void SetupWeapon(Transform sightPoint, float weaponZoomMultiplier)
     {
-        zoomFov = weaponZoomFov;
+        zoomMultiplier = weaponZoomMultiplier;
 
         // 가늠자가 없는 무기(근접 등) — 이전 무기의 정렬 오프셋을 물려받으면 안 된다
         if (sightPoint == null)

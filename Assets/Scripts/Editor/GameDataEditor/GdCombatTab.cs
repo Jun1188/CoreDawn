@@ -29,7 +29,7 @@ class GGun
 {
     public string id = "", displayName = "", description = "", fireMode = "Projectile", ammo = "";
     public bool isAutomatic;
-    public float fireRate = 0.2f, range, reloadTime = 1.5f, zoomFOV = 50, damageMultiplier = 1;
+    public float fireRate = 0.2f, range, reloadTime = 1.5f, zoomMultiplier = 1.3f, damageMultiplier = 1;
     public int magSize = 30, pellets = 1;
     public List<string> ammoFilter = new();
     public float xRecoil = 3, yRecoil = 2, zRecoil = 1, visualKickbackZ = 1;
@@ -108,7 +108,8 @@ class GdCombatTab : GdTab
                 isAutomatic = g.isAutomatic, fireMode = string.IsNullOrEmpty(g.fireMode) ? "Projectile" : g.fireMode,
                 fireRate = g.fireRate > 0 ? g.fireRate : 0.2f, range = Mathf.Max(0, g.range),
                 pellets = g.pellets > 0 ? g.pellets : 1, magSize = g.magSize > 0 ? g.magSize : 30,
-                reloadTime = g.reloadTime > 0 ? g.reloadTime : 1.5f, zoomFOV = g.zoomFOV > 0 ? g.zoomFOV : 50,
+                reloadTime = g.reloadTime > 0 ? g.reloadTime : 1.5f,
+                zoomMultiplier = g.zoomMultiplier > 0 ? g.zoomMultiplier : 1.3f,
                 ammoFilter = (g.ammoFilter ?? Array.Empty<string>()).ToList(),
                 ammo = g.ammoFilter is { Length: > 0 } af ? af[0] : "",   // 임포터 규약: 첫 항목이 기본
                 damageMultiplier = g.damageMultiplier >= 0 ? g.damageMultiplier : 1,
@@ -162,7 +163,7 @@ class GdCombatTab : GdTab
         var o = g.src ?? new GameDataImporter.GunDto();
         o.id = g.id; o.displayName = g.displayName; o.isAutomatic = g.isAutomatic; o.fireMode = g.fireMode;
         o.description = string.IsNullOrEmpty(g.description) ? null : g.description;
-        o.fireRate = g.fireRate; o.range = g.range; o.reloadTime = g.reloadTime; o.zoomFOV = g.zoomFOV;
+        o.fireRate = g.fireRate; o.range = g.range; o.reloadTime = g.reloadTime; o.zoomMultiplier = g.zoomMultiplier;
         o.magSize = g.magSize;
         o.pellets = g.pellets > 1 ? g.pellets : 0;   // 1 은 기본값 — 샷건만 8 (0 = 생략, 에셋 유지)
         // 임포터 규약: ammoFilter 첫 항목이 기본 탄종 — 기본을 앞으로 정렬해 내보낸다
@@ -566,7 +567,8 @@ class GdCombatTab : GdTab
             Cell("Reload", g.reloadTime, v => g.reloadTime = v),
             Cell("Range", g.range, v => g.range = v),
             Cell("Pellets", g.pellets, v => { g.pellets = Mathf.Max(1, Mathf.RoundToInt(v)); RefreshDps(); }, "방아쇠당 발사 수. 샷건 8, 나머지 1"),
-            Cell("Zoom FOV", g.zoomFOV, v => g.zoomFOV = v)));
+            Cell("Zoom 배율", g.zoomMultiplier, v => g.zoomMultiplier = Mathf.Max(1, v),
+                "조준 확대 배율 — FOV 절대값이 아니라 기본 화각 대비 배율")));
         detailBox.Add(NumGrid("반동",
             Cell("X", g.xRecoil, v => g.xRecoil = v),
             Cell("Y", g.yRecoil, v => g.yRecoil = v),

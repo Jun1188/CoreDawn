@@ -134,7 +134,7 @@ public class WeaponManager : MonoBehaviour
             motionManager.transform.localPosition = Vector3.zero;
             motionManager.transform.localRotation = Quaternion.identity;
 
-            adsModule.SetupWeapon(weapon.sightPoint, weapon.gunData.zoomFOV);
+            adsModule.SetupWeapon(weapon.sightPoint, weapon.gunData.zoomMultiplier);
 
             motionManager.transform.localPosition = tempPos;
             motionManager.transform.localRotation = tempRot;

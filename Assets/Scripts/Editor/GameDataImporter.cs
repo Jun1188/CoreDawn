@@ -90,7 +90,8 @@ public static class GameDataImporter
         public bool   unlimitedAmmo; // 탄을 소비하지 않는 무기(근접). 위와 같은 이유로 항상 명시할 것
         public bool   blockAim;      // 조준 불가(근접). 생략 = false = 조준 가능이라 기존 총은 안전
         public string fireMode;      // Projectile | Hitscan | Aura. 생략 시 유지
-        public float  fireRate, range, reloadTime, zoomFOV;   // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
+        public float  fireRate, range, reloadTime;            // >0일 때만 덮음. 탄속·탄도는 탄약(items) 소유
+        public float  zoomMultiplier;                         // 조준 줌 배율(FOV 절대값 아님). >0일 때만 덮음
         public int    magSize, pellets;                       // >0일 때만 덮음. pellets = 방아쇠당 탄 수(샷건 8)
 
         // 명중 효과는 탄약이 정의한다 — 총은 장전 가능 탄종 목록과 배율만 갖는다
@@ -448,7 +449,7 @@ public static class GameDataImporter
         if (dto.magSize     > 0)  gun.magSize     = dto.magSize;
         if (dto.pellets     > 0)  gun.pellets     = dto.pellets;
         if (dto.reloadTime  > 0f) gun.reloadTime  = dto.reloadTime;
-        if (dto.zoomFOV     > 0f) gun.zoomFOV     = dto.zoomFOV;
+        if (dto.zoomMultiplier > 0f) gun.zoomMultiplier = dto.zoomMultiplier;
 
         // 감각 튜닝 — 0이 정당한 값이라 음수가 "생략(유지)" 신호다
         if (dto.xRecoil >= 0f) gun.xRecoil = dto.xRecoil;

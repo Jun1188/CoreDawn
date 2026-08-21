@@ -1141,7 +1141,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCameraRig
   targetCamera: {fileID: 2516082347585424752}
   ads: {fileID: 3775902399488542646}
-  baseFov: 60
+  baseFov: 103
   speedFovGain: 9
   slideFovGain: 10
   fovSharpness: 7
