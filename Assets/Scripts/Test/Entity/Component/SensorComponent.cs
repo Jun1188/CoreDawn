@@ -18,8 +18,12 @@ public class SensorComponent
     private LayerMask targetLayer;
     private float lastScanTime = float.MinValue;
 
-    // GC 방지용 재사용 버퍼 (메인 스레드 전용)
-    private static readonly Collider[] overlapBuffer = new Collider[64];
+    // GC 방지용 재사용 버퍼 (메인 스레드 전용).
+    // static이 아니라 인스턴스 필드다 — 모든 센서(타워 전부 + 플레이어)가 한 배열을 나눠 쓰면
+    // 한 스캔이 다른 스캔의 결과 위에 덮어쓸 수 있고(재진입), 디버깅이 불가능한 형태로 어긋난다.
+    // 256칸인 이유: 가득 차면 Unity가 조용히 잘라내므로, 잘린 목록에서 고른 "가장 가까운 대상"이
+    // 실제로 가장 가깝지 않게 된다 — 밤 웨이브에 몬스터가 몰리는 순간 조준이 튀는 원인이 된다.
+    private readonly Collider[] overlapBuffer = new Collider[256];
 
     public float DetectionRange => detectionRange;
     public float ScanInterval => scanInterval;
@@ -64,6 +68,12 @@ public class SensorComponent
 
     // 범위 내 가장 가까운 유효 Entity (타워 자동 공격 등 단일 대상용, 즉시 스캔).
     // minRange보다 가까운 대상은 건너뛴다 — 박격포처럼 사각(최소 사거리)이 있는 발사기용.
+    //
+    // 거리는 반드시 Entity의 위치(= 목표를 계속 유지할지 판정하는 쪽이 쓰는 값)로 잰다.
+    // OverlapSphere는 콜라이더의 "부피"가 구에 닿기만 해도 돌려주므로, 반지름만 믿으면
+    // 중심이 사거리 밖인 대상까지 잡힌다(몬스터 캡슐 반지름 0.5 → 사거리+0.5까지).
+    // 그러면 잡는 쪽과 유지하는 쪽의 기준이 어긋나, 경계에 선 몬스터를 스캔마다
+    // 잡았다 버렸다 하며 포탑이 초당 몇 번씩 홱홱 돌아간다.
     public Entity GetClosestTarget(float rangeOverride = -1f, float minRange = 0f)
     {
         if (transform == null) return null;
@@ -77,8 +87,8 @@ public class SensorComponent
             Entity entity = overlapBuffer[i].GetComponentInParent<Entity>();
             if (entity == null || entity == owner || !entity.IsValidTarget()) continue;
 
-            float dist = Vector3.Distance(transform.position, overlapBuffer[i].transform.position);
-            if (dist < minRange) continue; // 사각 안 — 조준 불가
+            float dist = Vector3.Distance(transform.position, entity.GetPosition());
+            if (dist < minRange || dist > range) continue;   // 사각 안 / 사거리 밖 — 조준 불가
             if (dist < minDistance)
             {
                 minDistance = dist;

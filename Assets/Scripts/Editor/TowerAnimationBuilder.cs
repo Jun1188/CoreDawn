@@ -59,8 +59,10 @@ public static class TowerAnimationBuilder
         SetCurve(clip, PathAnim, "m_LocalScale", 'z', Key(0f, 0.01f), Key(0.30f, 1.06f), Key(DeployLength, 1f));
         SetCurve(clip, PathAnim, "m_LocalPosition", 'y', Key(0f, -0.6f), Key(0.30f, 0.06f), Key(DeployLength, 0f));
 
-        // 등장 중에도 포신은 곧게 — Starved에서 곧장 재배치될 때 처짐이 남지 않도록
-        SetIdentityRotation(clip, PathDroop);
+        // 등장 중에도 포신은 곧게 — Starved에서 곧장 재배치될 때 처짐이 남지 않도록.
+        // 길이를 DeployLength로 맞춘다: 기본값(0.5)을 쓰면 이 곡선 하나 때문에 클립이
+        // 0.5초로 늘어나 BattleTower.DeployDuration(0.45)과 어긋난다.
+        SetIdentityRotation(clip, PathDroop, DeployLength);
         return Save(clip);
     }
 
@@ -81,10 +83,17 @@ public static class TowerAnimationBuilder
         return Save(clip);
     }
 
-    /// <summary>탄약 끊김 — 동력이 빠진 듯 포신이 앞으로 처진다.</summary>
+    /// <summary>
+    /// 탄약 끊김 — 동력이 빠진 듯 포신이 앞으로 처진다.
+    ///
+    /// <b>루프하면 안 된다.</b> 이 클립은 주기 동작이 아니라 "처지고 그대로 있는 자세"라
+    /// 시작(0°)과 끝(DroopDegrees)이 다르다. 루프를 켜면 끝에서 시작으로 순간 이동하며
+    /// 1초마다 포신이 딱 하고 튀어오른다 — 보급이 끊긴 타워가 영원히 틱틱거리게 된다.
+    /// 마지막 프레임에서 멈춰 있다가, 보급이 복구되면 Tower_Active가 원위치로 되돌린다.
+    /// </summary>
     private static AnimationClip BuildStarved()
     {
-        var clip = NewClip("Tower_Starved", loop: true);
+        var clip = NewClip("Tower_Starved", loop: false);
 
         SetCurve(clip, PathAnim, "m_LocalScale", 'x', Key(0f, 1f), Key(1f, 1f));
         SetCurve(clip, PathAnim, "m_LocalScale", 'y', Key(0f, 1f), Key(1f, 1f));
@@ -178,12 +187,17 @@ public static class TowerAnimationBuilder
         AnimationUtility.SetEditorCurve(clip, binding, curve);
     }
 
-    private static void SetIdentityRotation(AnimationClip clip, string path)
+    /// <param name="length">
+    /// 마지막 키의 시각. 클립 길이는 가장 긴 곡선이 정하므로, 이 값이 클립 전체 길이보다
+    /// 길면 클립이 그만큼 늘어난다 — 등장 클립이 DeployDuration보다 길어져 연출이 끝나기
+    /// 전에 타워가 움직이기 시작하던 원인이었다.
+    /// </param>
+    private static void SetIdentityRotation(AnimationClip clip, string path, float length = 0.5f)
     {
-        SetCurve(clip, path, "m_LocalRotation", 'x', Key(0f, 0f), Key(0.5f, 0f));
-        SetCurve(clip, path, "m_LocalRotation", 'y', Key(0f, 0f), Key(0.5f, 0f));
-        SetCurve(clip, path, "m_LocalRotation", 'z', Key(0f, 0f), Key(0.5f, 0f));
-        SetCurve(clip, path, "m_LocalRotation", 'w', Key(0f, 1f), Key(0.5f, 1f));
+        SetCurve(clip, path, "m_LocalRotation", 'x', Key(0f, 0f), Key(length, 0f));
+        SetCurve(clip, path, "m_LocalRotation", 'y', Key(0f, 0f), Key(length, 0f));
+        SetCurve(clip, path, "m_LocalRotation", 'z', Key(0f, 0f), Key(length, 0f));
+        SetCurve(clip, path, "m_LocalRotation", 'w', Key(0f, 1f), Key(length, 1f));
     }
 
     /// <summary>
