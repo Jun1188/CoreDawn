@@ -1759,7 +1759,7 @@
         }
       ],
       "speedMultiplier": 0.0,
-      "speedTilesPerSec": 2.0,
+      "speedTilesPerSec": 1.0,
       "damageMultiplier": 0.0,
       "range": 0.0,
       "fireRate": 0.0,
@@ -1811,7 +1811,7 @@
         }
       ],
       "speedMultiplier": 0.0,
-      "speedTilesPerSec": 4.0,
+      "speedTilesPerSec": 2.0,
       "damageMultiplier": 0.0,
       "range": 0.0,
       "fireRate": 0.0,

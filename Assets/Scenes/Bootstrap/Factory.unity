@@ -167,8 +167,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb219762334e4f509c87686bcc6531e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BeltItemView
-  itemHeight: 1.5
-  itemScale: 0.5
+  itemHeight: 1
+  itemScale: 0.25
 --- !u!4 &624921172
 Transform:
   m_ObjectHideFlags: 0
@@ -239,8 +239,8 @@ MonoBehaviour:
   validMat: {fileID: 2100000, guid: 8101430187e8a5a479f3ed5dfedd8bfa, type: 2}
   invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
-  showPortsOnAim: 1
   demolishHoldSeconds: 0.4
+  buildRangeFallback: 16
 --- !u!4 &1310938166
 Transform:
   m_ObjectHideFlags: 0

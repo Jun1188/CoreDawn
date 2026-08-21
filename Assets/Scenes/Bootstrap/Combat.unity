@@ -271,7 +271,7 @@ MonoBehaviour:
   nightSpawnPointProvider: {fileID: 0}
   quantityBasedNightWaves: 1
   playerMaxHealth: 300
-  playerDetectionRange: 5
+  playerDetectionRange: 10
 --- !u!4 &2019025797
 Transform:
   m_ObjectHideFlags: 0
