@@ -91,6 +91,7 @@ public class Gun : MonoBehaviour
             {
                 StopAllCoroutines();
                 IsReloading = false;
+                if (reloadSource != null && reloadSource.isPlaying) reloadSource.Stop();
             }
 
             return;
@@ -119,8 +120,9 @@ public class Gun : MonoBehaviour
 
     private void OnDisable()
     {
-        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지
+        // 무기를 집어넣을 때 재장전 코루틴 안전하게 정지 — 소리도 함께 끊는다
         StopAllCoroutines();
+        if (reloadSource != null && reloadSource.isPlaying) reloadSource.Stop();
     }
 
     /// <summary>사격 시도 — 재장전·탄약·연사 간격을 통과하면 발사하고 true.</summary>
@@ -255,14 +257,26 @@ public class Gun : MonoBehaviour
         StartCoroutine(ReloadRoutine());
     }
 
+    // 재장전 소리는 전용 소스로 — 공용 풀의 PlayOneShot 은 개별 정지가 안 돼서,
+    // 총을 내렸다 들었다 반복하면 끊긴 재장전마다 소리가 쌓여 중첩된다.
+    private AudioSource reloadSource;
+
     private IEnumerator ReloadRoutine()
     {
         IsReloading = true;
 
         if (gunData != null && gunData.reloadSound != null)
         {
-            if (SoundManager.Instance != null)
-                SoundManager.Instance.Play3DSFX(gunData.reloadSound, transform.position, gunData.reloadVolume);
+            if (reloadSource == null)
+            {
+                reloadSource = gameObject.AddComponent<AudioSource>();
+                reloadSource.playOnAwake = false;
+                reloadSource.spatialBlend = 1f;
+            }
+            reloadSource.clip = gunData.reloadSound;
+            reloadSource.volume = gunData.reloadVolume;
+            reloadSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
+            reloadSource.Play();
         }
         yield return new WaitForSeconds(gunData.reloadTime);
 
