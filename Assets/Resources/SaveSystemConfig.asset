@@ -16,7 +16,7 @@ MonoBehaviour:
   autoSlotCount: 2
   compress: 1
   titleScenePath: Assets/Scenes/Title.unity
-  newGameScenePath: Assets/Scenes/Test/MainScene.unity
+  newGameScenePath: Assets/Scenes/World.unity
   autoSaveOnDayStart: 1
   autoSaveOnNightStart: 1
   autoSaveOnQuit: 1
