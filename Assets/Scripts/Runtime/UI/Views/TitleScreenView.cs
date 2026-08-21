@@ -45,6 +45,10 @@ public class TitleScreenView : MonoBehaviour
         UnityEngine.Cursor.visible = true;
         Time.timeScale = 1f;
 
+        // 게임에서 돌아와도 전투·밤 BGM이 계속 흐르던 것 — 타이틀은 메인 테마로 되돌린다.
+        // 같은 곡이면 PlayBGM이 스스로 무시하므로(첫 부팅) 중복 재생 걱정은 없다.
+        if (SoundManager.Instance != null) SoundManager.Instance.PlayBGM(BGMType.Main);
+
         menuPage = root.Q("menu-page");
         loadPage = root.Q("load-page");
         recent = root.Q<Label>("recent");

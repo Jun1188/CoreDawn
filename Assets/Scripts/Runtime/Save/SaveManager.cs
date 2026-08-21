@@ -321,12 +321,17 @@ public class SaveManager : MonoBehaviour
     }
 
     /// <summary>
-    /// DontDestroyOnLoad 싱글턴은 씬을 다시 열어도 초기화되지 않는다.
-    /// 이전 세션의 진행도가 새로 불러온 세이브에 섞이지 않게 여기서 직접 되돌린다.
+    /// DontDestroyOnLoad 싱글턴은 씬을 다시 열어도 초기화되지 않는다 — 파괴가 곧 초기화다.
+    /// 되돌릴 필드를 골라 리셋하는 방식은 새 상태가 생길 때마다 여기를 잊게 되므로,
+    /// 게임플레이 영속 매니저를 통째로 파괴한다. 다음 게임플레이 씬이 자기 것을 새로 만들고
+    /// (Awake의 중복 가드가 이때는 통과한다), 타이틀에는 아예 없는 것이 정상이다 —
+    /// 시계가 타이틀에서도 돌며 이벤트를 쏘고, 새 게임에 이전 일차가 이월되던 원인.
+    /// SoundManager·InputManager·SaveManager는 게임 상태가 없어 남긴다.
     /// </summary>
     static void ResetPersistentSingletons()
     {
-        if (GameManager.Instance != null) GameManager.Instance.ResetProgress();
+        if (TimeManager.Instance != null) Destroy(TimeManager.Instance.gameObject);
+        if (GameManager.Instance != null) Destroy(GameManager.Instance.gameObject);
     }
 
     // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────

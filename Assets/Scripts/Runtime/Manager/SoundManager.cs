@@ -285,7 +285,8 @@ public class SoundManager : MonoBehaviour
 
         while (timer < duration)
         {
-            timer += Time.deltaTime;
+            // 일시정지(timeScale 0) 중에 씬을 떠나도 페이드가 얼어붙지 않게 실시간으로 잰다
+            timer += Time.unscaledDeltaTime;
             float progress = timer / duration;
 
             fadeOutSource.volume = Mathf.Lerp(startVolume, 0f, progress);
