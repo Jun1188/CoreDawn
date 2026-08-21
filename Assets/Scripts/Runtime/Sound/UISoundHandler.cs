@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,6 +19,7 @@ public class UISoundHandler : MonoBehaviour
     // 버튼 안 Label로 포인터가 넘어가도 Enter가 다시 온다 — 대상이 실제로 바뀌었을
     // 때만 내지 않으면 버튼 하나에서 호버음이 여러 번 울린다
     private VisualElement lastHovered;
+    private readonly HashSet<int> pressedPointers = new();
 
     private void Update()
     {
@@ -43,6 +45,12 @@ public class UISoundHandler : MonoBehaviour
         root.UnregisterCallback<PointerDownEvent>(OnPointerDown, TrickleDown.TrickleDown);
         root.RegisterCallback<PointerDownEvent>(OnPointerDown, TrickleDown.TrickleDown);
 
+        root.UnregisterCallback<PointerUpEvent>(OnPointerUp, TrickleDown.TrickleDown);
+        root.RegisterCallback<PointerUpEvent>(OnPointerUp, TrickleDown.TrickleDown);
+
+        root.UnregisterCallback<PointerCancelEvent>(OnPointerCancel, TrickleDown.TrickleDown);
+        root.RegisterCallback<PointerCancelEvent>(OnPointerCancel, TrickleDown.TrickleDown);
+
         root.UnregisterCallback<PointerEnterEvent>(OnPointerEnter, TrickleDown.TrickleDown);
         root.RegisterCallback<PointerEnterEvent>(OnPointerEnter, TrickleDown.TrickleDown);
 
@@ -52,12 +60,28 @@ public class UISoundHandler : MonoBehaviour
 
     private void OnPointerDown(PointerDownEvent evt)
     {
-        VisualElement clickable = GetClickableTarget(evt.target as VisualElement);
-        if (clickable == null) return;
+        int pointerId = evt.pointerId;
 
+        // 같은 포인터가 눌린 상태에서는 클릭음 재생 금지
+        if (pressedPointers.Contains(pointerId))
+            return;
+
+        VisualElement clickable = GetClickableTarget(evt.target as VisualElement);
+        if (clickable == null)
+            return;
+
+        pressedPointers.Add(pointerId);
         PlaySound(CommonSFX.Click);
     }
+    private void OnPointerUp(PointerUpEvent evt)
+    {
+        pressedPointers.Remove(evt.pointerId);
+    }
 
+    private void OnPointerCancel(PointerCancelEvent evt)
+    {
+        pressedPointers.Remove(evt.pointerId);
+    }
     private void OnPointerEnter(PointerEnterEvent evt)
     {
         VisualElement clickable = GetClickableTarget(evt.target as VisualElement);
@@ -105,5 +129,10 @@ public class UISoundHandler : MonoBehaviour
     {
         if (SoundManager.Instance == null) return;
         SoundManager.Instance.PlayCommonSFX(sfx);
+    }
+    private void OnDisable()
+    {
+        pressedPointers.Clear();
+        lastHovered = null;
     }
 }

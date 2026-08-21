@@ -980,9 +980,6 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     private void PlayDamageVignette()
     {
-        Debug.Log(
-            $"[PlayerController] PlayDamageVignette / vignette = {vignette}"
-        );
 
         if (vignette == null)
             return;
@@ -1013,68 +1010,43 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     private void RespawnAtCore()
     {
-        Debug.Log("[PlayerController] ===== Respawn 시작 =====");
 
         BindPlayerEntityIfNeeded();
 
         if (playerEntity == null)
-        {
-            Debug.LogError(
-                "[PlayerController] Respawn 시점에도 Player 엔티티가 없습니다."
-            );
             return;
-        }
 
         BuildingEntity core = FindCore();
 
         if (core == null)
-        {
-            Debug.LogError(
-                "[PlayerController] 씬에서 Core를 찾지 못했습니다."
-            );
             return;
-        }
+        
 
         if (!TryFindCoreRespawnPosition(
                 core,
                 out Vector3 respawnPosition))
-        {
-            Debug.LogError(
-                "[PlayerController] Core 주변에 유효한 부활 위치가 없습니다."
-            );
             return;
-        }
+        
 
         float respawnYaw = core.transform.eulerAngles.y;
 
-        Debug.Log(
-            $"[PlayerController] Respawn Point = {respawnPosition}"
-        );
 
         rb.isKinematic = false;
         rb.useGravity = true;
 
-        Debug.Log("[PlayerController] Rigidbody 복구 완료");
 
         playerEntity.Revive(respawnPosition);
 
-        Debug.Log("[PlayerController] Player.Revive 완료");
 
         RestoreTransform(
             respawnPosition,
             respawnYaw
         );
 
-        Debug.Log("[PlayerController] RestoreTransform 완료");
 
         ReleaseHeldInputs();
         _isDead = false;
 
-        Debug.Log(
-            $"[PlayerController] 부활 직후 HP = " +
-            $"{playerEntity.Health.CurrentHealth} / " +
-            $"{playerEntity.Health.MaxHealth}"
-        );
 
         GameplayHUDView hud =
             FindFirstObjectByType<GameplayHUDView>();
@@ -1090,15 +1062,9 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
         if (weaponController != null)
             weaponController.ForceReleaseInput();
-
-        Debug.Log("[PlayerController] ===== Respawn 완료 =====");
     }
     public void HandlePlayerDamaged(float oldHealth, float newHealth)
     {
-        Debug.Log(
-            $"[PlayerController] Player Damaged : {oldHealth} -> {newHealth}"
-        );
-
         if (newHealth < oldHealth)
         {
             PlayDamageVignette();
@@ -1139,14 +1105,6 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
         playerEntity = GetComponent<Player>();
 
-        if (playerEntity != null)
-        {
-            Debug.Log(
-                $"[PlayerController] Player 엔티티 바인딩 완료 / " +
-                $"Player={playerEntity.GetInstanceID()} / " +
-                $"Health={playerEntity.Health.GetHashCode()}"
-            );
-        }
     }
 
     private BuildingEntity FindCore()
@@ -1242,18 +1200,6 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
                         continue;
                     }
-
-                    Debug.Log(
-                        $"[PlayerController] Core 주변 부활 위치 발견: " +
-                        $"cell={candidateCell}, " +
-                        $"world={respawnPosition}, " +
-                        $"radius={radius}"
-                    );
-                    Debug.Log(
-                        $"[PlayerController] Respawn Ground Hit = " +
-                        $"point={groundHit.point}, " +
-                        $"normal={groundHit.normal}"
-                    );
                     return true;
                 }
             }

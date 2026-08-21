@@ -134,9 +134,6 @@ public class Gun : MonoBehaviour
     /// <summary>사격 시도 — 재장전·탄약·연사 간격을 통과하면 발사하고 true.</summary>
     public bool TryFire()
     {
-        Debug.Log(
-        $"[Gun] TryFire / gun={name} / owner={OwnerEntity} / ownerDead={OwnerEntity?.IsDead}"
-    );
         // 사망 중에는 발사 금지
         if (OwnerEntity != null && OwnerEntity.IsDead)
             return false;
@@ -177,9 +174,6 @@ public class Gun : MonoBehaviour
     // 발사 — 스펙(ProjectileShot)을 만들어 공용 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
     private void Fire(int rounds)
     {
-        Debug.Log(
-    $"[Gun] 실제 Fire 실행 / gun={name} / owner={OwnerEntity} / ownerDead={OwnerEntity?.IsDead}"
-);
         if (gunData != null && gunData.fireSound != null)
         {
             Vector3 soundPos = muzzlePoint != null ? muzzlePoint.position : transform.position;

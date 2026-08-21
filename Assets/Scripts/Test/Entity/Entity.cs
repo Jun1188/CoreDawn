@@ -109,10 +109,6 @@ public class Entity : MonoBehaviour
     {
         float final = amount * Effects.IncomingDamageMultiplier;
 
-        Debug.Log(
-            $"[Entity] ReceiveDamage / Entity={name} / amount={amount} / final={final}"
-        );
-
         if (final > 0f)
         {
             health.TakeDamage(final);
