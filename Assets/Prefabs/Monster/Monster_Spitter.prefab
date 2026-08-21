@@ -98,16 +98,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 379e98897c92c70468e74d777b0fad93, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Monster
-  moveSpeed: 5
+  moveSpeed: 4
   deathDelay: 2
   destroyOnDeath: 1
   health:
     maxHealth: 60
   movement:
-    moveSpeed: 5
+    moveSpeed: 4
     rotateSpeed: 720
     crowdRadius: 0.4
-    knockbackDamping: 8
+    knockbackDamping: 10
     stickToGround: 1
   combat:
     attackRange: 1.5
@@ -115,6 +115,13 @@ MonoBehaviour:
     attackEffects:
     - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
       value: 10
+  maxPatience: 3
+  patienceRadius: 0
+  outsidePatienceDrain: 2
+  rangedPokePatienceDrain: 3
+  patienceRecoverRate: 2
+  absoluteLeashMultiplier: 1
+  returnRegenPerSecond: 0.12
 --- !u!114 &9025220649631867168
 MonoBehaviour:
   m_ObjectHideFlags: 0
