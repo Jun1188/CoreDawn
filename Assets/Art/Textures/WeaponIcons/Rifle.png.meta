@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Art/Textures/WeaponIcons/Rifle.png.meta
 guid: 5c2946d85ab19a04baf2b6e3f6354a44
-========
-guid: ffdbf5143bcd651499a9f3a01ec2336c
->>>>>>>> origin/main:Assets/Art/Textures/WeaponIcons/PlasmaCutter.png.meta
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
