@@ -205878,7 +205878,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3201304295260047070, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 3250906825666707958, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_LocalScale.x
@@ -206006,11 +206006,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5354792953702502582, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 5403117073540319064, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 5496319261266471851, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_IsActive
@@ -206058,7 +206058,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6904422464192262449, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 7096013060996383979, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: aimAmountMultiplier
@@ -206126,15 +206126,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9026961402327380799, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 9186000760144942549, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 9216608982967901336, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: knockbackPerDamage
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
