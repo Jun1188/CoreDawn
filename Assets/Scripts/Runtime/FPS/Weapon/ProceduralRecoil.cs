@@ -28,8 +28,8 @@ public class ProceduralRecoil : MonoBehaviour, ICameraMotionModule
     public float maxAccumulated = 12f;
 
     [Header("ADS")]
-    [Tooltip("조준 중 반동 크기 배율.")]
-    [Range(0f, 1f)] public float aimScale = 0.55f;
+    [Tooltip("조준 중 반동 크기 배율 — 절반으로 눌러 정조준 사격을 보상한다.")]
+    [Range(0f, 1f)] public float aimScale = 0.5f;
 
     [Header("Movement Coupling")]
     [Tooltip("이동 속도가 빠를수록 반동이 커지는 비율. 0이면 속도 무관.")]
