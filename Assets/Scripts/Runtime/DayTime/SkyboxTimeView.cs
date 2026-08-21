@@ -41,6 +41,11 @@ public class SkyboxTimeView : MonoBehaviour
              "월식 원뿔(1.1°) 바로 밖, 위상은 눈에 안 띄는 4°가 적정.")]
     [SerializeField] float moonOrbitYawOffset = 4f;
 
+    [Tooltip("물량제 밤 달 궤적의 보간 강도(초당). 2단 지수 감쇠라 처치로 목표가 튀어도 " +
+             "속도가 0에서 천천히 올라갔다가, 목표에 가까워지면 다시 천천히 줄며 멎는다. " +
+             "낮출수록 더 느긋하게 움직인다.")]
+    [SerializeField] float moonEase = 0.35f;
+
     [Tooltip("시간(0~1)에 따른 햇빛 색. 0=일출, 0.25=정오, 0.5=일몰.")]
     [SerializeField] Gradient lightColor;
 
@@ -145,8 +150,16 @@ public class SkyboxTimeView : MonoBehaviour
                     : 0.45f + (p - 0.15f) / 0.65f * 0.10f;
             sunT = 0.5f + g * 0.5f;
         }
-        var sunRot  = Quaternion.Euler(sunT * 360f, sunYaw, 0f);
-        var moonRot = Quaternion.Euler(t * 360f + 180f, sunYaw + moonOrbitYawOffset, 0f);
+        float moonAngle = MoonAngle(t);
+
+        // 물량제 밤에는 해가 달의 정반대를 따른다 — 스카이박스의 달 위상과 하늘 밝기가
+        // 해·달 각도차에서 나오므로, 해가 자기 궤적을 따로 돌면 밤새 보름달이 이지러졌다
+        // 돌아온다(반달 버그). 이러면 하늘 어둠도 시계가 아니라 밤의 실제 진행(달)을 따르고,
+        // 새벽(달 180° = 해 360°)에서 낮 궤적과 정확히 이어진다. 궤도면 4° 오프셋이
+        // 개기월식 판정(정렬 1.1°)은 계속 피해준다.
+        float sunAngle = _moonQuantityNight ? moonAngle + 180f : sunT * 360f;
+        var sunRot  = Quaternion.Euler(sunAngle, sunYaw, 0f);
+        var moonRot = Quaternion.Euler(moonAngle, sunYaw + moonOrbitYawOffset, 0f);
         if (sun != null) sun.rotation = sunRot;
         if (moon != null) moon.rotation = moonRot;
 
@@ -157,7 +170,7 @@ public class SkyboxTimeView : MonoBehaviour
         if (sunLight != null)
         {
             sunLight.transform.rotation = sunRot;
-            float elev = Mathf.Sin(sunT * 360f * Mathf.Deg2Rad);            // 해 고도(sin)
+            float elev = Mathf.Sin(sunAngle * Mathf.Deg2Rad);               // 실제 해 각도의 고도
             float gate = SmoothStep01(elev / Mathf.Sin(10f * Mathf.Deg2Rad)); // 고도 10°까지 페이드인
             if (lightColor != null) sunLight.color = lightColor.Evaluate(t);
             if (lightIntensity != null) sunLight.intensity = lightIntensity.Evaluate(t) * gate;
@@ -166,7 +179,7 @@ public class SkyboxTimeView : MonoBehaviour
         if (moonLight != null)
         {
             moonLight.transform.rotation = moonRot;
-            float elev = -Mathf.Sin(t * 360f * Mathf.Deg2Rad);              // 달 고도 = 해의 반대
+            float elev = Mathf.Sin(moonAngle * Mathf.Deg2Rad);              // 실제 달 각도의 고도
             float gate = SmoothStep01(elev / Mathf.Sin(10f * Mathf.Deg2Rad));
             moonLight.color = moonColor;
             moonLight.intensity = moonIntensity * gate;
@@ -186,6 +199,92 @@ public class SkyboxTimeView : MonoBehaviour
             foreach (var (mat, prop, original) in _vegCache)
                 if (mat != null) mat.SetColor(prop, original * tint);
         }
+    }
+
+    // ── 달 궤적 ─────────────────────────────────────────────────
+
+    float _moonShown;         // 물량제 밤 궤적의 표시 각도(0~180)
+    float _moonMid;           // 2단 감쇠의 중간 단 — 이게 있어야 표시 속도가 0에서 부드럽게 출발한다
+    float _moonSetStart;      // 전멸 순간의 달 각도 — 지는 구간은 여기서 180°까지 남은 밤 시간에 편다
+    bool _moonCleared;        // 전멸을 감지했는가 (setStart를 한 번만 찍기 위함)
+    bool _moonNightActive;    // 밤 궤적이 켜져 있는가 — 밤 진입 순간 0°(지평선)에서 시작
+    bool _moonQuantityNight;  // 이번 프레임이 물량제 밤인가 — 해가 달의 정반대를 따르게 한다
+
+    // 시간 구동 구간(뜸·짐)의 추종 강도 — 시계는 등속이라 바짝 따라가도 튀지 않는다.
+    // 처치 구동 구간만 moonEase(느긋한 S자)를 쓴다.
+    const float TimeEase = 2f;
+
+    /// <summary>
+    /// 달의 X축 각도. 낮·에디터 프리뷰·시간제 밤은 해의 정반대(t·360+180) 그대로.
+    /// 물량제 밤은 0~180°(뜸→짐)를 세 구간으로 나눠 흐른다:
+    ///   0→30°       자정까지의 밤 시간 진행 (시계)
+    ///   30→처치각    처치 비율 = 잡은 수 / 전체 물량 (최대 150°)
+    ///   전멸각→180°  전멸 순간의 각도에서 새벽까지의 밤 시간에 펴서 진다 (시계)
+    /// 지는 구간을 고정 150° 기준으로 두면 빨리 전멸했을 때 목표가 한참 앞으로 튀어
+    /// 달이 훅 진다 — 전멸 순간의 자리에서 시작하면 어디서 전멸하든 새벽에 정확히
+    /// 다 지고 속도도 일정하다. 표시 각도는 목표를 2단 지수 감쇠로 뒤쫓는다 —
+    /// 처치 구간은 느긋한 S자(moonEase), 시계 구간은 등속이라 바짝(TimeEase) 따른다.
+    /// </summary>
+    float MoonAngle(float t)
+    {
+        var tm = Application.isPlaying ? TimeManager.Instance : null;
+        int remain = 0, total = 0;
+        _moonQuantityNight = tm != null && tm.TryGetNightWaveStatus(out remain, out total);
+        if (!_moonQuantityNight)
+        {
+            float raw = t * 360f + 180f;
+            if (!_moonNightActive) return raw;
+
+            // 밤 궤적이 남긴 잔차를 낮 궤적에 부드럽게 합류시킨다 — 새벽 순간
+            // 몇 도가 스냅으로 튀지 않게. 합류가 끝나면 원래 공식으로 되돌아간다.
+            _moonShown = Mathf.Lerp(_moonShown, raw, 1f - Mathf.Exp(-2f * Time.deltaTime));
+            if (Mathf.Abs(_moonShown - raw) < 0.5f) { _moonNightActive = false; return raw; }
+            return _moonShown;
+        }
+
+        float nightP = Mathf.Clamp01(tm.PhaseProgress);
+        bool cleared = total > 0 && remain == 0;
+
+        if (!_moonNightActive)
+        {
+            _moonNightActive = true;
+            _moonShown = 0f;   // 밤은 항상 지평선에서 시작한다
+            _moonMid = 0f;
+            _moonCleared = false;
+        }
+
+        if (cleared && !_moonCleared)
+        {
+            _moonCleared = true;
+            _moonSetStart = _moonShown;   // 전멸 순간의 그 자리에서 지기 시작한다
+        }
+
+        float target, ease;
+        if (cleared)
+        {
+            target = Mathf.Lerp(_moonSetStart, 180f, Mathf.Clamp01((nightP - 0.5f) / 0.5f));
+            ease = TimeEase;
+        }
+        else if (nightP < 0.5f)
+        {
+            target = nightP / 0.5f * 30f;
+            ease = TimeEase;
+        }
+        else
+        {
+            target = 30f + (total > 0 ? 120f * (total - remain) / total : 0f);
+            ease = moonEase;
+        }
+
+        // 2단 감쇠 — 중간 단이 목표를 쫓고, 표시 단이 중간 단을 쫓는다.
+        // 1단이면 목표가 튀는 순간 속도도 튄다(처치 때 확 올라가던 원인). 2단은 표시 속도가
+        // 0에서 부드럽게 올라갔다가 목표 근처에서 다시 부드럽게 죽는 S자 프로파일이 된다.
+        // 구간별 ease 전환은 목표와 표시가 거의 붙은 순간(경계는 값이 이어진다)에 일어나
+        // 속도 점프를 만들지 않는다.
+        float a = 1f - Mathf.Exp(-ease * Time.deltaTime);
+        _moonMid = Mathf.Lerp(_moonMid, target, a);
+        _moonShown = Mathf.Lerp(_moonShown, _moonMid, a);
+        return _moonShown;
     }
 
     static float SmoothStep01(float x) => Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(x));
