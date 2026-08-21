@@ -56,7 +56,6 @@ public class HitMarkerHUD : MonoBehaviour
     private void OnEnable()
     {
         CombatEvents.OnPlayerHitEnemy += ShowHitMarker;
-        print("HitMarker - CombatEvents 등록");
     }
 
     private void OnDisable()
@@ -74,8 +73,6 @@ public class HitMarkerHUD : MonoBehaviour
             );
             return;
         }
-
-        print("HitMarker - 실행");
 
         fadeTween?.Kill();
 

@@ -690,6 +690,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1266478037}
     - target: {fileID: 6442160254612740854, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: footstepVolume
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6442160254612740854, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: chestInventoryUI
       value: 
       objectReference: {fileID: 762098484}
