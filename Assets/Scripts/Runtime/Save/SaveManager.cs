@@ -33,7 +33,7 @@ public class SaveManager : MonoBehaviour
 
     double _playtime;
     string _currentSlotId;
-    int _autoSlotCursor;
+    int _autoSlotCursor = -1;   // -1 = 미초기화 — 첫 자동 저장 때 디스크에서 이어받는다
 
     public double Playtime => _playtime;
 
@@ -168,9 +168,33 @@ public class SaveManager : MonoBehaviour
         if (ShouldSuppressAutoSave()) return false;
 
         int count = Mathf.Max(1, Config.autoSlotCount);
+        if (_autoSlotCursor < 0) _autoSlotCursor = NextAutoIndexFromDisk(count);
         string slotId = SaveSystemConfig.AutoSlotId(_autoSlotCursor % count);
         _autoSlotCursor = (_autoSlotCursor + 1) % count;
         return Save(slotId);
+    }
+
+    /// <summary>
+    /// 세션의 첫 자동 저장이 쓸 칸 — 디스크에서 가장 최근에 쓰인 자동 슬롯의 <b>다음</b>.
+    /// 커서가 매 실행 0에서 시작하면 첫 자동 저장이 항상 auto_01, 대개 직전 세션의
+    /// 최신본을 덮는다 — 링버퍼가 "가장 오래된 것부터" 돌려면 세션을 넘어 이어서 돌아야 한다.
+    /// </summary>
+    int NextAutoIndexFromDisk(int count)
+    {
+        int newest = -1;
+        DateTime newestAt = DateTime.MinValue;
+        for (int i = 0; i < count; i++)
+        {
+            var meta = SaveStorage.ReadMeta(SaveSystemConfig.AutoSlotId(i));
+            if (meta == null) continue;
+            if (DateTime.TryParse(meta.SavedAtUtc, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out var at) && at > newestAt)
+            {
+                newestAt = at;
+                newest = i;
+            }
+        }
+        return (newest + 1) % count;
     }
 
     SaveFile CaptureToFile(string slotId)
