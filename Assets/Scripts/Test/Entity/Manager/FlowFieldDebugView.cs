@@ -12,22 +12,17 @@ using UnityEngine;
 /// Scene 뷰에서만 보인다. 통짜 메시는 드로우콜 하나로 끝나고 Game 뷰에도 그대로 나오므로
 /// 플레이하면서 흐름을 볼 수 있다. 색은 칸마다 다르니 머티리얼이 아니라 정점 색으로 싣는다.
 ///
-/// 갱신은 필요할 때만 — 기준점이 반 칸 넘게 움직였거나 필드가 다시 계산됐을 때.
+/// 다시 그리는 시점은 <b>필드가 다시 계산될 때</b>뿐이다(FlowFieldManager.FieldRebuilt).
+/// 필드가 그대로인데 메시를 다시 지을 이유가 없고, 필드가 바뀌면 반드시 다시 지어야 한다.
 /// </summary>
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class FlowFieldDebugView : MonoBehaviour
 {
     [Header("표시")]
-    [Tooltip("끄면 아무것도 그리지 않는다 (Game 뷰·Scene 뷰 공통).")]
-    [SerializeField] bool show = true;
+    [Tooltip("켜면 그린다 (Game 뷰·Scene 뷰 공통). 맵 전체를 훑어 메시를 다시 짓는 일이라 " +
+             "평소에는 꺼 둔다 — 필요할 때만 켤 것.")]
+    [SerializeField] bool show = false;
 
-    [Tooltip("기준점에서 이 반경(칸)만 그린다.")]
-    [SerializeField, Range(3, 80)] int radiusCells = 25;
-
-    [Tooltip("비워 두면 플레이어를 따라간다. 플레이어도 없으면 이 오브젝트 위치.")]
-    [SerializeField] Transform focus;
-
-    [Header("모양")]
     [Tooltip("칸 크기 대비 화살표 길이.")]
     [SerializeField, Range(0.2f, 1f)] float arrowScale = 0.65f;
 
@@ -40,25 +35,33 @@ public class FlowFieldDebugView : MonoBehaviour
     [Tooltip("목표까지의 비용을 색으로 — 가까울수록 초록, 멀수록 붉게. 끄면 단색.")]
     [SerializeField] bool colorByCost = true;
 
-    [Tooltip("도달할 수 없는 칸(막힘)을 회색 ×로 표시.")]
-    [SerializeField] bool showBlocked = true;
+    [Tooltip("화살촉까지 그린다. 끄면 선분만 남아 정점이 1/3로 준다 — 넓게 볼 때 유리하다.")]
+    [SerializeField] bool drawHeads = true;
 
-    static readonly Color GoalColor = new(0.2f, 0.9f, 1f);
-    static readonly Color BlockedColor = new(0.5f, 0.5f, 0.55f, 0.5f);
-    static readonly Color FlatColor = new(0.35f, 0.85f, 0.45f);
+    [Tooltip("도달할 수 없는 칸(막힘)도 회색 ×로 표시. 맵 전체를 그리므로 켜면 정점이 크게 는다.")]
+    [SerializeField] bool showBlocked = false;
+
+    static readonly Color32 GoalColor = new(51, 230, 255, 255);
+    static readonly Color32 BlockedColor = new(128, 128, 140, 110);
+    static readonly Color32 FlatColor = new(90, 217, 115, 255);
     static readonly Color NearColor = new(0.3f, 0.95f, 0.4f);
     static readonly Color FarColor = new(0.95f, 0.35f, 0.25f);
 
     Mesh mesh;
     MeshRenderer meshRenderer;
     Material material;
+    FlowFieldManager subscribed;
 
+    // 매번 새로 할당하면 맵 전체 규모(수십만 정점)에서 GC가 그대로 히치가 된다 — 재사용한다
     readonly List<Vector3> verts = new();
-    readonly List<Color> colors = new();
-    readonly List<int> indices = new();
+    readonly List<Color32> colors = new();
 
-    Vector2Int lastCenter = new(int.MinValue, int.MinValue);
-    float nextRefresh;
+    // 선분 인덱스는 언제나 0,1,2,…N-1 — 매번 채울 이유가 없어 한 번 만들어 길이만 맞춰 쓴다
+    int[] sequentialIndices = System.Array.Empty<int>();
+
+    Matrix4x4 worldToLocal;   // 셀마다 InverseTransformPoint를 부르지 않으려고 한 번만 잡는다
+
+    bool dirty;
 
     void OnEnable()
     {
@@ -78,14 +81,15 @@ public class FlowFieldDebugView : MonoBehaviour
         meshRenderer.receiveShadows = false;
 
         mesh = new Mesh { name = "FlowFieldDebug", hideFlags = HideFlags.HideAndDontSave };
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;   // 반경 80이면 정점이 16bit를 넘는다
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;   // 맵 전체는 16bit 인덱스를 훌쩍 넘는다
         GetComponent<MeshFilter>().sharedMesh = mesh;
 
-        lastCenter = new Vector2Int(int.MinValue, int.MinValue);
+        dirty = true;   // 이미 계산된 필드가 있으면 첫 프레임에 한 번 그린다
     }
 
     void OnDisable()
     {
+        Unsubscribe();
         if (mesh != null) DestroyImmediate(mesh);
         if (material != null) DestroyImmediate(material);
         mesh = null;
@@ -98,60 +102,69 @@ public class FlowFieldDebugView : MonoBehaviour
 
         var flow = FlowFieldManager.Instance;
         var grid = GridManager.Instance;
-        bool ready = show && flow != null && grid != null && flow.HasField;
 
+        // 매니저는 씬과 함께 갈릴 수 있다 — 바뀌면 구독을 옮긴다
+        if (flow != subscribed)
+        {
+            Unsubscribe();
+            subscribed = flow;
+            if (subscribed != null) subscribed.FieldRebuilt += MarkDirty;
+            dirty = true;
+        }
+
+        bool ready = show && flow != null && grid != null && flow.HasField;
         if (meshRenderer.enabled != ready) meshRenderer.enabled = ready;
         if (!ready) return;
 
         material.SetFloat("_Alpha", alpha);
 
-        // 필드는 몇 초마다 다시 계산되고 기준점도 움직인다 — 둘 중 하나라도 바뀌면 다시 짓는다.
-        // 매 프레임 짓지 않는 이유는 단순하다: 칸 수천 개를 매 프레임 순회할 이유가 없다.
-        var node = grid.NodeFromWorldPoint(FocusPosition());
-        if (node == null) return;
-
-        bool moved = node.gridCoord != lastCenter;
-        bool due = Time.unscaledTime >= nextRefresh;
-        if (!moved && !due) return;
-
-        lastCenter = node.gridCoord;
-        nextRefresh = Time.unscaledTime + 0.5f;
-        Rebuild(flow, grid, node.gridCoord);
+        if (!dirty) return;
+        dirty = false;
+        Rebuild(flow, grid);
     }
 
-    void Rebuild(FlowFieldManager flow, GridManager grid, Vector2Int mid)
+    void MarkDirty() => dirty = true;
+
+    void Unsubscribe()
+    {
+        if (subscribed != null) subscribed.FieldRebuilt -= MarkDirty;
+        subscribed = null;
+    }
+
+    void Rebuild(FlowFieldManager flow, GridManager grid)
     {
         verts.Clear();
         colors.Clear();
-        indices.Clear();
+        worldToLocal = transform.worldToLocalMatrix;
 
+        Vector2Int size = grid.gridSize;
         float cell = grid.cellSize;
         float half = cell * arrowScale * 0.5f;
         float head = cell * arrowScale * 0.3f;
 
-        // 색을 상대적으로 매기려면 보이는 범위의 비용 폭을 먼저 알아야 한다
+        // 색을 상대적으로 매기려면 필드 전체의 비용 폭을 먼저 알아야 한다
         int minCost = int.MaxValue, maxCost = int.MinValue;
         if (colorByCost)
         {
-            for (int dx = -radiusCells; dx <= radiusCells; dx++)
-                for (int dy = -radiusCells; dy <= radiusCells; dy++)
-                    if (flow.TryGetCost(new Vector2Int(mid.x + dx, mid.y + dy), out int c))
+            for (int x = 0; x < size.x; x++)
+                for (int y = 0; y < size.y; y++)
+                    if (flow.TryGetCost(new Vector2Int(x, y), out int c))
                     {
                         if (c < minCost) minCost = c;
                         if (c > maxCost) maxCost = c;
                     }
         }
 
-        for (int dx = -radiusCells; dx <= radiusCells; dx++)
+        for (int x = 0; x < size.x; x++)
         {
-            for (int dy = -radiusCells; dy <= radiusCells; dy++)
+            for (int y = 0; y < size.y; y++)
             {
-                var at = new Vector2Int(mid.x + dx, mid.y + dy);
+                var at = new Vector2Int(x, y);
                 var node = grid.GetNode(at);
                 if (node == null) continue;
 
                 // 메시는 이 오브젝트의 로컬 공간이다 — 월드 좌표를 그대로 넣으면 트랜스폼만큼 밀린다
-                Vector3 center = transform.InverseTransformPoint(node.worldPosition + Vector3.up * lift);
+                Vector3 center = worldToLocal.MultiplyPoint3x4(node.worldPosition + Vector3.up * lift);
 
                 if (!flow.TryGetCost(at, out int cost))
                 {
@@ -173,7 +186,7 @@ public class FlowFieldDebugView : MonoBehaviour
                 if (dir.sqrMagnitude < 0.0001f) continue;
                 dir.Normalize();
 
-                Color color = colorByCost ? CostColor(cost, minCost, maxCost) : FlatColor;
+                Color32 color = colorByCost ? CostColor(cost, minCost, maxCost) : FlatColor;
                 AddArrow(center - dir * half, center + dir * half, head, color);
             }
         }
@@ -181,38 +194,43 @@ public class FlowFieldDebugView : MonoBehaviour
         mesh.Clear();
         if (verts.Count == 0) return;
 
+        if (sequentialIndices.Length < verts.Count)
+        {
+            sequentialIndices = new int[verts.Count];
+            for (int i = 0; i < sequentialIndices.Length; i++) sequentialIndices[i] = i;
+        }
+
         mesh.SetVertices(verts);
         mesh.SetColors(colors);
-        mesh.SetIndices(indices, MeshTopology.Lines, 0);
+        mesh.SetIndices(sequentialIndices, 0, verts.Count, MeshTopology.Lines, 0);
         mesh.RecalculateBounds();
     }
 
     // ── 선분 조립 ────────────────────────────────────────────────
 
-    void AddLine(Vector3 a, Vector3 b, Color color)
+    void AddLine(Vector3 a, Vector3 b, Color32 color)
     {
-        indices.Add(verts.Count);
-        indices.Add(verts.Count + 1);
         verts.Add(a); colors.Add(color);
         verts.Add(b); colors.Add(color);
     }
 
-    void AddArrow(Vector3 from, Vector3 to, float headSize, Color color)
+    void AddArrow(Vector3 from, Vector3 to, float headSize, Color32 color)
     {
         AddLine(from, to, color);
+        if (!drawHeads) return;
 
         Vector3 dir = (to - from).normalized;
         AddLine(to, to + (Quaternion.Euler(0f, 155f, 0f) * dir) * headSize, color);
         AddLine(to, to + (Quaternion.Euler(0f, -155f, 0f) * dir) * headSize, color);
     }
 
-    void AddCross(Vector3 at, float size, Color color)
+    void AddCross(Vector3 at, float size, Color32 color)
     {
         AddLine(at + new Vector3(-size, 0f, -size), at + new Vector3(size, 0f, size), color);
         AddLine(at + new Vector3(-size, 0f, size), at + new Vector3(size, 0f, -size), color);
     }
 
-    void AddSquare(Vector3 at, float size, Color color)
+    void AddSquare(Vector3 at, float size, Color32 color)
     {
         Vector3 a = at + new Vector3(-size, 0f, -size);
         Vector3 b = at + new Vector3(size, 0f, -size);
@@ -221,16 +239,8 @@ public class FlowFieldDebugView : MonoBehaviour
         AddLine(a, b, color); AddLine(b, c, color); AddLine(c, d, color); AddLine(d, a, color);
     }
 
-    Vector3 FocusPosition()
-    {
-        if (focus != null) return focus.position;
-
-        var player = FindFirstObjectByType<PlayerController>();
-        return player != null ? player.transform.position : transform.position;
-    }
-
     /// <summary>가까울수록(비용이 낮을수록) 초록, 멀수록 붉게.</summary>
-    static Color CostColor(int cost, int min, int max)
+    static Color32 CostColor(int cost, int min, int max)
     {
         if (max <= min) return FlatColor;
         return Color.Lerp(NearColor, FarColor, Mathf.InverseLerp(min, max, cost));

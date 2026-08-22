@@ -24,6 +24,9 @@ public class FlowFieldManager : MonoBehaviour
 
     public bool HasField => field.HasField;
 
+    /// <summary>필드를 다시 계산했다 — 시각화처럼 필드를 그대로 베껴 두는 쪽이 구독한다.</summary>
+    public event System.Action FieldRebuilt;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -75,11 +78,13 @@ public class FlowFieldManager : MonoBehaviour
         if (GridManager.Instance == null)
         {
             field.Clear();
+            FieldRebuilt?.Invoke();
             return;
         }
 
         CollectGoals();
         field.Rebuild(GridManager.Instance, goalBuffer);
+        FieldRebuilt?.Invoke();
     }
 
     // 살아있는 건물이 차지한 셀을 목표로 수집. 단 벨트는 제외 —
