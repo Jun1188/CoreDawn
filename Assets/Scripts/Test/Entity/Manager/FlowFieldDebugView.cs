@@ -14,6 +14,10 @@ using UnityEngine;
 ///
 /// 다시 그리는 시점은 <b>필드가 다시 계산될 때</b>뿐이다(FlowFieldManager.FieldRebuilt).
 /// 필드가 그대로인데 메시를 다시 지을 이유가 없고, 필드가 바뀌면 반드시 다시 지어야 한다.
+///
+/// 조립은 <b>워커 스레드</b>에서 한다 — 맵 전체면 정점이 백만 단위라 메인에서 돌리면
+/// 필드 갱신마다 프레임이 멎는다. 워커는 순수 배열(필드 비용·셀 좌표 공식)만 만지고,
+/// 메시 업로드만 메인에서 한다(그것만이 Unity API다).
 /// </summary>
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class FlowFieldDebugView : MonoBehaviour
@@ -61,6 +65,7 @@ public class FlowFieldDebugView : MonoBehaviour
 
     Matrix4x4 worldToLocal;   // 셀마다 InverseTransformPoint를 부르지 않으려고 한 번만 잡는다
 
+    System.Threading.Tasks.Task buildTask;
     bool dirty;
 
     void OnEnable()
@@ -118,79 +123,33 @@ public class FlowFieldDebugView : MonoBehaviour
 
         material.SetFloat("_Alpha", alpha);
 
-        if (!dirty) return;
+        // 워커가 끝났으면 이번 프레임에 올린다 — 메시 업로드는 메인 스레드만 할 수 있다
+        if (buildTask != null && buildTask.IsCompleted)
+        {
+            var failed = buildTask.Exception;
+            buildTask = null;
+
+            if (failed != null) Debug.LogException(failed);
+            else Upload();
+        }
+
+        if (!dirty || buildTask != null) return;
         dirty = false;
-        Rebuild(flow, grid);
-    }
 
-    void MarkDirty() => dirty = true;
-
-    void Unsubscribe()
-    {
-        if (subscribed != null) subscribed.FieldRebuilt -= MarkDirty;
-        subscribed = null;
-    }
-
-    void Rebuild(FlowFieldManager flow, GridManager grid)
-    {
-        verts.Clear();
-        colors.Clear();
-        worldToLocal = transform.worldToLocalMatrix;
-
+        // 워커가 만질 것을 미리 굳혀 둔다: 필드 참조, 격자 정보, 로컬 변환.
+        // 이 값들은 메인에서만 바뀌므로 여기서 한 번 읽어 두면 워커는 순수 계산만 한다.
+        var field = flow.Field;
         Vector2Int size = grid.gridSize;
         float cell = grid.cellSize;
-        float half = cell * arrowScale * 0.5f;
-        float head = cell * arrowScale * 0.3f;
+        Vector3 origin = grid.originPosition;
+        worldToLocal = transform.worldToLocalMatrix;
 
-        // 색을 상대적으로 매기려면 필드 전체의 비용 폭을 먼저 알아야 한다
-        int minCost = int.MaxValue, maxCost = int.MinValue;
-        if (colorByCost)
-        {
-            for (int x = 0; x < size.x; x++)
-                for (int y = 0; y < size.y; y++)
-                    if (flow.TryGetCost(new Vector2Int(x, y), out int c))
-                    {
-                        if (c < minCost) minCost = c;
-                        if (c > maxCost) maxCost = c;
-                    }
-        }
+        buildTask = System.Threading.Tasks.Task.Run(() => Assemble(field, size, cell, origin));
+    }
 
-        for (int x = 0; x < size.x; x++)
-        {
-            for (int y = 0; y < size.y; y++)
-            {
-                var at = new Vector2Int(x, y);
-                var node = grid.GetNode(at);
-                if (node == null) continue;
-
-                // 메시는 이 오브젝트의 로컬 공간이다 — 월드 좌표를 그대로 넣으면 트랜스폼만큼 밀린다
-                Vector3 center = worldToLocal.MultiplyPoint3x4(node.worldPosition + Vector3.up * lift);
-
-                if (!flow.TryGetCost(at, out int cost))
-                {
-                    if (showBlocked) AddCross(center, cell * 0.25f, BlockedColor);
-                    continue;
-                }
-
-                if (!flow.TryGetNextCell(at, out Vector2Int nextCell))
-                {
-                    AddSquare(center, cell * 0.25f, GoalColor);   // 비용은 있는데 다음이 없다 = 목표 칸
-                    continue;
-                }
-
-                var nextNode = grid.GetNode(nextCell);
-                if (nextNode == null) continue;
-
-                Vector3 dir = nextNode.worldPosition - node.worldPosition;
-                dir.y = 0f;
-                if (dir.sqrMagnitude < 0.0001f) continue;
-                dir.Normalize();
-
-                Color32 color = colorByCost ? CostColor(cost, minCost, maxCost) : FlatColor;
-                AddArrow(center - dir * half, center + dir * half, head, color);
-            }
-        }
-
+    /// <summary>워커가 채워 둔 배열을 메시에 올린다 — 메인 스레드 전용.</summary>
+    void Upload()
+    {
         mesh.Clear();
         if (verts.Count == 0) return;
 
@@ -204,6 +163,70 @@ public class FlowFieldDebugView : MonoBehaviour
         mesh.SetColors(colors);
         mesh.SetIndices(sequentialIndices, 0, verts.Count, MeshTopology.Lines, 0);
         mesh.RecalculateBounds();
+    }
+
+    void MarkDirty() => dirty = true;
+
+    void Unsubscribe()
+    {
+        if (subscribed != null) subscribed.FieldRebuilt -= MarkDirty;
+        subscribed = null;
+    }
+
+    /// <summary>
+    /// 정점·색 배열을 채운다 — <b>워커 스레드에서 돈다</b>. Unity API를 부르지 않으려고
+    /// 셀의 월드 좌표도 GridManager를 거치지 않고 같은 공식(원점 + 칸 중앙)으로 직접 만든다.
+    /// </summary>
+    void Assemble(FlowField field, Vector2Int size, float cell, Vector3 origin)
+    {
+        verts.Clear();
+        colors.Clear();
+
+        float half = cell * arrowScale * 0.5f;
+        float head = cell * arrowScale * 0.3f;
+        float mid = cell * 0.5f;
+
+        // 색을 상대적으로 매기려면 필드 전체의 비용 폭을 먼저 알아야 한다
+        int minCost = int.MaxValue, maxCost = int.MinValue;
+        if (colorByCost)
+        {
+            for (int x = 0; x < size.x; x++)
+                for (int y = 0; y < size.y; y++)
+                    if (field.TryGetCost(new Vector2Int(x, y), out int c))
+                    {
+                        if (c < minCost) minCost = c;
+                        if (c > maxCost) maxCost = c;
+                    }
+        }
+
+        for (int x = 0; x < size.x; x++)
+        {
+            for (int y = 0; y < size.y; y++)
+            {
+                var at = new Vector2Int(x, y);
+                Vector3 world = new(origin.x + x * cell + mid, origin.y + lift, origin.z + y * cell + mid);
+                Vector3 center = worldToLocal.MultiplyPoint3x4(world);
+
+                if (!field.TryGetCost(at, out int cost))
+                {
+                    if (showBlocked) AddCross(center, cell * 0.25f, BlockedColor);
+                    continue;
+                }
+
+                if (!field.TryGetNext(at, out Vector2Int nextCell))
+                {
+                    AddSquare(center, cell * 0.25f, GoalColor);   // 비용은 있는데 다음이 없다 = 목표 칸
+                    continue;
+                }
+
+                Vector3 dir = new(nextCell.x - x, 0f, nextCell.y - y);
+                if (dir.sqrMagnitude < 0.0001f) continue;
+                dir.Normalize();
+
+                Color32 color = colorByCost ? CostColor(cost, minCost, maxCost) : FlatColor;
+                AddArrow(center - dir * half, center + dir * half, head, color);
+            }
+        }
     }
 
     // ── 선분 조립 ────────────────────────────────────────────────

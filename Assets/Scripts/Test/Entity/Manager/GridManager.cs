@@ -193,6 +193,66 @@ public class GridManager : MonoBehaviour
         return cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
     }
 
+    /// <summary>
+    /// 플로우필드 계산용 비용 스냅샷을 뜬다 — <b>메인 스레드 전용</b>.
+    ///
+    /// 워커 스레드는 Unity API(맵 SO·심 조회)를 부를 수 없으므로, 필드 계산에 필요한 것을
+    /// 여기서 배열로 한 번 떠서 넘긴다. 다익스트라가 칸마다 이웃 8개를 물어보는 것에 비해
+    /// 칸당 한 번만 계산하므로 총 호출 수도 크게 준다.
+    /// </summary>
+    public void CaptureCostSnapshot(FlowField.CostSnapshot snapshot)
+    {
+        if (snapshot == null) return;
+        snapshot.Resize(gridSize);
+
+        var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+
+        for (int y = 0; y < gridSize.y; y++)
+        {
+            int row = y * gridSize.x;
+            int tileY = y / subdiv;
+
+            for (int x = 0; x < gridSize.x; x++)
+            {
+                int i = row + x;
+                var node = grid[x, y];
+
+                // 아래는 EnterCost와 같은 규칙이되 <b>한 번에 두 답</b>을 낸다 —
+                // 진격/보행을 따로 물으면 타일·건물 조회가 두 배가 되고, 칸이 20만을 넘으면
+                // 그 두 배가 그대로 프레임에 얹힌다.
+                if (node == null || !node.walkable)
+                {
+                    snapshot.EnterCost[i] = TileRules.Blocked;
+                    snapshot.Walkable[i] = false;
+                    continue;
+                }
+
+                int cost = map != null
+                    ? TileRules.EnterCost(map.TileAt(new Vector2Int(x / subdiv, tileY)))
+                    : TileRules.BaseCost;
+
+                if (cost >= TileRules.Blocked)
+                {
+                    snapshot.EnterCost[i] = TileRules.Blocked;
+                    snapshot.Walkable[i] = false;
+                    continue;
+                }
+
+                var building = sim != null ? BuildingAt(node) : null;
+                if (building == null)
+                {
+                    snapshot.EnterCost[i] = cost;
+                    snapshot.Walkable[i] = true;   // 건물이 없으니 걸어서 지나갈 수 있다
+                    continue;
+                }
+
+                int hp = building.Data != null ? building.Data.maxHp : 100;
+                snapshot.EnterCost[i] = cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
+                snapshot.Walkable[i] = false;      // 뚫고는 가도 걸어서는 못 지나간다
+            }
+        }
+    }
+
     /// <summary>길찾기 노드 좌표 → 월드 칸(맵 타일) 좌표. 세분화 배율을 되돌린다.</summary>
     private Vector2Int TileOf(Vector2Int cell) => new(cell.x / subdiv, cell.y / subdiv);
 
