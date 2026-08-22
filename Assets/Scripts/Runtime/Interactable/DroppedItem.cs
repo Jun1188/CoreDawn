@@ -109,7 +109,12 @@ public class DroppedItem : Interactable
 
         if (success)
         {
-            Destroy(gameObject);   // 적재로 컨테이너가 Changed를 쏘면 HUD·장착이 스스로 따라온다
+            // Destroy는 프레임 끝에야 실행된다 — 그 사이에 E가 한 번 더 들어오면
+            // 같은 더미를 두 번 먹는다(연타 시 아이템 2배). 병합 쪽과 같은 방식으로
+            // 즉시 무효화해 후속 줍기·병합을 막는다(위의 amount 가드에 걸린다).
+            amount = 0;
+            promptMessage = null;   // 프롬프트가 비면 조준 대상에서도 즉시 빠진다
+            Destroy(gameObject);    // 적재로 컨테이너가 Changed를 쏘면 HUD·장착이 스스로 따라온다
         }
         else
         {
