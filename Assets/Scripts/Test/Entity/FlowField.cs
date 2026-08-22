@@ -10,32 +10,10 @@ using UnityEngine;
 // 모든 몬스터가 자기 셀의 방향만 샘플링하면 되므로 대량 웨이브에 적합하다.
 //
 // <b>워커 스레드에서 돈다</b> — 그래서 Unity API를 일절 부르지 않는다. 지형·건물 비용은
-// 메인 스레드가 미리 떠 온 배열(CostSnapshot)로 받고, 여기서는 배열 산술만 한다.
+// 메인 스레드가 미리 떠 온 배열(CostField)로 받고, 여기서는 배열 산술만 한다.
 // 자료구조도 2차원이 아니라 1차원 배열이다: 인덱스 계산이 곧 접근이라 캐시에 유리하다.
 public class FlowField
 {
-    /// <summary>
-    /// 메인 스레드가 떠 주는 지형·건물 비용. 워커는 이것만 보고 계산한다.
-    /// <see cref="GridManager.CaptureCostSnapshot"/>이 채운다.
-    /// </summary>
-    public class CostSnapshot
-    {
-        public Vector2Int Size;
-        public int[] EnterCost;   // 진격 비용 (건물 통과 허용) — Blocked 이상이면 못 감
-        public bool[] Walkable;   // 보행 가능 (건물은 막힘) — 대각 모서리 판정용
-
-        public void Resize(Vector2Int size)
-        {
-            int count = size.x * size.y;
-            if (EnterCost == null || EnterCost.Length != count)
-            {
-                EnterCost = new int[count];
-                Walkable = new bool[count];
-            }
-            Size = size;
-        }
-    }
-
     private int[] integration;    // 각 셀 → 목표까지의 누적 비용
     private int[] next;           // 각 셀이 향할 다음 셀 (인덱스, -1이면 없음)
     private Vector2Int size;
@@ -60,15 +38,15 @@ public class FlowField
     /// 필드를 다시 계산한다. <b>워커 스레드에서 호출해도 안전하다</b> — Unity API를 부르지 않는다.
     /// 계산이 끝날 때까지 이 인스턴스를 읽는 쪽이 없어야 한다(FlowFieldManager가 더블 버퍼로 보장).
     /// </summary>
-    public void Rebuild(CostSnapshot snapshot, List<Goal> goals)
+    public void Rebuild(CostField costs, List<Goal> goals)
     {
-        if (snapshot == null || snapshot.EnterCost == null || goals == null || goals.Count == 0)
+        if (costs == null || !costs.IsReady || goals == null || goals.Count == 0)
         {
             HasField = false;
             return;
         }
 
-        size = snapshot.Size;
+        size = costs.Size;
         int count = size.x * size.y;
 
         if (integration == null || integration.Length != count)
@@ -97,8 +75,8 @@ public class FlowField
             }
         }
 
-        var enterCost = snapshot.EnterCost;
-        var walkable = snapshot.Walkable;
+        var enterCost = costs.EnterCost;
+        var walkable = costs.Walkable;
 
         while (open.Count > 0)
         {

@@ -24,7 +24,6 @@ public class FlowFieldManager : MonoBehaviour
 
     private readonly List<FlowField.Goal> goalBuffer = new List<FlowField.Goal>();
     private readonly List<FlowField.Goal> workerGoals = new List<FlowField.Goal>();
-    private readonly FlowField.CostSnapshot snapshot = new FlowField.CostSnapshot();
 
     private System.Threading.Tasks.Task rebuildTask;
     private bool dirty;
@@ -118,14 +117,15 @@ public class FlowFieldManager : MonoBehaviour
         }
 
         CollectGoals();
-        grid.CaptureCostSnapshot(snapshot);
 
         // 목표 목록은 복사해서 넘긴다 — 워커가 읽는 동안 메인이 다음 수집으로 덮어쓰면 안 된다
         workerGoals.Clear();
         workerGoals.AddRange(goalBuffer);
 
+        // 비용 필드는 그리드가 소유하고 항상 최신이다(건물이 바뀐 자리만 갱신됨)
+        var costs = grid.Costs;
         var target = back;
-        rebuildTask = System.Threading.Tasks.Task.Run(() => target.Rebuild(snapshot, workerGoals));
+        rebuildTask = System.Threading.Tasks.Task.Run(() => target.Rebuild(costs, workerGoals));
     }
 
     // 살아있는 건물이 차지한 셀을 목표로 수집. 단 벨트는 제외 —

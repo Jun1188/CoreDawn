@@ -97,13 +97,29 @@ public class BuildingEntity : Entity, IInteractable
     {
         all.Add(this);
         // 건물 배치/파괴는 몬스터 경로에 영향을 주므로 플로우필드 갱신 예약
+        RefreshPathingCosts();
         if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
     }
 
     private void OnDisable()
     {
         all.Remove(this);
+        RefreshPathingCosts();
         if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+    }
+
+    /// <summary>
+    /// 이 건물이 덮는 칸의 길찾기 비용만 다시 칠한다 — 배치·철거 순간.
+    /// 맵 전체(20만 칸)를 다시 훑는 대신 바뀐 자리만 고치므로 벨트를 연달아 깔아도 부담이 없다.
+    /// 심이 아직 없으면(뷰 먼저 생성) 건너뛴다 — 심이 붙는 쪽에서 어차피 다시 부른다.
+    /// </summary>
+    private void RefreshPathingCosts()
+    {
+        var grid = GridManager.Instance;
+        if (grid == null) return;
+
+        if (TryGetFootprintRect(out Vector3 min, out Vector3 max)) grid.RefreshCostsIn(min, max);
+        else grid.RefreshCostsIn(transform.position, transform.position);
     }
 
     // 게임 종료/씬 언로드 중에는 정리에 손대지 않는다 — 그 시점의 Sim.Remove는
