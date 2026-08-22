@@ -48,6 +48,36 @@ public class BuildingEntity : Entity, IInteractable
     /// <summary>살아 있는 심에 연결돼 있는가 (철거·파괴된 심은 false).</summary>
     public bool HasSim => Sim != null && !Sim.IsRemoved;
 
+    // 칸 크기·원점의 소유자 — 씬이 바뀌면 파괴돼 가짜 null이 되므로 그때 다시 찾는다
+    static PlacementSystem placementCache;
+
+    /// <summary>
+    /// 점유 풋프린트의 월드 사각형(XZ 평면, y는 이 건물의 높이). 심이나 배치 시스템이 없으면 false.
+    ///
+    /// 모델(콜라이더)이 아니라 <b>차지한 칸</b>이 기준이다. 콜라이더는 메시마다 조각조각
+    /// 흩어져 있어서 하나만 집으면 건물의 일부만 가리키고(코어의 안테나 한 짝),
+    /// 전부 합쳐도 모델일 뿐 풋프린트는 아니다. 길을 막는 것도, 몬스터가 다가와 때리는
+    /// 것도 풋프린트이므로 시각화·목표·거리의 기준은 전부 여기여야 한다.
+    /// </summary>
+    public bool TryGetFootprintRect(out Vector3 min, out Vector3 max)
+    {
+        min = max = default;
+        if (!HasSim || Data == null) return false;
+
+        if (placementCache == null) placementCache = FindFirstObjectByType<PlacementSystem>();
+        if (placementCache == null) return false;
+
+        float cell = placementCache.CellSize;
+        Vector3 gridOrigin = placementCache.GridOrigin;
+        Vector2Int size = Size;
+
+        min = new Vector3(gridOrigin.x + Origin.x * cell,
+                          transform.position.y,
+                          gridOrigin.z + Origin.y * cell);
+        max = min + new Vector3(size.x * cell, 0f, size.y * cell);
+        return true;
+    }
+
     // ── 플레이어 상호작용(E) — 행동이 IInteractiveBehavior를 구현한 건물만 반응 (opt-in)
     public string Prompt => Sim?.Behavior is IInteractiveBehavior i ? i.InteractPrompt : null;
 

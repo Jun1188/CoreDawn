@@ -103,11 +103,20 @@ public class FlowFieldManager : MonoBehaviour
                          : building.Data != null ? building.Data.threatSeedCost
                          : fallbackGoalCost;
 
-            var col = building.GetComponentInChildren<Collider>();
-            if (col != null)
+            // 점유 풋프린트가 기준이다 — 콜라이더는 메시마다 조각나 있어서 하나만 집으면
+            // 건물의 일부(코어의 안테나 한 짝)만 목표가 되고, 전부 합쳐도 모델일 뿐이다.
+            // 심이 없는 씬 직접 배치 건물만 콜라이더로 폴백한다.
+            bool hasRect = building.TryGetFootprintRect(out Vector3 rectMin, out Vector3 rectMax);
+            var col = hasRect ? null : building.GetComponentInChildren<Collider>();
+
+            if (hasRect || col != null)
             {
-                Node min = grid.NodeFromWorldPoint(col.bounds.min);
-                Node max = grid.NodeFromWorldPoint(col.bounds.max);
+                // 풋프린트의 바깥 모서리는 이미 다음 칸이라 살짝 안쪽을 찍는다
+                Vector3 lo = hasRect ? rectMin : col.bounds.min;
+                Vector3 hi = hasRect ? rectMax - new Vector3(0.01f, 0f, 0.01f) : col.bounds.max;
+
+                Node min = grid.NodeFromWorldPoint(lo);
+                Node max = grid.NodeFromWorldPoint(hi);
                 if (min != null && max != null)
                 {
                     for (int x = min.gridCoord.x; x <= max.gridCoord.x; x++)
