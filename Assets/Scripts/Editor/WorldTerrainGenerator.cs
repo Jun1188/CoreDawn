@@ -522,8 +522,13 @@ public static class WorldTerrainGenerator
     // 시간대 틴트(SkyboxTimeView)가 서드파티 에셋을 건드리지 않고 색을 만질 수 있다.
     const string VegPrefabFolder = "Assets/Prefabs/Vegetation";
     const float DetailPointM = 0.5f;    // 디테일 점 간격 목표(m) — 격자 크기는 맵 실측(m)에서 산정
-    const int DetailPatch = 32;         // 패치 단위 — Demo와 같은 값
-    const float DetailDistance = 120f;  // 이 거리 밖에서는 그리지 않는다
+    // 패치 단위 — 디테일은 <b>패치마다 따로 그려진다</b>. 32면 해상도 1024에서 32×32=1024패치가
+    // 되고, 프로토타입 8종을 곱하면 배치가 수천 개로 불어난다(실측: 잔디가 전체 배치의 79%).
+    // 64로 키우면 패치가 256개로 줄어 그만큼 드로우콜이 준다 — 컬링 단위가 커지는 것이 대가다.
+    const int DetailPatch = 64;
+    // 이 거리 밖에서는 그리지 않는다. 실측(1920×1080): 120m면 배치 1258·삼각형 6.3M,
+    // 70m면 그 절반 남짓이다. 잔디는 발밑에서만 눈에 띄므로 멀리까지 그릴 값어치가 적다.
+    const float DetailDistance = 70f;
 
     // ── 절벽 프리팹 배치 ────────────────────────────────────────
     // 칸마다 바위 하나. 제약은 "절벽이 아닌 타일 침범 금지" 하나뿐이고, 절벽끼리는
