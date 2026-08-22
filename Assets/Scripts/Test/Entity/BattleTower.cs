@@ -68,6 +68,20 @@ public class BattleTower : BuildingEntity
     /// BuildingEntity.Data(BuildingDataSO)를 타워 전용 타입으로 좁혀 가린다(의도된 가림).</summary>
     private new TowerDataSO Data => Sim?.Data as TowerDataSO ?? fallbackData;
 
+    // 데이터의 minRange(타일)를 월드 미터로 환산해 둔 값 — 거리 비교가 전부 미터라서.
+    private float minRangeWorld;
+
+    /// <summary>
+    /// 타일 → 미터 환산 계수. 데이터의 사거리는 그리드 칸 수(타일) 단위인데 물리 쿼리는
+    /// 미터로 돈다 — 칸 크기를 곱하지 않으면 칸이 1m가 아닌 맵에서 사거리가 통째로 어긋난다.
+    /// 칸 크기의 소유자는 배치 시스템(맵에서 주입받는다). 없는 씬(테스트)은 1칸 = 1m.
+    /// </summary>
+    private static float TileSize()
+    {
+        var placement = FindFirstObjectByType<PlacementSystem>();
+        return placement != null ? placement.CellSize : 1f;
+    }
+
     /// <summary>
     /// 배치된 뒤 한 번, SO의 사거리·연사를 전투 컴포넌트에 주입한다.
     /// Sim은 PlacementBridge가 배치 시점에 꽂아주므로 Awake에서는 아직 없다.
@@ -79,8 +93,10 @@ public class BattleTower : BuildingEntity
         statsApplied = true;
 
         supply = Sim?.Behavior as TowerBehavior;
-        combat.Configure(data.range, data.fireRate > 0f ? 1f / data.fireRate : 1f);
-        sensor.SetDetectionRange(data.range);
+        float tile = TileSize();
+        combat.Configure(data.range * tile, data.fireRate > 0f ? 1f / data.fireRate : 1f);
+        sensor.SetDetectionRange(data.range * tile);
+        minRangeWorld = data.minRange * tile;
 
         previewRound = data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
 
@@ -206,7 +222,7 @@ public class BattleTower : BuildingEntity
             // 목표를 놓쳤다 다시 잡으며 포탑이 대기 스캔과 조준 사이를 홱홱 오간다.
             // 여유를 준 만큼은 "쫓아가다 놓치기 직전" 구간이 되어 조준이 이어진다.
             float d = Vector3.Distance(transform.position, target.GetPosition());
-            if (d <= combat.AttackRange + TargetKeepMargin && d >= data.minRange) return; // 유지
+            if (d <= combat.AttackRange + TargetKeepMargin && d >= minRangeWorld) return; // 유지
         }
 
         target = null;
@@ -215,7 +231,7 @@ public class BattleTower : BuildingEntity
         if (Time.time < nextScanTime) return;
         nextScanTime = Time.time + Mathf.Max(0.05f, sensor.ScanInterval);
 
-        target = sensor.GetClosestTarget(combat.AttackRange, data.minRange);
+        target = sensor.GetClosestTarget(combat.AttackRange, minRangeWorld);
         // 콜라이더는 목표를 잡을 때 한 번만 찾는다 — 조준은 매 프레임이라 여기서 캐시해야 한다
         targetCollider = target != null ? target.GetComponentInChildren<Collider>() : null;
     }

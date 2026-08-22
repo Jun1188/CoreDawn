@@ -48,6 +48,15 @@ public class DayCycle
     /// <summary>밤 시작 (인자 = 일수). 웨이브 스포너가 구독할 지점.</summary>
     public event Action<int> NightStarted;
 
+    /// <summary>
+    /// 밤으로 넘어가기 <b>직전</b> (인자 = 일수). 아직 Phase는 Day다.
+    ///
+    /// 자동 저장이 여기 붙는다: 밤 상태는 저장 대상이 아니므로(웨이브 진행이 스키마에 없다)
+    /// "그날 밤 직전"이 되돌아갈 수 있는 마지막 지점이다. 불러오면 낮의 끝에서 재개되어
+    /// 밤이 정상적으로 시작되고, 웨이브도 그때 새로 편성된다.
+    /// </summary>
+    public event Action<int> NightImminent;
+
     readonly float _dayDuration, _nightDuration;
     bool _started;
 
@@ -119,6 +128,11 @@ public class DayCycle
 
     void BeginNight(float overshoot)
     {
+        // 아직 낮이다 — 구독자(자동 저장)가 "밤 직전" 상태를 그대로 볼 수 있는 유일한 순간.
+        // 남은 낮 시간을 0으로 먼저 확정해, 이 시점을 저장했다 불러오면 곧바로 밤이 열린다.
+        PhaseRemaining = 0f;
+        NightImminent?.Invoke(DayNumber);
+
         Phase          = DayPhase.Night;
         PhaseRemaining = _nightDuration - overshoot;
         NightStarted?.Invoke(DayNumber);

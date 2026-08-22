@@ -19,6 +19,9 @@ public class PlayerInteractionManager : MonoBehaviour
 
     [SerializeField] float interactRange = 4f;
 
+    /// <summary>E키 상호작용 사거리 — 건설(배치·철거) 조준도 같은 값을 쓴다(PlacementSystem).</summary>
+    public float InteractRange => interactRange;
+
     /// <summary>이번 프레임에 조준 중인 상호작용 대상. 없거나 Prompt가 비었으면 null.</summary>
     public IInteractable Current { get; private set; }
 

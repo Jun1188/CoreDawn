@@ -205853,6 +205853,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 307732148233776431, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: interactRange
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2516082347585424752, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: m_ForceIntoRT
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5008654619937830270, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 240
@@ -205897,10 +205905,29 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[6].item
+      value: 
+      objectReference: {fileID: 11400000, guid: 59085cd7adfb1e94baf26c6d7796ddb7, type: 2}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[6].amount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[6].maxStackSize
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8683513508193775307, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1604464743}
   m_SourcePrefab: {fileID: 100100000, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
 --- !u!4 &1347396655 stripped
 Transform:
@@ -223924,6 +223951,7 @@ MonoBehaviour:
   moonLight: {fileID: 815550420}
   sunYaw: 30
   moonOrbitYawOffset: 4
+  moonEase: 0.35
   lightColor:
     serializedVersion: 2
     key0: {r: 1, g: 0.55, b: 0.35, a: 1}
@@ -244474,6 +244502,36 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5586220953514933799, guid: 3165793d3ae6acb48863fa5e0f6d5ccb, type: 3}
   m_PrefabInstance: {fileID: 623586701}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1604464737 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8683513508193775307, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+  m_PrefabInstance: {fileID: 1347193936}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1604464743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604464737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bb42831ee5422f409e7f24f9e7488ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EPO::EPOOutline.Outliner
+  stage: 1
+  renderingStrategy: 0
+  renderingMode: 1
+  outlineLayerMask: -1
+  primaryBufferSizeMode: 0
+  primaryRendererScale: 0.75
+  primarySizeReference: 800
+  blurShift: 1
+  dilateShift: 1
+  dilateIterations: 1
+  dilateQuality: 0
+  blurIterations: 1
+  blurType: 1
 --- !u!4 &1605383542 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2836439255435353027, guid: a86af659c52a1f54c924985f5d11a2b9, type: 3}

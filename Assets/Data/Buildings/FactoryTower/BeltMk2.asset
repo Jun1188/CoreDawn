@@ -38,6 +38,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
     amount: 2
   maxHp: 60
-  speedTilesPerSec: 4
+  speedTilesPerSec: 2
   curveLPrefab: {fileID: 0}
   curveRPrefab: {fileID: 0}

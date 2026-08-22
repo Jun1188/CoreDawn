@@ -38,6 +38,14 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private float raycastStartHeight = 100f;
     [SerializeField] private float maxSlopeHeightDiff = 0.5f;
 
+    [Tooltip("건물을 지형 높이가 아니라 그리드 평면의 고정 높이에 놓는다. 지형이 ±1m로 " +
+             "굴곡져 있어 지형을 따라 놓으면 이웃 건물끼리 층이 지고 벨트가 울퉁불퉁해진다. " +
+             "광맥도 같은 평면(월드 원점 y)에 서므로 채굴기 정렬도 이쪽이 맞다.")]
+    [SerializeField] private bool fixedBuildHeight = true;
+
+    [Tooltip("고정 높이 사용 시 그리드 평면(gridOrigin.y)에 더할 오프셋(m).")]
+    [SerializeField] private float buildHeightOffset = 0f;
+
     [Header("Preview Materials")]
     [SerializeField] private Material validMat;
     [SerializeField] private Material invalidMat;
@@ -483,6 +491,23 @@ public class PlacementSystem : MonoBehaviour
 
     // ===================== 공용 헬퍼 =====================
 
+    [Tooltip("건설(배치·철거) 조준 사거리 폴백(m). 씬에 PlayerInteractionManager가 있으면 " +
+             "그쪽의 E키 상호작용 사거리를 그대로 쓴다 — 두 감각이 어긋나지 않게.")]
+    [SerializeField] private float buildRangeFallback = 16f;
+
+    private PlayerInteractionManager interaction;
+
+    /// <summary>건설 조준의 최대 거리 — E키 상호작용(interactRange)과 같은 값.
+    /// 무제한이면 맵 반대편에서도 짓고 부순다.</summary>
+    private float BuildRange
+    {
+        get
+        {
+            if (interaction == null) interaction = FindFirstObjectByType<PlayerInteractionManager>();
+            return interaction != null ? interaction.InteractRange * 2f : buildRangeFallback;
+        }
+    }
+
     /// <summary>
     /// 조준한 건물 찾기 — 공용 쿼리 (철거 하이라이트가 사용, 이후 기계 UI 열기 등도 여기로).
     /// ① 건물 콜라이더 직접 히트(몸체 조준) ② 실패 시 바닥 칸의 건물 폴백(벨트처럼 낮은 건물 대비).
@@ -492,7 +517,7 @@ public class PlacementSystem : MonoBehaviour
         building = null;
 
         // ① 몸체 직접 조준 — 건물은 Default 레이어라 마스크 없이 쏘고 엔티티 컴포넌트로 판별
-        if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, 1000f))
+        if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, BuildRange))
         {
             var view = bodyHit.collider.GetComponentInParent<BuildingEntity>();
             if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
@@ -515,7 +540,8 @@ public class PlacementSystem : MonoBehaviour
 
     private bool TryGetGroundPoint(out Vector3 point)
     {
-        if (Physics.Raycast(AimRay(), out RaycastHit hit, 1000f, groundMask))
+        // 사거리 밖 지면은 조준 실패 — 프리뷰가 숨고 배치·철거가 걸리지 않는다
+        if (Physics.Raycast(AimRay(), out RaycastHit hit, BuildRange, groundMask))
         {
             point = hit.point;
             return true;
@@ -568,6 +594,16 @@ public class PlacementSystem : MonoBehaviour
         if (so == null || so.prefab == null) return 0f;
         if (pivotLiftCache.TryGetValue(so, out float cached)) return cached;
 
+        // 모델 프리팹은 "지면 = 로컬 y0" 규약으로 저작된다 — y0 아래로 내려간 부분(채굴기
+        // 드릴)은 일부러 땅에 박히는 부위다. 렌더러 최저점 기준으로 들어올리면 드릴 끝이
+        // 표면 위에 얹혀 몸체가 뜬다. 들어올림은 피벗이 중앙인 큐브 플레이스홀더("Mesh")에만
+        // 필요하다 — 모델 프리팹은 그대로 놓는 것이 맞다.
+        if (so.prefab.transform.Find("Mesh") == null)
+        {
+            pivotLiftCache[so] = 0f;
+            return 0f;
+        }
+
         float min = float.MaxValue;
         Transform root = so.prefab.transform;
 
@@ -592,8 +628,20 @@ public class PlacementSystem : MonoBehaviour
         return lift;
     }
 
+    /// <summary>
+    /// 건물이 설 높이. 고정 높이 모드면 그리드 평면 — 지형 굴곡을 따라가지 않으므로
+    /// 이웃 건물끼리 층이 지지 않고 벨트가 한 평면으로 이어진다. 경사 판정도 함께
+    /// 무의미해지므로 건너뛴다(강·절벽은 맵 타일이 이미 막고, 맵 밖은 조준이 막는다).
+    /// 지형 추종 모드에서는 예전처럼 풋프린트 최고점을 쓰고 경사 한계를 검사한다.
+    /// </summary>
     private bool TryGetFootprintHeight(Vector2Int origin, Vector2Int size, out float y)
     {
+        if (fixedBuildHeight)
+        {
+            y = gridOrigin.y + buildHeightOffset;
+            return true;
+        }
+
         float min = float.MaxValue, max = float.MinValue;
         foreach (var cell in GetCells(origin, size))
         {

@@ -118,10 +118,34 @@ public class SaveManager : MonoBehaviour
 
     // ── 저장 ──────────────────────────────────────────────────────
 
-    /// <summary>현재 상태를 슬롯에 저장한다.</summary>
+    /// <summary>
+    /// 지금 저장할 수 있는가 — 안 되면 사람에게 보여줄 사유를 함께 준다.
+    ///
+    /// <b>밤에는 저장하지 않는다</b>: 밤의 알맹이인 웨이브 진행(이번 밤의 목표 물량, 이미
+    /// 내보낸 수)이 저장 스키마에 없어서, 밤 세이브를 불러오면 웨이브가 편성되지 않은 채
+    /// 밤이 끝나지 않는다. 되돌아갈 지점은 밤이 열리기 직전(NightImminent 자동 저장)이고,
+    /// 그걸 불러오면 밤이 처음부터 정상적으로 다시 시작된다.
+    /// </summary>
+    public bool CanSaveNow(out string reason)
+    {
+        var tm = TimeManager.Instance;
+        if (tm != null && tm.Phase == DayPhase.Night)
+        {
+            reason = "밤에는 저장할 수 없습니다. 아침이 밝은 뒤에 저장하세요.";
+            return false;
+        }
+
+        reason = null;
+        return true;
+    }
+
+    /// <summary>현재 상태를 슬롯에 저장한다. 저장할 수 없는 때(밤)면 아무것도 하지 않고 false.</summary>
     public bool Save(string slotId)
     {
         if (string.IsNullOrEmpty(slotId)) { Debug.LogError("[Save] 슬롯 id가 비었습니다."); return false; }
+
+        // 모든 저장 경로(수동·자동·종료·타이틀 복귀)가 여기로 모이므로 가드도 여기 한 곳이면 된다
+        if (!CanSaveNow(out string reason)) { Debug.Log($"[Save] 저장하지 않음 — {reason}"); return false; }
 
         var file = CaptureToFile(slotId);
         bool ok = SaveStorage.Write(slotId, file, Config.compress);
@@ -321,12 +345,29 @@ public class SaveManager : MonoBehaviour
     }
 
     /// <summary>
-    /// DontDestroyOnLoad 싱글턴은 씬을 다시 열어도 초기화되지 않는다.
-    /// 이전 세션의 진행도가 새로 불러온 세이브에 섞이지 않게 여기서 직접 되돌린다.
+    /// DontDestroyOnLoad 싱글턴은 씬을 다시 열어도 초기화되지 않는다 — 파괴가 곧 초기화다.
+    /// 되돌릴 필드를 골라 리셋하는 방식은 새 상태가 생길 때마다 여기를 잊게 되므로,
+    /// 게임플레이 영속 매니저를 통째로 파괴한다. 다음 게임플레이 씬이 자기 것을 새로 만들고
+    /// (Awake의 중복 가드가 이때는 통과한다), 타이틀에는 아예 없는 것이 정상이다 —
+    /// 시계가 타이틀에서도 돌며 이벤트를 쏘고, 새 게임에 이전 일차가 이월되던 원인.
+    /// InputManager도 함께 부순다 — 상태는 없지만 Systems.unity의 <b>대표 타입</b>이라
+    /// (GameBootstrap.shouldLoad), 살아 있으면 부트스트랩이 Systems를 다시 얹지 않아
+    /// 방금 부순 TimeManager·GameManager가 영영 재생성되지 않는다.
+    /// SoundManager·SaveManager는 게임 상태가 없고 씬 탑재와도 무관해 남긴다.
+    ///
+    /// <b>DestroyImmediate인 이유</b>: 보통의 Destroy는 프레임 끝에야 실제로 파괴한다.
+    /// 그런데 바로 다음 줄에서 씬을 로드하므로, 부트스트랩이 "Systems를 얹을까"를 판단하는
+    /// 순간(씬 로드 직후)에도 옛 InputManager가 아직 살아 있어 <b>이미 있다</b>고 오판한다 —
+    /// Systems가 영영 안 얹혀 시계도 진행도도 없는 채로 게임이 뜬다(불러오기가 이렇게 죽어 있었다).
+    /// 같은 이유로 새 씬의 TimeManager.Awake도 옛 Instance를 보고 자폭한다.
+    /// 즉시 파괴하면 OnDestroy가 그 자리에서 돌아 Instance가 끊기고 탐색에서도 사라진다.
+    /// 호출 시점이 UI·이벤트라 물리/렌더 루프 한가운데가 아니므로 안전하다.
     /// </summary>
     static void ResetPersistentSingletons()
     {
-        if (GameManager.Instance != null) GameManager.Instance.ResetProgress();
+        if (TimeManager.Instance != null) DestroyImmediate(TimeManager.Instance.gameObject);
+        if (GameManager.Instance != null) DestroyImmediate(GameManager.Instance.gameObject);
+        if (InputManager.Instance != null) DestroyImmediate(InputManager.Instance.gameObject);
     }
 
     // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────

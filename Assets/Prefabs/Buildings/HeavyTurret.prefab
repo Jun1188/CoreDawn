@@ -294,7 +294,8 @@ GameObject:
   - component: {fileID: 8968386588004059795}
   - component: {fileID: 2373644558805503099}
   - component: {fileID: 2485462587664547136}
-  m_Layer: 10
+  - component: {fileID: 2973144577162972647}
+  m_Layer: 13
   m_Name: Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -373,6 +374,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &2973144577162972647
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6008971033636729776}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 5efb5ebf8259c497899b736e8bdbb2fb, type: 3}
 --- !u!1 &7039037631456951174
 GameObject:
   m_ObjectHideFlags: 0
@@ -448,7 +471,8 @@ GameObject:
   - component: {fileID: 6169807372583233089}
   - component: {fileID: 2573020977675337682}
   - component: {fileID: 8411022156370239022}
-  m_Layer: 10
+  - component: {fileID: 754890857630155807}
+  m_Layer: 13
   m_Name: Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -535,6 +559,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &754890857630155807
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7232810885752900533}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 1c9385b2c3c07479f80437a2cef1fafa, type: 3}
 --- !u!1 &7276461332977000175
 GameObject:
   m_ObjectHideFlags: 0
@@ -545,7 +591,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8801235323530880761}
   - component: {fileID: 9101721226794808140}
-  - component: {fileID: 9008501989424925671}
   - component: {fileID: 5637173182155258517}
   - component: {fileID: 1111361256702731742}
   m_Layer: 13
@@ -601,27 +646,6 @@ MonoBehaviour:
     targetLayerName: Monster
     scanInterval: 0.2
   fallbackData: {fileID: 0}
---- !u!65 &9008501989424925671
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7276461332977000175}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 0.5, z: 2}
-  m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!114 &5637173182155258517
 MonoBehaviour:
   m_ObjectHideFlags: 0

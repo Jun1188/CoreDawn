@@ -1022,13 +1022,55 @@ public static class GameDataImporter
             }
         }
 
-        // 3) 루트 콜라이더 — 없을 때만 모델 AABB로 하나 붙인다(렌더러 없으면 풋프린트 폴백).
-        //    이미 있는 콜라이더는 절대 손대지 않는다: 손으로 조정해 둔 값(공격 타워 등)을
-        //    임포터가 재실행마다 덮으면 사람의 작업이 조용히 사라진다.
-        if (root.GetComponent<BoxCollider>() == null)
+        // 3) 콜라이더 — 매 임포트마다 그리는 메시 그대로 덮어쓴다(팀 결정: 예외·불변 규칙 없음).
+        //    루트 상자(풋프린트·AABB)는 모델과의 괴리로 보이지 않는 벽을 만들던 원인이라 제거하고,
+        //    렌더 메시마다 MeshCollider를 붙인다 — 충돌이 곧 그림이다. 타워의 포탑 회전 같은
+        //    트랜스폼 애니메이션은 콜라이더가 오브젝트를 따라 움직이므로 그대로 유효하다.
+        changed |= EnsureColliders(root);
+
+        return changed;
+    }
+
+    /// <summary>
+    /// 렌더 메시마다 논컨벡스 MeshCollider를 강제한다 — 총알·조준이 그림에 없는 빈 공간에
+    /// 걸리지 않는다. 루트의 BoxCollider(구 체제)는 제거. 이미 맞는 상태면 아무것도 안 바꿔
+    /// 재임포트가 프리팹을 더럽히지 않는다. 스킨드 메시는 바인드 포즈 기준(현재 건물엔 없음).
+    /// </summary>
+    static bool EnsureColliders(GameObject root)
+    {
+        bool changed = false;
+
+        foreach (var box in root.GetComponentsInChildren<BoxCollider>(true))
         {
-            AddRootCollider(root, so.size);
+            // 중첩 프리팹 인스턴스 소속(모델 에셋 내부)은 여기서 못 지운다 — 그 모델 에셋에서 지울 것
+            if (PrefabUtility.IsPartOfPrefabInstance(box)) continue;
+            UnityEngine.Object.DestroyImmediate(box);
             changed = true;
+        }
+
+        int entityLayer = LayerMask.NameToLayer("Entity");
+
+        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r is ParticleSystemRenderer || r is TrailRenderer || r is LineRenderer) continue;
+
+            Mesh mesh = r is SkinnedMeshRenderer skinned ? skinned.sharedMesh
+                      : r.TryGetComponent(out MeshFilter mf) ? mf.sharedMesh : null;
+            if (mesh == null) continue;
+
+            var mc = r.GetComponent<MeshCollider>();
+            if (mc == null) { mc = r.gameObject.AddComponent<MeshCollider>(); changed = true; }
+            if (mc.sharedMesh != mesh) { mc.sharedMesh = mesh; changed = true; }
+            if (mc.convex) { mc.convex = false; changed = true; }
+
+            // 콜라이더를 얹은 오브젝트는 반드시 Entity 레이어 — 조준·상호작용·몬스터 감지가
+            // 전부 이 레이어로 본다. 그림 전용이던 시절의 레이어가 남아 있으면(타워가 Ground였다)
+            // 충돌체가 엉뚱한 레이어로 나가 타워 상호작용·감지가 통째로 죽는다.
+            if (entityLayer >= 0 && r.gameObject.layer != entityLayer)
+            {
+                r.gameObject.layer = entityLayer;
+                changed = true;
+            }
         }
 
         return changed;
@@ -1037,26 +1079,28 @@ public static class GameDataImporter
     /// <summary>벨트 커브 전용 — 본체와 같은 방식이되 컴포넌트는 붙이지 않는다(메시 교체용).</summary>
     static GameObject EnsureCurvePrefab(BuildingDataSO so, string modelFile, string suffix)
     {
-        if (string.IsNullOrEmpty(modelFile)) return null;
-
         string path = $"{PrefabFolder}/{so.name}{suffix}.prefab";
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
         if (existing != null)
         {
-            // 이미 있어도 칸 크기는 맞춰준다 — 커브는 본체와 달리 EnsureContract를 거치지 않아
-            // 여기서 손보지 않으면 벨트만 반쪽 크기로 남는다
+            // 이미 있으면 모델 지정이 비어 있어도 계약은 계속 맞춘다 — 커브는 본체와 달리
+            // EnsureContract를 거치지 않아 여기서 손보지 않으면 칸 크기·콜라이더가 옛날에 머문다
             var contents = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                if (EnsureRootScale(contents)) PrefabUtility.SaveAsPrefabAsset(contents, path);
+                bool dirty = EnsureRootScale(contents);
+                dirty |= EnsureColliders(contents);
+                if (dirty) PrefabUtility.SaveAsPrefabAsset(contents, path);
             }
             finally { PrefabUtility.UnloadPrefabContents(contents); }
             return existing;
         }
 
+        if (string.IsNullOrEmpty(modelFile)) return null;
+
         var root = MakeBody(modelFile, so.size, so.name + suffix);
         root.name = so.name + suffix;
-        AddRootCollider(root, so.size);
+        EnsureColliders(root);
         EnsureRootScale(root);
 
         Directory.CreateDirectory(PrefabFolder);
@@ -1089,7 +1133,7 @@ public static class GameDataImporter
         cube.name = "Mesh";
         cube.transform.SetParent(root.transform, false);
         cube.transform.localScale = new Vector3(size.x * 0.9f, BuildingHeight / CellSize, size.y * 0.9f);
-        UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // 루트에 AABB 기준으로 다시 붙는다
+        UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // EnsureColliders가 메시 기준으로 다시 붙인다
 
         if (!string.IsNullOrEmpty(modelFile))
             Debug.LogWarning($"[GameDataImporter] '{logName}': 모델 '{modelFile}' 을 찾지 못해 큐브로 만들었습니다");
@@ -1138,13 +1182,7 @@ public static class GameDataImporter
         if (placeholder != null) UnityEngine.Object.DestroyImmediate(placeholder.gameObject);
 
         AttachModelChild(root, wanted);
-
-        var col = root.GetComponent<BoxCollider>();
-        if (col != null && TryGetModelBounds(root, out var aabb))
-        {
-            col.size = aabb.size;
-            col.center = aabb.center;
-        }
+        // 콜라이더는 EnsureContract의 EnsureColliders가 새 메시 기준으로 다시 만든다
 
         Debug.Log($"[GameDataImporter] '{so.name}': 모델을 '{modelFile}' 로 교체했습니다.");
         return true;
@@ -1187,72 +1225,6 @@ public static class GameDataImporter
         root.transform.localScale = want;
         return true;
     }
-
-    /// <summary>
-    /// 루트 콜라이더 부착 — 모델 렌더러들의 AABB 기준. 콜라이더가 보이는 모델과 일치해야
-    /// 총알·조준이 그림에 없는 빈 공간에 걸리지 않는다. 렌더러가 없으면 풋프린트 폴백.
-    /// 생성 시 한 번만 — 이후 값은 사람이 손봐도 임포터가 덮지 않는다(EnsureContract 참고).
-    /// </summary>
-    static void AddRootCollider(GameObject root, Vector2Int size)
-    {
-        var col = root.AddComponent<BoxCollider>();
-        if (TryGetModelBounds(root, out var aabb))
-        {
-            col.size   = aabb.size;
-            col.center = aabb.center;
-        }
-        else
-        {
-            col.size   = FootprintColliderSize(size);
-            col.center = FootprintColliderCenter;
-        }
-    }
-
-    /// <summary>
-    /// 루트 로컬 기준 렌더러 합산 AABB. 파티클·트레일은 연출이라 제외.
-    /// 월드 AABB의 꼭짓점을 루트 로컬로 되돌리므로 루트 스케일(칸 크기)이 얼마든 로컬 단위로 떨어진다.
-    /// </summary>
-    static bool TryGetModelBounds(GameObject root, out Bounds bounds)
-    {
-        bounds = default;
-        bool has = false;
-        foreach (var r in root.GetComponentsInChildren<Renderer>(true))
-        {
-            if (r is ParticleSystemRenderer || r is TrailRenderer) continue;
-            var b = r.bounds;
-            for (int i = 0; i < 8; i++)
-            {
-                var corner = new Vector3(
-                    (i & 1) == 0 ? b.min.x : b.max.x,
-                    (i & 2) == 0 ? b.min.y : b.max.y,
-                    (i & 4) == 0 ? b.min.z : b.max.z);
-                var local = root.transform.InverseTransformPoint(corner);
-                if (!has) { bounds = new Bounds(local, Vector3.zero); has = true; }
-                else bounds.Encapsulate(local);
-            }
-        }
-
-        if (has)
-        {
-            // 납작한 모델(벨트 등)도 레이캐스트에 안정적으로 잡히게 최소 두께 확보
-            var s = bounds.size;
-            bounds.size = new Vector3(Mathf.Max(s.x, 0.05f), Mathf.Max(s.y, 0.05f), Mathf.Max(s.z, 0.05f));
-        }
-        return has;
-    }
-
-    // 로컬 단위(1칸 = 1)로 준다 — 루트 스케일이 CellSize라 월드에서는 저절로 미터로 환산된다.
-    static Vector3 FootprintColliderSize(Vector2Int size) => new(size.x, BuildingHeight / CellSize, size.y);
-
-    /// <summary>
-    /// 콜라이더 중심은 로컬 원점 바로 위다.
-    ///
-    /// PlacementBridge가 건물을 <see cref="GridSystem.GetFootprintCenter"/>에 놓기 때문에
-    /// 프리팹의 로컬 원점이 곧 풋프린트의 한가운데다. 원점 "칸"의 중심으로 착각해
-    /// ((size-1)/2) 만큼 밀면 멀티타일 건물의 콜라이더가 통째로 어긋난다 —
-    /// 3×3 코어는 (1, 1)칸만큼 빗나가서 조준도 철거도 엉뚱한 자리에서 걸린다.
-    /// </summary>
-    static Vector3 FootprintColliderCenter => new(0f, BuildingHeight / CellSize * 0.5f, 0f);
 
     static T FindAsset<T>(string name, string folder) where T : UnityEngine.Object
     {

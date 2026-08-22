@@ -1,66 +1,41 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <!-- 타이틀 화면.
-
-         게임플레이 UI와 달리 팝업이 아니라 씬 그 자체다 — 뒤에 아무것도 없으므로
-         반투명 스크림 대신 배경을 꽉 채운다.
-
-         슬롯 목록을 별도 창으로 띄우지 않고 같은 문서 안에서 갈아끼우는 이유:
-         타이틀 씬에는 InputManager가 없어 UITKPopup(ESC·입력 소유권 계약)을 쓸 수 없다.
-
-         "이어하기"는 가장 최근 세이브로 바로 들어간다 — 슬롯을 고르는 일은 대부분의 실행에서
-         필요 없고, 필요한 사람만 "불러오기"로 들어가면 된다. -->
-    <Style src="../Styles/tokens.uss" />
-    <Style src="../Styles/components.uss" />
-    <Style src="../Styles/saveload.uss" />
-
+    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/tokens.uss?fileID=7433441132597879392&amp;guid=9db750b513ab8d340b5033a21edc4083&amp;type=3#tokens"/>
+    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/components.uss?fileID=7433441132597879392&amp;guid=f1501a2a6100e3e4a982c5a6596ab3f9&amp;type=3#components"/>
+    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/saveload.uss?fileID=7433441132597879392&amp;guid=546228bd0c3589f4a8ea2edc8662dc64&amp;type=3#saveload"/>
     <ui:VisualElement name="title-root" class="title-root">
-
-        <!-- ── 메인 메뉴 ── -->
         <ui:VisualElement name="menu-page" class="title-page">
-
             <ui:VisualElement class="title-head">
-                <ui:Label text="TEAMPROJ 2606" class="title-head__tag" />
-                <ui:Label name="game-title" text="공장" class="title-head__name" />
-                <ui:Label name="subtitle" text="밤이 오기 전에 라인을 완성하라" class="title-head__sub" />
+                <ui:Label text="TEAMPROJ 2606" class="title-head__tag"/>
+                <ui:Label name="game-title" text="Coredawn" class="title-head__name"/>
+                <ui:Label name="subtitle" text="불시착한 행성에서 살아남아라" class="title-head__sub" style="-unity-font-definition: url(&quot;project://database/Assets/Art/Fonts/IBMPlexSansKR-Regular.ttf?fileID=12800000&amp;guid=1e57cd717b9148d4392587aa6471ea00&amp;type=3#IBMPlexSansKR-Regular&quot;);"/>
             </ui:VisualElement>
-
             <ui:VisualElement class="title-menu">
-                <ui:Button name="btn-continue" text="이어하기" class="ui-btn ui-btn--primary title-btn" />
-                <ui:Button name="btn-new" text="새 게임" class="ui-btn title-btn" />
-                <ui:Button name="btn-load" text="불러오기" class="ui-btn title-btn" />
-                <ui:Button name="btn-settings" text="설정" class="ui-btn ui-btn--disabled title-btn" />
-                <ui:Button name="btn-quit" text="종료" class="ui-btn ui-btn--ghost title-btn" />
+                <ui:Button name="btn-continue" text="이어하기" class="ui-btn ui-btn--primary title-btn"/>
+                <ui:Button name="btn-new" text="새 게임" class="ui-btn title-btn"/>
+                <ui:Button name="btn-load" text="불러오기" class="ui-btn title-btn"/>
+                <ui:Button name="btn-settings" text="설정" class="ui-btn ui-btn--disabled title-btn"/>
+                <ui:Button name="btn-quit" text="종료" class="ui-btn ui-btn--ghost title-btn"/>
             </ui:VisualElement>
-
-            <ui:Label name="recent" text="" class="title-recent" />
-
+            <ui:Label name="recent" text="" class="title-recent"/>
         </ui:VisualElement>
-
-        <!-- ── 슬롯 고르기 ── -->
         <ui:VisualElement name="load-page" class="title-page">
-            <ui:VisualElement class="ui-panel slots-panel">
-
+            <ui:VisualElement class="ui-panel slots-panel" style="display: flex; visibility: hidden;">
                 <ui:VisualElement class="ui-panel__title">
-                    <ui:Label text="LOAD" class="ui-panel__tag" />
-                    <ui:Label text="불러오기" />
-                    <ui:Button name="btn-back-x" text="✕" class="ui-panel__x" />
+                    <ui:Label text="LOAD" class="ui-panel__tag"/>
+                    <ui:Label text="불러오기"/>
+                    <ui:Button name="btn-back-x" text="✕" class="ui-panel__x"/>
                 </ui:VisualElement>
-
                 <ui:VisualElement class="ui-panel__body slots-panel__body">
-                    <ui:ScrollView name="slot-list" class="ui-scroll slots-list" />
-                    <ui:Label name="empty-note" text="저장된 게임이 없습니다." class="slots-empty" />
-
+                    <ui:ScrollView name="slot-list" class="ui-scroll slots-list"/>
+                    <ui:Label name="empty-note" text="저장된 게임이 없습니다." class="slots-empty"/>
                     <ui:VisualElement class="slots-footer">
-                        <ui:Button name="btn-delete" text="삭제" class="ui-btn ui-btn--ghost" />
-                        <ui:VisualElement class="slots-footer__spacer" />
-                        <ui:Button name="btn-back" text="뒤로" class="ui-btn ui-btn--ghost" />
-                        <ui:Button name="btn-confirm" text="불러오기" class="ui-btn ui-btn--primary" />
+                        <ui:Button name="btn-delete" text="삭제" class="ui-btn ui-btn--ghost"/>
+                        <ui:VisualElement class="slots-footer__spacer"/>
+                        <ui:Button name="btn-back" text="뒤로" class="ui-btn ui-btn--ghost"/>
+                        <ui:Button name="btn-confirm" text="불러오기" class="ui-btn ui-btn--primary"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
-
             </ui:VisualElement>
         </ui:VisualElement>
-
     </ui:VisualElement>
 </ui:UXML>

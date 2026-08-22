@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 9123928040904307538}
   - component: {fileID: 2505088627000152842}
-  - component: {fileID: 630301570850516541}
   - component: {fileID: 1001281921106334121}
   - component: {fileID: 8874743714678006129}
   m_Layer: 13
@@ -66,27 +65,6 @@ MonoBehaviour:
     targetLayerName: Monster
     scanInterval: 0.2
   fallbackData: {fileID: 0}
---- !u!65 &630301570850516541
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1631026919013201843}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 0.5, z: 2}
-  m_Center: {x: 0, y: 0.25, z: 0}
 --- !u!114 &1001281921106334121
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,6 +165,7 @@ GameObject:
   - component: {fileID: 368180089695915837}
   - component: {fileID: 943698122416248102}
   - component: {fileID: 2622571053691389548}
+  - component: {fileID: 4496092012325589182}
   m_Layer: 13
   m_Name: Base
   m_TagString: Untagged
@@ -266,6 +245,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &4496092012325589182
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2611343594859418134}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300002, guid: d5fce1ef7f53e4b6384af86a686e95c9, type: 3}
 --- !u!1 &3150651091251808759
 GameObject:
   m_ObjectHideFlags: 0
@@ -373,6 +374,7 @@ GameObject:
   - component: {fileID: 8206811078189084189}
   - component: {fileID: 3921338941167623471}
   - component: {fileID: 8835023307199382571}
+  - component: {fileID: 5831136476674581820}
   m_Layer: 13
   m_Name: Turret
   m_TagString: Untagged
@@ -454,6 +456,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &5831136476674581820
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4970733161098598902}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300002, guid: 8031707b196244358abb896d165def8f, type: 3}
 --- !u!1 &6556226541217584164
 GameObject:
   m_ObjectHideFlags: 0

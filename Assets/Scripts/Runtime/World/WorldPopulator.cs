@@ -42,44 +42,100 @@ public static class WorldPopulator
 
     // ── 시작 드롭 아이템 ───────────────────────────────────────
 
+    // 시작 잔해가 흩어지는 범위 — 코어 중심에서 몇 칸까지인가. 2칸이면 3×3 코어 바로 바깥이다.
+    const float StartDropMinRing = 2f;
+    const float StartDropMaxRing = 5f;
+
+    /// <summary>같은 아이템은 이 거리 안에서 스택으로 합쳐진다(트리거 센서) — 그보다 넉넉히 띄운다.</summary>
+    const float StartDropMinGap = 3.5f;
+
     /// <summary>
-    /// World 씬에 배치한 StartItem_* DroppedItem을 스폰 마커로 사용한다.
-    /// 실제 플레이 오브젝트는 공용 DroppedItem.Spawn 경로로 다시 만들어 E 픽업·세이브·
-    /// 스택 병합 규칙을 일반 드롭 아이템과 완전히 공유한다.
+    /// 시작 잔해를 코어 주변에 흩는다.
+    ///
+    /// 씬의 <c>StartItem_*</c> DroppedItem은 이제 <b>배치가 아니라 사양</b>이다 — "무엇을 몇 개"만
+    /// 읽고 지운다. 씬에 실물로 두면 세이브를 불러올 때 이 함수가 다시 돌면서 저장된 드롭 위에
+    /// 시작 잔해가 겹쳐 생겨 아이템이 불어난다. 복원 중이면 아예 만들지 않는다 —
+    /// 저장된 바닥 아이템을 곧 되살릴 참이고, 그것이 이 잔해의 현재 상태다.
+    ///
+    /// 흩는 방식: 낱개로 쪼개 원주를 균등 분할하고 각도·반지름에 지터를 준다. 무작위지만
+    /// 뭉치지 않는다 — 순수 난수는 반드시 몇 개가 붙고, 붙으면 스택으로 합쳐져 하나가 된다.
     /// </summary>
     static int PlaceStartingDrops(World world, Transform root)
     {
-        var markers = Object.FindObjectsByType<DroppedItem>(FindObjectsInactive.Include,
-                                                             FindObjectsSortMode.None);
-        int placed = 0;
-        foreach (var marker in markers)
+        // 1) 사양 수집 — 씬 마커는 읽고 지운다(복원 중이라도 지운다: 실물로 남으면 안 된다)
+        ItemDataSO item = null;
+        int total = 0;
+
+        foreach (var marker in Object.FindObjectsByType<DroppedItem>(FindObjectsInactive.Include,
+                                                                    FindObjectsSortMode.None))
         {
             if (marker == null || marker.gameObject.scene != world.gameObject.scene ||
                 !marker.name.StartsWith("StartItem_") || marker.item == null || marker.amount <= 0)
                 continue;
 
-            var item = marker.item;
-            int amount = marker.amount;
-            Vector3 position = marker.transform.position;
-            Quaternion rotation = marker.transform.rotation;
-
-            // 같은 위치에 새 드롭을 만드는 동안 마커가 트리거 병합에 참여하면
-            // 12개 마커 + 12개 생성물이 24개로 합쳐진다. 먼저 비활성화해 템플릿으로만 쓴다.
-            marker.gameObject.SetActive(false);
-            var spawned = DroppedItem.Spawn(item, amount, position, Vector3.zero);
-            if (spawned == null)
-            {
-                marker.gameObject.SetActive(true);
-                continue;
-            }
-
-            spawned.name = marker.name;
-            spawned.transform.SetParent(root, true);
-            spawned.transform.rotation = rotation;
+            item ??= marker.item;
+            if (marker.item == item) total += marker.amount;
             Object.Destroy(marker.gameObject);
-            placed++;
         }
-        return placed;
+
+        if (item == null || total <= 0) return 0;
+        if (SaveLoadContext.IsRestoring) return 0;
+
+        // 2) 코어 중심 — 코어는 3×3이라 원점 칸에서 1.5칸이 한가운데다(World의 기즈모와 같은 식)
+        Vector3 center = world.CellToWorld(world.Map.core)
+                       + new Vector3(1.5f, 0f, 1.5f) * world.CellSize;
+
+        var placedPoints = new List<Vector3>(total);
+        float step = 360f / total;
+        float baseAngle = Random.Range(0f, 360f);
+
+        for (int i = 0; i < total; i++)
+        {
+            // 자기 몫의 각도 구간 안에서만 흔든다(±40%) — 이웃과 겹칠 여지를 남기지 않는다
+            float angle = baseAngle + step * i + Random.Range(-step * 0.4f, step * 0.4f);
+
+            // 지형(강·절벽)이나 이웃과의 간격 때문에 실패하면 조금씩 비틀어 다시 시도
+            for (int attempt = 0; attempt < 12; attempt++)
+            {
+                float radius = Random.Range(StartDropMinRing, StartDropMaxRing) * world.CellSize;
+                float rad = (angle + attempt * 6f) * Mathf.Deg2Rad;
+                Vector3 pos = center + new Vector3(Mathf.Cos(rad), 0f, Mathf.Sin(rad)) * radius;
+
+                if (!IsOpenGround(world, pos)) continue;
+                if (TooClose(placedPoints, pos)) continue;
+
+                // 살짝 띄워 떨어뜨린다 — 지형이 칸마다 조금씩 높낮이가 있어 파묻히지 않게
+                var drop = DroppedItem.Spawn(item, 1, pos + Vector3.up * 0.5f, Vector3.zero);
+                if (drop == null) break;
+
+                drop.transform.SetParent(root, true);
+                placedPoints.Add(pos);
+                break;
+            }
+        }
+
+        return placedPoints.Count;
+    }
+
+    /// <summary>맵 위의 지면 칸인가 — 강·절벽·맵 밖에는 떨어뜨리지 않는다.</summary>
+    static bool IsOpenGround(World world, Vector3 position)
+    {
+        var map = world.Map;
+        if (map == null) return true;   // 맵 없는 구성(테스트 씬)에서는 제한하지 않는다
+
+        Vector3 local = position - world.Origin;
+        var cell = new Vector2Int(Mathf.FloorToInt(local.x / world.CellSize),
+                                  Mathf.FloorToInt(local.z / world.CellSize));
+
+        if (cell.x < 0 || cell.y < 0 || cell.x >= map.width || cell.y >= map.height) return false;
+        return map.TileAt(cell) == MapTile.Ground;
+    }
+
+    static bool TooClose(List<Vector3> points, Vector3 candidate)
+    {
+        foreach (var p in points)
+            if ((p - candidate).sqrMagnitude < StartDropMinGap * StartDropMinGap) return true;
+        return false;
     }
 
     // ── 광맥 ────────────────────────────────────────────────────

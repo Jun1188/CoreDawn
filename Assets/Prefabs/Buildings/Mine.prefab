@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7012941204901576165}
   - component: {fileID: 6460924857874311685}
   - component: {fileID: 3815813946829035903}
+  - component: {fileID: 8914356064704437934}
   m_Layer: 13
   m_Name: Mesh
   m_TagString: Untagged
@@ -90,6 +91,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &8914356064704437934
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1980702463338927432}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &5266862440184732111
 GameObject:
   m_ObjectHideFlags: 0
@@ -100,7 +123,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5039275196142845339}
   - component: {fileID: 186352859161264585}
-  - component: {fileID: 3159794333433944579}
   m_Layer: 13
   m_Name: Mine
   m_TagString: Untagged
@@ -154,24 +176,3 @@ MonoBehaviour:
     targetLayerName: Monster
     scanInterval: 0.2
   fallbackData: {fileID: 0}
---- !u!65 &3159794333433944579
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5266862440184732111}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 0.5, z: 1}
-  m_Center: {x: 0, y: 0.25, z: 0}

@@ -113,7 +113,7 @@ public class WorldSaveModule : ISaveModule
     static void RestoreDrops(Dto dto)
     {
         foreach (var existing in Object.FindObjectsByType<DroppedItem>(FindObjectsSortMode.None))
-            if (existing != null) Object.Destroy(existing.gameObject);
+            if (existing != null) existing.Release();   // 파괴가 아니라 풀 반환 — 바로 아래서 다시 꺼내 쓴다
 
         foreach (var d in dto.Drops)
         {
