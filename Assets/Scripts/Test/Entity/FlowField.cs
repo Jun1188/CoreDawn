@@ -121,6 +121,22 @@ public class FlowField
         return true;
     }
 
+    /// <summary>
+    /// 이 칸에서 목표까지의 누적 비용. 도달할 수 없는 칸(막힘·필드 밖)이면 false.
+    /// 읽기 전용 — 시각화·검증이 "어디가 얼마나 먼가"를 물을 때 쓴다.
+    /// </summary>
+    public bool TryGetCost(Vector2Int cell, out int cost)
+    {
+        cost = 0;
+        if (!HasField || !InBounds(cell)) return false;
+
+        int value = integration[cell.x, cell.y];
+        if (value == int.MaxValue) return false;
+
+        cost = value;
+        return true;
+    }
+
     private bool InBounds(Vector2Int c) => c.x >= 0 && c.x < size.x && c.y >= 0 && c.y < size.y;
 
     // 다익스트라용 간단한 이진 최소 힙

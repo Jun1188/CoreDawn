@@ -127,6 +127,14 @@ public class FlowFieldManager : MonoBehaviour
         }
     }
 
+    // ── 조회 (시각화·검증용) ────────────────────────────────────
+
+    /// <summary>이 칸에서 목표까지의 누적 비용. 도달 불가면 false.</summary>
+    public bool TryGetCost(Vector2Int cell, out int cost) => field.TryGetCost(cell, out cost);
+
+    /// <summary>이 칸의 다음 칸. 목표 칸 자체이거나 도달 불가면 false.</summary>
+    public bool TryGetNextCell(Vector2Int cell, out Vector2Int next) => field.TryGetNext(cell, out next);
+
     // 현재 위치 셀에서 목표로 가는 방향 벡터. 필드 없음/목표 도달/맵 밖이면 zero.
     public Vector3 GetDirection(Vector3 worldPosition)
     {
