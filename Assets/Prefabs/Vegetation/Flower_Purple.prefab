@@ -53,6 +53,10 @@ PrefabInstance:
       value: Flower_Purple
       objectReference: {fileID: 0}
     - target: {fileID: 2977488606555035951, guid: be88ccc41855af94c9a8e89f1658ddf9, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2977488606555035951, guid: be88ccc41855af94c9a8e89f1658ddf9, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: f2f034aae26c0a04b8d3ce583fc80082, type: 2}

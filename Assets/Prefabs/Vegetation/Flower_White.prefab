@@ -53,6 +53,10 @@ PrefabInstance:
       value: Flower_White
       objectReference: {fileID: 0}
     - target: {fileID: 5127406509901702238, guid: 8c7bc13b48e07624cbeab19070eac416, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5127406509901702238, guid: 8c7bc13b48e07624cbeab19070eac416, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: f2f034aae26c0a04b8d3ce583fc80082, type: 2}
