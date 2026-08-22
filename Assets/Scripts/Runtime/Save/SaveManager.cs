@@ -118,10 +118,34 @@ public class SaveManager : MonoBehaviour
 
     // ── 저장 ──────────────────────────────────────────────────────
 
-    /// <summary>현재 상태를 슬롯에 저장한다.</summary>
+    /// <summary>
+    /// 지금 저장할 수 있는가 — 안 되면 사람에게 보여줄 사유를 함께 준다.
+    ///
+    /// <b>밤에는 저장하지 않는다</b>: 밤의 알맹이인 웨이브 진행(이번 밤의 목표 물량, 이미
+    /// 내보낸 수)이 저장 스키마에 없어서, 밤 세이브를 불러오면 웨이브가 편성되지 않은 채
+    /// 밤이 끝나지 않는다. 되돌아갈 지점은 밤이 열리기 직전(NightImminent 자동 저장)이고,
+    /// 그걸 불러오면 밤이 처음부터 정상적으로 다시 시작된다.
+    /// </summary>
+    public bool CanSaveNow(out string reason)
+    {
+        var tm = TimeManager.Instance;
+        if (tm != null && tm.Phase == DayPhase.Night)
+        {
+            reason = "밤에는 저장할 수 없습니다. 아침이 밝은 뒤에 저장하세요.";
+            return false;
+        }
+
+        reason = null;
+        return true;
+    }
+
+    /// <summary>현재 상태를 슬롯에 저장한다. 저장할 수 없는 때(밤)면 아무것도 하지 않고 false.</summary>
     public bool Save(string slotId)
     {
         if (string.IsNullOrEmpty(slotId)) { Debug.LogError("[Save] 슬롯 id가 비었습니다."); return false; }
+
+        // 모든 저장 경로(수동·자동·종료·타이틀 복귀)가 여기로 모이므로 가드도 여기 한 곳이면 된다
+        if (!CanSaveNow(out string reason)) { Debug.Log($"[Save] 저장하지 않음 — {reason}"); return false; }
 
         var file = CaptureToFile(slotId);
         bool ok = SaveStorage.Write(slotId, file, Config.compress);

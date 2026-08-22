@@ -101,14 +101,30 @@ public class SaveLoadPanelView : UITKPopup
         if (btnConfirm != null) btnConfirm.text = save ? "저장" : "불러오기";
     }
 
+    string emptyNoteDefault;   // 안내문으로 잠시 바꿔 쓰므로 원문을 기억해 둔다
+
     void Rebuild()
     {
         int usable = slots.Rebuild(list?.contentContainer, saveMode: mode == Mode.Save);
 
         if (emptyNote != null)
+        {
+            emptyNoteDefault ??= emptyNote.text;
+            emptyNote.text = emptyNoteDefault;
             emptyNote.style.display = usable == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
 
         UpdateButtons();
+    }
+
+    /// <summary>같은 자리에 사유를 띄운다 — 다시 고르면 Rebuild가 원래 안내문으로 되돌린다.</summary>
+    void ShowNote(string message)
+    {
+        if (emptyNote == null) { Debug.LogWarning($"[SaveLoad] {message}"); return; }
+
+        emptyNoteDefault ??= emptyNote.text;
+        emptyNote.text = message;
+        emptyNote.style.display = DisplayStyle.Flex;
     }
 
     void UpdateButtons()
@@ -131,7 +147,13 @@ public class SaveLoadPanelView : UITKPopup
 
         if (mode == Mode.Save)
         {
-            SaveManager.Instance.Save(slot);
+            // 실패(밤·디스크 오류)했는데 창이 닫히면 저장된 줄 안다 — 사유를 띄우고 열어 둔다
+            if (!SaveManager.Instance.Save(slot))
+            {
+                SaveManager.Instance.CanSaveNow(out string reason);
+                ShowNote(reason ?? "저장에 실패했습니다.");
+                return;
+            }
             Close();
             return;
         }

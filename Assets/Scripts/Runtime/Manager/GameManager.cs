@@ -58,9 +58,10 @@ public class GameManager : MonoBehaviour
         // 기획: 밤을 넘겨 아침이 밝으면 자동 저장 (1일차 시작은 제외)
         TimeManager.Instance.Cycle.DayStarted += day => { if (day > 1) SaveGame(); };
 
-        // 밤이 시작될 때도 저장한다 — 코어가 부서질 수 있는 유일한 시간이라,
+        // 밤이 시작되기 <b>직전</b>에도 저장한다 — 코어가 부서질 수 있는 유일한 시간이라,
         // 게임오버 후 되돌아갈 지점이 여기여야 밤을 통째로 다시 살지 않는다.
-        TimeManager.Instance.Cycle.NightStarted += _ => SaveNightfall();
+        // 밤 자체는 저장 대상이 아니므로(웨이브 진행이 스키마에 없다) 그 직전이 마지막 지점이다.
+        TimeManager.Instance.Cycle.NightImminent += _ => SaveNightfall();
     }
 
     // ── 기존 코드 호환용 (시간 관련 조회는 TimeManager로 위임)
