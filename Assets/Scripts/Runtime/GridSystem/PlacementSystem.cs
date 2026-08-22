@@ -38,6 +38,14 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private float raycastStartHeight = 100f;
     [SerializeField] private float maxSlopeHeightDiff = 0.5f;
 
+    [Tooltip("건물을 지형 높이가 아니라 그리드 평면의 고정 높이에 놓는다. 지형이 ±1m로 " +
+             "굴곡져 있어 지형을 따라 놓으면 이웃 건물끼리 층이 지고 벨트가 울퉁불퉁해진다. " +
+             "광맥도 같은 평면(월드 원점 y)에 서므로 채굴기 정렬도 이쪽이 맞다.")]
+    [SerializeField] private bool fixedBuildHeight = true;
+
+    [Tooltip("고정 높이 사용 시 그리드 평면(gridOrigin.y)에 더할 오프셋(m).")]
+    [SerializeField] private float buildHeightOffset = 0f;
+
     [Header("Preview Materials")]
     [SerializeField] private Material validMat;
     [SerializeField] private Material invalidMat;
@@ -620,8 +628,20 @@ public class PlacementSystem : MonoBehaviour
         return lift;
     }
 
+    /// <summary>
+    /// 건물이 설 높이. 고정 높이 모드면 그리드 평면 — 지형 굴곡을 따라가지 않으므로
+    /// 이웃 건물끼리 층이 지지 않고 벨트가 한 평면으로 이어진다. 경사 판정도 함께
+    /// 무의미해지므로 건너뛴다(강·절벽은 맵 타일이 이미 막고, 맵 밖은 조준이 막는다).
+    /// 지형 추종 모드에서는 예전처럼 풋프린트 최고점을 쓰고 경사 한계를 검사한다.
+    /// </summary>
     private bool TryGetFootprintHeight(Vector2Int origin, Vector2Int size, out float y)
     {
+        if (fixedBuildHeight)
+        {
+            y = gridOrigin.y + buildHeightOffset;
+            return true;
+        }
+
         float min = float.MaxValue, max = float.MinValue;
         foreach (var cell in GetCells(origin, size))
         {
