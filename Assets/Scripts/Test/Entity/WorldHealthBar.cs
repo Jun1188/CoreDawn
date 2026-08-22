@@ -22,6 +22,7 @@ public class WorldHealthBar : MonoBehaviour
     private Camera cam;
     private float nextCameraSearch; // 카메라 교체(사망 리스폰 등) 대비 저빈도 재탐색
     private float barWidth;         // 보조 바를 같은 폭으로 세우기 위해 기억해 둔다
+    private bool hideWhenFull;      // 만피일 때는 숨긴다 — 건물처럼 수가 많은 대상용
 
     // 보조 게이지(인내심 등) — 값의 출처는 소유자가 넘긴 델리게이트다.
     // 체력처럼 이벤트로 밀어 넣지 않고 폴링하는 이유는, 인내심이 매 프레임 연속적으로
@@ -49,8 +50,12 @@ public class WorldHealthBar : MonoBehaviour
     /// <summary>
     /// 대상 엔티티 위에 HP 바를 세운다. anchor를 주면 그 위(둥지 코어 등), 없으면 엔티티 루트 위.
     /// 이미 붙어 있으면 그대로 반환한다 — 리스폰·복구 흐름에서 중복 생성 방지.
+    ///
+    /// hideWhenFull이면 체력이 만땅인 동안 바가 숨는다 — 몬스터처럼 항상 보여야 하는 대상은
+    /// 기본값(false) 그대로 두고, 건물처럼 평시엔 잡음일 뿐인 대상만 켠다.
     /// </summary>
-    public static WorldHealthBar Attach(Entity target, Transform anchor = null, bool large = false)
+    public static WorldHealthBar Attach(Entity target, Transform anchor = null, bool large = false,
+                                        bool hideWhenFull = false)
     {
         if (target == null) return null;
 
@@ -63,16 +68,45 @@ public class WorldHealthBar : MonoBehaviour
         var bar = go.AddComponent<WorldHealthBar>();
         bar.entity = target;
         bar.anchor = anchor != null ? anchor : target.transform;
-
-        // 머리 높이 — 앵커 소속 콜라이더의 꼭대기에서 약간 위. 콜라이더가 없으면 2m.
-        var col = bar.anchor.GetComponentInChildren<Collider>();
-        if (col == null) col = target.GetComponentInChildren<Collider>();
-        bar.heightOffset = col != null
-            ? (col.bounds.max.y - bar.anchor.position.y) + 0.35f
-            : 2f;
+        bar.hideWhenFull = hideWhenFull;
+        bar.heightOffset = TopOffset(bar.anchor, target);
 
         bar.Build(large ? BossBarWidth : BarWidth);
         return bar;
+    }
+
+    /// <summary>
+    /// 머리 높이 — 콜라이더 꼭대기에서 약간 위. 콜라이더가 하나뿐인 몬스터와 달리 건물은
+    /// Base·Turret처럼 여러 개로 쪼개져 있어, 처음 찾은 하나만 보면 낮은 받침대가 잡혀
+    /// 바가 포탑 몸통에 파묻힌다. 그래서 자식 전체에서 가장 높은 꼭대기를 쓴다.
+    /// 앵커 아래에 콜라이더가 없으면 엔티티 전체에서, 그것도 없으면 예전처럼 2m.
+    /// </summary>
+    private static float TopOffset(Transform anchor, Entity target)
+    {
+        if (!TryTopY(anchor, out float top) && !TryTopY(target.transform, out top))
+            return 2f;
+
+        return (top - anchor.position.y) + 0.35f;
+    }
+
+    /// <summary>
+    /// 자식 콜라이더들의 가장 높은 꼭대기(월드 y). 트리거와 꺼진 콜라이더는 세지 않는다 —
+    /// 건물의 포트·감지용 트리거는 실제 부피보다 훨씬 커서 바를 하늘로 밀어 올린다.
+    /// </summary>
+    private static bool TryTopY(Transform root, out float topY)
+    {
+        topY = 0f;
+        bool found = false;
+
+        foreach (var col in root.GetComponentsInChildren<Collider>())
+        {
+            if (col.isTrigger || !col.enabled) continue;
+
+            float y = col.bounds.max.y;
+            if (!found || y > topY) { topY = y; found = true; }
+        }
+
+        return found;
     }
 
     /// <summary>
@@ -169,6 +203,11 @@ public class WorldHealthBar : MonoBehaviour
         }
 
         bool visible = !entity.IsDead && cam != null;
+
+        // 만피면 보여줄 게 없다 — 보조 게이지와 같은 규칙을 체력바에도 적용한다.
+        // 폴링인 이유도 같다: 바는 하나뿐이라 이벤트를 거는 것보다 매 프레임 한 번 나누는 게 싸다.
+        if (visible && hideWhenFull && HealthRatio() >= 0.999f) visible = false;
+
         if (visible)
         {
             Vector3 pos = anchor.position + Vector3.up * heightOffset;
@@ -185,6 +224,15 @@ public class WorldHealthBar : MonoBehaviour
             visualRoot.SetActive(visible);
 
         UpdateSecondary(visible);
+    }
+
+    /// <summary>현재 체력 비율(0~1). 최대 체력이 0인 비정상 대상은 만땅으로 친다.</summary>
+    private float HealthRatio()
+    {
+        var health = entity.Health;
+        return health != null && health.MaxHealth > 0f
+            ? health.CurrentHealth / health.MaxHealth
+            : 1f;
     }
 
     private void UpdateSecondary(bool ownerVisible)
