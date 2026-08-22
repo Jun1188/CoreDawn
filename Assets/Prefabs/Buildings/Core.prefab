@@ -49,7 +49,7 @@ MonoBehaviour:
   deathDelay: 2
   destroyOnDeath: 1
   health:
-    maxHealth: 5000
+    maxHealth: 1000
   isCore: 1
   destroySfx: {fileID: 0}
 --- !u!1001 &2459109349982216559

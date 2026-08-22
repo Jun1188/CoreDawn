@@ -19,7 +19,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   category: 0
   prefab: {fileID: 3223742120988269179, guid: 8e72872f52f7d26458e07e2f3105188e, type: 3}
-  size: {x: 3, y: 3}
+  size: {x: 2, y: 2}
   ports:
   - LocalOffset: {x: 0, y: 0}
     Direction: 3
@@ -27,15 +27,15 @@ MonoBehaviour:
   - LocalOffset: {x: 0, y: 1}
     Direction: 3
     IsInput: 1
-  - LocalOffset: {x: 0, y: 2}
-    Direction: 3
-    IsInput: 1
-  - LocalOffset: {x: 1, y: 2}
+  - LocalOffset: {x: 0, y: 1}
     Direction: 0
     IsInput: 1
-  - LocalOffset: {x: 2, y: 1}
+  - LocalOffset: {x: 1, y: 0}
     Direction: 1
     IsInput: 0
+  - LocalOffset: {x: 0, y: 0}
+    Direction: 2
+    IsInput: 1
   inputSlots: 4
   outputSlots: 1
   bufferStackCap: 10

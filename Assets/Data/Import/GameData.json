@@ -1587,8 +1587,8 @@
       "category": "Production",
       "model": "",
       "size": {
-        "x": 3,
-        "y": 3
+        "x": 2,
+        "y": 2
       },
       "ports": [
         {
@@ -1605,21 +1605,21 @@
         },
         {
           "x": 0,
-          "y": 2,
-          "dir": "West",
-          "isInput": true
-        },
-        {
-          "x": 1,
-          "y": 2,
+          "y": 1,
           "dir": "North",
           "isInput": true
         },
         {
-          "x": 2,
-          "y": 1,
+          "x": 1,
+          "y": 0,
           "dir": "East",
           "isInput": false
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "dir": "South",
+          "isInput": true
         }
       ],
       "inputSlots": 4,
@@ -2126,7 +2126,7 @@
       "outputSlots": 0,
       "bufferStackCap": 0,
       "requiredCoreTier": 0,
-      "maxHp": 5000,
+      "maxHp": 1000,
       "hideFromBuildMenu": true,
       "buildCost": [],
       "speedMultiplier": 0.0,
@@ -2153,7 +2153,7 @@
             "작업대 — 손으로 제련·제작",
             "채굴기 · 제련로 · 컨베이어 벨트"
           ],
-          "maxHpBonus": 0,
+          "maxHpBonus": 1000,
           "isFinal": false
         },
         {
@@ -2162,7 +2162,7 @@
           "requirements": [
             {
               "item": "Item:HullPanel",
-              "amount": 20
+              "amount": 8
             },
             {
               "item": "Item:IronPlate",
@@ -2178,7 +2178,7 @@
             "채굴기 Mk.2 · 벨트 Mk.2",
             "중기관 포탑 · 박격포 타워"
           ],
-          "maxHpBonus": 2000,
+          "maxHpBonus": 500,
           "isFinal": false
         },
         {
@@ -2196,6 +2196,10 @@
             {
               "item": "Item:CopperWire",
               "amount": 50
+            },
+            {
+              "item": "Item:HullPanel",
+              "amount": 30
             }
           ],
           "unlocks": [
@@ -2203,7 +2207,7 @@
             "제조기 — 부품 4종을 한 번에 조립",
             "레이저 타워 · 감속 필드 타워"
           ],
-          "maxHpBonus": 1500,
+          "maxHpBonus": 500,
           "isFinal": false
         },
         {
@@ -2220,18 +2224,18 @@
             },
             {
               "item": "Item:CopperWire",
-              "amount": 30
+              "amount": 100
             },
             {
               "item": "Item:HullPanel",
-              "amount": 10
+              "amount": 100
             }
           ],
           "unlocks": [
             "엔진 예열 개시",
             "이륙 시퀀스"
           ],
-          "maxHpBonus": 1500,
+          "maxHpBonus": 1000,
           "isFinal": true
         }
       ]

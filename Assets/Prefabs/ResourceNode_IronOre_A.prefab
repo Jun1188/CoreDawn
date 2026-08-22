@@ -134,7 +134,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 10.5, y: 0.5, z: 10.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3, y: 1, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8167303130577529058}
@@ -160,6 +160,9 @@ MonoBehaviour:
   amountPerCycle: 1
   maxStock: 5
   initialStock: 0
+  allowManualMining: 1
+  manualExtractSeconds: 3
+  manualYield: 1
   currentStock: 0
   snapToGrid: 1
   gizmoColor: {r: 1, g: 0.75, b: 0.1, a: 0.35}
