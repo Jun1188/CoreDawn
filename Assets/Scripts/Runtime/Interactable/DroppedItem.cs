@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Pool;
 
 public class DroppedItem : Interactable
 {
@@ -7,6 +8,57 @@ public class DroppedItem : Interactable
 
     [Tooltip("아이템 아이콘을 표시할 렌더러 — 공용 프리팹에서 연결 (폴백 조립 시 런타임 주입)")]
     [SerializeField] private SpriteRenderer visual;
+
+    // ── 풀 ──────────────────────────────────────────────────────
+    // 드롭은 채굴·철거 환급·루팅으로 끊임없이 나고 사라진다. 매번 Instantiate/Destroy를 하면
+    // 그만큼 GC 쓰레기가 쌓이므로 인스턴스를 돌려 쓴다 (총알 풀과 같은 UnityEngine.Pool).
+    // 활성이든 대기든 전부 DroppedItemPool 아래 모은다 — 하이라키에 흩어지지 않는다.
+    const string PooledName = "DroppedItem (Pooled)";
+    static ObjectPool<DroppedItem> pool;
+    static Transform poolRoot;
+
+    /// <summary>
+    /// 풀 — 루트가 없으면(첫 사용, 또는 씬 전환으로 파괴됨) 함께 새로 만든다.
+    /// 씬을 넘어 살리지 않는 이유: 바닥 아이템은 그 씬의 물건이라 다음 씬까지 따라가면 안 된다.
+    /// 그래서 루트의 생사가 곧 풀의 생사이고, 죽은 인스턴스 참조가 남을 일도 없다.
+    /// </summary>
+    static ObjectPool<DroppedItem> Pool
+    {
+        get
+        {
+            if (poolRoot != null) return pool;
+
+            poolRoot = new GameObject("DroppedItemPool").transform;
+            pool = new ObjectPool<DroppedItem>(
+                createFunc: CreateInstance,
+                actionOnGet: d => d.gameObject.SetActive(true),
+                actionOnRelease: d => d.gameObject.SetActive(false),
+                actionOnDestroy: d => { if (d != null) Destroy(d.gameObject); },
+                collectionCheck: true,   // 같은 인스턴스를 두 번 반환하면 즉시 드러나게
+                defaultCapacity: 20,
+                maxSize: 200);
+            return pool;
+        }
+    }
+
+    static Transform PoolRoot()
+    {
+        _ = Pool;            // 루트 생성은 풀 초기화와 한 몸이다
+        return poolRoot;
+    }
+
+    // 도메인 리로드를 끈 환경에서 static이 플레이를 넘어 살아남는 것 방지
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics()
+    {
+        pool = null;
+        poolRoot = null;
+    }
+
+    Rigidbody body;
+
+    // 프리팹이 비활성으로 저장돼 있으면 Awake가 늦게 오므로 첫 접근에 잡는다
+    Rigidbody Body => body != null ? body : (body = GetComponent<Rigidbody>());
 
     public void Setup(ItemDataSO itemData, int count)
     {
@@ -27,18 +79,63 @@ public class DroppedItem : Interactable
     /// </summary>
     public static DroppedItem Spawn(ItemDataSO item, int amount, Vector3 position, Vector3 throwDirection)
     {
-        var db = ItemDatabaseSO.LoadDefault();
-        var prefab = db != null ? db.droppedItemPrefab : null;
-
-        DroppedItem dropped = prefab != null
-            ? Instantiate(prefab, position, Quaternion.identity)
-            : BuildFallback(position);
+        DroppedItem dropped = Rent(position);
+        if (dropped == null) return null;
 
         dropped.Setup(item, amount);
-
-        var rb = dropped.GetComponent<Rigidbody>();
-        if (rb != null) rb.AddForce(throwDirection * 3.5f, ForceMode.Impulse);
+        if (dropped.Body != null) dropped.Body.AddForce(throwDirection * 3.5f, ForceMode.Impulse);
         return dropped;
+    }
+
+    /// <summary>풀에서 하나 꺼내(없으면 새로 만들어) 지정 위치에 세운다.</summary>
+    static DroppedItem Rent(Vector3 position)
+    {
+        var d = Pool.Get();
+        if (d == null) return null;
+
+        // 지난번에 남의 부모(Spawned 루트 등)로 옮겨졌을 수 있다 — 다시 풀 아래로
+        d.transform.SetParent(PoolRoot(), false);
+        d.transform.SetPositionAndRotation(position, Quaternion.identity);
+        d.ResetPhysics();
+        return d;
+    }
+
+    static DroppedItem CreateInstance()
+    {
+        var db = ItemDatabaseSO.LoadDefault();
+        var prefab = db != null ? db.droppedItemPrefab : null;
+        var created = prefab != null ? Instantiate(prefab) : BuildFallback(Vector3.zero);
+        created.name = PooledName;
+        created.transform.SetParent(poolRoot, false);
+        return created;
+    }
+
+    /// <summary>
+    /// 풀로 돌려보낸다 — 파괴 대신. 남은 관성이 다음 사용에 새어 나가지 않게 물리도 멈춘다.
+    /// 이미 반환된 인스턴스는 무시한다 — 중복 반환은 같은 것을 두 번 꺼내 쓰게 만든다
+    /// (풀의 collectionCheck에도 걸리지만, 조용히 넘기는 편이 호출부에 안전하다).
+    /// </summary>
+    public void Release()
+    {
+        if (!gameObject.activeSelf) return;
+
+        item = null;
+        amount = 0;
+        promptMessage = null;
+        // 이름은 되돌린다 — WorldPopulator가 시작 아이템에 "StartItem_*"를 붙이는데,
+        // 그대로 풀에 들어가면 다음 배치에서 스폰 마커로 오인된다.
+        gameObject.name = PooledName;
+
+        ResetPhysics();
+        transform.SetParent(PoolRoot(), false);
+        Pool.Release(this);   // 비활성화는 actionOnRelease가 한다
+    }
+
+    void ResetPhysics()
+    {
+        if (Body == null) return;
+        Body.linearVelocity = Vector3.zero;
+        Body.angularVelocity = Vector3.zero;
     }
 
     /// <summary>공용 프리팹이 없을 때의 코드 조립 (구 방식). 프리팹과 같은 구조를 만든다.</summary>
@@ -94,7 +191,7 @@ public class DroppedItem : Interactable
 
         amount += other.amount;
         other.amount = 0;                                      // 상대의 후속 병합/줍기 차단
-        Destroy(other.gameObject);
+        other.Release();
         Setup(item, amount);                                   // 프롬프트("xN 줍기") 갱신
     }
 
@@ -109,12 +206,10 @@ public class DroppedItem : Interactable
 
         if (success)
         {
-            // Destroy는 프레임 끝에야 실행된다 — 그 사이에 E가 한 번 더 들어오면
-            // 같은 더미를 두 번 먹는다(연타 시 아이템 2배). 병합 쪽과 같은 방식으로
-            // 즉시 무효화해 후속 줍기·병합을 막는다(위의 amount 가드에 걸린다).
-            amount = 0;
-            promptMessage = null;   // 프롬프트가 비면 조준 대상에서도 즉시 빠진다
-            Destroy(gameObject);    // 적재로 컨테이너가 Changed를 쏘면 HUD·장착이 스스로 따라온다
+            // Release가 amount·프롬프트를 즉시 비우고 오브젝트를 끈다 — 연타로 E가 한 번 더
+            // 들어와도 위의 amount 가드에 걸려 같은 더미를 두 번 먹지 않는다.
+            // 적재로 컨테이너가 Changed를 쏘면 HUD·장착은 스스로 따라온다.
+            Release();
         }
         else
         {
