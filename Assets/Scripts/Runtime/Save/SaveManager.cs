@@ -330,12 +330,20 @@ public class SaveManager : MonoBehaviour
     /// (GameBootstrap.shouldLoad), 살아 있으면 부트스트랩이 Systems를 다시 얹지 않아
     /// 방금 부순 TimeManager·GameManager가 영영 재생성되지 않는다.
     /// SoundManager·SaveManager는 게임 상태가 없고 씬 탑재와도 무관해 남긴다.
+    ///
+    /// <b>DestroyImmediate인 이유</b>: 보통의 Destroy는 프레임 끝에야 실제로 파괴한다.
+    /// 그런데 바로 다음 줄에서 씬을 로드하므로, 부트스트랩이 "Systems를 얹을까"를 판단하는
+    /// 순간(씬 로드 직후)에도 옛 InputManager가 아직 살아 있어 <b>이미 있다</b>고 오판한다 —
+    /// Systems가 영영 안 얹혀 시계도 진행도도 없는 채로 게임이 뜬다(불러오기가 이렇게 죽어 있었다).
+    /// 같은 이유로 새 씬의 TimeManager.Awake도 옛 Instance를 보고 자폭한다.
+    /// 즉시 파괴하면 OnDestroy가 그 자리에서 돌아 Instance가 끊기고 탐색에서도 사라진다.
+    /// 호출 시점이 UI·이벤트라 물리/렌더 루프 한가운데가 아니므로 안전하다.
     /// </summary>
     static void ResetPersistentSingletons()
     {
-        if (TimeManager.Instance != null) Destroy(TimeManager.Instance.gameObject);
-        if (GameManager.Instance != null) Destroy(GameManager.Instance.gameObject);
-        if (InputManager.Instance != null) Destroy(InputManager.Instance.gameObject);
+        if (TimeManager.Instance != null) DestroyImmediate(TimeManager.Instance.gameObject);
+        if (GameManager.Instance != null) DestroyImmediate(GameManager.Instance.gameObject);
+        if (InputManager.Instance != null) DestroyImmediate(InputManager.Instance.gameObject);
     }
 
     // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────
