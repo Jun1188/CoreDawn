@@ -374,7 +374,9 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
 
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        // 게임플레이 진입 기준 상태 — 이전 씬에서 창이 열린 채 넘어왔을 수 있으므로
+        // 커서 소유권 계수도 여기서 0으로 되돌린다 (UICursor 머리말 참고)
+        UICursor.ResetLocked();
 
         if (InputManager.Instance != null) InputManager.Instance.Register(this);
         else Debug.LogError("[PlayerController] 씬에 InputManager가 없습니다.", this);

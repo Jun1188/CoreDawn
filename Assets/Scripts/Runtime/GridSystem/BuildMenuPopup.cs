@@ -21,14 +21,12 @@ public class BuildMenuPopup : UIPopup
     protected override void OnEnable()
     {
         base.OnEnable();   // 리시버 등록 + UI 맵 Push
-        Cursor.lockState = CursorLockMode.None;   // 메뉴 조작용 커서 해제 (PausePopup 패턴)
-        Cursor.visible = true;
+        UICursor.Release();   // 메뉴 조작용 커서 해제
     }
 
     protected override void OnDisable()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        UICursor.Restore();
         base.OnDisable();
     }
 

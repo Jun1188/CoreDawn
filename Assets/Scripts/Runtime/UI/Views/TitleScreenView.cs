@@ -40,9 +40,8 @@ public class TitleScreenView : MonoBehaviour
         }
 
         // 타이틀에서는 마우스를 써야 한다 — 게임플레이 씬에서 잠가둔 채로 넘어올 수 있다.
-        // (UnityEngine.UIElements.Cursor와 이름이 겹쳐 정규화가 필요하다 — UITKPopup과 같은 사정)
-        UnityEngine.Cursor.lockState = CursorLockMode.None;
-        UnityEngine.Cursor.visible = true;
+        // 창이 열린 채 씬이 바뀌었을 수 있어 계수까지 함께 버린다 (UICursor 머리말 참고).
+        UICursor.ResetFree();
         Time.timeScale = 1f;
 
         // 게임에서 돌아와도 전투·밤 BGM이 계속 흐르던 것 — 타이틀은 메인 테마로 되돌린다.

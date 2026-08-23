@@ -18,15 +18,13 @@ public class InventoryPopup : UIPopup
         if (player == null) player = FindFirstObjectByType<PlayerController>();
         base.OnEnable();
 
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        UICursor.Release();
         if (player != null && player.crosshairUI != null) player.crosshairUI.SetActive(false);
     }
 
     protected override void OnDisable()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        UICursor.Restore();
         if (player != null && player.crosshairUI != null) player.crosshairUI.SetActive(true);
         base.OnDisable();
     }
