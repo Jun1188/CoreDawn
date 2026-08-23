@@ -33,6 +33,19 @@ public class MovementComponent
     public bool IsMoving => (currentPath != null && currentPath.Count > 0) || flowDirection != Vector3.zero;
     public float MoveSpeed => moveSpeed;
 
+    /// <summary>
+    /// 실측 수평 이동 속도(m/s) — 곡사탄의 탄착점 예측이 읽는다.
+    ///
+    /// 계산값(방향 × EffectiveSpeed)이 아니라 <b>실제 이동량</b>을 재는 이유: 경로 추종·
+    /// 플로우필드·넉백이 각자 위치를 옮기고 감속 효과·지형 배율까지 곱해지므로, 어느 한
+    /// 경로의 의도만 봐서는 몸이 실제로 어디로 가는지 알 수 없다. Y는 버린다 — 접지 보정이
+    /// 매 프레임 지형 높이만큼 튀게 만드는데, 예측에 필요한 것은 수평 이동뿐이다.
+    ///
+    /// 지수 평활을 거치는 이유는 웨이포인트 코너다. 꺾이는 한 프레임의 생속도를 그대로 쓰면
+    /// 몇 초 뒤를 내다보는 예측이 그 순간 엉뚱한 곳을 찍는다.
+    /// </summary>
+    public Vector3 Velocity => velocity;
+
     /// <summary>군중 겹침 해소용 개체 반지름 — CrowdSystem이 읽는다.</summary>
     public float CrowdRadius => crowdRadius;
 
@@ -129,9 +142,16 @@ public class MovementComponent
         flowDirection = Vector3.zero;
     }
 
+    /// <summary>속도 평활 계수(1/초) — 클수록 실측을 빨리 따라가고 코너에서 더 튄다.</summary>
+    private const float VelocitySmoothing = 8f;
+
+    private Vector3 velocity;
+
     public void Tick(float deltaTime)
     {
         if (transform == null) return;
+
+        Vector3 before = transform.position;
 
         if (currentPath != null) TickPath(deltaTime);
         else if (flowDirection != Vector3.zero) TickDirection(deltaTime);
@@ -142,6 +162,20 @@ public class MovementComponent
 
         // 접지는 XZ가 전부 정해진 뒤 마지막에 한다
         if (stickToGround) StickToGround();
+
+        TrackVelocity(before, deltaTime);
+    }
+
+    /// <summary>이번 프레임 실제로 움직인 거리에서 수평 속도를 갱신한다.</summary>
+    private void TrackVelocity(Vector3 before, float deltaTime)
+    {
+        if (deltaTime <= 0f) return;
+
+        Vector3 delta = transform.position - before;
+        delta.y = 0f;
+        // 프레임 독립 지수 평활 — dt가 흔들려도 따라가는 속도가 같다
+        velocity = Vector3.Lerp(velocity, delta / deltaTime,
+                                1f - Mathf.Exp(-VelocitySmoothing * deltaTime));
     }
 
     /// <summary>

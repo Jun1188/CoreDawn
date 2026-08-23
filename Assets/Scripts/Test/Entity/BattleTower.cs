@@ -177,7 +177,7 @@ public class BattleTower : BuildingEntity
         bool aligned = true;
         if (visual != null)
         {
-            Vector3 aimDir = AimDirection(aimOrigin, aimPoint, data);
+            Vector3 aimDir = AimDirection(aimOrigin, aimPoint, VelocityOf(target), data);
             aligned = visual.AimTowards(aimDir, data.turnSpeed, data.aimTolerance);
         }
 
@@ -240,16 +240,26 @@ public class BattleTower : BuildingEntity
     private Vector3 AimPointOf(Entity t)
         => targetCollider != null ? targetCollider.bounds.center : t.GetPosition();
 
+    /// <summary>목표의 수평 이동 속도 — 곡사 탄착 예측이 쓴다. 움직이지 않는 대상은 0.</summary>
+    private static Vector3 VelocityOf(Entity t)
+    {
+        var movement = t != null ? t.Movement : null;
+        return movement != null ? movement.Velocity : Vector3.zero;
+    }
+
     /// <summary>
     /// 포탑이 향해야 할 방향. 중력탄을 쏘는 발사기는 목표가 아니라 <b>발사각</b>을 봐야 한다 —
-    /// 박격포가 표적을 똑바로 겨누면 포탄은 발밑에 떨어진다.
+    /// 박격포가 표적을 똑바로 겨누면 포탄은 발밑에 떨어진다. 게다가 겨눌 곳도 목표의 현재
+    /// 위치가 아니라 <b>탄착점</b>이다: 비행 시간 동안 몬스터가 걸어 나가므로, 포탑이 도는
+    /// 방향부터 앞질러 잡아 두지 않으면 발사 직전에 각을 다시 트느라 정렬이 늦는다.
     /// 탄종은 발사 순간에야 확정되므로 여기서는 defaultAmmo로 곡사 여부만 미리 본다.
     /// </summary>
-    private Vector3 AimDirection(Vector3 origin, Vector3 aimPoint, TowerDataSO data)
+    private Vector3 AimDirection(Vector3 origin, Vector3 aimPoint, Vector3 targetVelocity, TowerDataSO data)
     {
+        // 중력이 0인 탄(대부분의 타워)은 예측도 탄도해도 건너뛴다 — 그냥 겨누면 맞는다
         if (data.fireMode == FireMode.Projectile && previewRound != null && previewRound.gravity > 0f)
-            return ProjectileSystem.BallisticAim(origin, aimPoint, previewRound.speed,
-                                                 previewRound.gravity, data.preferHighArc);
+            return ProjectileSystem.BallisticLead(origin, aimPoint, targetVelocity, previewRound.speed,
+                                                  previewRound.gravity, data.preferHighArc, out _);
 
         Vector3 dir = aimPoint - origin;
         return dir.sqrMagnitude < 0.0001f ? transform.forward : dir.normalized;
@@ -321,11 +331,16 @@ public class BattleTower : BuildingEntity
         Vector3 muzzle = hasMuzzle ? muzzleTf.position
                                    : transform.position + Vector3.up * data.muzzleHeight;
 
-        // 발사기의 일은 각도다 — 중력탄(유탄)은 탄도해로 조준각을 풀고, 직선탄은 그냥 겨눈다
+        // 발사기의 일은 각도다 — 중력탄(유탄)은 포탄이 떨어질 자리(탄착점)로 탄도해를 풀고,
+        // 직선탄은 그냥 겨눈다. 중력이 0인 탄은 예측 자체를 건너뛴다 — 탄속이 빨라 리드가
+        // 필요 없는 데다, 모든 직사 타워가 매 발 반복해 풀 만큼 싼 계산이 아니다.
         Vector3 dir;
+        Vector3 impact = aimPoint;
         if (data.fireMode == FireMode.Projectile && round.gravity > 0f)
         {
-            dir = ProjectileSystem.BallisticAim(muzzle, aimPoint, round.speed, round.gravity, data.preferHighArc);
+            dir = ProjectileSystem.BallisticLead(muzzle, aimPoint, VelocityOf(target),
+                                                 round.speed, round.gravity, data.preferHighArc,
+                                                 out impact);
         }
         else
         {
@@ -334,7 +349,14 @@ public class BattleTower : BuildingEntity
             dir.Normalize();
         }
 
-        var shot = new ProjectileShot(round.speed, round.lifetime, combat.AttackRange + 2f,
+        // 탄의 소멸 거리 — 사거리에 여유 2m가 기본이지만, 리드가 탄착점을 사거리 밖으로
+        // 밀어낸 경우(달아나는 목표)에는 그 거리를 기준으로 잡는다. 여유가 모자라면
+        // 포탄이 탄착점 코앞에서 만료돼 허공에서 터진다.
+        float travel = Vector3.Distance(new Vector3(muzzle.x, 0f, muzzle.z),
+                                        new Vector3(impact.x, 0f, impact.z));
+        float range = Mathf.Max(combat.AttackRange, travel) + 2f;
+
+        var shot = new ProjectileShot(round.speed, round.lifetime, range,
                                       effects, monsterMask, this, round.gravity, round.explosionRadius,
                                       data.fireMode, round.bulletPrefab, round.pierce, null,
                                       round.hitEffectPrefab);
