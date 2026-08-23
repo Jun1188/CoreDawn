@@ -562,7 +562,7 @@ public static class WorldTerrainGenerator
     /// <summary>절벽 타일에 세우는 암벽 프리팹. 지형을 솟구치게 하는 대신 이것들이 벽이 된다.</summary>
     static readonly string[] CliffSet =
     {
-        "Cliff_01", "Cliff_02", "Cliff_03", "Cliff_05",
+        "SM_Rocks_01", "SM_Rocks_02", "SM_Rocks_03", "SM_Rocks_04","SM_Rocks_05", "SM_Rocks_06", "SM_Rocks_07", "SM_Rocks_08", "SM_Rocks_09", "SM_Rocks_10", "SM_Rocks_11",
     };
 
     // 디테일은 지형 텍스처가 아니라 <b>정점 색</b>으로 물드므로 색을 여기서 준다 (Demo와 같은 값)
