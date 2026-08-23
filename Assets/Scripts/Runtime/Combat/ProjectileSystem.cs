@@ -491,6 +491,62 @@ public static class ProjectileSystem
         return (flat / d + Vector3.up * tan).normalized;
     }
 
+    /// <summary>탄착점을 다시 푸는 횟수 — 1회면 대개 수십 cm 안으로 수렴한다.</summary>
+    private const int LeadRefineSteps = 2;
+
+    /// <summary>
+    /// 곡사탄의 <b>탄착점</b> 조준 — 목표의 현재 위치가 아니라, 포탄이 날아가 떨어질 때
+    /// 목표가 서 있을 자리를 겨눈다.
+    ///
+    /// 왜 필요한가: 중력탄은 궤적이 굽는 만큼 비행 시간이 길다(박격포 최대 사거리에서
+    /// 0.7초 남짓, 고각이면 몇 배). 그동안 몬스터는 걸어서 자리를 뜨므로, 현재 위치로
+    /// 탄도해를 풀면 포탄은 <b>몬스터가 있던 자리</b>에 정확히 떨어진다. 직사탄은 탄속이
+    /// 빨라 이 오차가 눈에 띄지 않지만, 곡사탄은 한 발이 통째로 빗나간다.
+    ///
+    /// 닭과 달걀 문제라 반복해서 푼다: 비행 시간을 알아야 탄착점을 알고, 탄착점을 알아야
+    /// 비행 시간을 안다. 현재 위치의 해에서 시간을 얻어 목표를 그만큼 앞질러 놓고 다시
+    /// 푸는 것을 <see cref="LeadRefineSteps"/>번 반복하면 충분히 수렴한다.
+    ///
+    /// <b>중력 0이면 부르지 말 것</b> — 직사탄은 예측도 탄도해도 필요 없다. 이 함수는
+    /// 중력탄 전용이며(gravity ≤ 0이면 곧장 직선 조준으로 빠진다), 발사기는 탄약의
+    /// gravity가 0이 아닐 때만 이 경로를 타면 된다.
+    /// </summary>
+    /// <param name="targetVelocity">목표의 수평 속도(m/s). 0이면 현재 위치를 그대로 겨눈다.</param>
+    /// <param name="impact">푼 탄착점 — 발사기가 사거리 여유를 잡는 데 쓴다.</param>
+    public static Vector3 BallisticLead(Vector3 origin, Vector3 target, Vector3 targetVelocity,
+                                        float speed, float gravity, bool highArc, out Vector3 impact)
+    {
+        impact = target;
+        Vector3 direction = BallisticAim(origin, target, speed, gravity, highArc);
+        if (gravity <= 0f || targetVelocity.sqrMagnitude < 0.0001f) return direction;
+
+        for (int i = 0; i < LeadRefineSteps; i++)
+        {
+            float flight = FlightTime(origin, impact, direction, speed);
+            if (flight <= 0f) break;
+
+            impact = target + targetVelocity * flight;
+            direction = BallisticAim(origin, impact, speed, gravity, highArc);
+        }
+
+        return direction;
+    }
+
+    /// <summary>
+    /// 주어진 발사 방향으로 목표의 수평 거리를 지나는 데 걸리는 시간.
+    /// 수평 속도는 중력의 영향을 받지 않으므로(가속이 아래로만 걸린다) 수평 성분만으로 나온다 —
+    /// 포물선을 적분할 필요가 없다.
+    /// </summary>
+    private static float FlightTime(Vector3 origin, Vector3 target, Vector3 direction, float speed)
+    {
+        Vector3 delta = target - origin;
+        float distance = new Vector2(delta.x, delta.z).magnitude;
+        float horizontalSpeed = new Vector2(direction.x, direction.z).magnitude * speed;
+
+        // 수평 속도가 0이면 수직 발사 — 거리를 지나는 시간이 정의되지 않으니 예측을 포기한다
+        return horizontalSpeed > 0.001f ? distance / horizontalSpeed : 0f;
+    }
+
     // ── 투사체 발사·풀 ──────────────────────────────────────────
     private static readonly Dictionary<GameObject, ObjectPool<GameObject>> pools
         = new Dictionary<GameObject, ObjectPool<GameObject>>();
