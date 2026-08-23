@@ -23,112 +23,47 @@ using UnityEngine;
 public static class WorldTerrainGenerator
 {
     const string TerrainRootName = "Terrain (Generated)";
-    const string AssetFolder = "Assets/Data/Maps/Terrain";
 
-    // ── 지형 프로파일 ───────────────────────────────────────────
-    // 지형이 담는 높이 폭(m). 절벽은 프리팹이 맡으므로 지형이 표현할 것은 강 깊이뿐이다 —
-    // 여유를 조금 둬야 미세 굴곡이 잘리지 않는다.
-    const float TerrainHeightRange = 2f;
-    // 강바닥 깊이(m). 물 평면보다 넉넉히 깊어야 한다 — 다듬기가 폭 1칸짜리 물길의 바닥을
-    // 들어올리기 때문에, 여유가 없으면 그런 구간에서 물이 끊겨 보인다.
-    const float RiverDepth = 0.85f;
-    const float WaterLevel = -0.15f;   // 물 표면 높이(m)
+    // ── 수치는 전부 에셋에 있다 ─────────────────────────────────
+    // 물가 경사 하나 보려고 스크립트를 고치면 도메인 리로드가 돌고, 아트 쪽에서는 만질
+    // 수도 없다. 값은 TerrainGenSettings 에셋이 들고, 이 파일은 <b>절차</b>만 갖는다.
+    // 각 값이 왜 그 값인지는 그 에셋의 필드 주석에 있다.
+    static TerrainGenSettings _settings;
+    static TerrainGenSettings S => _settings != null ? _settings : (_settings = TerrainGenSettings.LoadOrCreate());
 
-    // ── 섬 ──────────────────────────────────────────────────────
-    const float ShoreWidth = 1.8f;  // 맵 가장자리에서 물에 잠기는 폭(칸)
-    const float SeaMargin = 1.5f;   // 물을 맵 밖으로 얼마나 더 깔지 (맵 한 변의 배수)
-
-    // ── 경계벽 ──────────────────────────────────────────────────
-    const float BoundsHeight = 40f;      // 점프·넉백으로도 넘지 못할 높이(m)
-    const float BoundsThickness = 2f;    // 빠른 이동체가 한 프레임에 뚫지 않을 두께(m)
-    const float BoundsSink = 5f;         // 바닥을 지형 아래까지 내려 물가 틈으로 새지 않게
-
-    /// <summary>수면 정점 간격(m). 물 셰이더가 정점을 흔들므로 파도 주기보다 촘촘해야 한다.</summary>
-    const float WaterVertexSpacing = 1f;   // 거품 띠는 정점 보간 폭보다 얇아질 수 없다 — 띠 목표 폭보다 촘촘히
-
-    /// <summary>이 수심(m)보다 얕으면 거품이 낀다. 정점 컬러의 빨강 채널이 곧 거품 세기다.
-    /// 0.35로 두면 작은 웅덩이는 수면 대부분이 거품 범위에 들어가 흰 원반처럼 렌더된다 —
-    /// 물가에 좁은 띠만 남도록 얕게 잡는다.</summary>
-    const float FoamDepth = 0.10f;
-
-    // ── 스케일 불변 단위 ────────────────────────────────────────
-    // 물가·워핑·해상도는 <b>미터</b>로 선언한다. 계산은 칸 좌표계라 파생값이 Cell로 환산한다 —
-    // 셀 크기를 바꿔도 물가의 실제 형상(경사·여울 폭·해안 굴곡·블러 반경)이 유지된다.
+    // ── 스케일 환산 ─────────────────────────────────────────────
+    // 물가·워핑·해상도는 에셋에 <b>미터</b>로 적혀 있고 계산은 칸 좌표계다. 그 환산이
+    // 여기 모여 있다 — 셀 크기를 바꿔도 물가의 실제 형상(경사·여울 폭·해안 굴곡·블러
+    // 반경)이 유지되는 이유가 이 한 겹이다.
     // (셀 2→4m 때 칸 단위 상수가 통째로 어긋나 물가가 두 배 넓어졌던 재발 방지.
-    //  절벽은 반대로 바위 폭이 곧 칸이라 칸 비례가 자연스럽다 — 그쪽 m 상수는 셀에 맞춰 튜닝)
+    //  절벽은 반대로 바위 폭이 곧 칸이라 칸 비례가 자연스럽다 — 그쪽은 Cell을 곱한다)
     static float Cell = 2f;   // Build 시작에 world.CellSize로 갱신된다
 
-    // 형상이 완성되는 거리 — 타일 <b>경계에서 안쪽으로</b> 얼마 들어가야 제 높이가 되는가.
-    // 짧아야 한다. 경사를 칸 하나에 걸쳐 눕히면 폭 1~2칸짜리 절벽·물길은 제 높이에 닿기도
-    // 전에 반대쪽 경계를 만나 밋밋한 둔덕이 된다(0.6칸일 때 절벽 43%가 절반 높이도 못 됐다).
-    // 절벽·강 타일은 어차피 건설 불가라 칸 안에서는 마음껏 깎아도 된다. 경계선 자체는 이미
-    // 블러로 매끈한 곡선이므로, 짧게 세울수록 그 곡선이 또렷한 벼랑·물길이 된다.
-    const float RiverFalloffM = 0.6f;   // 골 경사 거리(m) — 크면 완만하다
-    static float RiverFalloff => RiverFalloffM / Cell;
+    static float RiverFalloff => S.riverFalloffM / Cell;
+    static float ShelfWidth   => S.shelfWidthM / Cell;
+    static float ShapeInset   => S.shapeInsetM / Cell;
 
-    // 물가는 벼랑이 아니라 <b>여울</b>로 들어간다 — 물 앞에서 넓고 얕게 눕다가, 그 다음에
-    // 골이 파인다. 한 단짜리 곡선으로는 이 둘을 함께 얻을 수 없다: 짧게 잡으면 물가가
-    // 벽이 되고, 길게 잡으면 폭 3칸짜리 물길이 제 깊이에 닿기 전에 반대편을 만나 말라버린다.
-    //
-    // 두 폭의 합은 <b>강 반폭(1.5칸)에서 한참 모자라야</b> 한다. 다듬기(거리장 블러 + 높이맵
-    // 블러)가 좁은 골의 바닥을 들어올리기 때문이다 — 실측으로 유효 침투 거리가 기대치의
-    // 약 2/3(1.35칸 → 0.9칸)로 줄었고, 합을 1.25칸으로 잡았을 때 수심이 16cm까지 말랐다.
-    const float ShelfWidthM = 0.9f;  // 여울 폭(m) — 물가 경사를 정한다
-    static float ShelfWidth => ShelfWidthM / Cell;
-    const float ShelfDepth = 0.3f;   // 여울 끝의 파임(m). WaterLevel보다 깊어야 물이 덮는다
+    static int FieldSubDiv    => Mathf.Max(2, Mathf.RoundToInt(Cell / S.fieldPixelM));
+    static int SamplesPerCell => Mathf.Max(2, Mathf.RoundToInt(Cell / S.heightSampleM));
 
-    // 형상을 타일 경계에서 이만큼 <b>안쪽으로</b> 물려 시작한다. 경사면이 남의 땅이 아니라
-    // 제 타일을 깎으며 생기게 하는 장치다 — 경계에 딱 맞춰 세우면 다듬는 과정에서 높이가
-    // 옆 지면으로 흘러넘쳐, 절벽이 깎이는 게 아니라 땅이 차오르는 모양이 된다.
-    // 덤으로 경계선이 칸 격자를 벗어나 거리장의 매끈한 등고선 위에 놓인다.
-    const float ShapeInsetM = 0.3f;
-    static float ShapeInset => ShapeInsetM / Cell;
+    static int SmoothRadius       => Mathf.Max(1, Mathf.RoundToInt(S.smoothRadiusM / S.fieldPixelM));
+    static int HeightSmoothRadius => Mathf.Max(1, Mathf.RoundToInt(S.smoothRadiusM / S.heightSampleM));
 
-    // ── 해상도 ──────────────────────────────────────────────────
-    // 픽셀·샘플 간격을 미터로 고정한다 — 셀이 커져도 곡선의 잘림·블러 반경(m)이 안 변한다.
-    const float FieldPixelM = 0.25f;     // 거리장 픽셀 크기(m) — 셀 4m 기준 칸당 16
-    static int FieldSubDiv => Mathf.Max(2, Mathf.RoundToInt(Cell / FieldPixelM));
-    const float HeightSampleM = 0.25f;   // 높이맵 샘플 간격(m). 전체는 2ⁿ+1로 올림된다
-    static int SamplesPerCell => Mathf.Max(2, Mathf.RoundToInt(Cell / HeightSampleM));
+    static float WarpStrength     => S.warpStrengthM / Cell;
+    static float WarpFrequency    => Cell / S.warpWavelengthM;
+    static float WarpMidStrength  => S.warpMidStrengthM / Cell;
+    static float WarpMidFrequency => Cell / S.warpMidWavelengthM;
+    static float WarpFineStrength => S.warpFineStrengthM / Cell;
+    static float WarpFineFrequency=> Cell / S.warpFineWavelengthM;
+    static float DetailFrequency  => Cell / S.detailWavelengthM;
 
-    // 계단 다듬기 — 타일은 네모라 거리장 등고선이 90°·45°로 꺾인다. 그 각을 뭉갠다.
-    // 반경도 <b>미터 고정</b>이다. 칸의 절반으로 정의했더니 셀 4m에서 반경이 2m가 되어,
-    // 해상도를 올려 담은 잔물결 워핑(±0.7m)을 블러가 도로 지워 해안이 직선이 됐다.
-    // 계단은 워핑이 이미 흩뜨려 놓으므로 1m 블러로 모서리만 둥글리면 된다
-    // (더 키우면 폭이 좁은 물길·여울의 속살까지 밀린다).
-    const float SmoothRadiusM = 0.75f;
-    static int SmoothRadius => Mathf.Max(1, Mathf.RoundToInt(SmoothRadiusM / FieldPixelM));
-    const int SmoothPasses = 2;             // 박스 블러를 겹쳐 가우시안에 가깝게
+    // 절벽은 칸 비례 — 바위의 xz 폭이 곧 칸이라 높이·후퇴량도 같이 커져야 비율이 유지된다
+    static float CliffHeightLow  => S.cliffHeightCells.x * Cell;
+    static float CliffHeightHigh => S.cliffHeightCells.y * Cell;
+    static float CliffBaseSink   => S.cliffBaseSinkCells * Cell;
 
-    // 높이맵 단계의 2차 다듬기. 거리장을 아무리 뭉개도 "타일 밖은 0" 클램프가
-    // 칸 격자에서 일어나 모서리가 되살아나므로, 격자를 떠난 뒤 한 번 더 편다.
-    static int HeightSmoothRadius => Mathf.Max(1, Mathf.RoundToInt(SmoothRadiusM / HeightSampleM));
-    const int HeightSmoothPasses = 2;
-
-    // ── 불규칙성 ────────────────────────────────────────────────
-    // 경계를 흔드는 세기(칸). 직각을 깨는 주역이지만 <b>형상 반폭보다 작아야</b> 한다.
-    // 워프 파장(18칸)이 물길 폭(3칸)보다 훨씬 길어서 물길 양쪽이 <b>같은 방향</b>으로 밀리는데,
-    // 아래의 "바깥쪽 택하기"는 그 이동분을 양쪽에서 깎아낸다 — 세기가 반폭(1.5칸)을 넘던
-    // 3.2칸에서는 그 깎임이 물길을 통째로 지워, 강이 중간중간 웅덩이로 끊겼다.
-    const float WarpStrengthM = 2.2f;    // 진폭(m)
-    static float WarpStrength => WarpStrengthM / Cell;
-    const float WarpWavelengthM = 36f;   // 파장(m)
-    static float WarpFrequency => Cell / WarpWavelengthM;
-    // 잔물결 옥타브 — 긴 파장 하나로는 흔들림이 너무 완만해 안 흔든 것처럼 보인다.
-    // 두 진폭의 합(1.45칸)은 여전히 물길 반폭(1.5칸) 안이다.
-    // 중간 옥타브 — <b>물길 폭(≈12m)보다 짧은 파장</b>이라 강에도 쓸 수 있다: 파장이 폭보다
-    // 짧으면 양쪽 기슭이 제각각 흔들려, 긴 파장처럼 물길 전체가 한쪽으로 쏠리지 않는다.
-    const float WarpMidStrengthM = 1.2f;
-    static float WarpMidStrength => WarpMidStrengthM / Cell;
-    const float WarpMidWavelengthM = 10f;
-    static float WarpMidFrequency => Cell / WarpMidWavelengthM;
-    const float WarpFineStrengthM = 0.7f;
-    static float WarpFineStrength => WarpFineStrengthM / Cell;
-    const float WarpFineWavelengthM = 4.5f;
-    static float WarpFineFrequency => Cell / WarpFineWavelengthM;
-    const float DetailAmplitude = 0.14f;  // 지면 미세 굴곡(m)
-    const float DetailWavelengthM = 22f;
-    static float DetailFrequency => Cell / DetailWavelengthM;
+    /// <summary>물가에서 풀이 멈추는 높이(m). 수면보다 조금 위여야 물속에 잠긴 풀이 없다.</summary>
+    static float GrassWaterLine => S.waterLevel + S.grassWaterLineOffset;
 
     [MenuItem("Tools/Factory/Build World Terrain")]
     public static void Build()
@@ -182,9 +117,9 @@ public static class WorldTerrainGenerator
     /// </summary>
     static float Submerge(float into)
     {
-        float shelf = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, ShelfWidth, into)) * ShelfDepth;
+        float shelf = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, ShelfWidth, into)) * S.shelfDepth;
         float trough = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(ShelfWidth, ShelfWidth + RiverFalloff, into))
-                     * (RiverDepth - ShelfDepth);
+                     * (S.riverDepth - S.shelfDepth);
         return shelf + trough;
     }
 
@@ -201,7 +136,7 @@ public static class WorldTerrainGenerator
         var riverField = SignedDistance(map, MapTile.River);
 
         var height = new float[res, res];
-        float total = TerrainHeightRange;   // 정규화 기준 (0 = 바닥, 1 = 천장)
+        float total = S.terrainHeightRange;   // 정규화 기준 (0 = 바닥, 1 = 천장)
 
         for (int j = 0; j < res; j++)
             for (int i = 0; i < res; i++)
@@ -247,7 +182,7 @@ public static class WorldTerrainGenerator
                 // 자로 그은 직선이 된다. 워핑 최대 진폭(1.45칸) < 잠김 폭(1.8칸)이라
                 // 맵 최외곽은 언제나 물에 잠긴 채로 남는다(지형 절단면 노출 없음).
                 float edge = Mathf.Min(Mathf.Min(wx, wy), Mathf.Min(map.width - wx, map.height - wy));
-                dig = Mathf.Max(dig, Submerge(ShoreWidth - edge));
+                dig = Mathf.Max(dig, Submerge(S.shoreWidth - edge));
 
                 h -= dig;
 
@@ -267,7 +202,7 @@ public static class WorldTerrainGenerator
                 float ty = (float)j / (res - 1) * map.height;
 
                 // 물 밑은 잔잔하게 — 파임을 흐리지 않도록
-                float detail = (Mathf.PerlinNoise(tx * DetailFrequency, ty * DetailFrequency) - 0.5f) * 2f * DetailAmplitude;
+                float detail = (Mathf.PerlinNoise(tx * DetailFrequency, ty * DetailFrequency) - 0.5f) * 2f * S.detailAmplitude;
                 float h = height[j, i] + detail * (height[j, i] < -0.05f ? 0.35f : 1f);
 
                 // 마른 지면은 노이즈가 아래로 파지 못하게 막는다. 굴곡 폭(±0.14m)이 잔디
@@ -276,7 +211,7 @@ public static class WorldTerrainGenerator
                 // 형상(강·여울)으로 파인 곳은 원래 음수라 이 클램프에 걸리지 않는다.
                 if (height[j, i] > -0.02f) h = Mathf.Max(h, -0.02f);
 
-                height[j, i] = Mathf.Clamp01((h + RiverDepth) / total);
+                height[j, i] = Mathf.Clamp01((h + S.riverDepth) / total);
             }
 
         return height;
@@ -296,7 +231,7 @@ public static class WorldTerrainGenerator
         var original = (float[,])height.Clone();
         var tmp = new float[res, res];
 
-        for (int pass = 0; pass < HeightSmoothPasses; pass++)
+        for (int pass = 0; pass < S.heightSmoothPasses; pass++)
         {
             for (int j = 0; j < res; j++)
                 for (int i = 0; i < res; i++)
@@ -384,7 +319,7 @@ public static class WorldTerrainGenerator
         int r = SmoothRadius;
         if (r <= 0) return;
 
-        for (int pass = 0; pass < SmoothPasses; pass++)
+        for (int pass = 0; pass < S.smoothPasses; pass++)
         {
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
@@ -474,17 +409,17 @@ public static class WorldTerrainGenerator
             name = $"{map.Id.Replace(':', '_')}_TerrainData",
         };
         // size는 heightmapResolution 설정 뒤에 줘야 한다 (해상도 변경이 size를 되돌린다)
-        data.size = new Vector3(map.width * world.CellSize, TerrainHeightRange, map.height * world.CellSize);
+        data.size = new Vector3(map.width * world.CellSize, S.terrainHeightRange, map.height * world.CellSize);
         data.SetHeights(0, 0, height);
         data.terrainLayers = BuildLayers();
 
-        AssetDatabase.CreateAsset(data, $"{AssetFolder}/{data.name}.asset");
+        AssetDatabase.CreateAsset(data, $"{S.assetFolder}/{data.name}.asset");
 
         var go = Terrain.CreateTerrainGameObject(data);
         go.name = "Terrain";
         go.transform.SetParent(root, false);
         // 지면(타일 높이 0)이 월드 y=0에 오도록 강 깊이만큼 내린다
-        go.transform.localPosition = new Vector3(0f, -RiverDepth, 0f);
+        go.transform.localPosition = new Vector3(0f, -S.riverDepth, 0f);
 
         int ground = LayerMask.NameToLayer("Ground");
         if (ground >= 0) go.layer = ground;
@@ -497,7 +432,7 @@ public static class WorldTerrainGenerator
         terrain.drawInstanced = true;
 
         // 풀은 멀리서 보이지 않아도 된다 — 가까이서 발밑을 덮는 것이 목적이다
-        terrain.detailObjectDistance = DetailDistance;
+        terrain.detailObjectDistance = S.detailDistance;
         terrain.detailObjectDensity = 1f;
 
         // 스플랫은 반드시 에셋으로 굳힌 뒤에 칠한다. TerrainData를 CreateAsset 하는 순간
@@ -517,18 +452,7 @@ public static class WorldTerrainGenerator
     // 지형 텍스처만으로는 에셋 홍보 사진 같은 그림이 나오지 않는다. 그 인상의 대부분은
     // 지면을 덮은 <b>잔디 메시</b>에서 온다 — 바닥이 평평한 그림에서 풀이 선 그림으로 바뀐다.
 
-    const string PrefabFolder = "Assets/ThirdParty/Idyllic Fantasy Nature/Prefabs";
-    // 풀·꽃은 <b>우리 변형</b>을 심는다 — 머티리얼이 Art/Materials/Vegetation의 우리 사본이라,
-    // 시간대 틴트(SkyboxTimeView)가 서드파티 에셋을 건드리지 않고 색을 만질 수 있다.
-    const string VegPrefabFolder = "Assets/Prefabs/Vegetation";
-    const float DetailPointM = 0.5f;    // 디테일 점 간격 목표(m) — 격자 크기는 맵 실측(m)에서 산정
-    // 패치 단위 — 디테일은 <b>패치마다 따로 그려진다</b>. 32면 해상도 1024에서 32×32=1024패치가
-    // 되고, 프로토타입 8종을 곱하면 배치가 수천 개로 불어난다(실측: 잔디가 전체 배치의 79%).
-    // 64로 키우면 패치가 256개로 줄어 그만큼 드로우콜이 준다 — 컬링 단위가 커지는 것이 대가다.
-    const int DetailPatch = 64;
-    // 이 거리 밖에서는 그리지 않는다. 실측(1920×1080): 120m면 배치 1258·삼각형 6.3M,
-    // 70m면 그 절반 남짓이다. 잔디는 발밑에서만 눈에 띄므로 멀리까지 그릴 값어치가 적다.
-    const float DetailDistance = 70f;
+    // 폴더·간격·패치·거리는 전부 TerrainGenSettings 에셋에 있다.
 
     // ── 절벽 프리팹 배치 ────────────────────────────────────────
     // 칸마다 바위 하나. 제약은 "절벽이 아닌 타일 침범 금지" 하나뿐이고, 절벽끼리는
@@ -537,48 +461,9 @@ public static class WorldTerrainGenerator
     // 높이는 <b>쌓지 않고 배치 고도로</b> 만든다: 가장자리 줄만 땅에 서고, 안쪽 바위는
     // 공중에 띄운다. 바닥은 앞줄이 가리므로 보이지 않는다. 쌓으면 이음매가 오레오처럼
     // 줄무늬가 되고, 세로로 늘리면 옆으로 넓은 바위가 콜라캔 판자가 된다 — 둘 다 겪었다.
-    // 능선고(m). 최저값은 플레이어 점프(1.3m)로 올라설 수 없는 선.
-    // 절벽 치수는 <b>칸 비례</b>다 — 바위의 xz 폭이 곧 칸 크기라, 높이·후퇴량도 같이
-    // 커져야 바위 비율이 유지된다. (물가가 미터 고정인 것과 반대 — 저긴 형상이, 여긴 비율이 불변)
-    static float CliffHeightLow => 2.0f * Cell;
-    static float CliffHeightHigh => 4.5f * Cell;
-
-    // 변주는 칸별 독립 난수가 아니라 <b>위치 기반 연속 노이즈</b>로 준다. 이웃끼리 아무
-    // 상관없는 크기·높이는 "쌓인 지형"이 아니라 "흩뿌린 에셋"으로 읽힌다 — 실제 절벽은
-    // 이웃한 바위가 서로 닮았고, 능선이 낮은 주파수로 오르내린다.
-    const float CliffRidgeFrequency = 0.11f;   // 높이 파장 ≈ 9칸(18m) — 몇 칸에 걸쳐 솟았다 가라앉는다
-    const float CliffFaceFrequency = 0.45f;    // 벽면 굴곡 파장 ≈ 2칸 — 지그재그 대신 물결
-
-    static float CliffBaseSink => 0.3f * Cell;   // 가장자리 줄을 땅에 묻는 깊이 — 데모도 Y 최저 -3.4m
-    // 세로 배율은 원본 비율에서 이만큼만 벗어난다 — 변주지 왜곡이 아니다.
-    // 데모는 아예 늘리지 않는다(전부 스케일 1).
-    const float CliffStretchLow = 0.85f;
-    const float CliffStretchHigh = 1.25f;
-
-    /// <summary>지면을 덮는 풀.</summary>
-    static readonly string[] GrassSet = { "Grass_01", "Grass_02", "Grass_03" };
-
-    /// <summary>드문드문 섞이는 꽃 — 단조로운 초원을 깬다.</summary>
-    static readonly string[] FlowerSet =
-    {
-        "Flower_White", "Flower_Yellow", "Flower_Blue_01", "Flower_Red", "Flower_Purple",
-    };
-
-    /// <summary>절벽 타일에 세우는 암벽 프리팹. 지형을 솟구치게 하는 대신 이것들이 벽이 된다.</summary>
-    static readonly string[] CliffSet =
-    {
-        "SM_Rocks_01", "SM_Rocks_02", "SM_Rocks_03", "SM_Rocks_04","SM_Rocks_05", "SM_Rocks_06", "SM_Rocks_07", "SM_Rocks_08", "SM_Rocks_09", "SM_Rocks_10", "SM_Rocks_11",
-    };
-
-    // 디테일은 지형 텍스처가 아니라 <b>정점 색</b>으로 물드므로 색을 여기서 준다 (Demo와 같은 값)
-    static readonly Color HealthyTint = new Color(0.263f, 0.976f, 0.165f);
-    static readonly Color DryTint = new Color(0.804f, 0.737f, 0.102f);
-
-    /// <summary>물가에서 풀이 멈추는 높이(m). 수면보다 조금 위여야 물속에 잠긴 풀이 없다.</summary>
-    const float GrassWaterLine = WaterLevel + 0.08f;
-
-    /// <summary>여기까지만 풀이 자란다. 여울 경사(약 0.17)는 넘고 골 경사는 못 넘는 값.</summary>
-    const float GrassMaxSlope = 0.45f;
+    // 능선고·변주 주파수·세로 배율, 그리고 프리팹 세트와 디테일 틴트·풀 조건은
+    // 전부 TerrainGenSettings 에셋에 있다. 칸 비례 파생값(CliffHeightLow/High,
+    // CliffBaseSink)과 GrassWaterLine 은 이 파일 머리의 환산 구역에 있다.
 
     /// <summary>
     /// 풀·꽃을 심는다. 심는 자리는 <b>실제 지형이 정한다</b> — 물가 위쪽의 완경사 지면에만
@@ -595,16 +480,20 @@ public static class WorldTerrainGenerator
         // 크기는 프리팹 원본에 곱해지는 배율이다. 1인칭 게임이라 무릎 높이여야 시야가 열린다 —
         // Demo 값(0.5~1)을 그대로 쓰면 눈높이를 덮어 앞이 안 보인다.
         var protos = new List<DetailPrototype>();
-        foreach (var n in GrassSet) AddProto(protos, n, 0.56f, 1.0f);
+        foreach (var p in S.grassSet) AddProto(protos, p, S.grassSize.x, S.grassSize.y);
         // 꽃은 잔디보다 조금 커야 보인다 — 작으면 풀숲에 통째로 묻힌다
         int flowerStart = protos.Count;
-        foreach (var n in FlowerSet) AddProto(protos, n, 0.7f, 1.2f);
+        foreach (var p in S.flowerSet) AddProto(protos, p, S.flowerSize.x, S.flowerSize.y);
         int grassCount = flowerStart;
         int flowerCount = protos.Count - flowerStart;
 
-        if (protos.Count == 0)
+        // 풀이 <b>한 종은</b> 있어야 한다 — 아래 칠하기 루프는 칸마다 풀을 먼저 놓고
+        // 그 위에 꽃을 얹는 구조라, 풀 종류 수가 0이면 나눗셈에서 터진다.
+        // 배열이 이제 인스펙터에서 비워질 수 있으므로 여기서 막는다.
+        if (grassCount == 0)
         {
-            Debug.LogWarning("[WorldTerrainGenerator] 디테일 프리팹을 하나도 찾지 못해 풀을 심지 않았습니다.");
+            Debug.LogWarning("[WorldTerrainGenerator] 풀 프리팹이 하나도 없어 디테일을 심지 않았습니다 — " +
+                             $"{TerrainGenSettings.AssetPath} 의 Grass Set 확인.");
             return;
         }
 
@@ -612,8 +501,8 @@ public static class WorldTerrainGenerator
         // SetDetailResolution은 디테일 데이터를 초기화하면서 프로토타입 목록까지 비운다 —
         // 순서를 반대로 하면 심을 것이 하나도 없는 상태가 된다.
         int DetailRes = Mathf.Min(2048, Mathf.NextPowerOfTwo(
-            Mathf.CeilToInt(Mathf.Max(map.width, map.height) * cellSize / DetailPointM)));
-        data.SetDetailResolution(DetailRes, DetailPatch);
+            Mathf.CeilToInt(Mathf.Max(map.width, map.height) * cellSize / S.detailPointM)));
+        data.SetDetailResolution(DetailRes, S.detailPatch);
 
         // 밀도 값을 <b>셀당 개수</b>로 해석하게 한다(Demo와 같은 모드).
         // 기본값인 CoverageMode에서는 같은 값이 0~255 커버리지 비율로 읽혀,
@@ -658,7 +547,7 @@ public static class WorldTerrainGenerator
                 if (SampleHeightAt(height, tx, ty, map) < GrassWaterLine) continue;
 
                 // 급경사에도 두지 않는다 — 비탈에 선 풀은 지면을 뚫고 나온 것처럼 보인다
-                if (SlopeAt(height, tx, ty, map, cellSize) > GrassMaxSlope) continue;
+                if (SlopeAt(height, tx, ty, map, cellSize) > S.grassMaxSlope) continue;
 
                 // 풀은 <b>빈 곳 없이</b> 깔되 밀도만 흔든다. 임계값으로 자르면 노이즈 모양 그대로
                 // 구멍이 뚫려, 잔디밭이 아니라 얼룩으로 보인다.
@@ -690,15 +579,10 @@ public static class WorldTerrainGenerator
         }
     }
 
-    static void AddProto(List<DetailPrototype> into, string prefabName, float min, float max)
+    static void AddProto(List<DetailPrototype> into, GameObject prefab, float min, float max)
     {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{VegPrefabFolder}/{prefabName}.prefab");
-        if (prefab == null)
-        {
-            Debug.LogWarning($"[WorldTerrainGenerator] 디테일 프리팹 없음: {VegPrefabFolder}/{prefabName} — " +
-                             "우리 소유 변형이 필요하다(머티리얼 틴트 대상). 원본만 있다면 변형을 먼저 만들 것.");
-            return;
-        }
+        // 빈 슬롯은 그냥 건너뛴다 — 설정 에셋 배열에 빈 칸이 남아 있는 경우다
+        if (prefab == null) return;
 
         into.Add(new DetailPrototype
         {
@@ -710,8 +594,8 @@ public static class WorldTerrainGenerator
             minHeight = min, maxHeight = max,
             noiseSpread = 20f,
             density = 1f,
-            healthyColor = HealthyTint,
-            dryColor = DryTint,
+            healthyColor = S.healthyTint,
+            dryColor = S.dryTint,
         });
     }
 
@@ -721,7 +605,7 @@ public static class WorldTerrainGenerator
         int res = height.GetLength(0);
         int i = Mathf.Clamp(Mathf.RoundToInt(tx / map.width * (res - 1)), 0, res - 1);
         int j = Mathf.Clamp(Mathf.RoundToInt(ty / map.height * (res - 1)), 0, res - 1);
-        return height[j, i] * TerrainHeightRange - RiverDepth;
+        return height[j, i] * S.terrainHeightRange - S.riverDepth;
     }
 
     /// <summary>
@@ -759,9 +643,8 @@ public static class WorldTerrainGenerator
         var footprints = new List<Vector2>();
         var bottoms = new List<float>();
         var heights = new List<float>();
-        foreach (var n in CliffSet)
+        foreach (var p in S.cliffSet)
         {
-            var p = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/{n}.prefab");
             if (p == null) continue;
             if (!PrefabBounds(p, out Vector2 foot, out float bottom, out float tallness)) continue;
 
@@ -772,7 +655,8 @@ public static class WorldTerrainGenerator
         }
         if (prefabs.Count == 0)
         {
-            Debug.LogWarning("[WorldTerrainGenerator] 절벽 프리팹을 찾지 못해 절벽을 세우지 못했습니다.");
+            Debug.LogWarning("[WorldTerrainGenerator] 쓸 수 있는 절벽 프리팹이 없어 절벽을 세우지 못했습니다 — " +
+                             $"{TerrainGenSettings.AssetPath} 의 Cliff Set 확인.");
             return;
         }
 
@@ -855,7 +739,7 @@ public static class WorldTerrainGenerator
 
                 // 능선 노이즈가 이 칸의 목표 능선고를 정한다 — 이웃 절벽끼리 높이가 이어져
                 // 몇 칸에 걸쳐 완만하게 솟았다 가라앉고, 칸별 잔결이 그 위에 얹힌다.
-                float ridge = Mathf.PerlinNoise(x * CliffRidgeFrequency + 5.3f, y * CliffRidgeFrequency + 9.1f);
+                float ridge = Mathf.PerlinNoise(x * S.cliffRidgeFrequency + 5.3f, y * S.cliffRidgeFrequency + 9.1f);
                 float wantTop = Mathf.Lerp(CliffHeightLow, CliffHeightHigh, ridge)
                               + (Hash(x, y, 31) % 1000 / 1000f - 0.5f) * 0.6f * Cell;
 
@@ -871,9 +755,8 @@ public static class WorldTerrainGenerator
                     : Hash(x, y, 23) % prefabs.Count;
                 // 세로는 넉넉히 늘린다(스케일 자유화) — 안쪽은 물러선 만큼 좁아진 발판으로
                 // 능선고를 채워야 하고, 가장자리도 낮으면 담장처럼 보인다.
-                float stretch = depth == 0
-                    ? Mathf.Lerp(1.15f, 1.75f, Hash(x, y, 37) % 1000 / 1000f)
-                    : Mathf.Lerp(1.0f, 1.7f, Hash(x, y, 37) % 1000 / 1000f);
+                var stretchRange = depth == 0 ? S.cliffStretchEdge : S.cliffStretchInner;
+                float stretch = Mathf.Lerp(stretchRange.x, stretchRange.y, Hash(x, y, 37) % 1000 / 1000f);
 
                 // <b>크기에도 노이즈</b>. 예산이 배율을 정하게 두면 예산이 벽 두께에서 오는
                 // 상수라, 같은 벽을 따라 전부 같은 크기가 된다 — 정렬된 규칙성의 정체.
@@ -1012,8 +895,8 @@ public static class WorldTerrainGenerator
                 float maxX = Mathf.Min((x1 - x + 0.5f) * c - inXp - halfX, coverX);
                 float minZ = Mathf.Max((y0 - y - 0.5f) * c + inZn + halfZ, -coverZ);
                 float maxZ = Mathf.Min((y1 - y + 0.5f) * c - inZp - halfZ, coverZ);
-                float waveX = Mathf.PerlinNoise(x * CliffFaceFrequency + 17.7f, y * CliffFaceFrequency + 3.9f) - 0.5f;
-                float waveZ = Mathf.PerlinNoise(x * CliffFaceFrequency + 41.3f, y * CliffFaceFrequency + 27.1f) - 0.5f;
+                float waveX = Mathf.PerlinNoise(x * S.cliffFaceFrequency + 17.7f, y * S.cliffFaceFrequency + 3.9f) - 0.5f;
+                float waveZ = Mathf.PerlinNoise(x * S.cliffFaceFrequency + 41.3f, y * S.cliffFaceFrequency + 27.1f) - 0.5f;
 
                 // 연속 노이즈(벽면의 큰 물결) + 칸별 해시(낱개 어긋남). 크기가 줄어든 만큼
                 // 여유가 생겨 클램프에 깎이지 않는다 — 크기 노이즈가 위치 노이즈를 살린다.
@@ -1138,19 +1021,19 @@ public static class WorldTerrainGenerator
         parent.SetParent(root, false);
 
         float w = map.width * world.CellSize, h = map.height * world.CellSize;
-        float t = BoundsThickness, half = BoundsHeight * 0.5f;
+        float t = S.boundsThickness, half = S.boundsHeight * 0.5f;
 
         // 벽 안쪽 면이 맵 경계에 딱 맞도록 두께의 절반만큼 바깥으로 민다
-        Wall("Bounds_-X", new Vector3(-t * 0.5f, half, h * 0.5f), new Vector3(t, BoundsHeight, h + t * 2f));
-        Wall("Bounds_+X", new Vector3(w + t * 0.5f, half, h * 0.5f), new Vector3(t, BoundsHeight, h + t * 2f));
-        Wall("Bounds_-Z", new Vector3(w * 0.5f, half, -t * 0.5f), new Vector3(w + t * 2f, BoundsHeight, t));
-        Wall("Bounds_+Z", new Vector3(w * 0.5f, half, h + t * 0.5f), new Vector3(w + t * 2f, BoundsHeight, t));
+        Wall("Bounds_-X", new Vector3(-t * 0.5f, half, h * 0.5f), new Vector3(t, S.boundsHeight, h + t * 2f));
+        Wall("Bounds_+X", new Vector3(w + t * 0.5f, half, h * 0.5f), new Vector3(t, S.boundsHeight, h + t * 2f));
+        Wall("Bounds_-Z", new Vector3(w * 0.5f, half, -t * 0.5f), new Vector3(w + t * 2f, S.boundsHeight, t));
+        Wall("Bounds_+Z", new Vector3(w * 0.5f, half, h + t * 0.5f), new Vector3(w + t * 2f, S.boundsHeight, t));
 
         void Wall(string name, Vector3 center, Vector3 size)
         {
             var go = new GameObject(name) { layer = ignoreRaycast };
             go.transform.SetParent(parent, false);
-            go.transform.localPosition = center - new Vector3(0f, BoundsSink, 0f);
+            go.transform.localPosition = center - new Vector3(0f, S.boundsSink, 0f);
 
             var box = go.AddComponent<BoxCollider>();
             box.size = size;
@@ -1212,7 +1095,7 @@ public static class WorldTerrainGenerator
     /// <summary>URP 지형 머티리얼 — 렌더 파이프라인의 기본값을 쓰되, 없으면 셰이더로 직접 만든다.</summary>
     static Material TerrainMaterial()
     {
-        string path = $"{AssetFolder}/Terrain.mat";
+        string path = $"{S.assetFolder}/Terrain.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (mat != null) return mat;
 
@@ -1242,28 +1125,17 @@ public static class WorldTerrainGenerator
     /// </summary>
     static TerrainLayer[] BuildLayers()
     {
-        const string LayerFolder = "Assets/ThirdParty/Idyllic Fantasy Nature/Terrain Layer";
-
-        var layers = new[]
+        // 배열 순서가 곧 채널이다 — 설정 에셋에서 순서를 바꾸면 칠이 뒤바뀐다.
+        var layers = S.terrainLayers;
+        if (layers == null || layers.Length < 3 || layers[0] == null || layers[1] == null || layers[2] == null)
         {
-            Load($"{LayerFolder}/Grass_Layer.terrainlayer"),   // 지면
-            Load($"{LayerFolder}/Rock_Layer.terrainlayer"),    // 절벽
-            Load($"{LayerFolder}/Sand_Layer.terrainlayer"),    // 강바닥
-        };
-
-        foreach (var l in layers)
-            if (l == null) return System.Array.Empty<TerrainLayer>();
-
-        return layers;
-
-        static TerrainLayer Load(string path)
-        {
-            var layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
-            if (layer == null)
-                Debug.LogError($"[WorldTerrainGenerator] 지형 레이어를 찾지 못했습니다: {path}\n" +
-                               "Idyllic Fantasy Nature 에셋이 지워졌거나 옮겨졌습니다.");
-            return layer;
+            Debug.LogError("[WorldTerrainGenerator] 지형 레이어 3종(지면·절벽·강바닥)이 모두 지정돼야 합니다 — " +
+                           $"{TerrainGenSettings.AssetPath} 의 Terrain Layers 확인.");
+            return System.Array.Empty<TerrainLayer>();
         }
+
+        // 4번째 이후는 무시한다 — PaintSplat이 채널 3개만 칠한다
+        return new[] { layers[0], layers[1], layers[2] };
     }
 
     /// <summary>
@@ -1276,7 +1148,7 @@ public static class WorldTerrainGenerator
         int res = data.alphamapResolution;
         int hres = height.GetLength(0);
         var alphas = new float[res, res, 3];
-        float total = TerrainHeightRange;
+        float total = S.terrainHeightRange;
 
         // 절벽 타일에서 바깥으로 번지는 정도(칸) — 딱 자르면 칸 경계가 그대로 드러난다
         var cliffField = SignedDistance(map, MapTile.Cliff);
@@ -1288,7 +1160,7 @@ public static class WorldTerrainGenerator
                 int hi = Mathf.Clamp(Mathf.RoundToInt((float)i / (res - 1) * (hres - 1)), 0, hres - 1);
                 int hj = Mathf.Clamp(Mathf.RoundToInt((float)j / (res - 1) * (hres - 1)), 0, hres - 1);
 
-                float world = height[hj, hi] * total - RiverDepth;   // 월드 높이(m)
+                float world = height[hj, hi] * total - S.riverDepth;   // 월드 높이(m)
 
                 float tx = (float)i / (res - 1) * map.width;
                 float ty = (float)j / (res - 1) * map.height;
@@ -1318,15 +1190,15 @@ public static class WorldTerrainGenerator
 
         // 맵 밖으로 한참 더 깔아 <b>바다</b>로 쓴다 — 지형이 물 한가운데 뜬 섬으로 보인다.
         // 맵 크기의 배수라 큰 맵에서도 수평선이 같은 비율로 물러난다.
-        float margin = Mathf.Max(w, h) * SeaMargin;
+        float margin = Mathf.Max(w, h) * S.seaMargin;
         float x0 = -margin, z0 = -margin;
         float sizeX = w + margin * 2f, sizeZ = h + margin * 2f;
 
         // <b>격자로 쪼갠다.</b> 물 셰이더가 정점을 흔들어 파도를 만들기 때문에, 사각형 네 점으로는
         // 흔들 것이 없어 수면이 판판한 판때기로 남는다. 파도 주기가 몇 미터 단위라
         // 정점 간격도 그 정도여야 물결이 산다.
-        int cols = Mathf.Clamp(Mathf.CeilToInt(sizeX / WaterVertexSpacing), 1, 512);
-        int rows = Mathf.Clamp(Mathf.CeilToInt(sizeZ / WaterVertexSpacing), 1, 512);
+        int cols = Mathf.Clamp(Mathf.CeilToInt(sizeX / S.waterVertexSpacing), 1, 512);
+        int rows = Mathf.Clamp(Mathf.CeilToInt(sizeZ / S.waterVertexSpacing), 1, 512);
 
         var verts = new Vector3[(cols + 1) * (rows + 1)];
         var uvs = new Vector2[verts.Length];
@@ -1354,11 +1226,11 @@ public static class WorldTerrainGenerator
                 float ttx = wx / world.CellSize, ttz = wz / world.CellSize;
                 bool overMap = ttx >= 0f && ttz >= 0f && ttx <= map.width && ttz <= map.height;
                 float bed = overMap ? SampleHeightAt(height, ttx, ttz, map) : -99f;   // 맵 밖은 먼 바다
-                float depth = WaterLevel - bed;
+                float depth = S.waterLevel - bed;
                 // 얕을수록 거품 — 다만 수심 0 부근에서는 다시 0으로 죽인다. 수면과 거의 같은
                 // 높이의 지형 위에서는 물 한 겹 없이 거품 100%가 그대로 얹혀, 물가의 얕은
                 // 둔덕이 흰색 원반처럼 렌더되던 원인이다. 거품 띠는 물가에서 살짝 떨어져 남는다.
-                float foam = Mathf.Clamp01(1f - depth / FoamDepth) * Mathf.Clamp01(depth / 0.05f);
+                float foam = Mathf.Clamp01(1f - depth / S.foamDepth) * Mathf.Clamp01(depth / 0.05f);
                 colors[v] = new Color(foam, 0f, 0f, 1f);
             }
 
@@ -1381,13 +1253,13 @@ public static class WorldTerrainGenerator
         mesh.colors = colors;
         mesh.RecalculateBounds();
 
-        string meshPath = $"{AssetFolder}/{mesh.name}.asset";
+        string meshPath = $"{S.assetFolder}/{mesh.name}.asset";
         if (AssetDatabase.LoadAssetAtPath<Mesh>(meshPath) != null) AssetDatabase.DeleteAsset(meshPath);
         AssetDatabase.CreateAsset(mesh, meshPath);
 
         var go = new GameObject("Water (Sea)");
         go.transform.SetParent(root, false);
-        go.transform.localPosition = new Vector3(0f, WaterLevel, 0f);
+        go.transform.localPosition = new Vector3(0f, S.waterLevel, 0f);
         go.AddComponent<MeshFilter>().sharedMesh = mesh;
         go.AddComponent<MeshRenderer>().sharedMaterial = WaterMaterial();
         // 콜라이더 없음 — 물은 건너다니는 것이고, 바닥은 Terrain이 받는다
@@ -1404,15 +1276,15 @@ public static class WorldTerrainGenerator
     /// </summary>
     static Material WaterMaterial()
     {
-        string path = $"{AssetFolder}/Water.mat";
+        string path = $"{S.assetFolder}/Water.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (mat != null) return mat;
 
-        const string SourcePath = "Assets/ThirdParty/Bitgem/StylisedWater/URP/Materials/example-water-01.mat";
-        var source = AssetDatabase.LoadAssetAtPath<Material>(SourcePath);
+        var source = S.waterMaterialSource;
         if (source == null)
         {
-            Debug.LogError($"[WorldTerrainGenerator] 물 머티리얼 원본을 찾지 못했습니다: {SourcePath}");
+            Debug.LogError("[WorldTerrainGenerator] 물 머티리얼 원본이 비어 있습니다 — " +
+                           $"{TerrainGenSettings.AssetPath} 의 Water Material Source 확인.");
             return null;
         }
 
@@ -1425,7 +1297,7 @@ public static class WorldTerrainGenerator
     {
         if (!AssetDatabase.IsValidFolder("Assets/Data/Maps"))
             AssetDatabase.CreateFolder("Assets/Data", "Maps");
-        if (!AssetDatabase.IsValidFolder(AssetFolder))
+        if (!AssetDatabase.IsValidFolder(S.assetFolder))
             AssetDatabase.CreateFolder("Assets/Data/Maps", "Terrain");
     }
 }
