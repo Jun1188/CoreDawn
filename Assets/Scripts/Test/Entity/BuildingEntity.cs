@@ -138,6 +138,32 @@ public class BuildingEntity : Entity, IInteractable
         if (boot != null && boot.Sim != null) boot.Sim.Remove(Sim);
     }
 
+    // ── 머리 위 HP 바 ─────────────────────────────────────────
+    // 몬스터와 같은 WorldHealthBar를 그대로 쓴다 — 건물도 Entity라 갱신 경로(HealthBarUI)가 똑같다.
+    //
+    // 다만 몬스터와 달리 처음부터 세우지 않는다. 벨트 한 칸까지 전부 건물이라 만피인 것들에도
+    // 바를 얹으면 월드스페이스 Canvas가 수백 개 생기고 화면이 게이지로 덮인다.
+    // 그래서 처음 피해를 입는 순간에만 붙이고, 그 뒤의 표시/숨김은 hideWhenFull이 맡는다
+    // (수리로 만피가 되면 다시 숨는다).
+    protected override void Start()
+    {
+        base.Start();
+
+        // 코어는 제외 — CorePanelView·GameplayHUDView가 이미 체력을 훨씬 크게 보여준다.
+        if (isCore) return;
+
+        OnHealthChanged += TryShowHealthBar;
+        TryShowHealthBar(Health.CurrentHealth, Health.MaxHealth); // 세이브 복원처럼 이미 깎인 채 시작하는 경우
+    }
+
+    private void TryShowHealthBar(float current, float max)
+    {
+        if (max <= 0f || current >= max) return;
+
+        OnHealthChanged -= TryShowHealthBar; // 한 번 붙으면 감시는 끝 — 이후는 바가 알아서 한다
+        WorldHealthBar.Attach(this, hideWhenFull: true);
+    }
+
     // 코어의 보호막이 내구도보다 먼저 맞는다 — 남은 몫만 HP로 내려간다.
     // 보호막의 원본은 심(CoreBehavior)이다: 자원 소각으로 차오르는 값이라
     // 자원과 같은 곳에 있어야 두 수치가 어긋나지 않는다.

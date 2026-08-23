@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 977204b90bc8bc74eb7e4e17652513e9, type: 3}
+  m_Name: Tut_Demolish
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialStepSO
+  id: Tutorial:Demolish
+  displayName: REMOVE
+  description: 
+  icon: {fileID: 0}
+  order: 120
+  tag: REMOVE
+  body: "X\uB85C \uCCA0\uAC70 \uBAA8\uB4DC\uC5D0 \uB4E4\uC5B4\uAC00 \uAC74\uBB3C\uC744
+    \uBC14\uB77C\uBCF8\uB4A4 \uB9C8\uC6B0\uC2A4\uB97C \uD640\uB4DC\uD558\uBA74 \uCCA0\uAC70\uD569\uB2C8\uB2E4."
+  keyHints:
+  - X
+  trigger: 9
+  item: {fileID: 0}
+  itemType: 7
+  count: 1
+  seconds: 2
+  minSeconds: 2.5
+  requireInOrder: 0

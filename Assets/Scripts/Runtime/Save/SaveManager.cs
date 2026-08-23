@@ -368,6 +368,8 @@ public class SaveManager : MonoBehaviour
         if (TimeManager.Instance != null) DestroyImmediate(TimeManager.Instance.gameObject);
         if (GameManager.Instance != null) DestroyImmediate(GameManager.Instance.gameObject);
         if (InputManager.Instance != null) DestroyImmediate(InputManager.Instance.gameObject);
+        // 튜토리얼도 DontDestroyOnLoad다 — 안 부수면 새 게임에 이전 판의 진행도가 그대로 이월된다
+        if (TutorialManager.Instance != null) DestroyImmediate(TutorialManager.Instance.gameObject);
     }
 
     // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────

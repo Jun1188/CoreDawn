@@ -540,7 +540,7 @@ public static class WorldTerrainGenerator
     // 능선고(m). 최저값은 플레이어 점프(1.3m)로 올라설 수 없는 선.
     // 절벽 치수는 <b>칸 비례</b>다 — 바위의 xz 폭이 곧 칸 크기라, 높이·후퇴량도 같이
     // 커져야 바위 비율이 유지된다. (물가가 미터 고정인 것과 반대 — 저긴 형상이, 여긴 비율이 불변)
-    static float CliffHeightLow => 2.5f * Cell;
+    static float CliffHeightLow => 2.0f * Cell;
     static float CliffHeightHigh => 4.5f * Cell;
 
     // 변주는 칸별 독립 난수가 아니라 <b>위치 기반 연속 노이즈</b>로 준다. 이웃끼리 아무
@@ -567,7 +567,7 @@ public static class WorldTerrainGenerator
     /// <summary>절벽 타일에 세우는 암벽 프리팹. 지형을 솟구치게 하는 대신 이것들이 벽이 된다.</summary>
     static readonly string[] CliffSet =
     {
-        "Cliff_01", "Cliff_02", "Cliff_03", "Cliff_05",
+        "SM_Rocks_01", "SM_Rocks_02", "SM_Rocks_03", "SM_Rocks_04","SM_Rocks_05", "SM_Rocks_06", "SM_Rocks_07", "SM_Rocks_08", "SM_Rocks_09", "SM_Rocks_10", "SM_Rocks_11",
     };
 
     // 디테일은 지형 텍스처가 아니라 <b>정점 색</b>으로 물드므로 색을 여기서 준다 (Demo와 같은 값)

@@ -855,6 +855,56 @@
     margin-right: var(--space-5);
 }
 
+/* 우상단 — 지금 무엇을 해야 하는가(튜토리얼 안내). 좌상단 시계와 대각으로 마주본다.
+   top이 30px이 아니라 96px인 이유: 나침반 띠가 화면 폭의 72%를 차지해 21~72px 구간을
+   가로지른다. 30px에 두면 카드 왼쪽이 나침반 오른쪽 끝과 겹친다.
+   기본은 display:none — TutorialManager가 띄울 안내가 있을 때만 켠다. */
+.tut-card {
+    position: absolute;
+    right: 36px;
+    top: 96px;
+    width: 420px;
+    display: none;
+    background-color: var(--bg-panel);
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+    border-radius: var(--r-lg);
+    padding: var(--space-3);
+    /* 등장·퇴장은 DOTween이 translate/opacity를 매 프레임 쓴다(TutorialHUD).
+       여기에 transition을 걸면 두 주인이 같은 값을 다퉈 움직임이 끈적해진다 — 걸지 말 것. */
+}
+
+.tut-card__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+/* 3/13 — 남은 분량을 알면 "언제 끝나나"가 불안이 되지 않는다. 수치라서 고정폭 */
+.tut-card__step {
+    margin-left: auto;
+    font-size: 15px;
+    color: var(--text-faint);
+    -unity-font-definition: var(--font-data);
+}
+
+.tut-card__body {
+    font-size: var(--fs-body);
+    color: var(--text);
+    white-space: normal;    /* 두 줄짜리 문장이 잘리지 않게 — HUD의 다른 라벨과 다른 점 */
+}
+
+.tut-card__keys {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: var(--space-2);
+}
+
+/* 키캡은 .ui-key__cap을 그대로 쓴다. 줄바꿈될 때를 위해 아래 여백만 더한다 */
+.tut-card__keys > .ui-key__cap {
+    margin-bottom: var(--space-1);
+}
+
 .combat-cross {
     position: absolute;
     left: 50%;

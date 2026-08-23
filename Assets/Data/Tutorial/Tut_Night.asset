@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 977204b90bc8bc74eb7e4e17652513e9, type: 3}
+  m_Name: Tut_Night
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialStepSO
+  id: Tutorial:Night
+  displayName: NIGHT
+  description: 
+  icon: {fileID: 0}
+  order: 130
+  tag: NIGHT
+  body: "\uBC24\uC774 \uC624\uBA74 \uAD34\uC218\uAC00 \uCF54\uC5B4\uB85C \uBAB0\uB824\uC635\uB2C8\uB2E4.\n\uB0AE
+    \uB3D9\uC548 \uD0C0\uC6CC\uB97C \uC138\uC6CC \uB450\uC138\uC694. \uCF54\uC5B4\uAC00
+    \uBD80\uC11C\uC9C0\uBA74 \uB05D\uC785\uB2C8\uB2E4."
+  keyHints: []
+  trigger: 11
+  item: {fileID: 0}
+  itemType: 8
+  count: 1
+  seconds: 2
+  minSeconds: 2.5
+  requireInOrder: 1
