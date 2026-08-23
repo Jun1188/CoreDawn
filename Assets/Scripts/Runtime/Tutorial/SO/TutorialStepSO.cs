@@ -57,6 +57,19 @@ public enum TutorialTrigger
 
     /// <summary>이 안내가 뜬 뒤로 벨트를 든 채 T를 눌러 모양을 count번 바꿨다.</summary>
     CycleBeltShape = 14,
+
+    /// <summary>
+    /// 벨트를 count개 설치했다. PlaceBuilding과 따로 두는 이유: 벨트 안내에 PlaceBuilding을 쓰면
+    /// 채굴기 하나를 더 놓아도 통과된다 — "컨베이어를 놓아 보라"는 안내는 컨베이어를 세야 한다.
+    /// </summary>
+    PlaceBelt = 15,
+
+    /// <summary>
+    /// 핫바 선택 칸을 count번 바꿨다(숫자키 또는 휠). "무기를 들고 있는가"(EquipWeapon)가 아니라
+    /// <b>칸을 바꿨는가</b>를 묻는다 — 제작한 물건은 빈 핫바 칸부터 채우므로, 들고 있는지만 보면
+    /// 아무것도 누르지 않았는데 통과돼 버린다.
+    /// </summary>
+    SwitchHotbarSlot = 16,
 }
 
 /// <summary>
@@ -99,4 +112,14 @@ public class TutorialStepSO : GameDataSO
 
     [Tooltip("MoveAndLook 전용 — 이동을 누적해야 하는 초. 시점 회전은 이 값의 1/4만 요구한다.")]
     public float seconds = 2f;
+
+    [Header("진행 속도")]
+
+    [Tooltip("이 안내가 현재 안내가 된 뒤 최소 이만큼(초)은 완료 판정을 미룬다.\n" +
+             "카드가 들어오는 연출 시간은 여기에 자동으로 더해지므로, 이 값은 순수한 '읽을 시간'이다.")]
+    public float minSeconds = 2.5f;
+
+    [Tooltip("켜면 앞질러 해도 건너뛰지 않는다 — 자기 차례가 와야 비로소 완료 판정을 시작한다.\n" +
+             "숫자키·T처럼 다른 안내를 따르다 얻어걸리기 쉬운 동작, 그리고 밤처럼 반드시 읽혀야 하는 경고에 쓴다.")]
+    public bool requireInOrder;
 }

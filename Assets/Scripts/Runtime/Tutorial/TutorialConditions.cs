@@ -18,8 +18,10 @@ public sealed class TutorialConditions
     // ── 누적 카운터 (단조 증가 — 기준점을 빼서 "이 스텝이 뜬 뒤로 n번 더"를 만든다) ──
     public int MinedTotal { get; private set; }
     public int PlacedCount { get; private set; }
+    public int PlacedBelts { get; private set; }
     public int DemolishedCount { get; private set; }
     public int BeltShapeCycles { get; private set; }
+    public int HotbarSwitches { get; private set; }
 
     /// <summary>손 제작으로 만들어 낸 개수 — 분류별. 없는 키는 0.</summary>
     readonly Dictionary<ItemType, int> _crafted = new();
@@ -44,6 +46,8 @@ public sealed class TutorialConditions
     TutorialInputProbe _probe;
 
     int _lastBuildingCount = -1;   // -1 = 아직 기준을 못 잡음 (다음 폴링이 기준만 잡고 넘어간다)
+    int _lastBeltCount;
+    int _lastHotbarIndex = -1;     // -1 = 아직 기준을 못 잡음
 
     // ─────────────────────────── 배선 ───────────────────────────
 
@@ -167,6 +171,25 @@ public sealed class TutorialConditions
         PollDayNight();
         PollBuildings();
         PollMining();
+        PollHotbar();
+    }
+
+    /// <summary>
+    /// 핫바 <b>선택 칸이 바뀌었는가</b>. 장착 여부가 아니라 이걸 보는 이유:
+    /// 제작·습득한 물건은 빈 핫바 칸부터 채우므로, 무기를 만들자마자 아무것도 누르지 않았는데
+    /// 손에 들려 버린다(HotbarController가 활성 칸이 바뀌면 스스로 장착을 맞춘다).
+    /// 그러면 "숫자키로 골라 보세요" 안내가 뜨자마자 통과돼 사라진다.
+    ///
+    /// 같은 칸을 다시 눌러도(=아무 일도 안 일어나도) 세지 않는다 — 화면에 변화가 없었으니 맞다.
+    /// </summary>
+    void PollHotbar()
+    {
+        var hb = HotbarController.Instance;
+        if (hb == null) return;
+
+        int idx = hb.CurrentHotbarIndex;
+        if (_lastHotbarIndex < 0) { _lastHotbarIndex = idx; return; }   // 기준만 잡고 넘어간다
+        if (idx != _lastHotbarIndex) { HotbarSwitches++; _lastHotbarIndex = idx; }
     }
 
     /// <summary>
@@ -191,12 +214,23 @@ public sealed class TutorialConditions
         var boot = FactoryBootstrap.Instance;
         if (boot == null) { _lastBuildingCount = -1; return; }
 
-        int n = 0;
-        foreach (var b in boot.Buildings) { if (b != null) n++; }
+        int n = 0, belts = 0;
+        foreach (var b in boot.Buildings)
+        {
+            if (b == null) continue;
+            n++;
+            if (b.Data is BeltDataSO) belts++;
+        }
 
-        if (_lastBuildingCount < 0) { _lastBuildingCount = n; return; }   // 기준만 잡고 넘어간다
+        // 기준만 잡고 넘어간다
+        if (_lastBuildingCount < 0) { _lastBuildingCount = n; _lastBeltCount = belts; return; }
+
+        // 증가분만 더한다 — 괴수가 부숴 줄어든 것을 나중에 "새로 지었다"로 오해하지 않기 위해서다
         if (n > _lastBuildingCount) PlacedCount += n - _lastBuildingCount;
+        if (belts > _lastBeltCount) PlacedBelts += belts - _lastBeltCount;
+
         _lastBuildingCount = n;
+        _lastBeltCount = belts;
     }
 
     /// <summary>
@@ -230,6 +264,8 @@ public sealed class TutorialConditions
         {
             case TutorialTrigger.MineResource: return MinedTotal;
             case TutorialTrigger.PlaceBuilding: return PlacedCount;
+            case TutorialTrigger.PlaceBelt: return PlacedBelts;
+            case TutorialTrigger.SwitchHotbarSlot: return HotbarSwitches;
             case TutorialTrigger.DemolishBuilding: return DemolishedCount;
             case TutorialTrigger.NightReached: return NightsStarted;
             case TutorialTrigger.SurviveNight: return NightsSurvived;
@@ -276,6 +312,12 @@ public sealed class TutorialConditions
 
             case TutorialTrigger.PlaceBuilding:
                 return PlacedCount - baseline >= need;
+
+            case TutorialTrigger.PlaceBelt:
+                return PlacedBelts - baseline >= need;
+
+            case TutorialTrigger.SwitchHotbarSlot:
+                return HotbarSwitches - baseline >= need;
 
             case TutorialTrigger.DemolishBuilding:
                 return DemolishedCount - baseline >= need;
