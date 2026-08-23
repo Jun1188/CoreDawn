@@ -80283,7 +80283,7 @@ Terrain:
   m_TreeBillboardDistance: 50
   m_TreeCrossFadeLength: 5
   m_TreeMaximumFullLODCount: 50
-  m_DetailObjectDistance: 120
+  m_DetailObjectDistance: 70
   m_DetailObjectDensity: 1
   m_HeightmapPixelError: 3
   m_SplatMapDistance: 1000
@@ -254950,6 +254950,10 @@ PrefabInstance:
     - target: {fileID: 704575568719838009, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_Name
       value: Sky
+      objectReference: {fileID: 0}
+    - target: {fileID: 2197527016275162744, guid: 036545facce72c1409578f24faec4033, type: 3}
+      propertyPath: m_TimeSlicingMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4675442462359392328, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_LocalPosition.x
