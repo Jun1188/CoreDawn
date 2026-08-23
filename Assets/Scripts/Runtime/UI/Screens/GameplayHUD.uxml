@@ -21,6 +21,14 @@
                 <ui:Label name="phase-time" text="—" class="ui-stat__value"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="tutorial" picking-mode="Ignore" class="tut-card">
+            <ui:VisualElement picking-mode="Ignore" class="tut-card__head">
+                <ui:Label name="tut-tag" text="GUIDE" picking-mode="Ignore" class="ui-panel__tag"/>
+                <ui:Label name="tut-step" text="" picking-mode="Ignore" class="tut-card__step"/>
+            </ui:VisualElement>
+            <ui:Label name="tut-body" text="" picking-mode="Ignore" class="tut-card__body"/>
+            <ui:VisualElement name="tut-keys" picking-mode="Ignore" class="tut-card__keys"/>
+        </ui:VisualElement>
         <ui:VisualElement name="crosshair" class="combat-cross">
             <ui:VisualElement class="combat-cross__bar combat-cross__bar--n"/>
             <ui:VisualElement class="combat-cross__bar combat-cross__bar--s"/>

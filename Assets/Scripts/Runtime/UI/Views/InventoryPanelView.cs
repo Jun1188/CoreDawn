@@ -187,7 +187,15 @@ public class InventoryPanelView : PlayerItemPanelView
                 DropToWorld(output.item, output.amount);
         }
 
+        HandCrafted?.Invoke(r);
     }
+
+    /// <summary>
+    /// 손으로 한 번 제작할 때마다. 자동 조립기(AssemblerBehavior)는 이 이벤트를 내지 않는다 —
+    /// "플레이어가 직접 만들었는가"를 묻는 관찰자(튜토리얼 등)만 쓰라고 둔 것이다.
+    /// 결과물이 가방에 안 들어가 바닥에 떨어졌더라도 제작 자체는 일어났으므로 발화한다.
+    /// </summary>
+    public static event System.Action<RecipeDataSO> HandCrafted;
 
     int CountAll(ItemDataSO item) =>
         (Main?.CountOf(item) ?? 0) + (Hotbar?.CountOf(item) ?? 0);
