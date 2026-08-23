@@ -40,5 +40,5 @@ MonoBehaviour:
     amount: 1
   maxHp: 60
   speedTilesPerSec: 1
-  curveLPrefab: {fileID: 7962463567319494330, guid: 7a9640f62bc6f404fa1b9ade84cf47f8, type: 3}
-  curveRPrefab: {fileID: 7962463567319494330, guid: 6514f9f08f82db64e8d5ca4c2c8a0dfb, type: 3}
+  curveLPrefab: {fileID: 8008316256139863917, guid: 7a9640f62bc6f404fa1b9ade84cf47f8, type: 3}
+  curveRPrefab: {fileID: 2357311465470800421, guid: 6514f9f08f82db64e8d5ca4c2c8a0dfb, type: 3}
