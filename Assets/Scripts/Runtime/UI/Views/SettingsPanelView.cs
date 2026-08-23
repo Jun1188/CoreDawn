@@ -36,8 +36,8 @@ public class SettingsPanelView : UITKPopup
     Slider sliderMaster, sliderBgm, sliderSfx;
     Label valueMaster, valueBgm, valueSfx;
 
-    // 그래픽 — 세그먼트는 런타임에 만든다(품질 레벨 수가 프로젝트마다 다르다)
-    VisualElement segQuality, segScreen, segVsync;
+    // 그래픽 — 조작부는 런타임에 만든다(품질 레벨 수가 프로젝트마다 다르다)
+    VisualElement stepQuality, segScreen, segVsync;
 
     // ───────────────────────── 열기 ─────────────────────────
 
@@ -85,7 +85,7 @@ public class SettingsPanelView : UITKPopup
         sliderBgm?.RegisterValueChangedCallback(OnBgmChanged);
         sliderSfx?.RegisterValueChangedCallback(OnSfxChanged);
 
-        segQuality = r.Q("seg-quality");
+        stepQuality = r.Q("step-quality");
         segScreen = r.Q("seg-screen");
         segVsync = r.Q("seg-vsync");
 
@@ -173,7 +173,7 @@ public class SettingsPanelView : UITKPopup
 
     void RefreshGraphics()
     {
-        BuildSegment(segQuality, QualitySettings.names, DisplaySettings.QualityLevel,
+        BuildStepper(stepQuality, QualitySettings.names, DisplaySettings.QualityLevel,
                      i => DisplaySettings.QualityLevel = i);
 
         BuildSegment(segScreen, new[] { "전체화면", "창 모드" }, DisplaySettings.Fullscreen ? 0 : 1,
@@ -209,6 +209,57 @@ public class SettingsPanelView : UITKPopup
             if (i == selected) btn.AddToClassList("set-seg__opt--on");
 
             host.Add(btn);
+        }
+    }
+
+    /// <summary>
+    /// 선택지가 많은 항목을 스테퍼(◀ 값 ▶) 한 줄로 그린다 — 폭이 선택지 수와 무관하다.
+    /// <see cref="BuildSegment"/>와 계약이 같아서 둘을 맞바꿔도 호출부는 그대로다.
+    ///
+    /// 순환하지 않고 양끝에서 멈춘다: 화살표가 꺼지는 것이 "여기가 끝"이라는 유일한 신호다.
+    /// 순환시키면 Ultra에서 한 번 더 눌렀을 때 Very Low로 떨어지는데, 목록을 외우지 않은
+    /// 사람에게는 그게 조작 실수로만 보인다.
+    /// </summary>
+    void BuildStepper(VisualElement host, string[] options, int selected, Action<int> apply)
+    {
+        if (host == null || options == null || options.Length == 0) return;
+
+        host.Clear();
+        int index = Mathf.Clamp(selected, 0, options.Length - 1);
+
+        var prev = new Button { text = "◀" };
+        var value = new Label(options[index]);
+        var next = new Button { text = "▶" };
+
+        prev.clicked += () => Step(-1);
+        next.clicked += () => Step(+1);
+
+        prev.AddToClassList("ui-btn");
+        prev.AddToClassList("set-step__arrow");
+        next.AddToClassList("ui-btn");
+        next.AddToClassList("set-step__arrow");
+        value.AddToClassList("set-step__value");
+
+        host.Add(prev);
+        host.Add(value);
+        host.Add(next);
+        Sync();
+
+        void Step(int delta)
+        {
+            int moved = Mathf.Clamp(index + delta, 0, options.Length - 1);
+            if (moved == index) return;      // 끝에서 누른 것 — 적용도 저장도 하지 않는다
+            index = moved;
+            apply(index);
+            value.text = options[index];
+            Sync();
+        }
+
+        // 양끝에서 화살표를 끈다 — :disabled 스타일이 "더 갈 곳이 없다"를 보여준다
+        void Sync()
+        {
+            prev.SetEnabled(index > 0);
+            next.SetEnabled(index < options.Length - 1);
         }
     }
 
