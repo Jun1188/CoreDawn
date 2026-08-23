@@ -24,8 +24,10 @@ MonoBehaviour:
   - 1
   - 2
   - 3
-  trigger: 6
+  trigger: 16
   item: {fileID: 0}
   itemType: 5
   count: 1
   seconds: 2
+  minSeconds: 2.5
+  requireInOrder: 1

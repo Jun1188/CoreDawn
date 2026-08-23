@@ -28,3 +28,5 @@ MonoBehaviour:
   itemType: 5
   count: 1
   seconds: 2
+  minSeconds: 2.5
+  requireInOrder: 0

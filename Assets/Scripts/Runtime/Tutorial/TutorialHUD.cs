@@ -30,6 +30,13 @@ public sealed class TutorialHUD
     /// <summary>나갈 때 오른쪽으로 밀려나는 거리(px). 카드 폭 + 여백보다 커야 화면 밖으로 사라진다.</summary>
     const float ExitToRight = 520f;
 
+    /// <summary>
+    /// 안내가 바뀌라는 지시가 떨어진 뒤 새 카드가 다 들어와 읽을 수 있게 되기까지의 시간.
+    /// <see cref="TutorialManager"/>가 완료 판정을 미루는 데 쓴다 — 아직 들어오지도 않은 카드를
+    /// 완료로 찍으면 플레이어는 그런 안내가 있었는지도 모른다.
+    /// </summary>
+    public const float LeadInSeconds = ExitSeconds + BreathSeconds + EnterSeconds;
+
     VisualElement _card;
     VisualElement _keys;
     Label _tag;

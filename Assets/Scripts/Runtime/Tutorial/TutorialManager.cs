@@ -34,6 +34,7 @@ public class TutorialManager : MonoBehaviour
     int _currentIndex;
     string _hudShownId;
     float _nextTick;
+    float _judgeFrom;   // 이 시각(unscaled) 전에는 어떤 스텝도 완료로 찍지 않는다
     bool _skipped;
 
     // ── 공개 상태 ──
@@ -112,7 +113,11 @@ public class TutorialManager : MonoBehaviour
         _nextTick = Time.unscaledTime + TickInterval;
 
         _cond.Tick();
-        EvaluateAll();
+
+        // 완료 판정에만 뜸을 들인다. 카드 연출(RefreshHud)은 그동안에도 계속 돈다 —
+        // 안 그러면 들어오는 중인 카드가 다 들어오지도 못하고 도로 나간다.
+        if (Time.unscaledTime >= _judgeFrom) EvaluateAll();
+
         RefreshHud();
     }
 
@@ -124,8 +129,15 @@ public class TutorialManager : MonoBehaviour
             var s = _steps[i];
             if (_completed.Contains(s.Id)) continue;
 
+            bool everShown = _baseline.ContainsKey(s.Id);
+
+            // 앞질러 완료를 금지한 스텝은 자기 차례가 오기 전엔 아예 보지 않는다.
+            // 숫자키·T처럼 앞선 안내를 따르다 얻어걸리는 동작, 그리고 밤 경고가 여기 해당한다 —
+            // 그런 것까지 "이미 할 줄 아네" 규칙에 맡기면 안내가 뜨자마자 사라진다.
+            if (s.requireInOrder && !everShown) continue;
+
             // 기준점이 없는 스텝(= 아직 뜬 적 없는 뒤쪽 스텝)은 0 — 절대값으로 판정되어 자동 완료된다
-            int baseline = _baseline.TryGetValue(s.Id, out int b) ? b : 0;
+            int baseline = everShown ? _baseline[s.Id] : 0;
             if (_cond.Evaluate(s, baseline)) _completed.Add(s.Id);
         }
 
@@ -144,8 +156,16 @@ public class TutorialManager : MonoBehaviour
         _current = next;
         _currentIndex = index;
 
-        // 이제부터 "n번 더"를 세기 시작한다 — 뜬 순간의 값이 기준점이다
-        if (_current != null) _baseline[_current.Id] = _cond.CounterOf(_current);
+        if (_current != null)
+        {
+            // 이제부터 "n번 더"를 세기 시작한다 — 뜬 순간의 값이 기준점이다
+            _baseline[_current.Id] = _cond.CounterOf(_current);
+
+            // 그리고 잠시 판정을 멈춘다. 카드가 다 들어오는 데 걸리는 시간을 더하므로
+            // minSeconds는 순수하게 "읽을 시간"이다. 이게 없으면 한 번의 동작이 여러 안내를
+            // 동시에 만족시켜 카드가 두세 장씩 스쳐 지나간다.
+            _judgeFrom = Time.unscaledTime + TutorialHUD.LeadInSeconds + Mathf.Max(0f, _current.minSeconds);
+        }
 
         StepChanged?.Invoke(_current);
         if (_current == null) TutorialFinished?.Invoke();
@@ -188,6 +208,7 @@ public class TutorialManager : MonoBehaviour
         _current = null;
         _hudShownId = null;
         _nextTick = 0f;
+        _judgeFrom = 0f;
     }
 
     // ─────────────────────── 세이브 연동 ───────────────────────
@@ -210,6 +231,7 @@ public class TutorialManager : MonoBehaviour
         _current = null;
         _hudShownId = null;
         _nextTick = 0f;
+        _judgeFrom = 0f;
     }
 
     /// <summary>eval로 상태를 들여다볼 때 쓰는 한 줄 요약.</summary>
@@ -218,7 +240,9 @@ public class TutorialManager : MonoBehaviour
            $"done={_completed.Count} skipped={_skipped} " +
            $"move={_cond?.MoveSeconds:0.0}s look={_cond?.LookSeconds:0.0}s " +
            $"inv={_cond?.InventoryOpened} build={_cond?.BuildModeEntered} weapon={_cond?.WeaponEquipped} " +
-           $"mined={_cond?.MinedTotal} placed={_cond?.PlacedCount} demo={_cond?.DemolishedCount} " +
+           $"hold={Mathf.Max(0f, _judgeFrom - Time.unscaledTime):0.0}s " +
+           $"mined={_cond?.MinedTotal} placed={_cond?.PlacedCount} belts={_cond?.PlacedBelts} " +
+           $"hotbar={_cond?.HotbarSwitches} demo={_cond?.DemolishedCount} " +
            $"craftedWeapon={_cond?.CraftedOfType(ItemType.Weapon)} beltShape={_cond?.BeltShapeCycles} " +
            $"tier={_cond?.CoreTier} nights={_cond?.NightsStarted}/{_cond?.NightsSurvived}";
 }
