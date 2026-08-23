@@ -11,8 +11,18 @@
     {
       "id": "Effect:Knockback",
       "displayName": "넉백",
-      "description": "value = 밀어내는 거리(타일). 유탄·샷건이 쓴다.",
+      "description": "value = 밀어내는 거리(m). 공격이 날아온 방향으로 민다 — 총알·히트스캔·근접용.",
       "kind": "Knockback",
+      "knockbackMode": "Directional",
+      "duration": 0.0,
+      "tickInterval": 0.0
+    },
+    {
+      "id": "Effect:KnockbackRadial",
+      "displayName": "넉백(폭발)",
+      "description": "value = 밀어내는 거리(m). 착탄점에서 바깥으로 민다 — 유탄·플라즈마 아크 같은 폭발용.",
+      "kind": "Knockback",
+      "knockbackMode": "Radial",
       "duration": 0.0,
       "tickInterval": 0.0
     },
@@ -465,7 +475,7 @@
           "value": 70.0
         },
         {
-          "effect": "Effect:Knockback",
+          "effect": "Effect:KnockbackRadial",
           "value": 2.0
         }
       ],
@@ -717,7 +727,7 @@
           "value": 10.0
         },
         {
-          "effect": "Effect:Knockback",
+          "effect": "Effect:KnockbackRadial",
           "value": 1.5
         }
       ],

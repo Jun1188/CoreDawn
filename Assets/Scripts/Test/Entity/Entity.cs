@@ -121,8 +121,8 @@ public class Entity : MonoBehaviour
     /// 시전측 배율(공격 버프·포탑 배율)은 시전자가 보낼 때 이미 항목에 구워져(bake) 있다.
     /// </summary>
     public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
-                             Entity source, Vector3 hitPoint)
-        => Effects.ApplyAll(entries, source, hitPoint);
+                             Entity source, Vector3 hitPoint, Vector3 hitDirection = default)
+        => Effects.ApplyAll(entries, source, hitPoint, hitDirection);
 
     /// <summary>
     /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.

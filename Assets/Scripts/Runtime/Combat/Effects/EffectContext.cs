@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// 효과 적용 한 건의 맥락 — 누가(Source), 얼마의 크기로(Value), 어디를(HitPoint) 때렸는가.
+/// 효과 적용 한 건의 맥락 — 누가(Source), 얼마의 크기로(Value), 어디를(HitPoint),
+/// 어느 방향에서(HitDirection) 때렸는가.
 ///
 /// Value는 시전측 데이터(EffectEntry.value × 시전측 배율)에서 오고, 해석은 효과가 한다:
 /// 피해량(Damage)·밀려나는 거리(Knockback)·이동속도 배율(MoveSpeed) 등.
@@ -16,13 +17,24 @@ public readonly struct EffectContext
     /// <summary>이 효과의 크기 — EffectEntry.value × 시전측 배율. 해석은 효과가 한다.</summary>
     public readonly float Value;
 
-    /// <summary>명중 지점 (넉백 방향·타격 이펙트용).</summary>
+    /// <summary>명중 지점 (타격 이펙트·방사형 넉백용).</summary>
     public readonly Vector3 HitPoint;
 
-    public EffectContext(Entity source, float value, Vector3 hitPoint = default)
+    /// <summary>
+    /// 공격이 <b>날아온 방향</b>(정규화). 총알·히트스캔의 진행 방향, 근접은 시전자→대상 방향.
+    /// 방향을 알 수 없는 전달 방식(폭발·오라)에서는 <see cref="Vector3.zero"/>다.
+    ///
+    /// HitPoint만으로는 이걸 대신할 수 없다: 명중점에서 대상 중심으로 미는 방식은
+    /// 몸통 왼쪽에 맞으면 왼쪽으로, 오른쪽에 맞으면 오른쪽으로 밀어낸다 — 정면에서 쏴도
+    /// 대상이 옆으로 튀는 이유가 그것이었다. 총알은 맞은 자리가 아니라 날아온 방향으로 민다.
+    /// </summary>
+    public readonly Vector3 HitDirection;
+
+    public EffectContext(Entity source, float value, Vector3 hitPoint = default, Vector3 hitDirection = default)
     {
         Source = source;
         Value = value;
         HitPoint = hitPoint;
+        HitDirection = hitDirection;
     }
 }

@@ -79,6 +79,7 @@ public static class GameDataImporter
         public string stacking;      // Refresh | Stack. 생략 시 유지
         public float  tickInterval;  // DamageOverTime 전용. >0일 때만 덮음
         public string[] affects;     // AttackModifier 전용 — 증폭할 효과 id들. null = 유지
+        public string knockbackMode; // Knockback 전용 — Directional | Radial. 생략 시 유지
     }
 
     [Serializable] internal class GunDto : JsonDtoBase
@@ -362,6 +363,14 @@ public static class GameDataImporter
             }
         }
         if (fx is DamageOverTimeEffectSO dot && dto.tickInterval > 0f) dot.tickInterval = dto.tickInterval;
+
+        if (!string.IsNullOrEmpty(dto.knockbackMode))
+        {
+            if (fx is not KnockbackEffectSO kb)
+            { Debug.LogError($"[GameDataImporter] {file} effects '{dto.id}': knockbackMode는 Knockback 전용입니다"); errors++; }
+            else if (Enum.TryParse(dto.knockbackMode, true, out KnockbackMode km)) kb.mode = km;
+            else { Debug.LogError($"[GameDataImporter] {file} effects '{dto.id}': 알 수 없는 knockbackMode '{dto.knockbackMode}' — 가능: Directional/Radial"); errors++; }
+        }
 
         // affects는 전 파일의 효과 임포트가 끝난 뒤 해석 (앞 항목이 뒤 항목을 참조할 수 있게)
         if (dto.affects != null)

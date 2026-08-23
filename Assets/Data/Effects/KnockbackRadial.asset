@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 304f3ae93624b244db9fab5cf88d551e, type: 3}
-  m_Name: Knockback
+  m_Name: KnockbackRadial
   m_EditorClassIdentifier: Assembly-CSharp::KnockbackEffectSO
-  id: Effect:Knockback
-  displayName: "\uB109\uBC31"
-  description: "value = \uBC00\uC5B4\uB0B4\uB294 \uAC70\uB9AC(m). \uACF5\uACA9\uC774
-    \uB0A0\uC544\uC628 \uBC29\uD5A5\uC73C\uB85C \uBBFC\uB2E4 \u2014 \uCD1D\uC54C\xB7\uD788\uD2B8\uC2A4\uCE94\xB7\uADFC\uC811\uC6A9."
+  id: Effect:KnockbackRadial
+  displayName: "\uB109\uBC31(\uD3ED\uBC1C)"
+  description: "value = \uBC00\uC5B4\uB0B4\uB294 \uAC70\uB9AC(m). \uCC29\uD0C4\uC810\uC5D0\uC11C
+    \uBC14\uAE65\uC73C\uB85C \uBBFC\uB2E4 \u2014 \uC720\uD0C4\xB7\uD50C\uB77C\uC988\uB9C8
+    \uC544\uD06C \uAC19\uC740 \uD3ED\uBC1C\uC6A9."
   icon: {fileID: 0}
-  mode: 0
+  mode: 1

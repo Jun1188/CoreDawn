@@ -159,7 +159,9 @@ public class Bullet : MonoBehaviour
         if (shot.TargetMask != 0 && dist > 0f &&
             ProjectileSystem.TryClosestHit(pos, step / dist, dist, sweepRadius, shooterRoot, out RaycastHit hit))
         {
-            ProjectileSystem.Impact(hit.collider, hit.point, shot); // 폭발탄은 착탄점 Pulse
+            // step/dist = 이번 프레임의 진행 방향. 중력탄은 매 프레임 굽으므로 발사 방향이
+            // 아니라 착탄 순간의 방향이어야 넉백이 실제 탄도와 맞는다.
+            ProjectileSystem.Impact(hit.collider, hit.point, step / dist, shot); // 폭발탄은 착탄점 Pulse
             transform.position = hit.point;   // 여운은 착탄점에 남는다
             BeginDeath();
             return;
