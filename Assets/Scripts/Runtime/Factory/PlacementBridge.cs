@@ -16,10 +16,13 @@ public static class PlacementBridge
         var boot = FactoryBootstrap.Instance;
         var b = boot.Sim.Place(so, origin, rotSteps, portOverride, shape);
 
-        // 뷰 생성
+        // 뷰 생성 — 벨트 커브는 메시의 뚫린 변을 포트에 맞추는 보정이 붙는다.
+        // 프리뷰(PlacementSystem.PreviewYaw)와 반드시 같은 값이어야 한다: 여기만 고치면
+        // 미리보기와 실제로 세워진 것이 다른 방향을 보게 된다.
         var prefab = prefabOverride != null ? prefabOverride : so.prefab;
+        float yaw = so is BeltDataSO ? BeltDataSO.MeshYaw(shape, rotSteps) : rotSteps * 90f;
         GameObject go = prefab != null
-            ? Object.Instantiate(prefab, pos, Quaternion.Euler(0, rotSteps * 90f, 0))
+            ? Object.Instantiate(prefab, pos, Quaternion.Euler(0, yaw, 0))
             : new GameObject(so.name);   // 프리팹 누락 시 빈 오브젝트
 
         // 프리팹에 미리 붙어 있으면(타워의 canAttack 설정 등) 그대로 쓰고, 없으면 부착

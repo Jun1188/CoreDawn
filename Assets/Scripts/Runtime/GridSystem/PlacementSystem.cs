@@ -300,7 +300,8 @@ public class PlacementSystem : MonoBehaviour
         Vector3 pos = grid.GetFootprintCenter(origin, size);
         pos.y = groundY + SurfaceLift(current, origin);
         preview.transform.position = pos;
-        preview.transform.rotation = Quaternion.Euler(0, rotation * 90, 0);
+        // 벨트 커브는 메시의 뚫린 변과 포트를 맞추는 보정이 붙는다 (BeltDataSO.MeshYaw)
+        preview.transform.rotation = Quaternion.Euler(0, PreviewYaw(), 0);
 
         // 설치 판정 캐시 — OnInput(Attack)이 사용
         // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
@@ -323,6 +324,10 @@ public class PlacementSystem : MonoBehaviour
         => current is BeltDataSO
             ? BeltDataSO.BuildPorts(beltShape, rotation)
             : current.GetRotatedPorts(rotation);
+
+    /// <summary>프리뷰 메시의 요(yaw). 벨트 커브만 포트에 맞추는 보정이 더 붙는다.</summary>
+    private float PreviewYaw()
+        => current is BeltDataSO ? BeltDataSO.MeshYaw(beltShape, rotation) : rotation * 90f;
 
     private void Place(Vector2Int origin, Vector3 pos)
     {
