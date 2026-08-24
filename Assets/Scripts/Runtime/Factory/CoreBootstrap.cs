@@ -19,6 +19,10 @@ public class CoreBootstrap : MonoBehaviour
 
     [SerializeField] private int rotationSteps = 0;
 
+    /// <summary>씬에 굳히는 쪽(에디터)이 채운다 — 인스펙터로 손대지 않아도 되게.</summary>
+    public void Configure(CoreDataSO data, Vector2Int origin, int rotation = 0)
+    { coreData = data; gridOrigin = origin; rotationSteps = rotation; }
+
     void Start()
     {
         if (coreData == null)

@@ -17,15 +17,39 @@ public static class WorldPopulator
     const string RootName = "Spawned";
 
     /// <summary>
+    /// 프리팹을 세우는 방법. 런타임은 그냥 Instantiate 하지만, 에디터가 씬에 굳힐 때는
+    /// <b>프리팹 연결을 남기는</b> PrefabUtility 로 갈아끼운다 — 연결이 없으면 씬 파일에 메시
+    /// 참조까지 통째로 복사되어 크게 불어나고, 프리팹을 고쳐도 씬의 것이 따라오지 않는다.
+    /// </summary>
+    public static System.Func<GameObject, Vector3, Quaternion, Transform, GameObject> SpawnOverride;
+
+    static GameObject Spawn(GameObject prefab, Vector3 pos, Quaternion rot, Transform parent)
+        => SpawnOverride != null ? SpawnOverride(prefab, pos, rot, parent)
+                                 : Object.Instantiate(prefab, pos, rot, parent);
+
+    /// <summary>
     /// 맵대로 세우고, 밤 웨이브의 진입로를 담은 제공자를 돌려준다.
-    /// 이미 세워져 있으면 지우고 다시 만든다(맵이 바뀌었을 수 있다).
+    ///
+    /// 배치물이 <b>이미 씬에 굳어 있으면 다시 세우지 않고 잇기만 한다.</b> 맵을 임포트할 때
+    /// 에디터가 미리 세워 두기 때문이다(<see cref="BakeIntoScene"/>) — 그래야 플레이하지 않고도
+    /// 맵이 어떻게 생겼는지 보인다. 런타임이 다시 세우면 같은 것이 둘이 된다.
+    ///
+    /// 굳어 있지 않은 씬(테스트 씬 등)에서는 예전처럼 여기서 세운다 — 그래야 맵만 꽂아도 돈다.
     /// </summary>
     public static NightSpawnPointProvider Populate(World world, Transform battleRoot)
     {
         if (world == null || world.Map == null) return null;
 
-        var old = world.transform.Find(RootName);
-        if (old != null) Object.Destroy(old.gameObject);
+        var baked = world.transform.Find(RootName);
+        if (baked != null)
+        {
+            int connected = Connect(world, baked);
+            var bakedProvider = PlaceNightSpawns(world, baked, battleRoot);
+            Debug.Log($"[WorldPopulator] '{world.Map.Id}' 굳어 있는 배치물을 이었습니다 — {connected}개 · " +
+                      $"밤 진입로 {(bakedProvider != null ? bakedProvider.SpawnPoints.Count : 0)}", world);
+            PlaceStartingDrops(world, baked);
+            return bakedProvider;
+        }
 
         var root = new GameObject(RootName).transform;
         root.SetParent(world.transform, false);
@@ -42,6 +66,108 @@ public static class WorldPopulator
                   $"나무 {trees}", world);
         return provider;
     }
+
+    /// <summary>
+    /// 에디터가 씬에 배치물을 굳힌다 — 맵을 임포트할 때 불린다.
+    ///
+    /// 심(FactorySim)은 건드리지 않는다. 에디터 모드에는 심이 없고, 칸을 잡는 것은 플레이가
+    /// 시작될 때 <see cref="Connect"/> 가 할 일이다. 여기서 만드는 것은 <b>보이는 것</b>뿐이다.
+    /// </summary>
+    public static void BakeIntoScene(World world, Transform root)
+    {
+        if (world == null || world.Map == null) return;
+        PlaceNodes(world, root);
+        PlaceNests(world, root);
+        PlaceTrees(world, root);
+        PlaceCore(world, root);
+    }
+
+    /// <summary>
+    /// 코어를 씬에 세운다 — <b>굳히는 경로 전용</b>이다.
+    ///
+    /// 심에 잇는 것은 <see cref="CoreBootstrap"/> 이 자기 Start 에서 한다(예전부터 그랬다).
+    /// 그래서 여기서는 PlacedMapObject 표식을 붙이지 않는다 — 붙이면 Connect 가 한 번 더
+    /// 이으려 들어 같은 칸을 두 번 잡는다.
+    ///
+    /// 런타임에 코어가 없는 씬은 FactoryBootstrap.AutoPlaceCore 가 세운다. 굳어 있으면
+    /// 그쪽이 알아서 비켜난다 — HasCore() 가 씬의 코어를 먼저 본다.
+    /// </summary>
+    static void PlaceCore(World world, Transform root)
+    {
+        var coreData = FindBuildingData<CoreDataSO>();
+        if (coreData == null || coreData.prefab == null)
+        {
+            Debug.LogWarning("[WorldPopulator] CoreDataSO 또는 그 프리팹을 찾지 못해 코어를 세우지 못했습니다.", world);
+            return;
+        }
+
+        var map = world.Map;
+        // 코어는 3×3 이라 원점 칸에서 1.5칸이 한가운데다(World 의 기즈모와 같은 식)
+        Vector3 pos = world.CellToWorld(map.core)
+                    + new Vector3(1.5f, 0f, 1.5f) * world.CellSize;
+        pos.y = GroundYAt(world, pos);
+
+        var go = Spawn(coreData.prefab, pos, Quaternion.identity, root);
+        go.name = "Core";
+
+        var boot = go.GetComponent<CoreBootstrap>();
+        if (boot == null) boot = go.AddComponent<CoreBootstrap>();
+        boot.Configure(coreData, map.core);
+    }
+
+    /// <summary>
+    /// 씬에 굳어 있는 배치물을 팩토리 심에 잇는다 — 칸을 잡고, 뷰를 심에 연결한다.
+    ///
+    /// 굳은 오브젝트는 그림일 뿐이라 이 단계를 거치지 않으면 그 위에 건물이 그대로 올라간다.
+    /// 무엇이 어느 칸인지는 <see cref="PlacedMapObject"/> 가 적어 두었다 — 트랜스폼에서
+    /// 역산하지 않는 이유는 모형이 칸 중앙에서 흔들려 있기 때문이다.
+    /// </summary>
+    static int Connect(World world, Transform root)
+    {
+        var boot = FactoryBootstrap.Instance;
+        if (boot == null || boot.Sim == null)
+        {
+            Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 굳어 있는 배치물을 잇지 못했습니다 — " +
+                             "그 위에 건물이 올라갑니다.", world);
+            return 0;
+        }
+
+        int connected = 0, skipped = 0;
+        foreach (var placed in root.GetComponentsInChildren<PlacedMapObject>(true))
+        {
+            if (placed == null || placed.Data == null) continue;   // 광맥은 자체 레지스트리가 맡는다
+
+            var size = placed.Data.size;
+            var origin = placed.Cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
+
+            bool free = true;
+            for (int dx = 0; dx < size.x && free; dx++)
+                for (int dy = 0; dy < size.y && free; dy++)
+                    if (boot.Sim.Grid.IsOccupied(origin + new Vector2Int(dx, dy))) free = false;
+            if (!free) { skipped++; continue; }
+
+            var view = placed.GetComponent<BuildingEntity>();
+            if (view != null) PlacementBridge.PlaceExisting(placed.Data, origin, 0, view);
+            else boot.Sim.Place(placed.Data, origin, 0);
+            connected++;
+        }
+
+        if (skipped > 0)
+            Debug.Log($"[WorldPopulator] 굳어 있는 배치물 {skipped}개는 칸이 이미 차 있어 잇지 못했습니다.", world);
+        return connected;
+    }
+
+    /// <summary>이 배치물이 어느 칸의 무엇인지 적어 둔다 — 런타임의 잇기가 이것을 읽는다.</summary>
+    static void Mark(GameObject go, Vector2Int cell, BuildingDataSO data)
+    {
+        var mark = go.GetComponent<PlacedMapObject>();
+        if (mark == null) mark = go.AddComponent<PlacedMapObject>();
+        mark.Configure(cell, data);
+    }
+
+    /// <summary>런타임에 갓 세운 나무를 심에 잇는다(굳어 있지 않은 씬 경로).</summary>
+    static void ConnectTree(BuildingEntity view, TreeDataSO data, Vector2Int cell)
+        => PlacementBridge.PlaceExisting(data, cell, 0, view);
 
     // ── 시작 드롭 아이템 ───────────────────────────────────────
 
@@ -167,8 +293,9 @@ public static class WorldPopulator
             Vector3 corner = world.CellToWorld(spec.cell);
             Vector3 center = corner + new Vector3(size, 0f, size) * (0.5f * world.CellSize);
 
-            var go = Object.Instantiate(world.ResourceNodePrefab, center, Quaternion.identity, root);
+            var go = Spawn(world.ResourceNodePrefab, center, Quaternion.identity, root);
             go.name = $"Node_{spec.item.name}_{spec.cell.x}_{spec.cell.y}";
+            Mark(go, spec.cell, null);   // 광맥은 칸을 잡지 않는다 — 자체 레지스트리가 관리한다
 
             var node = go.GetComponent<ResourceNode>();
             if (node != null)
@@ -198,9 +325,9 @@ public static class WorldPopulator
         int placed = 0;
         foreach (var spec in map.nests)
         {
-            var go = Object.Instantiate(world.NestPrefab, root);
+            var go = Spawn(world.NestPrefab, world.CellToWorldCenter(spec.cell), Quaternion.identity, root);
             go.name = $"Nest_{spec.cell.x}_{spec.cell.y}";
-            go.transform.position = world.CellToWorldCenter(spec.cell);
+            Mark(go, spec.cell, nestData);
 
             var nest = go.GetComponent<MonsterNest>();
             if (nest != null)
@@ -212,7 +339,7 @@ public static class WorldPopulator
                 ApplySpawnPoints(world, nest, spec);
             }
 
-            ClaimNestCells(nestData, spec.cell, go);
+            if (SpawnOverride == null) ClaimNestCells(nestData, spec.cell, go);
 
             // 교전 구역은 값이 있을 때만 붙인다 — 프리팹에 없으면 둥지는 기본 동작을 그대로 쓴다
             if (spec.engageMaxRange > 0f)
@@ -308,14 +435,19 @@ public static class WorldPopulator
     // ── 나무 ────────────────────────────────────────────────────
 
     /// <summary>
-    /// 맵이 적어 둔 칸에 나무를 세우고 팩토리 그리드에 그 칸을 잡는다.
+    /// 맵이 적어 둔 칸에 나무를 세운다 — <b>뷰(BuildingEntity)를 가진 온전한 건물</b>로.
     ///
-    /// 나무가 건물인 이유는 <b>칸을 막아야</b> 하기 때문이다 — 건설 판정은 그리드 점유만 보므로,
-    /// 그리드에 들어가지 않은 나무 위에는 벨트도 포탑도 그대로 올라간다.
+    /// 칸을 막아야 하는 것이 첫째 이유다: 건설 판정은 그리드 점유만 보므로, 그리드에 들어가지
+    /// 않은 나무 위에는 벨트도 포탑도 그대로 올라간다.
     ///
-    /// 뷰(BuildingEntity)는 붙이지 않는다. 나무는 수백 그루가 깔리는데 그루마다 붙이면 전부
-    /// BuildingEntity.All 에 들어가, 플로우필드의 시드 수집과 몬스터의 사거리 검색이 매번 그
-    /// 목록을 훑는다. 지금 나무에 필요한 것은 "칸을 막는다"뿐이다.
+    /// <b>뷰가 필요한 이유는 나무가 부서지기 때문이다.</b> 플레이어가 베어낼 수 있고 다시 자라지
+    /// 않으므로, 무엇을 베었는지가 세이브에 남아야 한다. 세이브가 순회하는 목록이
+    /// FactoryBootstrap.Buildings = 뷰가 붙은 건물들이라, 뷰가 없으면 벤 나무가 불러오기마다
+    /// 되살아난다. 피격 판정(BuildingEntity.ApplyEffects)과 파괴 시 칸 해제도 뷰의 몫이다.
+    ///
+    /// 복원 중에도 그대로 세운다 — 세이브가 뒤이어 자기에 없는 건물을 지우므로(RemoveUnwanted),
+    /// 벤 나무는 그때 사라지고 남은 나무는 "이미 있다"로 재사용된다. 여기서 건너뛰면 세이브가
+    /// 나무를 다시 세울 때 프리팹을 모르는 채로(TreeDataSO.prefab 은 비어 있다) 빈 껍데기가 된다.
     ///
     /// 모형·크기·각도는 칸 좌표에서 결정론적으로 뽑는다 — 맵에 그루별로 적어 두면 수백 줄이
     /// 늘어나는데 그 값들은 사람이 고칠 것이 아니고, 해시로 뽑으면 같은 맵은 언제나 같은 숲이 된다.
@@ -336,37 +468,45 @@ public static class WorldPopulator
 
         var treeData = FindBuildingData<TreeDataSO>();
         if (treeData == null)
-            Debug.LogWarning("[WorldPopulator] TreeDataSO를 BuildingDatabase에서 찾지 못했습니다 — " +
-                             "나무를 세우되 칸은 잡지 못해 그 위에 건물이 올라갑니다.", world);
+        {
+            Debug.LogWarning("[WorldPopulator] TreeDataSO를 BuildingDatabase에서 찾지 못해 나무를 세우지 못했습니다.",
+                             world);
+            return 0;
+        }
 
-        var treeRoot = new GameObject("Trees").transform;
-        treeRoot.SetParent(root, false);
+        // 심은 <b>런타임에만</b> 필요하다 — 에디터에서 씬에 굳힐 때는 그림만 만들고,
+        // 칸을 잡는 것은 플레이가 시작될 때 Connect 가 한다.
+        var boot = FactoryBootstrap.Instance;
+        bool connecting = SpawnOverride == null;
+        if (connecting && (boot == null || boot.Sim == null))
+        {
+            Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 나무를 세우지 못했습니다.", world);
+            return 0;
+        }
 
         int placed = 0, skipped = 0;
         foreach (var cell in map.trees)
         {
             if (!map.InBounds(cell)) continue;
 
-            // 칸부터 잡는다 — 코어·광맥·둥지와 겹친 그루는 세우지도 않는다.
-            // 세워 놓고 칸만 못 잡으면 눈에는 나무가 있는데 그 위에 건물이 올라간다.
-            if (treeData != null && !ClaimCells(treeData, cell, world.gameObject, "나무", warnOnOccupied: false))
-            { skipped++; continue; }
+            // 칸이 차 있으면 세우지 않는다 — 세워 놓고 칸을 못 잡으면 눈에는 나무가 있는데
+            // 그 위에 건물이 올라간다. GridIndex.Add 는 덮어쓰기라 먼저 확인해야 한다.
+            if (connecting && boot.Sim.Grid.IsOccupied(cell)) { skipped++; continue; }
 
-            int h = Hash(cell.x, cell.y, 41);
-            var prefab = prefabs[h % prefabs.Count];
-            float scale = Mathf.Lerp(0.85f, 1.35f, Hash(cell.x, cell.y, 43) % 1000 / 1000f);
-            float yaw = Hash(cell.x, cell.y, 47) % 3600 / 10f;
-            // 칸 중앙에서 흔든다 — 격자에 줄을 서면 숲으로 안 보인다. 차지하는 칸은 그대로다
-            float jx = (Hash(cell.x, cell.y, 23) % 1000 / 1000f - 0.5f) * 2f * 0.32f;
-            float jz = (Hash(cell.x, cell.y, 29) % 1000 / 1000f - 0.5f) * 2f * 0.32f;
+            TreePose(world, cell, prefabs.Count, out int pi, out Vector3 pos, out float yaw, out float scale);
 
-            Vector3 pos = world.CellToWorld(cell)
-                        + new Vector3((0.5f + jx) * world.CellSize, 0f, (0.5f + jz) * world.CellSize);
-            pos.y = GroundYAt(world, pos);
-
-            var go = Object.Instantiate(prefab, pos, Quaternion.Euler(0f, yaw, 0f), treeRoot);
+            var go = Spawn(prefabs[pi], pos, Quaternion.Euler(0f, yaw, 0f), root);
             go.transform.localScale = Vector3.one * scale;
             go.name = $"Tree_{cell.x}_{cell.y}";
+            Mark(go, cell, treeData);
+
+            // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect).
+            // 뷰는 프리팹에 없으므로 지금 붙여 둔다: 굳은 씬에서 인스펙터로 확인할 수 있고,
+            // 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
+            var view = go.GetComponent<BuildingEntity>();
+            if (view == null) view = go.AddComponent<BuildingEntity>();
+            if (treeData.maxHp > 0) view.Health.SetMaxHealth(treeData.maxHp);
+            if (connecting) ConnectTree(view, treeData, cell);
             placed++;
         }
 
@@ -374,6 +514,31 @@ public static class WorldPopulator
             Debug.Log($"[WorldPopulator] 나무 {skipped}그루는 칸이 이미 차 있어 세우지 않았습니다 " +
                       "(코어·광맥·둥지와 겹친 자리).", world);
         return placed;
+    }
+
+    // 나무 한 그루의 생김새를 정하는 값들 — 칸 좌표에서 뽑으므로 같은 맵은 언제나 같은 숲이다
+    const float TreeScaleMin = 0.85f, TreeScaleMax = 1.35f;
+    /// <summary>칸 중앙에서 흔드는 폭(칸). 0이면 격자에 줄을 서서 숲으로 안 보인다.</summary>
+    const float TreeJitter = 0.32f;
+
+    /// <summary>
+    /// 그 칸에 설 나무 한 그루의 모형·위치·각도·크기.
+    ///
+    /// <b>에디터 미리보기와 런타임이 반드시 같은 값을 써야 하므로</b> 계산을 여기 한 곳에 둔다 —
+    /// 양쪽에 같은 해시를 베껴 두면 한쪽만 고쳐졌을 때 미리보기가 거짓말을 하기 시작한다.
+    /// </summary>
+    public static void TreePose(World world, Vector2Int cell, int prefabCount,
+                                out int prefabIndex, out Vector3 position, out float yaw, out float scale)
+    {
+        prefabIndex = prefabCount > 0 ? Hash(cell.x, cell.y, 41) % prefabCount : 0;
+        scale = Mathf.Lerp(TreeScaleMin, TreeScaleMax, Hash(cell.x, cell.y, 43) % 1000 / 1000f);
+        yaw = Hash(cell.x, cell.y, 47) % 3600 / 10f;
+
+        float jx = (Hash(cell.x, cell.y, 23) % 1000 / 1000f - 0.5f) * 2f * TreeJitter;
+        float jz = (Hash(cell.x, cell.y, 29) % 1000 / 1000f - 0.5f) * 2f * TreeJitter;
+        position = world.CellToWorld(cell)
+                 + new Vector3((0.5f + jx) * world.CellSize, 0f, (0.5f + jz) * world.CellSize);
+        position.y = GroundYAt(world, position);
     }
 
     /// <summary>

@@ -16,6 +16,14 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: e23eadeebe7d02349919567f2e1e49d5, type: 2}
+    - target: {fileID: 2126095102144534692, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3097994901712537701, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
     - target: {fileID: 3500722393526403426, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -60,6 +68,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BroadleafTree_02_Green
       objectReference: {fileID: 0}
+    - target: {fileID: 4314097512950914008, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
     - target: {fileID: 4485565184442817686, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -68,6 +80,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: e23eadeebe7d02349919567f2e1e49d5, type: 2}
+    - target: {fileID: 7298399428418029111, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
     - target: {fileID: 8890362712167610617, guid: 5d6ff116fb5dd6343a053c078b5cdc2b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

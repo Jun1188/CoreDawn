@@ -637,6 +637,16 @@ public static class WorldTerrainGenerator
         /// 쓰이지 않았다). 절벽면으로 읽힐 형태가 죽은 코드였다.
         /// </summary>
         public readonly float FootAspect;
+
+        /// <summary>
+        /// 로컬 XZ 외곽선 — 각도를 16등분해 방향마다 <b>실제 메시</b>의 최대 반경을 잰 것.
+        ///
+        /// 왜 필요한가: 배치는 슬롯(직사각형)과 등가 원으로만 계산하는데, cliffRoundness 를
+        /// 낮춰 원본 비율을 살린 뒤로는 바위가 슬롯에 <b>내접</b>할 뿐 채우지 않는다.
+        /// 걸음 폭을 슬롯 크기로 잡으면 슬롯과 메시의 차이가 그대로 조각 사이의 틈이 된다.
+        /// AABB 로는 부족하다 — 회전하면 과대평가하고, 오목한 바위는 방향에 따라 반경이 크게 다르다.
+        /// </summary>
+        public readonly Vector2[] Outline;
         /// <summary>정렬·선택용 대표 크기 — 짧은 축 반폭.</summary>
         public float Radius => 0.5f * Mathf.Min(Foot.x, Foot.y);
         public readonly float Height;   // m
@@ -646,7 +656,63 @@ public static class WorldTerrainGenerator
         {
             Prefab = p; Foot = foot; Height = h; Bottom = b;
             FootAspect = Mathf.Max(foot.x, foot.y) / Mathf.Max(0.01f, Mathf.Min(foot.x, foot.y));
+            Outline = BuildOutline(p);
         }
+    }
+
+    /// <summary>프리팹 메시의 XZ 외곽선을 각도 16등분으로 잰다(프리팹 루트 기준 로컬).</summary>
+    static Vector2[] BuildOutline(GameObject prefab)
+    {
+        const int K = 16;
+        var best = new float[K];
+        var w2l = prefab.transform.worldToLocalMatrix;
+
+        foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
+        {
+            var mesh = mf.sharedMesh;
+            if (mesh == null) continue;
+            var l2r = w2l * mf.transform.localToWorldMatrix;
+            foreach (var v in mesh.vertices)
+            {
+                var q = l2r.MultiplyPoint3x4(v);
+                float r = Mathf.Sqrt(q.x * q.x + q.z * q.z);
+                if (r <= 0f) continue;
+                float ang = Mathf.Atan2(q.z, q.x) + Mathf.PI;          // 0..2π
+                int k = Mathf.Clamp((int)(ang / (Mathf.PI * 2f) * K), 0, K - 1);
+                if (r > best[k]) best[k] = r;
+            }
+        }
+
+        var outline = new Vector2[K];
+        for (int k = 0; k < K; k++)
+        {
+            float a = (k + 0.5f) / K * Mathf.PI * 2f - Mathf.PI;
+            outline[k] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * best[k];
+        }
+        return outline;
+    }
+
+    /// <summary>
+    /// 회전·축별 배율을 반영한 <b>실제 메시</b>의 한 방향 반경(m).
+    ///
+    /// Unity 의 Y 회전은 로컬 +X → 월드 (cosθ, −sinθ), 로컬 +Z → (sinθ, cosθ) 다.
+    /// 월드 방향을 로컬로 되돌려(전치) 외곽선과 내적한 최댓값을 취한다.
+    /// </summary>
+    static float MeshReach(CliffRock rock, float yawDeg, float sx, float sz, Vector2 dirWorld)
+    {
+        if (rock.Outline == null || rock.Outline.Length == 0) return 0f;
+        float t = yawDeg * Mathf.Deg2Rad;
+        float c = Mathf.Cos(t), sn = Mathf.Sin(t);
+        // 월드 → 로컬 (회전 전치)
+        var d = new Vector2(dirWorld.x * c - dirWorld.y * sn, dirWorld.x * sn + dirWorld.y * c);
+
+        float best = 0f;
+        foreach (var o in rock.Outline)
+        {
+            float v = Mathf.Abs(o.x * sx * d.x + o.y * sz * d.y);
+            if (v > best) best = v;
+        }
+        return best;
     }
 
     /// <summary>배치가 확정된 바위 하나 — 겹침 검사와 쌓기의 단위.</summary>
@@ -657,6 +723,8 @@ public static class WorldTerrainGenerator
         public float Radius;    // 겹침·쌓기용 등가 원 반지름(m) — 두 반폭의 기하평균
         public float HalfAcross; // 벽을 가로지르는 반폭(m) — 클리어런스에 묶인 하드 제약
         public float HalfAlong;  // 벽 접선 방향 반폭(m) — 여기가 길어져야 벽으로 읽힌다
+        /// <summary>접선 방향으로 <b>실제 메시</b>가 닿는 반경(m). 슬롯이 아니라 메시다.</summary>
+        public float ReachAlong;
         public float ScaleX, ScaleZ, ScaleY;   // 축별 배율 — 정사각형에 맞추느라 갈린다
         public float TiltX, TiltZ;             // 기울기(도) — 크기를 정할 때 이미 반영했다
         // yaw·strike 를 여기서 들고 가는 이유: 기울기 방위가 yaw 에 상대적이라(Euler ZXY)
@@ -840,15 +908,47 @@ public static class WorldTerrainGenerator
             // 0.6m 의 차이가 8m 와 8.2m 의 차이보다 훨씬 크게 보인다.
             lo = Mathf.Max(0.05f, lo);
             hi = Mathf.Max(lo, hi);
-            const int Steps = 14;
+            const int Steps = 24;
             float best = 0f;
+
             for (int i = 0; i <= Steps; i++)
             {
-                float a = lo * Mathf.Pow(hi / lo, (float)i / Steps);
-                if (ClearAt(edge + nrm * a) < a * 0.9f) break;
-                best = a;
+                float d = lo * Mathf.Pow(hi / lo, (float)i / Steps);
+                float room = ClearAt(edge + nrm * d);
+
+                // 절벽을 <b>벗어나면</b> 거기서 멈춘다. 그 너머에서 클리어런스가 다시 커지는
+                // 것은 건너편의 <b>남의 벽</b>이라, 거기에 맞춰 크기를 잡으면 허공을 건너뛴다.
+                if (room <= 0f) break;
+                if (room > best) best = room;
             }
             return best;
+        }
+
+        /// <summary>
+        /// 반지름 <paramref name="want"/> 인 바위를 담을 수 있는 <b>가장 얕은</b> 깊이.
+        /// 담지 못하면 음수.
+        ///
+        /// 반지름과 깊이를 <b>떼어 놓기 위한</b> 함수다. 예전에는 중심을 늘 깊이 = 반지름에
+        /// 두어(윤곽에 접하게) 크기가 "그 점에 접하는 원"에 갇혔다. 경계가 오목한 자리에서는
+        /// 그 원이 벽 두께보다 훨씬 작다 — 실측으로 법선 최대 클리어런스가 4.87m 인 자리에서
+        /// 1.70m 였고, 그 크기가 조약돌 하한에 걸려 자리 2천여 곳이 통째로 비었다.
+        ///
+        /// 깊이를 따로 찾으면 둘 다 얻는다. 클리어런스의 정의상 clearance(d) ≤ d 이므로
+        /// 앞면 위치 d − want 는 <b>항상 0 이상</b>이다 — 절벽 밖으로 나가지 않는다.
+        /// 그리고 직선 벽에서는 d = want 라 예전과 완전히 같다(부풀지 않는다).
+        /// </summary>
+        float SeatDepth(Vector2 edge, Vector2 nrm, float want, float hi)
+        {
+            if (want <= 0f) return -1f;
+            const int Steps = 24;
+            float lo = Mathf.Max(0.05f, want);
+            hi = Mathf.Max(lo, hi);
+            for (int i = 0; i <= Steps; i++)
+            {
+                float d = lo * Mathf.Pow(hi / lo, (float)i / Steps);
+                if (ClearAt(edge + nrm * d) >= want) return d;   // 가장 얕은 유효 깊이
+            }
+            return -1f;
         }
 
         // ── 절리 방향(strike) — 이 알고리즘에서 <b>방향을 만드는 유일한 곳</b> ──
@@ -1112,6 +1212,11 @@ public static class WorldTerrainGenerator
             float capY = S.cliffMaxHeightCells * Cell / rock.Height;
             if (scaleY > capY) scaleY = capY;
 
+            // <b>실제 메시가 접선 방향으로 닿는 반경.</b> 슬롯(halfAlong)이 아니라 메시다 —
+            // roundness 를 낮춰 원본 비율을 살린 뒤로 바위는 슬롯에 내접할 뿐 채우지 않는다.
+            // 걸음 폭을 슬롯으로 잡으면 그 차이가 그대로 조각 사이의 틈이 된다.
+            float reachAlong = MeshReach(rock, yaw, scaleX, scaleZ, TangentOf(strike));
+
             placedList.Add(new PlacedRock
             {
                 Rock = pick,
@@ -1119,6 +1224,7 @@ public static class WorldTerrainGenerator
                 Radius = radius,
                 HalfAcross = halfAcross,
                 HalfAlong = halfAlong,
+                ReachAlong = reachAlong,
                 ScaleX = scaleX,
                 ScaleZ = scaleZ,
                 ScaleY = scaleY,
@@ -1170,6 +1276,14 @@ public static class WorldTerrainGenerator
         int stations = 0;
         // 걷기 계측 — 어느 관문에서 얼마나 걸러지는지. 추측 대신 이걸 본다.
         int stTried = 0, stThin = 0, stPebble = 0, stNoRoom = 0, stHigh = 0;
+        // 벽 반두께 표본 — 조약돌 거부가 "얇은 자리"에 몰려 있는지 재려는 것.
+        // 추측으로는 못 가른다: 거부된 자리와 놓은 자리의 두께 분포를 나란히 봐야 안다.
+        var roomAll = new List<float>();
+        var roomPebble = new List<float>();
+        // 같은 지점에서 법선을 따라 잰 클리어런스 <b>최댓값</b>.
+        // roomMax(첫 실패에서 멈춤)와 비교하면 "행진이 조기 종료됐는가"와
+        // "실제로 얇은가"가 갈린다. 추측으로는 못 가른다.
+        var rayPebble = new List<float>();
         double contourM = 0;
         foreach (var lp in loops)
             for (int k = 0; k < lp.Count; k++)
@@ -1264,6 +1378,7 @@ public static class WorldTerrainGenerator
                     float thinFloor = Mathf.Max(0.05f, S.cliffMinThicknessM);
                     float roomMax = MaxHalfThickness(onEdge, nrm, thinFloor, maxR);
                     if (roomMax < thinFloor) { stThin++; arc += minR; walked += minR; continue; }
+                    roomAll.Add(roomMax);
 
                     // 크기 — 층마다 다른 해시라 이음매가 저절로 어긋난다
                     // 크기 — <b>범위를 넓게</b> 잡아야 위계가 생긴다.
@@ -1289,13 +1404,27 @@ public static class WorldTerrainGenerator
                     float advance = Mathf.Max(minR * 0.4f, br * 2f * S.cliffPackSpacing);
 
                     if (ar * Mathf.Sqrt(aspect) < minR * 0.45f)
-                    { stPebble++; arc += advance; walked += advance; continue; }
+                    {
+                        stPebble++;
+                        roomPebble.Add(roomMax);
+                        float rayMax = 0f;
+                        for (int q = 1; q <= 24; q++)
+                            rayMax = Mathf.Max(rayMax, ClearAt(onEdge + nrm * (q * 0.5f)));
+                        rayPebble.Add(rayMax);
+                        arc += advance; walked += advance; continue;
+                    }
+
+                    // <b>깊이는 반지름과 별개로 구한다.</b> 이 바위를 담을 수 있는 가장 얕은
+                    // 자리에 놓아야 앞면이 윤곽에 최대한 붙는다.
+                    float seatDepth = SeatDepth(onEdge, nrm, ar, maxR);
+                    if (seatDepth < 0f)
+                    { stNoRoom++; arc += advance; walked += advance; continue; }
 
                     // 안쪽으로 물러남(안식각) + 접선 방향 흔들림
                     float setback = course * ar * S.cliffCourseSetback;
                     float sway = (Hash(hx, hy, 271 + course) % 1000 / 1000f - 0.5f)
                                * 2f * ar * S.cliffCourseSway;
-                    Vector2 c = onEdge + nrm * (setback + ar) + tan * sway;
+                    Vector2 c = onEdge + nrm * (seatDepth + setback) + tan * sway;
 
                     if (ClearAt(c) < ar * 0.75f)
                     { stNoRoom++; arc += advance; walked += advance; continue; }
@@ -1318,10 +1447,16 @@ public static class WorldTerrainGenerator
                     Place(new Vector2Int(hx, hy + course * 7919), c, ar, br, seat, course, strike);
                     stations++;
 
-                    WriteTop(arc, br, placedList[placedList.Count - 1].Top);
+                    // 전진과 높이 프로파일은 <b>실제 메시</b> 기준으로. 슬롯으로 걸으면
+                    // 슬롯과 메시의 차이만큼 매 걸음 틈이 남는다.
+                    var justPlaced = placedList[placedList.Count - 1];
+                    float reach = justPlaced.ReachAlong > 0.05f ? justPlaced.ReachAlong : br;
 
-                    arc += advance;
-                    walked += advance;
+                    WriteTop(arc, reach, justPlaced.Top);
+
+                    float step = Mathf.Max(minR * 0.3f, reach * 2f * S.cliffPackSpacing);
+                    arc += step;
+                    walked += step;
                 }
             }
         }
@@ -1466,6 +1601,9 @@ public static class WorldTerrainGenerator
                   $"  윤곽 {loops.Count}루프 {contourM:F0}m · 자리 {stTried}회 시도 → " +
                   $"얇아서 {stThin} · 조약돌 {stPebble} · 공간부족 {stNoRoom} · 목표높이도달 {stHigh} " +
                   $"→ 놓임 {stations}" +
+                  System.Environment.NewLine +
+                  $"  벽 반두께 — 전체 {Quart(roomAll)} · 조약돌 거부 {Quart(roomPebble)}" +
+                  $" · 그 자리 법선 최대 클리어런스 {Quart(rayPebble)}" +
                   System.Environment.NewLine +
                   CliffQualityReport(placedList, grid, world.Origin.y));
         // 5%까지는 큰 바위들이 겹치며 남긴 그늘이라 정상이다. 그보다 크게 비면 벽에
@@ -1729,6 +1867,14 @@ public static class WorldTerrainGenerator
             EditorUtility.SetDirty(m);
         }
         return m;
+    }
+
+    /// <summary>표본의 사분위를 "q1 / q2 / q3" 로. 비었으면 "-".</summary>
+    static string Quart(List<float> v)
+    {
+        if (v == null || v.Count == 0) return "-";
+        v.Sort();
+        return $"{v[v.Count / 4]:F2} / {v[v.Count / 2]:F2} / {v[v.Count * 3 / 4]:F2}m";
     }
 
     /// <summary>구워낸 명도 변종이 사는 폴더. 지우고 다시 구우면 원본 머티리얼에서 새로 만든다.</summary>

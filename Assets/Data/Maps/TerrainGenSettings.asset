@@ -76,7 +76,7 @@ MonoBehaviour:
   - {fileID: 5389395240314065769, guid: 54c53036c73c3e84ca29b6911adf5fd8, type: 3}
   - {fileID: 2010085120437849477, guid: 4828afd64a3dd424393c97dfacfc7aa3, type: 3}
   cliffMinRadius: 3
-  cliffMaxRadius: 10
+  cliffMaxRadius: 12
   cliffYawJitter: 26
   cliffPackSpacing: 0.42
   cliffCoverFactor: 0.75

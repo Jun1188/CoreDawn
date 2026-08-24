@@ -141,7 +141,14 @@ public class FlowFieldManager : MonoBehaviour
         foreach (var building in BuildingEntity.All)
         {
             if (!building.IsValidTarget()) continue;
-            if (building.Data is BeltDataSO) continue; // 벨트만 목표 제외
+            // 벨트·나무는 목표에서 뺀다 — 웨이브가 공장과 코어를 노리라고 만든 시드에
+            // 길가의 잡동사니가 섞이면 몬스터가 그쪽으로 돌아간다. 특히 나무는 다시 자라지
+            // 않아서 그 손실이 영구적이다.
+            //
+            // <b>사거리 판정(FlowFieldState)에서는 빼지 않는다.</b> 건물이 선 칸은
+            // Walkable=false 라 "뚫고는 가도 걸어서는 못 지나간다" — 목표에서도 빼고 공격
+            // 대상에서도 빼면 나무에 막힌 몬스터가 부수지도 돌아가지도 못하고 갇힌다.
+            if (building.Data is BeltDataSO or TreeDataSO) continue;
 
             // 무엇부터 노릴지는 건물이 정한다 — 코어 0(최종 목표), 공격 타워는 낮게(먼저 부순다),
             // 일반 건물은 높게(굳이 돌아가지 않는다). 시드가 작을수록 그 목표가 가깝게 계산된다.

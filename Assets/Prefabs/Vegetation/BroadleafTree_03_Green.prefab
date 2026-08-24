@@ -8,6 +8,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 519916375586756138, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 1993289460867624097, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
     - target: {fileID: 2397446232490055277, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -64,6 +72,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7569934100535185037, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
     - target: {fileID: 7633674503254805335, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -75,6 +87,10 @@ PrefabInstance:
     - target: {fileID: 7755859256941194996, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
       propertyPath: m_Name
       value: BroadleafTree_03_Green
+      objectReference: {fileID: 0}
+    - target: {fileID: 7755859256941194996, guid: 04edc0bffc5bee54eb107fcc8ce4385a, type: 3}
+      propertyPath: m_Layer
+      value: 13
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
