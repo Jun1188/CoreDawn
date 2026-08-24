@@ -191,6 +191,7 @@ public static class WorldPopulator
             return 0;
         }
 
+        var nestData = FindNestData();
         int placed = 0;
         foreach (var spec in map.nests)
         {
@@ -204,8 +205,11 @@ public static class WorldPopulator
                 nest.Configure(spec.warningRange, spec.triggerRange,
                                spec.defenseSpawnAmount, spec.defenseSpawnCooldown,
                                spec.bossRecoveryDays, spec.nestRecoveryDays);
+                nest.SetData(nestData);
                 ApplySpawnPoints(world, nest, spec);
             }
+
+            ClaimNestCells(nestData, spec.cell, go);
 
             // 교전 구역은 값이 있을 때만 붙인다 — 프리팹에 없으면 둥지는 기본 동작을 그대로 쓴다
             if (spec.engageMaxRange > 0f)
@@ -219,6 +223,62 @@ public static class WorldPopulator
             placed++;
         }
         return placed;
+    }
+
+    /// <summary>
+    /// 둥지 데이터(NestDataSO) — BuildingDatabase에서 찾는다. 코어를 찾는 방식과 같은 규칙이라
+    /// 씬 배선이 늘지 않는다. 없으면 칸 점유만 건너뛰고 둥지 자체는 그대로 선다.
+    /// </summary>
+    static NestDataSO FindNestData()
+    {
+        var db = BuildingDatabaseSO.LoadDefault();
+        if (db == null || db.buildings == null) return null;
+
+        foreach (var b in db.buildings)
+            if (b is NestDataSO nest) return nest;
+        return null;
+    }
+
+    /// <summary>
+    /// 둥지가 덮는 칸을 팩토리 그리드에 잡아 둔다 — <b>이래야 그 위에 건물이 안 올라간다</b>
+    /// (건설 판정은 그리드 점유만 본다).
+    ///
+    /// 뷰(BuildingEntity)는 만들지 않는다. 씬 위의 둥지는 이미 MonsterNest(Entity)이고,
+    /// 한 오브젝트에 Entity가 둘이면 총알이 어느 쪽을 맞혔는지 불확실해지며 몬스터가 자기
+    /// 둥지를 목표로 삼는다. 그래서 심에만 넣는다 — FactorySim.Place는 칸과 그래프만 건드린다.
+    ///
+    /// 잡은 칸은 <b>영구적이다</b>. 둥지를 부숴도 nestRecoveryDays 뒤에 다시 서므로,
+    /// 그 자리는 처음부터 끝까지 건설 금지여야 한다.
+    ///
+    /// 풋프린트는 둥지 칸을 <b>가운데</b>에 둔다 — 맵은 둥지를 한 점(cell)으로 적는데
+    /// 실제 모형은 그보다 크다. 3×3이면 cell을 중심으로 한 칸씩 번진다.
+    /// </summary>
+    static void ClaimNestCells(NestDataSO nestData, Vector2Int cell, GameObject nestGo)
+    {
+        if (nestData == null) return;
+
+        var boot = FactoryBootstrap.Instance;
+        if (boot == null || boot.Sim == null)
+        {
+            Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 둥지 칸을 잡지 못했습니다 — " +
+                             "둥지 위에 건물이 올라갈 수 있습니다.", nestGo);
+            return;
+        }
+
+        var size = nestData.size;
+        var origin = cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
+
+        // 겹치면 심이 예외를 던지거나 기존 건물을 덮어쓸 수 있다 — 먼저 확인하고 경고로 남긴다.
+        for (int dx = 0; dx < size.x; dx++)
+            for (int dy = 0; dy < size.y; dy++)
+                if (boot.Sim.Grid.IsOccupied(origin + new Vector2Int(dx, dy)))
+                {
+                    Debug.LogWarning($"[WorldPopulator] 둥지 {cell} 의 칸 {origin + new Vector2Int(dx, dy)} " +
+                                     "가 이미 점유되어 있어 칸을 잡지 못했습니다 — 맵에서 둥지를 옮기세요.", nestGo);
+                    return;
+                }
+
+        boot.Sim.Place(nestData, origin, 0);
     }
 
     /// <summary>

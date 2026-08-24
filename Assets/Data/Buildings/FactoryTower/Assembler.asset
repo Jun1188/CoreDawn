@@ -44,6 +44,8 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: dc9b0770090ed1640b49fc024ca925d9, type: 2}
     amount: 8
   maxHp: 250
+  isDemolishable: 1
+  isAttackable: 0
   availableRecipes:
   - {fileID: 11400000, guid: 1f4309e7d1892ad49b242e4e1ece7aa3, type: 2}
   - {fileID: 11400000, guid: 81f36f2327698b3459b4a2480d636959, type: 2}

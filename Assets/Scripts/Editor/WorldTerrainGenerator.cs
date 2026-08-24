@@ -999,10 +999,14 @@ public static class WorldTerrainGenerator
         Debug.Log($"[WorldTerrainGenerator] 절벽 바위 {placedList.Count}개 " +
                   $"(지면 {ground - filled} + 구멍 메움 {filled} + 쌓기 {stacked}, 칸 {world.CellSize}m) — " +
                   $"덮임 {100f * (cliffPx - holePx) / Mathf.Max(1, cliffPx):F1}%");
-        if (holePx > cliffPx / 100)
-            Debug.LogWarning($"[WorldTerrainGenerator] 절벽에 덮이지 않은 자리가 {holePx}픽셀 남았습니다 " +
-                             $"({100f * holePx / Mathf.Max(1, cliffPx):F1}%) — 벽이 뚫렸을 수 있습니다. " +
-                             $"{TerrainGenSettings.AssetPath} 의 Cliff Fill Min Ratio를 낮춰 보세요.");
+        // 5%까지는 큰 바위들이 겹치며 남긴 그늘이라 정상이다. 그보다 크게 비면 벽에
+        // 사람이 지나갈 틈이 있다는 뜻이므로, 원인을 짚어 알린다.
+        if (holePx > cliffPx / 20)
+            Debug.LogWarning($"[WorldTerrainGenerator] 절벽의 {100f * holePx / Mathf.Max(1, cliffPx):F1}%에 " +
+                             $"바위가 서지 않았습니다({holePx}픽셀) — 벽이 뚫렸을 수 있습니다.\n" +
+                             $"Cliff Min Radius({S.cliffMinRadius}m)보다 얇은 구간에는 아무것도 놓지 않습니다. " +
+                             "그 값을 낮추면 채워지지만 그만큼 작은 바위가 나오고, 크고 안 뚫리는 벽을 " +
+                             "원하면 맵의 절벽 타일 폭을 넓혀야 합니다(그래야 클리어런스가 커집니다).");
         if (placedList.Count > 12000)
             Debug.LogWarning($"[WorldTerrainGenerator] 절벽 바위가 {placedList.Count}개입니다 — " +
                              "드로우콜·씬 용량이 부담됩니다. cliffRadiusRange 최소값을 올리거나 " +

@@ -164,6 +164,20 @@ public class BuildingEntity : Entity, IInteractable
         WorldHealthBar.Attach(this, hideWhenFull: true);
     }
 
+    /// <summary>
+    /// 플레이어의 공격이 통하지 않는 건물은 명중 자체를 흘린다 (BuildingDataSO.isAttackable).
+    /// 총·근접이 모두 여기로 수렴하므로 한 곳만 막으면 된다.
+    ///
+    /// 몬스터의 공격은 이 값과 무관하다 — 밤 웨이브가 무엇을 노리는지는 플로우필드의
+    /// 목표 선정(threatSeedCost)이 정하고, 정한 목표는 실제로 부술 수 있어야 한다.
+    /// </summary>
+    public override void ApplyEffects(IReadOnlyList<EffectEntry> entries, Entity source,
+                                      Vector3 hitPoint, Vector3 hitDirection = default)
+    {
+        if (source is Player && Data != null && !Data.isAttackable) return;
+        base.ApplyEffects(entries, source, hitPoint, hitDirection);
+    }
+
     // 코어의 보호막이 내구도보다 먼저 맞는다 — 남은 몫만 HP로 내려간다.
     // 보호막의 원본은 심(CoreBehavior)이다: 자원 소각으로 차오르는 값이라
     // 자원과 같은 곳에 있어야 두 수치가 어긋나지 않는다.

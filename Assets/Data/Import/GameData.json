@@ -13,18 +13,18 @@
       "displayName": "넉백",
       "description": "value = 밀어내는 거리(m). 공격이 날아온 방향으로 민다 — 총알·히트스캔·근접용.",
       "kind": "Knockback",
-      "knockbackMode": "Directional",
       "duration": 0.0,
-      "tickInterval": 0.0
+      "tickInterval": 0.0,
+      "knockbackMode": "Directional"
     },
     {
       "id": "Effect:KnockbackRadial",
       "displayName": "넉백(폭발)",
       "description": "value = 밀어내는 거리(m). 착탄점에서 바깥으로 민다 — 유탄·플라즈마 아크 같은 폭발용.",
       "kind": "Knockback",
-      "knockbackMode": "Radial",
       "duration": 0.0,
-      "tickInterval": 0.0
+      "tickInterval": 0.0,
+      "knockbackMode": "Radial"
     },
     {
       "id": "Effect:Burn",
@@ -281,6 +281,7 @@
       "type": "Salvage",
       "line": "None",
       "icon": "ShipDebris",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -295,6 +296,7 @@
       "type": "Ore",
       "line": "Iron",
       "icon": "IronOre",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -309,6 +311,7 @@
       "type": "Ingot",
       "line": "Iron",
       "icon": "IronIngot",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -323,6 +326,7 @@
       "type": "Part",
       "line": "Iron",
       "icon": "IronPlate",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -337,6 +341,7 @@
       "type": "Part",
       "line": "Iron",
       "icon": "IronGear",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -351,6 +356,7 @@
       "type": "Ammo",
       "line": "Iron",
       "icon": "BasicAmmo",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -371,6 +377,7 @@
       "type": "Ore",
       "line": "Copper",
       "icon": "CopperOre",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -385,6 +392,7 @@
       "type": "Ingot",
       "line": "Copper",
       "icon": "CopperIngot",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -399,6 +407,7 @@
       "type": "Part",
       "line": "Copper",
       "icon": "CopperWire",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -413,6 +422,7 @@
       "type": "Ore",
       "line": "Crystal",
       "icon": "CrystalOre",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -427,6 +437,7 @@
       "type": "Ingot",
       "line": "Crystal",
       "icon": "RefinedCrystal",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -441,6 +452,7 @@
       "type": "RepairPart",
       "line": "Iron",
       "icon": "HullPanel",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -455,6 +467,7 @@
       "type": "Part",
       "line": "Copper",
       "icon": "CircuitBoard",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -469,6 +482,7 @@
       "type": "Ammo",
       "line": "Iron",
       "icon": "Grenade",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -493,6 +507,7 @@
       "type": "Ammo",
       "line": "Iron",
       "icon": "DenseAmmo",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -513,6 +528,7 @@
       "type": "Part",
       "line": "Crystal",
       "icon": "EnergyCell",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -527,6 +543,7 @@
       "type": "Ammo",
       "line": "Crystal",
       "icon": "EnergyCellAmmo",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -551,6 +568,7 @@
       "type": "RepairPart",
       "line": "Copper",
       "icon": "NavControlUnit",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -565,6 +583,7 @@
       "type": "Salvage",
       "line": "Beast",
       "icon": "BeastCore",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -579,6 +598,7 @@
       "type": "Part",
       "line": "Copper",
       "icon": "ControlModule",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -593,6 +613,7 @@
       "type": "RepairPart",
       "line": "Crystal",
       "icon": "PowerModule",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
       "speed": -1.0,
       "gravity": -1.0,
@@ -607,6 +628,7 @@
       "type": "Ammo",
       "line": "Crystal",
       "icon": "CrystalAmmo",
+      "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -631,6 +653,7 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "Pistol",
+      "iconGuid": "edf27d1135600e245ac99153f1177507",
       "damage": 0.0,
       "gun": "Gun:Pistol",
       "speed": -1.0,
@@ -646,6 +669,7 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "Rifle",
+      "iconGuid": "5c2946d85ab19a04baf2b6e3f6354a44",
       "damage": 0.0,
       "gun": "Gun:Rifle",
       "speed": -1.0,
@@ -661,6 +685,7 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "Shotgun",
+      "iconGuid": "38f317d4c2c337f4baced47e4de101ac",
       "damage": 0.0,
       "gun": "Gun:Shotgun",
       "speed": -1.0,
@@ -676,6 +701,7 @@
       "type": "Weapon",
       "line": "Copper",
       "icon": "Sniper",
+      "iconGuid": "722185e6f4af1ae4fa819f76322195a1",
       "damage": 0.0,
       "gun": "Gun:Sniper",
       "speed": -1.0,
@@ -691,6 +717,7 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "GrenadeLauncher",
+      "iconGuid": "9773aecee1ac0ff439cd79ecdab562f4",
       "damage": 0.0,
       "gun": "Gun:GrenadeLauncher",
       "speed": -1.0,
@@ -706,6 +733,7 @@
       "type": "Weapon",
       "line": "Crystal",
       "icon": "EnergyRifle",
+      "iconGuid": "2a9cd9ba278812a4db106de4718601d6",
       "damage": 0.0,
       "gun": "Gun:EnergyRifle",
       "speed": -1.0,
@@ -745,6 +773,7 @@
       "type": "Weapon",
       "line": "Iron",
       "icon": "PlasmaCutter",
+      "iconGuid": "ffdbf5143bcd651499a9f3a01ec2336c",
       "damage": 0.0,
       "gun": "Gun:PlasmaCutter",
       "speed": -1.0,
@@ -1308,6 +1337,7 @@
       "description": "광맥 위에 놓아 자원을 캔다. 광맥이 어려울수록 느리다.",
       "category": "Production",
       "model": "Miner.fbx",
+      "modelGuid": "38bc4162e9cc06c449ab7fa8686b5fcb",
       "size": {
         "x": 1,
         "y": 1
@@ -1404,6 +1434,7 @@
       "description": "원광을 녹여 소재로 만든다.",
       "category": "Production",
       "model": "Smelter.fbx",
+      "modelGuid": "ea46188c8bdb2b347a989f03493e6ccc",
       "size": {
         "x": 1,
         "y": 1
@@ -1461,6 +1492,7 @@
       "description": "소재 한 종을 가공해 기본 부품을 만든다.",
       "category": "Production",
       "model": "Constructor.fbx",
+      "modelGuid": "28cee9ec78d36094388f7fddb8b70132",
       "size": {
         "x": 1,
         "y": 1
@@ -1734,6 +1766,7 @@
       "description": "설비 사이로 아이템을 옮긴다. 배치 중 T로 모양을 바꾼다.",
       "category": "Logistics",
       "model": "Conveyor.prefab",
+      "modelGuid": "19042ae8bf9e72943b1b3eec44bea3ce",
       "size": {
         "x": 1,
         "y": 1
@@ -1771,7 +1804,9 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 1.0,
       "modelCurveL": "Conveyor_L.fbx",
+      "modelCurveLGuid": "e4dd130d39a2f394ca180cbeada7fba2",
       "modelCurveR": "Conveyor_R.fbx",
+      "modelCurveRGuid": "441ae0e8dfa059c4cbf87444217d14f3",
       "damageMultiplier": 0.0,
       "range": 0.0,
       "fireRate": 0.0,
@@ -2056,6 +2091,7 @@
       "description": "불시착한 우주선. 어느 면으로든 부품을 받아 수리한다.",
       "category": "Production",
       "model": "SpaceShip.fbx",
+      "modelGuid": "8e653362f0109004983636cf44f424dc",
       "size": {
         "x": 3,
         "y": 3
@@ -2140,6 +2176,7 @@
       "requiredCoreTier": 0,
       "maxHp": 1000,
       "hideFromBuildMenu": true,
+      "isDemolishable": false,
       "buildCost": [],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
@@ -2585,6 +2622,28 @@
       "ammoFilter": [
         "Item:EnergyCellAmmo"
       ]
+    },
+    {
+      "id": "Building:Nest",
+      "kind": "Nest",
+      "displayName": "괴수 둥지",
+      "description": "맵이 세우는 괴수의 둥지. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형·전투·스폰은 World의 둥지 프리픥(MonsterNest)이 담당한다.",
+      "category": "Defense",
+      "model": "",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "ports": [],
+      "inputSlots": 0,
+      "outputSlots": 0,
+      "bufferStackCap": 0,
+      "requiredCoreTier": 0,
+      "maxHp": 1000,
+      "hideFromBuildMenu": true,
+      "isDemolishable": false,
+      "isAttackable": true,
+      "buildCost": []
     }
   ],
   "waves": [

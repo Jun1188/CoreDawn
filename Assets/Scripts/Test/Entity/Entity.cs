@@ -119,9 +119,13 @@ public class Entity : MonoBehaviour
     /// <summary>
     /// 공격 명중의 단일 진입점 — 효과 항목 목록을 이 엔티티에 적용한다.
     /// 시전측 배율(공격 버프·포탑 배율)은 시전자가 보낼 때 이미 항목에 구워져(bake) 있다.
+    ///
+    /// virtual인 이유: "누가 때렸는가"로 갈리는 규칙은 여기서만 판단할 수 있다.
+    /// ReceiveDamage는 시전자를 모르므로(수치만 받는다) 플레이어 공격만 막는 것 같은
+    /// 규칙은 이쪽을 override해야 한다.
     /// </summary>
-    public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
-                             Entity source, Vector3 hitPoint, Vector3 hitDirection = default)
+    public virtual void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
+                                     Entity source, Vector3 hitPoint, Vector3 hitDirection = default)
         => Effects.ApplyAll(entries, source, hitPoint, hitDirection);
 
     /// <summary>

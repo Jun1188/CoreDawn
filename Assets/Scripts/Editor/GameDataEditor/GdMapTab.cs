@@ -84,6 +84,23 @@ class GdMapTab : GdTab
         ("Item:CrystalOre", "크리스탈 광석", GdEnum.FromHex("#B48CFF")),
     };
 
+    // ── 배치물 레이어 ──
+    // key 는 도구 키와 일부러 같다 — 숨겨 둔 레이어의 도구를 고르면 그 레이어가 다시 켜진다.
+    // filled=false 는 캔버스에서도 테두리만 있는 칸(밤 진입로)이라 칩도 속을 비운다.
+    class LayerInfo
+    {
+        public readonly string key, ko; public readonly Color color; public readonly bool filled;
+        public LayerInfo(string key, string ko, Color color, bool filled)
+        { this.key = key; this.ko = ko; this.color = color; this.filled = filled; }
+    }
+    static readonly LayerInfo[] Layers =
+    {
+        new("core", "코어", GdEnum.Ok, true),
+        new("node", "자원", GdEnum.ItemC, true),
+        new("nest", "둥지", GdEnum.Warn, true),
+        new("night", "밤 진입로", GdEnum.ItemC, false),
+    };
+
     // ── 데이터 ──
     readonly List<GMap> maps = new();
     int curMap;
@@ -93,6 +110,10 @@ class GdMapTab : GdTab
     int paintTile = 2, brushSize = 3;
     (string type, int i)? sel;
     bool showRings = true, showHalo = true, showGrid = true;
+
+    // 숨긴 레이어 — 화면에서 빠지고 클릭에도 집히지 않는다. 검증은 숨긴 것도 그대로 본다
+    readonly HashSet<string> hiddenLayers = new();
+    bool Vis(string layer) => !hiddenLayers.Contains(layer);
 
     // 뷰 변환 — k = 타일당 픽셀
     float viewX, viewY, viewK = 4;
@@ -329,6 +350,8 @@ class GdMapTab : GdTab
     Texture2D tileTex;
     readonly List<Button> toolButtons = new();
     readonly List<Button> tileButtons = new();
+    readonly List<(Button b, VisualElement chip, Label lab, LayerInfo info)> layerButtons = new();
+    Button allLayersBtn;
 
     public override void Build(VisualElement host)
     {
@@ -423,6 +446,8 @@ class GdMapTab : GdTab
                 SyncToolButtons();
                 paintRow.style.display = tool == "paint" ? DisplayStyle.Flex : DisplayStyle.None;
                 sel = null;
+                // 숨겨 둔 레이어의 도구를 골랐다면 켠다 — 안 보이는 곳에 놓는 사고를 막는다
+                if (hiddenLayers.Remove(k)) SyncLayerButtons();
                 RenderAll();
             }) { text = label };
             b.AddToClassList("gd-btn-mini");
@@ -479,6 +504,43 @@ class GdMapTab : GdTab
         SyncToolButtons();
         SyncTileButtons();
 
+        // ── 레이어 — 배치물만 종류별로 끄고 켠다 (지형은 바탕이라 대상이 아니다) ──
+        left.Add(SectTtl("레이어"));
+        var layersRow = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap } };
+        left.Add(layersRow);
+        layerButtons.Clear();
+        foreach (var L in Layers)
+        {
+            var info = L;
+            var b = new Button(() => SetLayerVis(info.key, !Vis(info.key)))
+            { tooltip = $"{info.ko} 표시/숨김 — 숨기면 클릭에도 집히지 않는다",
+              style = { flexDirection = FlexDirection.Row, alignItems = Align.Center,
+                justifyContent = Justify.Center, flexGrow = 1, flexBasis = Length.Percent(46) } };
+            b.AddToClassList("gd-btn-mini");
+            b.AddToClassList("gd-subtab");
+            var chip = new VisualElement { pickingMode = PickingMode.Ignore, style = { width = 11, height = 11,
+                flexShrink = 0, marginRight = 5,
+                borderTopLeftRadius = 2, borderTopRightRadius = 2, borderBottomLeftRadius = 2, borderBottomRightRadius = 2,
+                borderTopWidth = 1, borderBottomWidth = 1, borderLeftWidth = 1, borderRightWidth = 1 } };
+            b.Add(chip);
+            var lab = new Label(info.ko) { pickingMode = PickingMode.Ignore, style = { fontSize = 12 } };
+            b.Add(lab);
+            layersRow.Add(b);
+            layerButtons.Add((b, chip, lab, info));
+        }
+        allLayersBtn = new Button(() =>
+        {
+            bool anyHidden = hiddenLayers.Count > 0;
+            hiddenLayers.Clear();
+            if (!anyHidden) { foreach (var L in Layers) hiddenLayers.Add(L.key); sel = null; }
+            SyncLayerButtons();
+            RenderProps(); RedrawCanvas();
+        }) { text = "모두 숨김", style = { marginTop = 4 } };
+        allLayersBtn.AddToClassList("gd-btn-mini");
+        allLayersBtn.AddToClassList("gd-subtab");
+        left.Add(allLayersBtn);
+        SyncLayerButtons();
+
         left.Add(SectTtl("표시"));
         void Chk(string label, bool val, Action<bool> set)
         {
@@ -506,6 +568,8 @@ class GdMapTab : GdTab
             "조작 — 휠로 확대, Shift+드래그 또는 가운데 버튼으로 이동.\n" +
             "우클릭으로 지운다 — 배치물 위에서는 그것을, 빈 곳에서는 지형을 지면으로 되돌린다.\n" +
             "배치 도구로 이미 놓인 것을 누르면 새로 놓지 않고 선택·이동된다.\n\n" +
+            "레이어 — 끄면 화면에서 빠지고 클릭에도 집히지 않는다. 겹쳐 놓인 것을 골라낼 때 쓴다. " +
+            "숨긴 레이어의 도구를 고르면 다시 켜진다. 검증은 숨긴 것도 그대로 본다.\n\n" +
             "밤 진입로는 웨이브가 맵으로 들어오는 대문이다 — 둥지의 스폰 지점과 다르다. " +
             "둥지 것은 낮에 다가갔을 때 방어 몬스터가 튀어나오는 자리이고, 진입로는 밤에 코어로 밀려드는 길이다.\n\n" +
             "검증이 잡는 것 — 둥지에서 코어로 가는 길이 막혔는지, 자원이 절벽에 갇혔는지, " +
@@ -562,6 +626,32 @@ class GdMapTab : GdTab
     {
         for (int i = 0; i < tileButtons.Count; i++)
             tileButtons[i].EnableInClassList("gd-subtab--on", i == paintTile);
+    }
+
+    void SetLayerVis(string layer, bool on)
+    {
+        if (on) hiddenLayers.Remove(layer);
+        else hiddenLayers.Add(layer);
+        // 숨긴 레이어의 것을 잡고 있으면 놓는다 — 안 보이는 걸 드래그하고 있을 수는 없다
+        if (!on && sel != null && sel.Value.type == layer) sel = null;
+        SyncLayerButtons();
+        RenderProps(); RedrawCanvas();
+    }
+
+    void SyncLayerButtons()
+    {
+        foreach (var (b, chip, lab, info) in layerButtons)
+        {
+            bool on = Vis(info.key);
+            b.EnableInClassList("gd-subtab--on", on);
+            lab.style.color = on ? GdEnum.Text : GdEnum.Faint;
+            var c = info.color;
+            c.a = on ? 1f : 0.3f;
+            chip.style.backgroundColor = info.filled ? c : Color.clear;
+            chip.style.borderTopColor = c; chip.style.borderBottomColor = c;
+            chip.style.borderLeftColor = c; chip.style.borderRightColor = c;
+        }
+        if (allLayersBtn != null) allLayersBtn.text = hiddenLayers.Count > 0 ? "모두 보기" : "모두 숨김";
     }
 
     void RenderAll() { RenderList(); RenderProps(); RenderWarn(); RebuildTileTex(); RedrawCanvas(); }
@@ -1199,8 +1289,8 @@ class GdMapTab : GdTab
             }
         }
 
-        // 둥지 반경(halo) — 노드 아래 깔린다
-        if (showHalo)
+        // 둥지 반경(halo) — 노드 아래 깔린다. 반경은 둥지의 것이라 둥지를 숨기면 같이 빠진다
+        if (showHalo && Vis("nest"))
             foreach (var n in m.nests)
             {
                 var c = P(n.x + 0.5f, n.y + 0.5f);
@@ -1208,43 +1298,49 @@ class GdMapTab : GdTab
                 p.BeginPath(); p.Arc(c, n.warningRange * k, 0, 360); p.Fill();
                 p.fillColor = new Color(1f, 0.365f, 0.451f, 0.13f);   // 진입 반경 — 여기 들어가면 튀어나온다
                 p.BeginPath(); p.Arc(c, n.triggerRange * k, 0, 360); p.Fill();
-                foreach (var sp in n.spawnPoints)
-                    FillRect(n.x + sp.x + 0.2f, n.y + sp.y + 0.2f, 0.6f, 0.6f,
-                        sp.hasBoss ? new Color(1f, 0.2f, 0.33f, 0.85f) : new Color(1f, 0.69f, 0.737f, 0.8f));
             }
 
         // 자원 노드
-        for (int i = 0; i < m.nodes.Count; i++)
-        {
-            var n = m.nodes[i];
-            var kind = NodeKinds.FirstOrDefault(q => q.item == n.item);
-            FillRect(n.x, n.y, n.size, n.size, kind.item != null ? kind.color : NodeKinds[0].color);
-            if (sel != null && sel.Value.type == "node" && sel.Value.i == i)
-                StrokeRect(n.x, n.y, n.size, n.size, Color.white, 2);
-        }
+        if (Vis("node"))
+            for (int i = 0; i < m.nodes.Count; i++)
+            {
+                var n = m.nodes[i];
+                var kind = NodeKinds.FirstOrDefault(q => q.item == n.item);
+                FillRect(n.x, n.y, n.size, n.size, kind.item != null ? kind.color : NodeKinds[0].color);
+                if (sel != null && sel.Value.type == "node" && sel.Value.i == i)
+                    StrokeRect(n.x, n.y, n.size, n.size, Color.white, 2);
+            }
 
-        // 둥지 본체
-        for (int i = 0; i < m.nests.Count; i++)
-        {
-            var n = m.nests[i];
-            bool boss = n.spawnPoints.Any(sp => sp.hasBoss);
-            var col = boss ? GdEnum.FromHex("#FF3355") : GdEnum.Warn;
-            FillRect(n.x, n.y, 1, 1, col);
-            if (k < 8) StrokeRect(n.x - 2.5f / k, n.y - 2.5f / k, 1 + 5f / k, 1 + 5f / k, col, 1.5f);
-            if (sel != null && sel.Value.type == "nest" && sel.Value.i == i)
-                StrokeRect(n.x, n.y, 1, 1, Color.white, 2);
-        }
+        // 둥지 본체 + 스폰 지점
+        if (Vis("nest"))
+            for (int i = 0; i < m.nests.Count; i++)
+            {
+                var n = m.nests[i];
+                bool boss = n.spawnPoints.Any(sp => sp.hasBoss);
+                var col = boss ? GdEnum.FromHex("#FF3355") : GdEnum.Warn;
+                foreach (var sp in n.spawnPoints)
+                    FillRect(n.x + sp.x + 0.2f, n.y + sp.y + 0.2f, 0.6f, 0.6f,
+                        sp.hasBoss ? new Color(1f, 0.2f, 0.33f, 0.85f) : new Color(1f, 0.69f, 0.737f, 0.8f));
+                FillRect(n.x, n.y, 1, 1, col);
+                if (k < 8) StrokeRect(n.x - 2.5f / k, n.y - 2.5f / k, 1 + 5f / k, 1 + 5f / k, col, 1.5f);
+                if (sel != null && sel.Value.type == "nest" && sel.Value.i == i)
+                    StrokeRect(n.x, n.y, 1, 1, Color.white, 2);
+            }
 
         // 밤 진입로 — 노란 테두리 칸
-        foreach (var np in m.nightSpawnPoints)
-        {
-            FillRect(np.x, np.y, 1, 1, new Color(0.91f, 0.647f, 0.294f, 0.35f));
-            StrokeRect(np.x, np.y, 1, 1, GdEnum.ItemC, Mathf.Max(1.5f, k * 0.12f));
-        }
+        if (Vis("night"))
+            foreach (var np in m.nightSpawnPoints)
+            {
+                FillRect(np.x, np.y, 1, 1, new Color(0.91f, 0.647f, 0.294f, 0.35f));
+                StrokeRect(np.x, np.y, 1, 1, GdEnum.ItemC, Mathf.Max(1.5f, k * 0.12f));
+            }
 
         // 코어 3×3
-        FillRect(m.coreX, m.coreY, 3, 3, GdEnum.Ok);
-        StrokeRect(m.coreX, m.coreY, 3, 3, GdEnum.Bg, 1.5f);
+        if (Vis("core"))
+        {
+            FillRect(m.coreX, m.coreY, 3, 3, GdEnum.Ok);
+            StrokeRect(m.coreX, m.coreY, 3, 3, GdEnum.Bg, 1.5f);
+        }
 
         // 브러시 미리보기
         if (hoverCell != null && tool == "paint")
@@ -1288,7 +1384,7 @@ class GdMapTab : GdTab
                     e.StopPropagation();
                     return;
                 }
-                int ni = m.nightSpawnPoints.FindIndex(p => p.x == cx2 && p.y == cy2);
+                int ni = Vis("night") ? m.nightSpawnPoints.FindIndex(p => p.x == cx2 && p.y == cy2) : -1;
                 if (ni >= 0)
                 {
                     m.nightSpawnPoints.RemoveAt(ni);
@@ -1451,15 +1547,18 @@ class GdMapTab : GdTab
         });
     }
 
+    // 숨긴 레이어는 건너뛴다 — 안 보이는 것이 집히면 겹친 것을 골라낼 방법이 없다
     (string type, int i)? HitTest(GMap m, int cx, int cy)
     {
-        for (int i = m.nests.Count - 1; i >= 0; i--)
-            if (m.nests[i].x == cx && m.nests[i].y == cy) return ("nest", i);
-        for (int i = m.nodes.Count - 1; i >= 0; i--)
-        {
-            var n = m.nodes[i];
-            if (cx >= n.x && cx < n.x + n.size && cy >= n.y && cy < n.y + n.size) return ("node", i);
-        }
+        if (Vis("nest"))
+            for (int i = m.nests.Count - 1; i >= 0; i--)
+                if (m.nests[i].x == cx && m.nests[i].y == cy) return ("nest", i);
+        if (Vis("node"))
+            for (int i = m.nodes.Count - 1; i >= 0; i--)
+            {
+                var n = m.nodes[i];
+                if (cx >= n.x && cx < n.x + n.size && cy >= n.y && cy < n.y + n.size) return ("node", i);
+            }
         return null;
     }
 

@@ -118,7 +118,8 @@ public static class GameDataImporter
         public string description;
         public string type;          // ItemType 이름 — 용도 축 (Ore/Ingot/Part/RepairPart/Ammo/Weapon/...)
         public string line;          // ItemLine 이름 — 계통 축 (Iron/Copper/Crystal/Beast). 생략 시 기존 값 유지
-        public string icon;          // 스프라이트 이름 (선택 — 프로젝트에서 이름으로 검색)
+        public string icon;          // 스프라이트 이름 — 아틀라스 안에서 어느 스프라이트인지 고르는 열쇠이기도 하다
+        public string iconGuid;      // 스프라이트를 담은 에셋의 guid — 이쪽이 파일을 특정한다
         public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
         public float  damage;        // Ammo 전용 구 숏컷 — attackEffects가 없을 때만 {Damage, damage}로 변환
         public string gun;           // Weapon 전용 — 연결할 GunData id (예: "Gun:Rifle")
@@ -151,17 +152,23 @@ public static class GameDataImporter
         public string displayName;   // 필수
         public string description;
         public string category;      // BuildingCategory 이름
-        public string model;          // 모델 파일명 (선택). 비면 풋프린트 크기 큐브로 대체
+        public string model;          // 모델 파일명 — 사람이 읽는 표시이자 guid가 죽었을 때의 폴백
+        public string modelGuid;      // 모델 에셋 guid — 이쪽이 진실. 이름은 프로젝트에 둘 있으면 어느 쪽이 걸릴지 정해지지 않는다
         public Vec2Dto size;
         public PortDto[] ports;
         public int   inputSlots, outputSlots, bufferStackCap, requiredCoreTier, maxHp;
         public bool  hideFromBuildMenu;
+        // SO 기본값과 같은 초기값을 준다 — json에서 빠진 건물이 철거 불가로 죽지 않게.
+        // JsonUtility는 없는 필드를 0으로 밀지 않고 생성자 초기값을 남긴다
+        // (minRange = -1f 와 같은 규약). bool? 는 JsonUtility가 아예 읽지 못한다.
+        public bool isDemolishable = true, isAttackable = false;
         public SlotDto[] buildCost;
 
         // 종류별 전용 필드 — 해당 kind가 아니면 무시된다
         public float    speedMultiplier;      // Miner
         public float    speedTilesPerSec;     // Belt
         public string   modelCurveL, modelCurveR;
+        public string   modelCurveLGuid, modelCurveRGuid;
         public string[] availableRecipes;     // Assembler
         public float    damageMultiplier, range, fireRate;   // Tower
         public float    minRange = -1f;                      // Tower — 최소 사거리(박격포 사각). 0 정당, 음수 = 생략(유지)
@@ -216,6 +223,7 @@ public static class GameDataImporter
         ["Storage"]   = typeof(StorageDataSO),
         ["Core"]      = typeof(CoreDataSO),
         ["Tower"]     = typeof(TowerDataSO),
+        ["Nest"]      = typeof(NestDataSO),
     };
 
     /// <summary>
@@ -607,9 +615,9 @@ public static class GameDataImporter
             }
         }
 
-        if (!string.IsNullOrEmpty(dto.icon))
+        if (!string.IsNullOrEmpty(dto.icon) || !string.IsNullOrEmpty(dto.iconGuid))
         {
-            var sprite = FindSprite(dto.icon);
+            var sprite = FindSprite(dto.iconGuid, dto.icon, $"{file} items '{dto.id}'");
             if (sprite != null) item.icon = sprite;
             else Debug.LogWarning($"[GameDataImporter] {file} items '{dto.id}': 스프라이트 '{dto.icon}' 을 찾지 못했습니다 (기존 아이콘 유지)");
         }
@@ -723,6 +731,8 @@ public static class GameDataImporter
         so.requiredCoreTier  = dto.requiredCoreTier;
         so.hideFromBuildMenu = dto.hideFromBuildMenu;
         if (dto.maxHp > 0) so.maxHp = dto.maxHp;
+        so.isDemolishable = dto.isDemolishable;
+        so.isAttackable   = dto.isAttackable;
 
         // 비용은 레시피 슬롯과 같은 해석기를 쓴다 — 못 찾은 아이템이 있으면 비용만 비우고 건물은 살린다
         if (TryResolveSlots(file, "buildings", dto.id, dto.buildCost, byId, out var cost, ref errors))
@@ -733,8 +743,10 @@ public static class GameDataImporter
         so.prefab = EnsurePrefab(so, dto);
         if (so is BeltDataSO belt)
         {
-            belt.curveLPrefab = EnsureCurvePrefab(so, dto.modelCurveL, "LCurve") ?? belt.curveLPrefab;
-            belt.curveRPrefab = EnsureCurvePrefab(so, dto.modelCurveR, "RCurve") ?? belt.curveRPrefab;
+            belt.curveLPrefab = EnsureCurvePrefab(so,
+                new ModelRef(dto.modelCurveLGuid, dto.modelCurveL), "LCurve") ?? belt.curveLPrefab;
+            belt.curveRPrefab = EnsureCurvePrefab(so,
+                new ModelRef(dto.modelCurveRGuid, dto.modelCurveR), "RCurve") ?? belt.curveRPrefab;
         }
 
         EditorUtility.SetDirty(so);
@@ -915,6 +927,11 @@ public static class GameDataImporter
     /// </summary>
     static GameObject EnsurePrefab(BuildingDataSO so, BuildingDto dto)
     {
+        // 둥지는 프리팹을 만들지 않는다 — 씬의 둥지는 World.nestPrefab(MonsterNest)이고,
+        // 여기서 만들면 BuildingEntity가 붙은 빈 껍데기가 하나 더 생긴다.
+        // 둥지 데이터가 실제로 쓰는 값은 크기와 파괴 규칙뿐이다.
+        if (so is NestDataSO) return so.prefab;
+
         string path = $"{PrefabFolder}/{so.name}.prefab";
         bool isTower = string.Equals(dto.kind, "Tower", StringComparison.OrdinalIgnoreCase);
 
@@ -924,7 +941,7 @@ public static class GameDataImporter
             var contents = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                if (EnsureContract(contents, so, isTower, dto.model))
+                if (EnsureContract(contents, so, isTower, new ModelRef(dto.modelGuid, dto.model)))
                 {
                     PrefabUtility.SaveAsPrefabAsset(contents, path);
                     Debug.Log($"[GameDataImporter] '{so.name}' 기존 프리팹에 빠진 항목을 채웠습니다 (모델은 유지).");
@@ -935,9 +952,10 @@ public static class GameDataImporter
             return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
-        GameObject root = MakeBody(dto.model, so.size, so.name);
+        var modelRef = new ModelRef(dto.modelGuid, dto.model);
+        GameObject root = MakeBody(modelRef, so.size, so.name);
         root.name = so.name;
-        EnsureContract(root, so, isTower, dto.model);
+        EnsureContract(root, so, isTower, modelRef);
 
         Directory.CreateDirectory(PrefabFolder);
         var saved = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -975,12 +993,12 @@ public static class GameDataImporter
         return changed;
     }
 
-    static bool EnsureContract(GameObject root, BuildingDataSO so, bool isTower, string modelFile)
+    static bool EnsureContract(GameObject root, BuildingDataSO so, bool isTower, ModelRef model)
     {
         bool changed = false;
 
         // 0-a) 모델 자식 동기화 — 레이어보다 먼저: 새로 붙은 모델 자식도 아래에서 레이어를 받는다.
-        changed |= EnsureModel(root, so, modelFile);
+        changed |= EnsureModel(root, so, model);
 
         // 0) Entity 레이어 — 플레이어의 상호작용 레이캐스트가 이 마스크로 쏜다.
         //    Default로 두면 조준해도 프롬프트가 안 뜨고 E가 먹지 않는다 (코어 열기·보관함·필터 전부).
@@ -1086,7 +1104,7 @@ public static class GameDataImporter
     }
 
     /// <summary>벨트 커브 전용 — 본체와 같은 방식이되 컴포넌트는 붙이지 않는다(메시 교체용).</summary>
-    static GameObject EnsureCurvePrefab(BuildingDataSO so, string modelFile, string suffix)
+    static GameObject EnsureCurvePrefab(BuildingDataSO so, ModelRef model, string suffix)
     {
         string path = $"{PrefabFolder}/{so.name}{suffix}.prefab";
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -1105,9 +1123,9 @@ public static class GameDataImporter
             return existing;
         }
 
-        if (string.IsNullOrEmpty(modelFile)) return null;
+        if (model.IsEmpty) return null;
 
-        var root = MakeBody(modelFile, so.size, so.name + suffix);
+        var root = MakeBody(model, so.size, so.name + suffix);
         root.name = so.name + suffix;
         EnsureColliders(root);
         EnsureRootScale(root);
@@ -1124,14 +1142,13 @@ public static class GameDataImporter
     /// 자식이면 EnsureModel이 JSON 변경을 따라 교체한다.
     /// 아트가 늦어도 배치·연결·시뮬레이션은 먼저 굴러가야 하므로 임포트를 막지 않는다.
     /// </summary>
-    static GameObject MakeBody(string modelFile, Vector2Int size, string logName)
+    static GameObject MakeBody(ModelRef modelRef, Vector2Int size, string logName)
     {
         // 루트는 스케일 1의 순수 GO — 큐브·모델을 그대로 루트로 쓰면 그 스케일이
         // 루트 콜라이더 크기까지 곱해져 충돌이 부풀거나, 모델 변형이 돼 교체가 막힌다.
         var root = new GameObject("Body");
 
-        var model = string.IsNullOrEmpty(modelFile) ? null
-            : FindAsset<GameObject>(Path.GetFileNameWithoutExtension(modelFile), ModelFolder);
+        var model = ResolveModel(modelRef, logName);
         if (model != null)
         {
             AttachModelChild(root, model);
@@ -1144,8 +1161,8 @@ public static class GameDataImporter
         cube.transform.localScale = new Vector3(size.x * 0.9f, BuildingHeight / CellSize, size.y * 0.9f);
         UnityEngine.Object.DestroyImmediate(cube.GetComponent<BoxCollider>());   // EnsureColliders가 메시 기준으로 다시 붙인다
 
-        if (!string.IsNullOrEmpty(modelFile))
-            Debug.LogWarning($"[GameDataImporter] '{logName}': 모델 '{modelFile}' 을 찾지 못해 큐브로 만들었습니다");
+        if (!modelRef.IsEmpty)
+            Debug.LogWarning($"[GameDataImporter] '{logName}': 모델 '{modelRef.Label}' 을 찾지 못해 큐브로 만들었습니다");
         return root;
     }
 
@@ -1163,10 +1180,9 @@ public static class GameDataImporter
     /// 경고만 남긴다: 프리팹을 지우고 재임포트하면 새 구조로 다시 만들어진다.
     /// 모델이 실제로 바뀐 순간에는 루트 콜라이더를 새 AABB로 재적합한다 — 이전 적합은 이전 모델의 것.
     /// </summary>
-    static bool EnsureModel(GameObject root, BuildingDataSO so, string modelFile)
+    static bool EnsureModel(GameObject root, BuildingDataSO so, ModelRef modelRef)
     {
-        var wanted = string.IsNullOrEmpty(modelFile) ? null
-            : FindAsset<GameObject>(Path.GetFileNameWithoutExtension(modelFile), ModelFolder);
+        var wanted = modelRef.IsEmpty ? null : ResolveModel(modelRef, so.name);
         if (wanted == null) return false;   // 모델 미지정·미발견 — 현 상태 유지
 
         var current = root.transform.Find("Model");
@@ -1176,14 +1192,13 @@ public static class GameDataImporter
             // 손으로 만든 것). 여기에 모델을 얹으면 이중으로 겹치므로 절대 손대지 않는다.
             // 지금 모델과 같은 에셋에서 나온 렌더러가 하나도 없으면 파일명이 바뀐 것 — 안내만.
             if (!AnyRendererFrom(root, wanted))
-                Debug.LogWarning($"[GameDataImporter] '{so.name}': 모델이 '{modelFile}' 로 바뀌었지만 " +
+                Debug.LogWarning($"[GameDataImporter] '{so.name}': 모델이 '{modelRef.Label}' 로 바뀌었지만 " +
                                  "프리팹이 구 구조(모델=루트)라 자동 교체할 수 없습니다 — " +
                                  "프리팹을 지우고 재임포트하면 새 구조로 다시 만들어집니다.");
             return false;
         }
 
-        if (current != null &&
-            PrefabUtility.GetCorrespondingObjectFromOriginalSource(current.gameObject) == wanted)
+        if (current != null && IsFrom(current.gameObject, wanted))
             return false;   // 이미 원하는 모델
 
         if (current != null) UnityEngine.Object.DestroyImmediate(current.gameObject);
@@ -1193,7 +1208,7 @@ public static class GameDataImporter
         AttachModelChild(root, wanted);
         // 콜라이더는 EnsureContract의 EnsureColliders가 새 메시 기준으로 다시 만든다
 
-        Debug.Log($"[GameDataImporter] '{so.name}': 모델을 '{modelFile}' 로 교체했습니다.");
+        Debug.Log($"[GameDataImporter] '{so.name}': 모델을 '{modelRef.Label}' 로 교체했습니다.");
         return true;
     }
 
@@ -1209,11 +1224,28 @@ public static class GameDataImporter
     /// <summary>루트 아래에 이 모델 에셋에서 나온 렌더러가 있는가 — 구 구조가 최신인지 판별용.</summary>
     static bool AnyRendererFrom(GameObject root, GameObject modelAsset)
     {
-        string wantedPath = AssetDatabase.GetAssetPath(modelAsset);
         foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+            if (IsFrom(r.gameObject, modelAsset)) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// 이 오브젝트가 그 에셋에서 나왔는가 — 프리팹 소스 체인을 <b>한 단계씩</b> 거슬러 올라가며 본다.
+    ///
+    /// GetCorrespondingObjectFromOriginalSource 하나로는 부족하다: 그것은 체인의 맨 끝(fbx)까지
+    /// 가버려서, 중간 단계 프리팹을 모델로 지정한 경우를 놓친다 — 예컨대 벨트는 fbx 를 감싸
+    /// Animator 를 붙인 Conveyor.prefab 을 쓰는데, 끝까지 거슬러 가면 fbx 가 나와
+    /// "모델이 바뀌었다"고 잘못 판단하고 매 임포트마다 경고를 냈다.
+    /// </summary>
+    static bool IsFrom(GameObject obj, GameObject asset)
+    {
+        if (asset == null) return false;
+        string wantedPath = AssetDatabase.GetAssetPath(asset);
+        var src = PrefabUtility.GetCorrespondingObjectFromSource(obj);
+        for (int depth = 0; src != null && depth < 8; depth++)
         {
-            var src = PrefabUtility.GetCorrespondingObjectFromOriginalSource(r.gameObject);
-            if (src != null && AssetDatabase.GetAssetPath(src) == wantedPath) return true;
+            if (src == asset || AssetDatabase.GetAssetPath(src) == wantedPath) return true;
+            src = PrefabUtility.GetCorrespondingObjectFromSource(src);
         }
         return false;
     }
@@ -1233,6 +1265,52 @@ public static class GameDataImporter
 
         root.transform.localScale = want;
         return true;
+    }
+
+    /// <summary>
+    /// 에셋 참조 — <b>guid가 진실이고 이름은 사람이 읽는 표시</b>다.
+    ///
+    /// 이름만 저장하던 시절의 문제: 프로젝트에 같은 이름의 모델이 둘 있으면
+    /// AssetDatabase.FindAssets가 돌려주는 순서에 따라 어느 쪽이 걸릴지 정해지지 않았다.
+    /// 에셋을 옮겨도 따라가는 것은 guid뿐이므로 그쪽을 정본으로 둔다.
+    /// 이름을 함께 남기는 이유는 두 가지 — json diff에서 무엇이 바뀌었는지 읽히고,
+    /// guid가 가리키는 에셋이 사라졌을 때 마지막 단서가 된다.
+    /// </summary>
+    readonly struct ModelRef
+    {
+        public readonly string guid, name;
+        public ModelRef(string guid, string name) { this.guid = guid; this.name = name; }
+        public bool IsEmpty => string.IsNullOrEmpty(guid) && string.IsNullOrEmpty(name);
+        /// <summary>로그에 쓸 표시 — 이름이 있으면 이름, 없으면 guid.</summary>
+        public string Label => string.IsNullOrEmpty(name) ? guid : name;
+    }
+
+    /// <summary>
+    /// guid로 먼저 찾고, 실패하면 이름으로 찾는다.
+    ///
+    /// guid가 있는데 그 에셋이 없으면 이름 폴백을 쓰되 <b>경고를 남긴다</b> — 조용히 다른 것을
+    /// 집는 것이 애초에 guid를 도입한 이유이기 때문이다. 못 찾았으면 null (호출측이 처리).
+    /// </summary>
+    static GameObject ResolveModel(ModelRef r, string logCtx)
+    {
+        GameObject ByName() => string.IsNullOrEmpty(r.name) ? null
+            : FindAsset<GameObject>(Path.GetFileNameWithoutExtension(r.name), ModelFolder);
+
+        if (string.IsNullOrEmpty(r.guid)) return ByName();
+
+        var path = AssetDatabase.GUIDToAssetPath(r.guid);
+        if (!string.IsNullOrEmpty(path))
+        {
+            var byGuid = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (byGuid != null) return byGuid;
+        }
+
+        var fallback = ByName();
+        Debug.LogWarning($"[GameDataImporter] '{logCtx}': modelGuid '{r.guid}' 의 에셋이 없습니다" +
+            (fallback != null
+                ? $" — 이름 '{r.name}' 으로 대신 찾았습니다. 에디터에서 모델을 다시 지정해 guid를 갱신하세요."
+                : "."));
+        return fallback;
     }
 
     static T FindAsset<T>(string name, string folder) where T : UnityEngine.Object
@@ -1315,8 +1393,46 @@ public static class GameDataImporter
     }
 
     /// <summary>이름으로 스프라이트 검색 (서브에셋 포함, 이름 정확 일치 우선).</summary>
-    static Sprite FindSprite(string name)
+    /// <summary>
+    /// 스프라이트 해석 — guid가 <b>파일</b>을 특정하고 이름이 그 안의 <b>어느 스프라이트</b>인지 고른다.
+    /// 스프라이트는 텍스처(아틀라스)의 하위 에셋일 수 있어 guid 하나로는 특정되지 않는다.
+    /// 이름이 비어 있으면 그 파일의 첫 스프라이트를 쓴다(단일 스프라이트 텍스처).
+    /// </summary>
+    static Sprite FindSprite(string guid, string name, string logCtx)
     {
+        if (!string.IsNullOrEmpty(guid))
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!string.IsNullOrEmpty(path))
+            {
+                Sprite first = null;
+                foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(path))
+                {
+                    if (sub is not Sprite sprite) continue;
+                    if (!string.IsNullOrEmpty(name) && sprite.name == name) return sprite;
+                    first ??= sprite;
+                }
+                if (string.IsNullOrEmpty(name) && first != null) return first;
+                if (first != null)
+                {
+                    Debug.LogWarning($"[GameDataImporter] {logCtx}: iconGuid 의 에셋 '{path}' 안에 " +
+                                     $"스프라이트 '{name}' 이 없어 '{first.name}' 을 씁니다.");
+                    return first;
+                }
+            }
+            var byName = FindSpriteByName(name);
+            Debug.LogWarning($"[GameDataImporter] {logCtx}: iconGuid '{guid}' 의 에셋이 없습니다" +
+                (byName != null
+                    ? $" — 이름 '{name}' 으로 대신 찾았습니다. 에디터에서 아이콘을 다시 지정해 guid를 갱신하세요."
+                    : "."));
+            return byName;
+        }
+        return FindSpriteByName(name);
+    }
+
+    static Sprite FindSpriteByName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return null;
         foreach (var guid in AssetDatabase.FindAssets($"{name} t:Sprite"))
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
