@@ -276,7 +276,7 @@ public class WaveSpawnManager
             // 보스의 교전에 종속시킨다 — 태어나자마자 거리를 이유로 되돌아가면 스폰이 낭비다.
             var zone = nest.GetComponent<NestEngagementZone>();
             if (zone != null || escortBoss != null)
-                monster.SetAsNestDefender(target, nest.transform.position, zone, escortBoss);
+                monster.SetAsNestDefender(target, zone, escortBoss);
             else
                 monster.SetAsNestDefender(target);
         }
