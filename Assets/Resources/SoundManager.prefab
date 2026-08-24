@@ -455,7 +455,7 @@ MonoBehaviour:
   - sfxType: 6
     clip: {fileID: 8300000, guid: d8d04c6f80a1140db85ede568dab1f51, type: 3}
   - sfxType: 7
-    clip: {fileID: 8300000, guid: 5c9ef139a6ba14f48a8ef69cb7ffa8e1, type: 3}
+    clip: {fileID: 8300000, guid: 86ec6bba3e2799d4b8140e956eae1064, type: 3}
   bgmList:
   - bgmType: 0
     clip: {fileID: 8300000, guid: d234a387482b6fb409872e39fc863b16, type: 3}

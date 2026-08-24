@@ -262,13 +262,14 @@ public class ResourceNode : MonoBehaviour, IHoldInteractable
         int want = Mathf.Max(1, manualYield);
         if (!TryExtract(want, out int taken)) return;
 
+        // silent: 이 프레임에 바로 아래에서 Mine음을 낸다 — 획득음까지 겹치면 같은 AudioSource에서
+        // 두 파형이 합산돼 찢어진 소리가 난다. 채굴 완료의 신호는 Mine음 하나로 충분하다.
         var holder = PlayerInventoryHolder.Instance;
-        bool stored = holder != null && holder.AddItemToPlayer(resource, taken);
+        bool stored = holder != null && holder.AddItemToPlayer(resource, taken, silent: true);
 
         if (!stored) DropAtHand(resource, taken, player);
 
         // 한 덩이가 떨어져 나올 때마다 나는 소리 — 링이 한 바퀴 돈 것을 눈으로 좇지 않아도 알 수 있다.
-        // 획득음(ItemPickup)은 인벤토리에 들어갈 때 PlayerInventoryHolder가 따로 낸다.
         SoundManager.Instance?.PlayCommonSFX(CommonSFX.Mine);
     }
 

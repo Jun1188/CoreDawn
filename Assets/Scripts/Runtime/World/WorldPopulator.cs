@@ -307,6 +307,10 @@ public static class WorldPopulator
 
             var go = Spawn(world.ResourceNodePrefab, center, Quaternion.identity, root);
             go.name = $"Node_{spec.item.name}_{spec.cell.x}_{spec.cell.y}";
+
+            // 모형도 풋프린트를 따라 커진다 — 프리팹 기본 스케일이 1×1 기준이므로 size 배.
+            // 데이터(점유 셀)만 2×2이고 모형이 1×1이면 어디까지가 광맥인지 눈으로 알 수 없다.
+            if (size > 1) go.transform.localScale *= size;
             Mark(go, spec.cell, null);   // 광맥은 칸을 잡지 않는다 — 자체 레지스트리가 관리한다
 
             var node = go.GetComponent<ResourceNode>();
