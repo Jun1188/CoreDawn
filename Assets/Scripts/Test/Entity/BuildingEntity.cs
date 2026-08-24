@@ -213,7 +213,7 @@ public class BuildingEntity : Entity, IInteractable
     }
 
     /// <summary>
-    /// 플레이어의 공격이 통하지 않는 건물은 명중 자체를 흘린다 (BuildingDataSO.isAttackable).
+    /// <b>아군의 공격</b>이 통하지 않는 건물은 명중 자체를 흘린다 (BuildingDataSO.isAttackable).
     /// 총·근접이 모두 여기로 수렴하므로 한 곳만 막으면 된다.
     ///
     /// 몬스터의 공격은 이 값과 무관하다 — 밤 웨이브가 무엇을 노리는지는 플로우필드의
@@ -222,8 +222,27 @@ public class BuildingEntity : Entity, IInteractable
     public override void ApplyEffects(IReadOnlyList<EffectEntry> entries, Entity source,
                                       Vector3 hitPoint, Vector3 hitDirection = default)
     {
-        if (source is Player && Data != null && !Data.isAttackable) return;
+        if (Data != null && !Data.isAttackable && !IsHostile(source)) return;
         base.ApplyEffects(entries, source, hitPoint, hitDirection);
+    }
+
+    static int hostileMask = -1;
+
+    /// <summary>
+    /// 이 공격이 <b>적에게서</b> 왔는가.
+    ///
+    /// 아군을 타입으로 열거하지 않는다: <c>source is Player</c> 로 보면 공격 타워가 빠지고,
+    /// 아군이 늘 때마다 조건이 붙는다. 이 게임은 편을 <b>레이어</b>로 가르므로
+    /// (타워가 적을 찾는 마스크가 곧 Monster다) 그 기준을 그대로 쓴다.
+    ///
+    /// 출처를 모르는 피해(null)는 아군으로 본다 — 실제 공격자는 모두 자신을 넘기므로,
+    /// 출처가 없다는 것은 곧 "누구의 공격도 아니다"이고 무적 건물이 그걸로 깎이면 안 된다.
+    /// </summary>
+    static bool IsHostile(Entity source)
+    {
+        if (source == null) return false;
+        if (hostileMask < 0) hostileMask = LayerMask.GetMask("Monster");
+        return (hostileMask & (1 << source.gameObject.layer)) != 0;
     }
 
     // 코어의 보호막이 내구도보다 먼저 맞는다 — 남은 몫만 HP로 내려간다.
