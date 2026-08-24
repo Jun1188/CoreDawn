@@ -244,9 +244,22 @@ public class TerrainGenSettings : ScriptableObject
     [Tooltip("바위 내접 반지름의 상한(m). 두꺼운 구간에서 한 덩어리가 산이 되는 것을 막는다.")]
     public float cliffMaxRadius = 4.5f;
 
-    // 벽을 따라 전부 같은 쪽을 보면 결이 정렬돼 보인다.
-    [Tooltip("회전에 얹는 각도 지터(도).")]
-    public float cliffYawJitter = 26f;
+    // ── 구 패킹 ──
+    // 부피를 구로 채우고, 구마다 프리팹 하나를 <b>균등 배율</b>로 맞춘다.
+    // 예전처럼 발자국을 눌러 자유 회전을 사는 거래가 아니다 — 원본 비율이 그대로 남는다.
+
+    [Tooltip("채울 껍질의 깊이(m). 절벽 안쪽은 앞의 바위에 가려 보이지 않으므로 테두리 띠만 채운다. " +
+             "키우면 벽이 두꺼워지고 바위 수가 그만큼 는다.")]
+    public float cliffShellDepthM = 6f;
+
+    [Tooltip("구끼리 얼마나 파고들게 둘지 — 중심 거리 하한 = (반지름 합) x 이 값. " +
+             "1이면 딱 맞닿고, 낮을수록 깊이 물려 틈이 사라진다. 0.5~0.7 권장.")]
+    [Range(0.2f, 1f)] public float cliffPackTightness = 0.6f;
+
+    [Tooltip("크기 등급 수. 큰 등급부터 채워야 위계가 생긴다 — 한 번에 임의 크기로 뿌리면 " +
+             "작은 것이 먼저 자리를 차지해 큰 것이 들어갈 곳이 없어진다.")]
+    [Range(1, 8)] public int cliffSizeTiers = 5;
+
 
     // 1이면 서로 닿기만 하고, 작을수록 파고든다. 겹침은 <b>틈을 지우는 장치</b>다 —
     // 바위는 둥글어서 외접원끼리 닿아도 실제 메시 사이엔 V자 틈이 남는다.
@@ -259,9 +272,6 @@ public class TerrainGenSettings : ScriptableObject
     [Tooltip("구멍 검사에서 바위가 실제로 막는다고 보는 반지름 비율.")]
     [Range(0.3f, 1f)] public float cliffCoverFactor = 0.8f;
 
-    [Tooltip("배율의 상한. 작은 바위를 억지로 늘리면 노멀·텍스처가 뭉개진다.\n" +
-             "하한은 두지 않는다 — 죄는 순간 반지름이 클리어런스를 넘어 지면을 침범한다.")]
-    public float cliffMaxScale = 2.2f;
 
     // 배치 전에 <b>축별로 눌러 발자국을 정사각형에 맞춘다.</b> 이유는 순전히 기하다:
     // 외접원으로 재면 정사각 발자국도 √2배 손해라 두께 2r 벽에 폭 1.41r짜리만 들어가
@@ -282,12 +292,6 @@ public class TerrainGenSettings : ScriptableObject
     public Vector2 cliffSizeNoise = new Vector2(0.45f, 1.0f);
 
     [Header("절벽 — 높이")]
-    // 높이는 <b>쌓기가 만든다</b>. 예전에는 바위 하나하나에 최소 높이를 보장하며 세로만
-    // 늘렸는데, 수평은 클리어런스에 묶여 있으니 늘어나는 건 세로뿐이라 벽이 통째로
-    // 길쭉해졌다(실측: 폭 2.7m에 높이 8.2m — 세장비 3). 얇은 자리의 바위는 낮게 두고
-    // 그 위에 층을 얹는 편이 실제 절벽에 가깝다. 점프 차단은 능선고까지 쌓아 보장한다.
-    [Tooltip("높이 ÷ 수평 반지름의 안전 상한. 프리팹 자체가 길쭉한 경우를 막는 그물이다.")]
-    public float cliffMaxAspect = 3.0f;
 
     // 크기를 클리어런스가 정하게 두면(= 상한을 없애면) 두꺼운 구간에서 반지름이 7m까지 가고,
     // 둥글게 눌러 놨으니 높이도 같이 올라가 <b>산봉우리</b>가 된다. 절벽은 벽이지 봉우리가
@@ -308,18 +312,11 @@ public class TerrainGenSettings : ScriptableObject
     [Tooltip("지면 층을 땅에 묻는 깊이 — 칸 크기의 배수. 바닥이 지면에 딱 붙으면 떠 보인다.")]
     public float cliffBaseSinkCells = 0.3f;
 
-    // 거의 균등으로 둔다. 세로만 늘리면 곧바로 길쭉해지는데, 바위 모양의 변주는
-    // 프리팹 자체가 이미 갖고 있다(세장비 0.41~2.04짜리가 11종).
-    [Tooltip("세로 배율 범위(균등 배율에 곱한다). 1에서 크게 벗어나면 실루엣이 무너진다.")]
-    public Vector2 cliffStretch = new Vector2(0.95f, 1.15f);
 
     [Header("절벽 — 쌓기")]
     [Tooltip("지면 층 포함 최대 층수. 능선고에 닿으면 그 전에 멈춘다.")]
     [Range(1, 6)] public int cliffStackLayers = 4;
 
-    [Tooltip("한 층 올라갈 때 반지름이 줄어드는 비율 범위. (x=최소, y=최대)\n" +
-             "위로 갈수록 작아져야 아랫바위의 둥근 어깨 위로 튀어나오지 않는다.")]
-    public Vector2 cliffStackShrink = new Vector2(0.72f, 0.92f);
 
     [Tooltip("윗바위를 아랫바위 속으로 파묻는 정도(아래 바위 높이 기준). " +
              "0이면 꼭대기에 얹혀 이음매가 드러나고, 크면 층이 안 보인다.")]
@@ -330,9 +327,6 @@ public class TerrainGenSettings : ScriptableObject
     [Tooltip("윗바위를 옆으로 미는 정도 — 두 반지름 합의 배수. 0이면 수직 탑만 쌓인다.")]
     [Range(0f, 1f)] public float cliffStackOffset = 0.55f;
 
-    // 작은 바위 위에 또 얹으면 벽이 아니라 자갈탑이 된다.
-    [Tooltip("쌓기를 시작할 최소 반지름 — cliffMinRadius의 배수.")]
-    public float cliffStackMinRadius = 1.0f;
 
     // 기울기는 <b>크기를 정하기 전에</b> 뽑고 그만큼 크기를 줄인다 — 눕히면 수평 점유가
     // 늘어나기 때문이다. 순서를 반대로 두면 기울이는 순간 절벽 밖으로 나가서, 예전에는
@@ -368,18 +362,8 @@ public class TerrainGenSettings : ScriptableObject
              "같은 수직선에 포개져 돌탑이 된다. 실제 절벽은 조각이 서로 어긋나 물려 있다.")]
     [Range(0f, 1.5f)] public float cliffCourseSway = 0.55f;
 
-    [Tooltip("뒷벽을 윤곽에서 안쪽으로 물리는 거리(m). 음수면 뒷벽을 세우지 않는다.\n" +
-             "조각 사이 틈으로 뒤가 비치는 것을 막는 불투명한 면이다 — 볼록한 덩어리를 쌓는 한 " +
-             "틈은 원리적으로 남으므로, 없애는 대신 뒤를 막아 '그늘'로 읽히게 한다.")]
-    public float cliffBackingInset = 1.6f;
 
-    [Tooltip("뒷벽을 그 자리 바위 꼭대기보다 얼마나 낮출지(m). 낮을수록 안전하지만 " +
-             "너무 낮추면 윗부분 틈이 도로 뚫린다.")]
-    public float cliffBackingDrop = 1.2f;
 
-    [Tooltip("놓을 수 있는 최소 반두께(m). 벽이 얇아도 여기까지는 놓는다 — 종이가 되지 않게 하는 바닥값일 뿐, " +
-             "'조약돌 금지'는 Cliff Min Radius가 등가 크기로 따로 건다.")]
-    public float cliffMinThicknessM = 0.4f;
 
     [Tooltip("얇은 벽에서 길이로 벌충할 때의 장/단축 상한. 두께로 못 채우는 몫을 길이로 메워 " +
              "'벽을 따라 누운 납작한 바위'를 만든다. 프리팹 발자국 비를 넘는 몫은 눌러서 채운다.")]

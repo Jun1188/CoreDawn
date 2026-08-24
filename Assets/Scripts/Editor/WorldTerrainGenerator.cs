@@ -639,16 +639,14 @@ public static class WorldTerrainGenerator
         public readonly float FootAspect;
 
         /// <summary>
-        /// 로컬 XZ 외곽선 — 각도를 16등분해 방향마다 <b>실제 메시</b>의 최대 반경을 잰 것.
+        /// 대표 크기 — 발자국의 <b>긴</b> 축 반폭.
         ///
-        /// 왜 필요한가: 배치는 슬롯(직사각형)과 등가 원으로만 계산하는데, cliffRoundness 를
-        /// 낮춰 원본 비율을 살린 뒤로는 바위가 슬롯에 <b>내접</b>할 뿐 채우지 않는다.
-        /// 걸음 폭을 슬롯 크기로 잡으면 슬롯과 메시의 차이가 그대로 조각 사이의 틈이 된다.
-        /// AABB 로는 부족하다 — 회전하면 과대평가하고, 오목한 바위는 방향에 따라 반경이 크게 다르다.
+        /// 긴 축을 쓰는 이유: 구 반지름 r 에 맞춰 균등 배율하면 수평 도달이 r 이하로 묶여
+        /// "절벽 밖으로 나가지 않는다"가 <b>배율 계산만으로</b> 보장된다. 짧은 축을 쓰면
+        /// 긴 쪽이 r 을 넘어 삐져나온다. 높이는 묶이지 않으므로 세로로 긴 프리팹은
+        /// 구보다 높이 서고, 그게 레퍼런스의 세로 블록이다.
         /// </summary>
-        public readonly Vector2[] Outline;
-        /// <summary>정렬·선택용 대표 크기 — 짧은 축 반폭.</summary>
-        public float Radius => 0.5f * Mathf.Min(Foot.x, Foot.y);
+        public float Radius => 0.5f * Mathf.Max(Foot.x, Foot.y);
         public readonly float Height;   // m
         /// <summary>원점 대비 바닥(m). 바닥 피벗이면 0, 중심 피벗이면 음수.</summary>
         public readonly float Bottom;
@@ -656,111 +654,28 @@ public static class WorldTerrainGenerator
         {
             Prefab = p; Foot = foot; Height = h; Bottom = b;
             FootAspect = Mathf.Max(foot.x, foot.y) / Mathf.Max(0.01f, Mathf.Min(foot.x, foot.y));
-            Outline = BuildOutline(p);
         }
-    }
-
-    /// <summary>프리팹 메시의 XZ 외곽선을 각도 16등분으로 잰다(프리팹 루트 기준 로컬).</summary>
-    static Vector2[] BuildOutline(GameObject prefab)
-    {
-        const int K = 16;
-        var best = new float[K];
-        var w2l = prefab.transform.worldToLocalMatrix;
-
-        foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
-        {
-            var mesh = mf.sharedMesh;
-            if (mesh == null) continue;
-            var l2r = w2l * mf.transform.localToWorldMatrix;
-            foreach (var v in mesh.vertices)
-            {
-                var q = l2r.MultiplyPoint3x4(v);
-                float r = Mathf.Sqrt(q.x * q.x + q.z * q.z);
-                if (r <= 0f) continue;
-                float ang = Mathf.Atan2(q.z, q.x) + Mathf.PI;          // 0..2π
-                int k = Mathf.Clamp((int)(ang / (Mathf.PI * 2f) * K), 0, K - 1);
-                if (r > best[k]) best[k] = r;
-            }
-        }
-
-        var outline = new Vector2[K];
-        for (int k = 0; k < K; k++)
-        {
-            float a = (k + 0.5f) / K * Mathf.PI * 2f - Mathf.PI;
-            outline[k] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * best[k];
-        }
-        return outline;
     }
 
     /// <summary>
-    /// 회전·축별 배율을 반영한 <b>실제 메시</b>의 한 방향 반경(m).
+    /// 절벽 타일에 암벽 프리팹을 세운다 — <b>구 패킹</b>.
     ///
-    /// Unity 의 Y 회전은 로컬 +X → 월드 (cosθ, −sinθ), 로컬 +Z → (sinθ, cosθ) 다.
-    /// 월드 방향을 로컬로 되돌려(전치) 외곽선과 내적한 최댓값을 취한다.
-    /// </summary>
-    static float MeshReach(CliffRock rock, float yawDeg, float sx, float sz, Vector2 dirWorld)
-    {
-        if (rock.Outline == null || rock.Outline.Length == 0) return 0f;
-        float t = yawDeg * Mathf.Deg2Rad;
-        float c = Mathf.Cos(t), sn = Mathf.Sin(t);
-        // 월드 → 로컬 (회전 전치)
-        var d = new Vector2(dirWorld.x * c - dirWorld.y * sn, dirWorld.x * sn + dirWorld.y * c);
-
-        float best = 0f;
-        foreach (var o in rock.Outline)
-        {
-            float v = Mathf.Abs(o.x * sx * d.x + o.y * sz * d.y);
-            if (v > best) best = v;
-        }
-        return best;
-    }
-
-    /// <summary>배치가 확정된 바위 하나 — 겹침 검사와 쌓기의 단위.</summary>
-    struct PlacedRock
-    {
-        public int Rock;        // CliffRock 목록의 인덱스
-        public Vector2 Center;  // 월드 XZ
-        public float Radius;    // 겹침·쌓기용 등가 원 반지름(m) — 두 반폭의 기하평균
-        public float HalfAcross; // 벽을 가로지르는 반폭(m) — 클리어런스에 묶인 하드 제약
-        public float HalfAlong;  // 벽 접선 방향 반폭(m) — 여기가 길어져야 벽으로 읽힌다
-        /// <summary>접선 방향으로 <b>실제 메시</b>가 닿는 반경(m). 슬롯이 아니라 메시다.</summary>
-        public float ReachAlong;
-        public float ScaleX, ScaleZ, ScaleY;   // 축별 배율 — 정사각형에 맞추느라 갈린다
-        public float TiltX, TiltZ;             // 기울기(도) — 크기를 정할 때 이미 반영했다
-        // yaw·strike 를 여기서 들고 가는 이유: 기울기 방위가 yaw 에 상대적이라(Euler ZXY)
-        // 둘을 같은 자리에서 정해야 어긋나지 않는다. 예전에는 yaw 를 인스턴스화 때 따로
-        // 뽑았고, 그래서 기울기 방위가 벽과 무관한 방향을 향했다.
-        public float Yaw;       // 도 — 실제 회전. 긴 축이 X인 프리팹은 여기에 90도가 더 붙는다
-        // 장축이 겨눈 방향(도). Yaw 와 나누는 이유: 프리팹에 따라 Yaw 에 90도가 붙어서,
-        // Yaw 를 비교하면 장축은 나란한데도 90도 어긋난 것으로 읽힌다.
-        // "이웃끼리 절리 방향을 공유하는가"를 재려면 이쪽을 봐야 한다.
-        public float AxisDeg;
-        public float Strike;    // 도 — 이 자리의 벽 접선. 쌓기가 물려받는다
-        public float BaseY;     // 월드 y — 바위 바닥
-        public float Top;       // 월드 y — 바위 꼭대기
-        public int Layer;       // 0 = 지면 층
-        public Vector2Int Seed; // 노이즈·해시의 기준 좌표
-    }
-
-    /// <summary>
-    /// 절벽 타일에 암벽 프리팹을 세운다. <b>지형을 솟구치게 하지 않는 이유</b>는 높이맵으로
-    /// 만든 벽이 결국 늘어난 텍스처 덩어리이기 때문이다 — 가까이서 보면 풀이 벽면에
-    /// 발려 있고, 실루엣도 매끄러운 언덕에 가깝다. 프리팹은 제 형태와 노멀을 갖고 있다.
+    /// <b>왜 지형을 솟구치게 하지 않는가</b>: 높이맵으로 수직 벽을 만들면 텍스처가 늘어나고
+    /// 경사 한계 때문에 진짜 수직이 나오지 않는다. 프리팹을 세우면 실루엣도 충돌도 아트가 정한다.
     ///
-    /// <b>칸에 맞추지 않는다 — 수평 바운딩 원으로 채운다.</b>
-    /// 예전에는 칸마다 하나씩 놓고 축별로 예산을 역산해 비균등 스케일로 칸에 우겨넣었다.
-    /// 그 방식은 두 가지를 못 견딘다: (1) 프리팹 가로세로비가 제각각이면 x·z 배율이 갈라져
-    /// 저작된 실루엣이 뭉개지고, (2) 회전하면 축정렬 점유 폭이 커져 자유 회전을 못 쓴다 —
-    /// 그 보정(회전 점유 폭 역산·기울임 역산·90° 제한·로컬축 되돌리기)이 복잡도의 절반이었다.
+    /// <b>왜 구 패킹인가</b>. 앞선 두 세대는 이랬다:
+    ///   1세대 — 절벽 픽셀을 클리어런스 큰 순으로 훑는 그리디. 절벽 영역이 맵의 26%인데
+    ///           보이는 건 테두리뿐이라, 넓은 면적에 한 겹을 얇게 펴 바르고 있었다.
+    ///   2세대 — 윤곽을 호길이로 걸으며 층을 쌓기. 배치는 <b>1차원</b>인데 바위는 sway·setback·
+    ///           깊이로 <b>3방향</b>으로 움직여서, 어디가 비었는지도 찼는지도 알 수 없었다.
+    ///           그래서 틈은 안 메워지고 엉뚱한 곳만 겹쳤다.
     ///
-    /// 원은 <b>회전에 불변</b>이라 그 전부가 사라진다. 남는 규칙은 하나다:
-    ///   바위의 수평 반지름 ≤ 그 자리의 클리어런스(비절벽 타일까지의 거리)
-    /// 이것만 지키면 어떤 각도로 돌리든 지면 타일을 침범하지 않는다. 배율이 균등이라
-    /// 바위 모양이 그대로 살고, 크기는 벽 두께가 정한다 — 두꺼운 곳엔 큰 바위가
-    /// 듬성듬성, 얇은 능선엔 작은 바위가 촘촘히. 크기 노이즈를 인위로 곱할 필요가 없다.
+    /// 이번에는 문제를 그대로 푼다: <b>부피를 구로 채운다.</b> 위치가 3차원 좌표 하나라
+    /// 점유를 그대로 기록할 수 있고, 큰 것부터 넣으므로 크기 위계가 공짜로 생긴다.
     ///
-    /// 콜라이더는 <b>여기서 붙인다</b> — 프리팹에 없다. 이제 이것이 플레이어를 막고
-    /// 총알을 받는 실체다(예전에는 Terrain 경사가 그 일을 했다). 길찾기는 여전히 타일이 정한다.
+    /// 구를 쓰지만 <b>프리팹은 눌리지 않는다</b> — 균등 배율로 구에 맞춘다. 예전에 발자국을
+    /// 정사각으로 눌러 자유 회전을 사던 거래와는 정반대다. 원본 비율이 남으므로 세로로 긴
+    /// 프리팹이 그대로 서서 레퍼런스의 세로 블록이 된다.
     /// </summary>
     static void PlaceCliffs(MapDataSO map, World world, Transform root)
     {
@@ -778,48 +693,20 @@ public static class WorldTerrainGenerator
                              $"{TerrainGenSettings.AssetPath} 의 Cliff Set 확인.");
             return;
         }
-        // 발자국 비 순 — 순서 자체에 의미는 없고(PickRock이 비율로 찾는다) 에셋 배열 순서가
-        // 바뀌어도 결과가 흔들리지 않게 하는 정규화다.
-        rocks.Sort((a, b) => a.FootAspect.CompareTo(b.FootAspect));
-
-        // 프리팹이 낼 수 있는 발자국 비의 상한 — cliffSlotAspect 를 이보다 크게 잡으면
-        // 그 차이는 눌러서(roundness) 메울 수밖에 없다. 둘이 상충하므로 값을 함께 봐야 한다.
-        float footAspectMax = 1f;
-        foreach (var rk in rocks) footAspectMax = Mathf.Max(footAspectMax, rk.FootAspect);
-        if (S.cliffSlotAspect > footAspectMax * 1.15f && S.cliffRoundness < 0.6f)
-            Debug.LogWarning($"[WorldTerrainGenerator] Cliff Slot Aspect({S.cliffSlotAspect:F2})가 " +
-                $"프리팹 발자국 비의 최대({footAspectMax:F2})를 넘습니다. Cliff Roundness가 " +
-                $"{S.cliffRoundness:F2}로 낮아 눌러 메우지 않으므로 슬롯이 그만큼 비어 갑니다 — " +
-                "상한을 낮추거나 발자국이 길쭉한 프리팹을 넣으세요.");
+        // 대표 반지름 오름차순 — PickRock 이 원하는 크기에 가까운 것을 이분 탐색으로 찾는다
+        rocks.Sort((a, b) => a.Radius.CompareTo(b.Radius));
 
         var clear = CliffClearance(map, out float maxClear);
         if (maxClear <= 0f) return;   // 절벽 타일이 없다
 
         int sub = FieldSubDiv;
         int fw = map.width * sub, fh = map.height * sub;
-        float px = Cell / sub;                       // 픽셀 한 변(m)
+        float px = Cell / sub;
         Vector3 fieldOrigin = world.CellToWorld(Vector2Int.zero);
         float groundY = world.Origin.y - CliffBaseSink;
 
-        // 클리어런스는 "여기까지 들어갈 수 있다"이지 "여기까지 커도 좋다"가 아니다 —
-        // 두꺼운 구간에서 한 덩어리가 산봉우리가 되는 것은 따로 죄야 한다.
         float minR = Mathf.Max(0.1f, S.cliffMinRadius);
         float maxR = Mathf.Max(minR, S.cliffMaxRadius);
-        // 반지름은 <b>절대</b> 클리어런스를 넘지 않는다 — 절벽 영역 밖으로 나가지 않는 것이
-        // 이 알고리즘의 유일한 하드 제약이다. minR은 "이보다 작으면 놓지 않는다"는 하한이지
-        // 크기를 끌어올리는 값이 아니다: Max(minR, ...)로 쓰면 얇은 자리에서 클리어런스를
-        // 넘겨 튀어나간다(실제로 그렇게 나왔다).
-
-        var placedList = new List<PlacedRock>();
-
-        // 이웃 검사용 공간 해시 — 격자 한 칸이 최대 지름이라 인접 3×3만 보면 된다
-        // 버킷 한 변은 있을 수 있는 최대 지름 — 클리어런스 최댓값이 그 상한이다
-        float bucket = Mathf.Max(maxClear * 2f, 1f);
-        CliffBucketProbe = bucket;   // 품질 계측이 같은 버킷으로 이웃을 찾는다
-        var grid = new Dictionary<Vector2Int, List<int>>();
-
-        Vector2 PixelToWorld(int fx, int fy)
-            => new Vector2(fieldOrigin.x + (fx + 0.5f) * px, fieldOrigin.z + (fy + 0.5f) * px);
 
         float ClearAt(Vector2 p)
         {
@@ -829,713 +716,160 @@ public static class WorldTerrainGenerator
             return clear[fx, fy];
         }
 
-        Vector2Int BucketOf(Vector2 p)
-            => new Vector2Int(Mathf.FloorToInt(p.x / bucket), Mathf.FloorToInt(p.y / bucket));
+        // 이 자리의 목표 높이 — 능선 노이즈가 몇 칸에 걸쳐 완만하게 솟았다 가라앉는다
+        float TopAt(Vector2 p)
+        {
+            float ridge = Mathf.PerlinNoise(p.x * S.cliffRidgeFrequency / Cell + 5.3f,
+                                            p.y * S.cliffRidgeFrequency / Cell + 9.1f);
+            return world.Origin.y + Mathf.Lerp(CliffHeightLow, CliffHeightHigh, ridge);
+        }
 
-        // 접선 방향으로 얼마나 뻗을 수 있는가 — 벽이 그쪽으로 이어지는 동안만.
+        // ── 채울 부피: 절벽의 <b>껍질</b> ──
+        // 안쪽은 어차피 앞의 바위에 가려 보이지 않는다. 전부 채우면 예산의 대부분이
+        // 보이지 않는 곳으로 간다(1세대의 실패). 테두리 띠만 채운다.
+        float shell = Mathf.Max(Cell, S.cliffShellDepthM);
+
+        var spheres = new List<Sphere>();
+        var grid = new Dictionary<Vector3Int, List<int>>();
+        float bucket = Mathf.Max(2f, maxR);
+
+        Vector3Int BucketOf(Vector3 c) => new Vector3Int(
+            Mathf.FloorToInt(c.x / bucket), Mathf.FloorToInt(c.y / bucket), Mathf.FloorToInt(c.z / bucket));
+
+        // 이 자리에 반지름 r 의 구를 놓을 수 있는가 — 이미 놓인 구와 너무 겹치지 않는지만 본다.
+        // 겹침 자체는 <b>허용</b>한다(그래야 틈이 없다). 금지하는 것은 "거의 같은 자리"뿐이다.
+        bool Free(Vector3 c, float r)
+        {
+            var b0 = BucketOf(c);
+            for (int bz = -1; bz <= 1; bz++)
+                for (int by = -1; by <= 1; by++)
+                    for (int bx = -1; bx <= 1; bx++)
+                        if (grid.TryGetValue(new Vector3Int(b0.x + bx, b0.y + by, b0.z + bz), out var list))
+                            foreach (int i in list)
+                            {
+                                var o = spheres[i];
+                                float min = (r + o.R) * S.cliffPackTightness;
+                                if ((o.C - c).sqrMagnitude < min * min) return false;
+                            }
+            return true;
+        }
+
+        void Add(Vector3 c, float r, Vector2Int seed)
+        {
+            spheres.Add(new Sphere { C = c, R = r, Seed = seed });
+            var b0 = BucketOf(c);
+            if (!grid.TryGetValue(b0, out var l)) grid[b0] = l = new List<int>();
+            l.Add(spheres.Count - 1);
+        }
+
+        // ── 후보 자리 수집 ──
+        // 껍질 띠의 픽셀을 모아 두고, 크기 등급마다 이 목록을 훑는다.
+        var slots = new List<int>();
+        for (int fy = 0; fy < fh; fy++)
+            for (int fx = 0; fx < fw; fx++)
+                if (clear[fx, fy] > 0f) slots.Add(fy * fw + fx);
+        if (slots.Count == 0) return;
+
+        // ── 큰 것부터 채운다 ──
         //
-        // 장축을 그냥 늘리면 벽이 꺾이거나 끝나는 자리에서 바위가 절벽 밖으로 튀어나간다.
-        // "절벽 영역을 벗어나지 않는다"는 이 알고리즘의 유일한 하드 제약이므로, 늘리려는
-        // 만큼 양쪽으로 걸어가 보고 벽이 끊기는 지점에서 자른다. 양쪽 대칭으로 보는 이유는
-        // 바위가 중심 기준으로 퍼지기 때문이다.
-        /// <summary>
-        /// 접선 방향 반폭(장축)을 정하고, 그 구간에서 <b>가장 얇은 곳</b>에 맞춰 단축을 줄인다.
-        ///
-        /// 판정을 이 방향으로 세워야 하는 이유: 클리어런스는 국소 최대(벽 중앙선)에서 어느
-        /// 쪽으로 가도 줄어든다. 그래서 "봉우리 두께를 유지하라"고 요구하면 <b>어떤 길이도
-        /// 통과하지 못한다</b> — 실측으로 슬롯 장/단축이 1.02에 붙어 이방성이 통째로 죽었다.
-        /// 슬랙을 20%로 줘도, 타원 테이퍼를 얹어도 마찬가지였다. 첫 걸음에서 이미 막히기 때문이다.
-        ///
-        /// 실제 슬래브는 <b>길어지는 만큼 얇아진다</b>. 그래서 길이를 먼저 늘리고, 그 길이
-        /// 전체가 들어갈 만큼 두께를 깎는다. 침범 금지는 그대로다 — 오히려 구간 최솟값을
-        /// 쓰므로 예전보다 보수적이다.
-        /// </summary>
-        float SlotAlong(Vector2 p, Vector2 tan, float acrossPeak, float aspect, out float acrossFit)
-        {
-            const int Steps = 6;
-            float want = acrossPeak * aspect;
-            float fit = acrossPeak;
-            float best = 0f;
+        // 등급을 나눠 큰 것부터 도는 이유: 한 번에 임의 크기로 뿌리면 작은 것이 먼저 자리를
+        // 차지해 큰 것이 들어갈 곳이 없어진다. 큰 것부터면 "압도적인 몇 개 + 중간 + 잔해"의
+        // 위계가 배치 순서에서 저절로 나온다 — 자연의 크기 분포가 그렇다.
+        int tiers = Mathf.Max(1, S.cliffSizeTiers);
+        int placedCount = 0, tried = 0, rejThin = 0, rejBusy = 0, rejHigh = 0, rejDeep = 0;
 
-            for (int i = 1; i <= Steps; i++)
+        for (int tier = 0; tier < tiers; tier++)
+        {
+            // 등급 반지름 — 큰 쪽부터. 멱법칙으로 등급 간 간격을 벌린다
+            float t = tiers == 1 ? 0f : tier / (float)(tiers - 1);
+            float tierR = Mathf.Lerp(maxR, minR, Mathf.Pow(t, 0.65f));
+
+            foreach (int flat in slots)
             {
-                float t = (float)i / Steps;
-                float d = want * t;
-                float room = Mathf.Min(ClearAt(p + tan * d), ClearAt(p - tan * d));
+                int fx = flat % fw, fy = flat / fw;
+                var seed = new Vector2Int(fx, fy + tier * 7919);
 
-                // 끝으로 갈수록 바위 폭이 줄어드니(타원) 그만큼은 좁아도 된다 —
-                // 끝에서 필요한 폭은 중앙 폭의 √(1−t²) 배다.
-                float taper = Mathf.Sqrt(Mathf.Max(0.04f, 1f - t * t));
-                float allow = room / taper;
+                // 등급 안에서도 크기를 흔든다 — 같은 등급이 같은 크기면 격자가 드러난다
+                float r = tierR * Mathf.Lerp(0.78f, 1f, Hash(seed.x, seed.y, 71) % 1000 / 1000f);
+                if (r < minR) continue;
 
-                float next = Mathf.Min(fit, allow);
-                if (next < minR) break;       // 이만큼 늘리면 너무 얇아진다 — 여기서 멈춘다
-                fit = next;
-                best = d;
-            }
+                Vector2 p2 = new Vector2(fieldOrigin.x + (fx + 0.5f) * px,
+                                         fieldOrigin.z + (fy + 0.5f) * px);
 
-            acrossFit = fit;
-            return Mathf.Max(fit, best);      // 최소한 등방(정사각)은 보장
-        }
+                tried++;
 
-        static Vector2 TangentOf(float strikeDeg)
-        {
-            float a = strikeDeg * Mathf.Deg2Rad;
-            return new Vector2(Mathf.Sin(a), Mathf.Cos(a));   // yaw 의 방향 벡터와 같은 규약
-        }
+                // 수평 제약 — 절벽 밖으로 나가지 않는다. 이 알고리즘의 유일한 하드 제약이다.
+                float room = ClearAt(p2);
+                if (room < r) { rejThin++; continue; }
 
-        /// <summary>
-        /// 윤곽의 이 자리에서 안쪽으로 놓을 수 있는 <b>최대 반두께</b>.
-        ///
-        /// 윤곽에서 법선을 따라 a 만큼 들어간 점의 클리어런스는 직선 벽이라면 정확히 a 다
-        /// (클리어런스 = 가장 가까운 비절벽까지의 거리). 그래서 "a 만큼 들어갔을 때
-        /// 클리어런스가 a 를 따라오는가"만 보면 된다 — 벽 중앙선을 넘는 순간 따라오지
-        /// 못하고, 거기가 곧 이 자리의 최대 두께다.
-        ///
-        /// 반두께 a 인 바위를 윤곽에서 a 만큼 안쪽에 놓으면 윤곽에 정확히 접한다.
-        /// 그래서 "절벽 밖으로 나가지 않는다"가 계산이 아니라 <b>배치 방식 자체로</b> 보장된다.
-        /// </summary>
-        float MaxHalfThickness(Vector2 edge, Vector2 nrm, float lo, float hi)
-        {
-            // <b>lo 를 포함해</b> 로그 등간격으로 훑는다.
-            //
-            // 예전에는 Lerp(lo, hi, i/Steps) 를 i=1 부터 돌렸다. lo=1.05·hi=10 이면 첫 표본이
-            // 이미 1.945m 라, 이 함수는 <b>0 아니면 1.945 이상</b>만 돌려줬다. 그래서 반두께
-            // 1.945m 를 못 내는 벽 — 폭 3.9m 미만 — 에는 지면 층이 통째로 놓이지 않았다.
-            // 칸이 4m 이므로 폭 1칸짜리 절벽 띠 전체가 여기 걸렸다(면 구멍의 84%).
-            //
-            // 로그 간격인 이유: 여기서 중요한 것은 절대 오차가 아니라 비율이다. 0.4m 와
-            // 0.6m 의 차이가 8m 와 8.2m 의 차이보다 훨씬 크게 보인다.
-            lo = Mathf.Max(0.05f, lo);
-            hi = Mathf.Max(lo, hi);
-            const int Steps = 24;
-            float best = 0f;
+                // <b>보임 판정은 크기 제약과 따로 둔다.</b> 후보를 껍질 픽셀로만 잘랐더니
+                // 클리어런스가 껍질 깊이(6m)를 못 넘어서 큰 등급이 통째로 거부됐다
+                // (시도의 92%가 두께부족, 반지름 최대/중앙 1.2배 = 위계 없음).
+                // 큰 바위는 벽이 두꺼운 안쪽에 놓여야 하고, 보이는지는 "얼굴까지 닿는가"다.
+                if (room - r > shell) { rejDeep++; continue; }
 
-            for (int i = 0; i <= Steps; i++)
-            {
-                float d = lo * Mathf.Pow(hi / lo, (float)i / Steps);
-                float room = ClearAt(edge + nrm * d);
-
-                // 절벽을 <b>벗어나면</b> 거기서 멈춘다. 그 너머에서 클리어런스가 다시 커지는
-                // 것은 건너편의 <b>남의 벽</b>이라, 거기에 맞춰 크기를 잡으면 허공을 건너뛴다.
-                if (room <= 0f) break;
-                if (room > best) best = room;
-            }
-            return best;
-        }
-
-        /// <summary>
-        /// 반지름 <paramref name="want"/> 인 바위를 담을 수 있는 <b>가장 얕은</b> 깊이.
-        /// 담지 못하면 음수.
-        ///
-        /// 반지름과 깊이를 <b>떼어 놓기 위한</b> 함수다. 예전에는 중심을 늘 깊이 = 반지름에
-        /// 두어(윤곽에 접하게) 크기가 "그 점에 접하는 원"에 갇혔다. 경계가 오목한 자리에서는
-        /// 그 원이 벽 두께보다 훨씬 작다 — 실측으로 법선 최대 클리어런스가 4.87m 인 자리에서
-        /// 1.70m 였고, 그 크기가 조약돌 하한에 걸려 자리 2천여 곳이 통째로 비었다.
-        ///
-        /// 깊이를 따로 찾으면 둘 다 얻는다. 클리어런스의 정의상 clearance(d) ≤ d 이므로
-        /// 앞면 위치 d − want 는 <b>항상 0 이상</b>이다 — 절벽 밖으로 나가지 않는다.
-        /// 그리고 직선 벽에서는 d = want 라 예전과 완전히 같다(부풀지 않는다).
-        /// </summary>
-        float SeatDepth(Vector2 edge, Vector2 nrm, float want, float hi)
-        {
-            if (want <= 0f) return -1f;
-            const int Steps = 24;
-            float lo = Mathf.Max(0.05f, want);
-            hi = Mathf.Max(lo, hi);
-            for (int i = 0; i <= Steps; i++)
-            {
-                float d = lo * Mathf.Pow(hi / lo, (float)i / Steps);
-                if (ClearAt(edge + nrm * d) >= want) return d;   // 가장 얕은 유효 깊이
-            }
-            return -1f;
-        }
-
-        // ── 절리 방향(strike) — 이 알고리즘에서 <b>방향을 만드는 유일한 곳</b> ──
-        //
-        // 노두가 노두로 읽히는 이유는 조각들이 공통 절리면을 공유하기 때문이다. 방향이
-        // 제각각이면 지질이 아니라 쏟아놓은 자갈로 보인다. 그래서 각도를 난수에서 뽑지 않고
-        // 벽의 형상에서 끌어낸다: 클리어런스가 가장 빨리 변하는 방향이 벽을 가로지르는
-        // 방향이고, 그 <b>수직</b>이 벽의 접선이다.
-        //
-        // 스텐실을 넓혀 가며 보는 이유: 거리장은 벽 중앙선에서 그래디언트가 0에 가깝다
-        // (양쪽 벽이 같은 거리라 상쇄된다). 한 픽셀 차분으로는 그 자리에서 노이즈만 읽어
-        // 두꺼운 벽 안쪽 바위들이 방향을 잃는다.
-        float StrikeAt(int fx, int fy)
-        {
-            // <b>구조 텐서</b>로 뽑는다. 그래디언트를 벡터로 더하면 안 되는 이유가 있다:
-            // 벽 중앙선에서는 양쪽 벽의 그래디언트가 서로 <b>반대</b>를 향해 상쇄되고,
-            // 남는 것은 노이즈뿐이다. 그런데 지면 층은 클리어런스가 큰 곳(=중앙선)부터
-            // 채우므로 <b>제일 큰 바위들이 전부 그 자리에서 방향을 잃는다</b>.
-            // 실측: 접선을 따라 늘리려던 장축이 실제로는 벽을 가로질러 뻗다가 잘려
-            // 슬롯 장/단축 중앙값이 1.02(= 정사각)로 주저앉았다.
-            //
-            // 텐서는 곱(gx²·gxgy·gy²)을 쌓아서 <b>부호에 둔감하다</b> — 반대 방향 그래디언트가
-            // 상쇄되지 않고 서로를 보강한다. 그래서 직선 벽이면 중앙선에서도 벽 방향이 나온다.
-            const int Rad = 8, Step = 4, G = 4;
-            double jxx = 0, jxy = 0, jyy = 0;
-            for (int oy = -Rad; oy <= Rad; oy += Step)
-                for (int ox = -Rad; ox <= Rad; ox += Step)
+                // 이 기둥에서 y 를 훑으며 빈 자리를 찾는다. 바닥부터 올라가며 처음 비는 곳에
+                // 앉힌다 — 위에서부터 찾으면 공중에 뜬다.
+                float top = TopAt(p2);
+                float yStep = r * S.cliffPackTightness;
+                bool put = false;
+                for (float y = groundY + r * 0.35f; y + r <= top; y += yStep)
                 {
-                    int x = Mathf.Clamp(fx + ox, 0, fw - 1);
-                    int y = Mathf.Clamp(fy + oy, 0, fh - 1);
-                    float gx = clear[Mathf.Min(x + G, fw - 1), y] - clear[Mathf.Max(x - G, 0), y];
-                    float gy = clear[x, Mathf.Min(y + G, fh - 1)] - clear[x, Mathf.Max(y - G, 0)];
-                    jxx += gx * gx; jxy += gx * gy; jyy += gy * gy;
+                    var c3 = new Vector3(p2.x, y, p2.y);
+                    if (!Free(c3, r)) continue;
+                    Add(c3, r, seed);
+                    placedCount++;
+                    put = true;
+                    break;
                 }
-
-            // 사방이 평평한 자리(넓은 고원) — 저주파 노이즈로 완만하게 돌린다.
-            // 픽셀별 난수와 달리 이웃끼리 이어져서 최소한 모자이크는 되지 않는다.
-            if (jxx + jyy < 1e-5)
-                return Mathf.PerlinNoise(fx * 0.004f + 3.1f, fy * 0.004f + 7.7f) * 180f;
-
-            // 텐서의 주축 = 변화가 가장 큰 방향 = 벽을 가로지르는 방향.
-            float th = 0.5f * Mathf.Atan2((float)(2.0 * jxy), (float)(jxx - jyy));
-            // 그 수직이 벽 접선. Unity 의 yaw 는 +Z 가 0 이라 (x, z) 순서로 atan2 한다.
-            return Mathf.Atan2(-Mathf.Sin(th), Mathf.Cos(th)) * Mathf.Rad2Deg;
-        }
-
-        // 클리어런스만 쓰면 벽 두께가 일정한 구간에서 바위가 전부 같은 크기가 된다.
-        // 큰 흐름(펄린)에 낱개 차이(해시)를 섞는다 — 칸별 독립 난수만 쓰면 "쌓인 지형"이
-        // 아니라 "흩뿌린 에셋"으로 읽힌다. 줄이는 방향이라 침범은 여전히 불가능하다.
-        float SizeNoise(int fx, int fy)
-            => Mathf.Lerp(S.cliffSizeNoise.x, S.cliffSizeNoise.y,
-                   0.65f * Mathf.PerlinNoise(fx * 0.018f + 61.7f, fy * 0.018f + 8.9f)
-                 + 0.35f * (Hash(fx, fy, 47) % 1000 / 1000f));
-
-        bool TooClose(Vector2 p, float r, float spacing)
-        {
-            var b0 = BucketOf(p);
-            for (int by = -1; by <= 1; by++)
-                for (int bx = -1; bx <= 1; bx++)
-                    if (grid.TryGetValue(new Vector2Int(b0.x + bx, b0.y + by), out var list))
-                        foreach (int i in list)
-                        {
-                            var o = placedList[i];
-                            if (o.Layer != 0) continue;
-                            float min = (r + o.Radius) * spacing;
-                            if ((o.Center - p).sqrMagnitude < min * min) return true;
-                        }
-            return false;
-        }
-
-        /// <summary>
-        /// 지면 층의 간격 검사 — <b>방향별로 다르게</b> 잰다.
-        ///
-        /// 등가 원으로 재던 것이 이방성 바위와 맞지 않았다. 반지름 √(단축×장축)은
-        /// 단축보다 뚱뚱하고 장축보다 홀쭉해서, 벽을 <b>가로질러</b>서는 필요 이상으로
-        /// 밀어내고(줄이 안 들어간다) 벽을 <b>따라</b>서는 덜 밀어냈다.
-        ///
-        /// 그런데 두 방향은 원하는 바가 애초에 다르다:
-        ///   · 벽을 따라서는 <b>겹쳐야</b> 한다 — 겹치지 않으면 조각 사이가 그대로 관통이다.
-        ///     절리 방향을 공유하는 조각들이라 겹침이 뭉개짐이 아니라 쌓인 벽으로 읽힌다.
-        ///   · 벽을 가로질러서는 <b>떨어져야</b> 한다 — 붙으면 줄이 하나로 녹아 두께가 안 생긴다.
-        /// 그래서 축마다 다른 계수를 쓰고, 타원 합으로 판정한다.
-        /// </summary>
-        bool TooCloseSlot(Vector2 p, float across, float along, Vector2 tan)
-        {
-            Vector2 nrm = new Vector2(-tan.y, tan.x);
-            // 계수는 <b>벽을 따라</b>가 작아야 한다 — 작을수록 겹쳐도 통과다.
-            // 처음에 반대로 걸었더니(장축 합에 큰 계수) 벽을 따라 더 밀어내서
-            // 덮임이 51.5% → 44.6% 로 떨어졌다. 겹치라고 만든 장치가 떼어놓고 있었다.
-            float sAlongF = Mathf.Max(0.05f, S.cliffPackSpacing / Mathf.Max(0.2f, S.cliffRowSeparation));
-            float sAcrossF = Mathf.Max(0.05f, S.cliffPackSpacing);
-
-            var b0 = BucketOf(p);
-            for (int by = -1; by <= 1; by++)
-                for (int bx = -1; bx <= 1; bx++)
-                    if (grid.TryGetValue(new Vector2Int(b0.x + bx, b0.y + by), out var list))
-                        foreach (int i in list)
-                        {
-                            var o = placedList[i];
-                            if (o.Layer != 0) continue;
-                            Vector2 d = o.Center - p;
-                            float dl = Vector2.Dot(d, tan) / Mathf.Max(0.01f, (along + o.HalfAlong) * sAlongF);
-                            float dc = Vector2.Dot(d, nrm) / Mathf.Max(0.01f, (across + o.HalfAcross) * sAcrossF);
-                            if (dl * dl + dc * dc < 1f) return true;
-                        }
-            return false;
-        }
-
-        // 애추끼리의 간격 — 지면 층과는 따로 본다. 애추는 벽의 일부가 아니라 그 앞에
-        // 흩어진 퇴적물이라, 큰 바위와 겹쳐도(오히려 겹쳐야) 자연스럽다.
-        bool TooCloseTalus(Vector2 p, float r)
-        {
-            var b0 = BucketOf(p);
-            for (int by = -1; by <= 1; by++)
-                for (int bx = -1; bx <= 1; bx++)
-                    if (grid.TryGetValue(new Vector2Int(b0.x + bx, b0.y + by), out var list))
-                        foreach (int i in list)
-                        {
-                            var o = placedList[i];
-                            if (o.Layer >= 0) continue;
-                            float min = (r + o.Radius) * S.cliffTalusSpacing;
-                            if ((o.Center - p).sqrMagnitude < min * min) return true;
-                        }
-            return false;
-        }
-
-        // 덮임 판정 — 실제 반지름보다 <b>작게</b> 본다. 바위는 원이 아니라 그 원 안에 든
-        // 덩어리라, 외접원으로 덮였다고 실제로 막혔다는 보장이 없다. 양쪽 다 보수적으로:
-        // 침범 판정은 외접원(크게), 커버 판정은 그보다 작게.
-        bool Covered(Vector2 p)
-        {
-            float f = Mathf.Clamp01(S.cliffCoverFactor);
-            var b0 = BucketOf(p);
-            for (int by = -1; by <= 1; by++)
-                for (int bx = -1; bx <= 1; bx++)
-                    if (grid.TryGetValue(new Vector2Int(b0.x + bx, b0.y + by), out var list))
-                        foreach (int i in list)
-                        {
-                            var o = placedList[i];
-                            if (o.Layer != 0) continue;
-                            float rr = o.Radius * f;
-                            if ((o.Center - p).sqrMagnitude < rr * rr) return true;
-                        }
-            return false;
-        }
-
-        void Place(Vector2Int seed, Vector2 p, float across, float along, float baseY,
-                   int layer, float strike)
-        {
-            float aspectWant = along / Mathf.Max(0.01f, across);
-            int pick = PickRock(rocks, aspectWant, Hash(seed.x, seed.y, 23 + layer * 7));
-            var rock = rocks[pick];
-
-            // yaw — 벽 접선을 따르고 지터만 얹는다. 예전에는 PerlinNoise * 720 이었는데,
-            // 픽셀당 노이즈가 0.02 씩 가고 이웃 바위는 10~17픽셀 떨어져 있어서 이웃 간
-            // 각도차가 100도를 넘었다. 흐름장을 두려던 장치가 균등난수가 돼 있었다.
-            float yaw = strike + (Hash(seed.x, seed.y, 89) % 1000 / 1000f - 0.5f) * S.cliffYawJitter;
-
-            // 프리팹의 <b>긴 발자국 축을 접선에 맞춘다.</b> 로컬 +Z 가 yaw 방향이므로,
-            // 긴 축이 X 인 프리팹은 yaw 를 90도 돌려 X 를 접선으로 보낸다.
-            // 이 한 줄이 납작한 프리팹을 벽을 따라 눕게 만든다 — 예전에는 어느 축이 어디를
-            // 향하든 정육면체로 눌러 버려서 프리팹의 비율이 아무 의미가 없었다.
-            bool longIsX = rock.Foot.x > rock.Foot.y;
-            float axisDeg = yaw;             // 장축이 겨눈 방향 — 90도 보정 전의 값
-            if (longIsX) yaw += 90f;
-            float footAlong = longIsX ? rock.Foot.x : rock.Foot.y;
-            float footAcross = longIsX ? rock.Foot.y : rock.Foot.x;
-
-            // <b>먼저 둥글게, 그 다음 내접으로 배치.</b>
-            //
-            // 외접원으로 재면 정사각 발자국조차 √2배 손해다 — 두께 2r 벽에 폭 1.41r짜리만
-            // 들어가 70%밖에 못 채운다. 그래서 축별로 눌러 발자국을 정사각(D×D)에 맞춘 뒤
-            // 내접(D/2 = r)으로 잰다. 그러면 바위가 벽 두께를 100% 채운다.
-            //
-            // 정사각이면 회전해도 내접원이 그대로라 자유 회전도 유지된다(모서리는 √2까지
-            // 나가지만, 둥글게 만든 메시라 그 자리에 실제 형체가 거의 없다).
-            // <b>기울기를 먼저 정한다.</b> 기울이면 수평 점유가 늘어나므로(누운 만큼 옆으로
-            // 퍼진다) 그 증가분을 크기에서 미리 빼야 절벽 밖으로 안 나간다. 순서를 반대로
-            // 하면 기울이는 순간 침범이라, 예전에는 기울기를 ±4°로 죄어 놨었다 —
-            // 그래서 바위가 전부 위로만 섰다.
-            // dip 은 <b>두 세트만</b> 쓴다. 조각들이 저마다 다른 각도로 기울면 무질서지만
-            // 두 각도로만 기울면 층리로 읽힌다 — 지질 느낌의 대부분이 여기서 나온다.
-            // 예전에는 tiltX·tiltZ 를 독립 해시로 뽑아서 기울기 방위가 완전 랜덤이었다.
-            bool steep = Hash(seed.x, seed.y, 101) % 1000 < Mathf.RoundToInt(S.cliffDipSteepShare * 1000f);
-            float dip = S.cliffTilt * (steep ? 0.85f : 0.25f)
-                      + (Hash(seed.x, seed.y, 103) % 1000 / 1000f - 0.5f) * S.cliffTilt * 0.25f;
-            dip = Mathf.Max(0f, dip);
-
-            // 기울기 방위는 벽을 가로지르는 방향(strike 의 수직) — 층리가 언덕 안쪽으로
-            // 파고드는 모습이다. Euler(x, yaw, z) 는 ZXY 순서라 기울기가 yaw 보다 먼저
-            // 적용된다: 월드 방위를 로컬로 환산해 넣어야 벽 기준으로 눕는다.
-            float leanLocal = (strike + 90f - yaw) * Mathf.Deg2Rad;
-            float tiltX = dip * Mathf.Sin(leanLocal);
-            float tiltZ = -dip * Mathf.Cos(leanLocal);
-            float tilt = dip * Mathf.Deg2Rad;
-
-            // 눕히면 수평 점유가 얼마나 커지는가 — <b>상자가 아니라 타원체로</b> 잰다.
-            // 바위엔 모서리가 없다. 직육면체로 보면 cos+sin·(H/D)라 22°에서 1.30(30% 손해)이
-            // 나오는데, 그건 앞서 외접원을 쓴 것과 똑같은 과잉 보수다.
-            //
-            // 반축 (D/2, H/2, D/2)인 타원체를 θ만큼 눕혔을 때의 수평 반경:
-            //     √( (D/2)²·cos²θ + (H/2)²·sin²θ )
-            // D == H면 각도와 무관하다 — <b>구는 굴려도 같다</b>. stretch로 늘린 만큼만 는다.
-            // stretch 1.1 · 22°면 1.015라 손해가 1.5%뿐이다.
-            float stretch = Mathf.Lerp(S.cliffStretch.x, S.cliffStretch.y,
-                                       Hash(seed.x, seed.y, 37 + layer) % 1000 / 1000f);
-            float ct = Mathf.Cos(tilt), st = Mathf.Sin(tilt);
-            float grow = Mathf.Sqrt(ct * ct + stretch * stretch * st * st);
-
-            // <b>grow 는 단축에만 적용한다.</b> 기울기 방위가 벽을 가로지르는 방향이므로
-            // 눕는 만큼 늘어나는 점유는 단축뿐이다 — 예전에는 정사각 D 전체에 걸었고,
-            // 그만큼 접선 방향을 공짜로 깎아먹고 있었다.
-            float acrossFit = across / Mathf.Max(0.5f, grow);
-
-            float sAlong = 2f * along / footAlong;
-            float sAcross = 2f * acrossFit / footAcross;
-            // 원본 비율을 지킬 때 슬롯 안에 들어가는 균등 배율. 슬롯 비율에 맞는 프리팹을
-            // 골랐으므로 이 값이 두 축 배율 모두에 가깝고, 남는 여유가 작다.
-            float u = Mathf.Min(sAlong, sAcross);
-
-            // roundness 는 <b>설정값 그대로</b> 쓴다.
-            //
-            // 한때 "프리팹 비율이 슬롯을 못 따라가는 만큼 국소적으로 눌러 메우자"고 했다가
-            // 되돌렸다. 얇은 벽에서 슬롯 비율이 6까지 요구되니 round 가 0.8 까지 올라가
-            // 설정의 0.3 이 무시됐고, 바위가 전부 <b>납작한 판</b>으로 눌려 층층이 쌓였다.
-            // 원본 비율을 살리려고 roundness 를 낮춘 것인데 그 장치가 스스로를 무효화했다.
-            //
-            // 못 채우면 슬롯을 비워 둔다. 눌러서 메우지 않는다.
-            float round = Mathf.Clamp01(S.cliffRoundness);
-
-            float scaleAlong = Mathf.Min(Mathf.Lerp(u, sAlong, round), S.cliffMaxScale);
-            float scaleAcross = Mathf.Min(Mathf.Lerp(u, sAcross, round), S.cliffMaxScale);
-            // 높이는 <b>프리팹 원본 비율</b>(u)에서 가져온다. 예전에는 단축(acrossFit)에
-            // 맞췄는데, round 가 높을 때 그 항이 이겨서 길고·얇고·낮은 팬케이크가 됐다.
-            // 너무 높아지는 것은 아래의 세장비·절대 높이 상한이 따로 막는다.
-            float scaleY = Mathf.Min(u, S.cliffMaxScale) * stretch;
-
-            float scaleX = longIsX ? scaleAlong : scaleAcross;
-            float scaleZ = longIsX ? scaleAcross : scaleAlong;
-
-            // 실제 점유 반폭. 겹침·쌓기는 원으로 재므로 두 반폭의 기하평균(같은 면적의 원)을 쓴다 —
-            // 단축으로 재면 벽을 따라 겹쳐 붙고, 장축으로 재면 벽을 가로질러 헐거워진다.
-            float halfAcross = 0.5f * footAcross * scaleAcross * grow;
-            float halfAlong = 0.5f * footAlong * scaleAlong;
-            float radius = Mathf.Sqrt(Mathf.Max(0.01f, halfAcross * halfAlong));
-
-            // 세장비 안전 상한. 바위 하나에 최소 높이를 보장하던 코드는 걷어냈다 —
-            // 수평이 클리어런스에 묶인 상태에서 높이를 요구하면 늘어나는 건 세로뿐이라
-            // 벽이 통째로 길쭉해진다(실측: 폭 2.7m에 높이 8.2m). 높이는 쌓기가 만든다.
-            // 세장비는 <b>단축</b> 기준 — 등가 반지름으로 재면 벽을 따라 긴 바위가
-            // 그 길이만큼 높아질 수 있어 바늘이 된다.
-            float maxY = halfAcross * S.cliffMaxAspect / rock.Height;
-            if (scaleY > maxY) scaleY = maxY;
-
-            // <b>절대 높이 상한.</b> 크기를 클리어런스가 정하게 두면 두꺼운 구간에서
-            // 반지름이 7m까지 가고, 둥글게 눌러 놨으니 높이도 같이 따라 올라가 산봉우리가
-            // 된다. 절벽은 벽이지 봉우리가 아니다 — 여기서 잘라 스카이라인을 잡는다.
-            //
-            // 세로만 자른다(수평은 그대로) — 폭까지 줄이면 두꺼운 구간이 도로 헐거워진다.
-            // 대신 그만큼 납작해지므로 상한을 너무 낮게 잡으면 팬케이크가 된다.
-            float capY = S.cliffMaxHeightCells * Cell / rock.Height;
-            if (scaleY > capY) scaleY = capY;
-
-            // <b>실제 메시가 접선 방향으로 닿는 반경.</b> 슬롯(halfAlong)이 아니라 메시다 —
-            // roundness 를 낮춰 원본 비율을 살린 뒤로 바위는 슬롯에 내접할 뿐 채우지 않는다.
-            // 걸음 폭을 슬롯으로 잡으면 그 차이가 그대로 조각 사이의 틈이 된다.
-            float reachAlong = MeshReach(rock, yaw, scaleX, scaleZ, TangentOf(strike));
-
-            placedList.Add(new PlacedRock
-            {
-                Rock = pick,
-                Center = p,
-                Radius = radius,
-                HalfAcross = halfAcross,
-                HalfAlong = halfAlong,
-                ReachAlong = reachAlong,
-                ScaleX = scaleX,
-                ScaleZ = scaleZ,
-                ScaleY = scaleY,
-                TiltX = tiltX,
-                TiltZ = tiltZ,
-                Yaw = yaw,
-                AxisDeg = axisDeg,
-                Strike = strike,
-                BaseY = baseY,
-                Top = baseY + rock.Height * scaleY,
-                Layer = layer,
-                Seed = seed,
-            });
-
-            var b0 = BucketOf(p);
-            if (!grid.TryGetValue(b0, out var bl)) grid[b0] = bl = new List<int>();
-            bl.Add(placedList.Count - 1);
-        }
-
-        // ── 지면 층 — <b>윤곽을 따라 걷는다</b> ──
-        //
-        // 예전에는 절벽 영역의 픽셀을 클리어런스 큰 순으로 훑으며 놓았다(그리디). 그런데
-        // 절벽 영역이 맵의 26%나 되는데 플레이어에게 보이는 것은 그 <b>테두리</b>뿐이다 —
-        // 실측으로 바위 하나가 50㎡를 맡아 넓은 면적에 한 겹을 얇게 펴 바르고 있었고,
-        // 안쪽 바위는 서로 가려 아무 일도 하지 않으면서 예산만 썼다. 벽이 낮아 보이고
-        // 덮임이 73%에 그친 것이 그 결과다.
-        //
-        // <b>면적을 샘플링해 선을 만들고 있었다.</b> 그래서 선을 직접 걷는다:
-        //   · 루프를 끝까지 걸으므로 구멍이 구조적으로 생기지 않는다
-        //   · strike 가 공짜다 — 폴리라인의 접선이 곧 절리 방향
-        //   · 얇은 벽이 자연히 처리된다. 얇으면 얇은 바위가 놓일 뿐, 안 놓이지 않는다
-        //   · 크기가 벽 두께에서 <b>풀려난다</b> — 두께는 안쪽으로 얼마나 물러나 놓느냐로
-        //     정해지므로, 크기는 원하는 분포대로 뽑을 수 있다
-        var loops = CliffContours(clear, fw, fh, fieldOrigin, px);
-        // 루프마다, <b>층 단위로 한 바퀴씩</b> 돈다.
-        //
-        // 예전에는 한 자리에서 기둥을 끝까지 쌓고 옆으로 갔다. 그러면 기둥 하나가 실패했을 때
-        // 바닥부터 꼭대기까지 통째로 비고, 이웃 기둥은 그 사실을 모른다 — 스크린샷에 계속
-        // 나오던 세로 슬롯이 그것이다. 게다가 그 구조는 <b>이음매가 세로로 정렬되도록
-        // 보장</b>한다. 벽돌을 그렇게 쌓는 사람은 없다.
-        //
-        // 층 단위로 돌면 층마다 시작 위상이 어긋나 아래 층의 이음매 위에 위 층의 블록이
-        // 온다(엇쌓기). 그러면 세로로 뚫리려면 <b>모든 층이 같은 자리에 이음매를 가져야</b>
-        // 하는데, 위상을 어긋내면 그럴 수가 없다.
-        //
-        // 층이 어긋나므로 "내 아래가 어디까지 찼는가"를 기둥 변수로는 알 수 없다. 대신
-        // 루프의 <b>호길이별 높이 프로파일</b>을 들고 다닌다 — 벽돌공이 아래 켜를 보고
-        // 다음 켜를 얹는 것과 같다.
-        int stations = 0;
-        // 걷기 계측 — 어느 관문에서 얼마나 걸러지는지. 추측 대신 이걸 본다.
-        int stTried = 0, stThin = 0, stPebble = 0, stNoRoom = 0, stHigh = 0;
-        // 벽 반두께 표본 — 조약돌 거부가 "얇은 자리"에 몰려 있는지 재려는 것.
-        // 추측으로는 못 가른다: 거부된 자리와 놓은 자리의 두께 분포를 나란히 봐야 안다.
-        var roomAll = new List<float>();
-        var roomPebble = new List<float>();
-        // 같은 지점에서 법선을 따라 잰 클리어런스 <b>최댓값</b>.
-        // roomMax(첫 실패에서 멈춤)와 비교하면 "행진이 조기 종료됐는가"와
-        // "실제로 얇은가"가 갈린다. 추측으로는 못 가른다.
-        var rayPebble = new List<float>();
-        double contourM = 0;
-        foreach (var lp in loops)
-            for (int k = 0; k < lp.Count; k++)
-                contourM += (lp[(k + 1) % lp.Count] - lp[k]).magnitude;
-
-        foreach (var loop in loops)
-        {
-            if (loop.Count < 3) continue;
-
-            // 호길이 색인 — 임의의 호 위치에서 점과 접선을 뽑는다
-            var cum = new float[loop.Count + 1];
-            for (int i = 0; i < loop.Count; i++)
-                cum[i + 1] = cum[i] + (loop[(i + 1) % loop.Count] - loop[i]).magnitude;
-            float total = cum[loop.Count];
-            if (total < minR) continue;
-
-            int SegAt(float arc)
-            {
-                int lo = 0, hi = loop.Count;
-                while (lo + 1 < hi)
+                if (!put)
                 {
-                    int mid = (lo + hi) >> 1;
-                    if (cum[mid] <= arc) lo = mid; else hi = mid;
-                }
-                return lo;
-            }
-
-            // 높이 프로파일 — 해상도는 0.5m. 층이 어긋나도 이 배열이 아래 켜를 알려준다.
-            const float Res = 0.5f;
-            int slots = Mathf.Max(1, Mathf.CeilToInt(total / Res));
-            var topAt = new float[slots];
-            for (int i = 0; i < slots; i++) topAt[i] = groundY;
-
-            int SlotOf(float arc) => ((Mathf.FloorToInt(arc / Res) % slots) + slots) % slots;
-
-            // 발자국 구간에서 <b>가장 낮은</b> 곳에 앉힌다.
-            //
-            // 최댓값에 앉히면 안 된다 — 구간 안에 높은 바위가 하나라도 있으면 그 높이로
-            // 올라가는데, sway·setback 이 바위를 옆·안쪽으로 옮겨 놓으므로 <b>그 높이를 만든
-            // 바위 위가 아니라 허공에 앉는다</b>. 실제로 바위가 공중에 뜬 채로 흩어졌다.
-            //
-            // 최솟값이면 높은 이웃을 파고들지만 그건 공짜다(불투명한 덩어리끼리 겹치는 것은
-            // 보이지 않는다). 뜨는 것은 공짜가 아니다.
-            float TopOver(float arc, float half)
-            {
-                int n = Mathf.Max(1, Mathf.CeilToInt(half * 2f / Res));
-                float low = float.MaxValue;
-                for (int i = 0; i <= n; i++)
-                    low = Mathf.Min(low, topAt[SlotOf(arc - half + i * (half * 2f / n))]);
-                return low == float.MaxValue ? groundY : low;
-            }
-            void WriteTop(float arc, float half, float top)
-            {
-                int n = Mathf.Max(1, Mathf.CeilToInt(half * 2f / Res));
-                for (int i = 0; i <= n; i++)
-                {
-                    int k = SlotOf(arc - half + i * (half * 2f / n));
-                    if (top > topAt[k]) topAt[k] = top;
-                }
-            }
-
-            int courses = Mathf.Max(1, S.cliffCourses);
-            for (int course = 0; course < courses; course++)
-            {
-                // 층마다 시작 위상을 어긋낸다. 0.37은 무리수에 가까운 비율이라 층이 몇이든
-                // 위상이 겹치지 않는다 — 0.5로 두면 짝수 층끼리 도로 정렬된다.
-                float arc = total * (course * 0.37f % 1f);
-                float walked = 0f;
-
-                while (walked < total)
-                {
-                    int seg = SegAt(Mathf.Repeat(arc, total));
-                    Vector2 a0v = loop[seg], b0v = loop[(seg + 1) % loop.Count];
-                    float segLen = Mathf.Max(1e-4f, cum[seg + 1] - cum[seg]);
-                    float f = Mathf.Clamp01((Mathf.Repeat(arc, total) - cum[seg]) / segLen);
-                    Vector2 onEdge = Vector2.Lerp(a0v, b0v, f);
-
-                    // 스팬을 넓게 — 마칭스퀘어 폴리라인은 1m 계단이라 ±3m 로는 그 계단을
-                    // 그대로 탄다. 실측: 구조 텐서를 쓰던 때 10.9도였던 이웃 장축 정렬이
-                    // 폴리라인 접선으로 바꾼 뒤 25.8도로 나빠졌다(지터 기여분 12도를 빼면
-                    // strike 자체가 22도 흔들린다는 뜻).
-                    Vector2 tan = LoopTangent(loop, seg, 10);
-                    if (tan.sqrMagnitude < 1e-6f) tan = (b0v - a0v).normalized;
-
-                    Vector2 nrm = new Vector2(-tan.y, tan.x);
-                    if (ClearAt(onEdge + nrm) < ClearAt(onEdge - nrm)) nrm = -nrm;
-
-                    // 마칭스퀘어 정점은 실제 경계에서 최대 1m 어긋난다 — 안으로 밀어 넣는다
-                    int push = 0;
-                    while (ClearAt(onEdge) <= 0f && push < 6) { onEdge += nrm * (px * 2f); push++; }
-                    if (ClearAt(onEdge) <= 0f) { arc += minR; walked += minR; continue; }
-
-                    stTried++;
-                    int hx = Mathf.RoundToInt(onEdge.x * 4f), hy = Mathf.RoundToInt(onEdge.y * 4f);
-
-                    float thinFloor = Mathf.Max(0.05f, S.cliffMinThicknessM);
-                    float roomMax = MaxHalfThickness(onEdge, nrm, thinFloor, maxR);
-                    if (roomMax < thinFloor) { stThin++; arc += minR; walked += minR; continue; }
-                    roomAll.Add(roomMax);
-
-                    // 크기 — 층마다 다른 해시라 이음매가 저절로 어긋난다
-                    // 크기 — <b>범위를 넓게</b> 잡아야 위계가 생긴다.
-                    //
-                    // 예전에는 roomMax 의 0.45~0.8 로 묶어 놓고 멱법칙을 씌웠다. 분포를 아무리
-                    // 비틀어도 1.8배 범위 안에서만 노니 전부 중간 크기가 되고, 벽이 "비슷한
-                    // 돌을 여러 겹 쌓은 것"으로 보였다. 자연의 멱법칙은 <b>범위가 넓다</b> —
-                    // 압도적인 몇 개와 잔해가 같은 벽에 있다.
-                    //
-                    // 상한이 1을 넘는 것은 일부러다. 큰 덩어리가 벽 두께를 조금 넘어 튀어나오는
-                    // 것이 절벽에서는 오히려 자연스럽다(하드 제약은 아래 ClearAt 검사가 지킨다).
-                    float u01 = Hash(hx, hy, 71 + course * 13) % 1000 / 1000f;
-                    float big = Mathf.Pow(u01, 2.6f);
-                    float ar = roomMax * Mathf.Lerp(0.22f, 1.25f, big)
-                             * Mathf.Pow(0.96f, course);       // 위 층은 아주 조금씩만 작게
-
-                    float thinBoost = Mathf.Clamp(minR / Mathf.Max(0.05f, ar),
-                                                  1f, Mathf.Max(1f, S.cliffThinAspectMax));
-                    float aspect = Mathf.Lerp(1f, Mathf.Max(1f, S.cliffSlotAspect),
-                                              Hash(hx, hy, 53 + course * 13) % 1000 / 1000f) * thinBoost;
-                    float br = ar * aspect;
-
-                    float advance = Mathf.Max(minR * 0.4f, br * 2f * S.cliffPackSpacing);
-
-                    if (ar * Mathf.Sqrt(aspect) < minR * 0.45f)
-                    {
-                        stPebble++;
-                        roomPebble.Add(roomMax);
-                        float rayMax = 0f;
-                        for (int q = 1; q <= 24; q++)
-                            rayMax = Mathf.Max(rayMax, ClearAt(onEdge + nrm * (q * 0.5f)));
-                        rayPebble.Add(rayMax);
-                        arc += advance; walked += advance; continue;
-                    }
-
-                    // <b>깊이는 반지름과 별개로 구한다.</b> 이 바위를 담을 수 있는 가장 얕은
-                    // 자리에 놓아야 앞면이 윤곽에 최대한 붙는다.
-                    float seatDepth = SeatDepth(onEdge, nrm, ar, maxR);
-                    if (seatDepth < 0f)
-                    { stNoRoom++; arc += advance; walked += advance; continue; }
-
-                    // 안쪽으로 물러남(안식각) + 접선 방향 흔들림
-                    float setback = course * ar * S.cliffCourseSetback;
-                    float sway = (Hash(hx, hy, 271 + course) % 1000 / 1000f - 0.5f)
-                               * 2f * ar * S.cliffCourseSway;
-                    Vector2 c = onEdge + nrm * (seatDepth + setback) + tan * sway;
-
-                    if (ClearAt(c) < ar * 0.75f)
-                    { stNoRoom++; arc += advance; walked += advance; continue; }
-
-                    // <b>아래 켜를 보고 얹는다.</b> 자기 발자국 구간에서 가장 높은 곳이 앉을 자리다.
-                    float seat = TopOver(arc, br);
-
-                    float ridge = Mathf.PerlinNoise(onEdge.x * S.cliffRidgeFrequency / Cell + 5.3f,
-                                                    onEdge.y * S.cliffRidgeFrequency / Cell + 9.1f);
-                    float wantTop = world.Origin.y + Mathf.Lerp(CliffHeightLow, CliffHeightHigh, ridge);
-                    if (seat >= wantTop) { stHigh++; arc += advance; walked += advance; continue; }
-
-                    // 이음매를 파묻는다 — 아래 켜 꼭대기보다 조금 내려 앉힌다
-                    if (course > 0) seat -= ar * S.cliffCourseSink;
-
-                    // <b>간격 검사는 하지 않는다.</b> 걸음이 이미 간격을 정한다 —
-                    // 겹치도록 전진해 놓고 겹쳤다고 거부하면 서로를 상쇄할 뿐이었다
-                    // (실측: 그 검사가 자리 1420회를 막고 있었다).
-                    float strike = Mathf.Atan2(tan.x, tan.y) * Mathf.Rad2Deg;
-                    Place(new Vector2Int(hx, hy + course * 7919), c, ar, br, seat, course, strike);
-                    stations++;
-
-                    // 전진과 높이 프로파일은 <b>실제 메시</b> 기준으로. 슬롯으로 걸으면
-                    // 슬롯과 메시의 차이만큼 매 걸음 틈이 남는다.
-                    var justPlaced = placedList[placedList.Count - 1];
-                    float reach = justPlaced.ReachAlong > 0.05f ? justPlaced.ReachAlong : br;
-
-                    WriteTop(arc, reach, justPlaced.Top);
-
-                    float step = Mathf.Max(minR * 0.3f, reach * 2f * S.cliffPackSpacing);
-                    arc += step;
-                    walked += step;
+                    if (groundY + r * 0.35f + r > top) rejHigh++;
+                    else rejBusy++;
                 }
             }
         }
-
-        int ground = placedList.Count;
-        // ── 발치 애추 ──
-        // 벽의 바깥 테두리 띠에만 작은 바위를 흩는다. 반지름이 클리어런스를 넘어도 좋다 —
-        // <b>일부러 지면 쪽으로 삐져나오게</b> 두는 것이 이 띠의 목적이다. 바위와 잔디가
-        // 선으로 만나는 것을 깨는 것 말고는 하는 일이 없다.
-        //
-        // 그래서 콜라이더를 붙이지 않는다(아래 인스턴스화에서 Layer로 가른다). 통행 가능한
-        // 땅에 콜라이더를 두면 플레이어가 안 보이는 것에 걸리고, 길찾기 격자는 맵 타일을
-        // 보므로 몬스터와 플레이어의 통행 판정이 어긋난다.
-        int talus = 0;
-        if (S.cliffTalusDensity > 0f && S.cliffTalusRadius.y > 0f)
-        {
-            float band = Mathf.Max(0.05f, S.cliffTalusBandM);
-            int gate = Mathf.RoundToInt(Mathf.Clamp01(S.cliffTalusDensity) * 1000f);
-            float tLo = minR * Mathf.Max(0.02f, S.cliffTalusRadius.x);
-            float tHi = minR * Mathf.Max(S.cliffTalusRadius.x, S.cliffTalusRadius.y);
-
-            for (int fy = 0; fy < fh; fy++)
-                for (int fx = 0; fx < fw; fx++)
-                {
-                    float c = clear[fx, fy];
-                    if (c <= 0f || c > band) continue;
-                    if (Hash(fx, fy, 307) % 1000 >= gate) continue;
-
-                    Vector2 p = PixelToWorld(fx, fy);
-                    float r = Mathf.Lerp(tLo, tHi, Hash(fx, fy, 311) % 1000 / 1000f);
-                    if (TooCloseTalus(p, r)) continue;
-
-                    // 애추는 절리 세트를 따르지 않는다 — 무너져 내린 조각에는 방향이 없다.
-                    // 정렬된 벽 아래에 방향 없는 잔해가 깔리는 것이 "벽이 부서져 쌓였다"로 읽힌다.
-                    float strikeT = (Hash(fx, fy, 313) % 1000 / 1000f) * 360f;
-                    // 애추는 등방 슬롯이다 — 무너져 내린 잔해에는 벽의 접선이라는 개념이 없다
-                    Place(new Vector2Int(fx, fy), p, r, r,
-                          groundY - r * S.cliffTalusSink, -1, strikeT);
-                    talus++;
-                }
-        }
-
-        // ── 인스턴스별 명도 단계 ──
-        var shade = BuildShadeVariants(rocks);
-        int shadeSteps = Mathf.Clamp(S.cliffShadeSteps, 1, 16);
-        float shadeLo = 1f - S.cliffShadeRange - S.cliffShadeDepthDarken;
-        float shadeHi = 1f + S.cliffShadeRange;
 
         // ── 인스턴스화 ──
         var parent = new GameObject("Cliffs").transform;
         parent.SetParent(root, false);
 
-        foreach (var pr in placedList)
+        var shade = BuildShadeVariants(rocks);
+        int shadeSteps = Mathf.Clamp(S.cliffShadeSteps, 1, 16);
+        float shadeLo = 1f - S.cliffShadeRange - S.cliffShadeDepthDarken;
+        float shadeHi = 1f + S.cliffShadeRange;
+
+        foreach (var sp in spheres)
         {
-            // 각도는 전부 Place에서 확정했다 — yaw는 벽 접선, 기울기는 그 수직으로 눕힌
-            // 두 절리 세트다. 여기서 다시 뽑으면 크기 보정(grow)과 어긋나 절벽 밖으로
-            // 나가고, 기울기 방위가 yaw와 어긋나 벽과 무관한 방향으로 눕는다.
-            var rockDef = rocks[pr.Rock];
-            float yaw = pr.Yaw;
-            float tiltX = pr.TiltX, tiltZ = pr.TiltZ;
+            int pick = PickRock(rocks, sp.R, Hash(sp.Seed.x, sp.Seed.y, 23));
+            var rock = rocks[pick];
 
-            var go = (GameObject)PrefabUtility.InstantiatePrefab(rockDef.Prefab, parent);
+            // <b>균등 배율.</b> 프리팹의 원본 비율이 그대로 남는다 — 세로로 긴 것은 서고,
+            // 납작한 것은 눕는다. 구에 맞추므로 회전이 크기를 바꾸지 않아 yaw 가 공짜다.
+            float scale = sp.R / Mathf.Max(0.01f, rock.Radius);
+
+            float yaw = Hash(sp.Seed.x, sp.Seed.y, 89) % 3600 / 10f;
+            // 기울기는 작게 — 레퍼런스의 바위들은 서 있지 누워 있지 않다
+            float tiltX = (Hash(sp.Seed.x, sp.Seed.y, 79) % 1000 / 1000f - 0.5f) * S.cliffTilt;
+            float tiltZ = (Hash(sp.Seed.x, sp.Seed.y, 83) % 1000 / 1000f - 0.5f) * S.cliffTilt;
+
+            // <b>피벗 보정.</b> 프리팹 피벗은 대개 메시 바닥에 있어서, 구 중심에 그냥 놓으면
+            // 반지름만큼 떠오른다. Bottom(피벗→바닥)과 높이 절반을 빼서 메시 <b>중심</b>을
+            // 구 중심에 맞춘다.
+            float centerOff = (rock.Bottom + rock.Height * 0.5f) * scale;
+
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(rock.Prefab, parent);
             go.transform.SetPositionAndRotation(
-                new Vector3(pr.Center.x, pr.BaseY - rockDef.Bottom * pr.ScaleY, pr.Center.y),
+                new Vector3(sp.C.x, sp.C.y - centerOff, sp.C.z),
                 Quaternion.Euler(tiltX, yaw, tiltZ));
-            go.transform.localScale = new Vector3(pr.ScaleX, pr.ScaleY, pr.ScaleZ);
+            go.transform.localScale = Vector3.one * scale;
 
-            // 명도 — 낱개 흔들림 + "낮은 것이 어둡다". 높이는 바위 <b>중심</b>으로 잰다:
-            // 바닥으로 재면 지면 층이 전부 같은 값이 되고, 꼭대기로 재면 납작한 것이 억울하다.
+            // 명도 — 낱개 흔들림 + "낮은 것이 어둡다"(습기·이끼가 앉는 발치)
             if (shade.Count > 0)
             {
-                float mid = (pr.BaseY + pr.Top) * 0.5f - world.Origin.y;
-                float hFrac = Mathf.Clamp01(mid / Mathf.Max(0.5f, CliffHeightHigh));
+                float hFrac = Mathf.Clamp01((sp.C.y - world.Origin.y) / Mathf.Max(0.5f, CliffHeightHigh));
                 float v = 1f
-                    + (Hash(pr.Seed.x, pr.Seed.y, 401) % 1000 / 1000f - 0.5f) * 2f * S.cliffShadeRange
+                    + (Hash(sp.Seed.x, sp.Seed.y, 401) % 1000 / 1000f - 0.5f) * 2f * S.cliffShadeRange
                     - S.cliffShadeDepthDarken * (1f - hFrac);
                 int k = Mathf.Clamp(
                     Mathf.FloorToInt((v - shadeLo) / Mathf.Max(1e-4f, shadeHi - shadeLo) * shadeSteps),
@@ -1552,333 +886,177 @@ public static class WorldTerrainGenerator
                 }
             }
 
-            // 애추(Layer < 0)에는 콜라이더를 붙이지 않는다 — 통행 가능한 땅으로 삐져나오는
-            // 장식이라, 콜라이더를 두면 플레이어가 안 보이는 것에 걸린다.
-            if (pr.Layer >= 0) AddConvexCollider(go);
+            AddConvexCollider(go);
         }
 
-        // ── 뒷벽(커튼) ──
-        //
-        // 볼록한 덩어리를 쌓는 한 조각 사이의 오목한 틈은 <b>원리적으로</b> 남는다.
-        // 밀도·간격·층수를 아무리 조여도 없어지지 않는다(이번 작업에서 여러 번 확인했다).
-        //
-        // 그래서 틈을 없애는 대신 <b>틈 뒤를 막는다</b>. 윤곽을 따라 불투명한 면을 세우면
-        // 같은 틈이 '관통'이 아니라 '그늘'로 읽힌다 — 깎아낸 덩어리에 난 균열처럼 보인다.
-        // 팀의 바위 프리팹은 그대로 절벽의 얼굴로 남는다.
-        //
-        // 높이는 그 자리에 실제로 선 바위의 꼭대기에서 끌어온다. 능선 목표치를 쓰면
-        // 바위가 낮은 구간에서 커튼이 위로 삐져나온다.
-        int backingTris = BuildCliffBacking(loops, placedList, grid, bucket, parent, groundY);
+        // ── 발치 애추 ──
+        // 바위와 지면이 선으로 만나는 것을 깬다. 콜라이더는 붙이지 않는다 —
+        // 통행 가능한 땅으로 삐져나오는 장식이라, 콜라이더를 두면 안 보이는 것에 걸린다.
+        int talus = PlaceTalus(clear, fw, fh, fieldOrigin, px, groundY, minR, rocks, parent, shade,
+                               shadeSteps, shadeLo, shadeHi, world);
 
-        // 실제로 다 덮였는지 재서 보고한다 — "구멍 없음"은 눈으로 못 믿을 종류의 주장이라
-        // 숫자로 남긴다. 여기가 0이 아니면 벽에 사람이 지나갈 틈이 있다는 뜻이다.
-        // 덮임은 <b>벽면 띠</b>에서만 잰다.
-        //
-        // 예전에는 절벽 영역 전체를 쟀는데, 윤곽 걷기로 바꾼 뒤로는 그게 틀린 질문이 됐다 —
-        // 안쪽을 비우는 것이 이 방식의 <b>요점</b>이기 때문이다(보이지도 않는 곳에 예산을
-        // 쓰지 않는다). 영역 전체로 재면 잘 되고 있을 때도 30%가 나와 경보만 울린다.
-        //
-        // 물어야 할 것은 "플레이어가 보는 면에 구멍이 있는가"이고, 그 면은 윤곽에서
-        // 한 칸 들어간 띠다. 통행은 이 값과 무관하다 — 절벽 타일은 TileRules 가 이미
-        // 통째로 막고 있어서 바위가 없어도 몬스터는 지나가지 못한다.
-        // 구멍을 클리어런스로 분류하던 것은 걷어냈다 — 띠 자체를 "클리어런스 4m 이하"로
-        // 정의해 놓고 그 안에서 "3m 미만인가"를 물었으니 무엇을 넣어도 80~90%가 나오는
-        // 동어반복이었다. 원인은 <b>자리 단위 계측</b>(아래 줄)이 말해 준다: 두께가 모자라
-        // 버려진 자리가 몇 개인지가 거기 그대로 찍힌다.
-        float faceBand = Cell;
-        int cliffPx = 0, holePx = 0, innerPx = 0;
+        Debug.Log($"[WorldTerrainGenerator] 절벽 바위 {spheres.Count + talus}개 " +
+                  $"(벽 {spheres.Count} + 애추 {talus}, 칸 {world.CellSize}m)" +
+                  System.Environment.NewLine +
+                  $"  후보 {slots.Count}칸 · 시도 {tried} → 두께부족 {rejThin} · 너무안쪽 {rejDeep} " +
+                  $"· 자리참 {rejBusy} · 높이초과 {rejHigh} → 놓임 {placedCount}" +
+                  System.Environment.NewLine +
+                  CliffPackReport(spheres, groundY));
+
+        if (spheres.Count + talus > 12000)
+            Debug.LogWarning($"[WorldTerrainGenerator] 절벽 바위가 {spheres.Count + talus}개입니다 — " +
+                             "드로우콜·씬 용량이 부담됩니다. Cliff Size Tiers를 줄이거나 " +
+                             "Cliff Pack Tightness를 올리세요(느슨해져 개수가 줍니다).");
+    }
+
+    /// <summary>패킹된 구 하나 — 인스턴스화 전의 배치 결과.</summary>
+    struct Sphere
+    {
+        public Vector3 C;
+        public float R;
+        public Vector2Int Seed;
+    }
+
+    /// <summary>
+    /// 패킹 품질 — 눈이 실제로 보는 것에 대응하는 값만 찍는다.
+    ///
+    /// 덮임%(바닥 평면)는 재지 않는다. 켜를 위로 쌓으면 그 값에 아무 기여도 하지 않아서,
+    /// 벽이 높아질수록 숫자가 제자리인 지표였다. 2세대에서 그것만 보다가 배치가 무너진
+    /// 회차를 "좋아졌다"고 읽었다.
+    /// </summary>
+    static string CliffPackReport(List<Sphere> spheres, float groundY)
+    {
+        if (spheres.Count < 4) return "  (품질 지표: 표본이 너무 적다)";
+
+        var radii = new List<float>();
+        double sum = 0, sum2 = 0;
+        float highest = groundY;
+        foreach (var s in spheres)
+        {
+            radii.Add(s.R);
+            float h = s.C.y + s.R - groundY;
+            sum += h; sum2 += h * h;
+            if (s.C.y + s.R > highest) highest = s.C.y + s.R;
+        }
+        radii.Sort();
+        float q1 = radii[radii.Count / 4], q2 = radii[radii.Count / 2], q3 = radii[radii.Count * 3 / 4];
+        double mean = sum / spheres.Count;
+        double sd = System.Math.Sqrt(System.Math.Max(0, sum2 / spheres.Count - mean * mean));
+
+        return $"  반지름 사분위 {q1:F2} / {q2:F2} / {q3:F2}m " +
+               $"(최대/중앙 {radii[radii.Count - 1] / Mathf.Max(0.01f, q2):F1}배 — 위계)" +
+               System.Environment.NewLine +
+               $"  꼭대기 높이 {mean:F2}m ± {sd:F2} (최고 {highest - groundY:F1}m)";
+    }
+
+    /// <summary>
+    /// 발치 애추(talus) — 벽의 바깥 테두리 띠에 작은 바위를 흩는다.
+    ///
+    /// "구멍 메움"과는 다른 이야기다. 큰 바위 사이의 그늘을 메우려던 조약돌은 벽을 자갈
+    /// 무더기로 만들지만, 발치의 조약돌은 메움이 아니라 <b>퇴적물</b>이다. 바위와 지면이
+    /// 선으로 만나는 것이 눈에 제일 먼저 걸리는데, 이 띠가 그 선을 깬다.
+    ///
+    /// 반지름이 클리어런스를 넘어도 좋다 — <b>일부러 지면 쪽으로 삐져나오게</b> 두는 것이
+    /// 이 띠의 목적이다. 대신 콜라이더를 붙이지 않는다: 통행 가능한 땅에 콜라이더를 두면
+    /// 플레이어가 안 보이는 것에 걸리고, 길찾기는 맵 타일을 보므로 판정이 어긋난다.
+    /// </summary>
+    static int PlaceTalus(float[,] clear, int fw, int fh, Vector3 fieldOrigin, float px,
+                          float groundY, float minR, List<CliffRock> rocks, Transform parent,
+                          Dictionary<Material, Material[]> shade, int shadeSteps,
+                          float shadeLo, float shadeHi, World world)
+    {
+        if (S.cliffTalusDensity <= 0f || S.cliffTalusRadius.y <= 0f) return 0;
+
+        float band = Mathf.Max(0.05f, S.cliffTalusBandM);
+        int gate = Mathf.RoundToInt(Mathf.Clamp01(S.cliffTalusDensity) * 1000f);
+        float tLo = minR * Mathf.Max(0.02f, S.cliffTalusRadius.x);
+        float tHi = minR * Mathf.Max(S.cliffTalusRadius.x, S.cliffTalusRadius.y);
+
+        var placed = new List<(Vector2 c, float r)>();
+        int count = 0;
+
+        bool TooClose(Vector2 p, float r)
+        {
+            foreach (var o in placed)
+            {
+                float min = (r + o.r) * S.cliffTalusSpacing;
+                if ((o.c - p).sqrMagnitude < min * min) return true;
+            }
+            return false;
+        }
+
         for (int fy = 0; fy < fh; fy++)
             for (int fx = 0; fx < fw; fx++)
             {
                 float c = clear[fx, fy];
-                if (c <= 0f) continue;
-                if (c > faceBand) { innerPx++; continue; }   // 안쪽 — 일부러 비운다
-                cliffPx++;
-                if (!Covered(PixelToWorld(fx, fy))) holePx++;
-            }
+                if (c <= 0f || c > band) continue;
+                if (Hash(fx, fy, 307) % 1000 >= gate) continue;
 
-        Debug.Log($"[WorldTerrainGenerator] 절벽 바위 {placedList.Count}개 " +
-                  $"(벽 {ground} + 애추 {talus}, 칸 {world.CellSize}m) — " +
-                  $"벽면 덮임 {100f * (cliffPx - holePx) / Mathf.Max(1, cliffPx):F1}%" +
-                  $" (안쪽 {innerPx} 픽셀은 일부러 비움 · 뒷벽 {backingTris}삼각형)" +
-                  System.Environment.NewLine +
-                  $"  윤곽 {loops.Count}루프 {contourM:F0}m · 자리 {stTried}회 시도 → " +
-                  $"얇아서 {stThin} · 조약돌 {stPebble} · 공간부족 {stNoRoom} · 목표높이도달 {stHigh} " +
-                  $"→ 놓임 {stations}" +
-                  System.Environment.NewLine +
-                  $"  벽 반두께 — 전체 {Quart(roomAll)} · 조약돌 거부 {Quart(roomPebble)}" +
-                  $" · 그 자리 법선 최대 클리어런스 {Quart(rayPebble)}" +
-                  System.Environment.NewLine +
-                  CliffQualityReport(placedList, grid, world.Origin.y));
-        // 5%까지는 큰 바위들이 겹치며 남긴 그늘이라 정상이다. 그보다 크게 비면 벽에
-        // 사람이 지나갈 틈이 있다는 뜻이므로, 원인을 짚어 알린다.
-        if (holePx > cliffPx / 20)
-            Debug.LogWarning($"[WorldTerrainGenerator] 벽면의 {100f * holePx / Mathf.Max(1, cliffPx):F1}%에 " +
-                             $"바위가 서지 않았습니다({holePx}픽셀) — 시야가 뚫려 뒤가 보일 수 있습니다. " +
-                             "(통행은 무관합니다 — 절벽 타일은 길찾기가 이미 막고 있습니다.)" +
-                             System.Environment.NewLine +
-                             "위의 자리 단위 계측을 보세요. '얇아서'가 크면 벽이 실제로 얇은 것이고, " +
-                             "'줄 겹침'이 크면 Cliff Pack Spacing을, '줄 공간부족'이 크면 " +
-                             "Cliff Wall Rows나 바위 크기 상한을 낮춰야 합니다.");
-        if (placedList.Count > 12000)
-            Debug.LogWarning($"[WorldTerrainGenerator] 절벽 바위가 {placedList.Count}개입니다 — " +
-                             "드로우콜·씬 용량이 부담됩니다. cliffRadiusRange 최소값을 올리거나 " +
-                             "cliffCoverFactor를 올려(구멍 판정을 느슨하게) 줄일 수 있습니다.");
-    }
+                var p2 = new Vector2(fieldOrigin.x + (fx + 0.5f) * px,
+                                     fieldOrigin.z + (fy + 0.5f) * px);
+                float r = Mathf.Lerp(tLo, tHi, Hash(fx, fy, 311) % 1000 / 1000f);
+                if (TooClose(p2, r)) continue;
+                placed.Add((p2, r));
 
-    /// <summary>
-    /// 원하는 반지름에 가장 가까운 프리팹을 고른다(목록은 반지름 오름차순).
-    /// 가까운 것을 고르는 이유는 균등 배율이 1 근처에 머물러야 노멀·텍스처 밀도가
-    /// 유지되기 때문이다 — 1.7m 바위를 6m로 늘리면 표면이 뭉개져 보인다.
-    /// 후보 셋 중 해시로 하나 — 같은 크기 자리마다 같은 바위가 오는 것을 깬다.
-    /// </summary>
-    /// <summary>
-    /// 절벽 영역의 경계를 닫힌 폴리라인(월드 XZ)으로 뽑는다 — 마칭스퀘어.
-    ///
-    /// 픽셀 경계를 그대로 따라가는 무어 추적 대신 마칭스퀘어를 쓰는 이유: 얇은 구조나
-    /// 한 픽셀짜리 돌기에서 무한 루프에 빠지지 않고, 구멍이 있는 영역·여러 덩어리를
-    /// 따로 다룰 필요 없이 한 번에 처리된다.
-    ///
-    /// <paramref name="stride"/>로 성기게 본다. 어차피 바위 간격(수 미터)으로 다시
-    /// 샘플링하므로 픽셀 단위 계단은 의미가 없고, 성기게 볼수록 계단이 저절로 뭉개진다.
-    /// </summary>
-    static List<List<Vector2>> CliffContours(float[,] clear, int fw, int fh,
-                                             Vector3 fieldOrigin, float px)
-    {
-        const int Stride = 4;                       // 0.25m 픽셀 기준 1m 격자
-        int gw = (fw - 1) / Stride, gh = (fh - 1) / Stride;
-        float cell = px * Stride;
+                int pick = PickRock(rocks, r, Hash(fx, fy, 23));
+                var rock = rocks[pick];
+                float scale = r / Mathf.Max(0.01f, rock.Radius);
 
-        bool In(int gx, int gy)
-        {
-            int fx = Mathf.Clamp(gx * Stride, 0, fw - 1);
-            int fy = Mathf.Clamp(gy * Stride, 0, fh - 1);
-            return clear[fx, fy] > 0f;
-        }
+                // 잔해에는 방향이 없다 — 정렬된 벽 아래 방향 없는 조각이 깔리는 것이
+                // "벽이 부서져 쌓였다"로 읽힌다
+                float yaw = Hash(fx, fy, 313) % 3600 / 10f;
+                float tiltX = (Hash(fx, fy, 79) % 1000 / 1000f - 0.5f) * 60f;
+                float tiltZ = (Hash(fx, fy, 83) % 1000 / 1000f - 0.5f) * 60f;
 
-        // 격자 좌표(반정수) → 월드. 키는 2배해 정수로 만든다
-        Vector2 W(float gx, float gy)
-            => new Vector2(fieldOrigin.x + gx * cell, fieldOrigin.z + gy * cell);
-        long Key(float gx, float gy)
-            => ((long)Mathf.RoundToInt(gx * 2f) << 32) ^ (uint)Mathf.RoundToInt(gy * 2f);
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(rock.Prefab, parent);
+                go.transform.SetPositionAndRotation(
+                    new Vector3(p2.x, groundY - r * S.cliffTalusSink - rock.Bottom * scale, p2.y),
+                    Quaternion.Euler(tiltX, yaw, tiltZ));
+                go.transform.localScale = Vector3.one * scale;
 
-        var segA = new List<Vector2>();
-        var segB = new List<Vector2>();
-        var segKeyA = new List<long>();
-        var segKeyB = new List<long>();
-
-        void Emit(float ax, float ay, float bx, float by)
-        {
-            segA.Add(W(ax, ay)); segB.Add(W(bx, by));
-            segKeyA.Add(Key(ax, ay)); segKeyB.Add(Key(bx, by));
-        }
-
-        for (int gy = 0; gy < gh; gy++)
-            for (int gx = 0; gx < gw; gx++)
-            {
-                int code = (In(gx, gy) ? 1 : 0) | (In(gx + 1, gy) ? 2 : 0)
-                         | (In(gx + 1, gy + 1) ? 4 : 0) | (In(gx, gy + 1) ? 8 : 0);
-                if (code == 0 || code == 15) continue;
-
-                float L = gx, R = gx + 1, B = gy, T = gy + 1, MX = gx + 0.5f, MY = gy + 0.5f;
-                switch (code)
+                if (shade.Count > 0)
                 {
-                    case 1: case 14: Emit(L, MY, MX, B); break;
-                    case 2: case 13: Emit(MX, B, R, MY); break;
-                    case 3: case 12: Emit(L, MY, R, MY); break;
-                    case 4: case 11: Emit(R, MY, MX, T); break;
-                    case 6: case 9:  Emit(MX, B, MX, T); break;
-                    case 7: case 8:  Emit(MX, T, L, MY); break;
-                    // 대각으로 마주 본 두 칸 — 어느 쪽으로 이어도 되지만 둘을 따로 끊는다
-                    case 5:  Emit(L, MY, MX, B); Emit(R, MY, MX, T); break;
-                    case 10: Emit(MX, B, R, MY); Emit(MX, T, L, MY); break;
+                    // 발치는 어둡다 — 가장 어두운 두 단계에서 고른다
+                    int k = Mathf.Clamp((int)(Hash(fx, fy, 401) % 2), 0, shadeSteps - 1);
+                    foreach (var rend in go.GetComponentsInChildren<Renderer>(true))
+                    {
+                        var mats = rend.sharedMaterials;
+                        bool any = false;
+                        for (int i = 0; i < mats.Length; i++)
+                            if (mats[i] != null && shade.TryGetValue(mats[i], out var arr))
+                            { mats[i] = arr[k]; any = true; }
+                        if (any) rend.sharedMaterials = mats;
+                    }
                 }
+
+                count++;
             }
 
-        // 끝점 키로 이어 붙여 폴리라인을 만든다
-        var byKey = new Dictionary<long, List<int>>();
-        void Reg(long k, int i)
-        {
-            if (!byKey.TryGetValue(k, out var l)) byKey[k] = l = new List<int>();
-            l.Add(i);
-        }
-        for (int i = 0; i < segA.Count; i++) { Reg(segKeyA[i], i); Reg(segKeyB[i], i); }
-
-        var used = new bool[segA.Count];
-        var loops = new List<List<Vector2>>();
-
-        for (int start = 0; start < segA.Count; start++)
-        {
-            if (used[start]) continue;
-            used[start] = true;
-
-            var line = new List<Vector2> { segA[start], segB[start] };
-            long tailKey = segKeyB[start];
-            Vector2 tail = segB[start];
-
-            while (true)
-            {
-                int next = -1;
-                if (byKey.TryGetValue(tailKey, out var cands))
-                    foreach (int j in cands)
-                        if (!used[j]) { next = j; break; }
-                if (next < 0) break;
-
-                used[next] = true;
-                bool fromA = segKeyA[next] == tailKey;
-                tail = fromA ? segB[next] : segA[next];
-                tailKey = fromA ? segKeyB[next] : segKeyA[next];
-                line.Add(tail);
-            }
-
-            if (line.Count >= 3) loops.Add(line);
-        }
-        return loops;
+        return count;
     }
 
     /// <summary>
-    /// 폴리라인의 국소 접선 — 앞뒤 <paramref name="span"/>개를 아울러 본다.
-    /// 마칭스퀘어의 결과를 한 구간만 보고 쓰면 45도 단위로 꺾인 방향이 나온다.
-    /// </summary>
-    static Vector2 LoopTangent(List<Vector2> loop, int i, int span)
-    {
-        int n = loop.Count;
-        Vector2 a = loop[((i - span) % n + n) % n];
-        Vector2 b = loop[(i + span) % n];
-        var d = b - a;
-        return d.sqrMagnitude > 1e-8f ? d.normalized : Vector2.zero;
-    }
-
-    /// <summary>
-    /// 윤곽을 따라 <b>불투명한 커튼</b>을 세운다 — 조각 사이 틈으로 뒤가 비치는 것을 막는다.
+    /// 원하는 반지름에 가장 가까운 프리팹을 고른다(목록은 Radius 오름차순).
     ///
-    /// 바위 뒤로 조금 물러나 세우고, 높이는 그 자리 바위들의 실제 꼭대기에서 끌어온다.
-    /// 메시는 리전 하나당 한 장이라 오브젝트 수에 사실상 영향이 없다.
+    /// 가까운 것을 고르는 이유는 <b>균등 배율이 1 근처에 머물러야</b> 하기 때문이다 —
+    /// 1.7m 바위를 6m 로 늘리면 면이 커진 만큼 폴리곤이 성겨 보인다.
+    /// 후보 셋 중 해시로 하나: 같은 크기 자리마다 같은 바위가 오면 반복이 눈에 띈다.
     /// </summary>
-    static int BuildCliffBacking(List<List<Vector2>> loops, List<PlacedRock> placed,
-                                 Dictionary<Vector2Int, List<int>> grid, float bucket,
-                                 Transform parent, float groundY)
+    static int PickRock(List<CliffRock> rocks, float radius, int hash)
     {
-        if (S.cliffBackingInset < 0f) return 0;
+        int n = rocks.Count;
+        if (n <= 1) return 0;
 
-        var verts = new List<Vector3>();
-        var tris = new List<int>();
-
-        // 이 지점 근처 바위들의 꼭대기 — 커튼이 그보다 낮아야 삐져나오지 않는다
-        float TopNear(Vector2 p)
+        int lo = 0, hi = n - 1;
+        while (lo < hi)
         {
-            var b0 = new Vector2Int(Mathf.FloorToInt(p.x / bucket), Mathf.FloorToInt(p.y / bucket));
-            float best = groundY;
-            for (int by = -1; by <= 1; by++)
-                for (int bx = -1; bx <= 1; bx++)
-                    if (grid.TryGetValue(new Vector2Int(b0.x + bx, b0.y + by), out var list))
-                        foreach (int i in list)
-                        {
-                            var o = placed[i];
-                            if (o.Layer < 0) continue;                 // 애추는 벽이 아니다
-                            float reach = o.Radius * 1.6f;
-                            if ((o.Center - p).sqrMagnitude > reach * reach) continue;
-                            if (o.Top > best) best = o.Top;
-                        }
-            return best;
+            int mid = (lo + hi) >> 1;
+            if (rocks[mid].Radius < radius) lo = mid + 1; else hi = mid;
         }
 
-        foreach (var loop in loops)
-        {
-            if (loop.Count < 3) continue;
-
-            // <b>열린 폴리라인을 닫힌 것처럼 이으면 안 된다.</b> CliffContours 는 이어붙이다
-            // 끊기면 열린 선을 내놓는데, 마지막 정점을 첫 정점에 연결하면 맵을 가로지르는
-            // 거대한 삼각형이 생긴다(실제로 검은 스파이크가 화면을 덮었다).
-            bool closed = (loop[0] - loop[loop.Count - 1]).sqrMagnitude < 4f;
-
-            int start = verts.Count;
-            for (int i = 0; i < loop.Count; i++)
-            {
-                Vector2 a = loop[i];
-                Vector2 t = LoopTangent(loop, i, 3);
-                Vector2 n = new Vector2(-t.y, t.x);
-
-                // 안쪽은 <b>바위가 선 쪽</b>이다. 루프 무게중심으로 가늠하면 안 된다 —
-                // 맵 경계 링의 무게중심은 맵 한가운데, 즉 잔디 쪽이라 정반대로 민다.
-                float plus = TopNear(a + n * S.cliffBackingInset);
-                float minus = TopNear(a - n * S.cliffBackingInset);
-                Vector2 inward = plus >= minus ? n : -n;
-
-                Vector2 q = a + inward * S.cliffBackingInset;
-                float top = TopNear(a) - S.cliffBackingDrop;
-                if (top < groundY) top = groundY;
-
-                verts.Add(new Vector3(q.x, groundY - 2f, q.y));
-                verts.Add(new Vector3(q.x, top, q.y));
-            }
-
-            int segs = closed ? loop.Count : loop.Count - 1;
-            for (int i = 0; i < segs; i++)
-            {
-                int i0 = start + i * 2, i1 = start + ((i + 1) % loop.Count) * 2;
-                // 양면 — 안팎 어디서 봐도 막힌다(컬링 때문에 한쪽만 뚫려 보이지 않게)
-                tris.Add(i0); tris.Add(i0 + 1); tris.Add(i1);
-                tris.Add(i1); tris.Add(i0 + 1); tris.Add(i1 + 1);
-                tris.Add(i1); tris.Add(i0 + 1); tris.Add(i0);
-                tris.Add(i1 + 1); tris.Add(i0 + 1); tris.Add(i1);
-            }
-        }
-
-        if (tris.Count == 0) return 0;
-
-        var mesh = new Mesh { name = "CliffBacking", indexFormat = verts.Count > 65000
-            ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(tris, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-
-        EnsureFolder();
-        string meshPath = $"{S.assetFolder}/CliffBacking.asset";
-        var old = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
-        if (old != null) AssetDatabase.DeleteAsset(meshPath);
-        AssetDatabase.CreateAsset(mesh, meshPath);
-
-        var go = new GameObject("Cliff Backing");
-        go.transform.SetParent(parent, false);
-        go.AddComponent<MeshFilter>().sharedMesh = mesh;
-        go.AddComponent<MeshRenderer>().sharedMaterial = CliffBackingMaterial();
-        // 콜라이더는 붙이지 않는다 — 바위 콜라이더가 이미 벽을 막고, 절벽 타일은
-        // 길찾기가 통째로 막는다. 여기 콜라이더를 두면 틈에 낀 플레이어를 밀어낼 뿐이다.
-
-        return tris.Count / 3;
-    }
-
-    /// <summary>커튼용 어두운 머티리얼 — 바위와 같은 셰이더라 배칭이 유지된다.</summary>
-    static Material CliffBackingMaterial()
-    {
-        EnsureFolder();
-        string path = $"{S.assetFolder}/CliffBacking.mat";
-        var m = AssetDatabase.LoadAssetAtPath<Material>(path);
-        if (m == null)
-        {
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-            m = new Material(shader) { name = "CliffBacking" };
-            AssetDatabase.CreateAsset(m, path);
-        }
-        int id = m.HasProperty(BaseColorId) ? BaseColorId : LegacyColorId;
-        var want = new Color(0.16f, 0.16f, 0.17f, 1f);   // 그늘로 읽힐 만큼 어둡게
-        if (m.HasProperty(id) && (Vector4)m.GetColor(id) != (Vector4)want)
-        {
-            m.SetColor(id, want);
-            if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", 0.05f);
-            EditorUtility.SetDirty(m);
-        }
-        return m;
-    }
-
-    /// <summary>표본의 사분위를 "q1 / q2 / q3" 로. 비었으면 "-".</summary>
-    static string Quart(List<float> v)
-    {
-        if (v == null || v.Count == 0) return "-";
-        v.Sort();
-        return $"{v[v.Count / 4]:F2} / {v[v.Count / 2]:F2} / {v[v.Count * 3 / 4]:F2}m";
+        int from = Mathf.Max(0, lo - 1);
+        int cand = Mathf.Min(3, n - from);
+        return from + (hash % cand);
     }
 
     /// <summary>구워낸 명도 변종이 사는 폴더. 지우고 다시 구우면 원본 머티리얼에서 새로 만든다.</summary>
@@ -1954,147 +1132,6 @@ public static class WorldTerrainGenerator
 
         if (wrote) AssetDatabase.SaveAssets();
         return map;
-    }
-
-    /// <summary>
-    /// 배치 결과의 <b>품질</b> 지표. 덮임%와 목적이 다르다 — 그쪽은 "뚫렸는가"를 재는
-    /// 정합성 지표고(그것도 필요하다), 이쪽은 "자연스러운가"를 잡으려는 값들이다.
-    ///
-    /// 덮임%만 보면 코드가 자꾸 채우는 방향으로 끌려간다. 사람 눈은 벽 두께를 몇 % 채웠는지
-    /// 못 보고, 아래 셋은 바로 본다.
-    ///   반지름 사분위 — 25~75% 구간이 좁으면 크기가 균질하다(자연은 멱법칙: 압도적인 몇 개
-    ///                   + 중간 + 잔해). 사분위 폭을 중앙값으로 나눈 값을 함께 찍는다.
-    ///   이웃 yaw 차이 중앙값 — 방향이 랜덤이면 45도 근처(축 데이터를 0~90도로 접은 기준),
-    ///                          절리 세트가 살아 있으면 20도 이하로 떨어진다.
-    ///   스카이라인 편차/평균 — 0에 가까우면 높이가 고른 담벼락이다.
-    /// </summary>
-    static string CliffQualityReport(List<PlacedRock> placed,
-                                     Dictionary<Vector2Int, List<int>> grid, float baseY)
-    {
-        var radii = new List<float>();
-        var groundIdx = new List<int>();
-        for (int i = 0; i < placed.Count; i++)
-            if (placed[i].Layer == 0) { radii.Add(placed[i].Radius); groundIdx.Add(i); }
-        if (radii.Count < 4) return "  (품질 지표: 표본이 너무 적다)";
-
-        radii.Sort();
-        float q1 = radii[radii.Count / 4], q2 = radii[radii.Count / 2], q3 = radii[radii.Count * 3 / 4];
-
-        // 이웃 간 yaw 차이 — 가장 가까운 다른 지면 바위 하나와만 비교한다.
-        // 축 데이터라 0~90도로 접는다(180도 돌린 바위는 같은 방향으로 읽힌다).
-        var deltas = new List<float>();
-        foreach (int i in groundIdx)
-        {
-            var a = placed[i];
-            float best = float.MaxValue; int bestJ = -1;
-            var b0 = new Vector2Int(Mathf.FloorToInt(a.Center.x / CliffBucketProbe),
-                                    Mathf.FloorToInt(a.Center.y / CliffBucketProbe));
-            foreach (var kv in grid)
-            {
-                if (Mathf.Abs(kv.Key.x - b0.x) > 1 || Mathf.Abs(kv.Key.y - b0.y) > 1) continue;
-                foreach (int j in kv.Value)
-                {
-                    if (j == i || placed[j].Layer != 0) continue;
-                    float d = (placed[j].Center - a.Center).sqrMagnitude;
-                    if (d < best) { best = d; bestJ = j; }
-                }
-            }
-            if (bestJ < 0) continue;
-            float dy = Mathf.Abs(Mathf.DeltaAngle(a.AxisDeg, placed[bestJ].AxisDeg));
-            deltas.Add(dy > 90f ? 180f - dy : dy);
-        }
-        deltas.Sort();
-        float medYaw = deltas.Count > 0 ? deltas[deltas.Count / 2] : -1f;
-
-        // 실제 슬롯 비율 — 이방성이 정말 일어났는지 재는 값. 1에 가까우면 여전히 정사각이다.
-        var asp = new List<float>();
-        foreach (int i in groundIdx)
-            asp.Add(placed[i].HalfAlong / Mathf.Max(0.01f, placed[i].HalfAcross));
-        asp.Sort();
-        float medAsp = asp.Count > 0 ? asp[asp.Count / 2] : 1f;
-
-        // 스카이라인 — 모든 층의 꼭대기 높이
-        double sum = 0, sum2 = 0;
-        int n = 0;
-        foreach (var pr in placed)
-        {
-            if (pr.Layer < 0) continue;   // 애추는 벽이 아니다 — 스카이라인에서 뺀다
-            double h = pr.Top - baseY; sum += h; sum2 += h * h; n++;
-        }
-        n = System.Math.Max(1, n);
-        double mean = sum / n;
-        double sd = System.Math.Sqrt(System.Math.Max(0, sum2 / n - mean * mean));
-
-        // <b>떠 있는 바위</b> — 바닥이 지면보다 높은데 그 아래를 받쳐 주는 것이 없는 것.
-        //
-        // 이 지표가 없어서 배치가 완전히 무너진 회차를 "스카이라인 편차가 가장 고름"이라고
-        // 보고했다. 덮임(바닥 평면)도 스카이라인(평균·편차)도 공중에 뜬 바위를 잡지 못한다.
-        // 눈에 제일 먼저 걸리는 것이 계측에 안 잡히면 계측이 판단을 오도한다.
-        int floating = 0;
-        foreach (var pr in placed)
-        {
-            if (pr.Layer <= 0 || pr.BaseY < baseY + 0.5f) continue;
-            bool supported = false;
-            foreach (var o in placed)
-            {
-                if (o.Layer > pr.Layer) continue;
-                float reach = pr.Radius + o.Radius;
-                if ((o.Center - pr.Center).sqrMagnitude > reach * reach) continue;
-                if (o.Top >= pr.BaseY - 0.3f && o.BaseY <= pr.BaseY) { supported = true; break; }
-            }
-            if (!supported) floating++;
-        }
-
-        return string.Join(System.Environment.NewLine, new[]
-        {
-            $"  반지름 사분위 {q1:F2} / {q2:F2} / {q3:F2}m " +
-            $"(IQR/중앙값 {(q3 - q1) / Mathf.Max(0.01f, q2):F2} — 낮으면 균질)",
-            $"  이웃 yaw 차이 중앙값 {medYaw:F1}도 (랜덤이면 45도 · 절리 세트면 20도 이하)",
-            $"  슬롯 장/단축 중앙값 {medAsp:F2} (1.0이면 정사각 — 이방성이 안 걸린 것)",
-            $"  스카이라인 {mean:F2}m ± {sd:F2} (편차/평균 {sd / System.Math.Max(0.01, mean):F2})",
-            $"  떠 있는 바위 {floating}개 (0이어야 한다 — 받침 없이 공중에 앉은 것)",
-        });
-    }
-
-    /// <summary>품질 계측이 이웃을 찾을 때 쓰는 버킷 한 변 — 배치 때 쓴 값과 같아야 한다.</summary>
-    static float CliffBucketProbe = 1f;
-
-    /// <summary>
-    /// 요청 비율(<paramref name="aspectWant"/>)에 가장 가까운 후보 셋 중에서 해시로 고른다.
-    ///
-    /// 슬롯이 이방성이 된 뒤로 이것이 핵심이 됐다. 납작한 프리팹은 납작한 슬롯으로, 길쭉한
-    /// 것은 길쭉한 슬롯으로 자연히 가므로 <b>눌러 일그러뜨릴 이유가 사라진다</b>. 그래서
-    /// cliffRoundness 를 낮게 둘 수 있고, 그러면 11종의 실루엣이 살아난다.
-    ///
-    /// 하나만 고르지 않고 셋 중에서 뽑는 이유: 최적 하나만 쓰면 비슷한 슬롯이 이어지는
-    /// 구간에서 같은 프리팹이 줄줄이 나와 격자가 드러난다.
-    /// </summary>
-    static int PickRock(List<CliffRock> rocks, float aspectWant, int hash)
-    {
-        int n = rocks.Count;
-        if (n <= 1) return 0;
-        int cand = Mathf.Min(3, n);
-
-        // n 이 열 남짓이라 정렬보다 3칸 삽입이 싸다
-        var idx = new int[3];
-        var err = new float[3];
-        for (int i = 0; i < 3; i++) { idx[i] = -1; err[i] = float.MaxValue; }
-
-        for (int i = 0; i < n; i++)
-        {
-            // 로그 비율 오차 — 2배 크고 2배 작은 것을 같은 거리로 본다
-            float e = Mathf.Abs(Mathf.Log(rocks[i].FootAspect / Mathf.Max(0.01f, aspectWant)));
-            for (int k = 0; k < cand; k++)
-                if (e < err[k])
-                {
-                    for (int j = cand - 1; j > k; j--) { err[j] = err[j - 1]; idx[j] = idx[j - 1]; }
-                    err[k] = e; idx[k] = i;
-                    break;
-                }
-        }
-
-        int at = idx[hash % cand];
-        return at >= 0 ? at : 0;
     }
 
     /// <summary>
