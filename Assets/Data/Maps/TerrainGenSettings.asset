@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42f4f8ea49417ae4fba7465f48b17ea7, type: 3}
+  m_Name: TerrainGenSettings
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::TerrainGenSettings
+  assetFolder: Assets/Data/Maps/Terrain
+  terrainLayers:
+  - {fileID: 8574412962073106934, guid: acd1f91ae4732f140ab38f18ebfaa16c, type: 2}
+  - {fileID: 8574412962073106934, guid: 410ebf160a46ed84083e2077ca8fc3d0, type: 2}
+  - {fileID: 8574412962073106934, guid: b447b7c760c116c43901f9ede86896f5, type: 2}
+  waterMaterialSource: {fileID: 2100000, guid: 16ca5feb16ef2d744852096378401523, type: 2}
+  terrainHeightRange: 2
+  riverDepth: 0.85
+  waterLevel: -0.15
+  shoreWidth: 1.8
+  seaMargin: 1.5
+  boundsHeight: 40
+  boundsThickness: 2
+  boundsSink: 5
+  waterVertexSpacing: 1
+  foamDepth: 0.1
+  riverFalloffM: 0.6
+  shelfWidthM: 0.9
+  shelfDepth: 0.3
+  shapeInsetM: 0.3
+  fieldPixelM: 0.25
+  heightSampleM: 0.25
+  smoothRadiusM: 0.75
+  smoothPasses: 2
+  heightSmoothPasses: 2
+  warpStrengthM: 2.2
+  warpWavelengthM: 36
+  warpMidStrengthM: 1.2
+  warpMidWavelengthM: 10
+  warpFineStrengthM: 0.7
+  warpFineWavelengthM: 4.5
+  detailAmplitude: 0.14
+  detailWavelengthM: 22
+  grassSet:
+  - {fileID: 6881102727349999488, guid: 00740326024ab3d4599c37550c9c6667, type: 3}
+  - {fileID: 8094190162121565675, guid: 1929177bd233d5f44b76684aae1f665e, type: 3}
+  - {fileID: 4504999685787635492, guid: a4312075d1411ba478af8362ef1d5883, type: 3}
+  flowerSet:
+  - {fileID: 7727420726551639470, guid: 1ee03ab7ac2971d478d048ccfbce5bad, type: 3}
+  - {fileID: 1382545689727023377, guid: 605f8ee4bc0f0d548ac832a268d52369, type: 3}
+  - {fileID: 8964455390626319223, guid: 0f257e8341891b443b3833e67e598be1, type: 3}
+  - {fileID: 3201195293181070412, guid: 9c04a5a41fe8f874da9d99c7f604cd22, type: 3}
+  - {fileID: 1793381877150410667, guid: 7e6b9314a0ced0b4a9980df42b95e4e3, type: 3}
+  grassSize: {x: 0.56, y: 1}
+  flowerSize: {x: 0.7, y: 1.2}
+  detailPointM: 0.5
+  detailPatch: 64
+  detailDistance: 70
+  healthyTint: {r: 0.263, g: 0.976, b: 0.165, a: 1}
+  dryTint: {r: 0.804, g: 0.737, b: 0.102, a: 1}
+  grassWaterLineOffset: 0.08
+  grassMaxSlope: 0.45
+  cliffSet:
+  - {fileID: 4843524868254211946, guid: a1b1fcbbf1bddee45b83995cf1bab000, type: 3}
+  - {fileID: 7105557981267009923, guid: fb22f2d8160ca714d80b1763c15734d0, type: 3}
+  - {fileID: 4356480299396696560, guid: 2f1248b51e774154a8668cf9e1e220b3, type: 3}
+  - {fileID: 1604413879457636381, guid: 704702636f10f5745821add6d9158972, type: 3}
+  - {fileID: 2586713759252572031, guid: 21aa32056f59b7547acb46bc9a7738d7, type: 3}
+  - {fileID: 5514129879276577408, guid: 163170d419d9c2744a4f121ed6c346eb, type: 3}
+  - {fileID: 6819962056721478856, guid: 2d7ce66dd0e6d2e46a85d1481b5f0ad4, type: 3}
+  - {fileID: 1418860561918544383, guid: 35de57031ce1e7b4f92690d555077e80, type: 3}
+  - {fileID: 5389395240314065769, guid: 54c53036c73c3e84ca29b6911adf5fd8, type: 3}
+  - {fileID: 2010085120437849477, guid: 4828afd64a3dd424393c97dfacfc7aa3, type: 3}
+  cliffMinRadius: 3
+  cliffMaxRadius: 12
+  cliffYawJitter: 26
+  cliffPackSpacing: 0.42
+  cliffCoverFactor: 0.75
+  cliffMaxScale: 999
+  cliffRoundness: 0.3
+  cliffSizeNoise: {x: 0.95, y: 1}
+  cliffMaxAspect: 2.2
+  cliffMaxHeightCells: 2.2
+  cliffHeightCells: {x: 2, y: 4.5}
+  cliffRidgeFrequency: 0.11
+  cliffBaseSinkCells: 0.3
+  cliffStretch: {x: 0.9, y: 1.1}
+  cliffStackLayers: 3
+  cliffStackShrink: {x: 0.85, y: 0.97}
+  cliffStackSink: 0.22
+  cliffStackOffset: 0.55
+  cliffStackMinRadius: 1.25
+  cliffTilt: 24
+  cliffDipSteepShare: 0.3
+  cliffSlotAspect: 1.5
+  cliffCourses: 6
+  cliffCourseSetback: 0.22
+  cliffCourseSink: 0.18
+  cliffCourseSway: 0.55
+  cliffBackingInset: -1
+  cliffBackingDrop: 1.2
+  cliffMinThicknessM: 0.4
+  cliffThinAspectMax: 4
+  cliffRowSeparation: 1.5
+  cliffTalusBandM: 1.2
+  cliffTalusDensity: 0.6
+  cliffTalusRadius: {x: 0.25, y: 0.5}
+  cliffTalusSpacing: 0.8
+  cliffTalusSink: 0.35
+  cliffShadeSteps: 8
+  cliffShadeRange: 0.12
+  cliffShadeDepthDarken: 0.18

@@ -49,6 +49,13 @@ public class MonsterNest : Entity
     [Tooltip("파괴 시 꺼질 외형(구조물 및 콜라이더 포함) 오브젝트들")]
     public GameObject[] destructibleVisuals;
 
+    [Tooltip("둥지의 건물 데이터 — 차지하는 칸과 파괴 규칙(철거 가능·공격 가능)의 출처. " +
+             "WorldPopulator가 BuildingDatabase에서 찾아 꽂는다.")]
+    [SerializeField] private NestDataSO data;
+
+    /// <summary>둥지의 건물 데이터를 꽂는다 (WorldPopulator 전용).</summary>
+    public void SetData(NestDataSO nestData) => data = nestData;
+
     [Header("Recovery Settings")]
     [Tooltip("보스 파괴 후 복구되는 기간(일)")]
     [SerializeField] private int bossRecoveryDays = 2;
@@ -305,6 +312,10 @@ public class MonsterNest : Entity
     // 효과 경로는 TakeDamage를 거치지 않고 ReceiveDamage로 직행하기 때문이다.
     public override void ReceiveDamage(float amount)
     {
+        // 데이터가 공격을 거부하면 스폰 포인트와 무관하게 아무 피해도 받지 않는다 —
+        // 건물의 isAttackable과 같은 규칙이다(BuildingEntity.ApplyEffects).
+        if (data != null && !data.isAttackable) return;
+
         if (IsInvulnerable())
         {
             // Debug.Log("[MonsterNest] 둥지가 무적 상태입니다! (보스 또는 스폰포인트가 살아있음)");

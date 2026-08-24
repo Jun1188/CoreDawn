@@ -15,7 +15,6 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
 {
     private static int _depthCounter;
     private static int _openCount;
-    private static int _cursorHolders;
     private int _depth;
     private int _mapToken = -1;
 
@@ -71,23 +70,18 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
     // 아래쪽 창에서 마우스가 사라진다. 그래서 잠그고 푸는 것은 개별 창이 아니라
     // "커서를 쥔 창이 몇 개인가"가 정한다.
 
+    // 계수는 여기서 들지 않고 UICursor에 맡긴다 — <b>커서 소유자는 하나여야 한다.</b>
+    //
+    // UIPopup을 상속하지 않는 자리도 커서를 쥔다: 씬 경계가 그렇다(게임플레이 진입은
+    // UICursor.ResetLocked, 타이틀 진입은 ResetFree). 여기에 따로 계수를 두면 그 리셋이
+    // 한쪽만 0으로 만들고 다른 쪽은 남아, 창을 다 닫아도 커서가 안 잠기거나 그 반대가 된다.
+    // 같은 버그를 두 갈래에서 각각 고쳤고, 합치면서 계수가 둘이 될 뻔한 자리다.
+
     /// <summary>커서를 푼다. 이미 다른 창이 풀어 뒀어도 세는 것은 늘어난다.</summary>
-    private static void AcquireCursor()
-    {
-        _cursorHolders++;
-        UnityEngine.Cursor.lockState = CursorLockMode.None;
-        UnityEngine.Cursor.visible = true;
-    }
+    private static void AcquireCursor() => UICursor.Release();
 
     /// <summary>마지막 한 창이 닫힐 때만 다시 잠근다.</summary>
-    private static void ReleaseCursor()
-    {
-        if (--_cursorHolders > 0) return;
-
-        _cursorHolders = 0;   // 씬 전환 등으로 짝이 어긋나도 음수로 흘러가지 않게
-        UnityEngine.Cursor.lockState = CursorLockMode.Locked;
-        UnityEngine.Cursor.visible = false;
-    }
+    private static void ReleaseCursor() => UICursor.Restore();
 
     /// <summary>
     /// 도메인 리로드를 끈 채로 플레이하면 static이 지난 세션의 값을 그대로 들고 시작한다 —
@@ -98,7 +92,7 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
     {
         _depthCounter = 0;
         _openCount = 0;
-        _cursorHolders = 0;
+        // 커서 계수는 UICursor가 자기 것을 스스로 되돌린다
     }
 
     public virtual bool OnInput(in InputEvent e)

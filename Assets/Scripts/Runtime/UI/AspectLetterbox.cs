@@ -7,7 +7,9 @@ using UnityEngine.UIElements;
 ///
 /// 적용은 세 겹이다:
 ///  1) 모든 Base 카메라의 뷰포트를 16:9 영역으로 줄인다 (Overlay 카메라는 Base를 따라간다)
-///  2) 띠 영역은 아무도 안 그리므로 최하 순위의 블랙 카메라가 전체를 먼저 검게 깐다
+///  2) 띠 영역은 아무도 안 그리므로 최하 순위의 블랙 카메라가 전체를 먼저 검게 깐다 —
+///     단 <b>한 번 칠한 뒤에는 끈다</b>. 아무도 덮어쓰지 않는 자리라 계속 칠할 이유가 없고,
+///     그 카메라는 아무것도 안 그려도 URP 패스를 전부 돌아 프레임당 수 ms를 먹는다.
 ///  3) UITK 패널은 뷰포트 개념이 없어 UIDocument 루트에 패딩으로 같은 영역을 잡는다
 ///
 /// 카메라·문서는 씬 전환마다 바뀌므로 소유하지 않고 저빈도로 다시 찾는다.
@@ -27,28 +29,43 @@ public class AspectLetterbox : MonoBehaviour
         go.AddComponent<AspectLetterbox>();
     }
 
+    // 띠를 덧칠하는 시간 — 버퍼가 몇 장이든(더블·트리플) 넉넉히 한 바퀴 덮을 만큼
+    const float ClearWindow = 0.5f;
+
     Camera blackout;
     Rect viewport = new(0f, 0f, 1f, 1f);
     int lastW, lastH;
     float nextSweep;   // 새로 생긴 카메라·UIDocument를 줍는 저빈도 스캔
+    float clearUntil;  // 이 시각까지만 블랙 카메라를 켠다
 
     bool HasBars => viewport.width < 1f - Epsilon || viewport.height < 1f - Epsilon;
 
     void LateUpdate()
     {
         bool changed = Screen.width != lastW || Screen.height != lastH;
-        if (!changed && Time.unscaledTime < nextSweep) return;
-        nextSweep = Time.unscaledTime + 0.5f;
 
-        if (changed)
+        if (changed || Time.unscaledTime >= nextSweep)
         {
-            lastW = Screen.width;
-            lastH = Screen.height;
-            Recompute();
+            nextSweep = Time.unscaledTime + 0.5f;
+
+            if (changed)
+            {
+                lastW = Screen.width;
+                lastH = Screen.height;
+                Recompute();
+                clearUntil = Time.unscaledTime + ClearWindow;
+            }
+
+            ApplyCameras();
+            ApplyDocuments();
         }
 
-        ApplyCameras();
-        ApplyDocuments();
+        // 끄는 판정만은 매 프레임 본다 — 다 칠하고도 스윕 한 박자를 더 켜 둘 이유가 없다
+        if (blackout != null)
+        {
+            bool on = HasBars && Time.unscaledTime < clearUntil;
+            if (blackout.enabled != on) blackout.enabled = on;
+        }
     }
 
     void Recompute()
@@ -77,7 +94,12 @@ public class AspectLetterbox : MonoBehaviour
             if (cam == blackout) continue;
             // Overlay 카메라(무기 뷰모델)도 직접 줄인다 — URP 스택의 오버레이는 베이스의
             // 뷰포트를 상속하지 않아서, 빼놓으면 무기만 검은 띠 위에 그려진다.
-            if (cam.rect != viewport) cam.rect = viewport;
+            if (cam.rect == viewport) continue;
+
+            // 뷰포트가 어긋나 있었다 = 이 카메라가 방금 전체 화면으로 그렸다(씬 로드 직후의
+            // 새 카메라 등). 그 그림이 띠 자리에 남아 영영 얼어붙지 않게 잠깐 덧칠한다.
+            cam.rect = viewport;
+            clearUntil = Time.unscaledTime + ClearWindow;
         }
     }
 
@@ -97,9 +119,9 @@ public class AspectLetterbox : MonoBehaviour
             var data = blackout.GetUniversalAdditionalCameraData();
             data.renderType = CameraRenderType.Base;
             data.renderPostProcessing = false;
-        }
 
-        if (blackout.enabled != HasBars) blackout.enabled = HasBars;
+            blackout.enabled = false;   // 켜고 끄는 판정은 LateUpdate가 맡는다
+        }
     }
 
     void ApplyDocuments()

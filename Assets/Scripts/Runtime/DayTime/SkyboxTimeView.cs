@@ -66,59 +66,9 @@ public class SkyboxTimeView : MonoBehaviour
     [Tooltip("시간(0~1)에 따른 앰비언트 색.")]
     [SerializeField] Gradient ambientColor;
 
-    [Header("식생 틴트")]
-    [Tooltip("잔디·꽃(Idyllic Vegetation 셰이더)은 색을 Emission으로 내는 풀브라이트라 " +
-             "라이트도 앰비언트도 안 받는다 — 밤에도 대낮처럼 빛난다. 그래서 머티리얼의 " +
-             "색 프로퍼티에 시간 틴트를 직접 곱한다. 비워두면 터레인 디테일에서 자동 수집.")]
-    [SerializeField] Material[] vegetationMaterials;
-
-    [Tooltip("시간(0~1)에 따른 식생 색 배율. 낮=백색(원색 그대로), 밤=어둡게.")]
-    [SerializeField] Gradient vegetationTint;
-
     [Header("에디터 미리보기")]
-    [Tooltip("에디트 모드에서 이 시간으로 하늘을 미리 본다(플레이 중에는 무시). " +
-             "식생 틴트는 에셋을 더럽히지 않도록 플레이 중에만 적용된다.")]
+    [Tooltip("에디트 모드에서 이 시간으로 하늘을 미리 본다(플레이 중에는 무시).")]
     [Range(0f, 1f)] [SerializeField] float previewTime = 0.25f;
-
-    // 식생 머티리얼 원색 캐시 — 플레이가 끝나면 되돌린다. 터레인 디테일은 sharedMaterial로
-    // 그려서 에셋 자체를 만지는 수밖에 없는데, 복원 없이는 에디터에서 에셋이 영구히 얼룩진다.
-    static readonly string[] VegColorProps = { "_Top_Color", "_Bottom_Color", "_Color" };
-    readonly System.Collections.Generic.List<(Material mat, int prop, Color original)> _vegCache = new();
-
-    void OnEnable()
-    {
-        if (!Application.isPlaying) return;
-
-        // 명시 목록이 비어 있으면 터레인 디테일(풀·꽃)의 머티리얼을 자동 수집한다 —
-        // 지형은 생성기가 굽는 물건이라 프로토타입 구성이 바뀌어도 따라간다.
-        var mats = new System.Collections.Generic.HashSet<Material>();
-        if (vegetationMaterials != null)
-            foreach (var m in vegetationMaterials) if (m != null) mats.Add(m);
-        if (mats.Count == 0)
-            foreach (var terrain in Terrain.activeTerrains)
-                foreach (var proto in terrain.terrainData.detailPrototypes)
-                {
-                    if (proto.prototype == null) continue;
-                    foreach (var r in proto.prototype.GetComponentsInChildren<Renderer>(true))
-                        foreach (var m in r.sharedMaterials) if (m != null) mats.Add(m);
-                }
-
-        _vegCache.Clear();
-        foreach (var m in mats)
-            foreach (var name in VegColorProps)
-            {
-                int prop = Shader.PropertyToID(name);
-                if (m.HasProperty(prop)) _vegCache.Add((m, prop, m.GetColor(prop)));
-            }
-    }
-
-    void OnDisable()
-    {
-        // 원색 복원 — sharedMaterial을 만졌으므로 안 되돌리면 에셋이 얼룩진 채 남는다
-        foreach (var (mat, prop, original) in _vegCache)
-            if (mat != null) mat.SetColor(prop, original);
-        _vegCache.Clear();
-    }
 
     void Update()
     {
@@ -192,13 +142,6 @@ public class SkyboxTimeView : MonoBehaviour
             RenderSettings.ambientLight = ambientColor.Evaluate(t);
         }
 
-        // 식생(풀브라이트 Emission) 어둡히기 — 플레이 중에만 (에셋 오염 방지, OnDisable에서 복원)
-        if (Application.isPlaying && vegetationTint != null && _vegCache.Count > 0)
-        {
-            var tint = vegetationTint.Evaluate(t);
-            foreach (var (mat, prop, original) in _vegCache)
-                if (mat != null) mat.SetColor(prop, original * tint);
-        }
     }
 
     // ── 달 궤적 ─────────────────────────────────────────────────
@@ -321,19 +264,6 @@ public class SkyboxTimeView : MonoBehaviour
             new Keyframe(0.94f, 0.18f),
             new Keyframe(1.00f, 0.35f));  // 다음 일출
 
-        vegetationTint = new Gradient();
-        vegetationTint.SetKeys(
-            new[]
-            {
-                new GradientColorKey(new Color(0.85f, 0.75f, 0.68f), 0.00f), // 일출 — 살짝 웜
-                new GradientColorKey(Color.white,                    0.10f), // 낮 — 원색 그대로
-                new GradientColorKey(Color.white,                    0.42f),
-                new GradientColorKey(new Color(0.80f, 0.62f, 0.52f), 0.50f), // 일몰 — 노을빛
-                new GradientColorKey(new Color(0.26f, 0.30f, 0.44f), 0.58f), // 밤 — 어둡고 푸르게
-                new GradientColorKey(new Color(0.26f, 0.30f, 0.44f), 0.92f),
-                new GradientColorKey(new Color(0.85f, 0.75f, 0.68f), 1.00f),
-            },
-            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
 
         ambientColor = new Gradient();
         ambientColor.SetKeys(

@@ -496,15 +496,15 @@ public class Monster : Entity
 
         public void Enter(StateMachineComponent sm)
         {
-            System.Collections.Generic.List<Node> path = PathFinder.FindPath(sm.Transform.position, origin);
-            if (path != null && path.Count > 0)
+            // 경로가 올 때까지는 둥지 쪽으로 곧장 걷는다 — 워커의 답을 기다리며 멈춰 서 있으면
+            // 복귀가 한 박자 늦어 보인다. 답이 오면 그 경로로 갈아탄다.
+            sm.Movement?.SetDirection((origin - sm.Transform.position).normalized);
+
+            PathRequest.Find(sm.Transform.position, origin, false, path =>
             {
-                sm.Movement?.StartMoving(path);
-            }
-            else
-            {
-                sm.Movement?.SetDirection((origin - sm.Transform.position).normalized);
-            }
+                if (sm == null || !ReferenceEquals(sm.CurrentState, this)) return;
+                if (path != null && path.Count > 0) sm.Movement?.StartMoving(path);
+            });
         }
 
         public void Update(StateMachineComponent sm)

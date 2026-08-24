@@ -38,4 +38,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: a1135b33ec184ee49b0aa1c217acda9e, type: 2}
     amount: 4
   maxHp: 220
+  isDemolishable: 1
+  isAttackable: 0
   speedMultiplier: 2

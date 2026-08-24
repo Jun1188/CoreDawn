@@ -106,6 +106,7 @@ public class GridManager : MonoBehaviour
         // GridSystem 초기화
         gridSystem = new GridSystem(cellSize, originPosition);
         CreateGrid();
+        RefreshAllCosts();   // 길찾기가 볼 비용 한 벌 — 이후로는 바뀐 자리만 고친다
     }
 
     /// <summary>주입도 바운즈 배선도 없었으면 수동 값으로라도 굽는다 — 격자 없이 남지 않게.</summary>
@@ -191,6 +192,97 @@ public class GridManager : MonoBehaviour
 
         int hp = building.Data != null ? building.Data.maxHp : 100;
         return cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
+    }
+
+    // ── 비용 필드 — 플로우필드와 A*가 함께 보는 정본 ─────────────
+
+    private readonly CostField costs = new CostField();
+
+    /// <summary>
+    /// 지형·건물 비용 한 벌. 워커 스레드가 이 배열만 보고 길을 찾는다(Unity API 없이).
+    /// 갱신은 메인 스레드에서만 — 처음 한 번 전체를 굽고, 이후 바뀐 자리만 다시 칠한다.
+    /// </summary>
+    public CostField Costs => costs;
+
+    /// <summary>비용 필드 전체를 다시 굽는다 — 격자를 새로 구웠을 때만 필요하다.</summary>
+    public void RefreshAllCosts()
+    {
+        costs.Resize(gridSize);
+        RefreshCostCells(0, 0, gridSize.x - 1, gridSize.y - 1);
+    }
+
+    /// <summary>
+    /// 월드 사각형이 덮는 칸의 비용만 다시 칠한다 — 건물이 놓이거나 부서졌을 때.
+    /// 20만 칸을 매번 훑는 대신 바뀐 자리만 고치는 것이 이 함수의 존재 이유다.
+    /// 대각 판정이 이웃을 보므로 한 칸 여유를 두고 칠한다.
+    /// </summary>
+    public void RefreshCostsIn(Vector3 worldMin, Vector3 worldMax)
+    {
+        if (!costs.IsReady || gridSystem == null) return;
+
+        Vector2Int lo = gridSystem.WorldToGrid(worldMin);
+        Vector2Int hi = gridSystem.WorldToGrid(worldMax);
+
+        RefreshCostCells(Mathf.Min(lo.x, hi.x) - 1, Mathf.Min(lo.y, hi.y) - 1,
+                         Mathf.Max(lo.x, hi.x) + 1, Mathf.Max(lo.y, hi.y) + 1);
+    }
+
+    void RefreshCostCells(int minX, int minY, int maxX, int maxY)
+    {
+        if (!costs.IsReady) return;
+
+        minX = Mathf.Max(0, minX); minY = Mathf.Max(0, minY);
+        maxX = Mathf.Min(gridSize.x - 1, maxX); maxY = Mathf.Min(gridSize.y - 1, maxY);
+        if (minX > maxX || minY > maxY) return;
+
+        var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+
+        for (int y = minY; y <= maxY; y++)
+        {
+            int row = y * gridSize.x;
+            int tileY = y / subdiv;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                int i = row + x;
+                var node = grid[x, y];
+
+                // 아래는 EnterCost와 같은 규칙이되 <b>한 번에 두 답</b>을 낸다 —
+                // 진격/보행을 따로 물으면 타일·건물 조회가 두 배가 되고, 칸이 20만을 넘으면
+                // 그 두 배가 그대로 프레임에 얹힌다.
+                if (node == null || !node.walkable)
+                {
+                    costs.EnterCost[i] = TileRules.Blocked;
+                    costs.Walkable[i] = false;
+                    continue;
+                }
+
+                int cost = map != null
+                    ? TileRules.EnterCost(map.TileAt(new Vector2Int(x / subdiv, tileY)))
+                    : TileRules.BaseCost;
+
+                if (cost >= TileRules.Blocked)
+                {
+                    costs.EnterCost[i] = TileRules.Blocked;
+                    costs.Walkable[i] = false;
+                    continue;
+                }
+
+                var building = sim != null ? BuildingAt(node) : null;
+                if (building == null)
+                {
+                    costs.EnterCost[i] = cost;
+                    costs.Walkable[i] = true;   // 건물이 없으니 걸어서 지나갈 수 있다
+                    continue;
+                }
+
+                int hp = building.Data != null ? building.Data.maxHp : 100;
+                costs.EnterCost[i] = cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
+                costs.Walkable[i] = false;      // 뚫고는 가도 걸어서는 못 지나간다
+            }
+        }
+
+        costs.Touch();
     }
 
     /// <summary>길찾기 노드 좌표 → 월드 칸(맵 타일) 좌표. 세분화 배율을 되돌린다.</summary>

@@ -15,8 +15,6 @@ Material:
   - MOON_ON
   - _CLOUDS
   - _MOON0
-  - _MOON1
-  - _MOON2
   - _STARS
   m_InvalidKeywords:
   - _CLOUDBACKON_ON
@@ -94,7 +92,7 @@ Material:
     - _CloudOpacity: 1
     - _CloudSpeed: 0.001
     - _Cloudiness: 0
-    - _MoonDarkside: 0
+    - _MoonDarkside: 1
     - _MoonDarkside1: 0
     - _MoonDarkside2: 0
     - _MoonEdgeStrength: 0.4
@@ -104,9 +102,9 @@ Material:
     - _MoonExposure1: 0
     - _MoonExposure2: 0
     - _MoonOn: 1
-    - _MoonOn1: 1
-    - _MoonOn2: 1
-    - _MoonRadius: 0.2
+    - _MoonOn1: 0
+    - _MoonOn2: 0
+    - _MoonRadius: 0.1
     - _MoonRadius1: 0.1
     - _MoonRadius2: 0.3
     - _SkyExposure: 1
@@ -119,7 +117,7 @@ Material:
     - _SunEdgeFalloff: 1
     - _SunHaloStrength: 24
     - _SunIntensity: 4
-    - _SunRadius: 0.12
+    - _SunRadius: 0.06
     - _SunTexture: 0
     - _SunTextureOn: 0
     - _SunTextureStrength: 0.8

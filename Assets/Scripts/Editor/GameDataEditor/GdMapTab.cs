@@ -54,6 +54,7 @@ class GMap
     public List<GMapNode> nodes = new();
     public List<GNest> nests = new();
     public List<Vector2Int> nightSpawnPoints = new();
+    public List<Vector2Int> trees = new();
     [JsonIgnore] public MapImporter.MapDto src;
 }
 
@@ -84,6 +85,24 @@ class GdMapTab : GdTab
         ("Item:CrystalOre", "크리스탈 광석", GdEnum.FromHex("#B48CFF")),
     };
 
+    // ── 배치물 레이어 ──
+    // key 는 도구 키와 일부러 같다 — 숨겨 둔 레이어의 도구를 고르면 그 레이어가 다시 켜진다.
+    // filled=false 는 캔버스에서도 테두리만 있는 칸(밤 진입로)이라 칩도 속을 비운다.
+    class LayerInfo
+    {
+        public readonly string key, ko; public readonly Color color; public readonly bool filled;
+        public LayerInfo(string key, string ko, Color color, bool filled)
+        { this.key = key; this.ko = ko; this.color = color; this.filled = filled; }
+    }
+    static readonly LayerInfo[] Layers =
+    {
+        new("core", "코어", GdEnum.Ok, true),
+        new("node", "자원", GdEnum.ItemC, true),
+        new("nest", "둥지", GdEnum.Warn, true),
+        new("night", "밤 진입로", GdEnum.ItemC, false),
+        new("tree", "나무", GdEnum.FromHex("#4FBF6A"), true),
+    };
+
     // ── 데이터 ──
     readonly List<GMap> maps = new();
     int curMap;
@@ -91,8 +110,17 @@ class GdMapTab : GdTab
 
     string tool = "paint";
     int paintTile = 2, brushSize = 3;
+
+    // 나무 자동생성 수치 — 브러시 크기와 같은 층위의 도구 상태다(맵에 저장되는 값이 아니다)
+    float treeSpacing = 3.2f, treeSpacingJitter = 1.1f;
+    float treeCoreClear = 10f, treeObjectClear = 3.5f, treeEdgeClear = 1f;
+    int treeSeed = 20260824;
     (string type, int i)? sel;
     bool showRings = true, showHalo = true, showGrid = true;
+
+    // 숨긴 레이어 — 화면에서 빠지고 클릭에도 집히지 않는다. 검증은 숨긴 것도 그대로 본다
+    readonly HashSet<string> hiddenLayers = new();
+    bool Vis(string layer) => !hiddenLayers.Contains(layer);
 
     // 뷰 변환 — k = 타일당 픽셀
     float viewX, viewY, viewK = 4;
@@ -161,6 +189,8 @@ class GdMapTab : GdTab
                         src = n,
                     }).ToList(),
                     nightSpawnPoints = (m.nightSpawnPoints ?? Array.Empty<MapImporter.CellDto>())
+                        .Select(p => new Vector2Int(p.x, p.y)).ToList(),
+                    trees = (m.trees ?? Array.Empty<MapImporter.CellDto>())
                         .Select(p => new Vector2Int(p.x, p.y)).ToList(),
                     src = m,
                 };
@@ -241,6 +271,7 @@ class GdMapTab : GdTab
         }).ToArray();
         o.nightSpawnPoints = g.nightSpawnPoints
             .Select(p => new MapImporter.CellDto { x = p.x, y = p.y }).ToArray();
+        o.trees = g.trees.Select(p => new MapImporter.CellDto { x = p.x, y = p.y }).ToArray();
         return o;
     }
 
@@ -298,6 +329,8 @@ class GdMapTab : GdTab
                 }).ToList(),
                 nightSpawnPoints = (m.nightSpawnPoints ?? Array.Empty<MapImporter.CellDto>())
                     .Select(p => new Vector2Int(p.x, p.y)).ToList(),
+                trees = (m.trees ?? Array.Empty<MapImporter.CellDto>())
+                    .Select(p => new Vector2Int(p.x, p.y)).ToList(),
                 src = m,
             });
         }
@@ -323,12 +356,14 @@ class GdMapTab : GdTab
     // ═════════ UI ═════════
 
     Label statLabel, hintLabel;
-    VisualElement listBox, warnBox, propsBox, paintRow;
+    VisualElement listBox, warnBox, propsBox, paintRow, treeRow;
     VisualElement canvasHost, overlay;
     Image tileImage;
     Texture2D tileTex;
     readonly List<Button> toolButtons = new();
     readonly List<Button> tileButtons = new();
+    readonly List<(Button b, VisualElement chip, Label lab, LayerInfo info)> layerButtons = new();
+    Button allLayersBtn;
 
     public override void Build(VisualElement host)
     {
@@ -414,7 +449,8 @@ class GdMapTab : GdTab
         left.Add(toolsRow);
         toolButtons.Clear();
         foreach (var (key, label) in new[] { ("paint", "지형"), ("node", "자원"), ("nest", "둥지"),
-                                             ("core", "코어"), ("night", "밤 진입로"), ("select", "선택") })
+                                             ("core", "코어"), ("night", "밤 진입로"), ("tree", "나무"),
+                                             ("select", "선택") })
         {
             string k = key;
             var b = new Button(() =>
@@ -422,7 +458,10 @@ class GdMapTab : GdTab
                 tool = k;
                 SyncToolButtons();
                 paintRow.style.display = tool == "paint" ? DisplayStyle.Flex : DisplayStyle.None;
+                treeRow.style.display = tool == "tree" ? DisplayStyle.Flex : DisplayStyle.None;
                 sel = null;
+                // 숨겨 둔 레이어의 도구를 골랐다면 켠다 — 안 보이는 곳에 놓는 사고를 막는다
+                if (hiddenLayers.Remove(k)) SyncLayerButtons();
                 RenderAll();
             }) { text = label };
             b.AddToClassList("gd-btn-mini");
@@ -476,8 +515,112 @@ class GdMapTab : GdTab
         });
         brushRow.Add(brushSlider);
         brushRow.Add(brushVal);
+        // ── 나무 패널 — 손으로 찍는 것 말고 필요한 두 가지: 한 번에 깔기, 한 번에 지우기 ──
+        treeRow = new VisualElement { style = { display = DisplayStyle.None } };
+        left.Add(treeRow);
+        treeRow.Add(SectTtl("나무"));
+
+        VisualElement NumRow(string label, float value, string tip, Action<float> set)
+        {
+            var row = new VisualElement { style = { flexDirection = FlexDirection.Row,
+                alignItems = Align.Center, marginBottom = 4 }, tooltip = tip };
+            row.Add(new Label(label) { style = { fontSize = 11.5f, color = GdEnum.Faint,
+                width = 74, flexShrink = 0 } });
+            var f = new FloatField { value = value, style = { flexGrow = 1 } };
+            f.AddToClassList("gd-field-input");
+            f.RegisterValueChangedCallback(e => set(e.newValue));
+            row.Add(f);
+            treeRow.Add(row);
+            return row;
+        }
+
+        NumRow("간격", treeSpacing, "나무끼리 최소 간격(칸). 이 값이 곧 밀도다 — 키우면 성겨진다.",
+               v => treeSpacing = Mathf.Max(1f, v));
+        NumRow("간격 흔들림", treeSpacingJitter, "간격에 주는 흔들림(칸). 0이면 어디나 똑같이 촘촘해 인공적이다.",
+               v => treeSpacingJitter = Mathf.Max(0f, v));
+        NumRow("코어 여유", treeCoreClear,
+               "코어에서 이만큼(칸) 안쪽에는 심지 않는다 — 시작 공장을 펼 자리다.",
+               v => treeCoreClear = Mathf.Max(0f, v));
+        NumRow("배치물 여유", treeObjectClear,
+               "광맥·둥지·밤 진입로에서 이만큼(칸) 떨어져야 심는다.",
+               v => treeObjectClear = Mathf.Max(0f, v));
+        NumRow("가장자리 여유", treeEdgeClear,
+               "강·절벽 같은 못 짓는 칸에서 이만큼(칸) 떨어져야 심는다.",
+               v => treeEdgeClear = Mathf.Max(0f, v));
+        NumRow("씨앗", treeSeed, "같은 맵·같은 값·같은 씨앗이면 언제나 같은 숲이 나온다.",
+               v => treeSeed = Mathf.RoundToInt(v));
+
+        var treeBtnRow = new VisualElement { style = { flexDirection = FlexDirection.Row, marginTop = 6 } };
+        treeRow.Add(treeBtnRow);
+        var genB = new Button(() =>
+        {
+            var m = M; if (m == null) return;
+            if (m.trees.Count > 0 && !EditorUtility.DisplayDialog("나무 자동생성",
+                $"이미 심긴 {m.trees.Count}그루를 지우고 다시 깝니다.", "다시 깐다", "취소")) return;
+            int n = GenerateTrees(m);
+            PushHist();
+            RenderAll();
+            EditorUtility.DisplayDialog("나무 자동생성", $"{n}그루를 심었습니다.", "확인");
+        }) { text = "자동생성", tooltip = "코어에서 걸어갈 수 있는 지면에 간격을 두고 깐다" };
+        genB.AddToClassList("gd-btn-mini");
+        genB.AddToClassList("gd-btn-primary");
+        genB.style.flexGrow = 1;
+        treeBtnRow.Add(genB);
+
+        var clrB = new Button(() =>
+        {
+            var m = M; if (m == null || m.trees.Count == 0) return;
+            if (!EditorUtility.DisplayDialog("나무 전체삭제",
+                $"이 맵의 나무 {m.trees.Count}그루를 모두 지웁니다.", "지운다", "취소")) return;
+            m.trees.Clear();
+            PushHist();
+            RenderAll();
+        }) { text = "전체삭제", tooltip = "이 맵의 나무를 모두 지운다" };
+        clrB.AddToClassList("gd-btn-mini");
+        clrB.AddToClassList("gd-btn-warn");
+        clrB.style.flexGrow = 1;
+        clrB.style.marginLeft = 5;
+        treeBtnRow.Add(clrB);
+
         SyncToolButtons();
         SyncTileButtons();
+
+        // ── 레이어 — 배치물만 종류별로 끄고 켠다 (지형은 바탕이라 대상이 아니다) ──
+        left.Add(SectTtl("레이어"));
+        var layersRow = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap } };
+        left.Add(layersRow);
+        layerButtons.Clear();
+        foreach (var L in Layers)
+        {
+            var info = L;
+            var b = new Button(() => SetLayerVis(info.key, !Vis(info.key)))
+            { tooltip = $"{info.ko} 표시/숨김 — 숨기면 클릭에도 집히지 않는다",
+              style = { flexDirection = FlexDirection.Row, alignItems = Align.Center,
+                justifyContent = Justify.Center, flexGrow = 1, flexBasis = Length.Percent(46) } };
+            b.AddToClassList("gd-btn-mini");
+            b.AddToClassList("gd-subtab");
+            var chip = new VisualElement { pickingMode = PickingMode.Ignore, style = { width = 11, height = 11,
+                flexShrink = 0, marginRight = 5,
+                borderTopLeftRadius = 2, borderTopRightRadius = 2, borderBottomLeftRadius = 2, borderBottomRightRadius = 2,
+                borderTopWidth = 1, borderBottomWidth = 1, borderLeftWidth = 1, borderRightWidth = 1 } };
+            b.Add(chip);
+            var lab = new Label(info.ko) { pickingMode = PickingMode.Ignore, style = { fontSize = 12 } };
+            b.Add(lab);
+            layersRow.Add(b);
+            layerButtons.Add((b, chip, lab, info));
+        }
+        allLayersBtn = new Button(() =>
+        {
+            bool anyHidden = hiddenLayers.Count > 0;
+            hiddenLayers.Clear();
+            if (!anyHidden) { foreach (var L in Layers) hiddenLayers.Add(L.key); sel = null; }
+            SyncLayerButtons();
+            RenderProps(); RedrawCanvas();
+        }) { text = "모두 숨김", style = { marginTop = 4 } };
+        allLayersBtn.AddToClassList("gd-btn-mini");
+        allLayersBtn.AddToClassList("gd-subtab");
+        left.Add(allLayersBtn);
+        SyncLayerButtons();
 
         left.Add(SectTtl("표시"));
         void Chk(string label, bool val, Action<bool> set)
@@ -506,6 +649,11 @@ class GdMapTab : GdTab
             "조작 — 휠로 확대, Shift+드래그 또는 가운데 버튼으로 이동.\n" +
             "우클릭으로 지운다 — 배치물 위에서는 그것을, 빈 곳에서는 지형을 지면으로 되돌린다.\n" +
             "배치 도구로 이미 놓인 것을 누르면 새로 놓지 않고 선택·이동된다.\n\n" +
+            "레이어 — 끄면 화면에서 빠지고 클릭에도 집히지 않는다. 겹쳐 놓인 것을 골라낼 때 쓴다. " +
+            "숨긴 레이어의 도구를 고르면 다시 켜진다. 검증은 숨긴 것도 그대로 본다.\n\n" +
+            "나무는 칸을 영구히 막는다 — 그 자리에는 아무것도 짓지 못한다. " +
+            "자동생성은 코어에서 걸어갈 수 있는 지면에만 간격을 두고 깐다(절벽에 막힌 땅은 건너뛴다). " +
+            "손으로 찍거나 문질러 더할 수도 있고, 우클릭으로 한 그루씩 지운다.\n\n" +
             "밤 진입로는 웨이브가 맵으로 들어오는 대문이다 — 둥지의 스폰 지점과 다르다. " +
             "둥지 것은 낮에 다가갔을 때 방어 몬스터가 튀어나오는 자리이고, 진입로는 밤에 코어로 밀려드는 길이다.\n\n" +
             "검증이 잡는 것 — 둥지에서 코어로 가는 길이 막혔는지, 자원이 절벽에 갇혔는지, " +
@@ -553,7 +701,7 @@ class GdMapTab : GdTab
 
     void SyncToolButtons()
     {
-        string[] keys = { "paint", "node", "nest", "core", "night", "select" };
+        string[] keys = { "paint", "node", "nest", "core", "night", "tree", "select" };
         for (int i = 0; i < toolButtons.Count; i++)
             toolButtons[i].EnableInClassList("gd-subtab--on", keys[i] == tool);
     }
@@ -562,6 +710,32 @@ class GdMapTab : GdTab
     {
         for (int i = 0; i < tileButtons.Count; i++)
             tileButtons[i].EnableInClassList("gd-subtab--on", i == paintTile);
+    }
+
+    void SetLayerVis(string layer, bool on)
+    {
+        if (on) hiddenLayers.Remove(layer);
+        else hiddenLayers.Add(layer);
+        // 숨긴 레이어의 것을 잡고 있으면 놓는다 — 안 보이는 걸 드래그하고 있을 수는 없다
+        if (!on && sel != null && sel.Value.type == layer) sel = null;
+        SyncLayerButtons();
+        RenderProps(); RedrawCanvas();
+    }
+
+    void SyncLayerButtons()
+    {
+        foreach (var (b, chip, lab, info) in layerButtons)
+        {
+            bool on = Vis(info.key);
+            b.EnableInClassList("gd-subtab--on", on);
+            lab.style.color = on ? GdEnum.Text : GdEnum.Faint;
+            var c = info.color;
+            c.a = on ? 1f : 0.3f;
+            chip.style.backgroundColor = info.filled ? c : Color.clear;
+            chip.style.borderTopColor = c; chip.style.borderBottomColor = c;
+            chip.style.borderLeftColor = c; chip.style.borderRightColor = c;
+        }
+        if (allLayersBtn != null) allLayersBtn.text = hiddenLayers.Count > 0 ? "모두 보기" : "모두 숨김";
     }
 
     void RenderAll() { RenderList(); RenderProps(); RenderWarn(); RebuildTileTex(); RedrawCanvas(); }
@@ -596,7 +770,9 @@ class GdMapTab : GdTab
     void RenderStat()
     {
         var m = M;
-        statLabel.text = m != null ? $"{m.width}×{m.height} · 노드 {m.nodes.Count} · 둥지 {m.nests.Count}" : "";
+        statLabel.text = m != null
+            ? $"{m.width}×{m.height} · 노드 {m.nodes.Count} · 둥지 {m.nests.Count} · 나무 {m.trees.Count}"
+            : "";
     }
 
     // ── 속성 패널 ──
@@ -1054,6 +1230,21 @@ class GdMapTab : GdTab
         if (m.nightSpawnPoints.Count == 0)
             outp.Add("밤 진입로가 없습니다 — 웨이브가 맵으로 들어올 자리가 없습니다");
 
+        // 나무 — 칸을 영구히 막으므로 잘못 놓이면 그 자리가 통째로 죽는다.
+        // 개수는 수백이라 낱개로 알리지 않고 한 줄로 묶는다.
+        int treeBad = 0, treeOnCore = 0, treeDup = 0;
+        var treeSeen = new HashSet<(int, int)>();
+        foreach (var t in m.trees)
+        {
+            var tt = TileAt(t.x, t.y);
+            if (tt == null || !tt.build) treeBad++;
+            if (t.x >= m.coreX && t.x < m.coreX + 3 && t.y >= m.coreY && t.y < m.coreY + 3) treeOnCore++;
+            if (!treeSeen.Add((t.x, t.y))) treeDup++;
+        }
+        if (treeBad > 0) outp.Add($"나무 {treeBad}그루가 강·절벽·맵 밖에 있습니다 — 세울 수 없습니다");
+        if (treeOnCore > 0) outp.Add($"나무 {treeOnCore}그루가 코어 자리에 있습니다 — 코어를 세우지 못합니다");
+        if (treeDup > 0) outp.Add($"나무 {treeDup}그루가 다른 나무와 같은 칸에 있습니다");
+
         if (m.nests.Count == 0) outp.Add("둥지가 없습니다 — 낮에 칠 대상이 없습니다");
         if (m.nodes.Count == 0) outp.Add("자원 노드가 없습니다");
 
@@ -1199,8 +1390,8 @@ class GdMapTab : GdTab
             }
         }
 
-        // 둥지 반경(halo) — 노드 아래 깔린다
-        if (showHalo)
+        // 둥지 반경(halo) — 노드 아래 깔린다. 반경은 둥지의 것이라 둥지를 숨기면 같이 빠진다
+        if (showHalo && Vis("nest"))
             foreach (var n in m.nests)
             {
                 var c = P(n.x + 0.5f, n.y + 0.5f);
@@ -1208,43 +1399,62 @@ class GdMapTab : GdTab
                 p.BeginPath(); p.Arc(c, n.warningRange * k, 0, 360); p.Fill();
                 p.fillColor = new Color(1f, 0.365f, 0.451f, 0.13f);   // 진입 반경 — 여기 들어가면 튀어나온다
                 p.BeginPath(); p.Arc(c, n.triggerRange * k, 0, 360); p.Fill();
-                foreach (var sp in n.spawnPoints)
-                    FillRect(n.x + sp.x + 0.2f, n.y + sp.y + 0.2f, 0.6f, 0.6f,
-                        sp.hasBoss ? new Color(1f, 0.2f, 0.33f, 0.85f) : new Color(1f, 0.69f, 0.737f, 0.8f));
             }
 
         // 자원 노드
-        for (int i = 0; i < m.nodes.Count; i++)
-        {
-            var n = m.nodes[i];
-            var kind = NodeKinds.FirstOrDefault(q => q.item == n.item);
-            FillRect(n.x, n.y, n.size, n.size, kind.item != null ? kind.color : NodeKinds[0].color);
-            if (sel != null && sel.Value.type == "node" && sel.Value.i == i)
-                StrokeRect(n.x, n.y, n.size, n.size, Color.white, 2);
-        }
+        if (Vis("node"))
+            for (int i = 0; i < m.nodes.Count; i++)
+            {
+                var n = m.nodes[i];
+                var kind = NodeKinds.FirstOrDefault(q => q.item == n.item);
+                FillRect(n.x, n.y, n.size, n.size, kind.item != null ? kind.color : NodeKinds[0].color);
+                if (sel != null && sel.Value.type == "node" && sel.Value.i == i)
+                    StrokeRect(n.x, n.y, n.size, n.size, Color.white, 2);
+            }
 
-        // 둥지 본체
-        for (int i = 0; i < m.nests.Count; i++)
-        {
-            var n = m.nests[i];
-            bool boss = n.spawnPoints.Any(sp => sp.hasBoss);
-            var col = boss ? GdEnum.FromHex("#FF3355") : GdEnum.Warn;
-            FillRect(n.x, n.y, 1, 1, col);
-            if (k < 8) StrokeRect(n.x - 2.5f / k, n.y - 2.5f / k, 1 + 5f / k, 1 + 5f / k, col, 1.5f);
-            if (sel != null && sel.Value.type == "nest" && sel.Value.i == i)
-                StrokeRect(n.x, n.y, 1, 1, Color.white, 2);
-        }
+        // 둥지 본체 + 스폰 지점
+        if (Vis("nest"))
+            for (int i = 0; i < m.nests.Count; i++)
+            {
+                var n = m.nests[i];
+                bool boss = n.spawnPoints.Any(sp => sp.hasBoss);
+                var col = boss ? GdEnum.FromHex("#FF3355") : GdEnum.Warn;
+                foreach (var sp in n.spawnPoints)
+                    FillRect(n.x + sp.x + 0.2f, n.y + sp.y + 0.2f, 0.6f, 0.6f,
+                        sp.hasBoss ? new Color(1f, 0.2f, 0.33f, 0.85f) : new Color(1f, 0.69f, 0.737f, 0.8f));
+                FillRect(n.x, n.y, 1, 1, col);
+                if (k < 8) StrokeRect(n.x - 2.5f / k, n.y - 2.5f / k, 1 + 5f / k, 1 + 5f / k, col, 1.5f);
+                if (sel != null && sel.Value.type == "nest" && sel.Value.i == i)
+                    StrokeRect(n.x, n.y, 1, 1, Color.white, 2);
+            }
 
         // 밤 진입로 — 노란 테두리 칸
-        foreach (var np in m.nightSpawnPoints)
+        if (Vis("night"))
+            foreach (var np in m.nightSpawnPoints)
+            {
+                FillRect(np.x, np.y, 1, 1, new Color(0.91f, 0.647f, 0.294f, 0.35f));
+                StrokeRect(np.x, np.y, 1, 1, GdEnum.ItemC, Mathf.Max(1.5f, k * 0.12f));
+            }
+
+        // 나무 — 칸을 채우는 작은 원. 사각형으로 그리면 지형 타일과 구분이 안 된다
+        if (Vis("tree"))
         {
-            FillRect(np.x, np.y, 1, 1, new Color(0.91f, 0.647f, 0.294f, 0.35f));
-            StrokeRect(np.x, np.y, 1, 1, GdEnum.ItemC, Mathf.Max(1.5f, k * 0.12f));
+            var trunk = GdEnum.FromHex("#4FBF6A");
+            foreach (var t in m.trees)
+            {
+                p.fillColor = trunk;
+                p.BeginPath();
+                p.Arc(P(t.x + 0.5f, t.y + 0.5f), Mathf.Max(1.5f, k * 0.34f), 0, 360);
+                p.Fill();
+            }
         }
 
         // 코어 3×3
-        FillRect(m.coreX, m.coreY, 3, 3, GdEnum.Ok);
-        StrokeRect(m.coreX, m.coreY, 3, 3, GdEnum.Bg, 1.5f);
+        if (Vis("core"))
+        {
+            FillRect(m.coreX, m.coreY, 3, 3, GdEnum.Ok);
+            StrokeRect(m.coreX, m.coreY, 3, 3, GdEnum.Bg, 1.5f);
+        }
 
         // 브러시 미리보기
         if (hoverCell != null && tool == "paint")
@@ -1288,10 +1498,18 @@ class GdMapTab : GdTab
                     e.StopPropagation();
                     return;
                 }
-                int ni = m.nightSpawnPoints.FindIndex(p => p.x == cx2 && p.y == cy2);
+                int ni = Vis("night") ? m.nightSpawnPoints.FindIndex(p => p.x == cx2 && p.y == cy2) : -1;
                 if (ni >= 0)
                 {
                     m.nightSpawnPoints.RemoveAt(ni);
+                    PushHist(); RenderAll();
+                    e.StopPropagation();
+                    return;
+                }
+                int ti = Vis("tree") ? m.trees.FindIndex(p => p.x == cx2 && p.y == cy2) : -1;
+                if (ti >= 0)
+                {
+                    m.trees.RemoveAt(ti);
                     PushHist(); RenderAll();
                     e.StopPropagation();
                     return;
@@ -1357,6 +1575,17 @@ class GdMapTab : GdTab
                 e.StopPropagation();
                 return;
             }
+            // 나무 — 있으면 빼고 없으면 넣는다(토글). 브러시로 문지를 수 있게 드래그도 받는다
+            if (tool == "tree")
+            {
+                if (!InB(m, cx2, cy2)) return;
+                ToggleTree(m, cx2, cy2);
+                drag = ("tree", 0, 0, 0, 0, cx2, cy2);
+                canvasHost.CapturePointer(e.pointerId);
+                PushHist(); RenderAll();
+                e.StopPropagation();
+                return;
+            }
             if (tool == "core")
             {
                 if (!InB(m, cx2, cy2)) return;
@@ -1400,6 +1629,14 @@ class GdMapTab : GdTab
                     break;
                 case "paint": PaintAt(m, c.x, c.y); break;
                 case "erase": EraseAt(m, c.x, c.y); break;
+                case "tree":
+                    // 지나간 칸에 없으면 심는다. 문지르는 동안 토글하면 같은 칸을 오가며 깜빡인다
+                    if (InB(m, c.x, c.y) && !m.trees.Any(t => t.x == c.x && t.y == c.y))
+                    {
+                        m.trees.Add(new Vector2Int(c.x, c.y));
+                        overlay.MarkDirtyRepaint();
+                    }
+                    break;
                 case "move":
                     if (sel == null) break;
                     var arr = sel.Value.type == "node";
@@ -1426,7 +1663,7 @@ class GdMapTab : GdTab
         canvasHost.RegisterCallback<PointerUpEvent>(e =>
         {
             if (canvasHost.HasPointerCapture(e.pointerId)) canvasHost.ReleasePointer(e.pointerId);
-            if (drag != null && drag.Value.type is "paint" or "erase" or "move")
+            if (drag != null && drag.Value.type is "paint" or "erase" or "move" or "tree")
             {
                 PushHist();
                 RenderWarn(); RenderProps();
@@ -1451,16 +1688,165 @@ class GdMapTab : GdTab
         });
     }
 
+    // 숨긴 레이어는 건너뛴다 — 안 보이는 것이 집히면 겹친 것을 골라낼 방법이 없다
     (string type, int i)? HitTest(GMap m, int cx, int cy)
     {
-        for (int i = m.nests.Count - 1; i >= 0; i--)
-            if (m.nests[i].x == cx && m.nests[i].y == cy) return ("nest", i);
-        for (int i = m.nodes.Count - 1; i >= 0; i--)
-        {
-            var n = m.nodes[i];
-            if (cx >= n.x && cx < n.x + n.size && cy >= n.y && cy < n.y + n.size) return ("node", i);
-        }
+        if (Vis("nest"))
+            for (int i = m.nests.Count - 1; i >= 0; i--)
+                if (m.nests[i].x == cx && m.nests[i].y == cy) return ("nest", i);
+        if (Vis("node"))
+            for (int i = m.nodes.Count - 1; i >= 0; i--)
+            {
+                var n = m.nodes[i];
+                if (cx >= n.x && cx < n.x + n.size && cy >= n.y && cy < n.y + n.size) return ("node", i);
+            }
         return null;
+    }
+
+    // ═════════ 나무 자동생성 ═════════
+
+    /// <summary>위치를 잘 섞인 값으로 바꾼다 — 좌표를 곱해 더하는 식은 대각선 줄무늬를 만든다.</summary>
+    static int TreeHash(int x, int y, int salt)
+    {
+        unchecked
+        {
+            int h = x * 374761393 + y * 668265263 + salt * 1442695041;
+            h = (h ^ (h >> 13)) * 1274126177;
+            return (h ^ (h >> 16)) & 0x7fffffff;
+        }
+    }
+
+    /// <summary>
+    /// 코어에서 걸어갈 수 있는 지면에 나무를 깐다. 이미 있던 나무는 지우고 새로 깐다.
+    ///
+    /// <b>왜 코어 도달성인가.</b> 나무는 칸을 영구히 막는다. 코어에서 절벽에 막혀 갈 수 없는
+    /// 땅은 플레이어가 짓지도 지나가지도 못하는 자리라, 거기 심은 나무는 아무것도 막지 않으면서
+    /// 데이터만 늘린다. 걸어갈 수 있는 땅만이 "언젠가 공장이 될 자리"다.
+    ///
+    /// 강을 건너갈 수 있는 것으로 치는 이유: 강 너머 땅도 코어에서 갈 수 있다.
+    /// "심을 수 있는가"는 지면 타일이라는 별도 조건으로 따로 본다.
+    /// </summary>
+    int GenerateTrees(GMap m)
+    {
+        m.trees.Clear();
+
+        // 1) 코어에서의 도달성 — 절벽만이 진짜 차단이다(TileRules와 같은 규칙)
+        var reach = new bool[m.width * m.height];
+        var queue = new Queue<Vector2Int>();
+        for (int y = m.coreY; y < m.coreY + 3; y++)
+            for (int x = m.coreX; x < m.coreX + 3; x++)
+                if (InB(m, x, y)) { reach[Idx(m, x, y)] = true; queue.Enqueue(new Vector2Int(x, y)); }
+
+        var dirs = new[] { new Vector2Int(1, 0), new Vector2Int(-1, 0),
+                           new Vector2Int(0, 1), new Vector2Int(0, -1) };
+        while (queue.Count > 0)
+        {
+            var c = queue.Dequeue();
+            foreach (var d in dirs)
+            {
+                var n = c + d;
+                if (!InB(m, n.x, n.y)) continue;
+                int i = Idx(m, n.x, n.y);
+                if (reach[i] || !TileOf(m.tiles[i]).walk) continue;
+                reach[i] = true;
+                queue.Enqueue(n);
+            }
+        }
+
+        // 2) 못 짓는 칸(강·절벽·맵 밖)까지의 거리 — 물가에 바짝 붙은 나무를 물린다
+        var edge = new float[m.width * m.height];
+        var eq = new Queue<Vector2Int>();
+        for (int y = 0; y < m.height; y++)
+            for (int x = 0; x < m.width; x++)
+            {
+                bool border = x == 0 || y == 0 || x == m.width - 1 || y == m.height - 1;
+                if (!TileOf(m.tiles[Idx(m, x, y)]).build || border)
+                { edge[Idx(m, x, y)] = 0f; eq.Enqueue(new Vector2Int(x, y)); }
+                else edge[Idx(m, x, y)] = float.MaxValue;
+            }
+        while (eq.Count > 0)
+        {
+            var c = eq.Dequeue();
+            float d0 = edge[Idx(m, c.x, c.y)] + 1f;
+            foreach (var d in dirs)
+            {
+                var n = c + d;
+                if (!InB(m, n.x, n.y)) continue;
+                int i = Idx(m, n.x, n.y);
+                if (edge[i] <= d0) continue;
+                edge[i] = d0;
+                eq.Enqueue(n);
+            }
+        }
+
+        // 3) 비켜야 할 원들 — 칸마다 목록을 훑으면 16만 칸 × 수십 개다. 미리 굳혀 둔다
+        var circles = new List<(Vector2 c, float r)>
+        {
+            (new Vector2(m.coreX + 1.5f, m.coreY + 1.5f), treeCoreClear),
+        };
+        foreach (var n in m.nodes)
+        {
+            float half = Mathf.Max(1, n.size) * 0.5f;
+            circles.Add((new Vector2(n.x + half, n.y + half), treeObjectClear + half));
+        }
+        foreach (var n in m.nests)
+        {
+            circles.Add((new Vector2(n.x + 0.5f, n.y + 0.5f), treeObjectClear));
+            foreach (var sp in n.spawnPoints)
+                circles.Add((new Vector2(n.x + sp.x + 0.5f, n.y + sp.y + 0.5f), treeObjectClear));
+        }
+        foreach (var p in m.nightSpawnPoints)
+            circles.Add((new Vector2(p.x + 0.5f, p.y + 0.5f), treeObjectClear));
+
+        // 4) 간격을 지키며 깐다 — 푸아송 원반과 같은 규칙이되 후보가 이미 칸으로 이산화돼
+        //    있어 별도 자료구조 없이 공간 해시만으로 끝난다
+        float bucket = Mathf.Max(1f, treeSpacing + treeSpacingJitter);
+        var buckets = new Dictionary<Vector2Int, List<Vector2>>();
+        bool TooClose(Vector2 pt, float need)
+        {
+            var b0 = new Vector2Int(Mathf.FloorToInt(pt.x / bucket), Mathf.FloorToInt(pt.y / bucket));
+            for (int by = -1; by <= 1; by++)
+                for (int bx = -1; bx <= 1; bx++)
+                    if (buckets.TryGetValue(new Vector2Int(b0.x + bx, b0.y + by), out var list))
+                        foreach (var o in list)
+                            if ((o - pt).sqrMagnitude < need * need) return true;
+            return false;
+        }
+
+        for (int y = 0; y < m.height; y++)
+            for (int x = 0; x < m.width; x++)
+            {
+                int i = Idx(m, x, y);
+                if (!reach[i]) continue;                          // 코어에서 못 간다
+                if (!TileOf(m.tiles[i]).build) continue;          // 강·절벽에는 안 심는다
+                if (edge[i] < treeEdgeClear) continue;            // 물가·벼랑에 바짝 붙지 않는다
+
+                var pt = new Vector2(x + 0.5f, y + 0.5f);
+                bool blocked = false;
+                foreach (var (c, r) in circles)
+                    if ((c - pt).sqrMagnitude < r * r) { blocked = true; break; }
+                if (blocked) continue;
+
+                float need = treeSpacing
+                           + (TreeHash(x, y, treeSeed + 31) % 1000 / 1000f - 0.5f) * 2f * treeSpacingJitter;
+                need = Mathf.Max(0.5f, need);
+                if (TooClose(pt, need)) continue;
+
+                m.trees.Add(new Vector2Int(x, y));
+                var b = new Vector2Int(Mathf.FloorToInt(pt.x / bucket), Mathf.FloorToInt(pt.y / bucket));
+                if (!buckets.TryGetValue(b, out var lst)) buckets[b] = lst = new List<Vector2>();
+                lst.Add(pt);
+            }
+
+        return m.trees.Count;
+    }
+
+    /// <summary>그 칸의 나무를 넣거나 뺀다.</summary>
+    void ToggleTree(GMap m, int cx, int cy)
+    {
+        int at = m.trees.FindIndex(t => t.x == cx && t.y == cy);
+        if (at >= 0) m.trees.RemoveAt(at);
+        else m.trees.Add(new Vector2Int(cx, cy));
     }
 
     void PaintAt(GMap m, int cx, int cy)

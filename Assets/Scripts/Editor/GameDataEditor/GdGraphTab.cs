@@ -85,6 +85,8 @@ class GEff { public string effect; public float value; }
 class GNodeData
 {
     public string name = "", displayName = "", description = "", type = "Part", line = "None", icon = "", gun = "";
+    // 아이콘 에셋의 guid — 이쪽이 파일을 특정하고 icon(이름)은 아틀라스 안에서 어느 스프라이트인지 고른다
+    public string iconGuid = "";
     public List<GEff> attackEffects = new();
     public float speed = 50, gravity, explosionRadius, lifetime = 3;
     public int pierce;
@@ -173,7 +175,7 @@ class GdGraphTab : GdTab
                     name = name, displayName = it.displayName ?? name, description = it.description ?? "",
                     type = string.IsNullOrEmpty(it.type) ? "Part" : it.type,
                     line = string.IsNullOrEmpty(it.line) ? "None" : it.line,
-                    icon = it.icon ?? "",
+                    icon = it.icon ?? "", iconGuid = it.iconGuid ?? "",
                     attackEffects = it.attackEffects != null
                         ? it.attackEffects.Select(e => new GEff { effect = e.effect, value = e.value }).ToList()
                         : (it.damage > 0 ? new List<GEff> { new() { effect = "Effect:Damage", value = it.damage } } : new List<GEff>()),
@@ -248,7 +250,7 @@ class GdGraphTab : GdTab
                 description = d.description ?? "",
                 type = string.IsNullOrEmpty(d.type) ? "Part" : d.type,
                 line = string.IsNullOrEmpty(d.line) ? "None" : d.line,
-                icon = d.icon ?? "",
+                icon = d.icon ?? "", iconGuid = d.iconGuid ?? "",
             };
             if (d.type == "Ammo")
             {
@@ -1419,20 +1421,22 @@ class GdGraphTab : GdTab
                 Render();
             }));
 
-            // icon — 이름 텍스트가 진실이고, 스프라이트 픽커는 이름을 채워주는 편의
+            // icon — guid 가 파일을 특정하고 이름이 아틀라스 안의 스프라이트를 고른다
             var iconRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
-            var iconPrev = new Image { style = { width = 34, height = 34, marginRight = 4 }, sprite = FindSprite(d.icon) };
+            var iconPrev = new Image { style = { width = 34, height = 34, marginRight = 4 },
+                sprite = FindSprite(d.iconGuid, d.icon) };
             var iconPick = new UnityEditor.UIElements.ObjectField { objectType = typeof(Sprite),
-                allowSceneObjects = false, value = FindSprite(d.icon), style = { flexGrow = 1 } };
+                allowSceneObjects = false, tooltip = "JSON 에는 guid 와 스프라이트 이름이 함께 저장된다",
+                value = FindSprite(d.iconGuid, d.icon), style = { flexGrow = 1 } };
             iconPick.RegisterValueChangedCallback(ev =>
             {
-                d.icon = ev.newValue == null ? "" : ev.newValue.name;
+                (d.icon, d.iconGuid) = IconRefOf(ev.newValue as Sprite);
                 iconPrev.sprite = ev.newValue as Sprite;
                 Render();
             });
             iconRow.Add(iconPrev);
             iconRow.Add(iconPick);
-            sideBody.Add(new Label("icon (스프라이트 이름 검색 — 비우면 기존 유지)") { style = { color = GdEnum.Faint, fontSize = 11, marginTop = 4 } });
+            sideBody.Add(new Label("icon (guid + 이름으로 저장 — 비우면 기존 유지)") { style = { color = GdEnum.Faint, fontSize = 11, marginTop = 4 } });
             sideBody.Add(iconRow);
 
             BuildModuleSection(d);
@@ -1532,7 +1536,36 @@ class GdGraphTab : GdTab
     }
 
     static readonly Dictionary<string, Sprite> spriteCache = new();
-    static Sprite FindSprite(string name)
+
+    /// <summary>
+    /// guid 가 <b>파일</b>을, 이름이 그 안의 <b>어느 스프라이트</b>인지 고른다 — 스프라이트는
+    /// 아틀라스의 하위 에셋일 수 있어 guid 하나로는 특정되지 않는다.
+    /// 임포터의 FindSprite 와 같은 우선순위여야 에디터에 보이는 것과 임포트 결과가 어긋나지 않는다.
+    /// </summary>
+    static Sprite FindSprite(string guid, string name)
+    {
+        if (!string.IsNullOrEmpty(guid))
+        {
+            var key = guid + "|" + name;
+            if (spriteCache.TryGetValue(key, out var hit) && hit != null) return hit;
+
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!string.IsNullOrEmpty(path))
+            {
+                Sprite first = null;
+                foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(path))
+                {
+                    if (sub is not Sprite sp) continue;
+                    if (!string.IsNullOrEmpty(name) && sp.name == name) return spriteCache[key] = sp;
+                    first ??= sp;
+                }
+                if (first != null) return spriteCache[key] = first;
+            }
+        }
+        return FindSpriteByName(name);
+    }
+
+    static Sprite FindSpriteByName(string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
         if (spriteCache.TryGetValue(name, out var c) && c != null) return c;
@@ -1540,6 +1573,13 @@ class GdGraphTab : GdTab
             foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(guid)))
                 if (sub is Sprite sp && sp.name == name) return spriteCache[name] = sp;
         return null;
+    }
+
+    /// <summary>픽커에서 고른 스프라이트 → (스프라이트 이름, 담긴 에셋의 guid).</summary>
+    static (string name, string guid) IconRefOf(Sprite sprite)
+    {
+        if (sprite == null) return ("", "");
+        return (sprite.name, AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(sprite)));
     }
 
     // ═════════════ 검증 (nodeWarning / renderWarnings) ═════════════

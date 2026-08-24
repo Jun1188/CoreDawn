@@ -21,6 +21,7 @@ class GEffect
 {
     public string id = "", displayName = "", description = "", kind = "Damage", stacking = "Refresh";
     public float duration, tickInterval;
+    public string knockbackMode = "Directional";   // Knockback 전용 — 미는 방향 기준
     public List<string> affects = new();
     [JsonIgnore] public GameDataImporter.EffectDto src;
 }
@@ -54,21 +55,29 @@ class GdCombatTab : GdTab
     class KindInfo
     {
         public readonly string v, ko, desc;
-        public readonly bool dur, tick, affects;
-        public KindInfo(string v, string ko, string desc, bool dur = false, bool tick = false, bool affects = false)
-        { this.v = v; this.ko = ko; this.desc = desc; this.dur = dur; this.tick = tick; this.affects = affects; }
+        public readonly bool dur, tick, affects, knockback;
+        public KindInfo(string v, string ko, string desc, bool dur = false, bool tick = false,
+                        bool affects = false, bool knockback = false)
+        { this.v = v; this.ko = ko; this.desc = desc; this.dur = dur; this.tick = tick; this.affects = affects; this.knockback = knockback; }
     }
     static readonly KindInfo[] EffectKinds =
     {
         new("Damage", "피해", "value 만큼 체력을 깎는다"),
         new("Heal", "회복", "value 만큼 체력을 채운다"),
-        new("Knockback", "넉백", "value = 밀어내는 거리"),
+        new("Knockback", "넉백", "value = 밀어내는 거리", knockback: true),
         new("DamageOverTime", "지속 피해", "tickInterval 마다 value 피해", dur: true, tick: true),
         new("MoveSpeed", "이동속도", "value = 배율 (0.5 = 절반)", dur: true),
         new("AttackModifier", "공격 증폭", "affects 의 효과를 value 배", dur: true, affects: true),
         new("IncomingDamage", "받는 피해", "value = 받는 피해 배율", dur: true),
     };
     static readonly string[] FireModes = { "Projectile", "Hitscan", "Aura" };
+    // KnockbackMode(런타임 enum)와 같은 순서·이름이어야 한다 — 임포터가 이름으로 파싱한다
+    static readonly string[] KnockbackModes = { "Directional", "Radial" };
+    static readonly string[] KnockbackModeDesc =
+    {
+        "공격이 날아온 방향으로 민다 — 총알·히트스캔·근접",
+        "명중점에서 바깥으로 민다 — 폭발·오라",
+    };
     static readonly string[] Stacking = { "Refresh", "Stack" };
     static KindInfo KindOf(string v) => EffectKinds.FirstOrDefault(k => k.v == v) ?? EffectKinds[0];
 
@@ -97,6 +106,7 @@ class GdCombatTab : GdTab
                 kind = string.IsNullOrEmpty(e.kind) ? "Damage" : e.kind,
                 duration = Mathf.Max(0, e.duration), stacking = string.IsNullOrEmpty(e.stacking) ? "Refresh" : e.stacking,
                 tickInterval = Mathf.Max(0, e.tickInterval),
+                knockbackMode = string.IsNullOrEmpty(e.knockbackMode) ? "Directional" : e.knockbackMode,
                 affects = (e.affects ?? Array.Empty<string>()).ToList(),
                 src = e,
             });
@@ -155,6 +165,7 @@ class GdCombatTab : GdTab
         o.stacking = k.dur ? e.stacking : null;
         o.tickInterval = k.tick && e.tickInterval > 0 ? e.tickInterval : 0;
         o.affects = k.affects && e.affects.Count > 0 ? e.affects.ToArray() : null;
+        o.knockbackMode = k.knockback ? e.knockbackMode : null;
         return o;
     }
 
@@ -499,6 +510,24 @@ class GdCombatTab : GdTab
             tickF.RegisterValueChangedCallback(ev => { e.tickInterval = Mathf.Max(0, ev.newValue); RenderWarn(); });
             HookHist(tickF);
             detailBox.Add(Field2("Tick (초)", tickF));
+        }
+
+        if (k.knockback)
+        {
+            int cur = Mathf.Max(0, Array.IndexOf(KnockbackModes, e.knockbackMode));
+            var modeD = new DropdownField(KnockbackModes.ToList(), cur);
+            var modeNote = new Label(KnockbackModeDesc[cur])
+                { style = { color = GdEnum.Faint, fontSize = 11, marginBottom = 6, marginLeft = 118 } };
+            modeD.RegisterValueChangedCallback(ev =>
+            {
+                int i = Array.IndexOf(KnockbackModes, ev.newValue);
+                if (i < 0) return;
+                e.knockbackMode = KnockbackModes[i];
+                modeNote.text = KnockbackModeDesc[i];
+                PushHist();
+            });
+            detailBox.Add(Field2("방향 기준", modeD));
+            detailBox.Add(modeNote);
         }
 
         if (k.affects)

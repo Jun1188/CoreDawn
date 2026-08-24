@@ -32,6 +32,8 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
     amount: 1
   maxHp: 10
+  isDemolishable: 1
+  isAttackable: 0
   fireMode: 0
   damageMultiplier: 6
   range: 2

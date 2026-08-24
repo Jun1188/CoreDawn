@@ -179,6 +179,21 @@ public abstract class BuildingDataSO : GameDataSO
     [Tooltip("밤 웨이브의 몬스터가 때릴 때 버티는 내구도. 프리팹의 Entity에 주입된다.")]
     public int maxHp = 200;
 
+    [Header("파괴 규칙 — 무엇으로 없앨 수 있는가")]
+    // 두 플래그를 나눠 둔 이유: 없애는 손이 둘이라 규칙도 둘이다.
+    //   플레이어가 짓는 건물은 철거 O · 플레이어 공격 X — 제 공장을 오발로 부술 일은 없어야 한다.
+    //   코어는 철거 X · 플레이어 공격 X — 실수로 밀면 그대로 게임오버다(몬스터에게는 최종 목표).
+    //   둥지는 철거 X · 플레이어 공격 O — 몬스터의 것이라 철거 대상이 아니지만 부숴야 진행된다.
+    //   나무 같은 지형물도 공격 O 로 "베어낼 수 있는가"를 켠다.
+    // 그래서 기본값이 다르다: 철거는 켜고(플레이어가 짓는 것이 다수), 공격은 끈다(둥지·지형물만 켠다).
+    // 예전에는 코어만 `Data is CoreDataSO` 로 하드코딩해 걸렀다 — 종류가 늘 때마다 조건이 붙어야 했다.
+    [Tooltip("철거 모드로 부술 수 있는가. 끄면 조준 하이라이트도, 홀드 카운트도 걸리지 않는다.")]
+    public bool isDemolishable = true;
+    [Tooltip("플레이어의 공격이 통하는가. 기본은 꺼짐 — 총·근접 모두 이 건물을 지나친다. " +
+             "둥지·나무처럼 플레이어가 부수는 것만 켠다 " +
+             "(몬스터의 공격은 이 값과 무관하다 — 그쪽은 밤 웨이브의 목표 선정이 정한다).")]
+    public bool isAttackable = false;
+
     /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
     public abstract IBuildingBehavior CreateBehavior(Building building);
 

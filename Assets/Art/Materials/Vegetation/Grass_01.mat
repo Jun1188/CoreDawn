@@ -195,9 +195,9 @@ Material:
     - _WindSpeed2: 2.06
     - _WindStrength: 1.79
     - _Wind_Direction: 0.1
-    - _Wind_Speed: 2.4
-    - _Wind_Strength: 0.2
-    - _Wind_Variation: 0
+    - _Wind_Speed: 0.25
+    - _Wind_Strength: 0.07
+    - _Wind_Variation: 0.3
     - _WorkflowMode: 0
     - _ZTest: 4
     - _ZWrite: 1

@@ -45,6 +45,21 @@ public class GameplayHUDView : MonoBehaviour
 
     int shownHotbarIndex = -1;
 
+    // ── 매 프레임 같은 값을 다시 그리지 않으려는 스탬프 ──
+    // Label.text는 값이 같으면 무시하지만, 그 값을 만드는 ToString()·문자열 보간은 이미
+    // 일어난 뒤다. 프로파일러에서 HUD가 GC 1위였던 것이 대부분 여기서 나왔다.
+    int shownDay = int.MinValue;
+    int shownPhaseValue = int.MinValue;   // 남은 초, 또는 수량 밤의 남은 적 수
+    bool shownPhaseIsCount, shownNight;
+    int shownEnemies = int.MinValue;
+
+    Gun shownGun;
+    int shownAmmo = int.MinValue, shownReserve = int.MinValue;
+    bool shownReloading;
+
+    // 나침반 마커가 지금 무슨 역할인지 (-1 미정 / 0 코어 / 1 위협) — markPool과 나란히
+    readonly List<int> markRoles = new();
+
     void Awake()
     {
         if (document == null) document = GetComponent<UIDocument>();
@@ -105,6 +120,14 @@ public class GameplayHUDView : MonoBehaviour
             enemyLine.Insert(0, glyph);
         }
 
+        // 스탬프 초기화 — 다시 켜졌을 때 옛 값 때문에 첫 갱신을 건너뛰지 않게
+        shownDay = shownPhaseValue = shownEnemies = int.MinValue;
+        shownAmmo = shownReserve = int.MinValue;
+        shownGun = null;
+        shownReloading = false;
+        shownNight = false;
+        if (phaseTime != null) phaseTime.style.color = StyleKeyword.Null;
+
         Show(deathOverlay, false);
         BindPlayerIfNeeded();
 
@@ -159,24 +182,37 @@ public class GameplayHUDView : MonoBehaviour
         {
             dayValue.text = "—";
             phaseTime.text = "—";
+            shownDay = shownPhaseValue = int.MinValue;
             return;
         }
 
-        dayValue.text = tm.DayNumber.ToString();
+        if (shownDay != tm.DayNumber)
+        {
+            shownDay = tm.DayNumber;
+            dayValue.text = shownDay.ToString();
+        }
 
         bool night = tm.Phase == DayPhase.Night;
         bool quantityNight = tm.TryGetNightWaveStatus(out int remainingEnemies, out _);
         phaseLabel.text = quantityNight ? "ENEMIES LEFT" : night ? "NIGHT ENDS" : "NIGHT IN";
 
-        if (quantityNight)
-            phaseTime.text = remainingEnemies.ToString();
-        else
+        // 시계는 1초에 한 번만 달라진다 — 그 초에만 문자열을 만든다
+        int value = quantityNight ? remainingEnemies
+                                  : Mathf.FloorToInt(Mathf.Max(0f, tm.RemainingPhaseTime));
+        if (value != shownPhaseValue || quantityNight != shownPhaseIsCount)
         {
-            float rem = Mathf.Max(0f, tm.RemainingPhaseTime);
-            phaseTime.text = $"{(int)(rem / 60f):00}:{(int)(rem % 60f):00}";
+            shownPhaseValue = value;
+            shownPhaseIsCount = quantityNight;
+            phaseTime.text = quantityNight ? value.ToString()
+                                           : $"{value / 60:00}:{value % 60:00}";
         }
+
         // 밤에는 시계가 위협의 잔여 시간이다 — 괴수색으로
-        phaseTime.style.color = night ? UIFlowColors.Of(ItemLine.Beast) : StyleKeyword.Null;
+        if (night != shownNight)
+        {
+            shownNight = night;
+            phaseTime.style.color = night ? UIFlowColors.Of(ItemLine.Beast) : StyleKeyword.Null;
+        }
     }
 
     // ───────────────────── 나침반 ─────────────────────
@@ -194,6 +230,7 @@ public class GameplayHUDView : MonoBehaviour
             var tick = new VisualElement { pickingMode = PickingMode.Ignore };
             tick.AddToClassList("ui-compass__tick");
             tick.style.height = cardinal ? 12f : 7.5f;
+            tick.style.left = 0f;      // 가로 이동은 translate가 맡는다 (PlaceOnStrip 참고)
             compass.Add(tick);
             ticks[i] = tick;
 
@@ -201,6 +238,7 @@ public class GameplayHUDView : MonoBehaviour
                 { pickingMode = PickingMode.Ignore };
             label.AddToClassList("ui-compass__label");
             if (cardinal) label.AddToClassList("ui-compass__label--card");
+            label.style.left = 0f;
             compass.Add(label);
             tickLabels[i] = label;
         }
@@ -227,8 +265,8 @@ public class GameplayHUDView : MonoBehaviour
         for (int i = 0; i < TickCount; i++)
         {
             float x = StripOffset(Mathf.DeltaAngle(yaw, i * 15f), halfTan, hudW);
-            PlaceOnStrip(ticks[i], x, compW);
-            PlaceOnStrip(tickLabels[i], x, compW);
+            PlaceOnStrip(ticks[i], x, compW, centered: false);
+            PlaceOnStrip(tickLabels[i], x, compW, centered: true);
         }
 
         // ── 마커: 초록 = 코어 방향(길 잃음 방지), 붉음 = 살아있는 괴수 방향 ──
@@ -273,20 +311,37 @@ public class GameplayHUDView : MonoBehaviour
         {
             var t = new TriangleGlyph();
             t.AddToClassList("ui-compass__mark");
+            t.style.left = 0f;   // 가로 이동은 translate가 맡는다
             compass.Add(t);
             markPool.Add(t);
+            markRoles.Add(-1);
         }
 
+        // 클래스 교체는 역할이 바뀔 때만 한다. 매 프레임 뗐다 붙이면 클래스 리스트 변경이
+        // 서브트리 재스타일을 부르고, TriangleGlyph는 Painter2D로 그리는 요소라 메시까지
+        // 다시 만든다 — 프로파일러의 RenderTreeManager·MeshGenerationDeferrer 할당이 이것이었다.
+        int role = threat ? 1 : 0;
         var mark = markPool[index];
-        mark.RemoveFromClassList("combat-mark--core");
-        mark.RemoveFromClassList("combat-mark--threat");
-        mark.AddToClassList(threat ? "combat-mark--threat" : "combat-mark--core");
-        PlaceOnStrip(mark, xOffset, compass.resolvedStyle.width);
+        if (markRoles[index] != role)
+        {
+            markRoles[index] = role;
+            mark.EnableInClassList("combat-mark--threat", threat);
+            mark.EnableInClassList("combat-mark--core", !threat);
+        }
+
+        PlaceOnStrip(mark, xOffset, compass.resolvedStyle.width, centered: true);
     }
 
-    /// <summary>띠 중앙 기준 픽셀 오프셋을 위치·투명도로 옮긴다. 범위 밖·뒤쪽(NaN)은 숨긴다.
-    /// 원본의 mask-image(양끝 페이드)가 USS에 없어 투명도를 직접 준다.</summary>
-    static void PlaceOnStrip(VisualElement e, float xOffset, float compassWidth)
+    /// <summary>
+    /// 띠 중앙 기준 픽셀 오프셋을 위치·투명도로 옮긴다. 범위 밖·뒤쪽(NaN)은 숨긴다.
+    /// 원본의 mask-image(양끝 페이드)가 USS에 없어 투명도를 직접 준다.
+    ///
+    /// <b>left가 아니라 translate로 옮긴다</b>: left는 레이아웃 속성이라 매 프레임 쓰면
+    /// 나침반이 프레임마다 다시 배치된다(눈금·라벨 48개 + 마커). translate는 트랜스폼만
+    /// 건드려 배치를 건드리지 않는다. 대신 USS의 <c>translate: -50% 0</c>(라벨·마커의
+    /// 중앙 정렬)을 덮으므로, <paramref name="centered"/>면 그 몫을 픽셀로 직접 뺀다.
+    /// </summary>
+    static void PlaceOnStrip(VisualElement e, float xOffset, float compassWidth, bool centered)
     {
         if (e == null) return;
 
@@ -297,8 +352,15 @@ public class GameplayHUDView : MonoBehaviour
             return;
         }
 
+        float x = half + xOffset;
+        if (centered)
+        {
+            float w = e.resolvedStyle.width;   // 마지막 배치 결과 — 읽어도 배치를 부르지 않는다
+            if (!float.IsNaN(w)) x -= w * 0.5f;
+        }
+
         e.style.display = DisplayStyle.Flex;
-        e.style.left = half + xOffset;
+        e.style.translate = new Translate(x, 0f);
         e.style.opacity = Mathf.Clamp01((1f - Mathf.Abs(xOffset) / half) / 0.24f);   // 양끝 12% 페이드
     }
 
@@ -382,24 +444,42 @@ public class GameplayHUDView : MonoBehaviour
         bool has = weapon != null && weapon.gunData != null;
 
         Show(ammoBox, has);
-        if (!has) return;
+        if (!has) { shownGun = null; return; }
 
         // 근접무기(무한 탄약)는 셀 탄이 없다 — 탄창 칸을 ∞로 접어 장전 수/최대치를 지운다.
         bool unlimited = weapon.gunData.unlimitedAmmo;
 
-        ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
-        ammoNow.text = unlimited ? "∞" : weapon.CurrentAmmo.ToString();
-        ammoCap.text = unlimited ? "" : $" / {weapon.gunData.magSize}";
+        // 무기에 딸린 값은 무기가 바뀔 때만 다시 만든다 (ToUpperInvariant가 매번 새 문자열이었다)
+        if (shownGun != weapon)
+        {
+            shownGun = weapon;
+            shownAmmo = shownReserve = int.MinValue;
+            ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
+            ammoCap.text = unlimited ? "" : $" / {weapon.gunData.magSize}";
+        }
+
+        int ammo = weapon.CurrentAmmo;
+        if (shownAmmo != ammo)
+        {
+            shownAmmo = ammo;
+            ammoNow.text = unlimited ? "∞" : ammo.ToString();
+        }
         ammoNow.EnableInClassList("combat-ammo__now--reloading", weapon.IsReloading);
 
         // 탄종 + 인벤토리 예비탄 (실소비). 인벤토리 없는 씬은 ReserveAmmo -1 = 무한 보급.
         var item = weapon.CurrentAmmoItem;
         ammoType.text = unlimited ? "근접" : item != null ? item.displayName : "";
+
         int reserve = weapon.ReserveAmmo;
-        ammoReserve.text = unlimited ? ""              // 장전 수 칸이 이미 ∞다 — 두 번 말하지 않는다
-                         : weapon.IsReloading ? "장전 중"
-                         : reserve < 0 ? "∞"
-                         : $"× {reserve}";
+        if (shownReserve != reserve || shownReloading != weapon.IsReloading)
+        {
+            shownReserve = reserve;
+            shownReloading = weapon.IsReloading;
+            ammoReserve.text = unlimited ? ""              // 장전 수 칸이 이미 ∞다 — 두 번 말하지 않는다
+                             : weapon.IsReloading ? "장전 중"
+                             : reserve < 0 ? "∞"
+                             : $"× {reserve}";
+        }
     }
 
     // ───────────────────── 상호작용 프롬프트 ─────────────────────
@@ -487,7 +567,12 @@ public class GameplayHUDView : MonoBehaviour
     {
         var spawner = BattleManager.Instance != null ? BattleManager.Instance.Spawner : null;
         Show(enemyLine, spawner != null);
-        if (spawner != null) enemyCount.text = spawner.AliveCount.ToString();
+        if (spawner == null) return;
+
+        int alive = spawner.AliveCount;
+        if (shownEnemies == alive) return;
+        shownEnemies = alive;
+        enemyCount.text = alive.ToString();
     }
 
     // ───────────────────── 핫바 ─────────────────────

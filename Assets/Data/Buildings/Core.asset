@@ -65,6 +65,8 @@ MonoBehaviour:
   hideFromBuildMenu: 1
   buildCost: []
   maxHp: 1000
+  isDemolishable: 0
+  isAttackable: 0
   tiers:
   - tierLabel: "\uC794\uD574 \uD68C\uC218"
     description: "\uD769\uC5B4\uC9C4 \uD30C\uD3B8\uC744 \uBAA8\uC544 \uCF54\uC5B4\uB97C

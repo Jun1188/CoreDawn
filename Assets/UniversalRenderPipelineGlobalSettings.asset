@@ -47,7 +47,7 @@ MonoBehaviour:
       - rid: 4927909307867726026
       - rid: 4927909307867726027
       - rid: 4927909307867726028
-      - rid: 4927909307867726029
+      - rid: 2392814895323414927
       - rid: 4927909307867726030
       - rid: 4927909307867726031
       - rid: 4927909307867726032
@@ -68,24 +68,7 @@ MonoBehaviour:
       - rid: 4927909307867726047
       - rid: 4927909307867726048
     m_RuntimeSettings:
-      m_List:
-      - rid: 4927909307867726016
-      - rid: 4927909307867726017
-      - rid: 4927909307867726020
-      - rid: 4927909307867726021
-      - rid: 4927909307867726026
-      - rid: 4927909307867726027
-      - rid: 4927909307867726028
-      - rid: 4927909307867726029
-      - rid: 4927909307867726031
-      - rid: 4927909307867726033
-      - rid: 4927909307867726034
-      - rid: 4927909307867726036
-      - rid: 4927909307867726037
-      - rid: 4927909307867726038
-      - rid: 4927909307867726039
-      - rid: 4927909307867726043
-      - rid: 4927909307867726047
+      m_List: []
   m_AssetVersion: 10
   m_ObsoleteDefaultVolumeProfile: {fileID: 0}
   m_RenderingLayerNames:
@@ -109,6 +92,11 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: 2392814895323414927
+      type: {class: URPDefaultVolumeProfileSettings, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
+      data:
+        m_Version: 0
+        m_VolumeProfile: {fileID: 11400000, guid: 4f4836b38ae812049b626a8d9832aa63, type: 2}
     - rid: 4927909307867726015
       type: {class: RayTracingRenderPipelineResources, ns: UnityEngine.Rendering.UnifiedRayTracing, asm: Unity.UnifiedRayTracing.Runtime}
       data:
@@ -236,11 +224,6 @@ MonoBehaviour:
       data:
         version: 1
         useReflectionProbeRotation: 1
-    - rid: 4927909307867726029
-      type: {class: URPDefaultVolumeProfileSettings, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
-      data:
-        m_Version: 0
-        m_VolumeProfile: {fileID: 11400000, guid: 4f4836b38ae812049b626a8d9832aa63, type: 2}
     - rid: 4927909307867726030
       type: {class: URPShaderStrippingSetting, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
       data:
