@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 977204b90bc8bc74eb7e4e17652513e9, type: 3}
-  m_Name: Tut_Move
+  m_Name: Tut_Move2
   m_EditorClassIdentifier: Assembly-CSharp::TutorialStepSO
-  id: Tutorial:Move
-  displayName: MOVE
+  id: Tutorial:Move1
+  displayName: MOVE 1
   description: 
   icon: {fileID: 0}
   order: 10
-  tag: MOVE
+  tag: MOVE 1
   body: "WASD\uB85C \uC6C0\uC9C1\uC774\uACE0, \uB9C8\uC6B0\uC2A4\uB97C \uB3CC\uB824
     \uC8FC\uC704\uB97C \uB458\uB7EC\uBCF4\uC138\uC694."
   keyHints:

@@ -18,11 +18,11 @@ MonoBehaviour:
   icon: {fileID: 0}
   order: 50
   tag: ITEMS
-  body: "I \uD0A4\uB85C \uC778\uBCA4\uD1A0\uB9AC\uB97C \uC5F4\uC5B4 \uAC00\uC9C4
+  body: "E \uD0A4\uB85C \uC778\uBCA4\uD1A0\uB9AC\uB97C \uC5F4\uC5B4 \uAC00\uC9C4
     \uAC83\uC744 \uD655\uC778\uD558\uC138\uC694.\n\uC81C\uC791\uB3C4 \uC774 \uD654\uBA74\uC5D0\uC11C
     \uD569\uB2C8\uB2E4."
   keyHints:
-  - I
+  - E
   trigger: 4
   item: {fileID: 0}
   itemType: 8

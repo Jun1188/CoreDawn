@@ -10,22 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 977204b90bc8bc74eb7e4e17652513e9, type: 3}
-  m_Name: Tut_Ports
+  m_Name: Tut_Move1
   m_EditorClassIdentifier: Assembly-CSharp::TutorialStepSO
-  id: Tutorial:Ports
-  displayName: PORTS
+  id: Tutorial:Move1
+  displayName: MOVE 1
   description: 
   icon: {fileID: 0}
-  order: 90
-  tag: PORTS
-  body: "\uBBF8\uB9AC\uBCF4\uAE30\uC758 \uCCAD\uB85D \uD3EC\uD2B8\uB294 \uB4E4\uC5B4\uC624\uB294
-    \uC785\uAD6C, \uC8FC\uD669 \uD3EC\uD2B8\uB294 \uB098\uAC00\uB294 \uCD9C\uAD6C\uC785\uB2C8\uB2E4.\nR\uB85C
-    \uB3CC\uB9AC\uACE0 \uC88C\uD074\uB9AD\uC73C\uB85C \uC124\uCE58\uD558\uC138\uC694."
+  order: 10
+  tag: MOVE 1
+  body: "WASD\uB85C \uC6C0\uC9C1\uC774\uACE0, \uB9C8\uC6B0\uC2A4\uB97C \uB3CC\uB824
+    \uC8FC\uC704\uB97C \uB458\uB7EC\uBCF4\uC138\uC694."
   keyHints:
-  - R
-  trigger: 8
+  - W
+  - A
+  - S
+  - D
+  trigger: 1
   item: {fileID: 0}
-  itemType: 7
+  itemType: 8
   count: 1
   seconds: 2
   minSeconds: 2.5
