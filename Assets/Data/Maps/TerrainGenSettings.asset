@@ -77,23 +77,20 @@ MonoBehaviour:
   - {fileID: 2010085120437849477, guid: 4828afd64a3dd424393c97dfacfc7aa3, type: 3}
   cliffMinRadius: 3
   cliffMaxRadius: 12
-  cliffYawJitter: 26
+  cliffShellDepthM: 6
+  cliffPackTightness: 0.6
+  cliffSizeTiers: 5
   cliffPackSpacing: 0.42
   cliffCoverFactor: 0.75
-  cliffMaxScale: 999
   cliffRoundness: 0.3
   cliffSizeNoise: {x: 0.95, y: 1}
-  cliffMaxAspect: 2.2
   cliffMaxHeightCells: 2.2
   cliffHeightCells: {x: 2, y: 4.5}
   cliffRidgeFrequency: 0.11
   cliffBaseSinkCells: 0.3
-  cliffStretch: {x: 0.9, y: 1.1}
   cliffStackLayers: 3
-  cliffStackShrink: {x: 0.85, y: 0.97}
   cliffStackSink: 0.22
   cliffStackOffset: 0.55
-  cliffStackMinRadius: 1.25
   cliffTilt: 24
   cliffDipSteepShare: 0.3
   cliffSlotAspect: 1.5
@@ -101,10 +98,7 @@ MonoBehaviour:
   cliffCourseSetback: 0.22
   cliffCourseSink: 0.18
   cliffCourseSway: 0.55
-  cliffBackingInset: -1
-  cliffBackingDrop: 1.2
-  cliffMinThicknessM: 0.4
-  cliffThinAspectMax: 4
+  cliffThinAspectMax: 1.5
   cliffRowSeparation: 1.5
   cliffTalusBandM: 1.2
   cliffTalusDensity: 0.6
