@@ -38,10 +38,9 @@ MonoBehaviour:
     probeSamplingDebugTexture: {fileID: 0}
     probeVolumeBlendStatesCS: {fileID: 0}
   m_RendererFeatures:
-  - {fileID: 5821300243927890351}
   - {fileID: 3521469450644988276}
   - {fileID: -1574219618204118624}
-  m_RendererFeatureMap: af7937b2ba69c95074a115cdcec5de30a0117e0a993f27ea
+  m_RendererFeatureMap: 74a115cdcec5de30a0117e0a993f27ea
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -64,12 +63,12 @@ MonoBehaviour:
     zFailOperation: 0
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 2
-  m_DepthPrimingMode: 2
+  m_DepthPrimingMode: 1
   m_CopyDepthMode: 0
   m_DepthAttachmentFormat: 0
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
-  m_IntermediateTextureMode: 1
+  m_IntermediateTextureMode: 0
 --- !u!114 &3521469450644988276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,16 +95,3 @@ MonoBehaviour:
     BlurQuality: 0
     Falloff: 300
     SampleCount: -1
---- !u!114 &5821300243927890351
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04e7136ccf173734c8ad4051eb0f2677, type: 3}
-  m_Name: TiltShift
-  m_EditorClassIdentifier: FronkonGames.Artistic.TiltShift::FronkonGames.Artistic.TiltShift.TiltShift
-  m_Active: 1

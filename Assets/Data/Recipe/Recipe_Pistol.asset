@@ -18,6 +18,8 @@ MonoBehaviour:
   icon: {fileID: 0}
   tier: 1
   inputs:
+  - item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
+    amount: 4
   - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
     amount: 3
   outputs:

@@ -50,8 +50,12 @@ public class WeaponStancePose : MonoBehaviour, IWeaponMotionModule
     public float slidePunchPitch = -9f;
 
     [Header("ADS")]
-    [Tooltip("조준 중 자세 포즈를 억제하는 비율.")]
+    [Tooltip("조준 중 자세 포즈(달리기·앉기·슬라이딩)를 억제하는 비율.")]
     [Range(0f, 1f)] public float aimSuppression = 1f;
+    [Tooltip("조준 중 충격 펀치(착지·점프·슬라이드 진입)를 억제하는 비율. " +
+             "자세 포즈와 따로 두는 이유: 1로 완전히 죽이면 조준 중 착지가 아무 감각 없이 지나간다. " +
+             "가늠자가 눈앞에 붙어 있는 상태에서는 같은 오프셋도 몇 배로 크게 읽히므로 대부분을 눌러야 한다.")]
+    [Range(0f, 1f)] public float impactAimSuppression = 0.85f;
     [Tooltip("포즈 추종 속도(가중치가 아니라 최종 합성값의 스무딩).")]
     public float sharpness = 14f;
 
@@ -102,7 +106,8 @@ public class WeaponStancePose : MonoBehaviour, IWeaponMotionModule
         var m = Motion;
         if (m == null) return;
 
-        float gate = 1f - aimSuppression * Mathf.Clamp01(m.AimWeight);
+        float aim = Mathf.Clamp01(m.AimWeight);
+        float gate = 1f - aimSuppression * aim;
 
         // 달리기 가중치는 이징 곡선으로 — "무기를 내렸다/올렸다"가 또렷하게 읽힌다
         bool wantSprint = m.IsSprinting && m.AimWeight < 0.3f;
@@ -128,8 +133,13 @@ public class WeaponStancePose : MonoBehaviour, IWeaponMotionModule
         _pos = MotionSpring.Damp(_pos, targetPos, sharpness, dt);
         _euler = MotionSpring.Damp(_euler, targetEuler, sharpness, dt);
 
-        PositionOffset = _pos + _impactPos;
-        RotationOffset = Quaternion.Euler(_euler + _impactEuler);
+        // 충격 펀치에도 조준 억제를 건다. 여기서(합성 시점에) 거는 이유는 펀치 도중 조준을
+        // 시작/해제해도 그 순간의 조준 상태를 따라가야 하기 때문 — 펀치를 시작할 때 진폭에
+        // 곱해 두면 점프 직후 조준한 경우 이미 커진 오프셋이 그대로 눈앞에서 흔들린다.
+        float impactGate = 1f - impactAimSuppression * aim;
+
+        PositionOffset = _pos + _impactPos * impactGate;
+        RotationOffset = Quaternion.Euler(_euler + _impactEuler * impactGate);
     }
 
     // ── 사건 ────────────────────────────────────────────────────────────

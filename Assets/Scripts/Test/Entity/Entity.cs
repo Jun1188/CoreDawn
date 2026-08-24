@@ -20,9 +20,12 @@ public static class EntityExtensions
         // 심 건물은 점유 풋프린트(칸) 기준으로 잰다 — 모델(콜라이더)이 풋프린트보다 한참
         // 작을 수 있는데(3×3칸 코어의 우주선), 몬스터의 길을 막는 것은 풋프린트라서
         // 풋프린트 경계까지 붙은 몬스터의 공격이 닿으려면 거리의 정본도 풋프린트여야 한다.
-        if (target is BuildingEntity be && be.HasSim &&
-            TryFootprintDistance(be.Sim, from, out float footprint))
-            return footprint;
+        if (target is BuildingEntity be && be.TryGetFootprintRect(out Vector3 min, out Vector3 max))
+        {
+            float dx = Mathf.Max(min.x - from.x, 0f, from.x - max.x);
+            float dz = Mathf.Max(min.z - from.z, 0f, from.z - max.z);
+            return Mathf.Sqrt(dx * dx + dz * dz);   // 지상전이라 높이는 무시한다
+        }
 
         var col = target.GetComponentInChildren<Collider>();
         if (col == null) return Vector3.Distance(from, target.GetPosition());
@@ -42,30 +45,6 @@ public static class EntityExtensions
         return Vector3.Distance(from, col.ClosestPoint(from));
     }
 
-    // 칸 크기·원점의 소유자 — 씬이 바뀌면 파괴돼 가짜 null이 되므로 그때 다시 찾는다
-    static PlacementSystem placementCache;
-
-    /// <summary>건물 점유 풋프린트 사각형(XZ)까지의 거리. 배치 시스템이 없는 씬이면 false.</summary>
-    static bool TryFootprintDistance(Building b, Vector3 from, out float distance)
-    {
-        distance = 0f;
-        if (b == null || b.Data == null) return false;
-        if (placementCache == null) placementCache = Object.FindFirstObjectByType<PlacementSystem>();
-        if (placementCache == null) return false;
-
-        float cell = placementCache.CellSize;
-        Vector3 origin = placementCache.GridOrigin;
-        Vector2Int size = b.RotationSteps % 2 == 0
-            ? b.Data.size
-            : new Vector2Int(b.Data.size.y, b.Data.size.x);   // 홀수 회전은 가로·세로가 바뀐다
-
-        float minX = origin.x + b.Origin.x * cell, maxX = minX + size.x * cell;
-        float minZ = origin.z + b.Origin.y * cell, maxZ = minZ + size.y * cell;
-        float dx = Mathf.Max(minX - from.x, 0f, from.x - maxX);
-        float dz = Mathf.Max(minZ - from.z, 0f, from.z - maxZ);
-        distance = Mathf.Sqrt(dx * dx + dz * dz);   // 지상전이라 높이는 무시한다
-        return true;
-    }
 }
 
 // 모든 게임 개체(몬스터/플레이어/건물)의 공통 베이스.
@@ -140,10 +119,14 @@ public class Entity : MonoBehaviour
     /// <summary>
     /// 공격 명중의 단일 진입점 — 효과 항목 목록을 이 엔티티에 적용한다.
     /// 시전측 배율(공격 버프·포탑 배율)은 시전자가 보낼 때 이미 항목에 구워져(bake) 있다.
+    ///
+    /// virtual인 이유: "누가 때렸는가"로 갈리는 규칙은 여기서만 판단할 수 있다.
+    /// ReceiveDamage는 시전자를 모르므로(수치만 받는다) 플레이어 공격만 막는 것 같은
+    /// 규칙은 이쪽을 override해야 한다.
     /// </summary>
-    public void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
-                             Entity source, Vector3 hitPoint)
-        => Effects.ApplyAll(entries, source, hitPoint);
+    public virtual void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
+                                     Entity source, Vector3 hitPoint, Vector3 hitDirection = default)
+        => Effects.ApplyAll(entries, source, hitPoint, hitDirection);
 
     /// <summary>
     /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.

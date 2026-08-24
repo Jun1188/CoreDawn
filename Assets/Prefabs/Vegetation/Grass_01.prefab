@@ -49,9 +49,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2532886251314913022, guid: 954b7a467a8ef9341bd209a76d738cb9, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2532886251314913022, guid: 954b7a467a8ef9341bd209a76d738cb9, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: c78dc0a7f2d82cc4f842f3e3de398364, type: 2}
+      objectReference: {fileID: 2100000, guid: 283431fd1e0e1b547bf6c4464cef4509, type: 2}
     - target: {fileID: 2532886251314913023, guid: 954b7a467a8ef9341bd209a76d738cb9, type: 3}
       propertyPath: m_Name
       value: Grass_01

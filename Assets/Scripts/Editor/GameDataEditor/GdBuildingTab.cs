@@ -13,8 +13,10 @@ using UnityEngine.UIElements;
 //
 //  three.js 뷰는 PreviewRenderUtility 로 옮겼다 — 격자·풋프린트·포트 흐름·
 //  모델 미리보기, 드래그 회전·휠 줌·우클릭 팬·격자 클릭 포트 추가까지 동일.
-//  모델 지정은 웹의 "파일 선택" 대신 유니티 ObjectField 다. JSON 에는 원본과
-//  똑같이 파일 이름만 들어가고, 임포터가 Assets/Models 에서 이름으로 찾는다.
+//  모델 지정은 웹의 "파일 선택" 대신 유니티 ObjectField 다. JSON 에는 에셋 guid 와
+//  파일 이름을 함께 남긴다 — guid 가 진실이고, 이름은 diff 에서 읽히는 표시이자
+//  guid 가 죽었을 때의 폴백이다. 이름만 저장하던 시절에는 같은 이름의 모델이 둘 있으면
+//  어느 쪽이 걸릴지 정해지지 않았다.
 //
 //  원본과 다른 점: 웹판 내보내기는 툴이 모르는 필드(fireMode·defaultAmmo·
 //  muzzleHeight 등)를 떨궜다. 여기서는 항목마다 원본 DTO를 들고 있다가
@@ -40,11 +42,14 @@ class GBuilding
     public bool idLocked;
     public string kind = "Miner", displayName = "새 건물", description = "", category = "Production";
     public string model = "", modelCurveL = "", modelCurveR = "";
+    // guid 가 정본 — 이름은 표시·폴백용 (임포터의 ModelRef 규약과 같다)
+    public string modelGuid = "", modelCurveLGuid = "", modelCurveRGuid = "";
     public int sizeX = 1, sizeY = 1;
     public List<GPort> ports = new();
     public List<GCost> buildCost = new();
     public int inputSlots = 1, outputSlots = 1, bufferStackCap, requiredCoreTier, maxHp = 200;
     public bool hideFromBuildMenu;
+    public bool isDemolishable = true, isAttackable;   // 공격 가능은 기본 꺼짐 — 둥지·지형물만 켠다
     public float speedMultiplier = 1, speedTilesPerSec = 2;
     public List<string> availableRecipes = new();
     public float damageMultiplier = 1, range = 8, fireRate = 1;
@@ -78,6 +83,8 @@ class GdBuildingTab : GdTab
         new("DronePort", "드론 스테이션", "Logistics",  "droneRange", "carryCapacity", "travelSpeed"),
         new("Core",      "코어",         "Production", "tiers"),
         new("Tower",     "방어 타워",    "Defense",    "damageMultiplier", "range", "fireRate", "ammoFilter"),
+        new("Nest",      "몬스터 둥지",   "Defense"),
+        new("Tree",      "나무",         "Production"),
     };
     static readonly (string v, string ko)[] Categories =
     { ("Production", "생산"), ("Logistics", "물류"), ("Storage", "저장"), ("Defense", "방어") };
@@ -158,6 +165,8 @@ class GdBuildingTab : GdTab
                 category = string.IsNullOrEmpty(o.category) ? k.cat : o.category,
                 model = o.model ?? "",
                 modelCurveL = o.modelCurveL ?? "", modelCurveR = o.modelCurveR ?? "",
+                modelGuid = o.modelGuid ?? "",
+                modelCurveLGuid = o.modelCurveLGuid ?? "", modelCurveRGuid = o.modelCurveRGuid ?? "",
                 sizeX = Mathf.Max(1, o.size?.x ?? 1), sizeY = Mathf.Max(1, o.size?.y ?? 1),
                 ports = (o.ports ?? Array.Empty<GameDataImporter.PortDto>())
                     .Select(p => new GPort { x = p.x, y = p.y,
@@ -166,6 +175,7 @@ class GdBuildingTab : GdTab
                     .Select(c => new GCost { item = c.item ?? "", amount = Mathf.Max(1, c.amount) }).ToList(),
                 inputSlots = o.inputSlots, outputSlots = o.outputSlots, bufferStackCap = o.bufferStackCap,
                 maxHp = o.maxHp, requiredCoreTier = o.requiredCoreTier, hideFromBuildMenu = o.hideFromBuildMenu,
+                isDemolishable = o.isDemolishable, isAttackable = o.isAttackable,
                 speedMultiplier = o.speedMultiplier > 0 ? o.speedMultiplier : 1,
                 speedTilesPerSec = o.speedTilesPerSec > 0 ? o.speedTilesPerSec : 2,
                 availableRecipes = (o.availableRecipes ?? Array.Empty<string>()).ToList(),
@@ -200,6 +210,7 @@ class GdBuildingTab : GdTab
         var o = b.src ?? (b.src = new GameDataImporter.BuildingDto());
         o.id = Bid(b); o.kind = b.kind; o.displayName = b.displayName; o.description = b.description ?? "";
         o.category = b.category; o.model = b.model ?? "";
+        o.modelGuid = b.modelGuid ?? "";
         o.size ??= new GameDataImporter.Vec2Dto();
         o.size.x = b.sizeX; o.size.y = b.sizeY;
         o.ports = b.ports.Select(p => new GameDataImporter.PortDto
@@ -208,6 +219,7 @@ class GdBuildingTab : GdTab
         { item = c.item, amount = c.amount }).ToArray();
         o.inputSlots = b.inputSlots; o.outputSlots = b.outputSlots; o.bufferStackCap = b.bufferStackCap;
         o.maxHp = b.maxHp; o.requiredCoreTier = b.requiredCoreTier; o.hideFromBuildMenu = b.hideFromBuildMenu;
+        o.isDemolishable = b.isDemolishable; o.isAttackable = b.isAttackable;
 
         // 종류별 전용 필드 — 원본 exportJson 과 같은 규칙. 다른 kind 의 잔존값은
         // 임포터가 무시하므로 src 에 남아 있어도 해가 없다.
@@ -215,8 +227,11 @@ class GdBuildingTab : GdTab
         if (b.kind == "Belt")
         {
             o.speedTilesPerSec = b.speedTilesPerSec;
-            if (!string.IsNullOrEmpty(b.modelCurveL)) o.modelCurveL = b.modelCurveL;
-            if (!string.IsNullOrEmpty(b.modelCurveR)) o.modelCurveR = b.modelCurveR;
+            // 이름·guid 는 한 쌍으로 움직인다 — 한쪽만 남으면 폴백이 엉뚱한 것을 집는다
+            if (!string.IsNullOrEmpty(b.modelCurveL) || !string.IsNullOrEmpty(b.modelCurveLGuid))
+            { o.modelCurveL = b.modelCurveL; o.modelCurveLGuid = b.modelCurveLGuid; }
+            if (!string.IsNullOrEmpty(b.modelCurveR) || !string.IsNullOrEmpty(b.modelCurveRGuid))
+            { o.modelCurveR = b.modelCurveR; o.modelCurveRGuid = b.modelCurveRGuid; }
         }
         if (b.kind == "Assembler") o.availableRecipes = b.availableRecipes.ToArray();
         if (b.kind == "DronePort")
@@ -290,20 +305,20 @@ class GdBuildingTab : GdTab
         // 웹판 "3D 모델 불러오기" — 유니티에서는 에셋 픽커. JSON 에는 파일 이름만 남는다.
         topModelField = new UnityEditor.UIElements.ObjectField
         { objectType = typeof(GameObject), allowSceneObjects = false,
-          tooltip = "본체 모델 — Assets/Models 의 에셋. JSON 에는 파일 이름만 저장된다",
+          tooltip = "본체 모델 — JSON 에는 guid 와 파일 이름이 함께 저장된다 (guid 가 진실)",
           style = { width = 230, marginLeft = 8 } };
         topModelField.RegisterValueChangedCallback(e =>
         {
             var b = Cur; if (b == null) return;
-            b.model = e.newValue != null ? Path.GetFileName(AssetDatabase.GetAssetPath(e.newValue)) : "";
+            (b.model, b.modelGuid) = ModelRefOf(e.newValue);
             PushHist();
             RenderProps(); Refresh3D();
         });
         top.Add(topModelField);
         var clearB = new Button(() =>
         {
-            var b = Cur; if (b == null || string.IsNullOrEmpty(b.model)) return;
-            b.model = "";
+            var b = Cur; if (b == null || (string.IsNullOrEmpty(b.model) && string.IsNullOrEmpty(b.modelGuid))) return;
+            b.model = ""; b.modelGuid = "";
             PushHist();
             RenderProps(); Refresh3D();
         }) { text = "모델 제거" };
@@ -530,7 +545,8 @@ class GdBuildingTab : GdTab
         propsBox.Add(Field2("Category", catD));
 
         // Model — 이름(mono) + ✕
-        propsBox.Add(Field2("Model", ModelNameRow(() => b.model, v => { b.model = v; })));
+        propsBox.Add(Field2("Model", ModelNameRow(() => (b.model, b.modelGuid),
+            (n, g) => { b.model = n; b.modelGuid = g; })));
         propsBox.Add(Field2("", new Label(string.IsNullOrEmpty(b.model)
             ? "모델이 없으면 풋프린트 크기의 큐브로 만들어진다"
             : "프리팹은 임포트할 때 이 모델로 자동 생성된다")
@@ -565,6 +581,17 @@ class GdBuildingTab : GdTab
         hideT.RegisterValueChangedCallback(e => { b.hideFromBuildMenu = e.newValue; PushHist(); RenderWarn(); });
         propsBox.Add(Field2("Hide In Menu", hideT));
 
+        // 파괴 규칙 — 없애는 손이 둘이라 규칙도 둘이다 (코어: 철거 X, 둥지: 철거 X · 공격 O)
+        var demoT = new Toggle { value = b.isDemolishable,
+            tooltip = "끄면 철거 모드가 이 건물을 아예 조준하지 않는다 — 코어·둥지" };
+        demoT.RegisterValueChangedCallback(e => { b.isDemolishable = e.newValue; PushHist(); RenderWarn(); });
+        propsBox.Add(Field2("Demolishable", demoT));
+
+        var atkT = new Toggle { value = b.isAttackable,
+            tooltip = "플레이어의 공격이 통하는가. 기본은 꺼짐 — 둥지·나무처럼 부술 것만 켠다. 몬스터의 공격은 이 값과 무관하다" };
+        atkT.RegisterValueChangedCallback(e => { b.isAttackable = e.newValue; PushHist(); RenderWarn(); });
+        propsBox.Add(Field2("Attackable", atkT));
+
         // ── kind 별 추가 필드 (NUM_FIELDS 대응) ──
         foreach (var f in k.extra)
         {
@@ -580,10 +607,12 @@ class GdBuildingTab : GdTab
                         v => { b.speedTilesPerSec = Mathf.Max(0, v); })));
                     break;
                 case "curveLPrefab":
-                    propsBox.Add(Field2("Curve L", ModelNameRow(() => b.modelCurveL, v => { b.modelCurveL = v; })));
+                    propsBox.Add(Field2("Curve L", ModelNameRow(() => (b.modelCurveL, b.modelCurveLGuid),
+                        (n, g) => { b.modelCurveL = n; b.modelCurveLGuid = g; })));
                     break;
                 case "curveRPrefab":
-                    propsBox.Add(Field2("Curve R", ModelNameRow(() => b.modelCurveR, v => { b.modelCurveR = v; })));
+                    propsBox.Add(Field2("Curve R", ModelNameRow(() => (b.modelCurveR, b.modelCurveRGuid),
+                        (n, g) => { b.modelCurveR = n; b.modelCurveRGuid = g; })));
                     break;
                 case "droneRange":
                     propsBox.Add(Field2("Range (타일)", NumField(b.droneRange,
@@ -624,16 +653,25 @@ class GdBuildingTab : GdTab
     void SyncTopModelField(GBuilding b)
     {
         if (topModelField == null) return;
-        topModelField.SetValueWithoutNotify(FindModelAsset(b?.model));
+        topModelField.SetValueWithoutNotify(FindModelAsset(b?.modelGuid, b?.model));
     }
 
-    static GameObject FindModelAsset(string fileName)
+    /// <summary>
+    /// guid 로 먼저 찾고 실패하면 이름으로 찾는다 — 임포터의 ResolveModel 과 같은 우선순위여야
+    /// 에디터에 보이는 모델과 임포트가 집는 모델이 어긋나지 않는다.
+    /// </summary>
+    static GameObject FindModelAsset(string guid, string fileName)
     {
+        if (!string.IsNullOrEmpty(guid))
+        {
+            var byGuid = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
+            if (byGuid != null) return byGuid;
+        }
         if (string.IsNullOrEmpty(fileName)) return null;
         var stem = Path.GetFileNameWithoutExtension(fileName);
-        foreach (var guid in AssetDatabase.FindAssets($"t:GameObject {stem}"))
+        foreach (var g in AssetDatabase.FindAssets($"t:GameObject {stem}"))
         {
-            var path = AssetDatabase.GUIDToAssetPath(guid);
+            var path = AssetDatabase.GUIDToAssetPath(g);
             if (string.Equals(Path.GetFileName(path), fileName, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(Path.GetFileNameWithoutExtension(path), stem, StringComparison.OrdinalIgnoreCase))
                 return AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -641,16 +679,27 @@ class GdBuildingTab : GdTab
         return null;
     }
 
-    // 모델 이름 행 — mono 파일명 + 픽커 + ✕ (웹의 "지정/✕" 대응)
-    VisualElement ModelNameRow(Func<string> get, Action<string> set)
+    /// <summary>픽커에서 고른 에셋 → (파일 이름, guid). 비우면 둘 다 빈 문자열.</summary>
+    static (string name, string guid) ModelRefOf(UnityEngine.Object asset)
+    {
+        if (asset == null) return ("", "");
+        var path = AssetDatabase.GetAssetPath(asset);
+        return (Path.GetFileName(path), AssetDatabase.AssetPathToGUID(path));
+    }
+
+    // 모델 행 — 픽커 + ✕ (웹의 "지정/✕" 대응). 이름과 guid 를 한 쌍으로 읽고 쓴다.
+    VisualElement ModelNameRow(Func<(string name, string guid)> get, Action<string, string> set)
     {
         var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
+        var cur = get();
         var pick = new UnityEditor.UIElements.ObjectField
         { objectType = typeof(GameObject), allowSceneObjects = false,
-          value = FindModelAsset(get()), style = { flexGrow = 1 } };
+          tooltip = "JSON 에는 guid 와 파일 이름이 함께 저장된다 — guid 가 진실",
+          value = FindModelAsset(cur.guid, cur.name), style = { flexGrow = 1 } };
         pick.RegisterValueChangedCallback(e =>
         {
-            set(e.newValue != null ? Path.GetFileName(AssetDatabase.GetAssetPath(e.newValue)) : "");
+            var (n, g) = ModelRefOf(e.newValue);
+            set(n, g);
             PushHist();
             RenderProps(); Refresh3D();
         });
@@ -658,7 +707,7 @@ class GdBuildingTab : GdTab
         var x = new Label("✕") { tooltip = "지우기", style = { color = GdEnum.Faint, paddingLeft = 3, paddingRight = 3 } };
         x.RegisterCallback<PointerDownEvent>(_ =>
         {
-            set("");
+            set("", "");
             PushHist();
             RenderProps(); Refresh3D();
         });
@@ -1507,7 +1556,7 @@ class GdBuildingTab : GdTab
 
     void BuildModel(GBuilding b, (int x, int y) size)
     {
-        var asset = FindModelAsset(b.model);
+        var asset = FindModelAsset(b.modelGuid, b.model);
         if (asset != null)
         {
             // 부품 수집 — 웹 툴은 텍스처가 없어 회색으로 통일했지만, 유니티에는

@@ -48,6 +48,36 @@ public class BuildingEntity : Entity, IInteractable
     /// <summary>살아 있는 심에 연결돼 있는가 (철거·파괴된 심은 false).</summary>
     public bool HasSim => Sim != null && !Sim.IsRemoved;
 
+    // 칸 크기·원점의 소유자 — 씬이 바뀌면 파괴돼 가짜 null이 되므로 그때 다시 찾는다
+    static PlacementSystem placementCache;
+
+    /// <summary>
+    /// 점유 풋프린트의 월드 사각형(XZ 평면, y는 이 건물의 높이). 심이나 배치 시스템이 없으면 false.
+    ///
+    /// 모델(콜라이더)이 아니라 <b>차지한 칸</b>이 기준이다. 콜라이더는 메시마다 조각조각
+    /// 흩어져 있어서 하나만 집으면 건물의 일부만 가리키고(코어의 안테나 한 짝),
+    /// 전부 합쳐도 모델일 뿐 풋프린트는 아니다. 길을 막는 것도, 몬스터가 다가와 때리는
+    /// 것도 풋프린트이므로 시각화·목표·거리의 기준은 전부 여기여야 한다.
+    /// </summary>
+    public bool TryGetFootprintRect(out Vector3 min, out Vector3 max)
+    {
+        min = max = default;
+        if (!HasSim || Data == null) return false;
+
+        if (placementCache == null) placementCache = FindFirstObjectByType<PlacementSystem>();
+        if (placementCache == null) return false;
+
+        float cell = placementCache.CellSize;
+        Vector3 gridOrigin = placementCache.GridOrigin;
+        Vector2Int size = Size;
+
+        min = new Vector3(gridOrigin.x + Origin.x * cell,
+                          transform.position.y,
+                          gridOrigin.z + Origin.y * cell);
+        max = min + new Vector3(size.x * cell, 0f, size.y * cell);
+        return true;
+    }
+
     // ── 플레이어 상호작용(E) — 행동이 IInteractiveBehavior를 구현한 건물만 반응 (opt-in)
     public string Prompt => Sim?.Behavior is IInteractiveBehavior i ? i.InteractPrompt : null;
 
@@ -67,13 +97,29 @@ public class BuildingEntity : Entity, IInteractable
     {
         all.Add(this);
         // 건물 배치/파괴는 몬스터 경로에 영향을 주므로 플로우필드 갱신 예약
+        RefreshPathingCosts();
         if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
     }
 
     private void OnDisable()
     {
         all.Remove(this);
+        RefreshPathingCosts();
         if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+    }
+
+    /// <summary>
+    /// 이 건물이 덮는 칸의 길찾기 비용만 다시 칠한다 — 배치·철거 순간.
+    /// 맵 전체(20만 칸)를 다시 훑는 대신 바뀐 자리만 고치므로 벨트를 연달아 깔아도 부담이 없다.
+    /// 심이 아직 없으면(뷰 먼저 생성) 건너뛴다 — 심이 붙는 쪽에서 어차피 다시 부른다.
+    /// </summary>
+    private void RefreshPathingCosts()
+    {
+        var grid = GridManager.Instance;
+        if (grid == null) return;
+
+        if (TryGetFootprintRect(out Vector3 min, out Vector3 max)) grid.RefreshCostsIn(min, max);
+        else grid.RefreshCostsIn(transform.position, transform.position);
     }
 
     // 게임 종료/씬 언로드 중에는 정리에 손대지 않는다 — 그 시점의 Sim.Remove는
@@ -116,6 +162,20 @@ public class BuildingEntity : Entity, IInteractable
 
         OnHealthChanged -= TryShowHealthBar; // 한 번 붙으면 감시는 끝 — 이후는 바가 알아서 한다
         WorldHealthBar.Attach(this, hideWhenFull: true);
+    }
+
+    /// <summary>
+    /// 플레이어의 공격이 통하지 않는 건물은 명중 자체를 흘린다 (BuildingDataSO.isAttackable).
+    /// 총·근접이 모두 여기로 수렴하므로 한 곳만 막으면 된다.
+    ///
+    /// 몬스터의 공격은 이 값과 무관하다 — 밤 웨이브가 무엇을 노리는지는 플로우필드의
+    /// 목표 선정(threatSeedCost)이 정하고, 정한 목표는 실제로 부술 수 있어야 한다.
+    /// </summary>
+    public override void ApplyEffects(IReadOnlyList<EffectEntry> entries, Entity source,
+                                      Vector3 hitPoint, Vector3 hitDirection = default)
+    {
+        if (source is Player && Data != null && !Data.isAttackable) return;
+        base.ApplyEffects(entries, source, hitPoint, hitDirection);
     }
 
     // 코어의 보호막이 내구도보다 먼저 맞는다 — 남은 몫만 HP로 내려간다.

@@ -69,36 +69,60 @@ public class ChaseState : IEntityState
         if (!target.IsValidTarget()) return;
 
         lastPathUpdateTime = Time.time;
-        List<Node> path = PathFinder.FindPath(stateMachine.Transform.position, target.GetPosition());
 
-        if (path != null)
+        // 계산은 워커에서 돈다 — 답은 다음 프레임 이후에 온다.
+        // 그 사이 상태가 갈렸으면(추적 포기·공격 전환) 남의 경로를 들이밀지 않는다.
+        var sm = stateMachine;
+        PathRequest.Find(sm.Transform.position, target.GetPosition(), false, path =>
         {
-            if (path.Count > 0)
-            {
-                stateMachine.Movement?.StartMoving(path);
-            }
-            else
-            {
-                // 시작 셀과 목표(보정) 셀이 같으면 빈 경로가 반환된다 — 막힘이 아니라 이미 도착.
-                // 사거리 진입 여부는 Update의 거리 판정에 맡긴다
-                stateMachine.Movement?.StopMoving();
-            }
-            return;
-        }
+            if (!IsStillCurrent(sm)) return;
 
-        // 길이 완전히 막힘 → 경로를 막는 건물을 새 타겟으로 삼아 부순다.
-        // 심(POCO) 건물을 뷰 GameObject의 Building 엔티티로 변환해 타겟으로 쓴다
-        Building blocker = PathFinder.FindBlockingBuilding(stateMachine.Transform.position, target.GetPosition());
-        BuildingEntity buildingEntity = BuildingEntity.GetOrAttach(blocker);
+            if (path != null)
+            {
+                if (path.Count > 0)
+                {
+                    sm.Movement?.StartMoving(path);
+                }
+                else
+                {
+                    // 시작 셀과 목표(보정) 셀이 같으면 빈 경로가 온다 — 막힘이 아니라 이미 도착.
+                    // 사거리 진입 여부는 Update의 거리 판정에 맡긴다
+                    sm.Movement?.StopMoving();
+                }
+                return;
+            }
 
-        if (buildingEntity != null && !ReferenceEquals(buildingEntity, target))
+            HandleFullyBlocked(sm);
+        });
+    }
+
+    /// <summary>콜백이 도착했을 때 아직 이 상태가 돌고 있는가 — 늦게 온 답을 거르는 유일한 관문.</summary>
+    private bool IsStillCurrent(StateMachineComponent sm)
+    {
+        return owner == sm && sm != null && ReferenceEquals(sm.CurrentState, this)
+            && target.IsValidTarget();
+    }
+
+    /// <summary>
+    /// 길이 완전히 막혔다 → 경로를 막는 건물을 새 타겟으로 삼아 부순다.
+    /// 심(POCO) 건물을 뷰 GameObject의 엔티티로 바꿔 타겟으로 쓴다.
+    /// </summary>
+    private void HandleFullyBlocked(StateMachineComponent sm)
+    {
+        PathRequest.FindBlockingBuilding(sm.Transform.position, target.GetPosition(), blocker =>
         {
-            stateMachine.SetState(new ChaseState(buildingEntity));
-            return;
-        }
+            if (!IsStillCurrent(sm)) return;
 
-        // 부술 건물조차 없으면(지형 막힘 등) Chase에 머물며 pathUpdateInterval 주기로 재시도.
-        // Idle로 보내면 Idle이 다음 프레임 바로 플로우필드로 전환해 상태 진동이 생길 수 있다
-        stateMachine.Movement?.StopMoving();
+            var buildingEntity = BuildingEntity.GetOrAttach(blocker);
+            if (buildingEntity != null && !ReferenceEquals(buildingEntity, target))
+            {
+                sm.SetState(new ChaseState(buildingEntity));
+                return;
+            }
+
+            // 부술 건물조차 없으면(지형 막힘 등) Chase에 머물며 pathUpdateInterval 주기로 재시도.
+            // Idle로 보내면 Idle이 다음 프레임 바로 플로우필드로 전환해 상태 진동이 생길 수 있다
+            sm.Movement?.StopMoving();
+        });
     }
 }

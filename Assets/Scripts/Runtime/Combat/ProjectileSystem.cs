@@ -134,7 +134,7 @@ public static class ProjectileSystem
                 Transform ignore = spec.Source != null ? spec.Source.transform.root : null;
                 if (TryClosestHit(origin, direction, joinDistance, 0f, ignore, out RaycastHit near))
                 {
-                    Impact(near.collider, near.point, spec);
+                    Impact(near.collider, near.point, direction, spec);
                     return;
                 }
             }
@@ -228,7 +228,7 @@ public static class ProjectileSystem
                 return false;
 
             end = hit.point;
-            Impact(hit.collider, hit.point, shot);
+            Impact(hit.collider, hit.point, direction, shot);
             return true;
         }
 
@@ -253,7 +253,7 @@ public static class ProjectileSystem
             Entity entity = h.collider.GetComponentInParent<Entity>();
             if (entity == null || entity.IsDead || !pulseSeen.Add(entity)) continue;
 
-            entity.ApplyEffects(shot.Effects, shot.Source, h.point);
+            entity.ApplyEffects(shot.Effects, shot.Source, h.point, direction);
             PlayEffect(shot.HitEffect, h.point, Quaternion.identity); // 뚫린 대상마다 착탄 연출
             applied++;
             if (applied > shot.Pierce)
@@ -308,12 +308,14 @@ public static class ProjectileSystem
     /// 폭발은 오라와 같은 코드다 — "터진다"는 착탄점에서 한 번 펄스하는 것.
     /// 착탄 이펙트(탄약의 hitEffectPrefab)는 벽에 맞아도 재생된다 — 명중 여부와 무관한 연출.
     /// </summary>
-    public static void Impact(Collider hit, Vector3 point, in ProjectileShot shot)
+    /// <param name="direction">탄/빔의 진행 방향 — 넉백처럼 "어디서 날아왔는가"를 보는 효과용.</param>
+    public static void Impact(Collider hit, Vector3 point, Vector3 direction, in ProjectileShot shot)
     {
         PlayEffect(shot.HitEffect, point, Quaternion.identity);
 
+        // 폭발은 방향이 없다 — 착탄점에서 사방으로 퍼진다(Pulse가 방향을 싣지 않는 이유)
         if (shot.ExplosionRadius > 0f) Pulse(point, shot.ExplosionRadius, shot);
-        else ApplyHit(hit, point, shot);
+        else ApplyHit(hit, point, direction, shot);
     }
 
     // ── 연출 (파티클) ───────────────────────────────────────────
@@ -349,7 +351,7 @@ public static class ProjectileSystem
     }
 
     /// <summary>명중 처리 — 맞은 것이 대상 레이어의 Entity면 실린 효과를 적용한다.</summary>
-    public static void ApplyHit(Collider hit, Vector3 point, in ProjectileShot shot)
+    public static void ApplyHit(Collider hit, Vector3 point, Vector3 direction, in ProjectileShot shot)
     {
         if (shot.TargetMask == 0) return;
         if ((shot.TargetMask & (1 << hit.gameObject.layer)) == 0) return;
@@ -357,7 +359,7 @@ public static class ProjectileSystem
         Entity entity = hit.GetComponentInParent<Entity>();
         if (entity != null && !entity.IsDead)
         {
-            entity.ApplyEffects(shot.Effects, shot.Source, point);
+            entity.ApplyEffects(shot.Effects, shot.Source, point, direction);
             if (shot.Source != null && shot.Source.GetComponent<PlayerController>() != null)
             {
                 CombatEvents.OnPlayerHitEnemy?.Invoke();
@@ -392,6 +394,7 @@ public static class ProjectileSystem
             if (entity == null || entity.IsDead) continue;
             if (!pulseSeen.Add(entity)) continue;   // 콜라이더 여러 개인 대상 중복 방지
 
+            // 오라·폭발은 방향이 없다 — 방향을 보는 효과가 원점 기준 방사형으로 대체한다
             entity.ApplyEffects(shot.Effects, shot.Source, origin);
             applied++;
 

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KnockbackEffectSO
   id: Effect:Knockback
   displayName: "\uB109\uBC31"
-  description: "value = \uBC00\uC5B4\uB0B4\uB294 \uAC70\uB9AC(\uD0C0\uC77C). \uC720\uD0C4\xB7\uC0F7\uAC74\uC774
-    \uC4F4\uB2E4."
+  description: "value = \uBC00\uC5B4\uB0B4\uB294 \uAC70\uB9AC(m). \uACF5\uACA9\uC774
+    \uB0A0\uC544\uC628 \uBC29\uD5A5\uC73C\uB85C \uBBFC\uB2E4 \u2014 \uCD1D\uC54C\xB7\uD788\uD2B8\uC2A4\uCE94\xB7\uADFC\uC811\uC6A9."
   icon: {fileID: 0}
+  mode: 0

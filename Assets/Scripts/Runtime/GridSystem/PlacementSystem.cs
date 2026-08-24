@@ -300,7 +300,8 @@ public class PlacementSystem : MonoBehaviour
         Vector3 pos = grid.GetFootprintCenter(origin, size);
         pos.y = groundY + SurfaceLift(current, origin);
         preview.transform.position = pos;
-        preview.transform.rotation = Quaternion.Euler(0, rotation * 90, 0);
+        // 벨트 커브는 메시의 뚫린 변과 포트를 맞추는 보정이 붙는다 (BeltDataSO.MeshYaw)
+        preview.transform.rotation = Quaternion.Euler(0, PreviewYaw(), 0);
 
         // 설치 판정 캐시 — OnInput(Attack)이 사용
         // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
@@ -323,6 +324,10 @@ public class PlacementSystem : MonoBehaviour
         => current is BeltDataSO
             ? BeltDataSO.BuildPorts(beltShape, rotation)
             : current.GetRotatedPorts(rotation);
+
+    /// <summary>프리뷰 메시의 요(yaw). 벨트 커브만 포트에 맞추는 보정이 더 붙는다.</summary>
+    private float PreviewYaw()
+        => current is BeltDataSO ? BeltDataSO.MeshYaw(beltShape, rotation) : rotation * 90f;
 
     private void Place(Vector2Int origin, Vector3 pos)
     {
@@ -390,9 +395,9 @@ public class PlacementSystem : MonoBehaviour
     private void UpdateDemolishing()
     {
         // 건물 몸체 직접 조준 우선, 실패하면 바닥 칸 폴백.
-        // 코어는 철거 대상이 아니다 — 기지의 심장을 실수로 밀면 그대로 게임오버다.
-        // 조준 단계에서 걸러 하이라이트도, 홀드 카운트도 아예 걸리지 않게 한다.
-        SetHovered(TryGetAimedBuilding(out Building target) && !(target.Data is CoreDataSO)
+        // 철거를 거부하는 건물(코어·둥지 등)은 데이터가 스스로 선언한다 — 종류가 늘 때마다
+        // 여기에 조건이 붙지 않도록. 조준 단계에서 걸러 하이라이트도, 홀드 카운트도 걸리지 않게 한다.
+        SetHovered(TryGetAimedBuilding(out Building target) && IsDemolishable(target)
             ? target : null);
 
         if (!holdPressed) { holdTarget = null; holdElapsed = 0f; return; }
@@ -428,11 +433,14 @@ public class PlacementSystem : MonoBehaviour
         holdElapsed = 0f;
     }
 
-    /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴. 코어는 거부한다.</summary>
+    /// <summary>철거를 허용하는 건물인가 — 데이터가 없는 건물은 허용한다(테스트용 심 배치).</summary>
+    static bool IsDemolishable(Building b) => b != null && (b.Data == null || b.Data.isDemolishable);
+
+    /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴. 코어·둥지는 거부한다.</summary>
     public void Demolish(Building b)
     {
         if (b == null) return;
-        if (b.Data is CoreDataSO) return;   // 조준 필터를 우회한 외부 호출까지 방어
+        if (!IsDemolishable(b)) return;   // 조준 필터를 우회한 외부 호출까지 방어
 
         // 하이라이트 대상이면 복원 절차 없이 참조만 비운다 (어차피 곧 파괴됨)
         if (hovered == b)

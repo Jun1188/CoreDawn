@@ -41,15 +41,21 @@ public class EffectController
 
     // ── 적용 진입점 ──────────────────────────────────────────────
 
-    /// <summary>효과 항목 목록을 일괄 적용한다. 시전측 배율은 이미 베이크돼 있어야 한다(BakeOutgoing).</summary>
-    public void ApplyAll(IReadOnlyList<EffectEntry> entries, Entity source, UnityEngine.Vector3 hitPoint)
+    /// <summary>
+    /// 효과 항목 목록을 일괄 적용한다. 시전측 배율은 이미 베이크돼 있어야 한다(BakeOutgoing).
+    /// </summary>
+    /// <param name="hitDirection">
+    /// 공격이 날아온 방향. 모르면(폭발·오라) 기본값 — 방향을 보는 효과가 스스로 대체 규칙을 쓴다.
+    /// </param>
+    public void ApplyAll(IReadOnlyList<EffectEntry> entries, Entity source,
+                         UnityEngine.Vector3 hitPoint, UnityEngine.Vector3 hitDirection = default)
     {
         if (owner.IsDead || entries == null) return;
 
         for (int i = 0; i < entries.Count; i++)
         {
             var entry = entries[i];
-            entry.effect?.Apply(owner, new EffectContext(source, entry.value, hitPoint));
+            entry.effect?.Apply(owner, new EffectContext(source, entry.value, hitPoint, hitDirection));
         }
     }
 

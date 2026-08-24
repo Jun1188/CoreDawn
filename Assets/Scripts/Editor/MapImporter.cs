@@ -37,6 +37,9 @@ public static class MapImporter
 
         /// <summary>밤 웨이브 진입로 — 둥지의 스폰 지점과 별개다(낮의 보스 자리가 밤의 대문이 되면 안 된다).</summary>
         public CellDto[] nightSpawnPoints;
+
+        /// <summary>나무가 선 칸들 — 맵 에디터의 나무 도구가 찍고, 런타임이 그 자리에 세운다.</summary>
+        public CellDto[] trees;
     }
 
     [Serializable] internal class CellDto : GameDataImporter.JsonDtoBase { public int x, y; }
@@ -100,6 +103,15 @@ public static class MapImporter
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
+        // 열려 있는 씬이 이 맵을 쓰고 있으면 배치물을 다시 세운다 — 배치의 정본은 맵이므로
+        // 맵이 바뀌는 순간이 곧 씬이 따라가야 할 순간이다. 별도 버튼을 두면 누르는 것을 잊는다.
+        foreach (var dto in root.maps)
+        {
+            if (dto == null || string.IsNullOrEmpty(dto.id)) continue;
+            if (byId.TryGetValue(dto.id, out var imported))
+                WorldPlaceableBaker.BakeIfOpen(imported as MapDataSO);
+        }
+
         string msg = $"[MapImporter] 맵 {created}개 생성, {updated}개 갱신";
         if (errors > 0) Debug.LogError($"{msg} — 오류 {errors}건 (위 로그 확인)");
         else Debug.Log(msg);
@@ -148,6 +160,7 @@ public static class MapImporter
         map.nodes = ResolveNodes(dto, byId, ref errors);
         map.nests = ResolveNests(dto);
         map.nightSpawnPoints = ResolveNightSpawns(dto);
+        map.trees = ResolveCells(dto.trees);
 
         EditorUtility.SetDirty(map);
         if (isNew) created++; else updated++;
@@ -219,12 +232,15 @@ public static class MapImporter
     }
 
     /// <summary>밤 웨이브 진입로. 맵 밖이나 통행 불가 칸은 버린다 — 거기서 나오면 즉시 갇힌다.</summary>
-    static Vector2Int[] ResolveNightSpawns(MapDto dto)
-    {
-        if (dto.nightSpawnPoints == null) return Array.Empty<Vector2Int>();
+    static Vector2Int[] ResolveNightSpawns(MapDto dto) => ResolveCells(dto.nightSpawnPoints);
 
-        var list = new List<Vector2Int>(dto.nightSpawnPoints.Length);
-        foreach (var p in dto.nightSpawnPoints)
+    /// <summary>칸 목록을 그대로 옮긴다. 빠진 항목(null)만 걸러낸다.</summary>
+    static Vector2Int[] ResolveCells(CellDto[] cells)
+    {
+        if (cells == null) return Array.Empty<Vector2Int>();
+
+        var list = new List<Vector2Int>(cells.Length);
+        foreach (var p in cells)
         {
             if (p == null) continue;
             list.Add(new Vector2Int(p.x, p.y));

@@ -183,7 +183,8 @@ public class FactoryScenarioTests : MonoBehaviour
     {
         Place(Miner(), 0, 0);
         var b1 = PlaceBelt(1, 0, 0, BeltShape.Straight);    // 동쪽으로
-        var b2 = PlaceBelt(2, 0, 3, BeltShape.CurveL);      // 서쪽에서 받아 북쪽으로
+        // 회전은 입구를 정한다 — rot 0 = 직선과 같은 서쪽 입구. CurveL이라 출구만 좌회전(북).
+        var b2 = PlaceBelt(2, 0, 0, BeltShape.CurveL);      // 서쪽에서 받아 북쪽으로
         var b3 = PlaceBelt(2, 1, 3, BeltShape.Straight);    // 북쪽으로
         var store = Place(Storage(), 2, 2, rot: 3);         // 남쪽(벨트)에서 받음
 

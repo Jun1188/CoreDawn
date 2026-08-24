@@ -15,7 +15,7 @@ MonoBehaviour:
   attackEffects:
   - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
     value: 70
-  - effect: {fileID: 11400000, guid: bb8d877bad62c4c418ff0c6af3c02d23, type: 2}
+  - effect: {fileID: 11400000, guid: 03df087ea73ed7c46a1eb09c154d0a16, type: 2}
     value: 2
   speed: 25
   gravity: 9.8
