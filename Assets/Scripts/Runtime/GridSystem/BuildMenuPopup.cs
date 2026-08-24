@@ -18,20 +18,6 @@ public class BuildMenuPopup : UIPopup
 
     private PlacementSystem placement;
 
-    protected override void OnEnable()
-    {
-        base.OnEnable();   // 리시버 등록 + UI 맵 Push
-        Cursor.lockState = CursorLockMode.None;   // 메뉴 조작용 커서 해제 (PausePopup 패턴)
-        Cursor.visible = true;
-    }
-
-    protected override void OnDisable()
-    {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        base.OnDisable();
-    }
-
     /// <summary>메뉴 토글 — 최초 호출 시 Canvas 아래에 패널을 생성한다 (BuildController가 호출).</summary>
     public static void Toggle(PlacementSystem placement)
     {

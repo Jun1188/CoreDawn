@@ -9,11 +9,13 @@ using UnityEngine.InputSystem;
 ///  - 활성화 시 UI 맵 Push → Gameplay 입력(사격/건설/이동 계열 액션) 신호 차단
 ///  - 열린 순서대로 depth 우선순위 부여 → Cancel(ESC)은 최상단 팝업만 닫는다
 ///  - 모달이면 처리하지 않은 입력도 삼켜 하위(HUD/플레이어)로 새지 않는다
+///  - 마우스 커서 해제·재잠금 (<see cref="ReleasesCursor"/>)
 /// </summary>
 public abstract class UIPopup : MonoBehaviour, IInputReceiver
 {
     private static int _depthCounter;
     private static int _openCount;
+    private static int _cursorHolders;
     private int _depth;
     private int _mapToken = -1;
 
@@ -32,10 +34,14 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
     /// <summary>모달이면 처리하지 않은 입력도 전부 삼킨다. 기본값 true.</summary>
     protected virtual bool IsModal => true;
 
+    /// <summary>커서를 풀어야 하는 창인가. 마우스를 쓰지 않는 오버레이는 false로 덮어쓴다.</summary>
+    protected virtual bool ReleasesCursor => true;
+
     protected virtual void OnEnable()
     {
         _openCount++;
         _depth = ++_depthCounter;   // 나중에 열린 창이 항상 위
+        if (ReleasesCursor) AcquireCursor();
         if (InputManager.Instance == null)
         {
             Debug.LogError("[UIPopup] 씬에 InputManager가 없습니다.", this);
@@ -48,6 +54,7 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
     protected virtual void OnDisable()
     {
         if (_openCount > 0) _openCount--;
+        if (ReleasesCursor) ReleaseCursor();         // 아래 가드보다 먼저 — 짝이 어긋나면 커서가 샌다
         if (InputManager.Instance == null) return;   // 앱 종료/씬 전환 순서 가드
         InputManager.Instance.Unregister(this);
         if (_mapToken >= 0)
@@ -55,6 +62,43 @@ public abstract class UIPopup : MonoBehaviour, IInputReceiver
             InputManager.Instance.PopMap(_mapToken);
             _mapToken = -1;
         }
+    }
+
+    // ───────────────────────── 커서 ─────────────────────────
+    //
+    // 창은 창 위에 겹쳐 뜬다 — 일시정지 메뉴 위의 설정 창, 세이브 슬롯 창이 그렇다.
+    // 창마다 닫힐 때 무조건 커서를 다시 잠그면, 위쪽 창을 닫는 순간 아직 떠 있는
+    // 아래쪽 창에서 마우스가 사라진다. 그래서 잠그고 푸는 것은 개별 창이 아니라
+    // "커서를 쥔 창이 몇 개인가"가 정한다.
+
+    /// <summary>커서를 푼다. 이미 다른 창이 풀어 뒀어도 세는 것은 늘어난다.</summary>
+    private static void AcquireCursor()
+    {
+        _cursorHolders++;
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+    }
+
+    /// <summary>마지막 한 창이 닫힐 때만 다시 잠근다.</summary>
+    private static void ReleaseCursor()
+    {
+        if (--_cursorHolders > 0) return;
+
+        _cursorHolders = 0;   // 씬 전환 등으로 짝이 어긋나도 음수로 흘러가지 않게
+        UnityEngine.Cursor.lockState = CursorLockMode.Locked;
+        UnityEngine.Cursor.visible = false;
+    }
+
+    /// <summary>
+    /// 도메인 리로드를 끈 채로 플레이하면 static이 지난 세션의 값을 그대로 들고 시작한다 —
+    /// 쥔 창이 하나도 없는데 세는 것만 남아 있으면 창을 닫아도 커서가 다시 잠기지 않는다.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _depthCounter = 0;
+        _openCount = 0;
+        _cursorHolders = 0;
     }
 
     public virtual bool OnInput(in InputEvent e)
