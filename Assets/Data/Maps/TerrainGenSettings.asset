@@ -76,9 +76,23 @@ MonoBehaviour:
   - {fileID: 5389395240314065769, guid: 54c53036c73c3e84ca29b6911adf5fd8, type: 3}
   - {fileID: 299869526856194824, guid: d2fb1a61e8bed4142b96de6ad1663930, type: 3}
   - {fileID: 2010085120437849477, guid: 4828afd64a3dd424393c97dfacfc7aa3, type: 3}
+  cliffMinRadius: 3
+  cliffMaxRadius: 10
+  cliffYawJitter: 26
+  cliffPackSpacing: 0.4
+  cliffCoverFactor: 0.75
+  cliffMaxScale: 999
+  cliffRoundness: 1
+  cliffSizeNoise: {x: 0.95, y: 1}
+  cliffMaxAspect: 2.2
+  cliffMaxHeightCells: 2.6
   cliffHeightCells: {x: 2, y: 4.5}
   cliffRidgeFrequency: 0.11
-  cliffFaceFrequency: 0.45
   cliffBaseSinkCells: 0.3
-  cliffStretchEdge: {x: 1.15, y: 1.75}
-  cliffStretchInner: {x: 1, y: 1.7}
+  cliffStretch: {x: 0.9, y: 1.1}
+  cliffStackLayers: 3
+  cliffStackShrink: {x: 0.85, y: 0.97}
+  cliffStackSink: 0.22
+  cliffStackOffset: 0.55
+  cliffStackMinRadius: 1.25
+  cliffTilt: 70
