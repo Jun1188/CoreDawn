@@ -148,6 +148,10 @@ public class PlacementSystem : MonoBehaviour
         gridOrigin = origin;
         grid = new GridSystem(cellSize, gridOrigin);
         if (portFlow != null) portFlow.Configure(cellSize, gridOrigin);
+
+        // 광맥은 이 격자로 자기 칸을 계산한다 — 캐시를 버리지 않으면 주입 전(칸 크기 1)에
+        // 계산해 둔 좌표를 그대로 들고 있어, 채굴기가 "광맥 위가 아니다"로 거부된다.
+        ResourceNodeRegistry.InvalidateGrid();
     }
 
     void Start()

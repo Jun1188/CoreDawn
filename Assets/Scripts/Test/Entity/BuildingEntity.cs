@@ -27,7 +27,27 @@ public class BuildingEntity : Entity, IInteractable
     [SerializeField] private AudioClip destroySfx;
 
     // 이 엔티티가 대변하는 팩토리 심 건물(plain C#). PlacementBridge가 배치 시 연결한다.
-    public Building Sim { get; set; }
+    private Building sim;
+
+    /// <summary>
+    /// 심이 붙는 순간이 <b>풋프린트가 확정되는 순간</b>이라 여기서 길찾기 비용을 다시 칠한다.
+    ///
+    /// OnEnable 때는 아직 Sim이 없어 풋프린트를 모른다 — 그래서 그때는 점 하나만 칠하고,
+    /// 진짜 칠은 여기로 미룬다. 이 대입이 조용하면 건물이 차지한 칸이 길찾기에 반영되지
+    /// 않아 몬스터가 그대로 통과한다. 씬에 굳혀 둔 배치물(나무·코어)은 심이 훨씬 나중에
+    /// 붙으므로(WorldPopulator가 잇는다) 증상이 특히 뚜렷하다.
+    /// </summary>
+    public Building Sim
+    {
+        get => sim;
+        set
+        {
+            if (sim == value) return;
+            sim = value;
+            RefreshPathingCosts();
+            if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+        }
+    }
 
     public bool IsCore => isCore;
     public override bool IsDead => base.IsDead || (Sim != null && Sim.IsRemoved);
@@ -118,8 +138,36 @@ public class BuildingEntity : Entity, IInteractable
         var grid = GridManager.Instance;
         if (grid == null) return;
 
-        if (TryGetFootprintRect(out Vector3 min, out Vector3 max)) grid.RefreshCostsIn(min, max);
+        // <b>제거된 심도 풋프린트로 쓴다.</b> 철거·파괴 직후에는 IsRemoved 라 HasSim 이 false 인데,
+        // 그때 점 하나만 칠하면 덮고 있던 칸의 가장자리가 막힌 채 남는다 — 칸 4m·세분 4면
+        // 1×1 건물도 노드 4×4 를 덮는데 점 재칠은 3×3 밖에 닿지 않는다.
+        // 자리를 비우는 순간이야말로 덮었던 자리를 전부 다시 칠해야 하는 순간이다.
+        if (TryFootprintRectRaw(out Vector3 min, out Vector3 max)) grid.RefreshCostsIn(min, max);
         else grid.RefreshCostsIn(transform.position, transform.position);
+    }
+
+    /// <summary>
+    /// <see cref="TryGetFootprintRect"/>와 같되 <b>심이 이미 제거되었어도</b> 사각형을 낸다.
+    /// 목표 선정 같은 곳은 제거된 건물을 세면 안 되므로 그쪽은 HasSim 을 보는 원래 표면을 쓴다 —
+    /// 이 완화는 "덮었던 자리를 되돌린다"는 용도에만 쓴다.
+    /// </summary>
+    private bool TryFootprintRectRaw(out Vector3 min, out Vector3 max)
+    {
+        min = max = default;
+        if (Sim == null || Sim.Data == null) return false;
+
+        if (placementCache == null) placementCache = FindFirstObjectByType<PlacementSystem>();
+        if (placementCache == null) return false;
+
+        float cell = placementCache.CellSize;
+        Vector3 gridOrigin = placementCache.GridOrigin;
+        Vector2Int size = Sim.Data.GetRotatedSize(Sim.RotationSteps);
+
+        min = new Vector3(gridOrigin.x + Sim.Origin.x * cell,
+                          transform.position.y,
+                          gridOrigin.z + Sim.Origin.y * cell);
+        max = min + new Vector3(size.x * cell, 0f, size.y * cell);
+        return true;
     }
 
     // 게임 종료/씬 언로드 중에는 정리에 손대지 않는다 — 그 시점의 Sim.Remove는

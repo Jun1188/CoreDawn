@@ -23,7 +23,7 @@ MonoBehaviour:
   pellets: 1
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 18432
+    m_Bits: 26624
   ammoFilter:
   - {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
   damageMultiplier: 1.4

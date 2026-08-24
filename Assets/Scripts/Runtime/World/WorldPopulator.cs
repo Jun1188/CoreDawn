@@ -132,6 +132,18 @@ public static class WorldPopulator
             return 0;
         }
 
+        // 광맥은 칸을 잡지 않지만 <b>다시 등록해야</b> 한다.
+        // 씬에 굳은 광맥은 자기 OnEnable(씬 로드)에서 등록하는데, 그때는 PlacementSystem 에
+        // 격자가 아직 주입되기 전이라 칸 크기 1로 좌표를 계산한다 — 채굴기가 "광맥 위가
+        // 아니다"로 거부되던 원인이다. 격자가 잡힌 지금 다시 등록해 좌표를 맞춘다.
+        int nodes = 0;
+        foreach (var node in root.GetComponentsInChildren<ResourceNode>(true))
+        {
+            if (node == null) continue;
+            node.Refresh();
+            nodes++;
+        }
+
         int connected = 0, skipped = 0;
         foreach (var placed in root.GetComponentsInChildren<PlacedMapObject>(true))
         {
@@ -154,7 +166,7 @@ public static class WorldPopulator
 
         if (skipped > 0)
             Debug.Log($"[WorldPopulator] 굳어 있는 배치물 {skipped}개는 칸이 이미 차 있어 잇지 못했습니다.", world);
-        return connected;
+        return connected + nodes;
     }
 
     /// <summary>이 배치물이 어느 칸의 무엇인지 적어 둔다 — 런타임의 잇기가 이것을 읽는다.</summary>
