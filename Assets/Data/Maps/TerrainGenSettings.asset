@@ -64,47 +64,29 @@ MonoBehaviour:
   dryTint: {r: 0.804, g: 0.737, b: 0.102, a: 1}
   grassWaterLineOffset: 0.08
   grassMaxSlope: 0.45
-  cliffSet:
-  - {fileID: 4843524868254211946, guid: a1b1fcbbf1bddee45b83995cf1bab000, type: 3}
-  - {fileID: 7105557981267009923, guid: fb22f2d8160ca714d80b1763c15734d0, type: 3}
-  - {fileID: 4356480299396696560, guid: 2f1248b51e774154a8668cf9e1e220b3, type: 3}
-  - {fileID: 1604413879457636381, guid: 704702636f10f5745821add6d9158972, type: 3}
-  - {fileID: 2586713759252572031, guid: 21aa32056f59b7547acb46bc9a7738d7, type: 3}
-  - {fileID: 5514129879276577408, guid: 163170d419d9c2744a4f121ed6c346eb, type: 3}
-  - {fileID: 6819962056721478856, guid: 2d7ce66dd0e6d2e46a85d1481b5f0ad4, type: 3}
-  - {fileID: 1418860561918544383, guid: 35de57031ce1e7b4f92690d555077e80, type: 3}
-  - {fileID: 5389395240314065769, guid: 54c53036c73c3e84ca29b6911adf5fd8, type: 3}
-  - {fileID: 2010085120437849477, guid: 4828afd64a3dd424393c97dfacfc7aa3, type: 3}
-  cliffMinRadius: 3
-  cliffMaxRadius: 12
-  cliffShellDepthM: 6
-  cliffPackTightness: 0.6
-  cliffSizeTiers: 5
-  cliffPackSpacing: 0.42
-  cliffCoverFactor: 0.75
-  cliffRoundness: 0.3
-  cliffSizeNoise: {x: 0.95, y: 1}
-  cliffMaxHeightCells: 2.2
-  cliffHeightCells: {x: 2, y: 4.5}
-  cliffRidgeFrequency: 0.11
-  cliffBaseSinkCells: 0.3
-  cliffStackLayers: 3
-  cliffStackSink: 0.22
-  cliffStackOffset: 0.55
-  cliffTilt: 24
-  cliffDipSteepShare: 0.3
-  cliffSlotAspect: 1.5
-  cliffCourses: 6
-  cliffCourseSetback: 0.22
-  cliffCourseSink: 0.18
-  cliffCourseSway: 0.55
-  cliffThinAspectMax: 1.5
-  cliffRowSeparation: 1.5
-  cliffTalusBandM: 1.2
-  cliffTalusDensity: 0.6
-  cliffTalusRadius: {x: 0.25, y: 0.5}
-  cliffTalusSpacing: 0.8
-  cliffTalusSink: 0.35
-  cliffShadeSteps: 8
-  cliffShadeRange: 0.12
-  cliffShadeDepthDarken: 0.18
+  cliffWallSet:
+  - {fileID: 2045505259197497222, guid: f04317fa8d9d20c41a0d594e3e57f106, type: 3}
+  - {fileID: 2159689498588671327, guid: 4b2e765e3f2d50c40912b76bf74eca1c, type: 3}
+  - {fileID: 2119933664681854360, guid: d03b7c500456a0243b335cf6764e933f, type: 3}
+  - {fileID: 8891040756608081534, guid: eb9fc4c623889cc4aa9705a9b22ca48c, type: 3}
+  cliffFootSet:
+  - {fileID: 2388546947796318627, guid: f76293de431c7ab41887609096a160df, type: 3}
+  - {fileID: 4055369214339962822, guid: e6514169f31df5a4ba7b16fc14a0f710, type: 3}
+  - {fileID: 897352580202710529, guid: 257eee2da01d4b644b325abe3bb7f1e2, type: 3}
+  - {fileID: 8393741676881791990, guid: e9c9c81d1003e6e4f89c04e46d1fff55, type: 3}
+  - {fileID: 2835696414000762623, guid: 0d4246cb65005ac44b7edc3a562c1e61, type: 3}
+  - {fileID: 5093910391062508454, guid: a372b00bacebe454b96f89b53f5b1018, type: 3}
+  - {fileID: 3162984673476236934, guid: c752f1f76036058469f8fd89eb917251, type: 3}
+  cliffWallOverlap: 0.55
+  cliffWallRows: 2
+  cliffWallRowStepM: 4.5
+  cliffWallScale: {x: 0.9, y: 1.35}
+  cliffWallOverhangM: 0
+  cliffWallSinkM: 0.4
+  cliffWallYawJitter: 8
+  cliffWallSlackCells: 0.05
+  cliffFootDensity: 0.1
+  cliffFootBandCells: 0.7
+  cliffFootScale: {x: 0.3, y: 0.7}
+  cliffFootSpacing: 2.2
+  cliffFootSinkM: 0.14
