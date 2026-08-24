@@ -64,8 +64,26 @@ public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior, ISavea
         _b.Input.SingleStackPerType = true;
         // 입력 버퍼는 현재 레시피의 재료만 받는다 (포트 필터 AcceptedTypes 대체)
         _b.Input.AcceptFilter = IsIngredient;
+
+        // 플레이어가 설비 창(SCR-09)에서 손으로 넣고 빼는 경로는 벨트를 거치지 않아
+        // 아무도 깨워 주지 않는다. 설비가 자고 있는 이유는 둘인데 둘 다 손으로 풀 수 있다:
+        //   재료 부족 — 손으로 재료를 넣어도 다음 벨트 입고 때까지 그대로 서 있다
+        //   출력 막힘 — 손으로 완성품을 빼내도 하류가 소비할 때까지 그대로 서 있다
+        // (보관소·코어가 같은 이유로 이미 쓰고 있는 방식)
+        _b.Input.Changed  += Wake;
+        _b.Output.Changed += Wake;
+
         SetRecipe(data.availableRecipes?.FirstOrDefault());
     }
+
+    /// <summary>
+    /// 버퍼가 바뀌었으니 다음 틱에 다시 판단하게 한다.
+    ///
+    /// 심 자신의 조작(재료 소비·완성품 적재)도 이걸 거쳐 한 틱 더 돌지만, 그 틱은
+    /// 어차피 해야 할 재평가다. 아무것도 움직이지 않는 상태에서는 Changed가 아예 발화하지
+    /// 않으므로(FlushOutputs는 밀어내기에 성공했을 때만 TryConsume) 헛도는 일은 없다.
+    /// </summary>
+    void Wake() => _b.Sim.MarkDirty(_b);
 
     // ── 설비 UI(SCR-09)가 읽는 표면 ──────────────────────────
 

@@ -181,12 +181,22 @@ public class InventoryManager : MonoBehaviour
             ItemStack targetSlot = container.PeekAt(clickedIndex);
             if (targetSlot == null || targetSlot.item == null)
             {
-                if (container.TryPutAt(clickedIndex, mouseCarriageItem))
-                    mouseCarriageItem = null;
+                // 상한(포탑 탄약함처럼 좁은 버퍼)을 넘으면 통째로 거절하지 않고 들어갈 만큼만 —
+                // 클릭이 아무 반응 없이 씹히는 것보다 "20개만 들어갔다"가 읽힌다
+                int fit = Mathf.Min(container.CapFor(mouseCarriageItem.item), mouseCarriageItem.amount);
+                if (fit >= mouseCarriageItem.amount)
+                {
+                    if (container.TryPutAt(clickedIndex, mouseCarriageItem))
+                        mouseCarriageItem = null;
+                }
+                else if (fit > 0 && container.TryPutAt(clickedIndex, new ItemStack(mouseCarriageItem.item, fit)))
+                {
+                    mouseCarriageItem.amount -= fit;
+                }
             }
             else if (targetSlot.item == mouseCarriageItem.item)
             {
-                int maxCanAdd = targetSlot.maxStackSize - targetSlot.amount;
+                int maxCanAdd = container.RoomAt(clickedIndex, targetSlot.item);
                 int toAdd = Mathf.Min(maxCanAdd, mouseCarriageItem.amount);
                 targetSlot.amount += toAdd;
                 mouseCarriageItem.amount -= toAdd;
@@ -231,7 +241,7 @@ public class InventoryManager : MonoBehaviour
                 if (container.TryPutAt(clickedIndex, new ItemStack(mouseCarriageItem.item, 1)))
                     mouseCarriageItem.amount--;
             }
-            else if (clickedBackendSlot.item == mouseCarriageItem.item && clickedBackendSlot.amount < clickedBackendSlot.maxStackSize)
+            else if (clickedBackendSlot.item == mouseCarriageItem.item && container.RoomAt(clickedIndex, clickedBackendSlot.item) > 0)
             {
                 clickedBackendSlot.amount++;
                 mouseCarriageItem.amount--;
@@ -286,9 +296,9 @@ public class InventoryManager : MonoBehaviour
         for (int i = 0; i < targetContainer.SlotCount; i++)
         {
             var targetSlot = targetContainer.PeekAt(i);
-            if (targetSlot != null && targetSlot.item == srcSlot.item && targetSlot.amount < targetSlot.maxStackSize)
+            if (targetSlot != null && targetSlot.item == srcSlot.item && targetContainer.RoomAt(i, srcSlot.item) > 0)
             {
-                int add = Mathf.Min(targetSlot.maxStackSize - targetSlot.amount, srcSlot.amount);
+                int add = Mathf.Min(targetContainer.RoomAt(i, srcSlot.item), srcSlot.amount);
                 targetSlot.amount += add;
                 srcSlot.amount -= add;
                 targetContainer.Touch();
@@ -301,7 +311,7 @@ public class InventoryManager : MonoBehaviour
             var targetSlot = targetContainer.PeekAt(i);
             if (targetSlot == null || targetSlot.item == null)
             {
-                int add = Mathf.Min(srcSlot.maxStackSize, srcSlot.amount);
+                int add = Mathf.Min(targetContainer.CapFor(srcSlot.item), srcSlot.amount);
                 if (targetContainer.TryPutAt(i, new ItemStack(srcSlot.item, add)))
                 {
                     srcSlot.amount -= add;

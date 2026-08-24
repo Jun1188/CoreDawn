@@ -14,9 +14,7 @@ using UnityEngine;
 public class ItemContainer
 {
     readonly ItemStack[] _slots;
-    readonly int _stackCap;   // 0 = ItemStack 기본값(64) 사용. 기계 버퍼는 작게 제한 가능.
-
-    const int DefaultStackSize = 64; // TODO: ItemDataSO.maxStack 도입 시 그쪽을 참조 (팀 합의 대기)
+    readonly int _stackCap;   // 0 = 아이템 상한(ItemDataSO.maxStack) 그대로. 기계 버퍼는 작게 제한 가능.
 
     /// <summary>
     /// true면 같은 아이템은 슬롯 1개까지만 (기계 입력용).
@@ -39,8 +37,28 @@ public class ItemContainer
 
     public int SlotCount => _slots.Length;
 
-    int CapOf(ItemStack s) => _stackCap > 0 ? Mathf.Min(_stackCap, s.maxStackSize) : s.maxStackSize;
-    int CapOfNew()         => _stackCap > 0 ? _stackCap : DefaultStackSize;
+    /// <summary>
+    /// 이 컨테이너에서 이 아이템이 한 슬롯에 몇 개까지 쌓이는가.
+    /// 아이템 상한과 컨테이너 상한 중 더 좁은 쪽 — 컨테이너는 좁히기만 하지 넓히지 않는다.
+    ///
+    /// public인 이유: UI의 드래그·병합은 슬롯을 직접 만지므로 TryAdd를 지나지 않는다.
+    /// 그쪽이 아이템 상한만 보던 탓에 포탑 탄약함처럼 stackCap이 좁은 버퍼가
+    /// 손으로는 3배까지 찼다. 상한을 묻는 창구는 여기 하나여야 한다.
+    /// </summary>
+    public int CapFor(ItemDataSO item)
+    {
+        int itemCap = item != null ? Mathf.Max(1, item.maxStack) : ItemStack.DefaultMaxStack;
+        return _stackCap > 0 ? Mathf.Min(_stackCap, itemCap) : itemCap;
+    }
+
+    /// <summary>이 슬롯에 이 아이템을 몇 개 더 얹을 수 있는가 (음수 없음). UI 병합용.</summary>
+    public int RoomAt(int i, ItemDataSO item)
+    {
+        if (i < 0 || i >= _slots.Length || item == null) return 0;
+        var s = _slots[i];
+        if (s != null && s.item != null && s.item != item) return 0;
+        return Mathf.Max(0, CapFor(item) - (s != null && s.item != null ? s.amount : 0));
+    }
 
     public bool HasAny
     {
@@ -65,23 +83,24 @@ public class ItemContainer
     {
         if (item == null || (AcceptFilter != null && !AcceptFilter(item))) return 0;
 
+        int cap = CapFor(item);
         int stackRoom = 0, emptyRoom = 0;
         bool hasStack = false;
         foreach (var s in _slots)
         {
             if (s == null || s.item == null)
-                emptyRoom += CapOfNew();
+                emptyRoom += cap;
             else if (s.item == item)
             {
                 hasStack   = true;
-                stackRoom += Mathf.Max(0, CapOf(s) - s.amount);
+                stackRoom += Mathf.Max(0, cap - s.amount);
             }
         }
 
         if (!SingleStackPerType) return stackRoom + emptyRoom;
 
         // 종류당 1스택: 기존 스택의 여유분만, 스택이 없으면 빈 슬롯 1개분만
-        return hasStack ? stackRoom : (emptyRoom > 0 ? CapOfNew() : 0);
+        return hasStack ? stackRoom : (emptyRoom > 0 ? cap : 0);
     }
 
     public bool HasRoomFor(ItemDataSO item, int n = 1) => RoomFor(item) >= n;
@@ -118,24 +137,33 @@ public class ItemContainer
         return s;
     }
 
-    /// <summary>빈 슬롯에 스택을 놓는다. 필터·종류당 1스택 규칙 위반이거나 슬롯이 차 있으면 false.</summary>
+    /// <summary>
+    /// 빈 슬롯에 스택을 놓는다. 필터·종류당 1스택 규칙 위반이거나, 슬롯이 차 있거나,
+    /// 스택이 이 컨테이너의 상한을 넘으면 false.
+    ///
+    /// 상한 초과를 여기서 쪼개 주지 않는 이유: 이 메서드는 스택 객체의 소유권을 통째로 가져간다.
+    /// 절반만 삼키고 true를 돌려주면 호출자가 남은 절반을 잃는다. 쪼개기는 개수를 아는
+    /// 호출자 쪽 일이다 — <see cref="CapFor"/>로 물어보고 그만큼만 만들어 넘길 것.
+    /// </summary>
     public bool TryPutAt(int i, ItemStack stack)
     {
         if (stack == null || stack.item == null || stack.amount <= 0) return false;
         if (_slots[i] != null && _slots[i].item != null) return false;
         if (!AllowsPlacement(stack.item, exceptSlot: i)) return false;
+        if (stack.amount > CapFor(stack.item)) return false;
 
         _slots[i] = stack;
         Touch();
         return true;
     }
 
-    /// <summary>슬롯의 스택과 교환한다 (드래그 스왑). 들어갈 스택이 규칙 위반이면 false.</summary>
+    /// <summary>슬롯의 스택과 교환한다 (드래그 스왑). 들어갈 스택이 규칙·상한 위반이면 false.</summary>
     public bool TryExchangeAt(int i, ItemStack incoming, out ItemStack previous)
     {
         previous = null;
         if (incoming == null || incoming.item == null) return false;
         if (!AllowsPlacement(incoming.item, exceptSlot: i)) return false;
+        if (incoming.amount > CapFor(incoming.item)) return false;
 
         previous = _slots[i];
         _slots[i] = incoming;
@@ -160,21 +188,22 @@ public class ItemContainer
     {
         if (item == null || n <= 0 || !HasRoomFor(item, n)) return false;
 
+        int cap = CapFor(item);
         foreach (var s in _slots)
         {
             if (n == 0) break;
             if (s == null || s.item != item) continue;
-            int add = Mathf.Min(CapOf(s) - s.amount, n);
+            // Max(0, ...) — 상한을 넘겨 찬 슬롯(UI 경로가 컨테이너 상한을 건너뛴 흔적)을 만나면
+            // 음수 add가 되어 남의 스택을 깎고 n을 되레 늘린다. RoomFor 쪽과 같은 방어.
+            int add = Mathf.Min(Mathf.Max(0, cap - s.amount), n);
             s.amount += add;
             n -= add;
         }
         for (int i = 0; i < _slots.Length && n > 0; i++)
         {
             if (_slots[i] != null && _slots[i].item != null) continue;
-            int add = Mathf.Min(CapOfNew(), n);
-            var stack = new ItemStack(item, add);
-            stack.maxStackSize = Mathf.Max(stack.maxStackSize, add); // 상한 오버라이드 시 정합 유지
-            _slots[i] = stack;
+            int add = Mathf.Min(cap, n);
+            _slots[i] = new ItemStack(item, add);
             n -= add;
             if (SingleStackPerType) break; // 새 스택은 1개까지 (RoomFor 선검사로 n==0 보장)
         }

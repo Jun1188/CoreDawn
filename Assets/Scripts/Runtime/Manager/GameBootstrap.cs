@@ -70,11 +70,20 @@ public static class GameBootstrap
     // ── 조립 ────────────────────────────────────────────────────
 
     /// <summary>
-    /// 배치 시스템에 조준 카메라와 맵을 꽂는다 — 카메라는 조준의 기준, 맵은 건설 가능 판정
-    /// (강·절벽에는 못 짓는다)과 격자 좌표계의 출처다.
+    /// 배치 시스템에 조준 카메라와 맵을, 상호작용 조준에 벨트 렌더 뷰를 꽂는다.
+    /// 카메라는 조준의 기준, 맵은 건설 가능 판정(강·절벽에는 못 짓는다)과 격자 좌표계의 출처다.
     /// </summary>
     static void AssembleFactory()
     {
+        var factory = Object.FindFirstObjectByType<FactoryBootstrap>();
+
+        // 벨트 위 아이템은 콜라이더가 없어(렌더 전용) 조준이 렌더 뷰의 좌표를 직접 훑는다.
+        // 맵이 없는 씬에서도 벨트는 돌므로 월드 검사보다 앞에 둔다.
+        // 뷰는 FactoryBootstrap의 RequireComponent라 이 시점에 반드시 있다.
+        var interaction = Object.FindFirstObjectByType<PlayerInteractionManager>();
+        if (interaction != null && factory != null)
+            interaction.Inject(factory.GetComponent<BeltItemView>());
+
         var placement = Object.FindFirstObjectByType<PlacementSystem>();
         if (placement == null) return;
 
@@ -86,7 +95,6 @@ public static class GameBootstrap
         placement.Inject(world.Map, world.Origin, world.CellSize);
 
         // 코어가 어디 서는지도 맵이 정한다 — 자동 설치(Start)보다 먼저 꽂힌다
-        var factory = Object.FindFirstObjectByType<FactoryBootstrap>();
         if (factory != null) factory.Inject(world.Map.core);
     }
 

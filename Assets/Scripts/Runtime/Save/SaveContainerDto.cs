@@ -31,7 +31,6 @@ public class SaveContainerDto
                 Index = i,
                 ItemId = SaveRefs.IdOf(s.item),
                 Amount = s.amount,
-                MaxStackSize = s.maxStackSize,
             });
         }
         return dto;
@@ -54,7 +53,7 @@ public class SaveContainerDto
             var item = SaveRefs.Item(s.ItemId);
             if (item == null || s.Amount <= 0) continue;
 
-            stacks[s.Index] = new ItemStack(item, s.Amount) { maxStackSize = s.MaxStackSize > 0 ? s.MaxStackSize : 64 };
+            stacks[s.Index] = new ItemStack(item, s.Amount);
         }
 
         c.RestoreSlotsRaw(stacks);
@@ -73,19 +72,18 @@ public class SaveStackDto
     [JsonProperty("n")]
     public int Amount;
 
-    /// <summary>스택 상한은 인스턴스마다 다를 수 있어(ItemContainer.TryAdd가 덮어씀) 함께 저장한다.</summary>
-    [JsonProperty("max")]
-    public int MaxStackSize = 64;
+    // (구 "max" — 스택마다의 상한. ItemDataSO.maxStack이 유일한 주인이 되면서 저장할 것이 없어졌다.
+    //  옛 세이브에 남은 키는 역직렬화에서 조용히 무시된다.)
 
     public static SaveStackDto From(ItemStack s) =>
         s == null || s.item == null || s.amount <= 0
             ? null
-            : new SaveStackDto { Index = -1, ItemId = SaveRefs.IdOf(s.item), Amount = s.amount, MaxStackSize = s.maxStackSize };
+            : new SaveStackDto { Index = -1, ItemId = SaveRefs.IdOf(s.item), Amount = s.amount };
 
     public ItemStack ToStack()
     {
         var item = SaveRefs.Item(ItemId);
         if (item == null || Amount <= 0) return null;
-        return new ItemStack(item, Amount) { maxStackSize = MaxStackSize > 0 ? MaxStackSize : 64 };
+        return new ItemStack(item, Amount);
     }
 }

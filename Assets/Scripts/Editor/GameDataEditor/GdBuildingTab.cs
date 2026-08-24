@@ -49,6 +49,7 @@ class GBuilding
     public List<GCost> buildCost = new();
     public int inputSlots = 1, outputSlots = 1, bufferStackCap, requiredCoreTier, maxHp = 200;
     public bool hideFromBuildMenu;
+    public int menuOrder;   // 같은 티어 안 표시 순서 (공정 단계)
     public bool isDemolishable = true, isAttackable;   // 공격 가능은 기본 꺼짐 — 둥지·지형물만 켠다
     public float speedMultiplier = 1, speedTilesPerSec = 2;
     public List<string> availableRecipes = new();
@@ -175,6 +176,7 @@ class GdBuildingTab : GdTab
                     .Select(c => new GCost { item = c.item ?? "", amount = Mathf.Max(1, c.amount) }).ToList(),
                 inputSlots = o.inputSlots, outputSlots = o.outputSlots, bufferStackCap = o.bufferStackCap,
                 maxHp = o.maxHp, requiredCoreTier = o.requiredCoreTier, hideFromBuildMenu = o.hideFromBuildMenu,
+                menuOrder = o.menuOrder,
                 isDemolishable = o.isDemolishable, isAttackable = o.isAttackable,
                 speedMultiplier = o.speedMultiplier > 0 ? o.speedMultiplier : 1,
                 speedTilesPerSec = o.speedTilesPerSec > 0 ? o.speedTilesPerSec : 2,
@@ -219,6 +221,7 @@ class GdBuildingTab : GdTab
         { item = c.item, amount = c.amount }).ToArray();
         o.inputSlots = b.inputSlots; o.outputSlots = b.outputSlots; o.bufferStackCap = b.bufferStackCap;
         o.maxHp = b.maxHp; o.requiredCoreTier = b.requiredCoreTier; o.hideFromBuildMenu = b.hideFromBuildMenu;
+        o.menuOrder = b.menuOrder;
         o.isDemolishable = b.isDemolishable; o.isAttackable = b.isAttackable;
 
         // 종류별 전용 필드 — 원본 exportJson 과 같은 규칙. 다른 kind 의 잔존값은
@@ -572,6 +575,10 @@ class GdBuildingTab : GdTab
             "밤 웨이브에 몬스터가 때릴 때 버티는 내구도")));
         propsBox.Add(Field2("Required Tier", IntField(b.requiredCoreTier,
             v => { b.requiredCoreTier = Mathf.Max(0, v); RenderWarn(); })));
+
+        propsBox.Add(Field2("Menu Order", IntField(b.menuOrder,
+            v => { b.menuOrder = Mathf.Max(0, v); RenderWarn(); },
+            "같은 티어 안 표시 순서 — 공정 단계를 적는다 (채굴 0 · 제련 1 · 제작 2 · 조립 3 · 제조 4)")));
 
         // Build Cost
         propsBox.Add(CostBlock("BUILD COST · 철거 시 전액 환급", b.buildCost, RenderProps));

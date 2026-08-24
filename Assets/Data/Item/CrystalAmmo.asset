@@ -45,5 +45,6 @@ MonoBehaviour:
   icon: {fileID: 136700167, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 4
   line: 3
+  maxStack: 100
   modules:
   - {fileID: -7444227262419028243}

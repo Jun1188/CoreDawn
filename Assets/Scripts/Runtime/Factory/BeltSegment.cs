@@ -55,6 +55,25 @@ public class BeltSegment
     /// <summary>세이브 복원 전용 — 벨트 위 아이템을 전부 치운다. 저장된 배치를 얹기 직전에 부른다.</summary>
     public void ClearItems() => _items.Clear();
 
+    /// <summary>
+    /// index의 아이템을 벨트에서 꺼낸다 — 플레이어가 지나가는 것을 조준해 낚아채는 경로.
+    ///
+    /// 입구 벨트 하나만 깨우면 충분하다: 그것이 BeltBehavior.Tick을 돌리고, 거기서
+    /// 입력 버퍼를 세그먼트로 밀면서 NotifyUpstream까지 스스로 부른다. 손으로 뺀 자리는
+    /// 벨트를 거치지 않은 변화라 아무도 깨워 주지 않으므로(보관소·설비와 같은 이유)
+    /// 여기서 걸어 주지 않으면 뒤 아이템이 다음 입고 때까지 그 자리에 선다.
+    /// </summary>
+    public bool TryTakeAt(int index, out ItemDataSO item)
+    {
+        item = null;
+        if (index < 0 || index >= _items.Count) return false;
+
+        item = _items[index].item;
+        _items.RemoveAt(index);
+        if (BeltCount > 0) _sim.MarkDirty(Belts[^1]);
+        return true;
+    }
+
     public void Tick(float dt)
     {
         float advance = SpeedTilesPerSec * dt;

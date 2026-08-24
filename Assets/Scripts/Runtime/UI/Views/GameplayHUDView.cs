@@ -604,7 +604,7 @@ public class GameplayHUDView : MonoBehaviour
             if (!empty) UIItemIcon.Apply(icon, stack.item);
             slot.Add(icon);
 
-            if (!empty)
+            if (!empty && stack.amount > 1)   // 1개는 숫자 없이 아이콘만
             {
                 var n = new Label(stack.amount.ToString()) { pickingMode = PickingMode.Ignore };
                 n.AddToClassList("ui-slot__n");

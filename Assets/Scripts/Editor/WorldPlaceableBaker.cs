@@ -50,10 +50,30 @@ public static class WorldPlaceableBaker
         try { WorldPopulator.BakeIntoScene(world, root); }
         finally { WorldPopulator.SpawnOverride = null; }
 
+        ClearStaticFlags(root);
+
         int count = root.GetComponentsInChildren<PlacedMapObject>(true).Length;
         EditorUtility.SetDirty(world.gameObject);
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(world.gameObject.scene);
         Debug.Log($"[WorldPlaceableBaker] '{world.Map.Id}' 배치물 {count}개를 씬에 세웠습니다 — " +
                   "런타임은 이것들을 다시 만들지 않고 심에 잇습니다. 씬을 저장해야 남습니다.", world);
+    }
+
+    /// <summary>
+    /// 배치물은 <b>static 이 아니다.</b>
+    ///
+    /// 두 가지 이유가 겹친다:
+    ///   ① 부서진다 — 나무는 베어지고 둥지·코어는 파괴된다. 오클루전에 구워 두면 사라진 뒤에도
+    ///      그 자리가 계속 시야를 가린 것으로 취급되어, 뒤에 있는 것이 안 그려진다.
+    ///   ② 맵이 바뀌면 통째로 다시 세운다 — 구워 둔 데이터는 그 순간 낡은 것이 된다.
+    ///
+    /// 나무 프리팹은 서드파티 원본에서 플래그를 물려받아 122(Occluder·Navigation·Occludee·
+    /// OffMeshLink·ReflectionProbe)로 켜져 있었다. 프리팹 쪽도 껐지만, 여기서 한 번 더 지운다 —
+    /// 아트가 새 프리팹을 넣을 때 이 규칙을 다시 지키게 하는 것보다 굽는 쪽이 보장하는 편이 낫다.
+    /// </summary>
+    static void ClearStaticFlags(Transform root)
+    {
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+            GameObjectUtility.SetStaticEditorFlags(t.gameObject, 0);
     }
 }

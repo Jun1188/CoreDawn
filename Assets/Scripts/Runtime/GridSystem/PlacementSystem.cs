@@ -90,6 +90,25 @@ public class PlacementSystem : MonoBehaviour
 
     // ── 외부(UI) 조회용
     public BuildMode Mode => mode;
+
+    /// <summary>
+    /// 지금 건설·철거 모드인가 — 참조 없이 읽는 전역 상태 (<see cref="UIPopup.AnyOpen"/>과 같은 이유).
+    ///
+    /// 읽는 쪽이 이 시스템의 참조를 들면, 그 배선이 빠졌을 때 "모드가 아니다"로 조용히 읽혀
+    /// 차단이 통째로 사라진다 — 불리언 하나를 위해 시스템 참조를 넘기는 것은 실패했을 때
+    /// 조용한 쪽을 고르는 일이다. 상호작용 조준(PlayerInteractionManager)이 이것을 본다.
+    /// </summary>
+    public static bool BuildModeActive { get; private set; }
+
+    /// <summary>모드 전이의 유일한 통로 — 전역 상태가 필드와 어긋나지 않게 한 곳에서만 바꾼다.</summary>
+    private void SetMode(BuildMode next)
+    {
+        mode = next;
+        BuildModeActive = next != BuildMode.None;
+    }
+
+    /// <summary>씬이 내려가거나 시스템이 꺼지면 모드도 끝난다 — 전역 플래그가 켜진 채 남지 않게.</summary>
+    private void OnDisable() => SetMode(BuildMode.None);
     public BuildingDataSO CurrentBuilding => current;
     public IReadOnlyList<BuildingDataSO> Buildings =>
         database != null ? database.buildings : System.Array.Empty<BuildingDataSO>();
@@ -242,7 +261,7 @@ public class PlacementSystem : MonoBehaviour
         if (data == null) return;
         if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(data.requiredCoreTier)) return;
         ExitMode();
-        mode = BuildMode.Placing;
+        SetMode(BuildMode.Placing);
         current = data;
         rotation = 0;
         beltShape = BeltShape.Straight;
@@ -263,7 +282,7 @@ public class PlacementSystem : MonoBehaviour
     public void EnterDemolishMode()
     {
         ExitMode();
-        mode = BuildMode.Demolishing;
+        SetMode(BuildMode.Demolishing);
     }
 
     /// <summary>현재 모드를 빠져나오며 프리뷰/하이라이트를 정리한다.</summary>
@@ -279,7 +298,7 @@ public class PlacementSystem : MonoBehaviour
         flowSo = null;
         flowRot = -1;
 
-        mode = BuildMode.None;
+        SetMode(BuildMode.None);
     }
 
     // ===================== 배치 모드 =====================

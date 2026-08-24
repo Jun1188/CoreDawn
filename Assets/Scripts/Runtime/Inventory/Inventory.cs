@@ -4,9 +4,19 @@ using UnityEngine;
 [Serializable]
 public class ItemStack
 {
+    /// <summary>아이템 데이터를 모를 때만 쓰는 폴백 — 정상 경로에서는 항상 SO 값이 이긴다.</summary>
+    public const int DefaultMaxStack = 64;
+
     public ItemDataSO item; // 팀원들이 만든 아이템 원본 데이터
     public int amount;      // 현재 쌓인 개수
-    public int maxStackSize = 64; // 마크식 64개 제한
+
+    // 상한은 스택이 들고 있지 않다. 예전의 maxStackSize 필드는 같은 아이템인데도 어디서
+    // 생겼느냐로 값이 갈렸고(세이브가 그 값을 굳혀 데이터 조정이 기존 세이브에 닿지 못했다),
+    // 인스펙터에 저작한 값은 정작 아무도 읽지 않았다.
+    //
+    // "이 스택은 몇 개까지 쌓이나"는 스택만 봐서는 답이 없는 질문이다 — 같은 탄약도
+    // 가방에서는 100개, 포탑 탄약함에서는 20개다. 담는 그릇을 알아야 하므로
+    // ItemContainer.CapFor(item) / RoomAt(slot, item)에 물을 것.
 
     public ItemStack(ItemDataSO item, int amount)
     {
@@ -56,7 +66,10 @@ public class Inventory : MonoBehaviour
         {
             var s = slots[i];
             if (s == null || s.item == null || s.amount <= 0) continue;
-            container.TryPutAt(i, new ItemStack(s.item, s.amount) { maxStackSize = s.maxStackSize });
+            // 상한 초과로 저작해 두면 TryPutAt이 통째로 거절한다 — 저작 실수로 상자가
+            // 텅 비어 열리는 것보다 들어가는 만큼이라도 넣는 편이 낫다
+            int fit = Mathf.Min(s.amount, container.CapFor(s.item));
+            container.TryPutAt(i, new ItemStack(s.item, fit));
         }
     }
 

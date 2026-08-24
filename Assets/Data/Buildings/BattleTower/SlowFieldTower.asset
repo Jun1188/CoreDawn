@@ -31,6 +31,7 @@ MonoBehaviour:
   threatSeedCost: 80
   requiredCoreTier: 3
   hideFromBuildMenu: 0
+  menuOrder: 3
   buildCost:
   - item: {fileID: 11400000, guid: f72e981c3d32945469d3cf594600dd9c, type: 2}
     amount: 2

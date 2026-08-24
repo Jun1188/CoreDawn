@@ -90,6 +90,7 @@ class GNodeData
     public List<GEff> attackEffects = new();
     public float speed = 50, gravity, explosionRadius, lifetime = 3;
     public int pierce;
+    public int maxStack = 64;   // 한 슬롯 최대 개수 (ItemDataSO.maxStack)
     public int tier = 1;
     public float craftTime = 2f;
 }
@@ -176,6 +177,7 @@ class GdGraphTab : GdTab
                     type = string.IsNullOrEmpty(it.type) ? "Part" : it.type,
                     line = string.IsNullOrEmpty(it.line) ? "None" : it.line,
                     icon = it.icon ?? "", iconGuid = it.iconGuid ?? "",
+                    maxStack = it.maxStack > 0 ? it.maxStack : 64,
                     attackEffects = it.attackEffects != null
                         ? it.attackEffects.Select(e => new GEff { effect = e.effect, value = e.value }).ToList()
                         : (it.damage > 0 ? new List<GEff> { new() { effect = "Effect:Damage", value = it.damage } } : new List<GEff>()),
@@ -251,6 +253,7 @@ class GdGraphTab : GdTab
                 type = string.IsNullOrEmpty(d.type) ? "Part" : d.type,
                 line = string.IsNullOrEmpty(d.line) ? "None" : d.line,
                 icon = d.icon ?? "", iconGuid = d.iconGuid ?? "",
+                maxStack = Mathf.Max(1, d.maxStack),
             };
             if (d.type == "Ammo")
             {
@@ -1420,6 +1423,9 @@ class GdGraphTab : GdTab
                 if (i < GdEnum.ItemLines.Length) d.line = GdEnum.ItemLines[i].v;
                 Render();
             }));
+
+            sideBody.Add(Int("maxStack (한 슬롯 최대 개수 — 무기·설치물은 1)", d.maxStack,
+                v => { d.maxStack = Mathf.Max(1, v); Render(); }));
 
             // icon — guid 가 파일을 특정하고 이름이 아틀라스 안의 스프라이트를 고른다
             var iconRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };

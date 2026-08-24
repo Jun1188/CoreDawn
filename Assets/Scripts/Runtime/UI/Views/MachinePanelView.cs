@@ -12,9 +12,13 @@ using UnityEngine.UIElements;
 ///
 /// 시작/중지는 상태줄 오른쪽 끝 — 멈춰도 진행률과 버퍼는 보존되므로
 /// "잠깐 자원을 아끼려고 세워둔다"가 안전한 조작이 된다.
+///
+/// 아래 두 단(소지품·핫바)은 보관소(SCR-08)와 같은 뼈대를 그대로 쓴다 — 설비 버퍼에
+/// 손으로 재료를 넣고 결과를 빼내려면 소지품이 같은 화면에 있어야 하고, 조작 문법
+/// (좌 집기/놓기 · 우 절반/한 개 · Shift 빠른 이동)도 창마다 다르면 안 되기 때문이다.
 /// </summary>
 [DefaultExecutionOrder(100)]
-public class MachinePanelView : UITKPopup
+public class MachinePanelView : PlayerItemPanelView
 {
     static MachinePanelView cached;
 
@@ -29,7 +33,6 @@ public class MachinePanelView : UITKPopup
 
     MachineState shownState = (MachineState)(-1);
     bool shownPaused;
-    UITooltip tooltip;
 
     // ───────────────────────── 열기 ─────────────────────────
 
@@ -101,7 +104,7 @@ public class MachinePanelView : UITKPopup
         if (searchBox != null && searchBox.Q<SearchGlyph>() == null)
             searchBox.Insert(0, new SearchGlyph());
 
-        tooltip = new UITooltip(r);
+        BindCommon();   // 소지품·핫바 격자, 캐리지, 창 밖 던지기, 툴팁
 
         RecipeRewardUnlockService.RecipeUnlocked += OnRecipeRewardUnlocked;
 
@@ -117,11 +120,10 @@ public class MachinePanelView : UITKPopup
         if (searchField != null) searchField.UnregisterValueChangedCallback(OnSearchChanged);
         RecipeRewardUnlockService.RecipeUnlocked -= OnRecipeRewardUnlocked;
 
-        tooltip?.Dispose();
-        tooltip = null;
-
         UnhookContainers();
         target = null;
+
+        UnbindCommon();   // 툴팁 정리 + 들고 있던 스택 회수
     }
 
     void HookContainers()
@@ -138,6 +140,38 @@ public class MachinePanelView : UITKPopup
         if (b == null) return;
         b.Input.Changed  -= RebuildSlots;
         b.Output.Changed -= RebuildSlots;
+    }
+
+    /// <summary>소지품·핫바가 바뀌었다 — 설비 버퍼 쪽은 HookContainers가 따로 RebuildSlots를 건다.</summary>
+    protected override void OnContainerChanged() => RebuildPlayerGrids();
+
+    /// <summary>
+    /// Shift+클릭 — 설비 버퍼↔플레이어를 오간다. 플레이어 쪽은 가방부터, 넘치면 핫바.
+    ///
+    /// 플레이어에서 올려 보낼 때는 입력 버퍼로만 간다. 출력 버퍼로 밀어 넣을 이유가 없고,
+    /// 잘못 넣으면 그대로 하류 벨트로 흘러가 라인에 엉뚱한 물건이 섞인다.
+    /// 입력은 현재 레시피의 재료만 받으므로(AcceptFilter) 재료가 아니면 그냥 들어가지 않는다.
+    /// </summary>
+    protected override void QuickMove(ItemContainer src, int index)
+    {
+        var b = target?.Building;
+        if (b == null) { base.QuickMove(src, index); return; }
+
+        var stack = src.PeekAt(index);
+        if (stack == null || stack.item == null || stack.amount <= 0) return;
+
+        if (src == b.Input || src == b.Output)
+        {
+            MoveStack(stack, Main);
+            if (stack.amount > 0) MoveStack(stack, Hotbar);
+        }
+        else
+        {
+            MoveStack(stack, b.Input);
+        }
+
+        src.Touch();
+        if (stack.amount <= 0) src.TakeAt(index);
     }
 
     void OnSearchChanged(ChangeEvent<string> e)
@@ -157,6 +191,8 @@ public class MachinePanelView : UITKPopup
 
     void RebuildAll()
     {
+        RebuildPlayerGrids();   // 설비를 못 찾아도 소지품은 그린다 — 빈 창이 뜨는 것보다 낫다
+
         if (target == null) return;
         machineName.text = string.IsNullOrEmpty(target.Data.displayName) ? target.Data.name : target.Data.displayName;
         RebuildRecipes();
@@ -278,33 +314,18 @@ public class MachinePanelView : UITKPopup
         FillSlots(outSlots, b.Output);
     }
 
+    /// <summary>
+    /// IN/OUT 칸 — 소지품 격자와 같은 부품(MakeSlot)을 쓴다. 그래서 조작 문법도 같다:
+    /// 좌 집기/놓기 · 우 절반/한 개 · Shift 빠른 이동. 규칙(수용 필터·종류당 1스택·스택 상한)은
+    /// 컨테이너가 지키므로 여기서 따로 막을 것이 없다 — 재료가 아니면 놓기가 그냥 실패한다.
+    /// </summary>
     void FillSlots(VisualElement parent, ItemContainer c)
     {
         parent.Clear();
         for (int i = 0; i < c.SlotCount; i++)
         {
-            var stack = c.PeekAt(i);
-            bool empty = stack == null || stack.item == null || stack.amount <= 0;
-
-            var slot = new VisualElement();
-            slot.AddToClassList("ui-slot");
-            if (empty) slot.AddToClassList("ui-slot--empty");
+            var slot = MakeSlot(c, i, keyLabel: null);
             if (i == c.SlotCount - 1) slot.AddToClassList("ui-slot--last");
-
-            var icon = new VisualElement();
-            icon.AddToClassList("ui-slot__icon");
-            if (!empty) UIItemIcon.Apply(icon, stack.item);
-            slot.Add(icon);
-
-            if (!empty)
-            {
-                var n = new Label(stack.amount.ToString());
-                n.AddToClassList("ui-slot__n");
-                slot.Add(n);
-
-                tooltip?.AttachItem(slot, stack.item);
-            }
-
             parent.Add(slot);
         }
     }
