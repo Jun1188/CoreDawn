@@ -64,6 +64,10 @@ public class ItemDataSO : GameDataSO
     [Tooltip("계통 축 — 어느 생산 라인 소속인가. UI 계통색의 근거.")]
     public ItemLine line;
 
+    [Tooltip("한 슬롯에 쌓이는 최대 개수. 무기·설치물처럼 낱개로 다루는 것은 1. " +
+             "건물 버퍼 상한(BuildingDataSO.bufferStackCap)과 만나면 더 작은 쪽이 이긴다.")]
+    [Min(1)] public int maxStack = 64;
+
     [Tooltip("역할 모듈 — 탄약(AmmoModuleSO)·무기(WeaponModuleSO) 같은 전용 데이터를 " +
              "상속 대신 조합으로 단다. 아이템 에셋의 서브에셋으로 저장되며 임포터가 관리한다.")]
     [SerializeField] private System.Collections.Generic.List<ItemModuleSO> modules = new();

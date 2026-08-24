@@ -171,6 +171,13 @@ public abstract class BuildingDataSO : GameDataSO
     [Tooltip("코어처럼 씬에 직접 배치되는 단일 건물 — 빌드 메뉴에 항상 숨김.")]
     public bool hideFromBuildMenu = false;
 
+    [Tooltip("같은 티어 안에서의 표시 순서 — 작을수록 먼저. 같으면 표시명순. " +
+             "공정 단계를 그대로 적을 것 (채굴 0 · 제련 1 · 제작 2 · 조립 3 · 제조 4). " +
+             "그러면 티어가 올라도 차례가 유지된다 — 채굴기 Mk.2는 조립기보다 앞에 온다. " +
+             "티어만으로는 가를 수 없다: 채굴기·제련로·제작기가 전부 게이트 1이라 " +
+             "이 값이 없으면 이름순(제련로·제작기·채굴기)으로 흩어진다.")]
+    public int menuOrder = 0;
+
     [Header("건설 비용 — 배치 시 차감, 철거 시 전액 환급")]
     [Tooltip("레시피의 슬롯 타입을 그대로 쓴다 — 임포터의 아이템 해석 코드와 UI의 재료 표시를 재사용하기 위함.")]
     public RecipeDataSO.Slot[] buildCost;

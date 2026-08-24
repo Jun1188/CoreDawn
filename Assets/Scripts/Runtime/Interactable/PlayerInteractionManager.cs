@@ -19,13 +19,23 @@ public class PlayerInteractionManager : MonoBehaviour
 
     [SerializeField] float interactRange = 4f;
 
+    [Tooltip("벨트 위 아이템 조준 판정 반경(m). 스프라이트 실제 크기보다 넉넉해야 " +
+             "빠르게 지나가는 아이템도 잡힌다. 콜라이더가 아니라 계산값이라 자유롭게 만져도 된다.")]
+    [SerializeField] float beltPickRadius = 0.3f;
+
+    [Tooltip("벨트 아이템 조준의 좌표 출처. Factory가 별도 씬으로 올라오면 GameBootstrap이 꽂는다 — " +
+             "같은 씬에 둔 구성이면 인스펙터 배선이 그대로 쓰인다.")]
+    [SerializeField] BeltItemView beltView;
+
     /// <summary>E키 상호작용 사거리 — 건설(배치·철거) 조준도 같은 값을 쓴다(PlacementSystem).</summary>
     public float InteractRange => interactRange;
 
     /// <summary>이번 프레임에 조준 중인 상호작용 대상. 없거나 Prompt가 비었으면 null.</summary>
     public IInteractable Current { get; private set; }
 
-    private PlacementSystem placement;
+    /// <summary>벨트 아이템 조준 — 콜라이더가 없어 물리 대신 해석적으로 맞춘다.
+    /// 인스턴스는 하나뿐이고 매 프레임 조준 결과만 갈아 끼운다.</summary>
+    private BeltItemTarget beltTarget;
 
     // ── 홀드 상태 ────────────────────────────────────────────────
     private IHoldInteractable holdTarget;
@@ -46,33 +56,74 @@ public class PlayerInteractionManager : MonoBehaviour
         }
     }
 
-    private void Awake() => placement = FindFirstObjectByType<PlacementSystem>();
+    /// <summary>
+    /// 벨트 렌더 뷰 주입 — 벨트 아이템은 콜라이더가 없어 조준이 그 뷰의 좌표를 훑는다.
+    /// Factory가 별도 씬으로 얹히면 인스펙터 참조가 씬 경계를 넘지 못하므로 GameBootstrap이 꽂는다.
+    /// 인스펙터 배선이 이미 있으면 덮지 않는다 (PlacementSystem.Inject와 같은 규칙).
+    /// </summary>
+    public void Inject(BeltItemView view)
+    {
+        if (beltView == null) beltView = view;
+    }
+
+    private void Awake() => beltTarget = new BeltItemTarget();
 
     /// <summary>
     /// 건설·철거 모드 중에는 상호작용을 막는다.
     /// 그 모드에서 좌클릭은 배치/철거이고 조준은 그리드를 겨냥하는 중이다 —
     /// 같은 조준선에 "[E] 필터 설정" 같은 프롬프트가 함께 뜨면 무엇이 일어날지 알 수 없어진다.
+    ///
+    /// 참조가 아니라 전역 상태를 읽는다 — 예전에는 PlacementSystem을 스스로 찾아 들고 있었는데,
+    /// 그 탐색이 빗나가면 "모드가 아니다"로 읽혀 차단이 소리 없이 사라진다.
+    /// 막는 장치는 배선이 빠졌을 때 열리는 쪽이 아니라 닫히는 쪽으로 실패해야 한다.
     /// </summary>
-    private bool BuildModeActive =>
-        placement != null && placement.Mode != PlacementSystem.BuildMode.None;
+    private static bool BuildModeActive => PlacementSystem.BuildModeActive;
 
     private void Update()
     {
-        Current = BuildModeActive ? null : FindAimedInteractable();
+        if (BuildModeActive)
+        {
+            Current = null;
+            beltTarget?.Clear();   // 모드 중에는 조준이 돌지 않는다 — 지난 픽이 세그먼트를 붙들지 않게
+        }
+        else Current = FindAimedInteractable();
+
         TickHold();
     }
 
+    /// <summary>
+    /// 조준선 위의 후보 둘을 견줘 가까운 쪽을 고른다.
+    ///
+    ///   ① 물리 히트 — 콜라이더가 있는 것 전부 (상자·건물·벽)
+    ///   ② 벨트 아이템 — 콜라이더가 없어 <see cref="BeltItemTarget"/>이 해석적으로 맞춘다
+    ///
+    /// ②를 ①의 <b>폴백으로 두면 안 된다</b>. 벨트는 상호작용 행동이 없어 Prompt가 비지만
+    /// 콜라이더에는 맞으므로, "레이캐스트가 실패하면 그때 벨트"라는 구조로는 벨트를 겨냥하는
+    /// 순간 항상 빠져나가 그 위 아이템을 영영 집을 수 없다.
+    ///
+    /// 물리 히트 거리를 ②의 사거리로 넘기면 가림 처리가 공짜다 — 벽이 더 가까우면
+    /// 그 너머 아이템은 사거리 밖이 되어 탈락한다.
+    /// </summary>
     private IInteractable FindAimedInteractable()
     {
         if (playerCamera == null) return null;
 
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
-        if (!Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayers))
-            return null;
 
-        var target = hit.collider.GetComponentInParent<IInteractable>();
-        // Prompt가 비어 있으면 "지금은 상호작용 불가" — 대상 없음으로 취급
-        return target != null && !string.IsNullOrEmpty(target.Prompt) ? target : null;
+        float solidDist = interactRange;
+        IInteractable solid = null;
+
+        if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayers))
+        {
+            solidDist = hit.distance;
+            var target = hit.collider.GetComponentInParent<IInteractable>();
+            // Prompt가 비어 있으면 "지금은 상호작용 불가" — 대상 없음으로 취급
+            if (target != null && !string.IsNullOrEmpty(target.Prompt)) solid = target;
+        }
+
+        if (beltTarget != null && beltTarget.TryAim(beltView, ray, solidDist, beltPickRadius)) return beltTarget;
+
+        return solid;
     }
 
     // ── 홀드 ────────────────────────────────────────────────────

@@ -187,7 +187,7 @@ public class DroppedItem : Interactable
         if (item == null || other.item != item) return;
         if (amount <= 0 || other.amount <= 0) return;          // 이미 병합/줍기로 소멸 예정인 상대
         if (GetInstanceID() > other.GetInstanceID()) return;   // 한쪽만 수행
-        if (amount + other.amount > new ItemStack(item, 1).maxStackSize) return;
+        if (amount + other.amount > item.maxStack) return;
 
         amount += other.amount;
         other.amount = 0;                                      // 상대의 후속 병합/줍기 차단

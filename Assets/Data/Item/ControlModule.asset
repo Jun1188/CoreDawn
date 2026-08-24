@@ -21,4 +21,5 @@ MonoBehaviour:
   icon: {fileID: -1110902257, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
   type: 2
   line: 2
+  maxStack: 50
   modules: []

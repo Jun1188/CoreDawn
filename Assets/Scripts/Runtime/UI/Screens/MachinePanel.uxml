@@ -6,13 +6,18 @@
          입력 슬롯 수(1·1·2·4)만 다르다. 가운데는 입력 → 진행 → 출력을 실제 흐름
          방향대로 놓아, 어디서 막혔는지 눈으로 짚게 한다.
 
-         레시피 행·IO 슬롯은 개수가 데이터에 달려 있으므로 MachinePanelView가 만든다. -->
+         아래 두 단(소지품·핫바)은 인벤토리(SCR-04)·보관소(SCR-08)와 자리까지 같다 —
+         설비 버퍼에 손으로 재료를 넣고 결과를 빼내려면 소지품이 같은 화면에 있어야 하고,
+         그 자리가 창마다 다르면 손이 헤맨다. 패널을 하단에 붙이는 것도 같은 이유로,
+         핫바가 HUD 핫바와 같은 자리에 온다.
+
+         레시피 행·IO 슬롯·슬롯 격자는 개수가 데이터에 달려 있으므로 MachinePanelView가 만든다. -->
     <Style src="../Styles/tokens.uss" />
     <Style src="../Styles/components.uss" />
     <Style src="../Styles/screens.uss" />
 
-    <ui:VisualElement name="screen-root" class="screen-root">
-        <ui:VisualElement name="machine-panel" class="ui-panel machine-panel">
+    <ui:VisualElement name="screen-root" class="screen-root screen-root--bottom">
+        <ui:VisualElement name="machine-panel" class="ui-panel machine-panel inv-panel">
 
             <ui:VisualElement class="ui-panel__title">
                 <ui:Label text="MACHINE" class="ui-panel__tag" />
@@ -20,66 +25,83 @@
                 <ui:Button name="btn-close" text="✕" class="ui-panel__x" />
             </ui:VisualElement>
 
-            <ui:VisualElement class="ui-panel__body machine-panel__body">
+            <ui:VisualElement class="ui-panel__body inv-panel__body">
 
-                <!-- 좌: 이 설비가 돌릴 수 있는 레시피 (해금된 것만) -->
-                <ui:VisualElement class="machine-list">
-                    <ui:VisualElement name="machine-search-box" class="ui-search machine-list__search">
-                        <ui:TextField name="machine-search" placeholder-text="레시피 검색" class="ui-search__input" />
+                <!-- 설비 — 좌 레시피 목록, 우 가동 상태 -->
+                <ui:VisualElement class="machine-work">
+
+                    <!-- 좌: 이 설비가 돌릴 수 있는 레시피 (해금된 것만) -->
+                    <ui:VisualElement class="machine-list">
+                        <ui:VisualElement name="machine-search-box" class="ui-search machine-list__search">
+                            <ui:TextField name="machine-search" placeholder-text="레시피 검색" class="ui-search__input" />
+                        </ui:VisualElement>
+                        <ui:ScrollView class="ui-scroll machine-list__scroll">
+                            <ui:VisualElement name="recipes" />
+                        </ui:ScrollView>
+                        <ui:Label name="recipes-empty" text="돌릴 수 있는 레시피가 없습니다"
+                                  class="machine-list__empty ui-hidden" />
                     </ui:VisualElement>
-                    <ui:ScrollView class="ui-scroll machine-list__scroll">
-                        <ui:VisualElement name="recipes" />
-                    </ui:ScrollView>
-                    <ui:Label name="recipes-empty" text="돌릴 수 있는 레시피가 없습니다"
-                              class="machine-list__empty ui-hidden" />
+
+                    <!-- 우: 가동 상태 -->
+                    <ui:VisualElement name="detail" class="machine-detail">
+
+                        <ui:VisualElement class="ui-yield machine-detail__yield">
+                            <ui:VisualElement class="ui-slot">
+                                <ui:VisualElement name="yield-icon" class="ui-slot__icon" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="ui-fill">
+                                <ui:Label name="yield-name" text="" class="machine-yield-name" />
+                                <ui:Label name="yield-sub" text="" class="machine-yield-sub" />
+                            </ui:VisualElement>
+                            <ui:Label name="yield-time" text="" class="ui-timepill" />
+                        </ui:VisualElement>
+
+                        <!-- 입력 → 진행 → 출력 -->
+                        <ui:VisualElement class="ui-io machine-io">
+                            <ui:VisualElement class="ui-io__col">
+                                <ui:Label text="IN" class="ui-io__cap" />
+                                <ui:VisualElement name="in-slots" class="ui-io__slots" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="io-arrow" class="ui-io__arrow">
+                                <ui:VisualElement name="machine-bar" class="ui-machine">
+                                    <ui:VisualElement name="machine-fill" class="ui-machine__fill" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="ui-machine__meta">
+                                    <ui:Label name="machine-pct" text="0%" />
+                                    <ui:Label name="machine-eta" text="대기" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="ui-io__col">
+                                <ui:Label text="OUT" class="ui-io__cap" />
+                                <ui:VisualElement name="out-slots" class="ui-io__slots" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- 상태줄 — 막힘의 원인은 셋뿐: 가동 중 · 재료 대기 · 출력 막힘 (+ 사람이 세운 중지) -->
+                        <ui:VisualElement class="machine-status">
+                            <ui:VisualElement name="status" class="ui-status ui-status--stop">
+                                <ui:VisualElement class="ui-status__dot" />
+                                <ui:Label name="status-text" text="중지됨" />
+                            </ui:VisualElement>
+                            <ui:Label name="status-note" text="" class="machine-status__note" />
+                            <ui:Button name="btn-toggle" text="■ 중지" class="ui-btn machine-status__btn" />
+                        </ui:VisualElement>
+
+                    </ui:VisualElement>
+
                 </ui:VisualElement>
 
-                <!-- 우: 가동 상태 -->
-                <ui:VisualElement name="detail" class="machine-detail">
-
-                    <ui:VisualElement class="ui-yield machine-detail__yield">
-                        <ui:VisualElement class="ui-slot">
-                            <ui:VisualElement name="yield-icon" class="ui-slot__icon" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="ui-fill">
-                            <ui:Label name="yield-name" text="" class="machine-yield-name" />
-                            <ui:Label name="yield-sub" text="" class="machine-yield-sub" />
-                        </ui:VisualElement>
-                        <ui:Label name="yield-time" text="" class="ui-timepill" />
+                <!-- 소지품 — IN/OUT 칸과 여기 사이를 좌클릭 드래그·Shift 클릭으로 오간다.
+                     설비 입력은 현재 레시피의 재료만 받으므로(AcceptFilter) 엉뚱한 것은 그냥 들어가지 않는다 -->
+                <ui:VisualElement class="inv-section">
+                    <ui:VisualElement class="inv-sechead">
+                        <ui:Label text="INVENTORY" class="inv-label" />
                     </ui:VisualElement>
-
-                    <!-- 입력 → 진행 → 출력 -->
-                    <ui:VisualElement class="ui-io machine-io">
-                        <ui:VisualElement class="ui-io__col">
-                            <ui:Label text="IN" class="ui-io__cap" />
-                            <ui:VisualElement name="in-slots" class="ui-io__slots" />
-                        </ui:VisualElement>
-                        <ui:VisualElement name="io-arrow" class="ui-io__arrow">
-                            <ui:VisualElement name="machine-bar" class="ui-machine">
-                                <ui:VisualElement name="machine-fill" class="ui-machine__fill" />
-                            </ui:VisualElement>
-                            <ui:VisualElement class="ui-machine__meta">
-                                <ui:Label name="machine-pct" text="0%" />
-                                <ui:Label name="machine-eta" text="대기" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-                        <ui:VisualElement class="ui-io__col">
-                            <ui:Label text="OUT" class="ui-io__cap" />
-                            <ui:VisualElement name="out-slots" class="ui-io__slots" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-
-                    <!-- 상태줄 — 막힘의 원인은 셋뿐: 가동 중 · 재료 대기 · 출력 막힘 (+ 사람이 세운 중지) -->
-                    <ui:VisualElement class="machine-status">
-                        <ui:VisualElement name="status" class="ui-status ui-status--stop">
-                            <ui:VisualElement class="ui-status__dot" />
-                            <ui:Label name="status-text" text="중지됨" />
-                        </ui:VisualElement>
-                        <ui:Label name="status-note" text="" class="machine-status__note" />
-                        <ui:Button name="btn-toggle" text="■ 중지" class="ui-btn machine-status__btn" />
-                    </ui:VisualElement>
-
+                    <ui:VisualElement name="grid" class="inv-grid" />
                 </ui:VisualElement>
+
+                <!-- 핫바 — HUD 핫바와 같은 자리 -->
+                <ui:VisualElement name="hotbar" class="inv-hotbar" />
 
             </ui:VisualElement>
         </ui:VisualElement>

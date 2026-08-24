@@ -23,6 +23,29 @@ public class BeltItemView : MonoBehaviour
     private readonly List<SpriteRenderer> pool = new();
     private int used;
 
+    /// <summary>이번 프레임에 그린 아이템 하나 — 조준(BeltItemTarget)이 이 좌표에 맞춘다.</summary>
+    public readonly struct Drawn
+    {
+        public readonly BeltSegment Seg;
+        public readonly int Index;          // 세그먼트 안 인덱스 (0 = 출구 쪽)
+        public readonly Vector3 World;      // 외삽까지 반영된 실제 표시 좌표
+        public readonly ItemDataSO Item;
+
+        public Drawn(BeltSegment seg, int index, Vector3 world, ItemDataSO item)
+        { Seg = seg; Index = index; World = world; Item = item; }
+    }
+
+    private readonly List<Drawn> drawn = new();
+
+    /// <summary>
+    /// 직전 LateUpdate가 그린 목록. 벨트 아이템은 콜라이더가 없어 조준이 이것을 훑는다 —
+    /// 심 좌표(틱 10Hz)가 아니라 <b>화면에 실제로 보이는 좌표</b>여야 조준점 아래 있는 것이 집힌다.
+    ///
+    /// Update에서 읽으면 한 프레임 묵은 값이다(이 뷰는 LateUpdate에 돈다). 60fps·2타일/초면
+    /// 어긋남이 0.03타일 남짓이라 조준 반경보다 한참 작다 — 손맛에 잡히지 않는다.
+    /// </summary>
+    public IReadOnlyList<Drawn> DrawnThisFrame => drawn;
+
     private PlacementSystem placement;   // 셀 크기의 소유자 — 늦게 생길 수 있어 찾을 때까지 재시도
     private float halfCell = 0.5f;
 
@@ -34,6 +57,7 @@ public class BeltItemView : MonoBehaviour
         halfCell = placement != null ? placement.CellSize * 0.5f : 0.5f;
 
         used = 0;
+        drawn.Clear();
         var boot = FactoryBootstrap.Instance;
         if (boot != null && boot.Sim != null)
         {
@@ -57,8 +81,10 @@ public class BeltItemView : MonoBehaviour
         float extra = seg.SpeedTilesPerSec * boot.Sim.TickLeftover;
 
         float prevVisual = float.MaxValue;   // index 0 = 출구 쪽 — 앞 아이템의 시각 위치
-        foreach (var (item, pos) in seg.Items)
+        var items = seg.Items;
+        for (int i = 0; i < items.Count; i++)   // 인덱스를 남겨야 조준이 그 아이템을 꺼낼 수 있다
         {
+            var (item, pos) = items[i];
             if (item == null) continue;
 
             float vpos = pos + extra;
@@ -69,9 +95,13 @@ public class BeltItemView : MonoBehaviour
 
             if (!TryGetWorldPos(seg, vpos, boot, out var world)) continue;
 
+            Vector3 at = world + Vector3.up * itemHeight;
+
             var slot = Rent();
             ApplyVisual(slot, item);
-            slot.transform.position = world + Vector3.up * itemHeight;
+            slot.transform.position = at;
+
+            drawn.Add(new Drawn(seg, i, at, item));
         }
     }
 

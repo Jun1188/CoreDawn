@@ -138,8 +138,8 @@ public class TowerBehavior : IBuildingBehavior, IInteractiveBehavior
         return false;
     }
 
-    // 발사 판정은 씬(Update)이 주도하므로 심 틱에서 할 일이 없다.
-    // 탄약이 들어오면 Input.Changed → MarkDirty로 깨어나지만, 여기서 소비하지는 않는다.
+    // 발사 판정은 씬(Update)이 주도하므로 심 틱에서 할 일이 없다 — 그래서 깨울 필요도 없다.
+    // 탄약이 벨트로 오든 플레이어가 탄약함에 손으로 넣든, 다음 발사 때 Input에서 바로 꺼낸다.
     public void Tick(float dt) { }
 
     public void OnAfterPlaced() { }

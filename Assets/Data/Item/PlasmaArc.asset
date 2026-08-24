@@ -46,5 +46,6 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 4
   line: 1
+  maxStack: 100
   modules:
   - {fileID: -2536490608755648729}

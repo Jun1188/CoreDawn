@@ -159,9 +159,14 @@ public abstract class PlayerItemPanelView : UITKPopup
 
         if (!empty)
         {
-            var n = new Label(stack.amount.ToString());
-            n.AddToClassList("ui-slot__n");
-            slot.Add(n);
+            // 1개는 숫자를 붙이지 않는다 — 아이콘만으로 하나임이 읽히고,
+            // 온 화면에 깔린 "1"은 정보가 아니라 잡음이다 (uGUI ItemSocket과 같은 규칙)
+            if (stack.amount > 1)
+            {
+                var n = new Label(stack.amount.ToString());
+                n.AddToClassList("ui-slot__n");
+                slot.Add(n);
+            }
 
             tooltip?.AttachItem(slot, stack.item);
         }
@@ -206,11 +211,21 @@ public abstract class PlayerItemPanelView : UITKPopup
         var target = container.PeekAt(index);
         if (target == null || target.item == null)
         {
-            if (container.TryPutAt(index, carried)) carried = null;
+            // 상한(포탑 탄약함처럼 좁은 버퍼)을 넘으면 통째로 거절하지 않고 들어갈 만큼만 —
+            // 클릭이 아무 반응 없이 씹히는 것보다 "20개만 들어갔다"가 읽힌다
+            int fit = Mathf.Min(container.CapFor(carried.item), carried.amount);
+            if (fit >= carried.amount)
+            {
+                if (container.TryPutAt(index, carried)) carried = null;
+            }
+            else if (fit > 0 && container.TryPutAt(index, new ItemStack(carried.item, fit)))
+            {
+                carried.amount -= fit;
+            }
         }
         else if (target.item == carried.item)
         {
-            int add = Mathf.Min(target.maxStackSize - target.amount, carried.amount);
+            int add = Mathf.Min(container.RoomAt(index, target.item), carried.amount);
             target.amount += add;
             carried.amount -= add;
             container.Touch();
@@ -242,7 +257,7 @@ public abstract class PlayerItemPanelView : UITKPopup
         {
             if (container.TryPutAt(index, new ItemStack(carried.item, 1))) carried.amount--;
         }
-        else if (target.item == carried.item && target.amount < target.maxStackSize)
+        else if (target.item == carried.item && container.RoomAt(index, target.item) > 0)
         {
             target.amount++;
             carried.amount--;
@@ -273,8 +288,8 @@ public abstract class PlayerItemPanelView : UITKPopup
         for (int i = 0; i < dst.SlotCount && src.amount > 0; i++)
         {
             var t = dst.PeekAt(i);
-            if (t == null || t.item != src.item || t.amount >= t.maxStackSize) continue;
-            int add = Mathf.Min(t.maxStackSize - t.amount, src.amount);
+            if (t == null || t.item != src.item || dst.RoomAt(i, src.item) <= 0) continue;
+            int add = Mathf.Min(dst.RoomAt(i, src.item), src.amount);
             t.amount += add;
             src.amount -= add;
             dst.Touch();
@@ -283,7 +298,7 @@ public abstract class PlayerItemPanelView : UITKPopup
         {
             var t = dst.PeekAt(i);
             if (t != null && t.item != null) continue;
-            int add = Mathf.Min(src.maxStackSize, src.amount);
+            int add = Mathf.Min(dst.CapFor(src.item), src.amount);
             if (dst.TryPutAt(i, new ItemStack(src.item, add))) src.amount -= add;
         }
     }
@@ -348,7 +363,7 @@ public abstract class PlayerItemPanelView : UITKPopup
         if (!has) return;
 
         UIItemIcon.Apply(carryIcon, carried.item);
-        carryCount.text = carried.amount.ToString();
+        carryCount.text = carried.amount > 1 ? carried.amount.ToString() : "";
     }
 
     /// <summary>들고 있던 스택을 가방으로 되돌린다. 가방이 가득이면 바닥에 떨어뜨린다.</summary>
