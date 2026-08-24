@@ -2073,8 +2073,8 @@
       "displayName": "보관소",
       "description": "아이템을 보관한다. 어느 면이든 왼쪽으로 받고 오른쪽으로 내보낸다.",
       "category": "Storage",
-      "model": "",
-      "modelGuid": "",
+      "model": "Storage.prefab",
+      "modelGuid": "935e9bd1c205c7044b36b398d51ffa2e",
       "size": {
         "x": 2,
         "y": 2

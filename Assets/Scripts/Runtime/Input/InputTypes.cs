@@ -28,6 +28,7 @@ public enum InputActionId
     // 실제 액션·수신자가 생길 때 추가한다
     // Global 맵 (맵 스택과 무관하게 항상 활성)
     ToggleInventory,
+    ToggleMap,            // M — 월드 맵 오버레이. 열기 = PlayerController, 닫기 = WorldMapPanelView가 상위에서 가로챈다
 }
 
 /// <summary>

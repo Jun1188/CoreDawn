@@ -116,12 +116,13 @@ MonoBehaviour:
     - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
       value: 10
   maxPatience: 3
-  patienceRadius: 0
+  patienceRadius: 25
   outsidePatienceDrain: 2
   rangedPokePatienceDrain: 1
   patienceRecoverRate: 2
   absoluteLeashMultiplier: 1
-  returnRegenPerSecond: 0.12
+  returnRegenPerSecond: 0.2
+  returnTimeout: 40
 --- !u!114 &7229461993632260497
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -303,6 +303,11 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
             case InputActionId.ToggleInventory:
                 GameScreens.OpenInventory();
                 return true;
+
+            // 맵(M)도 같은 규칙 — 열려 있으면 맵 팝업이 상위에서 가로채 닫는다.
+            case InputActionId.ToggleMap:
+                GameScreens.OpenWorldMap();
+                return true;
         }
         return false;
     }

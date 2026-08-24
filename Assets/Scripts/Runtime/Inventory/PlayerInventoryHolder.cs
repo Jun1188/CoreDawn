@@ -82,8 +82,11 @@ public class PlayerInventoryHolder : MonoBehaviour
     /// 획득음은 여기 한 곳에서 낸다 — 줍기·손 채굴·제작 산출·환급·저장고 회수가 전부 이 문을 지나므로,
     /// 호출처마다 소리를 붙이면 어딘가는 빠지고 어딘가는 두 번 난다.
     /// 실패(가득 참)에는 소리가 없다 — 들어가지 않은 것을 들어간 것처럼 들려주면 안 된다.
+    ///
+    /// silent: 호출처가 같은 순간 자기 소리를 내는 경우(손 채굴의 Mine음 등) 획득음을 건너뛴다 —
+    /// 같은 프레임에 같은 AudioSource로 두 소리를 겹치면 파형이 합산돼 찢어진 소리가 난다.
     /// </summary>
-    public bool AddItemToPlayer(ItemDataSO item, int amount)
+    public bool AddItemToPlayer(ItemDataSO item, int amount, bool silent = false)
     {
         if (item == null || amount <= 0) return false;
 
@@ -92,7 +95,7 @@ public class PlayerInventoryHolder : MonoBehaviour
         if (!HotbarContainer.TryAdd(item, amount) && !MainContainer.TryAdd(item, amount))
             return false;
 
-        if (!silentAdd && !SaveLoadContext.IsRestoring)
+        if (!silent && !silentAdd && !SaveLoadContext.IsRestoring)
             SoundManager.Instance?.PlayCommonSFX(CommonSFX.ItemPickup);
 
         return true;

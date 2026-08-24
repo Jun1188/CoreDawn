@@ -69,7 +69,10 @@ public static class HostileIntentProbe
             Monster boss = members[i];
 
             // 보스만, 그리고 아직 자고 있는 보스만 — 이미 깨어난 쪽은 인내심이 알아서 굴린다.
-            if (boss == null || boss.IsDead || !boss.IsBoss || boss.HasBeenAttacked) continue;
+            // 집으로 돌아가는 중인 보스도 건너뛴다: 그 복귀는 되돌릴 수 없어서
+            // Provoke가 어차피 거절하고, 아래 레이캐스트만 헛되이 쏘게 된다.
+            if (boss == null || boss.IsDead || !boss.IsBoss ||
+                boss.HasBeenAttacked || boss.IsReturningHome) continue;
 
             Vector3 center = AimPointOf(boss);
             Vector3 toBoss = center - eye;

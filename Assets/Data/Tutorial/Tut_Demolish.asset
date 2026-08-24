@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: REMOVE
   description: 
   icon: {fileID: 0}
-  order: 120
+  order: 130
   tag: REMOVE
   body: "X\uB85C \uCCA0\uAC70 \uBAA8\uB4DC\uC5D0 \uB4E4\uC5B4\uAC00 \uAC74\uBB3C\uC744
     \uBC14\uB77C\uBCF8\uB4A4 \uB9C8\uC6B0\uC2A4\uB97C \uD640\uB4DC\uD558\uBA74 \uCCA0\uAC70\uD569\uB2C8\uB2E4."

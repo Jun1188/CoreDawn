@@ -98,8 +98,9 @@ public class MonsterNest : Entity
 
     /// <summary>
     /// 감지는 경고·스폰에 쓰는 모든 반경을 덮어야 한다 — 감지가 좁으면 스폰 판정 자체가 늦는다.
-    /// 스폰 포인트는 둥지 중심에서 수십 m 떨어질 수 있으므로(맵 오프셋 최대 10칸 = 20m),
-    /// 그 거리만큼 감지를 넓혀야 포인트 근처의 플레이어를 놓치지 않는다.
+    /// 스폰 포인트는 둥지 중심에서 수십 m 떨어질 수 있으므로(현재 맵은 cellSize 4에
+    /// 오프셋 최대 9칸 = 36m), 그 거리만큼 감지를 넓혀야 포인트 근처의 플레이어를 놓치지 않는다.
+    /// 칸 크기는 씬마다 다르니 상수로 적지 말고 <see cref="MaxSpawnPointOffset"/>로 실측할 것.
     /// </summary>
     private float SensorRange => Mathf.Max(warningRange, Mathf.Max(triggerRange,
         engagementZone != null ? engagementZone.MaximumRange : daySpawnMaxRange)) + MaxSpawnPointOffset;
@@ -262,13 +263,19 @@ public class MonsterNest : Entity
         base.Awake();
         // 파괴 연출 지연시간 0, Entity의 기본 파괴 시 Destroy 방지용
         SetDeathBehavior(destroy: false, delay: 0f);
-        
-        engagementZone = GetComponent<NestEngagementZone>();
     }
 
     protected override void Start()
     {
         base.Start();
+
+        // 교전 구역은 Awake가 아니라 여기서 찾는다 — WorldPopulator는 Instantiate(→Awake 즉시
+        // 실행) <b>뒤에</b> AddComponent<NestEngagementZone>()을 하므로, Awake에서 캐시하면
+        // 그 경로에서 영원히 null로 굳는다. 그러면 보스만 zone 없이(=하드코딩 폴백 반경)
+        // 배선되고, 매번 GetComponent를 다시 하는 WaveSpawnManager를 타는 방어 몬스터는
+        // zone을 받아, 같은 둥지 안에서 규칙이 갈린다.
+        engagementZone = GetComponent<NestEngagementZone>();
+
         if (TimeManager.Instance != null && TimeManager.Instance.Cycle != null)
         {
             TimeManager.Instance.Cycle.NightStarted += OnNightStarted;
@@ -467,7 +474,7 @@ public class MonsterNest : Entity
             spawnPoint.point.rotation, transform);
         SnapBossToGround(go);
         spawnPoint.linkedBoss = go.GetComponent<Monster>();
-        spawnPoint.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        spawnPoint.linkedBoss?.SetAsBoss(engagementZone);
         if (spawnPoint.linkedBoss != null && spawnPoint.bossMaxHp > 0f)
             spawnPoint.linkedBoss.Health.SetMaxHealth(spawnPoint.bossMaxHp);
         Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
@@ -627,7 +634,7 @@ public class MonsterNest : Entity
         // 평시 스폰(SpawnBossAtPoint)과 같은 계약으로 마무리한다 — 이걸 빠뜨리면 되살아난
         // 보스가 보스 취급을 받지 못하고 교전 구역에도 묶이지 않아, 불러온 게임에서만
         // 다르게 행동하게 된다. 위치만 저장값을 쓰고 나머지는 평시와 동일하다.
-        sp.linkedBoss?.SetAsBoss(transform.position, engagementZone);
+        sp.linkedBoss?.SetAsBoss(engagementZone);
         // 포인트별 보스 HP도 평시 스폰과 같게 맞춘다 — 저장된 현재/최대 HP는
         // 세이브 모듈이 이 뒤에 덮어쓰므로 순서상 안전하다.
         if (sp.linkedBoss != null && sp.bossMaxHp > 0f)

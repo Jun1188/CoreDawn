@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: SURVIVE
   description: 
   icon: {fileID: 0}
-  order: 140
+  order: 150
   tag: SURVIVE
   body: "\uCCAB \uBC24\uC744 \uB118\uACBC\uC2B5\uB2C8\uB2E4.\n\uC774\uC81C \uB77C\uC778\uC744
     \uB113\uD788\uACE0 \uCF54\uC5B4\uB97C \uB354 \uD0A4\uC6B0\uC138\uC694."

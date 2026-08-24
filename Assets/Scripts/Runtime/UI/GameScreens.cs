@@ -34,6 +34,13 @@ public static class GameScreens
         Missing("코어 화면");
     }
 
+    /// <summary>월드 맵 오버레이 (M키) — 지형·배치물 위에 플레이어 위치를 실시간으로 찍는다.</summary>
+    public static void OpenWorldMap()
+    {
+        if (WorldMapPanelView.TryOpen()) return;
+        Missing("맵");
+    }
+
     /// <summary>게임오버 — 코어가 파괴됐을 때. 닫을 수 없는 창이라 여는 쪽만 있다.</summary>
     public static void OpenGameOver()
     {

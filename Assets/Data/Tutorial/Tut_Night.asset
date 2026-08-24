@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: NIGHT
   description: 
   icon: {fileID: 0}
-  order: 130
+  order: 140
   tag: NIGHT
   body: "\uBC24\uC774 \uC624\uBA74 \uAD34\uC218\uAC00 \uCF54\uC5B4\uB85C \uBAB0\uB824\uC635\uB2C8\uB2E4.\n\uB0AE
     \uB3D9\uC548 \uD0C0\uC6CC\uB97C \uC138\uC6CC \uB450\uC138\uC694. \uCF54\uC5B4\uAC00

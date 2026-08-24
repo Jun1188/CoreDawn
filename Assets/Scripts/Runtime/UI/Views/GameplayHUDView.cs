@@ -502,7 +502,7 @@ public class GameplayHUDView : MonoBehaviour
         string prompt = interaction.Current?.Prompt;
         bool show = !string.IsNullOrEmpty(prompt) && !UIPopup.AnyOpen;
         Show(interactPrompt, show);
-        if (show) interactPrompt.text = $"[E] {prompt}";
+        if (show) interactPrompt.text = $"[F] {prompt}";
     }
 
     // ───────────────────── 크로스헤어 진행 링 ─────────────────────

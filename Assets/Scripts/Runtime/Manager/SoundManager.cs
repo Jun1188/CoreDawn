@@ -95,7 +95,10 @@ public class SoundManager : MonoBehaviour
 
     // 저장된 볼륨이 믹서에 자리 잡았다고 볼 조건 — 근거는 Co_ApplySavedVolumes 참고
     private const int VOLUME_SETTLED_FRAMES = 5;      // 연속 몇 프레임 그대로 남아야 하는가
-    private const float VOLUME_APPLY_TIMEOUT = 2f;    // 그때까지 못 잡으면 포기하고 경고 (초)
+    private const int VOLUME_APPLY_MAX_FRAMES = 300;  // 그때까지 못 잡으면 포기하고 경고 (프레임)
+
+    // 믹서에 노출해 둔 볼륨 파라미터 — 이름이 하나라도 어긋나면 저장된 볼륨이 통째로 무시된다
+    private static readonly string[] VolumeParameters = { "MasterVolume", "BGMVolume", "SFXVolume" };
 
     // BGM 크로스페이드용
     private AudioSource activeBgmSource;
@@ -141,14 +144,19 @@ public class SoundManager : MonoBehaviour
     /// SetFloat의 반환값은 믿을 수 없다 — 덮어쓰기는 그 뒤에 오므로 true를 받아도 남지 않는다.
     /// 그래서 GetFloat으로 되읽어, 넣은 값이 <see cref="VOLUME_SETTLED_FRAMES"/>프레임 연속으로
     /// 그대로 남아 있을 때만 자리 잡은 것으로 본다.
+    ///
+    /// 포기 기준은 초가 아니라 프레임이다 — 예전엔 2초를 재다가, 값은 첫 프레임부터 멀쩡히
+    /// 들어가 있는데도 "믹서에 반영되지 않았습니다" 경고가 매 실행마다 떴다. 맵·플로우필드를
+    /// 굽는 초반 몇 초는 한 프레임이 0.5초를 넘어서, 2초 안에 셀 프레임이 5개가 안 됐기 때문이다.
+    /// 세는 단위가 프레임이니 재는 단위도 프레임이어야 한다.
     /// </summary>
     private IEnumerator Co_ApplySavedVolumes()
     {
         AudioSettingsData settings = AudioSaveSystem.LoadSettings();
-        float deadline = Time.realtimeSinceStartup + VOLUME_APPLY_TIMEOUT;
         int settled = 0;
+        int frames = 0;
 
-        while (settled < VOLUME_SETTLED_FRAMES && Time.realtimeSinceStartup < deadline)
+        while (settled < VOLUME_SETTLED_FRAMES && frames < VOLUME_APPLY_MAX_FRAMES)
         {
             SetMasterVolume(settings.masterVolume);
             SetBGMVolume(settings.bgmVolume);
@@ -160,14 +168,37 @@ public class SoundManager : MonoBehaviour
                     ? settled + 1
                     : 0;   // 한 번이라도 어긋나면 처음부터 다시 센다
 
+            frames++;
             yield return null;   // 프레임 대기 — timeScale과 무관해 일시정지 중에도 진행된다
         }
 
-        if (settled < VOLUME_SETTLED_FRAMES)
+        if (settled >= VOLUME_SETTLED_FRAMES) yield break;
+
+        // 여기까지 왔으면 정말 이상한 것이니 무엇이 문제인지까지 짚어 준다.
+        // "이름을 확인하라"는 노출 파라미터가 아예 없을 때만 맞는 말이다.
+        string missing = FindMissingParameter();
+        if (missing != null)
         {
-            Debug.LogWarning("[SoundManager] 저장된 볼륨이 믹서에 반영되지 않았습니다. " +
-                             "MainMixer의 노출 파라미터 이름(MasterVolume/BGMVolume/SFXVolume)을 확인하세요.");
+            Debug.LogWarning($"[SoundManager] 저장된 볼륨을 넣을 수 없습니다 — MainMixer에 노출 파라미터 " +
+                             $"'{missing}'이(가) 없습니다. 믹서에서 해당 볼륨을 Expose 했는지 확인하세요.");
         }
+        else
+        {
+            Debug.LogWarning($"[SoundManager] 저장된 볼륨이 {VOLUME_APPLY_MAX_FRAMES}프레임 안에 자리 잡지 못했습니다. " +
+                             "다른 코드가 매 프레임 볼륨을 덮어쓰고 있는지 확인하세요.");
+        }
+    }
+
+    /// <summary>믹서에 없는 노출 파라미터 이름 — 전부 있으면 null. 믹서 자체가 없으면 그 사실을 돌려준다.</summary>
+    private string FindMissingParameter()
+    {
+        if (audioMixer == null) return "(AudioMixer 미할당)";
+
+        foreach (string parameterName in VolumeParameters)
+        {
+            if (!audioMixer.GetFloat(parameterName, out _)) return parameterName;
+        }
+        return null;
     }
 
     /// <summary>믹서에 실제로 그 볼륨이 들어가 있는가 — SetFloat의 반환값만으로는 알 수 없다.</summary>

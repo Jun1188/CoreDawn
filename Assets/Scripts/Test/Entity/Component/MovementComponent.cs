@@ -31,6 +31,10 @@ public class MovementComponent
     private Vector3 flowDirection; // 방향 이동 모드 (플로우필드)
 
     public bool IsMoving => (currentPath != null && currentPath.Count > 0) || flowDirection != Vector3.zero;
+
+    /// <summary>지금 따라갈 경로를 들고 있는가 — 경로가 끝났는지 밖에서 판단할 때 쓴다.</summary>
+    public bool HasPath => currentPath != null && currentPath.Count > 0;
+
     public float MoveSpeed => moveSpeed;
 
     /// <summary>
@@ -203,9 +207,20 @@ public class MovementComponent
 
     private Vector3 knockback; // 현재 넉백 속도 (지수 감쇠)
 
+    /// <summary>
+    /// 넉백을 받지 않는가. 교전을 포기하고 자기 자리로 돌아가는 개체가 켠다.
+    ///
+    /// 그 복귀는 되돌릴 수 없다고 정해 놓고 몸만 밀리면, 총알에 떠밀려 집에 영영 못 간다 —
+    /// 총기 넉백은 데미지당 0.2m라 25 데미지 한 발이 5m를 민다(실측: 네 발에 집에서 11m
+    /// 더 멀어졌다). 걸어서 좁히는 속도보다 밀리는 쪽이 빨라서, 쏘는 동안 복귀가 뒤로 간다.
+    /// </summary>
+    public bool IgnoreKnockback { get; set; }
+
     /// <summary>지정 방향으로 총 distance만큼 밀려나게 한다 (감쇠 적분값이 distance가 되도록 초기 속도를 잡는다).</summary>
     public void AddKnockback(Vector3 direction, float distance)
     {
+        if (IgnoreKnockback) return;
+
         direction.y = 0f;
         if (direction.sqrMagnitude < 0.0001f || distance <= 0f) return;
         // 지수 감쇠의 총 이동량 = v0 / 감쇠율 → v0 = 거리 × 감쇠율
