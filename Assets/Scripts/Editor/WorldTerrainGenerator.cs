@@ -1169,22 +1169,22 @@ public static class WorldTerrainGenerator
             // 골랐으므로 이 값이 두 축 배율 모두에 가깝고, 남는 여유가 작다.
             float u = Mathf.Min(sAlong, sAcross);
 
-            // <b>필요한 곳에서만 누른다.</b> roundness 를 전역 상수로 두면 두 극단뿐이다 —
-            // 높으면 11종의 실루엣이 전부 정육면체가 되고, 낮으면 프리팹 비율(최대 1.56)을
-            // 넘는 슬롯을 채우지 못해 얇은 벽이 빈다.
+            // roundness 는 <b>설정값 그대로</b> 쓴다.
             //
-            // 그래서 프리팹 비율이 슬롯 비율을 못 따라가는 <b>그만큼만</b> 누른다.
-            // 두꺼운 벽에서는 둘이 비슷해 round 가 설정값 그대로 낮게 유지되고(실루엣 보존),
-            // 얇은 벽에서만 눌러 길게 눕는다 — 거기서는 구멍이 나느니 눌리는 편이 낫다.
-            float need = 1f - rock.FootAspect / Mathf.Max(1f, aspectWant);
-            float round = Mathf.Clamp01(Mathf.Max(S.cliffRoundness, need));
+            // 한때 "프리팹 비율이 슬롯을 못 따라가는 만큼 국소적으로 눌러 메우자"고 했다가
+            // 되돌렸다. 얇은 벽에서 슬롯 비율이 6까지 요구되니 round 가 0.8 까지 올라가
+            // 설정의 0.3 이 무시됐고, 바위가 전부 <b>납작한 판</b>으로 눌려 층층이 쌓였다.
+            // 원본 비율을 살리려고 roundness 를 낮춘 것인데 그 장치가 스스로를 무효화했다.
+            //
+            // 못 채우면 슬롯을 비워 둔다. 눌러서 메우지 않는다.
+            float round = Mathf.Clamp01(S.cliffRoundness);
 
             float scaleAlong = Mathf.Min(Mathf.Lerp(u, sAlong, round), S.cliffMaxScale);
             float scaleAcross = Mathf.Min(Mathf.Lerp(u, sAcross, round), S.cliffMaxScale);
-            // 높이는 <b>단축</b> 기준이다. 장축에 맞추면 벽을 따라 길게 뻗은 바위가 그만큼
-            // 높아져 얇은 벽 위에 탑이 선다.
-            float scaleY = Mathf.Min(Mathf.Lerp(u, 2f * acrossFit / rock.Height, round),
-                                     S.cliffMaxScale) * stretch;
+            // 높이는 <b>프리팹 원본 비율</b>(u)에서 가져온다. 예전에는 단축(acrossFit)에
+            // 맞췄는데, round 가 높을 때 그 항이 이겨서 길고·얇고·낮은 팬케이크가 됐다.
+            // 너무 높아지는 것은 아래의 세장비·절대 높이 상한이 따로 막는다.
+            float scaleY = Mathf.Min(u, S.cliffMaxScale) * stretch;
 
             float scaleX = longIsX ? scaleAlong : scaleAcross;
             float scaleZ = longIsX ? scaleAcross : scaleAlong;
@@ -1361,7 +1361,11 @@ public static class WorldTerrainGenerator
                     float f = Mathf.Clamp01((Mathf.Repeat(arc, total) - cum[seg]) / segLen);
                     Vector2 onEdge = Vector2.Lerp(a0v, b0v, f);
 
-                    Vector2 tan = LoopTangent(loop, seg, 3);
+                    // 스팬을 넓게 — 마칭스퀘어 폴리라인은 1m 계단이라 ±3m 로는 그 계단을
+                    // 그대로 탄다. 실측: 구조 텐서를 쓰던 때 10.9도였던 이웃 장축 정렬이
+                    // 폴리라인 접선으로 바꾼 뒤 25.8도로 나빠졌다(지터 기여분 12도를 빼면
+                    // strike 자체가 22도 흔들린다는 뜻).
+                    Vector2 tan = LoopTangent(loop, seg, 10);
                     if (tan.sqrMagnitude < 1e-6f) tan = (b0v - a0v).normalized;
 
                     Vector2 nrm = new Vector2(-tan.y, tan.x);

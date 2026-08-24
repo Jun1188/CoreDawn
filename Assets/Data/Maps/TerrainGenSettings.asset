@@ -75,7 +75,7 @@ MonoBehaviour:
   - {fileID: 1418860561918544383, guid: 35de57031ce1e7b4f92690d555077e80, type: 3}
   - {fileID: 5389395240314065769, guid: 54c53036c73c3e84ca29b6911adf5fd8, type: 3}
   - {fileID: 2010085120437849477, guid: 4828afd64a3dd424393c97dfacfc7aa3, type: 3}
-  cliffMinRadius: 3
+  cliffMinRadius: 4
   cliffMaxRadius: 12
   cliffYawJitter: 26
   cliffPackSpacing: 0.42
@@ -104,7 +104,7 @@ MonoBehaviour:
   cliffBackingInset: -1
   cliffBackingDrop: 1.2
   cliffMinThicknessM: 0.4
-  cliffThinAspectMax: 4
+  cliffThinAspectMax: 1.5
   cliffRowSeparation: 1.5
   cliffTalusBandM: 1.2
   cliffTalusDensity: 0.6
