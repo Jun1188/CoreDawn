@@ -118,6 +118,7 @@ public static class GameDataImporter
         public string description;
         public string type;          // ItemType 이름 — 용도 축 (Ore/Ingot/Part/RepairPart/Ammo/Weapon/...)
         public string line;          // ItemLine 이름 — 계통 축 (Iron/Copper/Crystal/Beast). 생략 시 기존 값 유지
+        public int    maxStack;      // 한 슬롯 최대 개수. 0 = 생략(기존 값 유지) — 무기·설치물은 1
         public string icon;          // 스프라이트 이름 — 아틀라스 안에서 어느 스프라이트인지 고르는 열쇠이기도 하다
         public string iconGuid;      // 스프라이트를 담은 에셋의 guid — 이쪽이 파일을 특정한다
         public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
@@ -157,6 +158,7 @@ public static class GameDataImporter
         public Vec2Dto size;
         public PortDto[] ports;
         public int   inputSlots, outputSlots, bufferStackCap, requiredCoreTier, maxHp;
+        public int   menuOrder;      // 같은 티어 안 표시 순서 (공정 단계). 건설 메뉴 정렬용
         public bool  hideFromBuildMenu;
         // SO 기본값과 같은 초기값을 준다 — json에서 빠진 건물이 철거 불가로 죽지 않게.
         // JsonUtility는 없는 필드를 0으로 밀지 않고 생성자 초기값을 남긴다
@@ -557,6 +559,7 @@ public static class GameDataImporter
         item.displayName = dto.displayName;
         item.description = dto.description ?? "";
         if (hasType) item.type = type;
+        if (dto.maxStack > 0) item.maxStack = dto.maxStack;
 
         if (!string.IsNullOrEmpty(dto.line))
         {
@@ -731,6 +734,7 @@ public static class GameDataImporter
         so.bufferStackCap    = dto.bufferStackCap;
         so.requiredCoreTier  = dto.requiredCoreTier;
         so.hideFromBuildMenu = dto.hideFromBuildMenu;
+        so.menuOrder         = dto.menuOrder;
         if (dto.maxHp > 0) so.maxHp = dto.maxHp;
         so.isDemolishable = dto.isDemolishable;
         so.isAttackable   = dto.isAttackable;
