@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: LOGISTICS
   description: 
   icon: {fileID: 0}
-  order: 100
+  order: 110
   tag: LOGISTICS
   body: "\uBCA8\uD2B8\uB97C \uC774\uC5B4 \uAE54\uC544 \uCD9C\uAD6C\uC640 \uC785\uAD6C\uB97C
     \uC5F0\uACB0\uD558\uBA74 \uC790\uC6D0\uC774 \uC800\uC808\uB85C \uD750\uB985\uB2C8\uB2E4."

@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: CORNER
   description: 
   icon: {fileID: 0}
-  order: 110
+  order: 120
   tag: CORNER
   body: "\uBCA8\uD2B8\uB97C \uB4E0 \uCC44 T\uB97C \uB204\uB974\uBA74 \uC9C1\uC120
     \xB7 \uC88C\uCEE4\uBE0C \xB7 \uC6B0\uCEE4\uBE0C\uB85C \uBC14\uB01D\uB2C8\uB2E4.\n\uBAA8\uD241\uC774\uB97C

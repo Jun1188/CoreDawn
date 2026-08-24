@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 977204b90bc8bc74eb7e4e17652513e9, type: 3}
   m_Name: Tut_Move2
   m_EditorClassIdentifier: Assembly-CSharp::TutorialStepSO
-  id: Tutorial:Move1
+  id: Tutorial:Move2
   displayName: MOVE 1
   description: 
   icon: {fileID: 0}
