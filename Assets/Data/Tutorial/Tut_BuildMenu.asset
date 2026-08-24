@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: BUILD
   description: 
   icon: {fileID: 0}
-  order: 80
+  order: 90
   tag: BUILD
   body: "B \uD0A4\uB85C \uAC74\uC124 \uBA54\uB274\uB97C \uC5FD\uB2C8\uB2E4.\n\uBC24\uC5D0\uB294
     \uAC74\uC124\uD560 \uC218 \uC5C6\uC73C\uB2C8 \uB0AE\uC5D0 \uC9C0\uC73C\uC138\uC694."

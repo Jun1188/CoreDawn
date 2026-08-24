@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: EQUIP
   description: 
   icon: {fileID: 0}
-  order: 70
+  order: 80
   tag: EQUIP
   body: "\uB9CC\uB4E0 \uBB34\uAE30\uB97C \uD56B\uBC14 \uCE78\uC5D0 \uB123\uACE0 \uC22B\uC790\uD0A4\uB85C
     \uACE0\uB974\uBA74 \uC190\uC5D0 \uB4E4\uB9BD\uB2C8\uB2E4."
