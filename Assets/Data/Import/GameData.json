@@ -749,6 +749,7 @@
       "type": "Ammo",
       "line": "Iron",
       "icon": "",
+      "iconGuid": "",
       "attackEffects": [
         {
           "effect": "Effect:Damage",
@@ -1356,6 +1357,8 @@
       "requiredCoreTier": 1,
       "maxHp": 150,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1384,6 +1387,7 @@
       "description": "두 배 빠르게 캔다. 광맥이 감당하는 만큼만 나온다.",
       "category": "Production",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -1402,6 +1406,8 @@
       "requiredCoreTier": 2,
       "maxHp": 220,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1459,6 +1465,8 @@
       "requiredCoreTier": 1,
       "maxHp": 180,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1517,6 +1525,8 @@
       "requiredCoreTier": 1,
       "maxHp": 180,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1552,6 +1562,7 @@
       "description": "부품 두 종을 합쳐 조립 부품을 만든다.",
       "category": "Production",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -1582,6 +1593,8 @@
       "requiredCoreTier": 2,
       "maxHp": 250,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1628,6 +1641,7 @@
       "description": "부품 네 종을 한 번에 조립한다. 동력 모듈 전용.",
       "category": "Production",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -1670,6 +1684,8 @@
       "requiredCoreTier": 3,
       "maxHp": 320,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:HullPanel",
@@ -1711,6 +1727,7 @@
       "description": "벨트 없이 다른 스테이션으로 물건을 실어 나른다. 멀리 떨어진 광맥을 잇는 용도.",
       "category": "Logistics",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -1735,6 +1752,8 @@
       "requiredCoreTier": 3,
       "maxHp": 260,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -1791,6 +1810,8 @@
       "requiredCoreTier": 1,
       "maxHp": 60,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1804,8 +1825,8 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 1.0,
       "modelCurveL": "Conveyor_L.fbx",
-      "modelCurveLGuid": "e4dd130d39a2f394ca180cbeada7fba2",
       "modelCurveR": "Conveyor_R.fbx",
+      "modelCurveLGuid": "e4dd130d39a2f394ca180cbeada7fba2",
       "modelCurveRGuid": "441ae0e8dfa059c4cbf87444217d14f3",
       "damageMultiplier": 0.0,
       "range": 0.0,
@@ -1823,6 +1844,7 @@
       "description": "두 배 빠른 벨트.",
       "category": "Logistics",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -1847,6 +1869,8 @@
       "requiredCoreTier": 2,
       "maxHp": 60,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1875,6 +1899,7 @@
       "description": "입력 하나를 여러 출구로 나눈다. 출구별 필터를 걸 수 있다.",
       "category": "Logistics",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -1911,6 +1936,8 @@
       "requiredCoreTier": 1,
       "maxHp": 80,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1939,6 +1966,7 @@
       "description": "여러 입력을 하나로 모은다.",
       "category": "Logistics",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -1975,6 +2003,8 @@
       "requiredCoreTier": 1,
       "maxHp": 80,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2003,6 +2033,7 @@
       "description": "아이템을 보관한다. 어느 면이든 왼쪽으로 받고 오른쪽으로 내보낸다.",
       "category": "Storage",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -2063,6 +2094,8 @@
       "requiredCoreTier": 1,
       "maxHp": 300,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2177,6 +2210,7 @@
       "maxHp": 1000,
       "hideFromBuildMenu": true,
       "isDemolishable": false,
+      "isAttackable": false,
       "buildCost": [],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
@@ -2296,6 +2330,7 @@
       "description": "몬스터의 진로를 막아 동선을 유도한다. 공격하지 않는다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -2307,6 +2342,8 @@
       "requiredCoreTier": 1,
       "maxHp": 250,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2332,6 +2369,7 @@
       "description": "밟으면 터진다. 건설 비용의 유탄이 그대로 폭약이며 한 번 쓰면 사라진다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -2343,6 +2381,8 @@
       "requiredCoreTier": 2,
       "maxHp": 10,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:Grenade",
@@ -2370,6 +2410,7 @@
       "description": "기본 탄약을 소비해 사격한다. 벨트로 보급할 수 있다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -2388,6 +2429,8 @@
       "requiredCoreTier": 1,
       "maxHp": 200,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2421,6 +2464,7 @@
       "description": "고밀도 탄약을 쓰는 연사 포탑.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -2439,6 +2483,8 @@
       "requiredCoreTier": 2,
       "maxHp": 320,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2475,6 +2521,7 @@
       "description": "유탄을 곡사로 날려 범위 피해를 준다. 근접한 적은 때리지 못한다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -2493,6 +2540,8 @@
       "requiredCoreTier": 2,
       "maxHp": 300,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2528,6 +2577,7 @@
       "description": "에너지 셀 탄을 소비해 관통 사격한다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 2,
         "y": 2
@@ -2546,6 +2596,8 @@
       "requiredCoreTier": 3,
       "maxHp": 280,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -2581,6 +2633,7 @@
       "description": "범위 안의 몬스터를 느리게 만든다. 5초마다 에너지 셀 1개를 태운다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -2599,6 +2652,8 @@
       "requiredCoreTier": 3,
       "maxHp": 180,
       "hideFromBuildMenu": false,
+      "isDemolishable": true,
+      "isAttackable": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -2630,6 +2685,7 @@
       "description": "맵이 세우는 괴수의 둥지. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형·전투·스폰은 World의 둥지 프리픥(MonsterNest)이 담당한다.",
       "category": "Defense",
       "model": "",
+      "modelGuid": "",
       "size": {
         "x": 1,
         "y": 1
@@ -2643,7 +2699,50 @@
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": true,
-      "buildCost": []
+      "buildCost": [],
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
+    },
+    {
+      "id": "Building:Tree",
+      "kind": "Tree",
+      "displayName": "나무",
+      "description": "지형이 놓아둔 나무. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형은 TreeGenSettings 의 Tree Set 이 정하고, 자리는 WorldTreePlanter 가 흔릿는다.",
+      "category": "Production",
+      "model": "",
+      "modelGuid": "",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "ports": [],
+      "inputSlots": 0,
+      "outputSlots": 0,
+      "bufferStackCap": 0,
+      "requiredCoreTier": 0,
+      "maxHp": 120,
+      "hideFromBuildMenu": true,
+      "isDemolishable": false,
+      "isAttackable": true,
+      "buildCost": [],
+      "speedMultiplier": 0.0,
+      "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
+      "range": 0.0,
+      "fireRate": 0.0,
+      "minRange": -1.0,
+      "muzzleHeight": -1.0,
+      "preferHighArc": false,
+      "turnSpeed": -1.0,
+      "aimTolerance": -1.0
     }
   ],
   "waves": [

@@ -224,6 +224,7 @@ public static class GameDataImporter
         ["Core"]      = typeof(CoreDataSO),
         ["Tower"]     = typeof(TowerDataSO),
         ["Nest"]      = typeof(NestDataSO),
+        ["Tree"]      = typeof(TreeDataSO),
     };
 
     /// <summary>
@@ -927,10 +928,11 @@ public static class GameDataImporter
     /// </summary>
     static GameObject EnsurePrefab(BuildingDataSO so, BuildingDto dto)
     {
-        // 둥지는 프리팹을 만들지 않는다 — 씬의 둥지는 World.nestPrefab(MonsterNest)이고,
-        // 여기서 만들면 BuildingEntity가 붙은 빈 껍데기가 하나 더 생긴다.
-        // 둥지 데이터가 실제로 쓰는 값은 크기와 파괴 규칙뿐이다.
-        if (so is NestDataSO) return so.prefab;
+        // 둥지·나무는 프리팹을 만들지 않는다 — 씬의 실물은 각자 다른 곳에서 온다
+        // (둥지 = World.nestPrefab, 나무 = TreeGenSettings.treeSet). 여기서 만들면
+        // BuildingEntity가 붙은 빈 껍데기가 하나 더 생긴다.
+        // 이 데이터들이 실제로 쓰는 값은 크기와 파괴 규칙뿐이다.
+        if (so is NestDataSO or TreeDataSO) return so.prefab;
 
         string path = $"{PrefabFolder}/{so.name}.prefab";
         bool isTower = string.Equals(dto.kind, "Tower", StringComparison.OrdinalIgnoreCase);

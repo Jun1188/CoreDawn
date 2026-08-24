@@ -84,6 +84,7 @@ class GdBuildingTab : GdTab
         new("Core",      "코어",         "Production", "tiers"),
         new("Tower",     "방어 타워",    "Defense",    "damageMultiplier", "range", "fireRate", "ammoFilter"),
         new("Nest",      "몬스터 둥지",   "Defense"),
+        new("Tree",      "나무",         "Production"),
     };
     static readonly (string v, string ko)[] Categories =
     { ("Production", "생산"), ("Logistics", "물류"), ("Storage", "저장"), ("Defense", "방어") };

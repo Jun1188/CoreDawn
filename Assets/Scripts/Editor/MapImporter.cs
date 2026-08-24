@@ -37,6 +37,9 @@ public static class MapImporter
 
         /// <summary>밤 웨이브 진입로 — 둥지의 스폰 지점과 별개다(낮의 보스 자리가 밤의 대문이 되면 안 된다).</summary>
         public CellDto[] nightSpawnPoints;
+
+        /// <summary>나무가 선 칸들 — 맵 에디터의 나무 도구가 찍고, 런타임이 그 자리에 세운다.</summary>
+        public CellDto[] trees;
     }
 
     [Serializable] internal class CellDto : GameDataImporter.JsonDtoBase { public int x, y; }
@@ -148,6 +151,7 @@ public static class MapImporter
         map.nodes = ResolveNodes(dto, byId, ref errors);
         map.nests = ResolveNests(dto);
         map.nightSpawnPoints = ResolveNightSpawns(dto);
+        map.trees = ResolveCells(dto.trees);
 
         EditorUtility.SetDirty(map);
         if (isNew) created++; else updated++;
@@ -219,12 +223,15 @@ public static class MapImporter
     }
 
     /// <summary>밤 웨이브 진입로. 맵 밖이나 통행 불가 칸은 버린다 — 거기서 나오면 즉시 갇힌다.</summary>
-    static Vector2Int[] ResolveNightSpawns(MapDto dto)
-    {
-        if (dto.nightSpawnPoints == null) return Array.Empty<Vector2Int>();
+    static Vector2Int[] ResolveNightSpawns(MapDto dto) => ResolveCells(dto.nightSpawnPoints);
 
-        var list = new List<Vector2Int>(dto.nightSpawnPoints.Length);
-        foreach (var p in dto.nightSpawnPoints)
+    /// <summary>칸 목록을 그대로 옮긴다. 빠진 항목(null)만 걸러낸다.</summary>
+    static Vector2Int[] ResolveCells(CellDto[] cells)
+    {
+        if (cells == null) return Array.Empty<Vector2Int>();
+
+        var list = new List<Vector2Int>(cells.Length);
+        foreach (var p in cells)
         {
             if (p == null) continue;
             list.Add(new Vector2Int(p.x, p.y));

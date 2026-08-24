@@ -34,9 +34,12 @@ public static class WorldPopulator
         int nests = PlaceNests(world, root);
         int startingDrops = PlaceStartingDrops(world, root);
         var provider = PlaceNightSpawns(world, root, battleRoot);
+        // 나무는 광맥·둥지 다음에 세운다 — 겹친 나무가 그것들을 밀어내면 안 된다.
+        int trees = PlaceTrees(world, root);
 
         Debug.Log($"[WorldPopulator] '{world.Map.Id}' 배치 — 광맥 {nodes} · 둥지 {nests} · " +
-                  $"시작 아이템 {startingDrops} · 밤 진입로 {(provider != null ? provider.SpawnPoints.Count : 0)}", world);
+                  $"시작 아이템 {startingDrops} · 밤 진입로 {(provider != null ? provider.SpawnPoints.Count : 0)} · " +
+                  $"나무 {trees}", world);
         return provider;
     }
 
@@ -229,13 +232,16 @@ public static class WorldPopulator
     /// 둥지 데이터(NestDataSO) — BuildingDatabase에서 찾는다. 코어를 찾는 방식과 같은 규칙이라
     /// 씬 배선이 늘지 않는다. 없으면 칸 점유만 건너뛰고 둥지 자체는 그대로 선다.
     /// </summary>
-    static NestDataSO FindNestData()
+    static NestDataSO FindNestData() => FindBuildingData<NestDataSO>();
+
+    /// <summary>이 타입의 건물 데이터를 BuildingDatabase에서 찾는다 — 코어를 찾는 방식과 같은 규칙.</summary>
+    static T FindBuildingData<T>() where T : BuildingDataSO
     {
         var db = BuildingDatabaseSO.LoadDefault();
         if (db == null || db.buildings == null) return null;
 
         foreach (var b in db.buildings)
-            if (b is NestDataSO nest) return nest;
+            if (b is T typed) return typed;
         return null;
     }
 
@@ -254,31 +260,142 @@ public static class WorldPopulator
     /// 실제 모형은 그보다 크다. 3×3이면 cell을 중심으로 한 칸씩 번진다.
     /// </summary>
     static void ClaimNestCells(NestDataSO nestData, Vector2Int cell, GameObject nestGo)
+        => ClaimCells(nestData, cell, nestGo, "둥지", warnOnOccupied: true);
+
+    /// <summary>
+    /// 이 데이터의 풋프린트만큼 팩토리 그리드에 칸을 잡는다. 성공하면 true.
+    ///
+    /// 풋프린트는 주어진 칸을 <b>가운데</b>에 둔다 — 맵도 심는 쪽도 대상을 한 점(cell)으로
+    /// 적는데 실제 모형은 그보다 클 수 있다. 3×3이면 cell을 중심으로 한 칸씩 번진다.
+    ///
+    /// 겹침을 먼저 확인하는 이유: GridIndex.Add는 덮어쓰기라, 이미 있는 건물 위에 놓으면
+    /// 그 건물이 칸을 잃고도 살아 있는 유령이 된다.
+    ///
+    /// warnOnOccupied — 둥지는 맵이 손으로 찍은 자리라 겹치면 사람이 고쳐야 할 실수지만,
+    /// 나무는 수백 그루를 자동으로 심으므로 겹친 그루는 조용히 건너뛰고 총계만 보고한다.
+    /// </summary>
+    static bool ClaimCells(BuildingDataSO data, Vector2Int cell, GameObject owner,
+                           string label, bool warnOnOccupied)
     {
-        if (nestData == null) return;
+        if (data == null) return false;
 
         var boot = FactoryBootstrap.Instance;
         if (boot == null || boot.Sim == null)
         {
-            Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 둥지 칸을 잡지 못했습니다 — " +
-                             "둥지 위에 건물이 올라갈 수 있습니다.", nestGo);
-            return;
+            Debug.LogWarning($"[WorldPopulator] FactorySim이 아직 없어 {label} 칸을 잡지 못했습니다 — " +
+                             $"{label} 위에 건물이 올라갈 수 있습니다.", owner);
+            return false;
         }
 
-        var size = nestData.size;
+        var size = data.size;
         var origin = cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
 
-        // 겹치면 심이 예외를 던지거나 기존 건물을 덮어쓸 수 있다 — 먼저 확인하고 경고로 남긴다.
         for (int dx = 0; dx < size.x; dx++)
             for (int dy = 0; dy < size.y; dy++)
                 if (boot.Sim.Grid.IsOccupied(origin + new Vector2Int(dx, dy)))
                 {
-                    Debug.LogWarning($"[WorldPopulator] 둥지 {cell} 의 칸 {origin + new Vector2Int(dx, dy)} " +
-                                     "가 이미 점유되어 있어 칸을 잡지 못했습니다 — 맵에서 둥지를 옮기세요.", nestGo);
-                    return;
+                    if (warnOnOccupied)
+                        Debug.LogWarning($"[WorldPopulator] {label} {cell} 의 칸 " +
+                            $"{origin + new Vector2Int(dx, dy)} 가 이미 점유되어 있어 칸을 잡지 못했습니다 — " +
+                            "맵에서 옮기세요.", owner);
+                    return false;
                 }
 
-        boot.Sim.Place(nestData, origin, 0);
+        boot.Sim.Place(data, origin, 0);
+        return true;
+    }
+
+    // ── 나무 ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 맵이 적어 둔 칸에 나무를 세우고 팩토리 그리드에 그 칸을 잡는다.
+    ///
+    /// 나무가 건물인 이유는 <b>칸을 막아야</b> 하기 때문이다 — 건설 판정은 그리드 점유만 보므로,
+    /// 그리드에 들어가지 않은 나무 위에는 벨트도 포탑도 그대로 올라간다.
+    ///
+    /// 뷰(BuildingEntity)는 붙이지 않는다. 나무는 수백 그루가 깔리는데 그루마다 붙이면 전부
+    /// BuildingEntity.All 에 들어가, 플로우필드의 시드 수집과 몬스터의 사거리 검색이 매번 그
+    /// 목록을 훑는다. 지금 나무에 필요한 것은 "칸을 막는다"뿐이다.
+    ///
+    /// 모형·크기·각도는 칸 좌표에서 결정론적으로 뽑는다 — 맵에 그루별로 적어 두면 수백 줄이
+    /// 늘어나는데 그 값들은 사람이 고칠 것이 아니고, 해시로 뽑으면 같은 맵은 언제나 같은 숲이 된다.
+    /// </summary>
+    static int PlaceTrees(World world, Transform root)
+    {
+        var map = world.Map;
+        if (map.trees == null || map.trees.Length == 0) return 0;
+
+        var prefabs = new List<GameObject>();
+        foreach (var p in world.TreePrefabs) if (p != null) prefabs.Add(p);
+        if (prefabs.Count == 0)
+        {
+            Debug.LogWarning($"[WorldPopulator] 나무 프리팹이 World에 배선되지 않아 나무 {map.trees.Length}그루를 " +
+                             "세우지 못했습니다.", world);
+            return 0;
+        }
+
+        var treeData = FindBuildingData<TreeDataSO>();
+        if (treeData == null)
+            Debug.LogWarning("[WorldPopulator] TreeDataSO를 BuildingDatabase에서 찾지 못했습니다 — " +
+                             "나무를 세우되 칸은 잡지 못해 그 위에 건물이 올라갑니다.", world);
+
+        var treeRoot = new GameObject("Trees").transform;
+        treeRoot.SetParent(root, false);
+
+        int placed = 0, skipped = 0;
+        foreach (var cell in map.trees)
+        {
+            if (!map.InBounds(cell)) continue;
+
+            // 칸부터 잡는다 — 코어·광맥·둥지와 겹친 그루는 세우지도 않는다.
+            // 세워 놓고 칸만 못 잡으면 눈에는 나무가 있는데 그 위에 건물이 올라간다.
+            if (treeData != null && !ClaimCells(treeData, cell, world.gameObject, "나무", warnOnOccupied: false))
+            { skipped++; continue; }
+
+            int h = Hash(cell.x, cell.y, 41);
+            var prefab = prefabs[h % prefabs.Count];
+            float scale = Mathf.Lerp(0.85f, 1.35f, Hash(cell.x, cell.y, 43) % 1000 / 1000f);
+            float yaw = Hash(cell.x, cell.y, 47) % 3600 / 10f;
+            // 칸 중앙에서 흔든다 — 격자에 줄을 서면 숲으로 안 보인다. 차지하는 칸은 그대로다
+            float jx = (Hash(cell.x, cell.y, 23) % 1000 / 1000f - 0.5f) * 2f * 0.32f;
+            float jz = (Hash(cell.x, cell.y, 29) % 1000 / 1000f - 0.5f) * 2f * 0.32f;
+
+            Vector3 pos = world.CellToWorld(cell)
+                        + new Vector3((0.5f + jx) * world.CellSize, 0f, (0.5f + jz) * world.CellSize);
+            pos.y = GroundYAt(world, pos);
+
+            var go = Object.Instantiate(prefab, pos, Quaternion.Euler(0f, yaw, 0f), treeRoot);
+            go.transform.localScale = Vector3.one * scale;
+            go.name = $"Tree_{cell.x}_{cell.y}";
+            placed++;
+        }
+
+        if (skipped > 0)
+            Debug.Log($"[WorldPopulator] 나무 {skipped}그루는 칸이 이미 차 있어 세우지 않았습니다 " +
+                      "(코어·광맥·둥지와 겹친 자리).", world);
+        return placed;
+    }
+
+    /// <summary>
+    /// 그 자리의 지면 높이. 지형이 있으면 실제 표면을, 없으면 월드 원점 높이를 쓴다 —
+    /// 지형 없는 구성(테스트 씬)에서도 나무가 뜨거나 잠기지 않게.
+    /// </summary>
+    static float GroundYAt(World world, Vector3 pos)
+    {
+        var terrain = world.GetComponentInChildren<Terrain>(true);
+        if (terrain == null) return world.Origin.y;
+        return terrain.SampleHeight(pos) + terrain.transform.position.y;
+    }
+
+    /// <summary>위치를 잘 섞인 값으로 바꾼다 — 좌표를 곱해 더하는 식은 대각선 줄무늬를 만든다.</summary>
+    static int Hash(int x, int y, int salt)
+    {
+        unchecked
+        {
+            int h = x * 374761393 + y * 668265263 + salt * 1442695041;
+            h = (h ^ (h >> 13)) * 1274126177;
+            return (h ^ (h >> 16)) & 0x7fffffff;
+        }
     }
 
     /// <summary>

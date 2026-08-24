@@ -341,6 +341,88 @@ public class TerrainGenSettings : ScriptableObject
     [Tooltip("바위를 기울이는 각도 폭(도). 이 값의 절반이 최대 기울기다.")]
     [Range(0f, 90f)] public float cliffTilt = 44f;
 
+    [Tooltip("급한 절리 세트의 비율. 기울기를 두 종류로만 두는 것이 '지층' 느낌의 대부분이다 — " +
+             "조각들이 저마다 다른 각도로 기울면 무질서지만 두 각도로만 기울면 층리로 읽힌다. " +
+             "급한 쪽은 Cliff Tilt의 0.85배, 완만한 쪽은 0.25배를 쓴다.")]
+    [Range(0f, 1f)] public float cliffDipSteepShare = 0.3f;
+
+    [Tooltip("슬롯 장축 / 단축의 상한. 단축은 벽 두께(클리어런스)에 묶이고 장축만 접선 방향으로 " +
+             "이만큼까지 늘어난다.\n" +
+             "이것이 있어야 발자국을 정사각으로 누를 이유가 사라진다 — 얇은 벽에도 " +
+             "조약돌 대신 벽을 따라 길게 누운 바위가 들어간다.")]
+    [Range(1f, 4f)] public float cliffSlotAspect = 2.2f;
+
+    [Tooltip("한 자리에 위로 쌓아 올릴 층수. 절벽 높이는 여기서 나온다 — " +
+             "안쪽으로 줄을 놓아 봐야 보이지 않고, 절벽을 절벽으로 만드는 것은 수직면이다.\n" +
+             "Cliff Height Cells가 정한 목표 높이에 닿으면 층수가 남아도 멈춘다.")]
+    [Range(1, 10)] public int cliffCourses = 5;
+
+    [Tooltip("층마다 안쪽으로 물러나는 정도 — 그 층 반두께의 배수(안식각). " +
+             "0이면 수직 기둥, 크면 계단식으로 눕는다.")]
+    [Range(0f, 1f)] public float cliffCourseSetback = 0.22f;
+
+    [Tooltip("위 층을 아래 층 꼭대기보다 얼마나 내려 앉힐지(0~1). 이음매를 파묻는다.")]
+    [Range(0f, 0.6f)] public float cliffCourseSink = 0.18f;
+
+    [Tooltip("층마다 벽을 <b>따라</b> 어긋나는 정도 — 그 층 반두께의 배수. 0이면 모든 층이 " +
+             "같은 수직선에 포개져 돌탑이 된다. 실제 절벽은 조각이 서로 어긋나 물려 있다.")]
+    [Range(0f, 1.5f)] public float cliffCourseSway = 0.55f;
+
+    [Tooltip("뒷벽을 윤곽에서 안쪽으로 물리는 거리(m). 음수면 뒷벽을 세우지 않는다.\n" +
+             "조각 사이 틈으로 뒤가 비치는 것을 막는 불투명한 면이다 — 볼록한 덩어리를 쌓는 한 " +
+             "틈은 원리적으로 남으므로, 없애는 대신 뒤를 막아 '그늘'로 읽히게 한다.")]
+    public float cliffBackingInset = 1.6f;
+
+    [Tooltip("뒷벽을 그 자리 바위 꼭대기보다 얼마나 낮출지(m). 낮을수록 안전하지만 " +
+             "너무 낮추면 윗부분 틈이 도로 뚫린다.")]
+    public float cliffBackingDrop = 1.2f;
+
+    [Tooltip("놓을 수 있는 최소 반두께(m). 벽이 얇아도 여기까지는 놓는다 — 종이가 되지 않게 하는 바닥값일 뿐, " +
+             "'조약돌 금지'는 Cliff Min Radius가 등가 크기로 따로 건다.")]
+    public float cliffMinThicknessM = 0.4f;
+
+    [Tooltip("얇은 벽에서 길이로 벌충할 때의 장/단축 상한. 두께로 못 채우는 몫을 길이로 메워 " +
+             "'벽을 따라 누운 납작한 바위'를 만든다. 프리팹 발자국 비를 넘는 몫은 눌러서 채운다.")]
+    [Range(1f, 6f)] public float cliffThinAspectMax = 4f;
+
+    [Tooltip("벽을 가로지르는 방향의 간격 계수 — Cliff Pack Spacing의 배수. " +
+             "1보다 크면 줄끼리는 벽을 따라서보다 더 떨어진다.\n" +
+             "벽을 따라서는 겹쳐야 관통이 안 생기고, 가로질러서는 떨어져야 줄이 하나로 " +
+             "녹지 않고 두께가 생긴다. 방향마다 원하는 바가 달라서 계수를 나눴다.")]
+    [Range(0.5f, 3f)] public float cliffRowSeparation = 1.5f;
+
+    // ── 발치 애추(talus) ──
+    // 구멍 메움 조약돌을 걷어낸 것과는 다른 이야기다. 그쪽은 큰 바위 사이의 그늘을 메우려던
+    // 것이라 자갈 무더기가 됐지만, 발치의 조약돌은 메움이 아니라 <b>퇴적물</b>이다.
+    // 바위와 지면이 선으로 만나는 것이 눈에 제일 먼저 걸리는데, 이 띠가 그 선을 깬다.
+    [Tooltip("애추를 뿌리는 띠의 폭(m) — 클리어런스가 이 값 이하인 자리, 즉 벽의 바깥 테두리.")]
+    public float cliffTalusBandM = 0.6f;
+
+    [Tooltip("띠 안에서 애추를 시도하는 비율. 0이면 애추를 두지 않는다.")]
+    [Range(0f, 1f)] public float cliffTalusDensity = 0.35f;
+
+    [Tooltip("애추 반지름 — Cliff Min Radius의 배수 범위.")]
+    public Vector2 cliffTalusRadius = new Vector2(0.25f, 0.5f);
+
+    [Tooltip("애추끼리의 최소 간격 계수. 작을수록 촘촘하다.")]
+    [Range(0.2f, 1f)] public float cliffTalusSpacing = 0.8f;
+
+    [Tooltip("애추를 지면에 파묻는 깊이 — 반지름의 배수. 얹혀 있으면 굴러온 공처럼 보인다.")]
+    [Range(0f, 0.8f)] public float cliffTalusSink = 0.35f;
+
+    // ── 인스턴스별 명도 ──
+    // 로우폴리는 면 방향 대비가 전부인데, 알베도가 전부 같으면 겹친 부분이 흰 덩어리로
+    // 뭉갠다. 단계별 머티리얼을 구워 인스턴스마다 골라 물린다 — MaterialPropertyBlock은
+    // 직렬화되지 않아 에디터가 만든 씬에서는 쓸 수 없고, SRP Batcher도 깨뜨린다.
+    [Tooltip("명도 단계 수. 1이면 명도 변주를 쓰지 않는다. 단계마다 머티리얼 에셋 하나가 생긴다.")]
+    [Range(1, 16)] public int cliffShadeSteps = 8;
+
+    [Tooltip("인스턴스별 명도 흔들림(±비율).")]
+    [Range(0f, 0.4f)] public float cliffShadeRange = 0.12f;
+
+    [Tooltip("낮은 것을 어둡게 하는 정도 — 습기·이끼가 앉는 발치가 어두워야 높이가 읽힌다.")]
+    [Range(0f, 0.6f)] public float cliffShadeDepthDarken = 0.18f;
+
     // ── 찾기 ────────────────────────────────────────────────────
 
     /// <summary>
