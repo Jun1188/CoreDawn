@@ -21,7 +21,7 @@ MonoBehaviour:
   body: "\uAD11\uB9E5\uC744 \uCC3E\uACE0 \uBC14\uB77C\uBCF8\uB4A4 \uC0C1\uD638\uC791\uC6A9\uD558\uC5EC
     \uC218\uB3D9\uC73C\uB85C \uC790\uC6D0\uC744 \uCE90\uC138\uC694"
   keyHints:
-  - E
+  - F
   trigger: 5
   item: {fileID: 0}
   itemType: 0
