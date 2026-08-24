@@ -93,18 +93,6 @@ public class SplitterFilterPopup : UIPopup
         return popup;
     }
 
-    protected override void OnEnable()
-    {
-        base.OnEnable();
-        UICursor.Release();
-    }
-
-    protected override void OnDisable()
-    {
-        UICursor.Restore();
-        base.OnDisable();
-    }
-
     private void Rebuild()
     {
         for (int i = transform.childCount - 1; i >= 0; i--)

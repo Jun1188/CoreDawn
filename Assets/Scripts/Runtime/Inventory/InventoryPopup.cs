@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 /// 인벤토리 패널(inventoryUIPanel)에 부착하는 파이프라인 어댑터.
 /// 열기/닫기 로직 자체는 PlayerController가 계속 소유하고, 이 컴포넌트는:
 ///  - 패널 활성화 시 UI 맵 Push → 사격·건설 등 Gameplay 입력 신호 차단
-///  - 커서 해제/잠금 + 크로스헤어 표시를 Enter/Exit에 집중 (PausePopup과 같은 패턴)
+///  - 크로스헤어 표시를 Enter/Exit에 집중 (커서 해제/잠금은 UIPopup 공통)
 ///  - Cancel(ESC) / ToggleInventory(I) / Interact(E) → CloseInventory() 위임
 ///    (마우스 캐리지 아이템 드롭, 상자 패널 정리 포함)
 /// </summary>
@@ -18,13 +18,11 @@ public class InventoryPopup : UIPopup
         if (player == null) player = FindFirstObjectByType<PlayerController>();
         base.OnEnable();
 
-        UICursor.Release();
         if (player != null && player.crosshairUI != null) player.crosshairUI.SetActive(false);
     }
 
     protected override void OnDisable()
     {
-        UICursor.Restore();
         if (player != null && player.crosshairUI != null) player.crosshairUI.SetActive(true);
         base.OnDisable();
     }

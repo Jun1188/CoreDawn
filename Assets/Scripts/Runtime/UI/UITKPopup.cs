@@ -4,12 +4,9 @@ using UnityEngine.UIElements;
 /// <summary>
 /// UI Toolkit 팝업 공통 베이스 — 레퍼런스 문서 §05 "기존 입력 시스템과 연결".
 ///
-/// 입력 소유권(맵 Push/Pop · depth 우선순위 · ESC 처리)은 <see cref="UIPopup"/>이
-/// 이미 갖고 있으므로 그대로 쓴다. 이 클래스가 추가로 맡는 것은 두 가지뿐이다:
-///   1. UIDocument 루트의 표시/숨김
-///   2. 커서 해제·재잠금 — 소유권 계수는 <see cref="UICursor"/>가 든다.
-///      겹쳐 열린 창(일시정지 위의 설정 등)이 서로의 커서를 잠그지 않게 하려면
-///      "마지막 하나가 닫힐 때만 재잠금"이어야 하고, 그 판단은 계수만 할 수 있다
+/// 입력 소유권(맵 Push/Pop · depth 우선순위 · ESC 처리)과 커서 해제·재잠금은
+/// <see cref="UIPopup"/>이 이미 갖고 있으므로 그대로 쓴다. 이 클래스가 추가로 맡는 것은
+/// UIDocument 루트의 표시/숨김 하나뿐이다.
 ///
 /// 파생 클래스는 <see cref="Bind"/>에서 이벤트를 구독하고 초기 1회 갱신하며,
 /// <see cref="Unbind"/>에서 반드시 같은 것을 해제한다.
@@ -27,9 +24,6 @@ public abstract class UITKPopup : UIPopup
     /// <summary>UXML 최상단 요소가 붙는 컨테이너. OnEnable 이후에만 유효하다.</summary>
     protected VisualElement Root => document != null ? document.rootVisualElement : null;
 
-    /// <summary>커서를 풀어야 하는 팝업인가. 마우스를 쓰지 않는 오버레이는 false로 덮어쓴다.</summary>
-    protected virtual bool ReleasesCursor => true;
-
     protected virtual void Awake()
     {
         if (document == null) document = GetComponent<UIDocument>();
@@ -39,9 +33,7 @@ public abstract class UITKPopup : UIPopup
     {
         if (document == null) document = GetComponent<UIDocument>();
 
-        base.OnEnable();   // 리시버 등록 + UI 맵 Push (기존 계약 유지)
-
-        if (ReleasesCursor) UICursor.Release();
+        base.OnEnable();   // 리시버 등록 + UI 맵 Push + 커서 해제 (기존 계약 유지)
 
         var root = Root;
         if (root == null)
@@ -63,11 +55,7 @@ public abstract class UITKPopup : UIPopup
         var root = Root;
         if (root != null) root.style.display = DisplayStyle.None;
 
-        // 겹쳐 열린 창(일시정지 위의 설정 등)이 아직 남아 있으면 커서를 뺏지 않는다 —
-        // 계수는 UICursor가 든다
-        if (ReleasesCursor) UICursor.Restore();
-
-        base.OnDisable();  // 리시버 해제 + UI 맵 Pop
+        base.OnDisable();  // 리시버 해제 + UI 맵 Pop + 커서 재잠금(마지막 창일 때만)
     }
 
     /// <summary>이벤트 구독 + 초기 1회 갱신. Root는 여기서 반드시 non-null이다.</summary>
