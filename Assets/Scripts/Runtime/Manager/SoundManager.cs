@@ -93,6 +93,10 @@ public class SoundManager : MonoBehaviour
     private readonly Dictionary<AudioClip, float> sfxCooldownDict = new Dictionary<AudioClip, float>();
     private const float DEFAULT_COOLDOWN = 0.05f;
 
+    // 저장된 볼륨이 믹서에 자리 잡았다고 볼 조건 — 근거는 Co_ApplySavedVolumes 참고
+    private const int VOLUME_SETTLED_FRAMES = 5;      // 연속 몇 프레임 그대로 남아야 하는가
+    private const float VOLUME_APPLY_TIMEOUT = 2f;    // 그때까지 못 잡으면 포기하고 경고 (초)
+
     // BGM 크로스페이드용
     private AudioSource activeBgmSource;
     private Coroutine bgmCrossfadeCoroutine;
@@ -116,22 +120,62 @@ public class SoundManager : MonoBehaviour
 
     private void Start()
     {
-        // 저장해 둔 볼륨을 먼저 믹서에 넣는다 — 이게 없으면 설정 창(SettingsPanelView)을
+        // 저장해 둔 볼륨을 믹서에 넣는다 — 이게 없으면 설정 창(SettingsPanelView)을
         // 한 번 열기 전까지 지난번에 줄여 둔 볼륨이 무시되고 기본값으로 소리가 난다.
-        // 믹서 파라미터는 Awake 시점엔 아직 안 잡힐 수 있어 Start에서 민다.
-        ApplySavedVolumes();
+        StartCoroutine(Co_ApplySavedVolumes());
 
         // 게임 시작 시 메인 BGM을 1.5초 동안 은은하게 재생
         PlayBGM(BGMType.Main, 1.5f);
     }
 
-    /// <summary>저장된 볼륨(audio_settings.json)을 믹서에 반영한다.</summary>
-    private void ApplySavedVolumes()
+    /// <summary>
+    /// 저장된 볼륨(audio_settings.json)을 믹서에 반영한다. 값이 실제로 자리 잡을 때까지 붙잡는다.
+    ///
+    /// 왜 한 번 넣고 끝내지 않는가 — 갓 로드된 AudioMixer는 SetFloat을 흘린다. 이 매니저는
+    /// <see cref="EnsureInstance"/>가 씬 로드 직후에 띄우므로 Start가 곧 앱의 첫 프레임이고,
+    /// 그 시점의 믹서는 아직 자기 시작 스냅샷(MainMixer의 Normal)을 밀어 넣는 중이라
+    /// 방금 넣은 값을 도로 덮어쓸 수 있다. 그러면 "설정 값은 남아 있는데 소리는 기본값"이 되고,
+    /// 설정 창에서 슬라이더를 한 번 건드려야(=한참 뒤의 SetFloat) 비로소 반영된다.
+    /// 에디터에서는 믹서가 이미 메모리에 떠 있어 재현되지 않지만, 빌드에서는 이때 로드된다.
+    ///
+    /// SetFloat의 반환값은 믿을 수 없다 — 덮어쓰기는 그 뒤에 오므로 true를 받아도 남지 않는다.
+    /// 그래서 GetFloat으로 되읽어, 넣은 값이 <see cref="VOLUME_SETTLED_FRAMES"/>프레임 연속으로
+    /// 그대로 남아 있을 때만 자리 잡은 것으로 본다.
+    /// </summary>
+    private IEnumerator Co_ApplySavedVolumes()
     {
         AudioSettingsData settings = AudioSaveSystem.LoadSettings();
-        SetMasterVolume(settings.masterVolume);
-        SetBGMVolume(settings.bgmVolume);
-        SetSFXVolume(settings.sfxVolume);
+        float deadline = Time.realtimeSinceStartup + VOLUME_APPLY_TIMEOUT;
+        int settled = 0;
+
+        while (settled < VOLUME_SETTLED_FRAMES && Time.realtimeSinceStartup < deadline)
+        {
+            SetMasterVolume(settings.masterVolume);
+            SetBGMVolume(settings.bgmVolume);
+            SetSFXVolume(settings.sfxVolume);
+
+            settled = IsVolumeApplied("MasterVolume", settings.masterVolume)
+                   && IsVolumeApplied("BGMVolume", settings.bgmVolume)
+                   && IsVolumeApplied("SFXVolume", settings.sfxVolume)
+                    ? settled + 1
+                    : 0;   // 한 번이라도 어긋나면 처음부터 다시 센다
+
+            yield return null;   // 프레임 대기 — timeScale과 무관해 일시정지 중에도 진행된다
+        }
+
+        if (settled < VOLUME_SETTLED_FRAMES)
+        {
+            Debug.LogWarning("[SoundManager] 저장된 볼륨이 믹서에 반영되지 않았습니다. " +
+                             "MainMixer의 노출 파라미터 이름(MasterVolume/BGMVolume/SFXVolume)을 확인하세요.");
+        }
+    }
+
+    /// <summary>믹서에 실제로 그 볼륨이 들어가 있는가 — SetFloat의 반환값만으로는 알 수 없다.</summary>
+    private bool IsVolumeApplied(string parameterName, float linearValue)
+    {
+        if (audioMixer == null) return false;
+        if (!audioMixer.GetFloat(parameterName, out float dB)) return false;
+        return Mathf.Abs(dB - ToDecibel(linearValue)) < 0.01f;
     }
 
     private void InitAudioSources()
@@ -302,9 +346,13 @@ public class SoundManager : MonoBehaviour
     public void SetVolume(string parameterName, float linearValue)
     {
         if (audioMixer == null) return;
-        float dB = Mathf.Log10(Mathf.Clamp(linearValue, 0.0001f, 1f)) * 20f;
-        audioMixer.SetFloat(parameterName, dB);
+        audioMixer.SetFloat(parameterName, ToDecibel(linearValue));
     }
+
+    /// <summary>슬라이더의 0~1을 믹서가 쓰는 dB로. 0은 믹서 최저치인 -80dB로 눌러 붙인다.</summary>
+    private static float ToDecibel(float linearValue)
+        => Mathf.Log10(Mathf.Clamp(linearValue, 0.0001f, 1f)) * 20f;
+
     /// <summary> 게임 일시정지 / 해제 시 사운드 연출 전환 </summary>
     public void SetPauseEffect(bool isPaused, float transitionTime = 0.2f)
     {
