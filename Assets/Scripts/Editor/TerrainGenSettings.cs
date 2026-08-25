@@ -260,6 +260,18 @@ public class TerrainGenSettings : ScriptableObject
              "너무 크면 앞면이 옆을 본다.")]
     [Range(0f, 25f)] public float cliffWallYawJitter = 7f;
 
+    [Tooltip("경계가 이 각도(도) 이상 꺾이면 모서리로 본다. 모서리에서는 조각을 끊고 다시 시작한다 — " +
+             "넘어가면 조각이 모서리 안쪽에서 겹치고 바깥으로는 잔디에 걸친다.")]
+    [Range(20f, 90f)] public float cliffWallCornerDeg = 45f;
+
+    [Tooltip("모서리 판정에서 앞뒤로 얼마나 떨어진 점을 볼지(m). 작으면 잔주름도 모서리가 되고, " +
+             "크면 완만한 굽이를 놓친다.")]
+    public float cliffWallCornerLookM = 3f;
+
+    [Tooltip("자리에 안 들어가는 조각을 배율 하한의 몇 배까지 줄여서 넣어 볼지. " +
+             "그래도 안 되면 앞모서리만 지키고 뒤는 넘어가게 둔다.")]
+    [Range(0.2f, 1f)] public float cliffWallMinShrink = 0.45f;
+
     [Tooltip("발자국 귀퉁이가 절벽 타일 밖으로 나가는 것을 이만큼(칸)까지 봐준다. 0이면 " +
              "한 치도 못 나간다.\n" +
              "절벽 밖은 건설·통행이 되는 칸이라 바위가 걸치면 보이는 것과 게임이 아는 것이 " +

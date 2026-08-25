@@ -743,7 +743,7 @@ public static class WorldTerrainGenerator
         parent.SetParent(root, false);
 
         float overlap = Mathf.Clamp01(S.cliffWallOverlap);
-        int placedCount = 0, rejShort = 0, shoved = 0, spilled = 0;
+        int placedCount = 0, rejShort = 0, shoved = 0, spilled = 0, backOut = 0;
         double walked = 0;
 
         float wSum = 0f;
@@ -769,25 +769,79 @@ public static class WorldTerrainGenerator
                 return Vector2.Lerp(line[i - 1], line[i], (t - cum[i - 1]) / seg);
             }
 
+            // ── 모서리 감지 ──
+            //
+            // 꺾이는 곳에서 이동 거리를 직선일 때처럼 계산하면 호길이 5m 앞의 점이
+            // 직선거리로는 3.5m 밖에 안 떨어져 있어 조각이 모서리 안쪽에서 겹친다.
+            // 게다가 방향을 잡는 현(chord)이 꺾인 두 변을 대각으로 가로질러, 조각이
+            // 모서리를 통째로 넘어가 반대편 잔디로 나온다 — 길을 막던 조각의 정체다.
+            //
+            // 폴리라인의 꼭짓점마다 앞뒤 접선 각도를 재서 임계를 넘으면 모서리로 표시한다.
+            // 걷다가 다음 모서리에 닿기 전에 <b>구간을 끊고</b>, 모서리 뒤에서 새로 시작한다.
+            var corners = new List<float>();
+            {
+                float lookM = Mathf.Max(1f, S.cliffWallCornerLookM);
+                for (int i = 1; i < n - 1; i++)
+                {
+                    var a0 = PosAt(cum[i] - lookM) - line[i];
+                    var a1 = PosAt(cum[i] + lookM) - line[i];
+                    if (a0.sqrMagnitude < 1e-6f || a1.sqrMagnitude < 1e-6f) continue;
+                    float ang = Vector2.Angle(-a0, a1);
+                    if (ang > S.cliffWallCornerDeg) corners.Add(cum[i]);
+                }
+                // 붙어 있는 모서리 표시를 하나로 합친다
+                var merged = new List<float>();
+                foreach (var c in corners)
+                    if (merged.Count == 0 || c - merged[merged.Count - 1] > lookM) merged.Add(c);
+                corners = merged;
+            }
+            int cornerIdx = 0;
+
+            // 조각의 네 귀퉁이가 전부 절벽 타일 안에 있는가.
+            // 예전에는 앞모서리 세 점만 봤다 — 뒤·옆 귀퉁이가 잔디로 나가도 통과했다.
+            bool Inside(Vector3 pivot, Quaternion rot, WallPiece w, float sc)
+            {
+                float hx = w.Width * 0.5f * sc, hz = w.Depth * 0.5f * sc;
+                var c3 = pivot + rot * new Vector3(w.Centre.x * sc, 0f, w.Centre.z * sc);
+                var tanW3 = rot * Vector3.right; var depW3 = rot * Vector3.forward;
+                var c = new Vector2(c3.x, c3.z);
+                var tanW = new Vector2(tanW3.x, tanW3.z); var depW = new Vector2(depW3.x, depW3.z);
+                for (int sx = -1; sx <= 1; sx++)
+                    for (int sz = -1; sz <= 1; sz += 2)
+                        if (!OnCliff(c + tanW * (hx * sx) + depW * (hz * sz))) return false;
+                return true;
+            }
+
             for (float t = 0f; t < total; )
             {
                 var p = PosAt(t);
-
-                // 접선은 조각이 덮을 구간의 <b>양 끝</b>을 이은 방향으로 잡는다 — 한 점의
-                // 미분보다 안정적이고, 조각이 그 구간을 실제로 덮는 방향과 맞는다.
                 int seedX = Mathf.RoundToInt(p.x * 4f), seedY = Mathf.RoundToInt(p.y * 4f);
 
                 float scale = Mathf.Lerp(S.cliffWallScale.x, S.cliffWallScale.y,
                                          Hash(seedX, seedY, 71) % 1000 / 1000f);
 
-                // 뽑기는 <b>폭에 비례해</b> 가중한다. 균등하게 뽑으면 4종 중 2종이 폭 4m
-                // 짜리 기둥이라 벽의 절반이 기둥이 되어 빗처럼 보인다.
+                // 뽑기는 폭에 비례해 가중한다. 균등하면 4종 중 2종이 폭 4m 기둥이라
+                // 벽의 절반이 기둥이 되어 빗처럼 보인다.
                 float roll = Hash(seedX, seedY, 131) % 1000 / 1000f * wSum;
                 int pick = walls.Count - 1;
                 for (int i = 0; i < walls.Count; i++) { roll -= walls[i].Width; if (roll <= 0f) { pick = i; break; } }
-
                 var piece = walls[pick];
-                float span = piece.Cover * scale;               // 이 조각이 <b>실제로</b> 덮는 호길이
+
+                // ── 이 조각이 덮을 구간 ──
+                // 다음 모서리까지 남은 길이보다 길면 <b>거기서 끊는다.</b> 모서리를 넘어가는
+                // 조각은 만들지 않는다. 남은 구간이 너무 짧으면 그만큼 작은 조각을 쓴다.
+                while (cornerIdx < corners.Count && corners[cornerIdx] <= t + 0.01f) cornerIdx++;
+                float limit = cornerIdx < corners.Count ? corners[cornerIdx] - t : total - t;
+
+                float span = piece.Cover * scale;
+                if (span > limit)
+                {
+                    // 남은 구간에 맞춰 줄인다 — 단, 배율 하한 아래로는 <b>안 줄인다.</b>
+                    // 처음엔 하한의 절반까지 줄였더니 높이 6m 미만 조각이 2574개가 되고 보폭이
+                    // 잘아져 84% 가 서로 파묻혔다. 하한에 걸리면 그냥 모서리를 조금 넘긴다.
+                    scale = Mathf.Max(S.cliffWallScale.x, limit / piece.Cover);
+                    span = piece.Cover * scale;
+                }
                 float step = span * (1f - overlap);
 
                 var pEnd = PosAt(t + span);
@@ -795,68 +849,74 @@ public static class WorldTerrainGenerator
                 if (chord.sqrMagnitude < 1e-6f) chord = PosAt(t + 1f) - p;
                 var tan = chord.normalized;
 
-                // 바깥 법선 — 접선의 수직 둘 중 거리장이 커지는 쪽
                 var nrm = new Vector2(tan.y, -tan.x);
                 var mid = Vector2.Lerp(p, pEnd, 0.5f);
                 if (FieldAt(mid + nrm * Cell * 0.5f) < FieldAt(mid - nrm * Cell * 0.5f)) nrm = -nrm;
 
-                // 조각은 구간의 <b>가운데</b>에 놓는다 — 끝에 놓으면 굽이에서 한쪽으로 쏠린다
                 var look = Quaternion.LookRotation(new Vector3(-nrm.x, 0f, -nrm.y), Vector3.up);
                 float yaw = look.eulerAngles.y
                           + (Hash(seedX, seedY, 89) % 1000 / 1000f - 0.5f) * 2f * S.cliffWallYawJitter;
                 var rot = Quaternion.Euler(0f, yaw, 0f);
                 var dir = rot * Vector3.back;
 
-                // ── 절벽 타일 안으로 밀어 넣는다 ──
+                // ── 절벽 타일 안으로 맞춘다 ──
                 //
-                // 절벽 밖은 건설·통행이 되는 칸이다. 거기에 벽이 걸치면 눈에 보이는 것과
-                // 게임이 아는 것이 어긋난다.
+                // 절벽 밖은 건설·통행이 되는 칸이다. 벽이 거기 걸치면 길이 막힌다.
                 //
-                // 거부하지 않고 <b>민다.</b> 거부했더니 후보가 대량으로 날아가 벽이
-                // 누더기가 됐다(뚫림 34.9%). 앞모서리가 타일 안에 들어올 때까지 법선
-                // 반대로 조금씩 밀고, 끝까지 안 되면 조각을 줄여 다시 민다.
-                var tanW3 = rot * Vector3.right;
-                var tanW = new Vector2(tanW3.x, tanW3.z);
-
+                // 네 귀퉁이가 전부 타일 안에 들어올 때까지: 먼저 안쪽으로 밀어 보고, 안 되면
+                // 조각을 줄여서 다시 민다. <b>포기하지 않는다</b> — 예전에는 세 단계 줄이고
+                // 안 되면 "가장 작은 조각으로 그냥 놓는다"였고, 그게 잔디로 나온 조각이다.
+                // 배율 하한까지 줄여도 안 들어가는 자리는 띠가 조각 깊이보다 얇은 곳뿐이고,
+                // 그런 곳에서는 뒤쪽 귀퉁이만 봐준다(앞은 여전히 엄격).
                 Vector3 pos = Vector3.zero;
                 float useScale = scale;
                 bool seated = false;
+                float minScale = S.cliffWallScale.x * S.cliffWallMinShrink;
 
-                for (int sstep = 0; sstep < 3 && !seated; sstep++)
+                for (float sc = scale; sc >= minScale - 1e-4f && !seated; sc *= 0.85f)
                 {
-                    float sc = scale * (sstep == 0 ? 1f : sstep == 1 ? 0.78f : 0.58f);
-                    // 검사는 <b>박스 폭</b>으로 한다. 실덮임 폭으로 재면 넓은 윗부분이 옆으로
-                    // 삐져나온다(실측: 타일 밖 걸침 5.3%). 걷기의 보폭만 실덮임 폭이다.
-                    float hx = piece.Width * 0.5f * sc;
-
                     for (float inset = S.cliffWallOverhangM; inset > -InsetLimitM; inset -= 0.4f)
                     {
                         Vector3 f3 = new Vector3(mid.x, 0f, mid.y) + dir * inset;
                         var pv = f3 - dir * (piece.FrontReach * sc);
-
-                        // 앞모서리 중심 = 피벗 + 회전한 (로컬 바운즈 중심 → 앞면)
-                        var fc = pv + rot * new Vector3(piece.Centre.x * sc, 0f,
-                                                        (piece.Centre.z - piece.Size.z * 0.5f) * sc);
-                        var fc2 = new Vector2(fc.x, fc.z);
-
-                        bool all = true;
-                        for (int k = -1; k <= 1 && all; k++) if (!OnCliff(fc2 + tanW * (hx * k))) all = false;
-                        if (!all) continue;
-
+                        if (!Inside(pv, rot, piece, sc)) continue;
                         pos = pv; useScale = sc; seated = true;
-                        if (sstep > 0 || inset < S.cliffWallOverhangM - 0.01f) shoved++;
+                        if (sc < scale - 1e-4f || inset < S.cliffWallOverhangM - 0.01f) shoved++;
                         break;
                     }
                 }
 
-                // 그래도 안 들어가면 <b>가장 깊이 민 자리에 가장 작은 조각으로</b> 놓는다.
-                // 조금 삐져나오는 것과 벽에 구멍이 나는 것 중에는 앞이 낫다.
                 if (!seated)
                 {
-                    useScale = scale * 0.58f;
-                    Vector3 f3 = new Vector3(mid.x, 0f, mid.y) - dir * (InsetLimitM - 0.4f);
-                    pos = f3 - dir * (piece.FrontReach * useScale);
+                    // 띠가 조각 깊이보다 얇다 — 앞모서리만 지키고 뒤는 넘어가게 둔다
+                    for (float sc = scale; sc >= minScale - 1e-4f && !seated; sc *= 0.85f)
+                    {
+                        float hx = piece.Width * 0.5f * sc;
+                        var tanW3 = rot * Vector3.right;
+                        var tanW = new Vector2(tanW3.x, tanW3.z);
+                        for (float inset = S.cliffWallOverhangM; inset > -InsetLimitM; inset -= 0.4f)
+                        {
+                            Vector3 f3 = new Vector3(mid.x, 0f, mid.y) + dir * inset;
+                            var pv = f3 - dir * (piece.FrontReach * sc);
+                            var fc = pv + rot * new Vector3(piece.Centre.x * sc, 0f,
+                                                            (piece.Centre.z - piece.Size.z * 0.5f) * sc);
+                            var fc2 = new Vector2(fc.x, fc.z);
+                            bool all = true;
+                            for (int k = -1; k <= 1 && all; k++) if (!OnCliff(fc2 + tanW * (hx * k))) all = false;
+                            if (!all) continue;
+                            pos = pv; useScale = sc; seated = true; backOut++;
+                            break;
+                        }
+                    }
+                }
+
+                if (!seated)
+                {
+                    // 앞모서리조차 못 넣는 자리 — 경계가 타일 밖으로 튀어나온 곳이다.
+                    // 여기 놓으면 길을 막는다. <b>건너뛴다.</b>
                     spilled++;
+                    t += Mathf.Max(0.5f, step);
+                    continue;
                 }
 
                 float scaleF = useScale;
@@ -868,7 +928,8 @@ public static class WorldTerrainGenerator
                 AddConvexCollider(go);
 
                 placedCount++;
-                t += Mathf.Max(0.5f, step);
+                // 실제로 세운 조각의 폭만큼만 나아간다 — 줄였으면 보폭도 준다
+                t += Mathf.Max(0.5f, piece.Cover * scaleF * (1f - overlap));
             }
         }
 
@@ -879,7 +940,7 @@ public static class WorldTerrainGenerator
                   System.Environment.NewLine +
                   $"  경계 {loops.Count}가닥 · 총 길이 {walked:F0}m · 너무 짧아 건너뜀 {rejShort}" +
                   System.Environment.NewLine +
-                  $"  타일 안으로 밀어 넣은 것 {shoved} · 끝내 못 넣은 것 {spilled}" +
+                  $"  타일 안으로 밀어 넣은 것 {shoved} · 뒤만 봐준 것 {backOut} · 건너뛴 것 {spilled}" +
                   System.Environment.NewLine +
                   $"  조각 폭 {walls[walls.Count - 1].Width:F1}~{walls[0].Width:F1}m " +
                   $"(실덮임 {walls[walls.Count - 1].Cover:F1}~{walls[0].Cover:F1}m) · " +

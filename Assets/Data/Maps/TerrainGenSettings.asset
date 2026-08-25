@@ -84,6 +84,9 @@ MonoBehaviour:
   cliffWallOverhangM: 0
   cliffWallSinkM: 0.4
   cliffWallYawJitter: 8
+  cliffWallCornerDeg: 45
+  cliffWallCornerLookM: 3
+  cliffWallMinShrink: 0.7
   cliffWallSlackCells: 0.05
   cliffFootDensity: 0.1
   cliffFootBandCells: 0.7
