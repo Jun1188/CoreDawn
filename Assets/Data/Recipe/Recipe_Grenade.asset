@@ -20,7 +20,7 @@ MonoBehaviour:
   tier: 2
   inputs:
   - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
-    amount: 2
+    amount: 1
   - item: {fileID: 11400000, guid: af1d69fc7621c8746bdc54ef95f4045e, type: 2}
     amount: 1
   outputs:

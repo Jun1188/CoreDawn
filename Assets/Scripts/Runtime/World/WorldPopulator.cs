@@ -183,9 +183,11 @@ public static class WorldPopulator
 
     // ── 시작 드롭 아이템 ───────────────────────────────────────
 
-    // 시작 잔해가 흩어지는 범위 — 코어 중심에서 몇 칸까지인가. 2칸이면 3×3 코어 바로 바깥이다.
-    const float StartDropMinRing = 2f;
-    const float StartDropMaxRing = 5f;
+    // 시작 잔해가 흩어지는 범위 — 코어 중심에서 몇 칸까지인가. 1.5칸이 3×3 코어의 가장자리다
+    // (cellSize 4 기준 중심 6~12m = 코어 벽에 바싹 붙어 시작). 링을 좁힐 때는 아래 MinGap과
+    // 수용량이 맞물린다 — 자리가 모자라면 12회 재시도를 소진한 잔해가 조용히 생략된다.
+    const float StartDropMinRing = 1.5f;
+    const float StartDropMaxRing = 3f;
 
     /// <summary>같은 아이템은 이 거리 안에서 스택으로 합쳐진다(트리거 센서) — 그보다 넉넉히 띄운다.</summary>
     const float StartDropMinGap = 3.5f;

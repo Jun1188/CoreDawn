@@ -887,7 +887,7 @@
       "outputs": [
         {
           "item": "Item:BasicAmmo",
-          "amount": 4
+          "amount": 10
         }
       ]
     },
@@ -984,7 +984,7 @@
       "inputs": [
         {
           "item": "Item:BasicAmmo",
-          "amount": 2
+          "amount": 1
         },
         {
           "item": "Item:IronPlate",
@@ -1045,11 +1045,11 @@
       "displayName": "고밀도 탄약 조립",
       "description": "조립기 2입력. 구리 코팅 강화 탄약.",
       "tier": 2,
-      "craftTime": 3.0,
+      "craftTime": 2.0,
       "inputs": [
         {
           "item": "Item:BasicAmmo",
-          "amount": 2
+          "amount": 10
         },
         {
           "item": "Item:CopperIngot",
@@ -1059,7 +1059,7 @@
       "outputs": [
         {
           "item": "Item:DenseAmmo",
-          "amount": 2
+          "amount": 10
         }
       ]
     },
@@ -1145,7 +1145,7 @@
       "inputs": [
         {
           "item": "Item:DenseAmmo",
-          "amount": 2
+          "amount": 10
         },
         {
           "item": "Item:RefinedCrystal",
@@ -1155,7 +1155,7 @@
       "outputs": [
         {
           "item": "Item:CrystalAmmo",
-          "amount": 2
+          "amount": 10
         }
       ]
     },
@@ -1168,7 +1168,7 @@
       "inputs": [
         {
           "item": "Item:ShipDebris",
-          "amount": 5
+          "amount": 3
         },
         {
           "item": "Item:IronPlate",
@@ -1190,8 +1190,8 @@
       "craftTime": 6.0,
       "inputs": [
         {
-          "item": "Item:ShipDebris",
-          "amount": 4
+          "item": "Item:IronIngot",
+          "amount": 1
         },
         {
           "item": "Item:IronPlate",

@@ -20,10 +20,10 @@ MonoBehaviour:
   tier: 2
   inputs:
   - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
-    amount: 2
+    amount: 10
   - item: {fileID: 11400000, guid: e6d363c6268ef084a8673efd71844861, type: 2}
     amount: 1
   outputs:
   - item: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
-    amount: 2
-  craftTime: 3
+    amount: 10
+  craftTime: 2

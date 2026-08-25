@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 튜토리얼 진행을 소유한다. 지금 어떤 안내를 띄울지 정하고, 그것을 우상단 카드에 그린다.
@@ -54,9 +55,27 @@ public class TutorialManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
+        // 이 어트리뷰트는 플레이 세션에서 첫 씬 로드 직후 딱 한 번만 불린다. 타이틀에서
+        // 시작하면 그 시점엔 플레이어가 없어 그냥 지나가는데, 재시도 장치가 없으면
+        // 그 뒤 World로 넘어가도 튜토리얼이 영영 생기지 않는다 — 그래서 GameBootstrap과
+        // 같은 방식으로 씬 전환(Single 로드)마다 다시 검사한다.
+        // 이름 있는 메서드를 빼고 다시 거는 것도 같은 이유다 — 도메인 리로드를 끈 환경에서는
+        // static 구독이 플레이를 넘어 살아남는다.
+        SceneManager.sceneLoaded -= OnSceneLoadedTrySpawn;
+        SceneManager.sceneLoaded += OnSceneLoadedTrySpawn;
+        TrySpawn();
+    }
+
+    static void OnSceneLoadedTrySpawn(Scene scene, LoadSceneMode mode)
+    {
+        if (mode == LoadSceneMode.Single) TrySpawn();
+    }
+
+    static void TrySpawn()
+    {
         if (Instance != null) return;
 
-        // GameBootstrap과 같은 규칙 — 플레이어가 없는 순수 테스트 씬은 오염시키지 않는다
+        // GameBootstrap과 같은 규칙 — 플레이어가 없는 씬(타이틀·순수 테스트)은 오염시키지 않는다
         if (FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include) == null) return;
 
         new GameObject("[TutorialManager]").AddComponent<TutorialManager>();

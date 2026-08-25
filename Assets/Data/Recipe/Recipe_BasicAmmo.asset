@@ -23,5 +23,5 @@ MonoBehaviour:
     amount: 1
   outputs:
   - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
-    amount: 4
+    amount: 10
   craftTime: 2
