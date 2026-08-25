@@ -21,10 +21,20 @@ MonoBehaviour:
   body: "\uCCAB \uBC24\uC744 \uB118\uACBC\uC2B5\uB2C8\uB2E4.\n\uC774\uC81C \uB77C\uC778\uC744
     \uB113\uD788\uACE0 \uCF54\uC5B4\uB97C \uB354 \uD0A4\uC6B0\uC138\uC694."
   keyHints: []
-  trigger: 12
-  item: {fileID: 0}
-  itemType: 8
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 1413744033480615551}
   minSeconds: 2.5
   requireInOrder: 1
+--- !u!114 &1413744033480615551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f33a18ee3364087933ff0bde16a9941, type: 3}
+  m_Name: SurviveNightCondition
+  m_EditorClassIdentifier: Assembly-CSharp::SurviveNightCondition
+  count: 1

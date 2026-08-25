@@ -22,10 +22,20 @@ MonoBehaviour:
     \uBC14\uB77C\uBCF8\uB4A4 \uB9C8\uC6B0\uC2A4\uB97C \uD640\uB4DC\uD558\uBA74 \uCCA0\uAC70\uD569\uB2C8\uB2E4."
   keyHints:
   - X
-  trigger: 9
-  item: {fileID: 0}
-  itemType: 7
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 3351017907296938506}
   minSeconds: 2.5
   requireInOrder: 0
+--- !u!114 &3351017907296938506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ae78e4055534a03bfa1bc30505ae76f, type: 3}
+  m_Name: DemolishBuildingCondition
+  m_EditorClassIdentifier: Assembly-CSharp::DemolishBuildingCondition
+  count: 1

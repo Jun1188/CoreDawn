@@ -24,10 +24,20 @@ MonoBehaviour:
   - 1
   - 2
   - 3
-  trigger: 16
-  item: {fileID: 0}
-  itemType: 5
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 3240763062885533999}
   minSeconds: 2.5
   requireInOrder: 1
+--- !u!114 &3240763062885533999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dff06f602acf410696b8c8a2e9029da3, type: 3}
+  m_Name: SwitchHotbarSlotCondition
+  m_EditorClassIdentifier: Assembly-CSharp::SwitchHotbarSlotCondition
+  count: 1

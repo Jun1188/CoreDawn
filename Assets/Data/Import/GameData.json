@@ -2853,5 +2853,316 @@
       "spawnInterval": 1.0,
       "monsterMaxHp": 0.0
     }
+  ],
+  "tutorial": [
+    {
+      "id": "Tutorial:Move1",
+      "displayName": "MOVE 1",
+      "description": "",
+      "order": 10,
+      "tag": "MOVE 1",
+      "body": "WASD로 움직이고, 마우스를 돌려 주위를 둘러보세요.",
+      "keyHints": [
+        "W",
+        "A",
+        "S",
+        "D"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "MoveAndLook",
+          "seconds": 2.0
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Move2",
+      "displayName": "MOVE 2",
+      "description": "",
+      "order": 13,
+      "tag": "MOVE 2",
+      "body": "Space로 점프하고, Shift를 누른 채 앞으로 달려 보세요.",
+      "keyHints": [
+        "Space",
+        "Shift"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "Jump",
+          "count": 1
+        },
+        {
+          "type": "Sprint",
+          "seconds": 1.0
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Move3",
+      "displayName": "MOVE 3",
+      "description": "",
+      "order": 16,
+      "tag": "MOVE 3",
+      "body": "달리는 중에 Ctrl을 누르면 슬라이딩합니다.\n빠를수록 멀리 미끄러집니다.",
+      "keyHints": [
+        "Shift",
+        "Ctrl"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "Slide",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Salvage",
+      "displayName": "SALVAGE",
+      "description": "",
+      "order": 20,
+      "tag": "SALVAGE",
+      "body": "흩어진 우주선 잔해를 주우세요.\n코어를 되살릴 첫 재료입니다.",
+      "keyHints": [
+        "E"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "AcquireItemType",
+          "count": 1,
+          "itemType": "Salvage"
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Core",
+      "displayName": "CORE",
+      "description": "",
+      "order": 30,
+      "tag": "CORE",
+      "body": "코어에 수리 자원을 넣고 상호작용하여 수리를 시작하세요.",
+      "keyHints": [
+        "F"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "CoreTier",
+          "tier": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Mine",
+      "displayName": "MINING",
+      "description": "",
+      "order": 40,
+      "tag": "MINING",
+      "body": "광맥을 찾고 바라본뒤 상호작용하여 수동으로 자원을 캐세요",
+      "keyHints": [
+        "F"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "MineResource",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Inventory",
+      "displayName": "ITEMS",
+      "description": "",
+      "order": 50,
+      "tag": "ITEMS",
+      "body": "E 키로 인벤토리를 열어 가진 것을 확인하세요.\n제작도 이 화면에서 합니다.",
+      "keyHints": [
+        "E"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "OpenInventory"
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Craft",
+      "displayName": "CRAFT",
+      "description": "",
+      "order": 60,
+      "tag": "CRAFT",
+      "body": "인벤토리의 제작 목록에서 무기를 직접 만드세요.\n재료가 모자라면 광맥을 더 캐야 합니다.",
+      "keyHints": [
+        "E"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "CraftItemType",
+          "count": 1,
+          "itemType": "Weapon"
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Equip",
+      "displayName": "EQUIP",
+      "description": "",
+      "order": 80,
+      "tag": "EQUIP",
+      "body": "만든 무기를 핫바 칸에 넣고 숫자키로 고르면 손에 들립니다.",
+      "keyHints": [
+        "1",
+        "2",
+        "3"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "SwitchHotbarSlot",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:BuildMenu",
+      "displayName": "BUILD",
+      "description": "",
+      "order": 90,
+      "tag": "BUILD",
+      "body": "B 키로 건설 메뉴를 엽니다.\n밤에는 건설할 수 없으니 낮에 지으세요.",
+      "keyHints": [
+        "B"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "EnterBuildMode"
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Ports",
+      "displayName": "PORTS",
+      "description": "",
+      "order": 90,
+      "tag": "PORTS",
+      "body": "미리보기의 청록 포트는 들어오는 입구, 주황 포트는 나가는 출구입니다.\nR로 돌리고 좌클릭으로 설치하세요.",
+      "keyHints": [
+        "R"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "PlaceBuilding",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Belt",
+      "displayName": "LOGISTICS",
+      "description": "",
+      "order": 110,
+      "tag": "LOGISTICS",
+      "body": "벨트를 이어 깔아 출구와 입구를 연결하면 자원이 저절로 흐릅니다.",
+      "keyHints": [],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "PlaceBelt",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:BeltShape",
+      "displayName": "CORNER",
+      "description": "",
+      "order": 120,
+      "tag": "CORNER",
+      "body": "벨트를 든 채 T를 누르면 직선 · 좌커브 · 우커브로 바뀝니다.\n모퉁이를 돌 때 씁니다.",
+      "keyHints": [
+        "T"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "CycleBeltShape",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Demolish",
+      "displayName": "REMOVE",
+      "description": "",
+      "order": 130,
+      "tag": "REMOVE",
+      "body": "X로 철거 모드에 들어가 건물을 바라본뒤 마우스를 홀드하면 철거합니다.",
+      "keyHints": [
+        "X"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "DemolishBuilding",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Night",
+      "displayName": "NIGHT",
+      "description": "",
+      "order": 140,
+      "tag": "NIGHT",
+      "body": "밤이 오면 괴수가 코어로 몰려옵니다.\n낮 동안 타워를 세워 두세요. 코어가 부서지면 끝입니다.",
+      "keyHints": [],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "NightReached",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "Tutorial:Survive",
+      "displayName": "SURVIVE",
+      "description": "",
+      "order": 150,
+      "tag": "SURVIVE",
+      "body": "첫 밤을 넘겼습니다.\n이제 라인을 넓히고 코어를 더 키우세요.",
+      "keyHints": [],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "SurviveNight",
+          "count": 1
+        }
+      ]
+    }
   ]
 }

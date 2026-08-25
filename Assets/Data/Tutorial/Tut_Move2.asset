@@ -13,22 +13,43 @@ MonoBehaviour:
   m_Name: Tut_Move2
   m_EditorClassIdentifier: Assembly-CSharp::TutorialStepSO
   id: Tutorial:Move2
-  displayName: MOVE 1
+  displayName: MOVE 2
   description: 
   icon: {fileID: 0}
-  order: 10
-  tag: MOVE 1
-  body: "WASD\uB85C \uC6C0\uC9C1\uC774\uACE0, \uB9C8\uC6B0\uC2A4\uB97C \uB3CC\uB824
-    \uC8FC\uC704\uB97C \uB458\uB7EC\uBCF4\uC138\uC694."
+  order: 13
+  tag: MOVE 2
+  body: "Space\uB85C \uC810\uD504\uD558\uACE0, Shift\uB97C \uB204\uB978 \uCC44 \uC55E\uC73C\uB85C \uB2EC\uB824 \uBCF4\uC138\uC694."
   keyHints:
-  - W
-  - A
-  - S
-  - D
-  trigger: 1
-  item: {fileID: 0}
-  itemType: 8
-  count: 1
-  seconds: 2
+  - Space
+  - Shift
+  conditions:
+  - {fileID: 2034281053220430169}
+  - {fileID: 4017827115916183505}
   minSeconds: 2.5
   requireInOrder: 0
+--- !u!114 &2034281053220430169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b25a65da296b42a4a135c478c9766d11, type: 3}
+  m_Name: JumpCondition
+  m_EditorClassIdentifier: Assembly-CSharp::JumpCondition
+  count: 1
+--- !u!114 &4017827115916183505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af920a8fc9d046b2b18f1d6f424ab68d, type: 3}
+  m_Name: SprintCondition
+  m_EditorClassIdentifier: Assembly-CSharp::SprintCondition
+  seconds: 1

@@ -22,10 +22,21 @@ MonoBehaviour:
     \uB418\uC0B4\uB9B4 \uCCAB \uC7AC\uB8CC\uC785\uB2C8\uB2E4."
   keyHints:
   - E
-  trigger: 2
-  item: {fileID: 11400000, guid: 9acda83e3ac91b24289ca004b851050c, type: 2}
-  itemType: 8
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 1034490825902139354}
   minSeconds: 2.5
   requireInOrder: 0
+--- !u!114 &1034490825902139354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9823c621a6544d1fbb7d71d5379468af, type: 3}
+  m_Name: AcquireItemTypeCondition
+  m_EditorClassIdentifier: Assembly-CSharp::AcquireItemTypeCondition
+  itemType: 8
+  count: 1

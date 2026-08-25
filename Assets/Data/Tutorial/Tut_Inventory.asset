@@ -23,10 +23,19 @@ MonoBehaviour:
     \uD569\uB2C8\uB2E4."
   keyHints:
   - E
-  trigger: 4
-  item: {fileID: 0}
-  itemType: 8
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 1911390657484063116}
   minSeconds: 2.5
   requireInOrder: 0
+--- !u!114 &1911390657484063116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0caa9cf65064850b37e6ae46a57e74d, type: 3}
+  m_Name: OpenInventoryCondition
+  m_EditorClassIdentifier: Assembly-CSharp::OpenInventoryCondition

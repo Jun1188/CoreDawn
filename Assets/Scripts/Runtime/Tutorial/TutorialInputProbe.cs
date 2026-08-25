@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 /// 알기 위해 PlacementSystem이나 PlayerController를 건드릴 필요가 없는 이유다.
 ///
 /// Move/Look은 라우팅되지 않고 <see cref="InputManager.ReadValue{T}"/>로만 읽히므로
-/// 여기로 오지 않는다 — 그쪽은 <see cref="TutorialConditions"/>가 PlayerMotionState를 폴링한다.
+/// 여기로 오지 않는다 — 그쪽은 <see cref="TutorialObserver"/>가 PlayerMotionState를 폴링한다.
 /// </summary>
 public class TutorialInputProbe : MonoBehaviour, IInputReceiver
 {

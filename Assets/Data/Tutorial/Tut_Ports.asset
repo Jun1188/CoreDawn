@@ -23,10 +23,20 @@ MonoBehaviour:
     \uB3CC\uB9AC\uACE0 \uC88C\uD074\uB9AD\uC73C\uB85C \uC124\uCE58\uD558\uC138\uC694."
   keyHints:
   - R
-  trigger: 8
-  item: {fileID: 0}
-  itemType: 7
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 3231682917985429960}
   minSeconds: 2.5
   requireInOrder: 0
+--- !u!114 &3231682917985429960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fc91642ad574b3e9b64a6d95742dcd5, type: 3}
+  m_Name: PlaceBuildingCondition
+  m_EditorClassIdentifier: Assembly-CSharp::PlaceBuildingCondition
+  count: 1

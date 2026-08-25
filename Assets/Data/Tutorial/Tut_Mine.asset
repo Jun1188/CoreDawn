@@ -22,10 +22,20 @@ MonoBehaviour:
     \uC218\uB3D9\uC73C\uB85C \uC790\uC6D0\uC744 \uCE90\uC138\uC694"
   keyHints:
   - F
-  trigger: 5
-  item: {fileID: 0}
-  itemType: 0
-  count: 1
-  seconds: 2
+  conditions:
+  - {fileID: 4284881754548083590}
   minSeconds: 2.5
   requireInOrder: 0
+--- !u!114 &4284881754548083590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 536abf5dfa3f4867bf0f6cb7814b2040, type: 3}
+  m_Name: MineResourceCondition
+  m_EditorClassIdentifier: Assembly-CSharp::MineResourceCondition
+  count: 1

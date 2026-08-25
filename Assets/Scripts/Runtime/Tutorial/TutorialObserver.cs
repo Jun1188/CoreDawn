@@ -2,26 +2,34 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 튜토리얼이 "플레이어가 그 동작을 해냈는가"를 판정하는 관측기.
+/// 세계를 관측만 하는 눈 — "플레이어가 무엇을 얼마나 했는가"의 원본 수치.
 ///
-/// 설계 원칙 하나: <b>게임플레이 코드를 한 줄도 고치지 않는다.</b> 그래서 여기 있는 것은
-/// 전부 기존 public 이벤트 구독이거나 기존 public 상태 폴링이다. 새 이벤트를 심으면
-/// 팀원의 파일과 충돌하고, 무엇보다 튜토리얼이 없어도 굴러가야 할 코드에 튜토리얼 흔적이 남는다.
+/// <b>스텝을 모른다.</b> 어떤 수치가 어떤 안내를 끝내는지는 조건 모듈(<see cref="TutorialConditionSO"/>)이,
+/// 기준점("뜬 뒤로 n번 더")은 <see cref="TutorialProgress"/>가 안다. 여기는 세기만 한다 —
+/// 그래서 새 조건을 더할 때 이 파일은 새 신호가 필요할 때만 손댄다.
+///
+/// 설계 원칙(구 TutorialConditions에서 계승): <b>게임플레이 코드를 한 줄도 고치지 않는다.</b>
+/// 전부 기존 public 이벤트 구독이거나 기존 public 상태 폴링이다.
 ///
 /// 세이브 복원이 이벤트를 재발화시키는 함정(GameManager.RestoreTier → TierUnlocked,
 /// ItemContainer.RestoreSlotsRaw → Changed)은 <b>애초에 이벤트를 안 쓰는 쪽</b>으로 피했다 —
 /// 코어 티어·일차·인벤토리는 전부 폴링한다. 폴링은 복원 후의 값을 그대로 읽으므로
 /// 복원 중 오발화라는 개념 자체가 없다.
 /// </summary>
-public sealed class TutorialConditions
+public sealed class TutorialObserver
 {
-    // ── 누적 카운터 (단조 증가 — 기준점을 빼서 "이 스텝이 뜬 뒤로 n번 더"를 만든다) ──
+    // ── 누적 카운터 (단조 증가 — Progress가 기준점을 빼서 "뜬 뒤로 n번 더"를 만든다) ──
     public int MinedTotal { get; private set; }
     public int PlacedCount { get; private set; }
     public int PlacedBelts { get; private set; }
     public int DemolishedCount { get; private set; }
     public int BeltShapeCycles { get; private set; }
     public int HotbarSwitches { get; private set; }
+    public int JumpCount { get; private set; }
+    public int SlideCount { get; private set; }
+
+    /// <summary>달리기 누적 초 — 모션 상태의 IsSprinting을 매 프레임 적산한다.</summary>
+    public float SprintSeconds { get; private set; }
 
     /// <summary>손 제작으로 만들어 낸 개수 — 분류별. 없는 키는 0.</summary>
     readonly Dictionary<ItemType, int> _crafted = new();
@@ -43,6 +51,7 @@ public sealed class TutorialConditions
     BuildMenuView _buildMenuView;
     PlacementSystem _placement;
     FactorySim _hookedSim;
+    PlayerMotionState _hookedMotion;
     TutorialInputProbe _probe;
 
     int _lastBuildingCount = -1;   // -1 = 아직 기준을 못 잡음 (다음 폴링이 기준만 잡고 넘어간다)
@@ -67,7 +76,33 @@ public sealed class TutorialConditions
         _probe = null;
         InventoryPanelView.HandCrafted -= OnHandCrafted;
         UnhookSim();
+        UnhookMotion();
     }
+
+    // ── 모션 이벤트 — 점프·슬라이드는 이산 사건이라 폴링으로 엣지를 추측하지 않는다(PlayerMotionState 규칙) ──
+
+    void HookMotion(PlayerMotionState motion)
+    {
+        if (motion == _hookedMotion) return;
+        UnhookMotion();
+        _hookedMotion = motion;
+        if (_hookedMotion == null) return;
+        _hookedMotion.Jumped += OnJumped;
+        _hookedMotion.SlideStarted += OnSlideStarted;
+    }
+
+    void UnhookMotion()
+    {
+        if (_hookedMotion != null)
+        {
+            _hookedMotion.Jumped -= OnJumped;
+            _hookedMotion.SlideStarted -= OnSlideStarted;
+        }
+        _hookedMotion = null;
+    }
+
+    void OnJumped(float launchSpeed) => JumpCount++;
+    void OnSlideStarted(float entrySpeed) => SlideCount++;
 
     void OnPerformed(InputActionId id)
     {
@@ -116,9 +151,7 @@ public sealed class TutorialConditions
 
     // ─────────────────── 매 프레임 (가벼운 것만) ───────────────────
 
-    /// <summary>
-    /// 이동·시점은 프레임 단위 값이라 0.2초 폴링으로는 대부분을 놓친다. 여기만 매 프레임 본다.
-    /// </summary>
+    /// <summary>이동·시점은 프레임 단위 값이라 0.2초 폴링으로는 대부분을 놓친다. 여기만 매 프레임 본다.</summary>
     public void UpdateFast(float dt)
     {
         if (_player == null) return;
@@ -128,6 +161,7 @@ public sealed class TutorialConditions
 
         if (m.MoveInput.sqrMagnitude > 0.01f) MoveSeconds += dt;
         if (m.LookDelta.sqrMagnitude > 0.0001f) LookSeconds += dt;
+        if (m.IsSprinting) SprintSeconds += dt;
     }
 
     // ───────────────────── 주기 폴링 (0.2초) ─────────────────────
@@ -135,7 +169,13 @@ public sealed class TutorialConditions
     public void Tick()
     {
         if (_player == null || !_player.isActiveAndEnabled)
+        {
             _player = Object.FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
+            // 플레이어가 갈렸거나 잠시 꺼졌다 켜졌다 — 그쪽 ClearSubscribers가 우리 구독을 이미
+            // 날렸을 수 있어, 같은 객체라도 다시 건다 (Jumped/SlideStarted는 폴링으로 못 세는 엣지다)
+            UnhookMotion();
+        }
+        HookMotion(_player != null ? _player.Motion : null);
 
         if (_placement == null)
             _placement = Object.FindFirstObjectByType<PlacementSystem>(FindObjectsInactive.Include);
@@ -247,104 +287,9 @@ public sealed class TutorialConditions
         if (total > MinedTotal) MinedTotal = total;
     }
 
-    // ───────────────────────── 판정 ─────────────────────────
-
-    /// <summary>
-    /// 누적형 조건의 기준점으로 쓸 현재 값. 그 외 조건은 0 (기준점이 무의미하다).
-    ///
-    /// 밤이 여기 들어 있는 이유: 밤은 플레이어가 하는 일이 아니라 플레이어에게 <b>일어나는</b> 일이라,
-    /// 절대값으로 두면 앞선 안내를 보는 동안 밤이 지나가 버려 "밤이 온다"는 경고를 영영 못 읽는다.
-    /// 기준점을 잡아 두면 그 안내가 뜬 뒤 <i>다음</i> 밤까지 카드가 남아, 읽을 시간이 반드시 생긴다.
-    /// </summary>
-    public int CounterOf(TutorialStepSO step)
-    {
-        if (step == null) return 0;
-
-        switch (step.trigger)
-        {
-            case TutorialTrigger.MineResource: return MinedTotal;
-            case TutorialTrigger.PlaceBuilding: return PlacedCount;
-            case TutorialTrigger.PlaceBelt: return PlacedBelts;
-            case TutorialTrigger.SwitchHotbarSlot: return HotbarSwitches;
-            case TutorialTrigger.DemolishBuilding: return DemolishedCount;
-            case TutorialTrigger.NightReached: return NightsStarted;
-            case TutorialTrigger.SurviveNight: return NightsSurvived;
-            case TutorialTrigger.CraftItemType: return CraftedOfType(step.itemType);
-            case TutorialTrigger.CycleBeltShape: return BeltShapeCycles;
-            default: return 0;
-        }
-    }
-
-    /// <summary>
-    /// 이 스텝을 끝냈는가. <paramref name="baseline"/>은 스텝이 화면에 뜬 순간의 카운터 값이고,
-    /// 아직 뜬 적 없는 스텝은 0이다 — 그래서 앞질러 해버린 단계는 절대값으로 판정되어 자동 완료된다.
-    /// 이것이 "이미 할 줄 아는 것 같으면 건너뛴다"의 전부다.
-    /// </summary>
-    public bool Evaluate(TutorialStepSO step, int baseline)
-    {
-        if (step == null) return false;
-
-        int need = Mathf.Max(1, step.count);
-
-        switch (step.trigger)
-        {
-            case TutorialTrigger.MoveAndLook:
-                // 시점은 1/4만 요구한다 — 계속 돌리고 있으라는 뜻이 아니라 둘러봤으면 됐다
-                return MoveSeconds >= step.seconds && LookSeconds >= step.seconds * 0.25f;
-
-            case TutorialTrigger.AcquireItemType:
-                return CountOfType(step.itemType) >= need;
-
-            case TutorialTrigger.AcquireItem:
-                return step.item != null && CountOfItem(step.item) >= need;
-
-            case TutorialTrigger.OpenInventory:
-                return InventoryOpened;
-
-            case TutorialTrigger.MineResource:
-                return MinedTotal - baseline >= need;
-
-            case TutorialTrigger.EquipWeapon:
-                return WeaponEquipped;
-
-            case TutorialTrigger.EnterBuildMode:
-                return BuildModeEntered;
-
-            case TutorialTrigger.PlaceBuilding:
-                return PlacedCount - baseline >= need;
-
-            case TutorialTrigger.PlaceBelt:
-                return PlacedBelts - baseline >= need;
-
-            case TutorialTrigger.SwitchHotbarSlot:
-                return HotbarSwitches - baseline >= need;
-
-            case TutorialTrigger.DemolishBuilding:
-                return DemolishedCount - baseline >= need;
-
-            case TutorialTrigger.CoreTierReached:
-                return CoreTier >= need;
-
-            case TutorialTrigger.NightReached:
-                return NightsStarted - baseline >= need;
-
-            case TutorialTrigger.SurviveNight:
-                return NightsSurvived - baseline >= need;
-
-            case TutorialTrigger.CraftItemType:
-                return CraftedOfType(step.itemType) - baseline >= need;
-
-            case TutorialTrigger.CycleBeltShape:
-                return BeltShapeCycles - baseline >= need;
-
-            default:
-                return false;   // None — 저작 중인 스텝은 영영 끝나지 않는다
-        }
-    }
-
     // ──────────────────── 인벤토리 조회 ────────────────────
 
-    static int CountOfItem(ItemDataSO item)
+    public static int CountOfItem(ItemDataSO item)
     {
         var h = PlayerInventoryHolder.Instance;
         if (h == null) return 0;
@@ -355,7 +300,7 @@ public sealed class TutorialConditions
         return n;
     }
 
-    static int CountOfType(ItemType type)
+    public static int CountOfType(ItemType type)
     {
         var h = PlayerInventoryHolder.Instance;
         if (h == null) return 0;

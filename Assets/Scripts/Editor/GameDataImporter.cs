@@ -64,6 +64,36 @@ public static class GameDataImporter
         public RecipeDto[]   recipes;
         public BuildingDto[] buildings;
         public WaveDto[]     waves;
+        public TutorialStepDto[] tutorial;
+    }
+
+    /// <summary>
+    /// 튜토리얼 완료 조건 한 개 — 스텝 에셋의 서브에셋(TutorialConditionSO)의 json 형태.
+    /// type은 조건 클래스 이름 — "Condition" 접미는 생략해도 된다 (MineResource / MineResourceCondition).
+    /// 나머지 필드는 그 클래스에 실제로 있는 것만 읽힌다 — 없는 필드는 조용히 무시.
+    /// </summary>
+    [Serializable] internal class TutorialConditionDto : JsonDtoBase
+    {
+        public string type;
+        public int    count = 1;      // 누적형·소지형: 몇 번/몇 개
+        public float  seconds = 2f;   // MoveAndLook: 이동 누적 초
+        public int    tier = 1;       // CoreTier: 목표 티어
+        public string itemType;       // ItemType 이름. 생략 시 클래스 기본값 유지
+        public string item;           // 아이템 id (AcquireItem 전용)
+    }
+
+    [Serializable] internal class TutorialStepDto : JsonDtoBase
+    {
+        public string id;            // 필수. 예: "Tutorial:Mine" — 세이브 키라 바꾸면 안 된다
+        public string displayName;   // 필수
+        public string description;
+        public int    order;         // 작을수록 먼저
+        public string tag = "GUIDE"; // 카드 배지
+        public string body;          // 카드 본문
+        public string[] keyHints;    // 키캡
+        public float  minSeconds = 2.5f;
+        public bool   requireInOrder;
+        public TutorialConditionDto[] conditions;   // 전부 충족해야 끝난다. 비면 영영 안 끝남(저작 중)
     }
 
     /// <summary>공격 효과 한 항목 — EffectEntry의 json 형태. effect는 효과 id.</summary>
@@ -321,8 +351,19 @@ public static class GameDataImporter
                 foreach (var dto in root.waves)
                     ImportWave(file, dto, byId, ref created, ref updated, ref errors);
 
+        // 5패스: 튜토리얼 (조건이 아이템을 참조할 수 있어 아이템 뒤)
+        bool anyTutorial = false;
+        foreach (var (file, root) in roots)
+            if (root?.tutorial != null)
+                foreach (var dto in root.tutorial)
+                {
+                    anyTutorial = true;
+                    ImportTutorialStep(file, dto, byId, ref created, ref updated, ref errors);
+                }
+
         AssetDatabase.SaveAssets();
         BuildingDatabaseScanner.RebuildAll();   // 아이템·건물 DB 재수집
+        if (anyTutorial) RebuildTutorialDatabase();   // json에 섹션이 있을 때만 — 손으로 채운 DB를 덮지 않는다
 
         Debug.Log($"[GameDataImporter] 완료 — 생성 {created}, 갱신 {updated}, 오류 {errors} (파일 {files.Length}개)");
     }
@@ -684,6 +725,152 @@ public static class GameDataImporter
 
         EditorUtility.SetDirty(wave);
         if (isNew) created++; else updated++;
+    }
+
+    // ── 튜토리얼 ──────────────────────────────────────────────
+
+    const string TutorialFolder       = "Assets/Data/Tutorial";
+    const string TutorialDatabasePath = "Assets/Resources/TutorialDatabase.asset";
+
+    static void ImportTutorialStep(string file, TutorialStepDto dto, Dictionary<string, GameDataSO> byId,
+        ref int created, ref int updated, ref int errors)
+    {
+        if (!ValidateKey(file, "tutorial", dto?.id, dto?.displayName, ref errors)) return;
+
+        var existing = Find<TutorialStepSO>(byId, dto.id, file, ref errors);
+        if (existing == null && byId.ContainsKey(dto.id)) return;
+
+        bool isNew = existing == null;
+        var step = existing != null ? existing
+            : (TutorialStepSO)CreateAsset(typeof(TutorialStepSO), dto.id, TutorialFolder, byId);
+
+        step.displayName    = dto.displayName;
+        step.description    = dto.description ?? "";
+        step.order          = dto.order;
+        step.tag            = string.IsNullOrEmpty(dto.tag) ? "GUIDE" : dto.tag;
+        step.body           = dto.body ?? "";
+        step.keyHints       = dto.keyHints ?? Array.Empty<string>();
+        step.minSeconds     = dto.minSeconds;
+        step.requireInOrder = dto.requireInOrder;
+
+        SyncTutorialConditions(file, dto, step, byId, ref errors);
+
+        EditorUtility.SetDirty(step);
+        if (isNew) created++; else updated++;
+    }
+
+    /// <summary>
+    /// 조건 서브에셋을 json 목록에 맞춘다 (ItemModuleSO와 같은 서브에셋 관리).
+    /// 같은 타입의 서브에셋이 이미 있으면 재사용한다 — fileID가 보존되어 임포트마다
+    /// 에셋 diff가 뒤집히지 않는다. json에 없는 것은 지운다.
+    /// </summary>
+    static void SyncTutorialConditions(string file, TutorialStepDto dto, TutorialStepSO step,
+        Dictionary<string, GameDataSO> byId, ref int errors)
+    {
+        var list   = step.EditorConditions;
+        var spare  = new List<TutorialConditionSO>(list);
+        var result = new List<TutorialConditionSO>();
+
+        foreach (var c in dto.conditions ?? Array.Empty<TutorialConditionDto>())
+        {
+            var type = ResolveConditionType(c?.type);
+            if (type == null)
+            {
+                Debug.LogError($"[GameDataImporter] {file} tutorial '{dto.id}': 알 수 없는 조건 type '{c?.type}' — 이 조건만 제외");
+                errors++;
+                continue;
+            }
+
+            var cond = spare.Find(o => o != null && o.GetType() == type);
+            if (cond != null) spare.Remove(cond);
+            else
+            {
+                cond = (TutorialConditionSO)ScriptableObject.CreateInstance(type);
+                cond.name = type.Name;
+                AssetDatabase.AddObjectToAsset(cond, step);
+            }
+
+            ApplyConditionFields(file, dto.id, c, cond, byId, ref errors);
+            EditorUtility.SetDirty(cond);
+            result.Add(cond);
+        }
+
+        foreach (var o in spare)
+        {
+            if (o == null) continue;
+            AssetDatabase.RemoveObjectFromAsset(o);
+            UnityEngine.Object.DestroyImmediate(o, true);
+        }
+
+        list.Clear();
+        list.AddRange(result);
+    }
+
+    /// <summary>조건 클래스 이름 → 타입. "Condition" 접미는 있어도 없어도 된다.</summary>
+    internal static Type ResolveConditionType(string typeName)
+    {
+        if (string.IsNullOrEmpty(typeName)) return null;
+        string full = typeName.EndsWith("Condition", StringComparison.Ordinal) ? typeName : typeName + "Condition";
+
+        foreach (var t in TypeCache.GetTypesDerivedFrom<TutorialConditionSO>())
+            if (!t.IsAbstract && (t.Name == typeName || t.Name == full)) return t;
+        return null;
+    }
+
+    /// <summary>
+    /// dto의 값을 조건에 있는 필드에만 쓴다 — SerializedObject로 이름을 맞춰 보므로
+    /// 조건 클래스마다 임포터 코드를 늘릴 필요가 없다 (새 조건 = 클래스 하나).
+    /// </summary>
+    static void ApplyConditionFields(string file, string stepId, TutorialConditionDto c, TutorialConditionSO cond,
+        Dictionary<string, GameDataSO> byId, ref int errors)
+    {
+        var so = new SerializedObject(cond);
+
+        var p = so.FindProperty("count");   if (p != null) p.intValue   = Mathf.Max(1, c.count);
+        p     = so.FindProperty("seconds"); if (p != null) p.floatValue = c.seconds;
+        p     = so.FindProperty("tier");    if (p != null) p.intValue   = Mathf.Max(1, c.tier);
+
+        p = so.FindProperty("itemType");
+        if (p != null && !string.IsNullOrEmpty(c.itemType))
+        {
+            if (Enum.TryParse(c.itemType, true, out ItemType it)) p.intValue = (int)it;
+            else { Debug.LogError($"[GameDataImporter] {file} tutorial '{stepId}': 알 수 없는 itemType '{c.itemType}'"); errors++; }
+        }
+
+        p = so.FindProperty("item");
+        if (p != null && !string.IsNullOrEmpty(c.item))
+        {
+            if (byId.TryGetValue(c.item, out var target) && target is ItemDataSO item) p.objectReferenceValue = item;
+            else { Debug.LogError($"[GameDataImporter] {file} tutorial '{stepId}': 아이템 id '{c.item}' 를 찾을 수 없습니다"); errors++; }
+        }
+
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    /// <summary>
+    /// Resources/TutorialDatabase.asset의 목록을 폴더의 스텝 에셋으로 다시 채운다 — 순서는 order.
+    /// 임포터는 에셋을 지우지 않으므로(다른 섹션과 같은 규칙) json에서 뺀 스텝은 에셋을 직접 지워야 목록에서 빠진다.
+    /// </summary>
+    static void RebuildTutorialDatabase()
+    {
+        var db = AssetDatabase.LoadAssetAtPath<TutorialDatabaseSO>(TutorialDatabasePath);
+        if (db == null)
+        {
+            Debug.LogWarning($"[GameDataImporter] {TutorialDatabasePath} 가 없어 튜토리얼 목록을 갱신하지 못했습니다.");
+            return;
+        }
+
+        var steps = new List<TutorialStepSO>();
+        foreach (var guid in AssetDatabase.FindAssets("t:TutorialStepSO", new[] { TutorialFolder }))
+        {
+            var s = AssetDatabase.LoadAssetAtPath<TutorialStepSO>(AssetDatabase.GUIDToAssetPath(guid));
+            if (s != null) steps.Add(s);
+        }
+        steps.Sort((a, b) => a.order != b.order ? a.order.CompareTo(b.order) : string.CompareOrdinal(a.Id, b.Id));
+
+        db.steps = steps.ToArray();
+        EditorUtility.SetDirty(db);
+        AssetDatabase.SaveAssets();
     }
 
     // ── 건물 ──────────────────────────────────────────────────
