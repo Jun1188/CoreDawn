@@ -22,7 +22,7 @@ MonoBehaviour:
     \uC9C1\uC811 \uB9CC\uB4DC\uC138\uC694.\n\uC7AC\uB8CC\uAC00 \uBAA8\uC790\uB77C\uBA74
     \uAD11\uB9E5\uC744 \uB354 \uCE90\uC57C \uD569\uB2C8\uB2E4."
   keyHints:
-  - E
+  - TAB
   conditions:
   - {fileID: 2115329216637169357}
   minSeconds: 2.5

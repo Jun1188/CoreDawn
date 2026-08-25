@@ -2935,10 +2935,9 @@
       "description": "",
       "order": 16,
       "tag": "MOVE 3",
-      "body": "달리는 중에 Ctrl을 누르면 슬라이딩합니다.\n빠를수록 멀리 미끄러집니다.",
+      "body": "달리는 중에 C를 누르면 슬라이딩합니다.\n빠를수록 멀리 미끄러집니다.",
       "keyHints": [
-        "Shift",
-        "Ctrl"
+        "C"
       ],
       "minSeconds": 2.5,
       "requireInOrder": false,
@@ -2981,7 +2980,7 @@
       "tag": "CORE",
       "body": "코어에 수리 자원을 넣고 상호작용하여 수리를 시작하세요.",
       "keyHints": [
-        "F"
+        "E"
       ],
       "minSeconds": 2.5,
       "requireInOrder": false,
@@ -3002,7 +3001,7 @@
       "tag": "MINING",
       "body": "광맥을 찾고 바라본뒤 상호작용하여 수동으로 자원을 캐세요",
       "keyHints": [
-        "F"
+        "E"
       ],
       "minSeconds": 2.5,
       "requireInOrder": false,
@@ -3023,7 +3022,7 @@
       "tag": "ITEMS",
       "body": "E 키로 인벤토리를 열어 가진 것을 확인하세요.\n제작도 이 화면에서 합니다.",
       "keyHints": [
-        "E"
+        "TAB"
       ],
       "minSeconds": 2.5,
       "requireInOrder": false,
@@ -3044,7 +3043,7 @@
       "tag": "CRAFT",
       "body": "인벤토리의 제작 목록에서 무기를 직접 만드세요.\n재료가 모자라면 광맥을 더 캐야 합니다.",
       "keyHints": [
-        "E"
+        "TAB"
       ],
       "minSeconds": 2.5,
       "requireInOrder": false,

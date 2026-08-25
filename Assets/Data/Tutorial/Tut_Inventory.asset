@@ -22,7 +22,7 @@ MonoBehaviour:
     \uAC83\uC744 \uD655\uC778\uD558\uC138\uC694.\n\uC81C\uC791\uB3C4 \uC774 \uD654\uBA74\uC5D0\uC11C
     \uD569\uB2C8\uB2E4."
   keyHints:
-  - E
+  - TAB
   conditions:
   - {fileID: 1911390657484063116}
   minSeconds: 2.5

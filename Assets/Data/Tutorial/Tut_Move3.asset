@@ -18,11 +18,10 @@ MonoBehaviour:
   icon: {fileID: 0}
   order: 16
   tag: MOVE 3
-  body: "\uB2EC\uB9AC\uB294 \uC911\uC5D0 Ctrl\uC744 \uB204\uB974\uBA74 \uC2AC\uB77C\uC774\uB529\uD569\uB2C8\uB2E4.\n\uBE60\uB97C\uC218\uB85D
+  body: "\uB2EC\uB9AC\uB294 \uC911\uC5D0 C\uB97C \uB204\uB974\uBA74 \uC2AC\uB77C\uC774\uB529\uD569\uB2C8\uB2E4.\n\uBE60\uB97C\uC218\uB85D
     \uBA40\uB9AC \uBBF8\uB044\uB7EC\uC9D1\uB2C8\uB2E4."
   keyHints:
-  - Shift
-  - Ctrl
+  - C
   conditions:
   - {fileID: 4589071844251570353}
   minSeconds: 2.5
