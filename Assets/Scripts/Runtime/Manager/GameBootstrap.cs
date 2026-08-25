@@ -115,6 +115,10 @@ public static class GameBootstrap
 
         battle.Inject(grid, Object.FindFirstObjectByType<FlowFieldManager>());
 
+        // 몬스터 아웃라인 — 반경 판정의 기준점(플레이어)을 꽂는다. Combat 씬은 플레이어를 모른다
+        var outline = Object.FindFirstObjectByType<MonsterOutlineProximity>();
+        if (outline != null) outline.Inject(PlayerRoot());
+
         // 둥지·광맥·밤 진입로는 맵이 정한다. 씬에 미리 놓지 않고 여기서 세우는 이유는
         // 맵을 갈아끼우면 배치도 함께 갈려야 하기 때문이다 — 씬에 박아두면 맵과 배치가
         // 따로 놀다가 "새 맵인데 옛 둥지가 서 있는" 상태가 된다.
@@ -124,6 +128,13 @@ public static class GameBootstrap
 
     /// <summary>이 씬의 월드 — 맵 데이터의 출처. 없으면 맵 없는 구성(테스트 씬)이다.</summary>
     static World ActiveWorld() => Object.FindFirstObjectByType<World>();
+
+    /// <summary>플레이어 루트 트랜스폼 — 거리 판정의 기준점. 없으면 null (몬스터 아웃라인처럼 없어도 해롭지 않은 소비자용).</summary>
+    static Transform PlayerRoot()
+    {
+        var player = Object.FindFirstObjectByType<PlayerController>();
+        return player != null ? player.transform : null;
+    }
 
     /// <summary>플레이어의 시점 카메라 — 조준·배치의 기준. 없으면 알린다(조용히 넘어가지 않는다).</summary>
     static Camera PlayerCamera()

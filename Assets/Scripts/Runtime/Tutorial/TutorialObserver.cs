@@ -44,6 +44,8 @@ public sealed class TutorialObserver
     public int CoreTier { get; private set; }
     public int NightsStarted { get; private set; }
     public int NightsSurvived { get; private set; }
+    /// <summary>지금이 밤인가 — 밤 조건이 "이 밤을 이미 맞고 있는가"를 가릴 때 쓴다.</summary>
+    public bool IsNight { get; private set; }
 
     // ── 캐시 ──
     PlayerController _player;
@@ -245,6 +247,7 @@ public sealed class TutorialObserver
         int day = tm.DayNumber;
         bool night = tm.Phase == DayPhase.Night;
 
+        IsNight = night;
         NightsStarted = Mathf.Max(NightsStarted, night ? day : day - 1);
         NightsSurvived = Mathf.Max(NightsSurvived, day - 1);
     }
