@@ -50,6 +50,7 @@ class GBuilding
     public int inputSlots = 1, outputSlots = 1, bufferStackCap, requiredCoreTier, maxHp = 200;
     public bool hideFromBuildMenu;
     public int menuOrder;   // 같은 티어 안 표시 순서 (공정 단계)
+    public int threatSeedCost = 80;   // 몬스터 위협도 시드 (월드 칸=10)
     public bool isDemolishable = true, isAttackable;   // 공격 가능은 기본 꺼짐 — 둥지·지형물만 켠다
     public float speedMultiplier = 1, speedTilesPerSec = 2;
     public List<string> availableRecipes = new();
@@ -177,6 +178,7 @@ class GdBuildingTab : GdTab
                 inputSlots = o.inputSlots, outputSlots = o.outputSlots, bufferStackCap = o.bufferStackCap,
                 maxHp = o.maxHp, requiredCoreTier = o.requiredCoreTier, hideFromBuildMenu = o.hideFromBuildMenu,
                 menuOrder = o.menuOrder,
+                threatSeedCost = o.threatSeedCost >= 0 ? o.threatSeedCost : 80,
                 isDemolishable = o.isDemolishable, isAttackable = o.isAttackable,
                 speedMultiplier = o.speedMultiplier > 0 ? o.speedMultiplier : 1,
                 speedTilesPerSec = o.speedTilesPerSec > 0 ? o.speedTilesPerSec : 2,
@@ -222,6 +224,7 @@ class GdBuildingTab : GdTab
         o.inputSlots = b.inputSlots; o.outputSlots = b.outputSlots; o.bufferStackCap = b.bufferStackCap;
         o.maxHp = b.maxHp; o.requiredCoreTier = b.requiredCoreTier; o.hideFromBuildMenu = b.hideFromBuildMenu;
         o.menuOrder = b.menuOrder;
+        o.threatSeedCost = b.threatSeedCost;
         o.isDemolishable = b.isDemolishable; o.isAttackable = b.isAttackable;
 
         // 종류별 전용 필드 — 원본 exportJson 과 같은 규칙. 다른 kind 의 잔존값은
@@ -579,6 +582,11 @@ class GdBuildingTab : GdTab
         propsBox.Add(Field2("Menu Order", IntField(b.menuOrder,
             v => { b.menuOrder = Mathf.Max(0, v); RenderWarn(); },
             "같은 티어 안 표시 순서 — 공정 단계를 적는다 (채굴 0 · 제련 1 · 제작 2 · 조립 3 · 제조 4)")));
+
+        propsBox.Add(Field2("Threat Seed", IntField(b.threatSeedCost,
+            v => { b.threatSeedCost = Mathf.Max(0, v); RenderWarn(); },
+            "몬스터가 무엇부터 노리는가 — 플로우필드 시드 비용 (월드 칸 = 10). 낮을수록 먼저.\n" +
+            "코어 0 = 최종 목표 · 공격 포탑 10 = 가는 길에 먼저 부순다 · 일반 건물 80 = 굳이 돌아가지 않는다")));
 
         // Build Cost
         propsBox.Add(CostBlock("BUILD COST · 철거 시 전액 환급", b.buildCost, RenderProps));

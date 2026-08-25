@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   day: 2
   requiredCoreTier: 0
-  baseAmount: 6
+  baseAmount: 10
   maxAliveAmount: 6
   spawnInterval: 2
-  monsterMaxHp: 0
+  monsterMaxHp: 20

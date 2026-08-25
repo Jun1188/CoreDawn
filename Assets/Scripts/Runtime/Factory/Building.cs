@@ -94,16 +94,30 @@ public class Building
     /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용).</summary>
     public IBuildingBehavior Behavior => _behavior;
 
+    // 출력 라운드로빈 커서 — 다음에 먼저 밀어볼 출력 연결 인덱스.
+    // 세이브하지 않는다: 로드 뒤 0에서 다시 돌기 시작해도 분배는 곧 고르게 되고, 잃는 것이 없다.
+    int _nextOut;
+
     /// <summary>
     /// 출력 버퍼의 아이템을 연결된 다음 건물로 Push.
     /// 성공하면 수신 건물을 Dirty 마킹 → 다음 틱에 처리됨.
+    ///
+    /// 출력이 여럿이면 <b>라운드로빈</b>으로 돌아가며 민다 (분배기와 같은 규칙).
+    /// 예전에는 목록 첫 연결이 받는 한 그쪽으로만 갔다 — 저장소처럼 출구가 넷인 건물에서
+    /// 먼저 이은 라인이 전부를 독식하고 나머지 셋은 첫 라인이 막힐 때만 받았다.
+    /// 가득 찬 출구는 건너뛰므로 한쪽이 막혀도 나머지로 계속 흐른다.
     /// </summary>
     public bool TryPushOutput(ItemDataSO item)
     {
-        foreach (var c in OutputConnections)
+        var conns = OutputConnections;
+        int n = conns.Count;
+        for (int i = 0; i < n; i++)
         {
-            if (!c.To.Input.TryAdd(item)) continue;
+            var c = conns[(_nextOut + i) % n];
+            if (!c.To.Input.TryAdd(item)) continue;   // 가득 찬 출구 — 다음 출구로
+
             Sim.MarkDirty(c.To);
+            _nextOut = (_nextOut + i + 1) % n;        // 다음 아이템은 그 다음 출구부터
             return true;
         }
         return false; // 모든 출력 막힘

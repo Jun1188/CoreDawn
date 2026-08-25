@@ -17,10 +17,11 @@ public class FlowFieldState : IEntityState
             return;
         }
 
-        // 목표 건물(코어/타워)이 사거리에 들어오면 공격
+        // 진격 경로 위의 건물(뚫어야 할 것·도착한 목표)이 사거리에 들어오면 공격.
+        // 사거리 안이라고 아무 건물이나 치지 않는다 — 그러면 코어로 가다 길가의 나무·설비마다 멈춘다.
         if (stateMachine.Combat != null)
         {
-            var building = BuildingEntity.FindClosestInRange(
+            var building = manager.FindBreachTarget(
                 stateMachine.Transform.position, stateMachine.Combat.AttackRange);
             if (building.IsValidTarget())
             {

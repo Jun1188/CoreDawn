@@ -152,9 +152,14 @@ public class FlowFieldManager : MonoBehaviour
 
             // 무엇부터 노릴지는 건물이 정한다 — 코어 0(최종 목표), 공격 타워는 낮게(먼저 부순다),
             // 일반 건물은 높게(굳이 돌아가지 않는다). 시드가 작을수록 그 목표가 가깝게 계산된다.
+            //
+            // 시드는 "월드 칸 = 10" 단위로 적혀 있는데 길찾기 격자는 월드 칸을 subdiv 등분한다.
+            // 그대로 쓰면 이동 비용만 subdiv배로 불어나 시드의 우회 허용 거리가 그만큼 줄어든다 —
+            // 80(8칸)이 4등분 격자에서는 2칸이 되어, 코어로 가던 몬스터가 두 칸 옆 건물로 새는 원인이었다.
             int seedCost = building.IsCore ? 0
                          : building.Data != null ? building.Data.threatSeedCost
                          : fallbackGoalCost;
+            seedCost *= Mathf.Max(1, grid.Subdiv);
 
             // 점유 풋프린트가 기준이다 — 콜라이더는 메시마다 조각나 있어서 하나만 집으면
             // 건물의 일부(코어의 안테나 한 짝)만 목표가 되고, 전부 합쳐도 모델일 뿐이다.
@@ -187,6 +192,45 @@ public class FlowFieldManager : MonoBehaviour
             Node node = grid.NodeFromWorldPoint(building.transform.position);
             if (node != null) goalBuffer.Add(new FlowField.Goal(node.gridCoord, seedCost));
         }
+    }
+
+    // ── 공격 대상 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// 이 자리에서 <b>진격 경로 위에 서 있는</b> 건물 — 지금 부숴야 앞으로 갈 수 있는 것.
+    ///
+    /// 사거리 안이라도 경로 밖 건물은 돌려주지 않는다. "닿는 건물은 다 친다"로 두면 몬스터가
+    /// 코어로 가다 말고 길가의 나무·설비마다 멈춰 서고, 그게 곧 "코어를 우선하지 않는다"였다.
+    ///
+    /// 필드는 건물을 "비싼 길"로 계산하므로 next 사슬이 건물 칸을 지난다는 것은 곧
+    /// "돌아가는 것보다 뚫는 게 싸다"는 판정이다 — 뚫을 건물만 여기서 잡힌다.
+    /// 목표 건물(시드)은 사슬의 끝 칸이 그 건물 자리라 같은 방식으로 잡힌다.
+    /// </summary>
+    public BuildingEntity FindBreachTarget(Vector3 from, float range)
+    {
+        var grid = GridManager.Instance;
+        if (grid == null || !front.HasField) return null;
+
+        Node node = grid.NodeFromWorldPoint(from);
+        if (node == null) return null;
+
+        // 사거리만큼만 사슬을 따라간다 — 대각이 섞여 칸 수가 들쭉날쭉하니 두 칸 여유를 둔다
+        int maxSteps = Mathf.CeilToInt(range / Mathf.Max(0.01f, grid.cellSize)) + 2;
+        Vector2Int cell = node.gridCoord;
+
+        for (int i = 0; i <= maxSteps; i++)
+        {
+            var building = grid.BuildingEntityAt(cell);
+            if (building != null && building.IsValidTarget() && building.DistanceTo(from) <= range)
+                return building;
+
+            // 사슬의 끝 = 목표 칸에 닿았거나 길이 없다. 목표가 심 밖 건물(씬에 직접 놓인 코어 등)이면
+            // 위 조회가 null이라 여기서 사거리로 한 번 더 본다 — 도착했는데 손을 놓고 서 있지 않게
+            if (!front.TryGetNext(cell, out var next))
+                return BuildingEntity.FindClosestInRange(from, range);
+            cell = next;
+        }
+        return null;
     }
 
     // ── 조회 (시각화·검증용) ────────────────────────────────────

@@ -76,6 +76,12 @@ public class InventoryPanelView : PlayerItemPanelView
         btnClose.clicked += Close;
         searchField.RegisterValueChangedCallback(OnSearchChanged);
 
+        // 검색어는 창을 닫아도 남는다(UIDocument가 살아 있고 필드는 그 안에 있다) — 그대로 두면
+        // 지난번에 친 글자로 걸러진 목록이 뜨고, 티어가 올라 새로 열린 레시피가 "해금이 안 된 것처럼" 보인다.
+        // 창을 여는 순간은 새 검색이다.
+        search = "";
+        searchField.SetValueWithoutNotify("");
+
         // 돋보기 — USS에 SVG가 없어 요소로 넣는다. Bind가 다시 돌아도 하나만
         var searchBox = r.Q("recipe-search-box");
         if (searchBox != null && searchBox.Q<SearchGlyph>() == null)

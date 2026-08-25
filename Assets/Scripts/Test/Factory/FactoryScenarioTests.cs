@@ -47,6 +47,8 @@ public class FactoryScenarioTests : MonoBehaviour
         Run("11. 분배기 필터 다중 아이템",      S11_SplitterMultiItemFilter);
         Run("12. 한 아이템 → 두 출구 분배",     S12_SplitterItemToTwoOutlets);
         Run("13. 막은 출구 건너뛰기",           S13_SplitterBlockedOutlet);
+        Run("14. 벨트 없는 직결 체인",          S14_DirectChain);
+        Run("15. 다출구 라운드로빈",            S15_MultiOutputRoundRobin);
 
         foreach (var so in _createdSOs) DestroyImmediate(so);
         _createdSOs.Clear();
@@ -347,6 +349,55 @@ public class FactoryScenarioTests : MonoBehaviour
         Expect(StoredCount(storeA, _ore) == 4, $"남은 출구로 전부 넘어가야 함 (실제: {StoredCount(storeA, _ore)}개)");
     }
 
+    /// <summary>
+    /// 마이너 → 조립기 → 저장소를 벨트 없이 포트끼리 맞대어 잇는다.
+    /// 건물↔건물 직결은 벨트 세그먼트를 거치지 않고 Building.TryPushOutput → Input.TryAdd 로만 흐른다 —
+    /// 그 경로가 벨트 경로와 따로 살아 있는지 박제한다.
+    /// </summary>
+    void S14_DirectChain()
+    {
+        var recipe = MakeRecipe(_ore, 1, _ingot, 1, craftTime: 0.3f);
+
+        var miner = Place(Miner(), 0, 0);                  // 출력 East
+        var asm   = Place(Assembler(recipe), 1, 0);        // 입력 West · 출력 East
+        var store = Place(Storage(), 2, 0);                // 입력 West
+
+        Expect(miner.OutputConnections.Count == 1 && miner.OutputConnections[0].To == asm,
+            "마이너 → 조립기 직결이 그래프에 잡혀야 함");
+        Expect(asm.OutputConnections.Count == 1 && asm.OutputConnections[0].To == store,
+            "조립기 → 저장소 직결이 그래프에 잡혀야 함");
+
+        RunSim(5f);
+        Expect(asm.Input.CountOf(_ore) + asm.Output.CountOf(_ingot) + StoredCount(store, _ingot) > 0,
+            "마이너의 광석이 벨트 없이 조립기로 넘어가야 함");
+        Expect(StoredCount(store, _ingot) >= 1,
+            $"조립기 산출물이 벨트 없이 저장소까지 가야 함 (실제: {StoredCount(store, _ingot)}개)");
+    }
+
+    /// <summary>
+    /// 출구가 셋인 저장소: 세 하류로 고르게 나뉘어야 한다.
+    /// 예전 TryPushOutput은 첫 연결이 받는 한 그쪽으로만 밀어 나머지 둘은 첫 라인이 막힐 때만 받았다.
+    /// </summary>
+    void S15_MultiOutputRoundRobin()
+    {
+        var hub = MakeBuilding<StorageDataSO>("TestHub",
+            new[] { Port(true, Direction.West), Port(false, Direction.North),
+                    Port(false, Direction.East), Port(false, Direction.South) }, stackCap: 50);
+
+        Place(Miner(ptime: 0.1f), 0, 1);
+        Place(hub, 1, 1);
+        var north = Place(Sink(Direction.South), 1, 2);
+        var east  = Place(Sink(Direction.West),  2, 1);
+        var south = Place(Sink(Direction.North), 1, 0);
+
+        RunSim(4f);
+
+        int a = StoredCount(north, _ore), b = StoredCount(east, _ore), c = StoredCount(south, _ore);
+        Expect(a > 0 && b > 0 && c > 0, $"세 출구 모두 받아야 함 (실제 N/E/S: {a}/{b}/{c})");
+        Expect(Mathf.Max(a, b, c) - Mathf.Min(a, b, c) <= 2,
+            $"라운드로빈이면 출구 간 차이가 2 이하여야 함 (실제 N/E/S: {a}/{b}/{c})");
+    }
+
     // ─── 검증/구동 헬퍼 ─────────────────────────────────────────
 
     void Expect(bool condition, string message)
@@ -403,6 +454,11 @@ public class FactoryScenarioTests : MonoBehaviour
     BuildingDataSO Storage(int slots = 1) =>
         MakeBuilding<StorageDataSO>("TestStorage",
             new[] { Port(true, Direction.West) }, stackCap: 50, slots: slots);
+
+    /// <summary>입력 한 면만 있는 받이 — 다출구 분배를 셀 때 각 방향에 하나씩 둔다.</summary>
+    BuildingDataSO Sink(Direction inputDir) =>
+        MakeBuilding<StorageDataSO>($"TestSink_{inputDir}",
+            new[] { Port(true, inputDir) }, stackCap: 50);
 
     BuildingDataSO Splitter() =>
         MakeBuilding<SplitterDataSO>("TestSplitter",

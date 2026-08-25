@@ -189,6 +189,7 @@ public static class GameDataImporter
         public PortDto[] ports;
         public int   inputSlots, outputSlots, bufferStackCap, requiredCoreTier, maxHp;
         public int   menuOrder;      // 같은 티어 안 표시 순서 (공정 단계). 건설 메뉴 정렬용
+        public int   threatSeedCost = -1;   // 몬스터 위협도 시드(월드 칸=10). 코어 0 · 포탑 10 · 일반 80. 음수 = 생략(유지)
         public bool  hideFromBuildMenu;
         // SO 기본값과 같은 초기값을 준다 — json에서 빠진 건물이 철거 불가로 죽지 않게.
         // JsonUtility는 없는 필드를 0으로 밀지 않고 생성자 초기값을 남긴다
@@ -922,6 +923,7 @@ public static class GameDataImporter
         so.requiredCoreTier  = dto.requiredCoreTier;
         so.hideFromBuildMenu = dto.hideFromBuildMenu;
         so.menuOrder         = dto.menuOrder;
+        if (dto.threatSeedCost >= 0) so.threatSeedCost = dto.threatSeedCost;
         if (dto.maxHp > 0) so.maxHp = dto.maxHp;
         so.isDemolishable = dto.isDemolishable;
         so.isAttackable   = dto.isAttackable;

@@ -25,8 +25,11 @@ public class PortFlowVisualizer : MonoBehaviour
     const float BAR_T = 0.10f;   // 바깥 방향 두께
     const float BAR_W = 0.90f;   // 좌우 길이
 
-    // 바닥판·지느러미 — 짝대기에서 바깥으로 흘러나가는 흐름
-    const float LEN = 0.58f;   // 바깥으로 뻗는 길이 (둘 공통)
+    // 바닥판·지느러미 — 짝대기에서 바깥으로 흘러나가는 흐름.
+    // 길이는 인셋과 맞물린다: 피벗이 면 안쪽 _inset 만큼에 놓이므로 이웃 칸으로 넘어가는 거리는
+    // (LEN + BAR_T − _inset) 이다. 0.58 이던 시절엔 0.68타일이 이웃 칸을 덮어, 건물이 붙어 있으면
+    // 옆 건물의 포트 표시와 겹쳐 읽을 수 없었다.
+    const float LEN = 0.42f;   // 바깥으로 뻗는 길이 (둘 공통)
     const float WID = 0.90f;   // 바닥판 좌우 폭
     const float HGT = 0.36f;   // 지느러미 높이
 
@@ -68,6 +71,7 @@ public class PortFlowVisualizer : MonoBehaviour
 
     Material _source;
     float _cellSize = 1f;
+    float _inset;   // 면에서 칸 안쪽으로 물러나는 거리(타일) — 짝대기가 자기 칸 안에 앉는다
     Color _inputColor  = new(0.31f, 0.847f, 0.878f);
     Color _outputColor = new(1f, 0.62f, 0.29f);
 
@@ -76,14 +80,17 @@ public class PortFlowVisualizer : MonoBehaviour
     /// <summary>지금 그려져 있는 포트 개수 — 오버레이가 빈 시각화를 걷어낼 때 쓴다.</summary>
     public int PortCount { get; private set; }
 
+    /// <param name="insetTiles">포트 표시를 면에서 칸 안쪽으로 물리는 거리(타일).
+    /// 0이면 짝대기가 면에 딱 붙는다 — 붙어 있는 두 건물의 짝대기가 같은 선 위에 포개진다.</param>
     public static PortFlowVisualizer Create(Transform parent, Material source, float cellSize,
-                                            Color inputColor, Color outputColor)
+                                            Color inputColor, Color outputColor, float insetTiles = 0f)
     {
         var go = new GameObject("PortFlow");
         go.transform.SetParent(parent, false);
         var v = go.AddComponent<PortFlowVisualizer>();
         v._source      = source;
         v._cellSize    = cellSize;
+        v._inset       = Mathf.Max(0f, insetTiles);
         v._inputColor  = inputColor;
         v._outputColor = outputColor;
         return v;
@@ -108,9 +115,11 @@ public class PortFlowVisualizer : MonoBehaviour
             var d     = Dir.ToVec(p.Direction);
             var out3  = new Vector3(d.x, 0f, d.y);   // 그리드 (x,y) → 월드 (x,z)
 
-            // 칸 중앙 → 그 칸의 바깥쪽 면
+            // 칸 중앙 → 그 칸의 바깥쪽 면 → 거기서 _inset 만큼 안쪽.
+            // 면에 딱 붙이면 붙어 있는 이웃과 짝대기가 같은 선 위에 포개지고, 흐름은 통째로
+            // 이웃 칸 위에 그려진다. 자기 칸 안으로 물러나야 "누구 포트인지"가 읽힌다.
             var cellCenter = new Vector3(p.LocalOffset.x + 0.5f, 0f, p.LocalOffset.y + 0.5f) * _cellSize;
-            var facePoint  = cellCenter + out3 * (0.5f * _cellSize);
+            var facePoint  = cellCenter + out3 * ((0.5f - _inset) * _cellSize);
 
             var pivot = new GameObject($"Port_{p.LocalOffset.x}_{p.LocalOffset.y}_{p.Direction}").transform;
             pivot.SetParent(transform, false);

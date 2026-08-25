@@ -39,5 +39,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bb137f57ea04cd482300c69dccfcac6, type: 3}
   m_Name: CraftItemTypeCondition
   m_EditorClassIdentifier: Assembly-CSharp::CraftItemTypeCondition
-  itemType: 5
   count: 1
+  itemType: 5

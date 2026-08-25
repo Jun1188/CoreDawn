@@ -1387,6 +1387,7 @@
       "requiredCoreTier": 1,
       "maxHp": 150,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1437,6 +1438,7 @@
       "requiredCoreTier": 2,
       "maxHp": 220,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1497,6 +1499,7 @@
       "requiredCoreTier": 1,
       "maxHp": 180,
       "menuOrder": 1,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1558,6 +1561,7 @@
       "requiredCoreTier": 1,
       "maxHp": 180,
       "menuOrder": 2,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1627,6 +1631,7 @@
       "requiredCoreTier": 2,
       "maxHp": 250,
       "menuOrder": 3,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1719,6 +1724,7 @@
       "requiredCoreTier": 3,
       "maxHp": 320,
       "menuOrder": 4,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1788,6 +1794,7 @@
       "requiredCoreTier": 3,
       "maxHp": 260,
       "menuOrder": 3,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1847,6 +1854,7 @@
       "requiredCoreTier": 1,
       "maxHp": 60,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1907,6 +1915,7 @@
       "requiredCoreTier": 2,
       "maxHp": 60,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -1975,6 +1984,7 @@
       "requiredCoreTier": 1,
       "maxHp": 80,
       "menuOrder": 1,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2043,6 +2053,7 @@
       "requiredCoreTier": 1,
       "maxHp": 80,
       "menuOrder": 2,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2135,6 +2146,7 @@
       "requiredCoreTier": 1,
       "maxHp": 300,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2251,6 +2263,7 @@
       "requiredCoreTier": 0,
       "maxHp": 1000,
       "menuOrder": 0,
+      "threatSeedCost": 0,
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": false,
@@ -2385,6 +2398,7 @@
       "requiredCoreTier": 1,
       "maxHp": 250,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2425,6 +2439,7 @@
       "requiredCoreTier": 2,
       "maxHp": 10,
       "menuOrder": 2,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2474,6 +2489,7 @@
       "requiredCoreTier": 1,
       "maxHp": 200,
       "menuOrder": 1,
+      "threatSeedCost": 10,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2529,6 +2545,7 @@
       "requiredCoreTier": 2,
       "maxHp": 320,
       "menuOrder": 1,
+      "threatSeedCost": 10,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2587,6 +2604,7 @@
       "requiredCoreTier": 2,
       "maxHp": 300,
       "menuOrder": 2,
+      "threatSeedCost": 10,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2644,6 +2662,7 @@
       "requiredCoreTier": 3,
       "maxHp": 280,
       "menuOrder": 1,
+      "threatSeedCost": 10,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2701,6 +2720,7 @@
       "requiredCoreTier": 3,
       "maxHp": 180,
       "menuOrder": 3,
+      "threatSeedCost": 10,
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
@@ -2747,6 +2767,7 @@
       "requiredCoreTier": 0,
       "maxHp": 1000,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": true,
@@ -2781,6 +2802,7 @@
       "requiredCoreTier": 0,
       "maxHp": 120,
       "menuOrder": 0,
+      "threatSeedCost": 80,
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": true,
@@ -2807,7 +2829,7 @@
       "baseAmount": 4,
       "maxAliveAmount": 4,
       "spawnInterval": 2.0,
-      "monsterMaxHp": 0.0
+      "monsterMaxHp": 20.0
     },
     {
       "id": "Wave:Day2",
@@ -2815,10 +2837,10 @@
       "description": "Second wave",
       "day": 2,
       "requiredCoreTier": 0,
-      "baseAmount": 6,
+      "baseAmount": 10,
       "maxAliveAmount": 6,
       "spawnInterval": 2.0,
-      "monsterMaxHp": 0.0
+      "monsterMaxHp": 20.0
     },
     {
       "id": "Wave:Day3",
@@ -2826,10 +2848,10 @@
       "description": "Third wave",
       "day": 3,
       "requiredCoreTier": 1,
-      "baseAmount": 8,
-      "maxAliveAmount": 8,
+      "baseAmount": 20,
+      "maxAliveAmount": 10,
       "spawnInterval": 1.5,
-      "monsterMaxHp": 0.0
+      "monsterMaxHp": 20.0
     },
     {
       "id": "Wave:Day4",
@@ -2837,10 +2859,10 @@
       "description": "Fourth wave",
       "day": 4,
       "requiredCoreTier": 1,
-      "baseAmount": 10,
-      "maxAliveAmount": 10,
-      "spawnInterval": 1.5,
-      "monsterMaxHp": 0.0
+      "baseAmount": 20,
+      "maxAliveAmount": 15,
+      "spawnInterval": 1.0,
+      "monsterMaxHp": 40.0
     },
     {
       "id": "Wave:Day5",
@@ -2848,10 +2870,10 @@
       "description": "Fifth wave",
       "day": 5,
       "requiredCoreTier": 2,
-      "baseAmount": 15,
-      "maxAliveAmount": 12,
-      "spawnInterval": 1.0,
-      "monsterMaxHp": 0.0
+      "baseAmount": 40,
+      "maxAliveAmount": 15,
+      "spawnInterval": 0.5,
+      "monsterMaxHp": 40.0
     }
   ],
   "tutorial": [
@@ -2873,7 +2895,9 @@
       "conditions": [
         {
           "type": "MoveAndLook",
-          "seconds": 2.0
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -2893,11 +2917,15 @@
       "conditions": [
         {
           "type": "Jump",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         },
         {
           "type": "Sprint",
-          "seconds": 1.0
+          "count": 1,
+          "seconds": 1.0,
+          "tier": 1
         }
       ]
     },
@@ -2917,7 +2945,9 @@
       "conditions": [
         {
           "type": "Slide",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -2937,6 +2967,8 @@
         {
           "type": "AcquireItemType",
           "count": 1,
+          "seconds": 2.0,
+          "tier": 1,
           "itemType": "Salvage"
         }
       ]
@@ -2956,6 +2988,8 @@
       "conditions": [
         {
           "type": "CoreTier",
+          "count": 1,
+          "seconds": 2.0,
           "tier": 1
         }
       ]
@@ -2975,7 +3009,9 @@
       "conditions": [
         {
           "type": "MineResource",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -2993,7 +3029,10 @@
       "requireInOrder": false,
       "conditions": [
         {
-          "type": "OpenInventory"
+          "type": "OpenInventory",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3013,6 +3052,8 @@
         {
           "type": "CraftItemType",
           "count": 1,
+          "seconds": 2.0,
+          "tier": 1,
           "itemType": "Weapon"
         }
       ]
@@ -3034,7 +3075,9 @@
       "conditions": [
         {
           "type": "SwitchHotbarSlot",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3052,7 +3095,10 @@
       "requireInOrder": false,
       "conditions": [
         {
-          "type": "EnterBuildMode"
+          "type": "EnterBuildMode",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3071,7 +3117,9 @@
       "conditions": [
         {
           "type": "PlaceBuilding",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3088,7 +3136,9 @@
       "conditions": [
         {
           "type": "PlaceBelt",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3107,7 +3157,9 @@
       "conditions": [
         {
           "type": "CycleBeltShape",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3126,7 +3178,9 @@
       "conditions": [
         {
           "type": "DemolishBuilding",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3143,7 +3197,9 @@
       "conditions": [
         {
           "type": "NightReached",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     },
@@ -3160,7 +3216,9 @@
       "conditions": [
         {
           "type": "SurviveNight",
-          "count": 1
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
         }
       ]
     }

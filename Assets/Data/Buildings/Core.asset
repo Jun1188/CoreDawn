@@ -60,7 +60,7 @@ MonoBehaviour:
   inputSlots: 4
   outputSlots: 0
   bufferStackCap: 0
-  threatSeedCost: 80
+  threatSeedCost: 0
   requiredCoreTier: 0
   hideFromBuildMenu: 1
   menuOrder: 0

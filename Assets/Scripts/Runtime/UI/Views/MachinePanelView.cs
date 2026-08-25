@@ -99,6 +99,11 @@ public class MachinePanelView : PlayerItemPanelView
         btnToggle.clicked += TogglePaused;
         searchField.RegisterValueChangedCallback(OnSearchChanged);
 
+        // 검색어는 창을 닫아도 남는다 — Retarget(열린 채 다른 설비로)만 지우고 있었다.
+        // 지난 검색어로 걸러진 목록은 티어가 올라 새로 열린 레시피를 감춰 "해금이 안 된 것처럼" 보인다.
+        search = "";
+        searchField.SetValueWithoutNotify("");
+
         // 돋보기 — USS에 SVG가 없어 요소로 넣는다. Bind가 다시 돌아도 하나만
         var searchBox = r.Q("machine-search-box");
         if (searchBox != null && searchBox.Q<SearchGlyph>() == null)
@@ -106,6 +111,9 @@ public class MachinePanelView : PlayerItemPanelView
 
         BindCommon();   // 소지품·핫바 격자, 캐리지, 창 밖 던지기, 툴팁
 
+        // 보상 해금만 듣고 티어 해금은 안 듣고 있었다 — 창이 열린 채 티어가 오르는 경우
+        // (코어 패널이 없는 씬의 벨트 자동 수리, 세이브 복원)에 목록이 그대로 낡는다. 인벤토리 패널과 같은 쌍.
+        if (GameManager.Instance != null) GameManager.Instance.TierUnlocked += OnTierUnlocked;
         RecipeRewardUnlockService.RecipeUnlocked += OnRecipeRewardUnlocked;
 
         HookContainers();
@@ -118,6 +126,7 @@ public class MachinePanelView : PlayerItemPanelView
         if (btnClose != null) btnClose.clicked -= Close;
         if (btnToggle != null) btnToggle.clicked -= TogglePaused;
         if (searchField != null) searchField.UnregisterValueChangedCallback(OnSearchChanged);
+        if (GameManager.Instance != null) GameManager.Instance.TierUnlocked -= OnTierUnlocked;
         RecipeRewardUnlockService.RecipeUnlocked -= OnRecipeRewardUnlocked;
 
         UnhookContainers();
@@ -181,6 +190,7 @@ public class MachinePanelView : PlayerItemPanelView
     }
 
     void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
+    void OnTierUnlocked(int _) => RebuildRecipes();
 
     void TogglePaused()
     {

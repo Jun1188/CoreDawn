@@ -21,6 +21,12 @@ public class PortFlowOverlay : MonoBehaviour
     [SerializeField] Color inputColor  = new(0.31f, 0.847f, 0.878f);   // 파랑 = 들어온다
     [SerializeField] Color outputColor = new(1f, 0.62f, 0.29f);        // 귤색 = 나간다
 
+    [Header("모양")]
+    [Tooltip("포트 표시를 건물 면에서 칸 안쪽으로 물리는 거리(타일).\n" +
+             "0이면 면에 딱 붙어, 건물이 붙어 있을 때 옆 건물의 표시와 같은 선 위에 포개진다. " +
+             "값이 커질수록 자기 칸 안으로 들어오고 이웃 칸으로 넘어가는 흐름이 짧아진다.")]
+    [SerializeField, Range(0f, 0.4f)] float portInsetTiles = 0.15f;
+
     [Header("범위")]
     [Tooltip("이 반경(타일) 안의 건물만 열린 포트를 그린다.")]
     [SerializeField] float radiusTiles = 30f;
@@ -94,7 +100,7 @@ public class PortFlowOverlay : MonoBehaviour
 
         if (_preview == null)
         {
-            _preview = PortFlowVisualizer.Create(transform, Source, _cellSize, inputColor, outputColor);
+            _preview = PortFlowVisualizer.Create(transform, Source, _cellSize, inputColor, outputColor, portInsetTiles);
             shapeChanged = true;
         }
         _preview.SetVisible(true);
@@ -149,7 +155,7 @@ public class PortFlowOverlay : MonoBehaviour
 
             if (!_open.TryGetValue(b, out var vis) || vis == null)
             {
-                vis = PortFlowVisualizer.Create(transform, Source, _cellSize, inputColor, outputColor);
+                vis = PortFlowVisualizer.Create(transform, Source, _cellSize, inputColor, outputColor, portInsetTiles);
                 _open[b] = vis;
             }
             vis.SetVisible(true);

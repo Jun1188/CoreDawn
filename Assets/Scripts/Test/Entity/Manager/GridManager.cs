@@ -304,6 +304,23 @@ public class GridManager : MonoBehaviour
         return boot.Sim.Grid.GetAt(simCell);
     }
 
+    /// <summary>
+    /// 월드 한 칸을 몇 등분해 길찾기 칸으로 쓰는가 (1 = 분할 없음).
+    /// "칸 = 10" 단위로 적힌 상수(건물 시드 비용 등)는 월드 칸 기준이라, 길찾기 칸으로 환산할 때
+    /// 이 배율을 곱해야 분할 전과 같은 거리 감각을 유지한다.
+    /// </summary>
+    public int Subdiv => subdiv;
+
+    /// <summary>이 길찾기 칸을 점유한 건물의 씬 엔티티. 건물이 없거나 심 밖 건물이면 null.</summary>
+    public BuildingEntity BuildingEntityAt(Vector2Int cell)
+    {
+        var node = GetNode(cell);
+        if (node == null) return null;
+
+        var building = BuildingAt(node);
+        return building != null ? FactoryBootstrap.Instance?.GetView(building) : null;
+    }
+
     // 정적 장애물(Awake에서 구운 값) + 런타임 설치 건물(심의 GridIndex)을 함께 판정
     /// <summary>
     /// 설 수 있는 칸인가 — <see cref="EnterCost"/>의 얇은 별칭이다(비용이 정본).
