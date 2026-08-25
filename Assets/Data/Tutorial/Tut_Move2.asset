@@ -18,7 +18,8 @@ MonoBehaviour:
   icon: {fileID: 0}
   order: 13
   tag: MOVE 2
-  body: "Space\uB85C \uC810\uD504\uD558\uACE0, Shift\uB97C \uB204\uB978 \uCC44 \uC55E\uC73C\uB85C \uB2EC\uB824 \uBCF4\uC138\uC694."
+  body: "Space\uB85C \uC810\uD504\uD558\uACE0, Shift\uB97C \uB204\uB978 \uCC44 \uC55E\uC73C\uB85C
+    \uB2EC\uB824 \uBCF4\uC138\uC694."
   keyHints:
   - Space
   - Shift
