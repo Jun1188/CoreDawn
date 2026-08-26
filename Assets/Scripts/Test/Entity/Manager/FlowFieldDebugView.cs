@@ -144,7 +144,13 @@ public class FlowFieldDebugView : MonoBehaviour
         Vector3 origin = grid.originPosition;
         worldToLocal = transform.worldToLocalMatrix;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // WebGL 플레이어는 스레드가 없어 Task.Run 작업이 영영 실행되지 않는다 — 동기 조립.
+        try { Assemble(field, size, cell, origin); buildTask = System.Threading.Tasks.Task.CompletedTask; }
+        catch (System.Exception e) { buildTask = System.Threading.Tasks.Task.FromException(e); }
+#else
         buildTask = System.Threading.Tasks.Task.Run(() => Assemble(field, size, cell, origin));
+#endif
     }
 
     /// <summary>워커가 채워 둔 배열을 메시에 올린다 — 메인 스레드 전용.</summary>

@@ -80,6 +80,14 @@ public class TitleScreenView : MonoBehaviour
         ShowMenuPage();
     }
 
+    /// <summary>
+    /// SaveManager는 씬 배치 없이 RuntimeInitializeOnLoadMethod(AfterSceneLoad)로 생겨나는데,
+    /// 그 시점은 이 컴포넌트의 OnEnable보다 늦다. 타이틀 씬에서 플레이를 바로 시작하면
+    /// OnEnable의 ShowMenuPage가 Instance == null을 보고 "세이브 없음"으로 굳어
+    /// 이어하기·불러오기가 죽는다 — Start는 부트스트랩 이후라 여기서 한 번 더 갱신한다.
+    /// </summary>
+    void Start() => ShowMenuPage();
+
     void OnDisable()
     {
         SaveManager.SlotsChanged -= RebuildSlots;

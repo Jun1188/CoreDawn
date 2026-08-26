@@ -19,7 +19,7 @@
             <ui:Label name="recent" text="" class="title-recent"/>
         </ui:VisualElement>
         <ui:VisualElement name="load-page" class="title-page">
-            <ui:VisualElement class="ui-panel slots-panel" style="display: flex; visibility: hidden;">
+            <ui:VisualElement class="ui-panel slots-panel">
                 <ui:VisualElement class="ui-panel__title">
                     <ui:Label text="LOAD" class="ui-panel__tag"/>
                     <ui:Label text="불러오기"/>

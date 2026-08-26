@@ -125,7 +125,14 @@ public class FlowFieldManager : MonoBehaviour
         // 비용 필드는 그리드가 소유하고 항상 최신이다(건물이 바뀐 자리만 갱신됨)
         var costs = grid.Costs;
         var target = back;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // WebGL 플레이어는 스레드가 없어 Task.Run 작업이 영영 실행되지 않는다 —
+        // 메인 스레드에서 즉시 계산하고, 교체·통지는 기존대로 다음 Update가 한다.
+        try { target.Rebuild(costs, workerGoals); rebuildTask = System.Threading.Tasks.Task.CompletedTask; }
+        catch (System.Exception e) { rebuildTask = System.Threading.Tasks.Task.FromException(e); }
+#else
         rebuildTask = System.Threading.Tasks.Task.Run(() => target.Rebuild(costs, workerGoals));
+#endif
     }
 
     // 살아있는 건물이 차지한 셀을 목표로 수집. 단 벨트는 제외 —

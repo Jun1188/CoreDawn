@@ -113,7 +113,14 @@ public class PathRequestQueue : MonoBehaviour
         lock (pending) { if (pending.Count == 0) return; }
 
         var costs = grid.Costs;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // WebGL 플레이어는 스레드가 없어 Task.Run 작업이 영영 실행되지 않는다 —
+        // 메인 스레드에서 바로 비우고, 결과 전달은 기존대로 Pump가 한다.
+        try { Drain(costs); worker = System.Threading.Tasks.Task.CompletedTask; }
+        catch (Exception e) { worker = System.Threading.Tasks.Task.FromException(e); }
+#else
         worker = System.Threading.Tasks.Task.Run(() => Drain(costs));
+#endif
     }
 
     /// <summary>워커 본체 — 쌓인 요청을 한 번에 비운다. Unity API는 하나도 부르지 않는다.</summary>

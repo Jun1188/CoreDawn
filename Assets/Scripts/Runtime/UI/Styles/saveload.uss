@@ -140,6 +140,9 @@
     justify-content: center;
     align-items: center;
     background-color: var(--bg-void);
+    /* 타이틀 메뉴는 .ui-panel/.screen-root 밖이라 본문 폰트 상속이 없다 —
+       기본 폰트엔 한글 글리프가 없어 WebGL에서 버튼 글자가 비어 보인다 */
+    -unity-font-definition: var(--font-body);
 }
 
 /* 메뉴와 슬롯 목록이 같은 자리를 번갈아 쓴다 — 한 번에 하나만 보인다 */
