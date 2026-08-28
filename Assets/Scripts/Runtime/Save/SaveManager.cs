@@ -5,571 +5,579 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using CoreDawn.Combat;
+using CoreDawn.DayTime;
+using CoreDawn.Inputs;
+using CoreDawn.Managers;
+using CoreDawn.Tutorial;
 
-/// <summary>
-/// 세이브/로드의 지휘자. 자기 밑에 어떤 모듈이 있는지는 모른다 —
-/// <see cref="ISaveModule"/> 구현체를 리플렉션으로 찾아 등록할 뿐이다.
-/// 그래서 새 시스템이 세이브에 참여해도 이 파일은 그대로다.
-///
-/// 씬에 배치하지 않는다. UIBootstrap과 같은 발상으로 첫 씬 로드 후 스스로 생겨나며
-/// DontDestroyOnLoad로 씬 전환을 넘어 살아남는다 — 게임플레이 씬 파일을 건드리지 않기 위해서다.
-/// </summary>
-[DefaultExecutionOrder(-500)]
-public class SaveManager : MonoBehaviour
+namespace CoreDawn.Save
 {
-    public static SaveManager Instance { get; private set; }
-
-    /// <summary>저장/로드가 끝날 때마다 발화 — 슬롯 목록 UI가 새로고침에 쓴다.</summary>
-    public static event Action SlotsChanged;
-
-    readonly List<ISaveModule> _modules = new();
-
     /// <summary>
-    /// 마지막으로 읽어들인 세이브의 모듈 데이터.
-    /// 이번 빌드가 모르는 모듈 키를 여기 담아뒀다가 다음 저장 때 그대로 되돌려 쓴다 —
-    /// 모듈이 덜 붙은 브랜치에서 열었다 저장해도 남의 데이터를 지우지 않기 위해서다.
-    /// </summary>
-    Dictionary<string, JToken> _carriedModules = new();
-
-    double _playtime;
-    string _currentSlotId;
-    int _autoSlotCursor = -1;   // -1 = 미초기화 — 첫 자동 저장 때 디스크에서 이어받는다
-
-    public double Playtime => _playtime;
-
-    /// <summary>지금 플레이 중인 세션이 어느 슬롯에서 왔는가 (없으면 새 게임).</summary>
-    public string CurrentSlotId => _currentSlotId;
-
-    SaveSystemConfig Config => SaveSystemConfig.Load();
-
-    // ── 부팅 ──────────────────────────────────────────────────────
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Bootstrap()
-    {
-        if (Instance != null) return;
-        var go = new GameObject("[SaveManager]");
-        go.AddComponent<SaveManager>();
-    }
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-        transform.SetParent(null);
-        DontDestroyOnLoad(gameObject);
-
-        DiscoverModules();
-
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    void OnDestroy()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-        if (Instance == this) Instance = null;
-    }
-
-    void Update()
-    {
-        // 타이틀 화면에 머문 시간은 플레이타임이 아니다
-        if (!IsTitleScene(SceneManager.GetActiveScene())) _playtime += Time.unscaledDeltaTime;
-    }
-
-    void OnApplicationQuit()
-    {
-        if (Config.autoSaveOnQuit && !IsTitleScene(SceneManager.GetActiveScene())) AutoSave();
-    }
-
-    /// <summary>
-    /// ISaveModule 구현체를 전부 찾아 등록한다.
-    /// 매개변수 없는 생성자만 있으면 되고, SaveManager에 이름을 적을 필요가 없다.
-    /// </summary>
-    void DiscoverModules()
-    {
-        _modules.Clear();
-
-        foreach (var type in typeof(SaveManager).Assembly.GetTypes())
-        {
-            if (type.IsAbstract || type.IsInterface) continue;
-            if (!typeof(ISaveModule).IsAssignableFrom(type)) continue;
-            if (type.GetConstructor(Type.EmptyTypes) == null) continue;
-
-            try { Register((ISaveModule)Activator.CreateInstance(type)); }
-            catch (Exception e) { Debug.LogError($"[Save] 모듈 '{type.Name}' 생성 실패: {e.Message}"); }
-        }
-
-        _modules.Sort((a, b) => a.Order.CompareTo(b.Order));
-        Debug.Log($"[Save] 모듈 {_modules.Count}개 등록: {string.Join(", ", _modules.Select(m => m.ModuleId))}");
-    }
-
-    /// <summary>수동 등록 — 매개변수 없는 생성자를 쓸 수 없는 모듈용.</summary>
-    public void Register(ISaveModule module)
-    {
-        if (module == null) return;
-        if (_modules.Any(m => m.ModuleId == module.ModuleId))
-        {
-            Debug.LogError($"[Save] 모듈 id 중복: '{module.ModuleId}' — 나중 것은 무시됩니다.");
-            return;
-        }
-        _modules.Add(module);
-    }
-
-    // ── 저장 ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// 지금 저장할 수 있는가 — 안 되면 사람에게 보여줄 사유를 함께 준다.
+    /// 세이브/로드의 지휘자. 자기 밑에 어떤 모듈이 있는지는 모른다 —
+    /// <see cref="ISaveModule"/> 구현체를 리플렉션으로 찾아 등록할 뿐이다.
+    /// 그래서 새 시스템이 세이브에 참여해도 이 파일은 그대로다.
     ///
-    /// <b>밤에는 저장하지 않는다</b>: 밤의 알맹이인 웨이브 진행(이번 밤의 목표 물량, 이미
-    /// 내보낸 수)이 저장 스키마에 없어서, 밤 세이브를 불러오면 웨이브가 편성되지 않은 채
-    /// 밤이 끝나지 않는다. 되돌아갈 지점은 밤이 열리기 직전(NightImminent 자동 저장)이고,
-    /// 그걸 불러오면 밤이 처음부터 정상적으로 다시 시작된다.
+    /// 씬에 배치하지 않는다. UIBootstrap과 같은 발상으로 첫 씬 로드 후 스스로 생겨나며
+    /// DontDestroyOnLoad로 씬 전환을 넘어 살아남는다 — 게임플레이 씬 파일을 건드리지 않기 위해서다.
     /// </summary>
-    public bool CanSaveNow(out string reason)
+    [DefaultExecutionOrder(-500)]
+    public class SaveManager : MonoBehaviour
     {
-        var tm = TimeManager.Instance;
-        if (tm != null && tm.Phase == DayPhase.Night)
+        public static SaveManager Instance { get; private set; }
+
+        /// <summary>저장/로드가 끝날 때마다 발화 — 슬롯 목록 UI가 새로고침에 쓴다.</summary>
+        public static event Action SlotsChanged;
+
+        readonly List<ISaveModule> _modules = new();
+
+        /// <summary>
+        /// 마지막으로 읽어들인 세이브의 모듈 데이터.
+        /// 이번 빌드가 모르는 모듈 키를 여기 담아뒀다가 다음 저장 때 그대로 되돌려 쓴다 —
+        /// 모듈이 덜 붙은 브랜치에서 열었다 저장해도 남의 데이터를 지우지 않기 위해서다.
+        /// </summary>
+        Dictionary<string, JToken> _carriedModules = new();
+
+        double _playtime;
+        string _currentSlotId;
+        int _autoSlotCursor = -1;   // -1 = 미초기화 — 첫 자동 저장 때 디스크에서 이어받는다
+
+        public double Playtime => _playtime;
+
+        /// <summary>지금 플레이 중인 세션이 어느 슬롯에서 왔는가 (없으면 새 게임).</summary>
+        public string CurrentSlotId => _currentSlotId;
+
+        SaveSystemConfig Config => SaveSystemConfig.Load();
+
+        // ── 부팅 ──────────────────────────────────────────────────────
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void Bootstrap()
         {
-            reason = "밤에는 저장할 수 없습니다. 아침이 밝은 뒤에 저장하세요.";
-            return false;
+            if (Instance != null) return;
+            var go = new GameObject("[SaveManager]");
+            go.AddComponent<SaveManager>();
         }
 
-        reason = null;
-        return true;
-    }
-
-    /// <summary>현재 상태를 슬롯에 저장한다. 저장할 수 없는 때(밤)면 아무것도 하지 않고 false.</summary>
-    public bool Save(string slotId)
-    {
-        if (string.IsNullOrEmpty(slotId)) { Debug.LogError("[Save] 슬롯 id가 비었습니다."); return false; }
-
-        // 모든 저장 경로(수동·자동·종료·타이틀 복귀)가 여기로 모이므로 가드도 여기 한 곳이면 된다
-        if (!CanSaveNow(out string reason)) { Debug.Log($"[Save] 저장하지 않음 — {reason}"); return false; }
-
-        var file = CaptureToFile(slotId);
-        bool ok = SaveStorage.Write(slotId, file, Config.compress);
-        if (ok)
+        void Awake()
         {
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            Instance = this;
+            transform.SetParent(null);
+            DontDestroyOnLoad(gameObject);
+
+            DiscoverModules();
+
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            if (Instance == this) Instance = null;
+        }
+
+        void Update()
+        {
+            // 타이틀 화면에 머문 시간은 플레이타임이 아니다
+            if (!IsTitleScene(SceneManager.GetActiveScene())) _playtime += Time.unscaledDeltaTime;
+        }
+
+        void OnApplicationQuit()
+        {
+            if (Config.autoSaveOnQuit && !IsTitleScene(SceneManager.GetActiveScene())) AutoSave();
+        }
+
+        /// <summary>
+        /// ISaveModule 구현체를 전부 찾아 등록한다.
+        /// 매개변수 없는 생성자만 있으면 되고, SaveManager에 이름을 적을 필요가 없다.
+        /// </summary>
+        void DiscoverModules()
+        {
+            _modules.Clear();
+
+            foreach (var type in typeof(SaveManager).Assembly.GetTypes())
+            {
+                if (type.IsAbstract || type.IsInterface) continue;
+                if (!typeof(ISaveModule).IsAssignableFrom(type)) continue;
+                if (type.GetConstructor(Type.EmptyTypes) == null) continue;
+
+                try { Register((ISaveModule)Activator.CreateInstance(type)); }
+                catch (Exception e) { Debug.LogError($"[Save] 모듈 '{type.Name}' 생성 실패: {e.Message}"); }
+            }
+
+            _modules.Sort((a, b) => a.Order.CompareTo(b.Order));
+            Debug.Log($"[Save] 모듈 {_modules.Count}개 등록: {string.Join(", ", _modules.Select(m => m.ModuleId))}");
+        }
+
+        /// <summary>수동 등록 — 매개변수 없는 생성자를 쓸 수 없는 모듈용.</summary>
+        public void Register(ISaveModule module)
+        {
+            if (module == null) return;
+            if (_modules.Any(m => m.ModuleId == module.ModuleId))
+            {
+                Debug.LogError($"[Save] 모듈 id 중복: '{module.ModuleId}' — 나중 것은 무시됩니다.");
+                return;
+            }
+            _modules.Add(module);
+        }
+
+        // ── 저장 ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 지금 저장할 수 있는가 — 안 되면 사람에게 보여줄 사유를 함께 준다.
+        ///
+        /// <b>밤에는 저장하지 않는다</b>: 밤의 알맹이인 웨이브 진행(이번 밤의 목표 물량, 이미
+        /// 내보낸 수)이 저장 스키마에 없어서, 밤 세이브를 불러오면 웨이브가 편성되지 않은 채
+        /// 밤이 끝나지 않는다. 되돌아갈 지점은 밤이 열리기 직전(NightImminent 자동 저장)이고,
+        /// 그걸 불러오면 밤이 처음부터 정상적으로 다시 시작된다.
+        /// </summary>
+        public bool CanSaveNow(out string reason)
+        {
+            var tm = TimeManager.Instance;
+            if (tm != null && tm.Phase == DayPhase.Night)
+            {
+                reason = "밤에는 저장할 수 없습니다. 아침이 밝은 뒤에 저장하세요.";
+                return false;
+            }
+
+            reason = null;
+            return true;
+        }
+
+        /// <summary>현재 상태를 슬롯에 저장한다. 저장할 수 없는 때(밤)면 아무것도 하지 않고 false.</summary>
+        public bool Save(string slotId)
+        {
+            if (string.IsNullOrEmpty(slotId)) { Debug.LogError("[Save] 슬롯 id가 비었습니다."); return false; }
+
+            // 모든 저장 경로(수동·자동·종료·타이틀 복귀)가 여기로 모이므로 가드도 여기 한 곳이면 된다
+            if (!CanSaveNow(out string reason)) { Debug.Log($"[Save] 저장하지 않음 — {reason}"); return false; }
+
+            var file = CaptureToFile(slotId);
+            bool ok = SaveStorage.Write(slotId, file, Config.compress);
+            if (ok)
+            {
+                _carriedModules = file.Modules;
+                if (!SaveSystemConfig.IsAutoSlot(slotId)) _currentSlotId = slotId;
+                Debug.Log($"[Save] 저장 완료 — 슬롯 '{slotId}' (Day {file.Meta.DayNumber}, {file.Meta.PlaytimeText})");
+                SlotsChanged?.Invoke();
+            }
+            return ok;
+        }
+
+        /// <summary>
+        /// 인게임 아침마다 GameManager가 부르는 자동 저장. 설정에서 꺼져 있으면 아무것도 하지 않는다.
+        /// </summary>
+        /// <returns>실제로 저장했으면 true.</returns>
+        public bool AutoSaveOnDayStart()
+        {
+            if (!Config.autoSaveOnDayStart) return false;
+            if (IsTitleScene(SceneManager.GetActiveScene())) return false;
+            return AutoSave();
+        }
+
+        /// <summary>
+        /// 밤이 시작될 때 GameManager가 부르는 자동 저장.
+        ///
+        /// 밤은 코어가 부서질 수 있는 유일한 시간이다. 여기서 한 번 저장해 두면 게임오버 화면의
+        /// "마지막 지점에서 다시"가 항상 그날 밤의 시작으로 돌아간다 — 아침 저장만 있으면
+        /// 밤을 통째로 다시 살아야 하고, 첫날 밤에 죽으면 돌아갈 곳이 아예 없다.
+        /// </summary>
+        /// <returns>실제로 저장했으면 true.</returns>
+        public bool AutoSaveOnNightStart()
+        {
+            if (!Config.autoSaveOnNightStart) return false;
+            if (IsTitleScene(SceneManager.GetActiveScene())) return false;
+            return AutoSave();
+        }
+
+        /// <summary>자동 저장 슬롯을 순환하며 저장한다.</summary>
+        public bool AutoSave()
+        {
+            // 여기 한 곳이면 아침·밤 자동 저장, 종료 시 저장, 타이틀 복귀 시 저장이 전부 덮인다
+            if (ShouldSuppressAutoSave()) return false;
+
+            int count = Mathf.Max(1, Config.autoSlotCount);
+            if (_autoSlotCursor < 0) _autoSlotCursor = NextAutoIndexFromDisk(count);
+            string slotId = SaveSystemConfig.AutoSlotId(_autoSlotCursor % count);
+            _autoSlotCursor = (_autoSlotCursor + 1) % count;
+            return Save(slotId);
+        }
+
+        /// <summary>
+        /// 세션의 첫 자동 저장이 쓸 칸 — 디스크에서 가장 최근에 쓰인 자동 슬롯의 <b>다음</b>.
+        /// 커서가 매 실행 0에서 시작하면 첫 자동 저장이 항상 auto_01, 대개 직전 세션의
+        /// 최신본을 덮는다 — 링버퍼가 "가장 오래된 것부터" 돌려면 세션을 넘어 이어서 돌아야 한다.
+        /// </summary>
+        int NextAutoIndexFromDisk(int count)
+        {
+            int newest = -1;
+            DateTime newestAt = DateTime.MinValue;
+            for (int i = 0; i < count; i++)
+            {
+                var meta = SaveStorage.ReadMeta(SaveSystemConfig.AutoSlotId(i));
+                if (meta == null) continue;
+                if (DateTime.TryParse(meta.SavedAtUtc, null,
+                        System.Globalization.DateTimeStyles.RoundtripKind, out var at) && at > newestAt)
+                {
+                    newestAt = at;
+                    newest = i;
+                }
+            }
+            return (newest + 1) % count;
+        }
+
+        SaveFile CaptureToFile(string slotId)
+        {
+            var scene = SceneManager.GetActiveScene();
+
+            // 모르는 모듈 키를 보존하기 위해 이전 데이터 위에 덮어쓴다
+            var modules = new Dictionary<string, JToken>(_carriedModules);
+
+            foreach (var m in _modules)
+            {
+                object captured;
+                try { captured = m.Capture(); }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[Save] 모듈 '{m.ModuleId}' Capture 실패 — 이전 값을 유지합니다: {e}");
+                    continue;
+                }
+
+                // null = 이 씬에 해당 시스템이 없음. 기존 값을 지우지 않고 그대로 둔다.
+                if (captured == null) continue;
+                modules[m.ModuleId] = SaveJson.ToToken(captured);
+            }
+
+            var cycle = TimeManager.Instance != null ? TimeManager.Instance.Cycle : null;
+
+            return new SaveFile
+            {
+                SchemaVersion = SaveFile.CurrentSchemaVersion,
+                Modules = modules,
+                Meta = new SaveMeta
+                {
+                    SlotId = slotId,
+                    ScenePath = scene.path,
+                    SceneName = scene.name,
+                    DayNumber = cycle?.DayNumber ?? 1,
+                    Phase = (cycle?.Phase ?? DayPhase.Day).ToString(),
+                    CoreTier = GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0,
+                    PlaytimeSeconds = _playtime,
+                    SavedAtUtc = DateTime.UtcNow.ToString("o"),
+                    AppVersion = Application.version,
+                },
+            };
+        }
+
+        // ── 로드 ──────────────────────────────────────────────────────
+
+        /// <summary>슬롯을 읽어 해당 씬을 열고 상태를 복원한다.</summary>
+        public bool Load(string slotId)
+        {
+            var file = SaveStorage.Read(slotId);
+            if (file == null)
+            {
+                Debug.LogError($"[Save] 슬롯 '{slotId}' 를 읽지 못했습니다.");
+                return false;
+            }
+
+            if (!SaveMigrations.TryMigrate(file, out string error))
+            {
+                Debug.LogError($"[Save] 슬롯 '{slotId}' 를 열 수 없습니다 — {error}");
+                return false;
+            }
+
+            string scene = ResolveScene(file.Meta.ScenePath, file.Meta.SceneName);
+            if (scene == null)
+            {
+                Debug.LogError($"[Save] 세이브가 가리키는 씬을 찾지 못했습니다: '{file.Meta.ScenePath}' — " +
+                               "Build Settings에 등록됐는지 확인하세요.");
+                return false;
+            }
+
+            _playtime = file.Meta.PlaytimeSeconds;
+            _currentSlotId = SaveSystemConfig.IsAutoSlot(slotId) ? null : slotId;
+
+            // 씬이 뜨기 전에 켜야 한다 — 각 시스템의 Awake/Start가 이 플래그를 보고 시딩을 건너뛴다
+            SaveLoadContext.BeginRestore(file);
+            ResetPersistentSingletons();
+
+            Time.timeScale = 1f;   // 일시정지 메뉴에서 불러오는 경로 대비
+            SceneManager.LoadScene(scene, LoadSceneMode.Single);
+            return true;
+        }
+
+        void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (mode != LoadSceneMode.Single) return;
+            if (SaveLoadContext.Pending == null) return;
+            StartCoroutine(RestoreAfterSceneReady());
+        }
+
+        /// <summary>
+        /// 씬의 Awake/Start가 전부 끝난 다음 프레임에 복원한다.
+        /// sceneLoaded 시점에는 아직 Start가 돌지 않아 시스템들이 준비되지 않았다.
+        /// </summary>
+        IEnumerator RestoreAfterSceneReady()
+        {
+            yield return null;   // Start 완료
+            yield return null;   // Start에서 만들어진 것들(코어 연결 등)까지 정착
+
+            var file = SaveLoadContext.Pending;
+            if (file == null) yield break;
+
+            ApplyModules(file);
+
             _carriedModules = file.Modules;
-            if (!SaveSystemConfig.IsAutoSlot(slotId)) _currentSlotId = slotId;
-            Debug.Log($"[Save] 저장 완료 — 슬롯 '{slotId}' (Day {file.Meta.DayNumber}, {file.Meta.PlaytimeText})");
+            SaveLoadContext.Finish();
+            Debug.Log($"[Save] 불러오기 완료 — Day {file.Meta.DayNumber}, {file.Meta.PlaytimeText}");
             SlotsChanged?.Invoke();
         }
-        return ok;
-    }
 
-    /// <summary>
-    /// 인게임 아침마다 GameManager가 부르는 자동 저장. 설정에서 꺼져 있으면 아무것도 하지 않는다.
-    /// </summary>
-    /// <returns>실제로 저장했으면 true.</returns>
-    public bool AutoSaveOnDayStart()
-    {
-        if (!Config.autoSaveOnDayStart) return false;
-        if (IsTitleScene(SceneManager.GetActiveScene())) return false;
-        return AutoSave();
-    }
-
-    /// <summary>
-    /// 밤이 시작될 때 GameManager가 부르는 자동 저장.
-    ///
-    /// 밤은 코어가 부서질 수 있는 유일한 시간이다. 여기서 한 번 저장해 두면 게임오버 화면의
-    /// "마지막 지점에서 다시"가 항상 그날 밤의 시작으로 돌아간다 — 아침 저장만 있으면
-    /// 밤을 통째로 다시 살아야 하고, 첫날 밤에 죽으면 돌아갈 곳이 아예 없다.
-    /// </summary>
-    /// <returns>실제로 저장했으면 true.</returns>
-    public bool AutoSaveOnNightStart()
-    {
-        if (!Config.autoSaveOnNightStart) return false;
-        if (IsTitleScene(SceneManager.GetActiveScene())) return false;
-        return AutoSave();
-    }
-
-    /// <summary>자동 저장 슬롯을 순환하며 저장한다.</summary>
-    public bool AutoSave()
-    {
-        // 여기 한 곳이면 아침·밤 자동 저장, 종료 시 저장, 타이틀 복귀 시 저장이 전부 덮인다
-        if (ShouldSuppressAutoSave()) return false;
-
-        int count = Mathf.Max(1, Config.autoSlotCount);
-        if (_autoSlotCursor < 0) _autoSlotCursor = NextAutoIndexFromDisk(count);
-        string slotId = SaveSystemConfig.AutoSlotId(_autoSlotCursor % count);
-        _autoSlotCursor = (_autoSlotCursor + 1) % count;
-        return Save(slotId);
-    }
-
-    /// <summary>
-    /// 세션의 첫 자동 저장이 쓸 칸 — 디스크에서 가장 최근에 쓰인 자동 슬롯의 <b>다음</b>.
-    /// 커서가 매 실행 0에서 시작하면 첫 자동 저장이 항상 auto_01, 대개 직전 세션의
-    /// 최신본을 덮는다 — 링버퍼가 "가장 오래된 것부터" 돌려면 세션을 넘어 이어서 돌아야 한다.
-    /// </summary>
-    int NextAutoIndexFromDisk(int count)
-    {
-        int newest = -1;
-        DateTime newestAt = DateTime.MinValue;
-        for (int i = 0; i < count; i++)
+        void ApplyModules(SaveFile file)
         {
-            var meta = SaveStorage.ReadMeta(SaveSystemConfig.AutoSlotId(i));
-            if (meta == null) continue;
-            if (DateTime.TryParse(meta.SavedAtUtc, null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out var at) && at > newestAt)
+            foreach (var m in _modules)   // Order 순으로 정렬돼 있다
             {
-                newestAt = at;
-                newest = i;
+                if (!file.Modules.TryGetValue(m.ModuleId, out var data) || data == null) continue;
+
+                try { m.Restore(data); }
+                catch (Exception e)
+                {
+                    // 한 모듈이 실패해도 나머지는 복원한다 — 전부 잃는 것보다 낫다
+                    Debug.LogError($"[Save] 모듈 '{m.ModuleId}' 복원 실패: {e}");
+                }
             }
         }
-        return (newest + 1) % count;
-    }
 
-    SaveFile CaptureToFile(string slotId)
-    {
-        var scene = SceneManager.GetActiveScene();
-
-        // 모르는 모듈 키를 보존하기 위해 이전 데이터 위에 덮어쓴다
-        var modules = new Dictionary<string, JToken>(_carriedModules);
-
-        foreach (var m in _modules)
+        /// <summary>
+        /// DontDestroyOnLoad 싱글턴은 씬을 다시 열어도 초기화되지 않는다 — 파괴가 곧 초기화다.
+        /// 되돌릴 필드를 골라 리셋하는 방식은 새 상태가 생길 때마다 여기를 잊게 되므로,
+        /// 게임플레이 영속 매니저를 통째로 파괴한다. 다음 게임플레이 씬이 자기 것을 새로 만들고
+        /// (Awake의 중복 가드가 이때는 통과한다), 타이틀에는 아예 없는 것이 정상이다 —
+        /// 시계가 타이틀에서도 돌며 이벤트를 쏘고, 새 게임에 이전 일차가 이월되던 원인.
+        /// InputManager도 함께 부순다 — 상태는 없지만 Systems.unity의 <b>대표 타입</b>이라
+        /// (GameBootstrap.shouldLoad), 살아 있으면 부트스트랩이 Systems를 다시 얹지 않아
+        /// 방금 부순 TimeManager·GameManager가 영영 재생성되지 않는다.
+        /// SoundManager·SaveManager는 게임 상태가 없고 씬 탑재와도 무관해 남긴다.
+        ///
+        /// <b>DestroyImmediate인 이유</b>: 보통의 Destroy는 프레임 끝에야 실제로 파괴한다.
+        /// 그런데 바로 다음 줄에서 씬을 로드하므로, 부트스트랩이 "Systems를 얹을까"를 판단하는
+        /// 순간(씬 로드 직후)에도 옛 InputManager가 아직 살아 있어 <b>이미 있다</b>고 오판한다 —
+        /// Systems가 영영 안 얹혀 시계도 진행도도 없는 채로 게임이 뜬다(불러오기가 이렇게 죽어 있었다).
+        /// 같은 이유로 새 씬의 TimeManager.Awake도 옛 Instance를 보고 자폭한다.
+        /// 즉시 파괴하면 OnDestroy가 그 자리에서 돌아 Instance가 끊기고 탐색에서도 사라진다.
+        /// 호출 시점이 UI·이벤트라 물리/렌더 루프 한가운데가 아니므로 안전하다.
+        /// </summary>
+        static void ResetPersistentSingletons()
         {
-            object captured;
-            try { captured = m.Capture(); }
-            catch (Exception e)
+            if (TimeManager.Instance != null) DestroyImmediate(TimeManager.Instance.gameObject);
+            if (GameManager.Instance != null) DestroyImmediate(GameManager.Instance.gameObject);
+            if (InputManager.Instance != null) DestroyImmediate(InputManager.Instance.gameObject);
+            // 튜토리얼도 DontDestroyOnLoad다 — 안 부수면 새 게임에 이전 판의 진행도가 그대로 이월된다
+            if (TutorialManager.Instance != null) DestroyImmediate(TutorialManager.Instance.gameObject);
+        }
+
+        // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────
+
+        public bool NewGame()
+        {
+            string scene = ResolveScene(Config.newGameScenePath, SceneNameOf(Config.newGameScenePath));
+            if (scene == null)
             {
-                Debug.LogError($"[Save] 모듈 '{m.ModuleId}' Capture 실패 — 이전 값을 유지합니다: {e}");
-                continue;
+                Debug.LogError($"[Save] New Game 씬을 찾지 못했습니다: '{Config.newGameScenePath}'");
+                return false;
             }
 
-            // null = 이 씬에 해당 시스템이 없음. 기존 값을 지우지 않고 그대로 둔다.
-            if (captured == null) continue;
-            modules[m.ModuleId] = SaveJson.ToToken(captured);
+            _playtime = 0;
+            _currentSlotId = null;
+            _carriedModules = new Dictionary<string, JToken>();
+            SaveLoadContext.Finish();       // 복원 아님 — 시딩이 정상 동작해야 한다
+            ResetPersistentSingletons();
+
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(scene, LoadSceneMode.Single);
+            return true;
         }
 
-        var cycle = TimeManager.Instance != null ? TimeManager.Instance.Cycle : null;
-
-        return new SaveFile
+        /// <summary>저장하고 타이틀로 돌아간다. saveFirst=false면 저장 없이 나간다.</summary>
+        public bool ReturnToTitle(bool saveFirst = true)
         {
-            SchemaVersion = SaveFile.CurrentSchemaVersion,
-            Modules = modules,
-            Meta = new SaveMeta
+            if (saveFirst && Config.autoSaveOnQuit && !ShouldSuppressAutoSave()
+                && !IsTitleScene(SceneManager.GetActiveScene()))
             {
-                SlotId = slotId,
-                ScenePath = scene.path,
-                SceneName = scene.name,
-                DayNumber = cycle?.DayNumber ?? 1,
-                Phase = (cycle?.Phase ?? DayPhase.Day).ToString(),
-                CoreTier = GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0,
-                PlaytimeSeconds = _playtime,
-                SavedAtUtc = DateTime.UtcNow.ToString("o"),
-                AppVersion = Application.version,
-            },
-        };
-    }
+                if (!string.IsNullOrEmpty(_currentSlotId)) Save(_currentSlotId);
+                else AutoSave();
+            }
 
-    // ── 로드 ──────────────────────────────────────────────────────
-
-    /// <summary>슬롯을 읽어 해당 씬을 열고 상태를 복원한다.</summary>
-    public bool Load(string slotId)
-    {
-        var file = SaveStorage.Read(slotId);
-        if (file == null)
-        {
-            Debug.LogError($"[Save] 슬롯 '{slotId}' 를 읽지 못했습니다.");
-            return false;
-        }
-
-        if (!SaveMigrations.TryMigrate(file, out string error))
-        {
-            Debug.LogError($"[Save] 슬롯 '{slotId}' 를 열 수 없습니다 — {error}");
-            return false;
-        }
-
-        string scene = ResolveScene(file.Meta.ScenePath, file.Meta.SceneName);
-        if (scene == null)
-        {
-            Debug.LogError($"[Save] 세이브가 가리키는 씬을 찾지 못했습니다: '{file.Meta.ScenePath}' — " +
-                           "Build Settings에 등록됐는지 확인하세요.");
-            return false;
-        }
-
-        _playtime = file.Meta.PlaytimeSeconds;
-        _currentSlotId = SaveSystemConfig.IsAutoSlot(slotId) ? null : slotId;
-
-        // 씬이 뜨기 전에 켜야 한다 — 각 시스템의 Awake/Start가 이 플래그를 보고 시딩을 건너뛴다
-        SaveLoadContext.BeginRestore(file);
-        ResetPersistentSingletons();
-
-        Time.timeScale = 1f;   // 일시정지 메뉴에서 불러오는 경로 대비
-        SceneManager.LoadScene(scene, LoadSceneMode.Single);
-        return true;
-    }
-
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (mode != LoadSceneMode.Single) return;
-        if (SaveLoadContext.Pending == null) return;
-        StartCoroutine(RestoreAfterSceneReady());
-    }
-
-    /// <summary>
-    /// 씬의 Awake/Start가 전부 끝난 다음 프레임에 복원한다.
-    /// sceneLoaded 시점에는 아직 Start가 돌지 않아 시스템들이 준비되지 않았다.
-    /// </summary>
-    IEnumerator RestoreAfterSceneReady()
-    {
-        yield return null;   // Start 완료
-        yield return null;   // Start에서 만들어진 것들(코어 연결 등)까지 정착
-
-        var file = SaveLoadContext.Pending;
-        if (file == null) yield break;
-
-        ApplyModules(file);
-
-        _carriedModules = file.Modules;
-        SaveLoadContext.Finish();
-        Debug.Log($"[Save] 불러오기 완료 — Day {file.Meta.DayNumber}, {file.Meta.PlaytimeText}");
-        SlotsChanged?.Invoke();
-    }
-
-    void ApplyModules(SaveFile file)
-    {
-        foreach (var m in _modules)   // Order 순으로 정렬돼 있다
-        {
-            if (!file.Modules.TryGetValue(m.ModuleId, out var data) || data == null) continue;
-
-            try { m.Restore(data); }
-            catch (Exception e)
+            string scene = ResolveScene(Config.titleScenePath, SceneNameOf(Config.titleScenePath));
+            if (scene == null)
             {
-                // 한 모듈이 실패해도 나머지는 복원한다 — 전부 잃는 것보다 낫다
-                Debug.LogError($"[Save] 모듈 '{m.ModuleId}' 복원 실패: {e}");
+                Debug.LogError($"[Save] 타이틀 씬을 찾지 못했습니다: '{Config.titleScenePath}'");
+                return false;
+            }
+
+            SaveLoadContext.Finish();
+            ResetPersistentSingletons();
+
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(scene, LoadSceneMode.Single);
+            return true;
+        }
+
+        // ── 슬롯 조회 (UI용) ──────────────────────────────────────────
+
+        public IEnumerable<(string slotId, SaveMeta meta)> ManualSlots()
+        {
+            for (int i = 0; i < Config.manualSlotCount; i++)
+            {
+                string id = SaveSystemConfig.ManualSlotId(i);
+                yield return (id, SaveStorage.ReadMeta(id));
             }
         }
-    }
 
-    /// <summary>
-    /// DontDestroyOnLoad 싱글턴은 씬을 다시 열어도 초기화되지 않는다 — 파괴가 곧 초기화다.
-    /// 되돌릴 필드를 골라 리셋하는 방식은 새 상태가 생길 때마다 여기를 잊게 되므로,
-    /// 게임플레이 영속 매니저를 통째로 파괴한다. 다음 게임플레이 씬이 자기 것을 새로 만들고
-    /// (Awake의 중복 가드가 이때는 통과한다), 타이틀에는 아예 없는 것이 정상이다 —
-    /// 시계가 타이틀에서도 돌며 이벤트를 쏘고, 새 게임에 이전 일차가 이월되던 원인.
-    /// InputManager도 함께 부순다 — 상태는 없지만 Systems.unity의 <b>대표 타입</b>이라
-    /// (GameBootstrap.shouldLoad), 살아 있으면 부트스트랩이 Systems를 다시 얹지 않아
-    /// 방금 부순 TimeManager·GameManager가 영영 재생성되지 않는다.
-    /// SoundManager·SaveManager는 게임 상태가 없고 씬 탑재와도 무관해 남긴다.
-    ///
-    /// <b>DestroyImmediate인 이유</b>: 보통의 Destroy는 프레임 끝에야 실제로 파괴한다.
-    /// 그런데 바로 다음 줄에서 씬을 로드하므로, 부트스트랩이 "Systems를 얹을까"를 판단하는
-    /// 순간(씬 로드 직후)에도 옛 InputManager가 아직 살아 있어 <b>이미 있다</b>고 오판한다 —
-    /// Systems가 영영 안 얹혀 시계도 진행도도 없는 채로 게임이 뜬다(불러오기가 이렇게 죽어 있었다).
-    /// 같은 이유로 새 씬의 TimeManager.Awake도 옛 Instance를 보고 자폭한다.
-    /// 즉시 파괴하면 OnDestroy가 그 자리에서 돌아 Instance가 끊기고 탐색에서도 사라진다.
-    /// 호출 시점이 UI·이벤트라 물리/렌더 루프 한가운데가 아니므로 안전하다.
-    /// </summary>
-    static void ResetPersistentSingletons()
-    {
-        if (TimeManager.Instance != null) DestroyImmediate(TimeManager.Instance.gameObject);
-        if (GameManager.Instance != null) DestroyImmediate(GameManager.Instance.gameObject);
-        if (InputManager.Instance != null) DestroyImmediate(InputManager.Instance.gameObject);
-        // 튜토리얼도 DontDestroyOnLoad다 — 안 부수면 새 게임에 이전 판의 진행도가 그대로 이월된다
-        if (TutorialManager.Instance != null) DestroyImmediate(TutorialManager.Instance.gameObject);
-    }
-
-    // ── 새 게임 / 타이틀 복귀 ─────────────────────────────────────
-
-    public bool NewGame()
-    {
-        string scene = ResolveScene(Config.newGameScenePath, SceneNameOf(Config.newGameScenePath));
-        if (scene == null)
+        public IEnumerable<(string slotId, SaveMeta meta)> AutoSlots()
         {
-            Debug.LogError($"[Save] New Game 씬을 찾지 못했습니다: '{Config.newGameScenePath}'");
-            return false;
+            for (int i = 0; i < Config.autoSlotCount; i++)
+            {
+                string id = SaveSystemConfig.AutoSlotId(i);
+                yield return (id, SaveStorage.ReadMeta(id));
+            }
         }
 
-        _playtime = 0;
-        _currentSlotId = null;
-        _carriedModules = new Dictionary<string, JToken>();
-        SaveLoadContext.Finish();       // 복원 아님 — 시딩이 정상 동작해야 한다
-        ResetPersistentSingletons();
+        /// <summary>수동·자동 슬롯 전체.</summary>
+        public IEnumerable<(string slotId, SaveMeta meta)> AllSlots()
+            => ManualSlots().Concat(AutoSlots());
 
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(scene, LoadSceneMode.Single);
-        return true;
-    }
-
-    /// <summary>저장하고 타이틀로 돌아간다. saveFirst=false면 저장 없이 나간다.</summary>
-    public bool ReturnToTitle(bool saveFirst = true)
-    {
-        if (saveFirst && Config.autoSaveOnQuit && !ShouldSuppressAutoSave()
-            && !IsTitleScene(SceneManager.GetActiveScene()))
+        /// <summary>가장 최근에 저장된 슬롯을 연다. 세이브가 하나도 없으면 false.</summary>
+        public bool LoadMostRecent()
         {
-            if (!string.IsNullOrEmpty(_currentSlotId)) Save(_currentSlotId);
-            else AutoSave();
+            string best = null;
+            DateTime bestTime = DateTime.MinValue;
+
+            foreach (var (slotId, meta) in AllSlots())
+            {
+                if (meta == null || meta.IsEmpty) continue;
+                if (!DateTime.TryParse(meta.SavedAtUtc, null,
+                        System.Globalization.DateTimeStyles.RoundtripKind, out var t)) continue;
+                if (t <= bestTime) continue;
+
+                bestTime = t;
+                best = slotId;
+            }
+
+            return best != null && Load(best);
         }
 
-        string scene = ResolveScene(Config.titleScenePath, SceneNameOf(Config.titleScenePath));
-        if (scene == null)
+        /// <summary>
+        /// 가장 최근에 저장된 슬롯의 요약. 세이브가 하나도 없으면 null.
+        /// "이어하기"·게임오버 화면이 어느 지점으로 돌아가는지 미리 보여주는 데 쓴다 —
+        /// <see cref="LoadMostRecent"/>가 실제로 여는 그 슬롯과 같은 기준으로 고른다.
+        /// </summary>
+        public SaveMeta LatestMeta()
         {
-            Debug.LogError($"[Save] 타이틀 씬을 찾지 못했습니다: '{Config.titleScenePath}'");
-            return false;
+            SaveMeta best = null;
+            DateTime bestTime = DateTime.MinValue;
+
+            foreach (var (_, meta) in AllSlots())
+            {
+                if (meta == null || meta.IsEmpty) continue;
+                if (!DateTime.TryParse(meta.SavedAtUtc, null,
+                        System.Globalization.DateTimeStyles.RoundtripKind, out var t)) continue;
+                if (t <= bestTime) continue;
+
+                bestTime = t;
+                best = meta;
+            }
+            return best;
         }
 
-        SaveLoadContext.Finish();
-        ResetPersistentSingletons();
-
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(scene, LoadSceneMode.Single);
-        return true;
-    }
-
-    // ── 슬롯 조회 (UI용) ──────────────────────────────────────────
-
-    public IEnumerable<(string slotId, SaveMeta meta)> ManualSlots()
-    {
-        for (int i = 0; i < Config.manualSlotCount; i++)
+        public bool DeleteSlot(string slotId)
         {
-            string id = SaveSystemConfig.ManualSlotId(i);
-            yield return (id, SaveStorage.ReadMeta(id));
-        }
-    }
-
-    public IEnumerable<(string slotId, SaveMeta meta)> AutoSlots()
-    {
-        for (int i = 0; i < Config.autoSlotCount; i++)
-        {
-            string id = SaveSystemConfig.AutoSlotId(i);
-            yield return (id, SaveStorage.ReadMeta(id));
-        }
-    }
-
-    /// <summary>수동·자동 슬롯 전체.</summary>
-    public IEnumerable<(string slotId, SaveMeta meta)> AllSlots()
-        => ManualSlots().Concat(AutoSlots());
-
-    /// <summary>가장 최근에 저장된 슬롯을 연다. 세이브가 하나도 없으면 false.</summary>
-    public bool LoadMostRecent()
-    {
-        string best = null;
-        DateTime bestTime = DateTime.MinValue;
-
-        foreach (var (slotId, meta) in AllSlots())
-        {
-            if (meta == null || meta.IsEmpty) continue;
-            if (!DateTime.TryParse(meta.SavedAtUtc, null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out var t)) continue;
-            if (t <= bestTime) continue;
-
-            bestTime = t;
-            best = slotId;
+            bool ok = SaveStorage.Delete(slotId);
+            if (ok) SlotsChanged?.Invoke();
+            return ok;
         }
 
-        return best != null && Load(best);
-    }
+        // ── 씬 이름 해석 ──────────────────────────────────────────────
 
-    /// <summary>
-    /// 가장 최근에 저장된 슬롯의 요약. 세이브가 하나도 없으면 null.
-    /// "이어하기"·게임오버 화면이 어느 지점으로 돌아가는지 미리 보여주는 데 쓴다 —
-    /// <see cref="LoadMostRecent"/>가 실제로 여는 그 슬롯과 같은 기준으로 고른다.
-    /// </summary>
-    public SaveMeta LatestMeta()
-    {
-        SaveMeta best = null;
-        DateTime bestTime = DateTime.MinValue;
-
-        foreach (var (_, meta) in AllSlots())
+        static string SceneNameOf(string path)
         {
-            if (meta == null || meta.IsEmpty) continue;
-            if (!DateTime.TryParse(meta.SavedAtUtc, null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out var t)) continue;
-            if (t <= bestTime) continue;
-
-            bestTime = t;
-            best = meta;
-        }
-        return best;
-    }
-
-    public bool DeleteSlot(string slotId)
-    {
-        bool ok = SaveStorage.Delete(slotId);
-        if (ok) SlotsChanged?.Invoke();
-        return ok;
-    }
-
-    // ── 씬 이름 해석 ──────────────────────────────────────────────
-
-    static string SceneNameOf(string path)
-    {
-        if (string.IsNullOrEmpty(path)) return "";
-        int slash = path.LastIndexOf('/');
-        string file = slash >= 0 ? path[(slash + 1)..] : path;
-        return file.EndsWith(".unity") ? file[..^6] : file;
-    }
-
-    /// <summary>경로 우선, 없으면 이름으로 폴백. 둘 다 빌드에 없으면 null.</summary>
-    static string ResolveScene(string path, string name)
-    {
-        if (!string.IsNullOrEmpty(path) && Application.CanStreamedLevelBeLoaded(path)) return path;
-        if (!string.IsNullOrEmpty(name) && Application.CanStreamedLevelBeLoaded(name)) return name;
-        return null;
-    }
-
-    bool IsTitleScene(Scene scene)
-        => scene.path == Config.titleScenePath || scene.name == SceneNameOf(Config.titleScenePath);
-
-    /// <summary>
-    /// 지금 상태를 자동으로 저장하면 안 되는가.
-    ///
-    /// 게임오버 상태를 자동 저장에 남기면 타이틀의 "이어하기"가 죽은 세계로 들어간다 —
-    /// 플레이어가 명시적으로 고른 것도 아닌데 되돌릴 수 없는 상태가 기록으로 굳는다.
-    /// 복원 중(IsRestoring)에는 아직 절반만 복원된 세계라 저장할 것이 없다.
-    /// </summary>
-    bool ShouldSuppressAutoSave()
-    {
-        if (SaveLoadContext.IsRestoring) return true;
-        return BattleManager.Instance != null && BattleManager.Instance.IsGameOver;
-    }
-
-    // ── 디버그 ────────────────────────────────────────────────────
-
-    /// <summary>
-    /// 왕복 검증 — 지금 상태를 캡처(A)하고, 그것을 그대로 복원한 뒤 다시 캡처(B)해서 A와 B를 비교한다.
-    /// 두 결과가 같아야 정상이며, 다르다면 그 차이가 곧 "복원되지 않은 필드"다.
-    /// 씬 재로드 없이 제자리에서 돌기 때문에 플레이 중 아무 때나 호출할 수 있다.
-    /// </summary>
-    public bool DebugRoundTripDiff()
-    {
-        var before = CaptureToFile("__roundtrip");
-
-        bool wasRestoring = SaveLoadContext.IsRestoring;
-        SaveLoadContext.BeginRestore(before);
-        try { ApplyModules(before); }
-        finally { if (!wasRestoring) SaveLoadContext.Finish(); }
-
-        var after = CaptureToFile("__roundtrip");
-
-        int mismatches = 0;
-        foreach (var key in before.Modules.Keys.Union(after.Modules.Keys))
-        {
-            before.Modules.TryGetValue(key, out var a);
-            after.Modules.TryGetValue(key, out var b);
-
-            if (JToken.DeepEquals(a, b)) continue;
-
-            mismatches++;
-            Debug.LogError($"[Save][왕복] 모듈 '{key}' 불일치\n" +
-                           $"── 저장 전 ──\n{Truncate(a)}\n── 복원 후 ──\n{Truncate(b)}");
+            if (string.IsNullOrEmpty(path)) return "";
+            int slash = path.LastIndexOf('/');
+            string file = slash >= 0 ? path[(slash + 1)..] : path;
+            return file.EndsWith(".unity") ? file[..^6] : file;
         }
 
-        if (mismatches == 0) Debug.Log($"[Save][왕복] 통과 — 모듈 {before.Modules.Count}개 전부 일치");
-        else Debug.LogError($"[Save][왕복] 실패 — 모듈 {mismatches}개 불일치");
+        /// <summary>경로 우선, 없으면 이름으로 폴백. 둘 다 빌드에 없으면 null.</summary>
+        static string ResolveScene(string path, string name)
+        {
+            if (!string.IsNullOrEmpty(path) && Application.CanStreamedLevelBeLoaded(path)) return path;
+            if (!string.IsNullOrEmpty(name) && Application.CanStreamedLevelBeLoaded(name)) return name;
+            return null;
+        }
 
-        return mismatches == 0;
+        bool IsTitleScene(Scene scene)
+            => scene.path == Config.titleScenePath || scene.name == SceneNameOf(Config.titleScenePath);
+
+        /// <summary>
+        /// 지금 상태를 자동으로 저장하면 안 되는가.
+        ///
+        /// 게임오버 상태를 자동 저장에 남기면 타이틀의 "이어하기"가 죽은 세계로 들어간다 —
+        /// 플레이어가 명시적으로 고른 것도 아닌데 되돌릴 수 없는 상태가 기록으로 굳는다.
+        /// 복원 중(IsRestoring)에는 아직 절반만 복원된 세계라 저장할 것이 없다.
+        /// </summary>
+        bool ShouldSuppressAutoSave()
+        {
+            if (SaveLoadContext.IsRestoring) return true;
+            return BattleManager.Instance != null && BattleManager.Instance.IsGameOver;
+        }
+
+        // ── 디버그 ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 왕복 검증 — 지금 상태를 캡처(A)하고, 그것을 그대로 복원한 뒤 다시 캡처(B)해서 A와 B를 비교한다.
+        /// 두 결과가 같아야 정상이며, 다르다면 그 차이가 곧 "복원되지 않은 필드"다.
+        /// 씬 재로드 없이 제자리에서 돌기 때문에 플레이 중 아무 때나 호출할 수 있다.
+        /// </summary>
+        public bool DebugRoundTripDiff()
+        {
+            var before = CaptureToFile("__roundtrip");
+
+            bool wasRestoring = SaveLoadContext.IsRestoring;
+            SaveLoadContext.BeginRestore(before);
+            try { ApplyModules(before); }
+            finally { if (!wasRestoring) SaveLoadContext.Finish(); }
+
+            var after = CaptureToFile("__roundtrip");
+
+            int mismatches = 0;
+            foreach (var key in before.Modules.Keys.Union(after.Modules.Keys))
+            {
+                before.Modules.TryGetValue(key, out var a);
+                after.Modules.TryGetValue(key, out var b);
+
+                if (JToken.DeepEquals(a, b)) continue;
+
+                mismatches++;
+                Debug.LogError($"[Save][왕복] 모듈 '{key}' 불일치\n" +
+                               $"── 저장 전 ──\n{Truncate(a)}\n── 복원 후 ──\n{Truncate(b)}");
+            }
+
+            if (mismatches == 0) Debug.Log($"[Save][왕복] 통과 — 모듈 {before.Modules.Count}개 전부 일치");
+            else Debug.LogError($"[Save][왕복] 실패 — 모듈 {mismatches}개 불일치");
+
+            return mismatches == 0;
+        }
+
+        static string Truncate(JToken t, int max = 2000)
+        {
+            string s = t?.ToString() ?? "(없음)";
+            return s.Length <= max ? s : s[..max] + $"\n… (총 {s.Length}자)";
+        }
+
+        /// <summary>세이브 폴더 경로 — 콘솔에서 파일을 직접 열어볼 때.</summary>
+        public static string SaveFolderPath => SaveStorage.RootDir;
     }
-
-    static string Truncate(JToken t, int max = 2000)
-    {
-        string s = t?.ToString() ?? "(없음)";
-        return s.Length <= max ? s : s[..max] + $"\n… (총 {s.Length}자)";
-    }
-
-    /// <summary>세이브 폴더 경로 — 콘솔에서 파일을 직접 열어볼 때.</summary>
-    public static string SaveFolderPath => SaveStorage.RootDir;
 }

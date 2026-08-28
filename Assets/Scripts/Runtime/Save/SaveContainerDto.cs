@@ -1,89 +1,94 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using CoreDawn.Factory;
+using CoreDawn.Inventories;
 
-/// <summary>
-/// <see cref="ItemContainer"/> 한 개의 저장 형태 — 플레이어 가방, 핫바, 건물 입출력 버퍼,
-/// 상자까지 프로젝트의 모든 보관함이 같은 타입을 쓰므로 DTO도 하나면 된다.
-///
-/// 비어 있는 슬롯은 기록하지 않는다 (36칸짜리 가방에 아이템 2개면 항목도 2개).
-/// 슬롯 인덱스를 함께 적으므로 배치가 그대로 복원된다.
-/// </summary>
-public class SaveContainerDto
+namespace CoreDawn.Save
 {
-    [JsonProperty("slotCount")]
-    public int SlotCount;
-
-    [JsonProperty("slots")]
-    public List<SaveStackDto> Slots = new();
-
-    /// <summary>컨테이너의 현재 내용을 DTO로. null이면 빈 컨테이너.</summary>
-    public static SaveContainerDto From(ItemContainer c)
-    {
-        if (c == null) return null;
-
-        var dto = new SaveContainerDto { SlotCount = c.SlotCount };
-        for (int i = 0; i < c.SlotCount; i++)
-        {
-            var s = c.PeekAt(i);
-            if (s == null || s.item == null || s.amount <= 0) continue;
-            dto.Slots.Add(new SaveStackDto
-            {
-                Index = i,
-                ItemId = SaveRefs.IdOf(s.item),
-                Amount = s.amount,
-            });
-        }
-        return dto;
-    }
-
     /// <summary>
-    /// 컨테이너를 이 DTO 내용으로 덮어쓴다.
-    /// 규칙 검사(수용 필터·종류당 1스택)를 거치지 않는다 — 저장 당시엔 이미 유효했던 배치이고,
-    /// 필터는 로드 직후 각 행동이 다시 설치하기 전이라 아직 비어 있을 수 있기 때문이다.
+    /// <see cref="ItemContainer"/> 한 개의 저장 형태 — 플레이어 가방, 핫바, 건물 입출력 버퍼,
+    /// 상자까지 프로젝트의 모든 보관함이 같은 타입을 쓰므로 DTO도 하나면 된다.
+    ///
+    /// 비어 있는 슬롯은 기록하지 않는다 (36칸짜리 가방에 아이템 2개면 항목도 2개).
+    /// 슬롯 인덱스를 함께 적으므로 배치가 그대로 복원된다.
     /// </summary>
-    public void ApplyTo(ItemContainer c)
+    public class SaveContainerDto
     {
-        if (c == null) return;
+        [JsonProperty("slotCount")]
+        public int SlotCount;
 
-        var stacks = new ItemStack[c.SlotCount];
-        foreach (var s in Slots)
+        [JsonProperty("slots")]
+        public List<SaveStackDto> Slots = new();
+
+        /// <summary>컨테이너의 현재 내용을 DTO로. null이면 빈 컨테이너.</summary>
+        public static SaveContainerDto From(ItemContainer c)
         {
-            if (s == null || s.Index < 0 || s.Index >= stacks.Length) continue;
+            if (c == null) return null;
 
-            var item = SaveRefs.Item(s.ItemId);
-            if (item == null || s.Amount <= 0) continue;
-
-            stacks[s.Index] = new ItemStack(item, s.Amount);
+            var dto = new SaveContainerDto { SlotCount = c.SlotCount };
+            for (int i = 0; i < c.SlotCount; i++)
+            {
+                var s = c.PeekAt(i);
+                if (s == null || s.item == null || s.amount <= 0) continue;
+                dto.Slots.Add(new SaveStackDto
+                {
+                    Index = i,
+                    ItemId = SaveRefs.IdOf(s.item),
+                    Amount = s.amount,
+                });
+            }
+            return dto;
         }
 
-        c.RestoreSlotsRaw(stacks);
+        /// <summary>
+        /// 컨테이너를 이 DTO 내용으로 덮어쓴다.
+        /// 규칙 검사(수용 필터·종류당 1스택)를 거치지 않는다 — 저장 당시엔 이미 유효했던 배치이고,
+        /// 필터는 로드 직후 각 행동이 다시 설치하기 전이라 아직 비어 있을 수 있기 때문이다.
+        /// </summary>
+        public void ApplyTo(ItemContainer c)
+        {
+            if (c == null) return;
+
+            var stacks = new ItemStack[c.SlotCount];
+            foreach (var s in Slots)
+            {
+                if (s == null || s.Index < 0 || s.Index >= stacks.Length) continue;
+
+                var item = SaveRefs.Item(s.ItemId);
+                if (item == null || s.Amount <= 0) continue;
+
+                stacks[s.Index] = new ItemStack(item, s.Amount);
+            }
+
+            c.RestoreSlotsRaw(stacks);
+        }
     }
-}
 
-/// <summary>슬롯 하나에 놓인 스택. 인덱스를 들고 있어 배치가 보존된다.</summary>
-public class SaveStackDto
-{
-    [JsonProperty("i")]
-    public int Index;
-
-    [JsonProperty("item")]
-    public string ItemId;
-
-    [JsonProperty("n")]
-    public int Amount;
-
-    // (구 "max" — 스택마다의 상한. ItemDataSO.maxStack이 유일한 주인이 되면서 저장할 것이 없어졌다.
-    //  옛 세이브에 남은 키는 역직렬화에서 조용히 무시된다.)
-
-    public static SaveStackDto From(ItemStack s) =>
-        s == null || s.item == null || s.amount <= 0
-            ? null
-            : new SaveStackDto { Index = -1, ItemId = SaveRefs.IdOf(s.item), Amount = s.amount };
-
-    public ItemStack ToStack()
+    /// <summary>슬롯 하나에 놓인 스택. 인덱스를 들고 있어 배치가 보존된다.</summary>
+    public class SaveStackDto
     {
-        var item = SaveRefs.Item(ItemId);
-        if (item == null || Amount <= 0) return null;
-        return new ItemStack(item, Amount);
+        [JsonProperty("i")]
+        public int Index;
+
+        [JsonProperty("item")]
+        public string ItemId;
+
+        [JsonProperty("n")]
+        public int Amount;
+
+        // (구 "max" — 스택마다의 상한. ItemDataSO.maxStack이 유일한 주인이 되면서 저장할 것이 없어졌다.
+        //  옛 세이브에 남은 키는 역직렬화에서 조용히 무시된다.)
+
+        public static SaveStackDto From(ItemStack s) =>
+            s == null || s.item == null || s.amount <= 0
+                ? null
+                : new SaveStackDto { Index = -1, ItemId = SaveRefs.IdOf(s.item), Amount = s.amount };
+
+        public ItemStack ToStack()
+        {
+            var item = SaveRefs.Item(ItemId);
+            if (item == null || Amount <= 0) return null;
+            return new ItemStack(item, Amount);
+        }
     }
 }

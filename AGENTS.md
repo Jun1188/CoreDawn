@@ -18,6 +18,45 @@ This repo is worked on by multiple AI agents. Shared conventions live here.
   retired on 2026-08-28: real tests and test-scene harnesses now sit in
   `Assets/Scripts/Tests/` (editor-only helpers in `Tests/Editor`). Test scenes: `Assets/Scenes/Test`.
 - Entity sim/view refactor in progress — plan and progress log: `docs/entity-refactor-plan.md`.
+
+## Namespaces (since 2026-08-28)
+
+Every script has a `CoreDawn.*` namespace decided by its folder (`LevelUp` is the old project
+name — never use it). New files go in the namespace of their folder:
+
+| Folder (`Assets/Scripts/…`) | Namespace |
+|---|---|
+| `Runtime/Entity` | `CoreDawn.Entities` |
+| `Runtime/Navigation` | `CoreDawn.Navigation` |
+| `Runtime/Combat` | `CoreDawn.Combat` |
+| `Runtime/DayTime` | `CoreDawn.DayTime` |
+| `Runtime/FPS` | `CoreDawn.FPS` |
+| `Runtime/Factory` | `CoreDawn.Factory` |
+| `Runtime/GridSystem` | `CoreDawn.Placement` |
+| `Runtime/Input` | `CoreDawn.Inputs` |
+| `Runtime/Interactable` | `CoreDawn.Interaction` |
+| `Runtime/Inventory` | `CoreDawn.Inventories` |
+| `Runtime/Manager` | `CoreDawn.Managers` |
+| `Runtime/Ping` | `CoreDawn.Pings` |
+| `Runtime/Resource` | `CoreDawn.ResourceNodes` |
+| `Runtime/Save` | `CoreDawn.Save` |
+| `Runtime/Settings` | `CoreDawn.Settings` |
+| `Runtime/Sound` | `CoreDawn.Sound` |
+| `Runtime/Tutorial` | `CoreDawn.Tutorial` |
+| `Runtime/UI` | `CoreDawn.UI` |
+| `Runtime/World` | `CoreDawn.Worlds` |
+| `Editor` | `CoreDawn.EditorTools` |
+| `Tests` (incl. `Tests/Editor`) | `CoreDawn.Tests` |
+
+Rules behind the odd names: a namespace must not share a name with a type used inside it
+(`Entity`, `Ping`, `World`, `Inventory`, `Interactable`, `GridSystem` are classes), nor with a
+Unity type that code refers to by simple name (`UnityEngine.Input`, `UnityEditor.Editor`) —
+inside `namespace CoreDawn.X`, a sibling namespace `CoreDawn.Input` would shadow `Input`.
+Two of our types collide with Unity names: `InputEvent` (vs `UnityEngine.UIElements.InputEvent`)
+and `Ping` (vs `UnityEngine.Ping`). Files that import both sides carry an alias line
+(`using InputEvent = CoreDawn.Inputs.InputEvent;`); the long-term fix is renaming ours.
+The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once to keep blame useful.
 - Commit messages in this repo already tend to note the main edited directory
   (e.g. "main edit directory: Script - test - entity") — keep doing that, it
   mirrors the log format above.

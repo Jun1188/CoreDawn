@@ -1,13 +1,16 @@
 using UnityEngine;
 
-public class ItemDataHolder : MonoBehaviour
+namespace CoreDawn.Factory
 {
-    [SerializeField]
-    ItemDataSO item;
-
-    public ItemDataSO GetItem()
+    public class ItemDataHolder : MonoBehaviour
     {
-        return item;
-    }
+        [SerializeField]
+        ItemDataSO item;
 
+        public ItemDataSO GetItem()
+        {
+            return item;
+        }
+
+    }
 }

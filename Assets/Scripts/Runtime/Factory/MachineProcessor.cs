@@ -1,57 +1,61 @@
 using UnityEngine;
+using CoreDawn.Entities;
 
-[RequireComponent(typeof(BuildingEntity))]
-public class MachineProcessor : BaseProcessor
+namespace CoreDawn.Factory
 {
-    private Building _building;   
-
-    // 공장 기계는 재료가 공급되는 한 계속 자동 순환
-    protected override bool IsAutomation => true; 
-
-    private void Start()
+    [RequireComponent(typeof(BuildingEntity))]
+    public class MachineProcessor : BaseProcessor
     {
-        var entity = GetComponentInParent<BuildingEntity>();
-        _building = entity != null ? entity.Sim : null;
-        if (_building == null)
-            Debug.LogWarning("[MachineProcessor] 심 건물(Sim) 연결을 찾지 못했습니다.", this);
-    }
+        private Building _building;   
 
-    protected override bool HasEnoughIngredients()
-    {
-        if (_building == null || currentRecipe == null) return false;
+        // 공장 기계는 재료가 공급되는 한 계속 자동 순환
+        protected override bool IsAutomation => true; 
 
-        var snapshot = _building.Input.Snapshot(); 
-        foreach (var input in currentRecipe.inputs)
+        private void Start()
         {
-            if (input.item == null) continue;
-            int required = input.amount;
-            int found = 0;
-            foreach (var (item, count) in snapshot)
+            var entity = GetComponentInParent<BuildingEntity>();
+            _building = entity != null ? entity.Sim : null;
+            if (_building == null)
+                Debug.LogWarning("[MachineProcessor] 심 건물(Sim) 연결을 찾지 못했습니다.", this);
+        }
+
+        protected override bool HasEnoughIngredients()
+        {
+            if (_building == null || currentRecipe == null) return false;
+
+            var snapshot = _building.Input.Snapshot(); 
+            foreach (var input in currentRecipe.inputs)
             {
-                if (item == input.item) { found = count; break; }
+                if (input.item == null) continue;
+                int required = input.amount;
+                int found = 0;
+                foreach (var (item, count) in snapshot)
+                {
+                    if (item == input.item) { found = count; break; }
+                }
+                if (found < required) return false;
             }
-            if (found < required) return false;
+            return true;
         }
-        return true;
-    }
 
-    protected override void ConsumeIngredients()
-    {
-        foreach (var input in currentRecipe.inputs)
+        protected override void ConsumeIngredients()
         {
-            if (input.item != null)
-                _building.Input.TryConsume(input.item, input.amount); 
+            foreach (var input in currentRecipe.inputs)
+            {
+                if (input.item != null)
+                    _building.Input.TryConsume(input.item, input.amount); 
+            }
+            _building.NotifyUpstream(); 
         }
-        _building.NotifyUpstream(); 
-    }
 
-    protected override void GiveOutputs()
-    {
-        foreach (var output in currentRecipe.outputs)
+        protected override void GiveOutputs()
         {
-            if (output.item != null) 
-                _building.Output.TryAdd(output.item, output.amount);
+            foreach (var output in currentRecipe.outputs)
+            {
+                if (output.item != null) 
+                    _building.Output.TryAdd(output.item, output.amount);
+            }
+            _building.NotifyUpstream(); 
         }
-        _building.NotifyUpstream(); 
     }
 }
