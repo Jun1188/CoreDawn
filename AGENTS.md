@@ -12,8 +12,12 @@ This repo is worked on by multiple AI agents. Shared conventions live here.
 
 ## Project notes
 
-- Unity project. Main active work area right now: `Assets/Scripts/Test/Entity`
-  (Entity/Monster AI: state machine + components) and `Assets/Scenes/Test`.
+- Unity project. Game code lives under `Assets/Scripts/Runtime/` — entities
+  (Entity/Monster AI: state machine + components) in `Runtime/Entity`, pathfinding in
+  `Runtime/Navigation`, waves/battle in `Runtime/Combat`. `Assets/Scripts/Test/` was
+  retired on 2026-08-28: real tests and test-scene harnesses now sit in
+  `Assets/Scripts/Tests/` (editor-only helpers in `Tests/Editor`). Test scenes: `Assets/Scenes/Test`.
+- Entity sim/view refactor in progress — plan and progress log: `docs/entity-refactor-plan.md`.
 - Commit messages in this repo already tend to note the main edited directory
   (e.g. "main edit directory: Script - test - entity") — keep doing that, it
   mirrors the log format above.
