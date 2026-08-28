@@ -3,7 +3,7 @@ using CoreDawn.Entities;
 
 namespace CoreDawn.Factory
 {
-    [RequireComponent(typeof(BuildingEntity))]
+    [RequireComponent(typeof(BuildingView))]
     public class MachineProcessor : BaseProcessor
     {
         private Building _building;   
@@ -13,8 +13,8 @@ namespace CoreDawn.Factory
 
         private void Start()
         {
-            var entity = GetComponentInParent<BuildingEntity>();
-            _building = entity != null ? entity.Sim : null;
+            var entity = GetComponentInParent<BuildingView>();
+            _building = entity != null ? entity.Building : null;
             if (_building == null)
                 Debug.LogWarning("[MachineProcessor] 심 건물(Sim) 연결을 찾지 못했습니다.", this);
         }

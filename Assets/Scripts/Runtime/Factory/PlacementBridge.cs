@@ -2,13 +2,12 @@ using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
-using CoreDawn.Placement;
 
 namespace CoreDawn.Factory
 {
     /// <summary>
-    /// 배치/제거의 Unity 쪽 진입점 — 심 배치(FactorySim)와 뷰(BuildingEntity) 생성을 묶는다.
-    /// 심만 필요하면(테스트 등) FactorySim.Place/Remove를 직접 호출하면 된다.
+    /// 배치/제거의 Unity 쪽 진입점 — 심 배치(FactorySystem)와 뷰(BuildingView) 생성을 묶는다.
+    /// 심만 필요하면(테스트 등) FactorySystem.Place/Remove를 직접 호출하면 된다.
     /// </summary>
     public static class PlacementBridge
     {
@@ -20,7 +19,7 @@ namespace CoreDawn.Factory
             BeltShape shape = BeltShape.Straight)
         {
             var boot = FactoryBootstrap.Instance;
-            var b = boot.Sim.Place(so, origin, rotSteps, portOverride, shape);
+            var b = boot.Factory.Place(so, origin, rotSteps, portOverride, shape);
 
             // 뷰 생성 — 벨트 커브는 메시의 뚫린 변을 포트에 맞추는 보정이 붙는다.
             // 프리뷰(PlacementSystem.PreviewYaw)와 반드시 같은 값이어야 한다: 여기만 고치면
@@ -32,9 +31,9 @@ namespace CoreDawn.Factory
                 : new GameObject(so.name);   // 프리팹 누락 시 빈 오브젝트
 
             // 프리팹에 미리 붙어 있으면(타워의 canAttack 설정 등) 그대로 쓰고, 없으면 부착
-            var view = go.GetComponent<BuildingEntity>();
-            if (view == null) view = go.AddComponent<BuildingEntity>();
-            view.Sim = b;
+            var view = go.GetComponent<BuildingView>();
+            if (view == null) view = go.AddComponent<BuildingView>();
+            view.Building = b;   // 엔티티(HP·편)도 이때 붙는다
             boot.RegisterView(b, view);
 
             return b;
@@ -42,40 +41,33 @@ namespace CoreDawn.Factory
 
         /// <summary>
         /// 씬에 이미 있는 뷰(코어 같은 싱글턴)를 심에 연결한다 — 새 프리팹을 Instantiate하지 않는다.
-        /// 배치 자체(Grid/Graph 등록)는 Place와 동일하게 FactorySim이 담당한다.
+        /// 배치 자체(Grid/Graph 등록)는 Place와 동일하게 FactorySystem이 담당한다.
         /// </summary>
         public static Building PlaceExisting(BuildingDataSO so, Vector2Int origin, int rotSteps,
-            BuildingEntity existingView, PortDefinition[] portOverride = null)
+            BuildingView existingView, PortDefinition[] portOverride = null)
         {
             var boot = FactoryBootstrap.Instance;
-            var b = boot.Sim.Place(so, origin, rotSteps, portOverride);
+            var b = boot.Factory.Place(so, origin, rotSteps, portOverride);
 
-            existingView.Sim = b;
+            existingView.Building = b;
             boot.RegisterView(b, existingView);
 
             return b;
         }
 
+        /// <summary>
+        /// 철거 — 심에서 제거한다. 버퍼 드롭·뷰 파괴는 Removed를 받는 FactoryBootstrap이 하므로
+        /// 전투 파괴(심이 스스로 제거)와 철거가 같은 관문을 지난다.
+        /// 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지(뷰 파괴 전이라 위치 조회 가능).
+        /// </summary>
         public static void Remove(Building b)
         {
             if (b == null || b.IsRemoved) return;
-            var boot = FactoryBootstrap.Instance;
-
-            // 버퍼 내용물은 파괴 전에 월드로 — 건물이 사라져도 아이템은 보존 (철거·전투 파괴 공통 관문)
-            var view = boot.GetView(b);
-            if (view != null)
-            {
-                DropContainer(b.Input, view.transform.position);
-                DropContainer(b.Output, view.transform.position);
-            }
-
-            // 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지(뷰 파괴 전이라 위치 조회 가능),
-            // 마지막에 Sim.Removed가 발화해 FactoryBootstrap이 뷰 정리까지 끝낸다.
-            boot.Sim.Remove(b);
+            FactoryBootstrap.Instance.Factory.Remove(b);
         }
 
         /// <summary>컨테이너 내용물 전체를 위치 주변에 드롭. 스택 상한(64) 단위로 쪼갠다.</summary>
-        static void DropContainer(ItemContainer container, Vector3 position)
+        public static void DropContainer(ItemContainer container, Vector3 position)
         {
             foreach (var (item, total) in container.Snapshot())
             {

@@ -11,9 +11,9 @@ namespace CoreDawn.Combat
     [CreateAssetMenu(fileName = "Effect_Damage", menuName = "Combat/Effect/Damage")]
     public class DamageEffectSO : EffectSO
     {
-        public override void Apply(Entity target, in EffectContext ctx)
+        public override void Apply(EntityView target, in EffectContext ctx)
         {
-            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value);
+            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value, ctx.Source);
         }
     }
 }

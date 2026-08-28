@@ -243,7 +243,7 @@ namespace CoreDawn.Navigation
             maxX = Mathf.Min(gridSize.x - 1, maxX); maxY = Mathf.Min(gridSize.y - 1, maxY);
             if (minX > maxX || minY > maxY) return;
 
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
 
             for (int y = minY; y <= maxY; y++)
             {
@@ -304,12 +304,12 @@ namespace CoreDawn.Navigation
         private Building BuildingAt(Node node)
         {
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null) return null;
+            if (boot == null || boot.Factory == null) return null;
 
             Vector2Int simCell = simGridSystem != null
                 ? simGridSystem.WorldToGrid(node.worldPosition)
                 : node.gridCoord;
-            return boot.Sim.Grid.GetAt(simCell);
+            return boot.Factory.Grid.GetAt(simCell);
         }
 
         /// <summary>
@@ -319,14 +319,11 @@ namespace CoreDawn.Navigation
         /// </summary>
         public int Subdiv => subdiv;
 
-        /// <summary>이 길찾기 칸을 점유한 건물의 씬 엔티티. 건물이 없거나 심 밖 건물이면 null.</summary>
-        public BuildingEntity BuildingEntityAt(Vector2Int cell)
+        /// <summary>이 길찾기 칸을 점유한 심 건물. 건물이 없으면 null.</summary>
+        public Building BuildingAt(Vector2Int cell)
         {
             var node = GetNode(cell);
-            if (node == null) return null;
-
-            var building = BuildingAt(node);
-            return building != null ? FactoryBootstrap.Instance?.GetView(building) : null;
+            return node != null ? BuildingAt(node) : null;
         }
 
         // 정적 장애물(Awake에서 구운 값) + 런타임 설치 건물(심의 GridIndex)을 함께 판정

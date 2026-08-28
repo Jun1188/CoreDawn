@@ -88,12 +88,122 @@ CoreDawn.Tests          Assets/Scripts/Tests
 - [x] Editor 어셈블리 타입을 가리키던 `using CoreDawn.EditorTools;`가 런타임 파일 23개에 들어갔던 것 제거(주석 속 이름 매칭) → 컴파일 0 오류
 - [x] 씬·프리팹의 `m_EditorClassIdentifier`는 GUID 참조라 깨지지 않음 — 리임포트 시 갱신될 뿐
 
-### 2. 의존 방향 뒤집기
-- [ ] `EntityId` · `World`(엔티티 등록부 + 시계) · `EntityModule` 계약 도입
-- [ ] `Building`을 엔티티의 모듈로 — HP는 `Health` 모듈이 유일한 주인 (뷰 `BuildingEntity`에서 이동)
-- [ ] 심의 `BuildingEntity` 참조 7곳 제거 (`Building` · `FactorySim` · `PlacementBridge` · `CoreDataSO` · `NestDataSO` · `TreeDataSO` · `MachineProcessor`) — 이벤트로 대체
-- [ ] `IsHostile`의 레이어("Monster") 판정 → 팩션/팀 필드 (레이어 리팩토링 선행 조건)
-- [ ] 출구 조건: Runtime → 뷰 역참조 0, asmdef를 넣을 수 있는 상태
+### 2. 의존 방향 뒤집기 — 완료 2026-08-28 (`feature/entity-sim-core`, 커밋 7개)
+- [x] `CoreDawn.Sim` 핵심: `EntityId` · `EntityWorld`(등록부·번호·이벤트) · `Entity` · `EntityModule` · `Health` · `Faction` · `GridGeometry` · `IDamageInterceptor` (커밋 1)
+- [x] 뷰 개명 `Entity → EntityView`, `BuildingEntity → BuildingView` (커밋 2)
+- [x] 모든 뷰가 심 엔티티를 갖고 HP를 위임 — 몬스터·플레이어·둥지는 뷰 우선 생성(과도기), `Faction`으로 적대 판정 (커밋 3)
+- [x] `FactorySim → FactorySystem(EntityWorld, GridGeometry)`, `Building : EntityModule, IDamageInterceptor`, HP 정본 `Data.maxHp`, 코어 보호막·isAttackable을 심 인터셉터로, 둥지는 MonsterNest 엔티티에 건물을 얹음(host) (커밋 4)
+- [x] 파괴는 심이 결정: `Health.Die → World.Died → FactorySystem.Remove → Removed → 뷰 파괴`, 코어 파괴 판정도 월드 이벤트 (커밋 5)
+- [x] 소비자 교체: FlowFieldManager·GridManager·DayRegen·CorePanel·HUD·부활·PortFlowOverlay·FactorySaveModule → `FactorySystem.Buildings` / `Owner.Health`. `BuildingView.All` 퇴역 (커밋 6)
+- [x] 출구 조건: 심 폴더의 뷰 import 0 (`tools/check-sim-imports.py` 통과). 세이브 포맷 불변
+- 남은 빚(다음 단계로): 몬스터·플레이어·둥지의 엔티티 생성 주체가 아직 뷰(3·4단계) · 효과(EffectController)·이동·전투 컴포넌트가 뷰(4단계) · SO 행동의 `Interact(PlayerController)`가 UI를 직접 엶(4단계) · `SimHost.World` 정적 접근점(5단계 WorldRunner) · PlacementSystem/GridManager의 격자 복사본(5단계)
+
+#### 2단계 설계 초안 (2026-08-28, 착수 전 검토용)
+
+**실측 근거**
+- 심(`FactorySim`·`Building`·행동·SO)이 뷰를 직접 아는 곳은 사실상 하나 — `CoreBehavior.ApplyMaxHpBonus`가 `boot.GetView(_b).Health`로 HP를 만진다. 나머지 `using CoreDawn.Entities`는 주석 속 이름 매칭이 남긴 것.
+- 뷰 쪽이 정본을 쥔 것: HP(`Entity.health`), 코어 여부(`BuildingEntity.isCore` 직렬화 플래그), 풋프린트 월드 사각형(`TryGetFootprintRect` — `PlacementSystem`의 셀 크기·원점 사용), 살아 있는 건물 목록(`BuildingEntity.All`), 코어 파괴 이벤트, 적대 판정(`IsHostile` = 레이어 "Monster").
+- 건물 HP는 이미 `BuildingDataSO.maxHp`가 데이터 정본이고, 임포터(`GameDataImporter` 1245~1251)가 그 값을 프리팹의 `Entity.health.maxHealth`에 복사한다. 22종 값이 프리팹과 일치.
+- HP를 읽는 소비자: `FactorySaveModule`·`CombatSaveModule`·`PlayerSaveModule`(캡처/복원), `CorePanelView`·`GameplayHUDView`·`DayRegenSystem`(코어·플레이어), `BattleManager`·`WaveSpawnManager`·`MonsterNest`(SetMaxHealth/Initialize), 효과 SO(`ReceiveDamage`·`Heal`).
+- `BuildingEntity`를 쓰는 곳 17파일: FlowFieldManager(목표·돌파 대상), GridManager(칸→건물), DayRegenSystem, CorePanelView, GameplayHUDView, PlayerController.FindCore(부활 위치), BattleManager(CoreDestroyed), PortFlowOverlay, PlacementSystem(철거 조준), WorldPopulator, FactoryBootstrap, PlacementBridge, CoreBootstrap, MachineProcessor, FactorySaveModule, FactoryTest.
+- 기존 `CoreDawn.Worlds.World`(MonoBehaviour)가 있으므로 심 등록부 이름은 `EntityWorld`.
+
+**출구 조건**
+1. `Runtime/Sim/` → `CoreDawn.Sim`: `EntityId`·`EntityWorld`·`Entity`·`EntityModule`·`Health`·`Faction`·`GridGeometry`·`IDamageInterceptor` (plain C#, UnityEngine.Object 없음).
+2. HP의 유일한 주인은 심 `Health`. 뷰는 `Sim.Health`를 위임 노출만 한다(소비자 API 표면 유지 → 세이브 포맷 불변).
+3. `Building : EntityModule`. `FactorySim.Place`가 심 엔티티를 먼저 만들고 모듈을 붙인다. HP 정본 = `Data.maxHp`, 임포터의 프리팹 HP 복사 제거.
+4. 파괴는 심이 결정: `Health.Died → Entity.Died → EntityWorld.Died → FactorySim.Remove → Removed → 뷰 파괴`. 버퍼 드롭은 브리지(FactoryBootstrap의 Removed 처리)로 이동. 코어 파괴 = `EntityWorld.Died` + `Building.IsCore`.
+5. 적대 판정 = `Entity.Faction`(Neutral/Player/Monster). 뷰 레이어는 물리·렌더링으로 되돌린다.
+6. 심 폴더(`Runtime/Sim`·`Runtime/Factory`의 plain C#·SO 행동)에 `using CoreDawn.Entities/UI/FPS/…` 0 — 검사 스크립트로 강제(asmdef 전까지).
+7. 뷰 개명: `Entity → EntityView`, `BuildingEntity → BuildingView` (파일·클래스 동시, GUID 유지).
+
+**타입 계약(초안)**
+```csharp
+namespace CoreDawn.Sim
+{
+    public readonly struct EntityId : IEquatable<EntityId> { public readonly ulong Value; public static readonly EntityId None; }
+    public enum Faction { Neutral, Player, Monster }
+    public readonly struct GridGeometry { public readonly float CellSize; public readonly Vector3 Origin;
+                                          public Vector3 CellToWorld(Vector2Int cell); public Vector2Int WorldToCell(Vector3 p); }
+
+    public abstract class EntityModule { public Entity Owner { get; internal set; }
+                                         protected internal virtual void OnAttach() {} protected internal virtual void OnDetach() {} }
+
+    /// 받는 피해를 가로채는 모듈 — 코어 보호막(CoreBehavior). 뷰의 ReceiveDamage override를 대체한다.
+    public interface IDamageInterceptor { float Intercept(float amount, Entity source); }
+
+    public sealed class Health : EntityModule
+    {
+        public float Max { get; } public float Current { get; } public bool IsDead { get; }
+        public event Action<float, float> Changed; public event Action Died;
+        public float Damage(float amount, Entity source);   // Owner의 IDamageInterceptor 체인 → 감산 → Died
+        public void Heal(float amount); public void SetMax(float max, bool refill); public void Kill();
+        public void RestoreState(float max, float current, bool isDead);   // 세이브 복원 — 이벤트로 사망 연출을 다시 돌리지 않는다
+    }
+
+    public sealed class Entity
+    {
+        public EntityId Id { get; } public EntityWorld World { get; } public Faction Faction { get; set; }
+        public Vector3 Position { get; set; }          // 건물은 배치 시 확정, 이동체는 뷰가 돌려준다(3단계)
+        public bool IsRemoved { get; }
+        public T Get<T>() where T : EntityModule; public T Add<T>(T m) where T : EntityModule; public bool Has<T>();
+        public Health Health => Get<Health>();
+        public event Action<Entity> Died, Removed;
+    }
+
+    public sealed class EntityWorld                      // 등록부·번호·이벤트뿐. 격자·시계는 여기 없다(2026-08-28 검토에서 Grid 제거)
+    {
+        public ulong NextId { get; }                    // 세이브 헤더(5단계) — 재사용 없음
+        public Entity Create(Faction faction, Vector3 position);
+        public void Remove(Entity e);                   // Removed 발화. 모듈 OnDetach
+        public Entity Get(EntityId id); public IEnumerable<Entity> All { get; }
+        public event Action<Entity> Created, Died, Removed;
+    }
+}
+
+namespace CoreDawn.Factory
+{
+    public sealed class Building : EntityModule          // 지금 필드·메서드 그대로 + Owner
+    {
+        public bool IsCore => Data is CoreDataSO;
+        public void WorldRect(out min, out max) => Sim.Geometry.RectOf(Origin, Size, …);   // 구 BuildingEntity.TryGetFootprintRect
+    }
+    // FactorySystem(EntityWorld world, GridGeometry geometry, float tps …)  ← FactorySim 개명. 이름 규칙(XxxSystem)
+    //   Place: world.Create → Add(new Health(data.maxHp)) → Add(new Building(...)) → Position = 풋프린트 중심
+    //   Geometry: 셀 크기·원점 — 공장의 속성이라 여기. PlacementSystem·GridManager의 복사본은 5단계에 통합
+    // 프로퍼티 개명: FactoryBootstrap.Sim → .Factory, BuildingView.Sim → .Building (System은 System 네임스페이스를 가려 못 씀)
+}
+```
+
+**소유권 이동표**
+
+| 항목 | 지금(뷰) | 2단계 후(심) |
+|---|---|---|
+| HP·사망 | `Entity.health`(프리팹 인라인) | `Entity.Health` 모듈. 건물은 `Data.maxHp`, 몬스터·플레이어·둥지는 뷰가 프리팹 값으로 **씨드**(3·4단계에서 데이터로) |
+| 코어 여부 | `BuildingEntity.isCore` 플래그 | `Building.IsCore => Data is CoreDataSO` |
+| 풋프린트 사각형 | `TryGetFootprintRect`(PlacementSystem 의존) | `Building.WorldRect`(`EntityWorld.Grid`) |
+| 살아 있는 건물 목록 | `BuildingEntity.All` | `EntityWorld.All` + `Has<Building>()` (FactoryBootstrap.Buildings도 여기서) |
+| 코어 파괴 통지 | `BuildingEntity.CoreDestroyed` | `EntityWorld.Died` + `IsCore` |
+| 적대 판정 | 레이어 "Monster" | `Entity.Faction` |
+| 코어 보호막·MaxHp 보너스 | `BuildingEntity.ReceiveDamage` override + `view.Health` | `CoreBehavior : IDamageInterceptor`, `Owner.Health.SetMax` |
+| isAttackable(아군 공격 무시) | `BuildingEntity.ApplyEffects` override | `Health.Damage`의 인터셉터(BuildingRules) |
+| 버퍼 드롭(파괴 시) | `PlacementBridge.Remove` → 뷰 위치 | `FactoryBootstrap`의 `Removed` 처리(뷰 파괴 직전) |
+
+**소비자 교체(파일별)** — FlowFieldManager·GridManager(`BuildingAt` → 심 `Building`), DayRegenSystem, CorePanelView, GameplayHUDView, PlayerController.FindCore(→ 심 코어 `Position`), BattleManager(Died 구독), FactorySaveModule(심 HP), CoreDataSO, WorldPopulator(`SetMaxHealth` 제거 — Data.maxHp가 자동), GameDataImporter(프리팹 HP 복사 제거). 몬스터 두뇌(FlowFieldState·AttackState)는 `FindBreachTarget`이 돌려주는 **심 엔티티**에서 뷰를 `EntityViewRegistry.ViewOf(id)`로 찾아 효과를 적용한다 — 효과(EffectController)는 4단계까지 뷰에 남으므로 이 다리가 과도기 접점이다.
+
+**커밋 순서(각각 컴파일·플레이 가능)**
+1. `CoreDawn.Sim` 핵심 타입 추가(아직 아무도 안 씀) + 심 폴더 import 검사 스크립트
+2. 뷰 개명 `Entity→EntityView`, `BuildingEntity→BuildingView` (동작 변경 0)
+3. 모든 `EntityView`가 심 엔티티를 갖고 HP를 위임(뷰 우선 생성) · `Faction` 도입 · `IsHostile` 레이어 제거
+4. `FactorySim.Place`가 심 엔티티 선생성 + `Building` 모듈 · `Data.maxHp` 정본 · 임포터 프리팹 HP 복사 제거 · 코어 보호막/보너스/isAttackable을 심으로
+5. 파괴 흐름 심 주도(Died→Remove→Removed) · 버퍼 드롭을 브리지로 · CoreDestroyed 대체
+6. 소비자 교체(위 목록) · `BuildingEntity.All` 삭제
+7. import 검사 0건 확인 · 문서 갱신
+
+**리스크**
+- 프리팹 인라인 `health.maxHealth`(몬스터·둥지·타워)는 직렬화 경로를 지켜야 값이 안 날아간다 → `HealthComponent` 타입·필드명은 **씨드 데이터 홀더**로 그대로 두고 런타임 로직만 뺀다.
+- 세이브 포맷은 바뀌지 않는다(HpMax/HpCurrent 그대로). `NextId`는 5단계 SharpNBT와 함께.
+- 팀 프리즈 창(휴가) 안에 2·3번(개명·위임)을 끝내야 한다 — 이 둘이 파일 수가 가장 많다.
 
 ### 3. 몬스터 심/뷰 분리 (가장 큰 덩어리)
 - [ ] `MonsterDataSO.Build(entity)` → Health · Movement(의도) · Combat · Brain(기존 상태기) 모듈
@@ -159,6 +269,10 @@ CoreDawn.Tests          Assets/Scripts/Tests
 - **2026-08-28** 1b 완료 (`feature/namespaces`). 278파일에 `CoreDawn.*` 부여, 런타임 파일의 EditorTools using 23건 정리, alias 4파일.
   검증: 컴파일 0 오류, World 플레이 스모크(부트스트랩 4씬 탑재, 콘솔 오류 0), `CoreDawn.Save.SaveManager` 반사 해석 정상.
   일괄 커밋은 `.git-blame-ignore-revs`에 등록. 다음: 2단계(의존 방향 뒤집기 — `EntityId`·`World`·`Building` 모듈화).
+- **2026-08-28** 2단계 완료 (`feature/entity-sim-core`, 커밋 7개 — 위 체크리스트). 매 커밋 컴파일·World 플레이 검증
+  (심 엔티티 184개, 나무 HP가 심으로, 코어 플레이어 공격 0·몬스터 50, Kill → 심 제거가 뷰 릴레이보다 먼저, 코어 조회 3경로 일치).
+  사고 기록: 개명 스크립트의 `\.Sim\b`가 `CoreDawn.Sim` 네임스페이스까지 바꿨고 그 상태에서 Unity가 재컴파일하지 않아 "0 오류"가 거짓이었다 —
+  HEAD로 되돌려 재적용. 교훈: 컴파일 결과는 `recompile_status`가 아니라 콘솔의 `error CS`로 본다.
 
 ## 8. 세션 재개 절차
 

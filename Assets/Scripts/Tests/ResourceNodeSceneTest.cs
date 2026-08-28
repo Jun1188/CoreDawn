@@ -44,7 +44,7 @@ namespace CoreDawn.Tests
         int _sceneErrors;
         string _firstSceneError;
 
-        FactorySim Sim => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+        FactorySystem Factory => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
         static GridSystem Grid => ResourceNodeRegistry.Grid;
 
         ItemDataSO _ore;
@@ -82,7 +82,7 @@ namespace CoreDawn.Tests
 
         bool Prepare()
         {
-            if (Sim == null)          return Fatal("씬에 FactoryBootstrap이 없습니다.");
+            if (Factory == null)          return Fatal("씬에 FactoryBootstrap이 없습니다.");
             if (TimeManager.Instance == null) return Fatal("씬에 TimeManager가 없습니다 (낮/밤 테스트 불가).");
             if (nodeA == null || nodeB == null) return Fatal("광맥 참조가 비어 있습니다 (세팅 스크립트 확인).");
 
@@ -107,11 +107,11 @@ namespace CoreDawn.Tests
             // 이 씬에는 FactoryTest가 있어 Start에서 GetResourceAt을 "전 좌표 철광석"으로 덮어쓴다.
             // 광맥이 있는 씬에서는 레지스트리가 소켓을 되찾아와야 한다 (실행 순서에 흔들리면 안 됨).
             Case("D1 광맥이 자원 소켓의 주인 (FactoryTest 오버라이드 복구)",
-                 Sim.GetResourceAt != null &&
-                 Sim.GetResourceAt(nodeA.Origin) == _ore &&
-                 Sim.GetResourceAt(FarEmptyCell()) == null,
-                 $"광맥 위={Name(Sim.GetResourceAt?.Invoke(nodeA.Origin))}, " +
-                 $"광맥 밖={Name(Sim.GetResourceAt?.Invoke(FarEmptyCell()))}");
+                 Factory.GetResourceAt != null &&
+                 Factory.GetResourceAt(nodeA.Origin) == _ore &&
+                 Factory.GetResourceAt(FarEmptyCell()) == null,
+                 $"광맥 위={Name(Factory.GetResourceAt?.Invoke(nodeA.Origin))}, " +
+                 $"광맥 밖={Name(Factory.GetResourceAt?.Invoke(FarEmptyCell()))}");
 
             Case("D2 광맥이 레지스트리에 등록됨",
                  ResourceNodeRegistry.NodeAt(nodeA.Origin) == nodeA &&
@@ -158,8 +158,8 @@ namespace CoreDawn.Tests
             var stray = Place(_minerSO, off);          // 판정을 무시하고 강행한 경우
             yield return null; yield return null;      // 러너의 LateUpdate 한 바퀴
             Case("D9 광맥 밖에 강행 설치되면 자동 철거(안전망)",
-                 stray == null || stray.IsRemoved || Sim.Grid.GetAt(off) == null,
-                 $"셀 {off}의 건물: {(Sim.Grid.GetAt(off) == null ? "없음" : "남아 있음")}");
+                 stray == null || stray.IsRemoved || Factory.Grid.GetAt(off) == null,
+                 $"셀 {off}의 건물: {(Factory.Grid.GetAt(off) == null ? "없음" : "남아 있음")}");
 
             Case("D10 낮에는 건축이 허용된다",
                  TimeManager.Instance.IsBuildingAllowed && TimeManager.Instance.Phase == DayPhase.Day,
@@ -191,10 +191,10 @@ namespace CoreDawn.Tests
             yield return null; yield return null;
 
             Case("N3 밤에 채굴기가 파괴되면 심에서도 제거된다",
-                 _miner.IsRemoved && Sim.Grid.GetAt(nodeA.Origin) == null,
-                 $"IsRemoved={_miner.IsRemoved}, 셀 점유={(Sim.Grid.GetAt(nodeA.Origin) != null)}");
+                 _miner.IsRemoved && Factory.Grid.GetAt(nodeA.Origin) == null,
+                 $"IsRemoved={_miner.IsRemoved}, 셀 점유={(Factory.Grid.GetAt(nodeA.Origin) != null)}");
 
-            // 작업3의 생명주기 계약 ①: 심이 제거되면 씬 껍데기도 사라진다 (FactorySim.Removed → Bootstrap)
+            // 작업3의 생명주기 계약 ①: 심이 제거되면 씬 껍데기도 사라진다 (FactorySystem.Removed → Bootstrap)
             Case("N3b 심이 제거되면 씬 껍데기와 매핑도 사라진다",
                  viewGO == null && FactoryBootstrap.Instance.GetView(_miner) == null,
                  $"뷰 GameObject={(viewGO == null ? "파괴됨" : "남아 있음")}, " +
@@ -245,8 +245,8 @@ namespace CoreDawn.Tests
             yield return null; yield return null;
 
             Case("M4 껍데기가 직접 파괴되면 심도 함께 정리된다 (유령 방지)",
-                 orphan.IsRemoved && Sim.Grid.GetAt(orphanCell) == null,
-                 $"IsRemoved={orphan.IsRemoved}, 셀 {orphanCell} 점유={(Sim.Grid.GetAt(orphanCell) != null)}");
+                 orphan.IsRemoved && Factory.Grid.GetAt(orphanCell) == null,
+                 $"IsRemoved={orphan.IsRemoved}, 셀 {orphanCell} 점유={(Factory.Grid.GetAt(orphanCell) != null)}");
         }
 
         // ─── 2일차 밤 ───────────────────────────────────────────────

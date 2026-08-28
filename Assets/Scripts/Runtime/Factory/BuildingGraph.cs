@@ -7,7 +7,7 @@ namespace CoreDawn.Factory
 {
     // ================================================================
     //  BuildingGraph.cs
-    //  건물 간 상호작용의 핵심 — 연결 관리 (plain C#, FactorySim 소유)
+    //  건물 간 상호작용의 핵심 — 연결 관리 (plain C#, FactorySystem 소유)
     //
     //  포함:
     //    BuildingConnection — 두 건물 간의 단방향 연결
@@ -16,7 +16,7 @@ namespace CoreDawn.Factory
     //  관련 (별도 파일):
     //    ItemContainer — 건물 입출력 버퍼 (슬롯 기반)
     //    Building      — 심 엔티티
-    //    GridIndex     — 좌표 → Building O(1) 조회 (FactorySim.cs)
+    //    GridIndex     — 좌표 → Building O(1) 조회 (FactorySystem.cs)
     // ================================================================
 
     /// <summary>두 Building 간의 단방향 아이템 연결.</summary>
@@ -42,13 +42,13 @@ namespace CoreDawn.Factory
     /// </summary>
     public class BuildingGraph
     {
-        readonly FactorySim _sim;
+        readonly FactorySystem _sim;
 
         // 인접 리스트 — 나가는/들어오는 연결 분리 저장
         readonly Dictionary<Building, List<BuildingConnection>> _out = new();
         readonly Dictionary<Building, List<BuildingConnection>> _in  = new();
 
-        public BuildingGraph(FactorySim sim) => _sim = sim;
+        public BuildingGraph(FactorySystem sim) => _sim = sim;
 
         // ── FactorySim이 호출하는 진입점
 

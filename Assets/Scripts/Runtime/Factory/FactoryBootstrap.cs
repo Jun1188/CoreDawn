@@ -3,21 +3,22 @@ using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.Placement;
 using CoreDawn.Save;
-using CoreDawn.Worlds;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
     /// <summary>
-    /// FactorySim의 Unity 드라이버 — 심과 씬의 유일한 접점.
+    /// FactorySystem의 Unity 드라이버 — 심과 씬의 유일한 접점.
     /// 씬에 이 컴포넌트 하나만 있으면 공장 시뮬레이션이 돌아간다.
     ///
     /// 역할:
     ///   1. 심 생성·매 프레임 Advance() 호출
-    ///   2. 심 Building ↔ BuildingEntity(GameObject) 매핑 관리
-    /// 시뮬레이션 로직은 전부 FactorySim(plain C#)에 있다.
+    ///   2. 심 Building ↔ BuildingView(GameObject) 매핑 관리
+    /// 시뮬레이션 로직은 전부 FactorySystem(plain C#)에 있다.
     ///
     /// 씬을 넘어 살아남지 않는다 — 심과 건물 뷰는 한 씬 안에서만 의미가 있고,
-    /// 씬이 바뀌면 새 심으로 시작한다.
+    /// 씬이 바뀌면 새 심으로 시작한다. 엔티티 등록부(SimHost.World)는 공유하되, 이 씬의 건물 엔티티는
+    /// OnDestroy에서 전부 빼서 다음 씬에 유령을 남기지 않는다.
     /// </summary>
     /// <remarks>
     /// 실행 순서를 뒤로 민 이유: 코어 자동 설치가 씬에 미리 놓인
@@ -36,6 +37,11 @@ namespace CoreDawn.Factory
 
         [Tooltip("프레임 드랍 후 한 프레임에 몰아서 따라잡을 수 있는 최대 틱 수.")]
         [SerializeField] int _maxCatchUpTicks = 5;
+
+        [Header("격자 (맵이 있으면 GameBootstrap이 덮는다)")]
+        [Tooltip("칸 한 변의 길이(m). 맵 없는 테스트 씬용 기본값 — PlacementSystem 기본값과 같아야 한다.")]
+        [SerializeField] float _cellSize = 1f;
+        [SerializeField] Vector3 _gridOrigin = Vector3.zero;
 
         [Header("코어 자동 설치")]
         [Tooltip("게임 시작 시 코어가 하나도 없으면 자동으로 세운다. " +
@@ -60,30 +66,47 @@ namespace CoreDawn.Factory
             _coreOrigin = coreOrigin;
         }
 
-        public FactorySim Sim { get; private set; }
+        /// <summary>
+        /// 격자 기하 주입 — 칸 크기·원점은 맵이 정하고 PlacementSystem·GridManager와 같은 출처에서 온다.
+        /// 배치(Start의 코어 자동 설치·WorldPopulator)보다 먼저, 씬 조립 때 들어온다.
+        /// </summary>
+        public void Inject(GridGeometry geometry)
+        {
+            _cellSize = geometry.CellSize;
+            _gridOrigin = geometry.Origin;
+            Factory?.SetGeometry(geometry);
+        }
 
-        readonly Dictionary<Building, BuildingEntity> _views = new();
+        public FactorySystem Factory { get; private set; }
+
+        readonly Dictionary<Building, BuildingView> _views = new();
 
         void Awake()
         {
             if (Instance != null) { Destroy(gameObject); return; }
             Instance = this;
-            Sim = new FactorySim(_tps, _maxCatchUpTicks);
+            Factory = new FactorySystem(SimHost.World, new GridGeometry(_cellSize, _gridOrigin), _tps, _maxCatchUpTicks);
 
             // 벨트 철거로 세그먼트에서 밀려난 아이템 → 월드 드롭 (통지 시점엔 벨트 뷰가 아직 살아있음)
-            Sim.Belts.ItemDiscarded += (belt, item) =>
+            Factory.Belts.ItemDiscarded += (belt, item) =>
             {
                 var view = GetView(belt);
                 if (view != null) PlacementBridge.DropAt(item, 1, view.transform.position);
             };
 
             // 심에서 건물이 사라지면 그 씬 표현도 함께 정리 — 매핑 소유자가 한 곳에서 책임진다.
-            // (전투 파괴·철거·테스트의 Sim.Remove 직접 호출까지 전부 이 경로로 모인다)
-            Sim.Removed += b =>
+            // (전투 파괴·철거·테스트의 Factory.Remove 직접 호출까지 전부 이 경로로 모인다)
+            // 버퍼 내용물은 뷰가 사라지기 전에 월드로 — 건물이 사라져도 아이템은 보존된다.
+            // 심은 아이템을 어디에 떨굴지 모르므로(월드 좌표는 뷰의 것) 드롭은 여기 브리지의 몫이다.
+            Factory.Removed += b =>
             {
                 var view = GetView(b);
                 _views.Remove(b);
-                if (view != null) Destroy(view.gameObject);
+                if (view == null) return;
+
+                PlacementBridge.DropContainer(b.Input, view.transform.position);
+                PlacementBridge.DropContainer(b.Output, view.transform.position);
+                Destroy(view.gameObject);
             };
 
             // 벨트 위 아이템 시각화 뷰 — 씬 배선 없이 드라이버가 직접 부착
@@ -97,7 +120,23 @@ namespace CoreDawn.Factory
             if (_autoPlaceCore && !SaveLoadContext.IsRestoring) AutoPlaceCore();
         }
 
-        void Update() => Sim.Advance(Time.deltaTime);
+        void Update() => Factory.Advance(Time.deltaTime);
+
+        // 씬이 내려갈 때 이 씬의 건물 엔티티를 등록부에서 뺀다 — 등록부는 씬을 넘어 살기 때문이다.
+        // 종료 중에는 손대지 않는다(드롭 등 새 오브젝트 생성이 에러를 낸다).
+        static bool quitting;
+        void OnApplicationQuit() => quitting = true;
+
+        void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+            Factory?.Dispose();
+            if (quitting || Factory == null) return;
+
+            var buildings = new List<Building>(Factory.Buildings);
+            foreach (var b in buildings)
+                if (b.OwnsEntity && b.Owner != null && !b.Owner.IsRemoved) Factory.World.Remove(b.Owner);
+        }
 
         // ── 코어 자동 설치 ───────────────────────────────────────────
 
@@ -131,10 +170,10 @@ namespace CoreDawn.Factory
                 Debug.LogWarning($"[FactoryBootstrap] 코어 자동 설치 실패 @ {_coreOrigin}: {reason}", this);
         }
 
-        static bool HasCore()
+        bool HasCore()
         {
-            foreach (var e in BuildingEntity.All)
-                if (e != null && e.IsCore) return true;
+            foreach (var b in Factory.Buildings)
+                if (b.IsCore) return true;
             return false;
         }
 
@@ -150,15 +189,12 @@ namespace CoreDawn.Factory
 
         // ── Building ↔ View 매핑 (PlacementBridge가 등록/해제)
 
-        /// <summary>
-        /// 배치된 모든 건물 — 세이브가 순회하는 정본 목록.
-        /// 그리드(GridIndex)를 훑으면 안 되는 이유: 멀티타일 건물은 여러 칸이 같은 Building을 가리켜 중복된다.
-        /// </summary>
-        public IEnumerable<Building> Buildings => _views.Keys;
+        /// <summary>배치된 모든 건물 — 심의 정본 목록(FactorySystem.Buildings)을 그대로 낸다.</summary>
+        public IEnumerable<Building> Buildings => Factory.Buildings;
 
-        public void RegisterView(Building b, BuildingEntity v) => _views[b] = v;
+        public void RegisterView(Building b, BuildingView v) => _views[b] = v;
         public void UnregisterView(Building b) => _views.Remove(b);
-        public BuildingEntity GetView(Building b) =>
+        public BuildingView GetView(Building b) =>
             b != null && _views.TryGetValue(b, out var v) ? v : null;
     }
 }

@@ -26,9 +26,11 @@ namespace CoreDawn.Entities
             {
                 var building = manager.FindBreachTarget(
                     stateMachine.Transform.position, stateMachine.Combat.AttackRange);
-                if (building.IsValidTarget())
+                // 공격은 아직 뷰를 대상으로 한다(효과 시스템이 뷰에 있다 — 4단계까지). 심 건물을 뷰로 바꿔 넘긴다.
+                var view = building != null ? BuildingView.GetOrAttach(building) : null;
+                if (view.IsValidTarget())
                 {
-                    stateMachine.SetState(new AttackState(building));
+                    stateMachine.SetState(new AttackState(view));
                     return;
                 }
             }

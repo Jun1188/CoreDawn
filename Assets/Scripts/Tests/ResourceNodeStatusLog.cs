@@ -95,7 +95,7 @@ namespace CoreDawn.Tests
         /// <summary>광맥 풋프린트 안에 건물이 서 있는가 (심이 없으면 판단 불가 → false).</summary>
         static bool MinerOn(ResourceNode node)
         {
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
             if (sim == null) return false;
 
             return node.Cells.Any(c => sim.Grid.GetAt(c) is { IsRemoved: false } b && b.Data is MinerDataSO);

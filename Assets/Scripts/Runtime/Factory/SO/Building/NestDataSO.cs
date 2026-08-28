@@ -1,7 +1,7 @@
 using UnityEngine;
-using CoreDawn.Entities;
 using CoreDawn.Placement;
 using CoreDawn.Worlds;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -13,7 +13,7 @@ namespace CoreDawn.Factory
     /// 그리드에 들어가지 않은 둥지 위에는 벨트도 포탑도 그대로 올라갔다.
     ///
     /// 다만 <b>뷰는 만들지 않는다</b> — 씬 위의 둥지는 MonsterNest(Entity)가 이미 담당하고 있다.
-    /// <see cref="WorldPopulator"/>가 FactorySim.Place만 호출해 칸을 잡고, 전투·스폰·복구는
+    /// <see cref="WorldPopulator"/>가 FactorySystem.Place만 호출해 칸을 잡고, 전투·스폰·복구는
     /// 전부 MonsterNest에 남는다. BuildingEntity를 붙이면 한 오브젝트에 Entity가 둘이 되어
     /// 총알이 어느 쪽을 맞혔는지가 불확실해지고, 몬스터가 자기 둥지를 목표로 삼는다.
     ///
@@ -23,6 +23,9 @@ namespace CoreDawn.Factory
     public class NestDataSO : BuildingDataSO
     {
         public override IBuildingBehavior CreateBehavior(Building building) => new NestBehavior();
+
+        /// <summary>둥지는 몬스터 편. 보통은 MonsterNest 뷰의 엔티티에 얹히므로(Place host) 이 값은 뷰 없는 배치에서만 쓰인다.</summary>
+        public override Faction Faction => Faction.Monster;
     }
 
     // ─── 행동 ──────────────────────────────────────────────────────

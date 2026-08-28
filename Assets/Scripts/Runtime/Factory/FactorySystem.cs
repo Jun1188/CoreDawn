@@ -1,23 +1,23 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Entities;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
     // ================================================================
-    //  FactorySim.cs
+    //  FactorySystem.cs
     //  공장 시뮬레이션의 루트 — plain C#, Unity 씬/컴포넌트 의존 없음
     //
     //  포함:
-    //    FactorySim — 시계 + Dirty Queue + Wake 예약 + 배치/제거 진입점
-    //    GridIndex  — 좌표 → Building O(1) 조회
+    //    FactorySystem — 시계 + Dirty Queue + Wake 예약 + 배치/제거 진입점
+    //    GridIndex     — 좌표 → Building O(1) 조회
     //
-    //  Unity와의 접점은 FactoryBootstrap(드라이버)과 BuildingEntity(씬 표현)뿐.
+    //  Unity와의 접점은 FactoryBootstrap(드라이버)과 BuildingView(씬 표현)뿐.
     //  씬 없이 생성해 Advance()를 직접 호출하면 헤드리스로 돌릴 수 있다 (테스트용).
     // ================================================================
 
-    /// <summary>좌표 → Building O(1) 조회. 배치 로직은 없다 — FactorySim이 채운다.</summary>
+    /// <summary>좌표 → Building O(1) 조회. 배치 로직은 없다 — FactorySystem이 채운다.</summary>
     public class GridIndex
     {
         readonly Dictionary<Vector2Int, Building> _grid = new();
@@ -38,12 +38,32 @@ namespace CoreDawn.Factory
     /// 건물을 깨우는 두 가지 경로:
     ///   MarkDirty(b)        — "지금 변화가 생겼다" (아이템 수신, 상류/하류 상태 변화, 새 연결)
     ///   ScheduleWake(b, t)  — "t초 후에 깨워라"   (채굴/조합 타이머의 완료 시점 예약)
+    ///
+    /// 건물은 심 엔티티(<see cref="Entity"/>)에 붙는 모듈(<see cref="Building"/>)이다. 배치가 엔티티를 먼저 만들고
+    /// 체력(Data.maxHp)과 건물 모듈을 붙인다 — HP·편·번호는 엔티티의 것이고, 칸·포트·버퍼·행동은 모듈의 것.
     /// </summary>
-    public class FactorySim
+    public class FactorySystem
     {
+        /// <summary>건물 엔티티가 사는 등록부. 여러 시스템이 같은 월드를 나눠 쓴다.</summary>
+        public readonly EntityWorld World;
+
+        /// <summary>
+        /// 칸 ↔ 월드 좌표. 값의 출처는 맵이고 드라이버(FactoryBootstrap)가 배치 전에 넣는다.
+        /// 심이 이걸 갖는 이유는 건물의 풋프린트 월드 사각형(몬스터 공격 거리·플로우필드 목표)을 뷰에 묻지 않기 위해서다.
+        /// </summary>
+        public GridGeometry Geometry { get; private set; }
+
         public readonly GridIndex          Grid;
         public readonly BuildingGraph      Graph;
         public readonly BeltSegmentManager Belts;
+
+        /// <summary>
+        /// 배치된 모든 건물 — 세이브·목표 수집이 순회하는 정본 목록.
+        /// 그리드(GridIndex)를 훑으면 안 되는 이유: 멀티타일 건물은 여러 칸이 같은 Building을 가리켜 중복된다.
+        /// 순회 중 배치·제거 금지.
+        /// </summary>
+        public IReadOnlyList<Building> Buildings => _buildings;
+        readonly List<Building> _buildings = new();
 
         /// <summary>시뮬레이션 누적 시간(초). 틱마다 틱 간격씩 증가한다.</summary>
         public float Now { get; private set; }
@@ -84,27 +104,73 @@ namespace CoreDawn.Factory
         readonly int   _maxCatchUpTicks;
         float _timer;
 
-        public FactorySim(float tps = 10f, int maxCatchUpTicks = 5)
+        public FactorySystem(EntityWorld world, GridGeometry geometry, float tps = 10f, int maxCatchUpTicks = 5)
         {
+            World            = world ?? throw new ArgumentNullException(nameof(world));
+            Geometry         = geometry;
             _interval        = 1f / Mathf.Max(0.1f, tps);
             _maxCatchUpTicks = Mathf.Max(1, maxCatchUpTicks);
             Grid  = new GridIndex();
             Graph = new BuildingGraph(this);
             Belts = new BeltSegmentManager(this);
+
+            World.Died += OnEntityDied;
+        }
+
+        /// <summary>
+        /// 월드 구독 해제 — 등록부는 씬을 넘어 살지만 이 시스템은 씬과 함께 죽는다. 드라이버(FactoryBootstrap)가 OnDestroy에서 부른다.
+        /// 안 부르면 죽은 시스템이 다음 씬의 사망 통지를 받아 남의 건물을 지우려 든다.
+        /// </summary>
+        public void Dispose() => World.Died -= OnEntityDied;
+
+        /// <summary>
+        /// 건물 엔티티의 사망 = 건물 제거. 파괴를 결정하는 것은 심이고 뷰는 Removed를 받아 따라온다 —
+        /// 구 BuildingEntity.HandleDeath(뷰가 심을 지우던 경로)를 대체한다.
+        /// 남의 엔티티에 얹힌 건물(둥지)은 주인이 죽어도 칸을 계속 차지한다 — 둥지는 며칠 뒤 되살아난다.
+        /// </summary>
+        void OnEntityDied(Entity e)
+        {
+            var b = e.Get<Building>();
+            if (b != null && b.OwnsEntity && !b.IsRemoved) Remove(b);
+        }
+
+        /// <summary>
+        /// 격자 기하 교체 — 맵이 정하는 값이라 드라이버가 씬 조립 때 넣는다. 배치 전에만 의미가 있다:
+        /// 이미 선 건물의 위치·풋프린트는 옛 기하로 계산돼 있다.
+        /// </summary>
+        public void SetGeometry(GridGeometry geometry)
+        {
+            if (_buildings.Count > 0)
+                Debug.LogWarning($"[FactorySystem] 건물 {_buildings.Count}개가 선 뒤에 격자 기하를 바꿨습니다 — 기존 건물의 위치가 어긋납니다.");
+            Geometry = geometry;
         }
 
         // ── 배치/제거 (외부 진입점 — 뷰 생성은 PlacementBridge가 별도로)
 
+        /// <summary>
+        /// 건물 배치 — 심 엔티티를 먼저 만들고(편·위치·체력) 건물 모듈을 붙인다.
+        /// </summary>
+        /// <param name="host">
+        /// 이미 있는 엔티티에 건물을 붙일 때(둥지처럼 스스로 엔티티를 가진 개체가 칸만 차지하는 경우).
+        /// null이면 새 엔티티를 만들고, 그 엔티티의 생사는 이 시스템이 책임진다(OwnsEntity).
+        /// </param>
         public Building Place(BuildingDataSO so, Vector2Int origin, int rotSteps = 0,
-            PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight)
+            PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, Entity host = null)
         {
-            var b = new Building(this, so, origin, rotSteps, portOverride, shape);
-
             var size = so.GetRotatedSize(rotSteps);
+            bool ownsEntity = host == null;
+
+            var entity = host ?? World.Create(so.Faction, Geometry.CenterOf(origin, size));
+            if (ownsEntity) entity.Add(new Health(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
+
+            var b = new Building(this, so, origin, rotSteps, portOverride, shape, ownsEntity);
+            entity.Add(b);
+
             for (int x = 0; x < size.x; x++)
                 for (int y = 0; y < size.y; y++)
                     Grid.Add(origin + new Vector2Int(x, y), b);
 
+            _buildings.Add(b);
             Graph.OnPlaced(b);
             MarkDirty(b);
             return b;
@@ -113,7 +179,8 @@ namespace CoreDawn.Factory
         /// <summary>
         /// 건물이 심에서 제거된 직후 1회. 씬 표현(뷰)은 이 통지를 받아 스스로 정리한다 —
         /// 심이 원본이고 뷰가 따라오는 방향을 코드로 고정하는 지점.
-        /// 벨트 폐기 통지(Belts.ItemDiscarded)보다 항상 뒤에 온다(그때는 뷰가 아직 살아 있어야 하므로).
+        /// 벨트 폐기 통지(Belts.ItemDiscarded)보다 항상 뒤에 오고(그때는 뷰가 아직 살아 있어야 하므로),
+        /// 엔티티가 월드에서 빠지기 전이라 수신자는 b.Owner를 아직 읽을 수 있다.
         /// </summary>
         public event Action<Building> Removed;
 
@@ -130,8 +197,12 @@ namespace CoreDawn.Factory
                     Grid.Remove(b.Origin + new Vector2Int(x, y));
 
             _inQ.Remove(b);
+            _buildings.Remove(b);
 
             Removed?.Invoke(b);
+
+            // 이 시스템이 만든 엔티티는 여기서 지운다. 남의 엔티티(둥지)는 건물 모듈만 떨어지고 주인이 남는다.
+            if (b.OwnsEntity && b.Owner != null) World.Remove(b.Owner);
         }
 
         // ── 깨우기
@@ -178,15 +249,15 @@ namespace CoreDawn.Factory
         // ── 구동
 
         /// <summary>
-        /// 실시간 dt만큼 시뮬레이션을 진행한다 (고정 틱 + 따라잡기 상한).
-        /// 드라이버(FactoryBootstrap)가 매 프레임 호출하거나, 테스트가 직접 호출한다.
-        /// </summary>
-        /// <summary>
         /// 마지막 틱 이후 흐른 시간(초) — 뷰가 틱 사이를 외삽해 부드럽게 그릴 때 사용.
         /// 틱 지연(캐치업 한도 초과) 시에도 한 틱 분량을 넘지 않게 클램프.
         /// </summary>
         public float TickLeftover => Mathf.Min(_timer, _interval);
 
+        /// <summary>
+        /// 실시간 dt만큼 시뮬레이션을 진행한다 (고정 틱 + 따라잡기 상한).
+        /// 드라이버(FactoryBootstrap)가 매 프레임 호출하거나, 테스트가 직접 호출한다.
+        /// </summary>
         public void Advance(float dt)
         {
             _timer += dt;

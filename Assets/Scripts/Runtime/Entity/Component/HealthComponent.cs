@@ -3,108 +3,18 @@ using UnityEngine;
 
 namespace CoreDawn.Entities
 {
-    // 체력/사망 상태 — 순수 C# 클래스. 소유 Entity의 인스펙터에 인라인으로 직렬화된다.
-    // 사망 후 오브젝트 처리(비활성화/파괴)는 Entity.HandleDeath가 담당한다.
+    /// <summary>
+    /// 최대 체력 씨드 — 프리팹 인스펙터에 인라인 직렬화되는 값 홀더. 런타임 체력은 여기 없다.
+    ///
+    /// 구 HealthComponent(체력·사망 로직)는 심 <see cref="CoreDawn.Sim.Health"/>로 갔다(리팩토링 2단계).
+    /// 클래스·필드 이름을 그대로 둔 이유: 몬스터·둥지·타워 프리팹이 <c>health.maxHealth</c> 경로로 값을 들고 있어서
+    /// 형이나 이름을 바꾸면 그 값이 전부 날아간다. 3·4단계에서 최대 체력이 데이터(SO)로 옮겨가면 이 클래스도 사라진다.
+    /// </summary>
     [Serializable]
     public class HealthComponent
     {
         [SerializeField] private float maxHealth = 100f;
 
-        private float currentHealth;
-
-        public bool IsDead { get; private set; }
-
-        public event Action<float, float> OnHealthChanged;
-        public event Action OnDeath;
-
         public float MaxHealth => maxHealth;
-        public float CurrentHealth => currentHealth;
-
-        public void Initialize()
-        {
-            currentHealth = maxHealth;
-            IsDead = false;
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        }
-
-        public void TakeDamage(float damageAmount)
-        {
-            if (IsDead) return;
-
-            currentHealth = Mathf.Clamp(
-                currentHealth - damageAmount,
-                0f,
-                maxHealth
-            );
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-            if (currentHealth <= 0f)
-            {
-                Die();
-            }
-        }
-
-        // 런타임 부착 엔티티(EnsurePlayerEntity 등)의 최대 체력 조정용 — 인스펙터를 못 쓰는 경우 사용
-        public void SetMaxHealth(float newMaxHealth, bool refill = true)
-        {
-            maxHealth = Mathf.Max(1f, newMaxHealth);
-
-            if (refill && !IsDead)
-                currentHealth = maxHealth;
-            else
-                currentHealth = Mathf.Min(currentHealth, maxHealth);
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        }
-
-        /// <summary>
-        /// 세이브 복원 전용 — 최대/현재 체력과 사망 여부를 저장된 값으로 되돌린다.
-        ///
-        /// SetMaxHealth와 달리 현재 체력을 채워주지 않는다. 또 OnDeath를 발화시키지 않는다 —
-        /// 복원은 사망이라는 사건이 아니라 사망해 있던 상태로 옮겨 앉는 것이고,
-        /// 발화시키면 사망 연출·드롭·전멸 판정이 로드할 때마다 다시 돈다.
-        /// </summary>
-        public void RestoreState(float max, float current, bool isDead)
-        {
-            maxHealth = Mathf.Max(1f, max);
-            currentHealth = Mathf.Clamp(current, 0f, maxHealth);
-            IsDead = isDead;
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        }
-
-        public void Heal(float healAmount)
-        {
-            if (IsDead)
-                return;
-
-            currentHealth = Mathf.Clamp(
-                currentHealth + healAmount,
-                0f,
-                maxHealth
-            );
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        }
-
-        // 즉시 사망 — Entity.Die()가 호출 (강제 처치/치트/스크립트 연출용)
-        public void Kill()
-        {
-            if (IsDead) return;
-
-            currentHealth = 0f;
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-            Die();
-        }
-
-        private void Die()
-        {
-            IsDead = true;
-            OnDeath?.Invoke();
-        }
     }
 }

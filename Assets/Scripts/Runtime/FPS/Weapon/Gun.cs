@@ -89,9 +89,9 @@ namespace CoreDawn.FPS
 
         // 효과의 출처(Source)로 전달할 플레이어 엔티티.
         // Player는 BattleManager가 런타임에 부착하므로(Awake 시점엔 없을 수 있음) 찾을 때까지 재시도한다.
-        private Entity ownerEntity;
-        private Entity OwnerEntity =>
-            ownerEntity != null ? ownerEntity : (ownerEntity = GetComponentInParent<Entity>());
+        private EntityView ownerEntity;
+        private EntityView OwnerEntity =>
+            ownerEntity != null ? ownerEntity : (ownerEntity = GetComponentInParent<EntityView>());
 
         private void Awake()
         {
@@ -164,7 +164,7 @@ namespace CoreDawn.FPS
             if (OwnerEntity != null && OwnerEntity.IsDead)
                 return false;
 
-            Entity owner = OwnerEntity;
+            EntityView owner = OwnerEntity;
 
             // 플레이어가 죽어 있으면 발사 금지
             if (owner != null && owner.IsDead)

@@ -11,6 +11,7 @@ using CoreDawn.Pings;
 using CoreDawn.Placement;
 using CoreDawn.UI;
 using CoreDawn.Worlds;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Managers
 {
@@ -107,8 +108,13 @@ namespace CoreDawn.Managers
 
             placement.Inject(world.Map, world.Origin, world.CellSize);
 
-            // 코어가 어디 서는지도 맵이 정한다 — 자동 설치(Start)보다 먼저 꽂힌다
-            if (factory != null) factory.Inject(world.Map.core);
+            // 칸 크기·원점과 코어 자리도 맵이 정한다 — 자동 설치(Start)보다 먼저 꽂힌다.
+            // 심이 기하를 갖는 이유: 건물 풋프린트의 월드 사각형을 뷰에 묻지 않기 위해서(GridGeometry 참조)
+            if (factory != null)
+            {
+                factory.Inject(new GridGeometry(world.CellSize, world.Origin));
+                factory.Inject(world.Map.core);
+            }
         }
 
         /// <summary>

@@ -79,7 +79,7 @@ namespace CoreDawn.Worlds
         /// <summary>
         /// 에디터가 씬에 배치물을 굳힌다 — 맵을 임포트할 때 불린다.
         ///
-        /// 심(FactorySim)은 건드리지 않는다. 에디터 모드에는 심이 없고, 칸을 잡는 것은 플레이가
+        /// 심(FactorySystem)은 건드리지 않는다. 에디터 모드에는 심이 없고, 칸을 잡는 것은 플레이가
         /// 시작될 때 <see cref="Connect"/> 가 할 일이다. 여기서 만드는 것은 <b>보이는 것</b>뿐이다.
         /// </summary>
         public static void BakeIntoScene(World world, Transform root)
@@ -134,7 +134,7 @@ namespace CoreDawn.Worlds
         static int Connect(World world, Transform root)
         {
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null)
+            if (boot == null || boot.Factory == null)
             {
                 Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 굳어 있는 배치물을 잇지 못했습니다 — " +
                                  "그 위에 건물이 올라갑니다.", world);
@@ -164,12 +164,18 @@ namespace CoreDawn.Worlds
                 bool free = true;
                 for (int dx = 0; dx < size.x && free; dx++)
                     for (int dy = 0; dy < size.y && free; dy++)
-                        if (boot.Sim.Grid.IsOccupied(origin + new Vector2Int(dx, dy))) free = false;
+                        if (boot.Factory.Grid.IsOccupied(origin + new Vector2Int(dx, dy))) free = false;
                 if (!free) { skipped++; continue; }
 
-                var view = placed.GetComponent<BuildingEntity>();
+                var view = placed.GetComponent<BuildingView>();
                 if (view != null) PlacementBridge.PlaceExisting(placed.Data, origin, 0, view);
-                else boot.Sim.Place(placed.Data, origin, 0);
+                else
+                {
+                    // 둥지처럼 스스로 심 엔티티를 가진 개체(MonsterNest)는 그 엔티티에 건물을 얹는다 —
+                    // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
+                    var host = placed.GetComponent<EntityView>();
+                    boot.Factory.Place(placed.Data, origin, 0, host: host != null ? host.Entity : null);
+                }
                 connected++;
             }
 
@@ -187,7 +193,7 @@ namespace CoreDawn.Worlds
         }
 
         /// <summary>런타임에 갓 세운 나무를 심에 잇는다(굳어 있지 않은 씬 경로).</summary>
-        static void ConnectTree(BuildingEntity view, TreeDataSO data, Vector2Int cell)
+        static void ConnectTree(BuildingView view, TreeDataSO data, Vector2Int cell)
             => PlacementBridge.PlaceExisting(data, cell, 0, view);
 
         // ── 시작 드롭 아이템 ───────────────────────────────────────
@@ -405,7 +411,7 @@ namespace CoreDawn.Worlds
         ///
         /// 뷰(BuildingEntity)는 만들지 않는다. 씬 위의 둥지는 이미 MonsterNest(Entity)이고,
         /// 한 오브젝트에 Entity가 둘이면 총알이 어느 쪽을 맞혔는지 불확실해지며 몬스터가 자기
-        /// 둥지를 목표로 삼는다. 그래서 심에만 넣는다 — FactorySim.Place는 칸과 그래프만 건드린다.
+        /// 둥지를 목표로 삼는다. 그래서 심에만 넣는다 — FactorySystem.Place는 칸과 그래프만 건드린다.
         ///
         /// 잡은 칸은 <b>영구적이다</b>. 둥지를 부숴도 nestRecoveryDays 뒤에 다시 서므로,
         /// 그 자리는 처음부터 끝까지 건설 금지여야 한다.
@@ -434,7 +440,7 @@ namespace CoreDawn.Worlds
             if (data == null) return false;
 
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null)
+            if (boot == null || boot.Factory == null)
             {
                 Debug.LogWarning($"[WorldPopulator] FactorySim이 아직 없어 {label} 칸을 잡지 못했습니다 — " +
                                  $"{label} 위에 건물이 올라갈 수 있습니다.", owner);
@@ -446,7 +452,7 @@ namespace CoreDawn.Worlds
 
             for (int dx = 0; dx < size.x; dx++)
                 for (int dy = 0; dy < size.y; dy++)
-                    if (boot.Sim.Grid.IsOccupied(origin + new Vector2Int(dx, dy)))
+                    if (boot.Factory.Grid.IsOccupied(origin + new Vector2Int(dx, dy)))
                     {
                         if (warnOnOccupied)
                             Debug.LogWarning($"[WorldPopulator] {label} {cell} 의 칸 " +
@@ -455,7 +461,10 @@ namespace CoreDawn.Worlds
                         return false;
                     }
 
-            boot.Sim.Place(data, origin, 0);
+            // 둥지처럼 스스로 심 엔티티를 가진 개체(MonsterNest)는 그 엔티티에 건물을 얹는다 —
+            // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
+            var hostView = owner != null ? owner.GetComponent<EntityView>() : null;
+            boot.Factory.Place(data, origin, 0, host: hostView != null ? hostView.Entity : null);
             return true;
         }
 
@@ -505,7 +514,7 @@ namespace CoreDawn.Worlds
             // 칸을 잡는 것은 플레이가 시작될 때 Connect 가 한다.
             var boot = FactoryBootstrap.Instance;
             bool connecting = SpawnOverride == null;
-            if (connecting && (boot == null || boot.Sim == null))
+            if (connecting && (boot == null || boot.Factory == null))
             {
                 Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 나무를 세우지 못했습니다.", world);
                 return 0;
@@ -518,7 +527,7 @@ namespace CoreDawn.Worlds
 
                 // 칸이 차 있으면 세우지 않는다 — 세워 놓고 칸을 못 잡으면 눈에는 나무가 있는데
                 // 그 위에 건물이 올라간다. GridIndex.Add 는 덮어쓰기라 먼저 확인해야 한다.
-                if (connecting && boot.Sim.Grid.IsOccupied(cell)) { skipped++; continue; }
+                if (connecting && boot.Factory.Grid.IsOccupied(cell)) { skipped++; continue; }
 
                 TreePose(world, cell, prefabs.Count, out int pi, out Vector3 pos, out float yaw, out float scale);
 
@@ -530,9 +539,8 @@ namespace CoreDawn.Worlds
                 // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect).
                 // 뷰는 프리팹에 없으므로 지금 붙여 둔다: 굳은 씬에서 인스펙터로 확인할 수 있고,
                 // 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
-                var view = go.GetComponent<BuildingEntity>();
-                if (view == null) view = go.AddComponent<BuildingEntity>();
-                if (treeData.maxHp > 0) view.Health.SetMaxHealth(treeData.maxHp);
+                var view = go.GetComponent<BuildingView>();
+                if (view == null) view = go.AddComponent<BuildingView>();
                 if (connecting) ConnectTree(view, treeData, cell);
                 placed++;
             }

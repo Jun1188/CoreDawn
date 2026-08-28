@@ -16,10 +16,10 @@ namespace CoreDawn.ResourceNodes
     //
     //  포함:
     //    ResourceNode         — 씬에 놓는 광맥 하나 (자원 + 풋프린트 + 생산/재고)
-    //    ResourceNodeRegistry — 셀 → 광맥 O(1) 조회, FactorySim 훅 주입, 배치 판정
+    //    ResourceNodeRegistry — 셀 → 광맥 O(1) 조회, FactorySystem 훅 주입, 배치 판정
     //    ResourceNodeRuntime  — 생산 구동 + 잘못 놓인 채굴기 철거를 도는 내부 러너
     //
-    //  공장(FactorySim)과의 접점은 두 델리게이트뿐이다:
+    //  공장(FactorySystem)과의 접점은 두 델리게이트뿐이다:
     //    ① GetResourceAt        — 채굴기가 무엇을 캘지 (없으면 null → 채굴 안 함)
     //    ② TryExtractResourceAt — 채굴 1회마다 광맥 재고를 실제로 꺼내감 (없으면 대기)
     //  ②가 아직 심에 없는 빌드에서도 ①만으로 동작한다(재고 무시, 무한 채굴).
@@ -27,7 +27,7 @@ namespace CoreDawn.ResourceNodes
     //  플레이어와의 접점은 하나다: ResourceNode가 IHoldInteractable이라 E를 누르고 있으면
     //  손으로 캘 수 있다(느리다). 채굴기와 같은 재고에서 꺼내므로 규칙이 갈리지 않는다.
     //
-    //  시간축: 생산은 FactorySim.Now(심 클럭)를 따른다 — 일시정지·배속이 공장과 같이 맞는다.
+    //  시간축: 생산은 FactorySystem.Now(심 클럭)를 따른다 — 일시정지·배속이 공장과 같이 맞는다.
     //  심이 없는 씬에서는 Time.time으로 자동 폴백한다.
     //
     //  좌표계: 심/PlacementSystem과 동일 (cellSize / gridOrigin).
@@ -64,7 +64,7 @@ namespace CoreDawn.ResourceNodes
         [SerializeField] private float extractInterval = 1f;
 
         [Header("생산")]
-        [Tooltip("몇 초마다 생산하는가. 심(FactorySim)의 시간 기준이라 일시정지·배속을 따른다.")]
+        [Tooltip("몇 초마다 생산하는가. 심(FactorySystem)의 시간 기준이라 일시정지·배속을 따른다.")]
         [SerializeField] private float productionInterval = 1f;
         [Tooltip("한 주기에 몇 개를 생산하는가.")]
         [SerializeField] private int amountPerCycle = 1;
@@ -221,7 +221,7 @@ namespace CoreDawn.ResourceNodes
         /// <summary>
         /// 세이브 복원 전용 — 재고와 다음 생산 시각, 누적 채굴량을 저장된 값으로 되돌린다.
         ///
-        /// nextProduceAt은 심 클럭 기준 절대 시각이라 FactorySim.Now를 되돌린 뒤에 넣어야 한다.
+        /// nextProduceAt은 심 클럭 기준 절대 시각이라 FactorySystem.Now를 되돌린 뒤에 넣어야 한다.
         /// (OnEnable이 -1로 리셋해 두므로, 복원하지 않으면 첫 Accrue에서 주기가 통째로 미뤄진다)
         /// </summary>
         public void RestoreState(int stock, float nextAt, int totalExtracted)
@@ -382,8 +382,8 @@ namespace CoreDawn.ResourceNodes
 
     /// <summary>
     /// 씬의 모든 광맥을 셀 단위로 색인하고, 그 정보를 세 소비자에게 공급한다:
-    ///   ① FactorySim.GetResourceAt        — 채굴기가 무엇을 캘지 (없으면 채굴 안 함)
-    ///   ② FactorySim.TryExtractResourceAt — 채굴 1회당 광맥 재고 차감 (없으면 대기)
+    ///   ① FactorySystem.GetResourceAt        — 채굴기가 무엇을 캘지 (없으면 채굴 안 함)
+    ///   ② FactorySystem.TryExtractResourceAt — 채굴 1회당 광맥 재고 차감 (없으면 대기)
     ///   ③ CanPlace(...)                   — 채굴기를 여기 지어도 되는지 (배치 UI/시스템용)
     /// </summary>
     public static class ResourceNodeRegistry
@@ -394,7 +394,7 @@ namespace CoreDawn.ResourceNodes
         static readonly GridSystem _fallbackGrid = new(1f, Vector3.zero);
 
         static GridSystem _grid;
-        static FactorySim _hookedSim;
+        static FactorySystem _hookedSim;
         static ResourceNodeRuntime _runtime;
 
         /// <summary>
@@ -411,7 +411,7 @@ namespace CoreDawn.ResourceNodes
             get
             {
                 var boot = FactoryBootstrap.Instance;
-                return boot != null && boot.Sim != null ? boot.Sim.Now : Time.time;
+                return boot != null && boot.Factory != null ? boot.Factory.Now : Time.time;
             }
         }
 
@@ -605,9 +605,9 @@ namespace CoreDawn.ResourceNodes
         public static void EnsureSimHook()
         {
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null) return;
+            if (boot == null || boot.Factory == null) return;
 
-            var sim = boot.Sim;
+            var sim = boot.Factory;
             if (ReferenceEquals(_hookedSim, sim) &&
                 ReferenceEquals(sim.GetResourceAt, _resolveHook) &&
                 ReferenceEquals(sim.TryExtractResourceAt, _extractHook) &&
@@ -618,7 +618,7 @@ namespace CoreDawn.ResourceNodes
         }
 
         /// <summary>임의의 심에 자원 소켓 두 개를 연결한다 (헤드리스 테스트/보조 심용).</summary>
-        public static void HookSim(FactorySim sim)
+        public static void HookSim(FactorySystem sim)
         {
             if (sim == null) return;
             sim.GetResourceAt        = _resolveHook;
@@ -648,7 +648,7 @@ namespace CoreDawn.ResourceNodes
         }
 
         // ── 잘못 놓인 채굴기 되돌리기
-        //    배치 도중(FactorySim.Place 내부)에 철거하면 뷰가 아직 등록되기 전이라
+        //    배치 도중(FactorySystem.Place 내부)에 철거하면 뷰가 아직 등록되기 전이라
         //    GameObject가 고아로 남는다. 그래서 프레임 끝(LateUpdate)까지 미룬다.
 
         static void QueueReject(Vector2Int cell)
@@ -671,9 +671,9 @@ namespace CoreDawn.ResourceNodes
                 Vector2Int cell = _rejects.Dequeue();
 
                 var boot = FactoryBootstrap.Instance;
-                if (boot == null || boot.Sim == null) continue;
+                if (boot == null || boot.Factory == null) continue;
 
-                var b = boot.Sim.Grid.GetAt(cell);
+                var b = boot.Factory.Grid.GetAt(cell);
                 if (b == null || b.IsRemoved || b.Data is not MinerDataSO) continue;
                 if (ResourceAt(b.Origin) != null) continue;   // 그 사이 광맥이 생겼으면 통과
 

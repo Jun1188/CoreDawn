@@ -5,13 +5,14 @@ using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Navigation;
 using CoreDawn.ResourceNodes;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tests
 {
     /// <summary>
     /// ResourceNode(광맥) 특성화 테스트.
     ///
-    /// 씬·플레이모드 없이 도는 것이 핵심이다 — 심(FactorySim)은 plain C#이고
+    /// 씬·플레이모드 없이 도는 것이 핵심이다 — 심(FactorySystem)은 plain C#이고
     /// 광맥은 에디트 모드에서도 AddComponent로 만들 수 있으므로, 에디터 배치모드에서
     /// 그대로 실행된다. 실행 경로 두 가지:
     ///   ① 에디터 메뉴  Tools/ResourceNode 테스트 실행   (Editor/ResourceNodeTestRunner.cs)
@@ -30,7 +31,7 @@ namespace CoreDawn.Tests
         static readonly List<ScriptableObject> _createdSOs = new();
         static readonly List<GameObject> _createdGOs = new();
 
-        static FactorySim _sim;
+        static FactorySystem _sim;
         static ItemDataSO _ore, _coal;
 
         /// <summary>전체 스위트 실행. 반환값 = 전부 통과했는가. report에 사람이 읽는 결과표.</summary>
@@ -74,7 +75,7 @@ namespace CoreDawn.Tests
             _fails.Clear();
             ClearNodes();
 
-            _sim = new FactorySim(tps: 10f);
+            _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
             ResourceNodeRegistry.HookSim(_sim);
             ResourceNodeRegistry.EnforceMinerPlacement = false;   // 철거는 플레이모드 러너의 일
 

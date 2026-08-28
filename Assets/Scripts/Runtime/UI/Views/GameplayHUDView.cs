@@ -40,8 +40,8 @@ namespace CoreDawn.UI
 
         PlayerController player;
         PlayerInteractionManager interaction;
-        Entity playerEntity;
-        BuildingEntity core;
+        EntityView playerEntity;
+        Building core;
         ItemContainer hotbar;
 
         // ── 나침반 — 15°마다 눈금 하나, 45°마다 방위 라벨. 풀을 만들어 두고 매 프레임 배치만 ──
@@ -151,7 +151,7 @@ namespace CoreDawn.UI
             if (playerEntity != null) playerEntity.OnHealthChanged -= OnPlayerHp;
             playerEntity = null;
             player = null;
-            if (core != null) { core.OnHealthChanged -= OnCoreHp; core = null; }
+            if (core != null) { var h = core.Owner?.Health; if (h != null) h.OnHealthChanged -= OnCoreHp; core = null; }
             if (hotbar != null) hotbar.Changed -= RebuildHotbar;
         }
 
@@ -274,7 +274,7 @@ namespace CoreDawn.UI
             int used = 0;
 
             if (core != null)
-                PlaceMark(used++, StripOffset(BearingTo(core.transform.position), halfTan, hudW));
+                PlaceMark(used++, StripOffset(BearingTo(core.Owner.Position), halfTan, hudW));
 
             var spawner = BattleManager.Instance != null ? BattleManager.Instance.Spawner : null;
             if (spawner != null)
@@ -419,15 +419,19 @@ namespace CoreDawn.UI
         /// </summary>
         void BindCoreIfNeeded()
         {
-            if (core != null) return;
+            if (core != null && !core.IsRemoved) return;
+            core = null;   // 부서진 코어는 심에서 빠진다 — 다시 세워지면 새 것을 잡는다
 
-            foreach (var e in BuildingEntity.All)
-                if (e != null && e.IsCore) { core = e; break; }
+            var boot = FactoryBootstrap.Instance;
+            if (boot != null && boot.Factory != null)
+                foreach (var b in boot.Factory.Buildings)
+                    if (b.IsCore) { core = b; break; }
 
-            if (core == null) { OnCoreHp(0f, 1f); return; }
+            var hp = core?.Owner?.Health;
+            if (hp == null) { core = null; OnCoreHp(0f, 1f); return; }
 
-            core.OnHealthChanged += OnCoreHp;
-            OnCoreHp(core.Health.CurrentHealth, core.Health.MaxHealth);
+            hp.OnHealthChanged += OnCoreHp;
+            OnCoreHp(hp.CurrentHealth, hp.MaxHealth);
         }
 
         void OnCoreHp(float current, float max)

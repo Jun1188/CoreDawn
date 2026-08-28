@@ -11,7 +11,7 @@ namespace CoreDawn.Factory
     /// FactoryBootstrap.Instance는 Awake에서 생성되므로 Start 시점엔 항상 준비돼 있다
     /// (유니티의 Awake→Start 실행 순서 보장).
     /// </summary>
-    [RequireComponent(typeof(BuildingEntity))]
+    [RequireComponent(typeof(BuildingView))]
     public class CoreBootstrap : MonoBehaviour
     {
         [Tooltip("이 코어의 건물 데이터(CoreDataSO) — 티어별 요구량을 정의한다.")]
@@ -34,7 +34,7 @@ namespace CoreDawn.Factory
                 return;
             }
 
-            var view = GetComponent<BuildingEntity>();
+            var view = GetComponent<BuildingView>();
             PlacementBridge.PlaceExisting(coreData, gridOrigin, rotationSteps, view);
         }
     }

@@ -60,7 +60,7 @@ namespace CoreDawn.Entities
         /// <param name="eye">조준의 기준점(카메라 위치).</param>
         /// <param name="aimDir">조준 방향(카메라 forward). 정규화되지 않아도 된다.</param>
         /// <param name="source">사격 주체. 플레이어가 아니면(포탑 등) 아무것도 하지 않는다.</param>
-        public static void Report(Vector3 eye, Vector3 aimDir, Entity source)
+        public static void Report(Vector3 eye, Vector3 aimDir, EntityView source)
         {
             var attacker = source as Player;
             if (!attacker.IsValidTarget()) return;

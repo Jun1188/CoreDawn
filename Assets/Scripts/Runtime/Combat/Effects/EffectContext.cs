@@ -15,7 +15,7 @@ namespace CoreDawn.Combat
     public readonly struct EffectContext
     {
         /// <summary>시전자. 출처 없는 피해(환경·구 TakeDamage 경로)면 null.</summary>
-        public readonly Entity Source;
+        public readonly EntityView Source;
 
         /// <summary>이 효과의 크기 — EffectEntry.value × 시전측 배율. 해석은 효과가 한다.</summary>
         public readonly float Value;
@@ -33,7 +33,7 @@ namespace CoreDawn.Combat
         /// </summary>
         public readonly Vector3 HitDirection;
 
-        public EffectContext(Entity source, float value, Vector3 hitPoint = default, Vector3 hitDirection = default)
+        public EffectContext(EntityView source, float value, Vector3 hitPoint = default, Vector3 hitDirection = default)
         {
             Source = source;
             Value = value;

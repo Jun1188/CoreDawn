@@ -23,7 +23,7 @@ namespace CoreDawn.Factory
 
     /// <summary>
     /// 주기적으로 아이템을 생산해 출력 포트로 Push.
-    /// 어떤 아이템을 채굴할지는 OnAfterPlaced에서 FactorySim.GetResourceAt으로 결정.
+    /// 어떤 아이템을 채굴할지는 OnAfterPlaced에서 FactorySystem.GetResourceAt으로 결정.
     /// (ResourceGrid 같은 공간 시스템은 이 파일의 관심사가 아님)
     ///
     /// 채굴은 ScheduleWake로 완료 시점에만 깨어난다.
@@ -43,21 +43,21 @@ namespace CoreDawn.Factory
         public void SetTarget(ItemDataSO item)
         {
             _target = item;
-            _b.Sim.MarkDirty(_b);
+            _b.Factory.MarkDirty(_b);
         }
 
         public void OnAfterPlaced()
         {
             // 심에 자원 조회 서비스가 주입되어 있으면 사용
             // 없으면 SetTarget()으로 직접 설정
-            if (_b.Sim.GetResourceAt != null)
-                _target = _b.Sim.GetResourceAt(_b.Origin);
+            if (_b.Factory.GetResourceAt != null)
+                _target = _b.Factory.GetResourceAt(_b.Origin);
         }
 
         public void Tick(float dt)
         {
             if (_target == null) return;
-            var sim = _b.Sim;
+            var sim = _b.Factory;
 
             // 1. 밀려 있던 출력 버퍼부터 배출 (하류가 받는 만큼 전부)
             _b.FlushOutputs();
@@ -113,7 +113,7 @@ namespace CoreDawn.Factory
             _readyAt = s.ReadyAt;
 
             // 기상 예약은 심의 힙에 있던 것이라 저장 대상이 아니다 — 완료 시각으로부터 다시 건다
-            if (_readyAt >= 0f) _b.Sim.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Sim.Now));
+            if (_readyAt >= 0f) _b.Factory.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Factory.Now));
         }
     }
 }

@@ -73,16 +73,16 @@ namespace CoreDawn.Save
         public object Capture()
         {
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null) return null;
+            if (boot == null || boot.Factory == null) return null;
 
-            var dto = new Dto { Now = boot.Sim.Now };
+            var dto = new Dto { Now = boot.Factory.Now };
 
             // 좌표순 정렬 — 같은 상태가 항상 같은 파일이 되어야 왕복 비교가 성립한다
             // (그리드가 아니라 뷰 목록을 훑는 이유: 멀티타일 건물은 여러 칸이 같은 Building을 가리킨다)
             foreach (var b in boot.Buildings.Where(b => b != null && !b.IsRemoved)
                                             .OrderBy(b => b.Origin.x).ThenBy(b => b.Origin.y))
             {
-                var view = boot.GetView(b);
+                var hp = b.Owner?.Health;   // HP 정본은 심 — 뷰 없는 건물(둥지·헤드리스)도 같은 경로
                 dto.Buildings.Add(new BuildingDto
                 {
                     DataId = SaveRefs.IdOf(b.Data),
@@ -91,13 +91,13 @@ namespace CoreDawn.Save
                     Shape = b.Shape,
                     Input = SaveContainerDto.From(b.Input),
                     Output = SaveContainerDto.From(b.Output),
-                    HpMax = view != null ? view.Health.MaxHealth : 0f,
-                    HpCurrent = view != null ? view.Health.CurrentHealth : 0f,
+                    HpMax = hp != null ? hp.MaxHealth : 0f,
+                    HpCurrent = hp != null ? hp.CurrentHealth : 0f,
                     Behavior = b.Behavior is ISaveableBehavior s ? SaveJson.ToToken(s.CaptureState()) : null,
                 });
             }
 
-            foreach (var seg in boot.Sim.Belts.Segments.Where(s => s.BeltCount > 0)
+            foreach (var seg in boot.Factory.Belts.Segments.Where(s => s.BeltCount > 0)
                                     .OrderBy(s => s.Belts[0].Origin.x).ThenBy(s => s.Belts[0].Origin.y))
             {
                 var belt = new BeltDto { ExitOrigin = seg.Belts[0].Origin };
@@ -114,13 +114,13 @@ namespace CoreDawn.Save
         public void Restore(JToken data)
         {
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null) return;
+            if (boot == null || boot.Factory == null) return;
 
             var dto = SaveJson.FromToken<Dto>(data);
             if (dto == null) return;
 
             // 시계가 먼저다 — 아래에서 되살릴 타이머들이 전부 이 값을 기준으로 다시 예약된다
-            boot.Sim.RestoreClock(dto.Now);
+            boot.Factory.RestoreClock(dto.Now);
 
             var placement = Object.FindFirstObjectByType<PlacementSystem>();
 
@@ -151,7 +151,7 @@ namespace CoreDawn.Save
 
                 // 철거 경로(PlacementBridge.Remove)를 쓰지 않는다 — 그쪽은 버퍼 내용물을
                 // 월드에 뿌리므로, 복원 중에 부르면 있지도 않던 드롭 아이템이 바닥에 깔린다
-                boot.Sim.Remove(existing);
+                boot.Factory.Remove(existing);
             }
         }
 
@@ -189,11 +189,9 @@ namespace CoreDawn.Save
                 // 상태에 따라 달라지는 판단이 있고, 그 최대치는 티어(이미 복원됨)에서 나온다
                 if (b.Behavior is ISaveableBehavior s && want.Behavior != null) s.RestoreState(want.Behavior);
 
-                var view = boot.GetView(b);
-                if (view != null && want.HpMax > 0f)
-                    view.Health.RestoreState(want.HpMax, want.HpCurrent, isDead: false);
+                if (want.HpMax > 0f) b.Owner?.Health?.RestoreState(want.HpMax, want.HpCurrent, isDead: false);
 
-                boot.Sim.MarkDirty(b);
+                boot.Factory.MarkDirty(b);
                 count++;
             }
 
@@ -207,14 +205,14 @@ namespace CoreDawn.Save
         static void RestoreBeltItems(FactoryBootstrap boot, Dto dto)
         {
             // 재사용된 벨트에는 이전 아이템이 남아 있다 — 얹기 전에 전부 비운다
-            foreach (var seg in boot.Sim.Belts.Segments) seg.ClearItems();
+            foreach (var seg in boot.Factory.Belts.Segments) seg.ClearItems();
 
             foreach (var saved in dto.Belts)
             {
                 if (saved?.Items == null) continue;
 
-                var exitBelt = boot.Sim.Grid.GetAt(saved.ExitOrigin);
-                var seg = exitBelt != null ? boot.Sim.Belts.GetSegment(exitBelt) : null;
+                var exitBelt = boot.Factory.Grid.GetAt(saved.ExitOrigin);
+                var seg = exitBelt != null ? boot.Factory.Belts.GetSegment(exitBelt) : null;
                 if (seg == null) continue;   // 벨트가 복원되지 못한 경우
 
                 foreach (var it in saved.Items)
@@ -224,7 +222,7 @@ namespace CoreDawn.Save
                 }
 
                 // 아이템이 실린 세그먼트는 대표(입구) 벨트가 구동한다 — 깨워두지 않으면 멈춘 채로 있는다
-                if (seg.HasItems) boot.Sim.MarkDirty(seg.Belts[^1]);
+                if (seg.HasItems) boot.Factory.MarkDirty(seg.Belts[^1]);
             }
         }
     }

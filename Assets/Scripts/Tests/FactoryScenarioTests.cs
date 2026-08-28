@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tests
 {
@@ -23,7 +24,7 @@ namespace CoreDawn.Tests
         readonly List<string> _fails = new();               // 실행 중인 시나리오의 실패 메시지
         readonly List<ScriptableObject> _createdSOs = new();
 
-        FactorySim _sim;
+        FactorySystem _sim;
         ItemDataSO _ore, _ingot;
 
         // ─── 실행 루프 ──────────────────────────────────────────────
@@ -69,7 +70,7 @@ namespace CoreDawn.Tests
             count++;
 
             // 시나리오마다 새 심 — plain C#이라 싱글톤 정리·프레임 대기가 필요 없다
-            _sim = new FactorySim(tps: 10f);
+            _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
             _sim.GetResourceAt = _ => _ore;
             _beltSO = null;   // 벨트 SO도 시나리오별로 새로
             _fails.Clear();

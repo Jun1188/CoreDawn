@@ -10,7 +10,7 @@ namespace CoreDawn.Factory
     /// </summary>
     public class BeltSegmentManager
     {
-        readonly FactorySim _sim;
+        readonly FactorySystem _sim;
 
         /// <summary>
         /// 벨트 철거로 세그먼트에서 밀려난(폐기될) 아이템 통지 — (제거된 벨트, 아이템).
@@ -24,7 +24,7 @@ namespace CoreDawn.Factory
 
         public IReadOnlyList<BeltSegment> Segments => _segs;
 
-        public BeltSegmentManager(FactorySim sim) => _sim = sim;
+        public BeltSegmentManager(FactorySystem sim) => _sim = sim;
 
         /// <summary>이 벨트의 세그먼트를 보장(없으면 1칸 세그먼트 즉시 생성).</summary>
         public BeltSegment EnsureSegment(Building belt)

@@ -6,6 +6,7 @@ using CoreDawn.Factory;
 using CoreDawn.Managers;
 using CoreDawn.Navigation;
 using CoreDawn.Worlds;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Combat
 {
@@ -101,7 +102,7 @@ namespace CoreDawn.Combat
         private void Start()
         {
             EnsurePlayerEntity();
-            BuildingEntity.CoreDestroyed += OnCoreDestroyed;
+            SimHost.World.Died += OnEntityDied;   // 코어 파괴 = 게임오버 — 뷰 이벤트가 아니라 심의 사망 통지
 
             spawnManager.SetQuantityBasedMode(quantityBasedNightWaves);
             spawnManager.QuantityWaveCompleted += OnQuantityWaveCompleted;
@@ -128,7 +129,7 @@ namespace CoreDawn.Combat
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
-            BuildingEntity.CoreDestroyed -= OnCoreDestroyed;
+            SimHost.World.Died -= OnEntityDied;
             spawnManager.QuantityWaveCompleted -= OnQuantityWaveCompleted;
             if (TimeManager.Instance != null)
             {
@@ -166,7 +167,13 @@ namespace CoreDawn.Combat
                 Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
         }
 
-        private void OnCoreDestroyed(BuildingEntity core)
+        private void OnEntityDied(Entity e)
+        {
+            var building = e.Get<Building>();
+            if (building != null && building.IsCore) OnCoreDestroyed();
+        }
+
+        private void OnCoreDestroyed()
         {
             if (IsGameOver) return;
             IsGameOver = true;
@@ -230,7 +237,7 @@ namespace CoreDawn.Combat
             if (playerSceneRoot != null && !playerSceneRoot.activeSelf)
                 playerSceneRoot.SetActive(true);
             playerEntity.gameObject.SetActive(true);
-            playerEntity.Health.Initialize(); // IsDead 해제 + HP 전량 회복
+            playerEntity.Health.ResetToFull(); // IsDead 해제 + HP 전량 회복
             Debug.Log("[BattleManager] 아침 — 플레이어 부활 (HP 전량 회복)");
         }
     }

@@ -17,7 +17,7 @@ namespace CoreDawn.Entities
         const float BarGap = 0.03f;             // 두 바 사이 간격(m)
         const float MaxVisibleDistance = 45f;   // 이보다 멀면 숨김 — 원거리 픽셀 노이즈·드로우 절약
 
-        private Entity entity;
+        private EntityView entity;
         private Transform anchor;       // 바가 따라다닐 기준 (몬스터 루트 또는 둥지 코어)
         private float heightOffset;
         private GameObject visualRoot;  // 표시/숨김 토글 대상 (컴포넌트 자신은 계속 살아 판정한다)
@@ -60,7 +60,7 @@ namespace CoreDawn.Entities
         /// 키 큰 나무처럼 콜라이더가 10m짜리면 바가 시야 밖 하늘에 떠서 "피는 다는데 체력바가
         /// 안 뜬다"가 된다. 줄기를 보는 플레이어 시야 안에 두려면 위로 무한정 따라가면 안 된다.
         /// </summary>
-        public static WorldHealthBar Attach(Entity target, Transform anchor = null, bool large = false,
+        public static WorldHealthBar Attach(EntityView target, Transform anchor = null, bool large = false,
                                             bool hideWhenFull = false, float maxHeight = float.PositiveInfinity)
         {
             if (target == null) return null;
@@ -87,7 +87,7 @@ namespace CoreDawn.Entities
         /// 바가 포탑 몸통에 파묻힌다. 그래서 자식 전체에서 가장 높은 꼭대기를 쓴다.
         /// 앵커 아래에 콜라이더가 없으면 엔티티 전체에서, 그것도 없으면 예전처럼 2m.
         /// </summary>
-        private static float TopOffset(Transform anchor, Entity target)
+        private static float TopOffset(Transform anchor, EntityView target)
         {
             if (!TryTopY(anchor, out float top) && !TryTopY(target.transform, out top))
                 return 2f;

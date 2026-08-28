@@ -140,18 +140,20 @@ namespace CoreDawn.Placement
             _lastCenter = center;
             _hasCenter  = true;
 
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
             if (sim == null) { ClearOpen(); return; }
 
             float sqRadius = Sq(radiusTiles * _cellSize);
             var live = new HashSet<Building>();
 
-            foreach (var entity in BuildingEntity.All)
+            var boot = FactoryBootstrap.Instance;
+            foreach (var b in sim.Buildings)
             {
-                if (entity == null || !entity.HasSim) continue;
+                // 포트 표시는 뷰 위치에 눕는다 — 뷰 없는 건물(둥지)은 그릴 것이 없다
+                var entity = boot.GetView(b);
+                if (entity == null) continue;
                 if ((entity.transform.position - center).sqrMagnitude > sqRadius) continue;
 
-                var b = entity.Sim;
                 var openPorts = CollectOpenPorts(sim, b);
                 if (openPorts.Count == 0) continue;
 
@@ -182,7 +184,7 @@ namespace CoreDawn.Placement
         /// 이웃 칸이 비어 있거나, 있어도 맞물리는 포트가 없으면 열린 포트.
         /// "맞물린다"의 정의(방향 반대 + 입출력 반대)는 BuildingGraph의 연결 규칙과 같다.
         /// </summary>
-        static List<PortDefinition> CollectOpenPorts(FactorySim sim, Building b)
+        static List<PortDefinition> CollectOpenPorts(FactorySystem sim, Building b)
         {
             var result = new List<PortDefinition>();
             var ports  = b.GetEffectivePorts();
@@ -231,7 +233,7 @@ namespace CoreDawn.Placement
         /// 배치할 때 더해준 만큼(광맥 위 채굴기)을 도로 빼면 지면이 나온다.
         /// 포트 흐름은 지면에 눕는 표시이므로 이 값을 써야 공중에 뜨지 않는다.
         /// </summary>
-        float GroundYOf(Building b, BuildingEntity view)
+        float GroundYOf(Building b, BuildingView view)
         {
             if (view == null) view = FactoryBootstrap.Instance != null
                 ? FactoryBootstrap.Instance.GetView(b) : null;

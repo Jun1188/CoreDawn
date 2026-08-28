@@ -41,7 +41,7 @@ namespace CoreDawn.UI
         Label hpText, hpMax, shieldText, shieldMax, repairText, repairMax, radarChipText;
         Label waveNext, waveNumber, waveIncoming, waveNests;
         RadarScope radar;
-        BuildingEntity coreEntity;   // 내구도 원본 — 심(Building)이 아니라 씬 껍데기가 갖고 있다
+        Building coreEntity;   // 내구도 원본은 심 엔티티(Owner.Health)다
         WaveSpawnManager subscribedWaveSpawner;
 
         /// <summary>레이더 해금 단계. 설계상 게이트②(항법·제어 복구) 완료 시 켜진다.</summary>
@@ -241,11 +241,13 @@ namespace CoreDawn.UI
 
         // ─────────────────── 코어 정보 탭 (SCR-01c) ───────────────────
 
-        /// <summary>씬의 코어 껍데기를 찾는다 — 내구도는 심(Building)이 아니라 BuildingEntity가 원본이다.</summary>
-        static BuildingEntity FindCoreEntity()
+        /// <summary>심의 코어 건물 — 내구도는 그 엔티티(Owner.Health)가 원본이다.</summary>
+        static Building FindCoreEntity()
         {
-            foreach (var e in BuildingEntity.All)
-                if (e != null && e.IsCore) return e;
+            var boot = FactoryBootstrap.Instance;
+            if (boot == null || boot.Factory == null) return null;
+            foreach (var b in boot.Factory.Buildings)
+                if (b.IsCore && !b.IsRemoved) return b;
             return null;
         }
 
@@ -255,7 +257,7 @@ namespace CoreDawn.UI
 
             // 코어 내구도
             if (coreEntity == null) coreEntity = FindCoreEntity();
-            var health = coreEntity != null ? coreEntity.Health : null;
+            var health = coreEntity?.Owner?.Health;
 
             if (health != null && health.MaxHealth > 0f)
             {
@@ -407,7 +409,7 @@ namespace CoreDawn.UI
 
             // 코어 내구도도 폴링하지 않고 이벤트로 받는다
             coreEntity = FindCoreEntity();
-            if (coreEntity != null) coreEntity.OnHealthChanged += OnCoreHealthChanged;
+            if (coreEntity?.Owner?.Health != null) coreEntity.Owner.Health.OnHealthChanged += OnCoreHealthChanged;
         }
 
         void Unsubscribe()
@@ -420,7 +422,7 @@ namespace CoreDawn.UI
             if (target != null) target.ReadyChanged -= OnContainerChanged;
             if (target != null) target.ShieldChanged -= OnShieldChanged;
 
-            if (coreEntity != null) coreEntity.OnHealthChanged -= OnCoreHealthChanged;
+            if (coreEntity?.Owner?.Health != null) coreEntity.Owner.Health.OnHealthChanged -= OnCoreHealthChanged;
             coreEntity = null;
         }
 

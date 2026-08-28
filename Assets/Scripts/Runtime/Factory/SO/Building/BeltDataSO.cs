@@ -108,7 +108,7 @@ namespace CoreDawn.Factory
 
         public void Tick(float dt)
         {
-            var seg = _b.Sim.Belts.EnsureSegment(_b);  // 항상 세그먼트 존재
+            var seg = _b.Factory.Belts.EnsureSegment(_b);  // 항상 세그먼트 존재
 
             // 입력 버퍼 아이템을 벨트 위로 (입구가 막혔으면 받아준 만큼만 소비).
             // TryAddItem은 세그먼트 입구(pos 0) 삽입 — 생산자로부터 입력을 받는 벨트는
@@ -130,7 +130,7 @@ namespace CoreDawn.Factory
 
             // 입구가 막혀 버퍼가 안 비면 다음 틱에 재시도
             if (_b.Input.HasAny)
-                _b.Sim.MarkDirty(_b);
+                _b.Factory.MarkDirty(_b);
         }
     }
 }

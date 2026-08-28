@@ -281,7 +281,7 @@ namespace CoreDawn.EditorTools
         {
             if (species.DeathDelay <= 0f) return;
 
-            var entity = root.GetComponent<Entity>();
+            var entity = root.GetComponent<EntityView>();
             if (entity == null) return;
 
             var so = new SerializedObject(entity);

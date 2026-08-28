@@ -58,11 +58,11 @@ namespace CoreDawn.Navigation
             Find(startPos, targetPos, ignoreBuildings: true, path =>
             {
                 var boot = FactoryBootstrap.Instance;
-                if (path == null || boot == null || boot.Sim == null) { onDone(null); return; }
+                if (path == null || boot == null || boot.Factory == null) { onDone(null); return; }
 
                 foreach (var node in path)
                 {
-                    var blocker = boot.Sim.Grid.GetAt(node.gridCoord);
+                    var blocker = boot.Factory.Grid.GetAt(node.gridCoord);
                     if (blocker != null && !blocker.IsRemoved) { onDone(blocker); return; }
                 }
                 onDone(null);
