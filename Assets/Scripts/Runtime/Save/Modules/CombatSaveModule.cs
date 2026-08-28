@@ -121,7 +121,7 @@ namespace CoreDawn.Save
                 var spawner = battle.Spawner;
 
                 // 둥지에 매인 보스는 위에서 이미 적었으므로 여기서는 뺀다 (되살릴 때 두 번 나오면 안 된다)
-                var bosses = new HashSet<Monster>(
+                var bosses = new HashSet<MonsterView>(
                     nests.SelectMany(n => n.Points).Select(p => p.linkedBoss).Where(b => b != null));
 
                 foreach (var m in spawner.Monsters
@@ -139,7 +139,7 @@ namespace CoreDawn.Save
             return dto;
         }
 
-        static MonsterDto Describe(Monster m) => new()
+        static MonsterDto Describe(MonsterView m) => new()
         {
             Position = m.transform.position,
             Rotation = m.transform.rotation,
@@ -215,7 +215,7 @@ namespace CoreDawn.Save
             if (dto.Wave != null) spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay);
         }
 
-        static void Apply(Monster m, MonsterDto saved)
+        static void Apply(MonsterView m, MonsterDto saved)
         {
             if (m == null || saved == null) return;
 

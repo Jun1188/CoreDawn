@@ -262,7 +262,7 @@ namespace CoreDawn.Entities
         /// <summary>목표의 수평 이동 속도 — 곡사 탄착 예측이 쓴다. 움직이지 않는 대상은 0.</summary>
         private static Vector3 VelocityOf(EntityView t)
         {
-            var movement = t != null ? t.Movement : null;
+            var movement = t != null ? t.Entity?.Get<Movement>() : null;
             return movement != null ? movement.Velocity : Vector3.zero;
         }
 

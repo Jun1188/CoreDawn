@@ -1,5 +1,6 @@
 using UnityEngine;
 using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Combat
 {
@@ -18,7 +19,7 @@ namespace CoreDawn.Combat
     public class MonsterDataSO : GameDataSO
     {
         [Header("뷰")]
-        [Tooltip("씬 표현 프리팹(Monster 컴포넌트가 붙은 것). 에셋 참조라 json에는 prefabGuid로 적힌다. 비우면 코드 조립 폴백(캡슐).")]
+        [Tooltip("씬 표현 프리팹(MonsterView 컴포넌트가 붙은 것). 에셋 참조라 json에는 prefabGuid로 적힌다. 비우면 코드 조립 폴백(캡슐).")]
         public GameObject prefab;
 
         [Header("체력")]
@@ -61,5 +62,16 @@ namespace CoreDawn.Combat
         public float returnRegenPerSecond = 0.12f;
         [Tooltip("복귀가 이 시간(초)을 넘기면 길이 막힌 것으로 보고 그 자리에서 복귀를 접는다. 0 이하면 제한 없음.")]
         public float returnTimeout = 20f;
+
+        /// <summary>심이 모듈을 조립할 때 읽는 숫자 묶음 — 에셋 참조(프리팹·효과)는 뷰 쪽에 남는다.</summary>
+        public MonsterSpec ToSpec() => new MonsterSpec
+        {
+            MaxHp = maxHp, MoveSpeed = moveSpeed, RotateSpeed = rotateSpeed, CrowdRadius = crowdRadius,
+            KnockbackDamping = knockbackDamping, StickToGround = stickToGround,
+            AttackRange = attackRange, AttackCooldown = attackCooldown,
+            MaxPatience = maxPatience, PatienceRadius = patienceRadius, OutsidePatienceDrain = outsidePatienceDrain,
+            RangedPokePatienceDrain = rangedPokePatienceDrain, PatienceRecoverRate = patienceRecoverRate,
+            AbsoluteLeashMultiplier = absoluteLeashMultiplier, ReturnRegenPerSecond = returnRegenPerSecond, ReturnTimeout = returnTimeout,
+        };
     }
 }

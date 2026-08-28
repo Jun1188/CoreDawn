@@ -18,7 +18,7 @@ namespace CoreDawn.Factory
     /// 연결 목록(InputConnections/OutputConnections)은 BuildingGraph가 채우고,
     /// 행동(IBuildingBehavior)은 SO의 CreateBehavior()가 결정한다.
     /// </summary>
-    public class Building : EntityModule, IDamageInterceptor
+    public class Building : EntityModule, IDamageInterceptor, IFootprint
     {
         public readonly FactorySystem Factory;
 

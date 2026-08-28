@@ -21,8 +21,8 @@ namespace CoreDawn.Combat
         private Transform parent;
         private bool spawningEnabled;
         private float nextSpawnTime;
-        private readonly List<Monster> monsters = new List<Monster>();
-        private readonly List<Monster> nightWaveMonsters = new List<Monster>();
+        private readonly List<MonsterView> monsters = new List<MonsterView>();
+        private readonly List<MonsterView> nightWaveMonsters = new List<MonsterView>();
 
         private bool quantityBasedMode;
         private bool quantityWaveActive;
@@ -40,7 +40,7 @@ namespace CoreDawn.Combat
         private readonly List<Transform> nightSpawnPoints = new List<Transform>();
         private bool useExplicitNightSpawnPoints;
 
-        public IReadOnlyList<Monster> Monsters => monsters;
+        public IReadOnlyList<MonsterView> Monsters => monsters;
         public bool SpawningEnabled => spawningEnabled;
         public bool QuantityBasedMode => quantityBasedMode;
         public bool IsQuantityWaveActive => quantityWaveActive;
@@ -216,7 +216,7 @@ namespace CoreDawn.Combat
             int concurrencyCount = quantityBasedMode ? NightWaveAliveCount : AliveCount;
             if (concurrencyCount >= effectiveMaxAlive) return;
 
-            if (TrySpawn(out Monster spawnedMonster))
+            if (TrySpawn(out MonsterView spawnedMonster))
             {
                 if (quantityBasedMode)
                 {
@@ -244,7 +244,7 @@ namespace CoreDawn.Combat
         /// </summary>
         public void SpawnNestDefenders(MonsterNest nest, Player target, int amount,
                                        List<MonsterNest.DefenderSpawnSlot> spawnSlots = null,
-                                       Monster escortBoss = null)
+                                       MonsterView escortBoss = null)
         {
             if (spawnSlots == null) spawnSlots = nest.GetAllActiveDefenderSlots();
             if (spawnSlots.Count == 0 || amount <= 0) return;
@@ -295,7 +295,7 @@ namespace CoreDawn.Combat
         /// 다시 스냅하면 경사면에서 조금씩 위치가 밀린다.
         /// </summary>
         /// <param name="data">종류. null이면 DB 기본 종류(종류를 적지 않은 구 세이브).</param>
-        public Monster RestoreMonster(Vector3 position, Quaternion rotation, MonsterDataSO data = null)
+        public MonsterView RestoreMonster(Vector3 position, Quaternion rotation, MonsterDataSO data = null)
         {
             var monster = InstantiateMonster(data, position, rotation);
             monster.transform.SetPositionAndRotation(position, rotation);
@@ -327,7 +327,7 @@ namespace CoreDawn.Combat
             }
         }
 
-        private bool TrySpawn(out Monster spawnedMonster)
+        private bool TrySpawn(out MonsterView spawnedMonster)
         {
             spawnedMonster = null;
             Vector3 position = default;
@@ -416,40 +416,11 @@ namespace CoreDawn.Combat
         /// HP 정본은 데이터(maxHp)다 — 프리팹의 인라인 값이 아니다(이동·공격 수치도 3단계 커밋 3부터 데이터가 조립한다).
         /// 데이터가 없으면(종류를 안 적은 웨이브·구 세이브) MonsterDatabase의 기본 종류.
         /// </summary>
-        private Monster InstantiateMonster(MonsterDataSO data, Vector3 position, Quaternion rotation)
+        private MonsterView InstantiateMonster(MonsterDataSO data, Vector3 position, Quaternion rotation)
         {
-            if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
-
-            GameObject go = data != null && data.prefab != null
-                ? UnityEngine.Object.Instantiate(data.prefab, position, rotation, parent)
-                : CreateFallbackMonster(position);
-            go.SetActive(true);
-
-            int monsterLayer = LayerMask.NameToLayer("Monster");
-            if (monsterLayer >= 0 && go.layer == 0)
-                SetLayerRecursively(go.transform, monsterLayer);
-
-            var rb = go.GetComponent<Rigidbody>();
-            if (rb == null) rb = go.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.useGravity = false;
-
-            var monster = go.GetComponent<Monster>();
-            if (monster == null) monster = go.AddComponent<Monster>();
+            var monster = MonsterSpawner.Spawn(data, position, rotation, parent);   // 심 엔티티 + 뷰. HP·이동·공격 수치는 데이터(spec)
             monsters.Add(monster);
-
-            if (data != null) monster.Health.SetMaxHealth(data.maxHp);
             return monster;
-        }
-
-        private GameObject CreateFallbackMonster(Vector3 position)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = "Monster(Spawned)";
-            go.transform.SetParent(parent);
-            go.transform.position = position;
-            go.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-            return go;
         }
 
         private void SnapToGround(GameObject go)
@@ -469,11 +440,5 @@ namespace CoreDawn.Combat
             }
         }
 
-        private static void SetLayerRecursively(Transform t, int layer)
-        {
-            t.gameObject.layer = layer;
-            foreach (Transform child in t)
-                SetLayerRecursively(child, layer);
-        }
     }
 }

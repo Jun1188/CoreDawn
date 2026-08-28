@@ -19,7 +19,7 @@ namespace CoreDawn.Entities
         public class NestSpawnPoint
         {
             public Transform point;
-            public Monster linkedBoss;
+            public MonsterView linkedBoss;
             [Tooltip("이 포인트에 서는 보스의 종류(MonsterDataSO). 비우면 보스 없음. 프리팹·HP·공격은 전부 데이터가 정한다.")]
             public MonsterDataSO bossData;
             [HideInInspector] public bool isDestroyed = false;
@@ -182,7 +182,7 @@ namespace CoreDawn.Entities
         /// 둥지가 보스의 상태를 모르면, 제 대장이 두들겨 맞는 동안 쫄몹이 "플레이어가 멀다"는
         /// 이유로 한 마리도 안 나오는 그림이 된다.
         /// </summary>
-        public Monster EngagedBoss
+        public MonsterView EngagedBoss
         {
             get
             {
@@ -203,7 +203,7 @@ namespace CoreDawn.Entities
         /// 다음으로 가까운 안 보이는 포인트로 넘어간다(눈앞 팝인 방지). 전부 보이면
         /// 플레이어에게서 가장 먼 포인트를 쓴다 — 스폰 자체는 절대 멈추지 않는다.
         /// </summary>
-        private List<DefenderSpawnSlot> GetBossReinforcementSlots(Monster boss, Player player)
+        private List<DefenderSpawnSlot> GetBossReinforcementSlots(MonsterView boss, Player player)
         {
             var result = new List<DefenderSpawnSlot>();
             if (spawnPoints == null || boss == null) return result;
@@ -376,7 +376,7 @@ namespace CoreDawn.Entities
             // 둥지가 제 보스를 버리는 것과 같다. 자리 선정은 보스 기준(GetBossReinforcementSlots).
             if (player != null && !player.IsDead)
             {
-                Monster engagedBoss = EngagedBoss;
+                MonsterView engagedBoss = EngagedBoss;
                 if (engagedBoss != null)
                 {
                     hasWarned = false;
@@ -476,13 +476,10 @@ namespace CoreDawn.Entities
         // 지면 스냅은 Y축 보정만 하므로 수평 위치는 point와 항상 일치한다.
         private void SpawnBossAtPoint(NestSpawnPoint spawnPoint)
         {
-            var go = Instantiate(spawnPoint.bossData.prefab, spawnPoint.point.position,
-                spawnPoint.point.rotation, transform);
-            SnapBossToGround(go);
-            spawnPoint.linkedBoss = go.GetComponent<Monster>();
-            spawnPoint.linkedBoss?.SetAsBoss(engagementZone);
-            // HP 정본은 종류 데이터 — 프리팹 인라인 값이 아니다
-            if (spawnPoint.linkedBoss != null) spawnPoint.linkedBoss.Health.SetMaxHealth(spawnPoint.bossData.maxHp);
+            var boss = MonsterSpawner.Spawn(spawnPoint.bossData, spawnPoint.point.position, spawnPoint.point.rotation, transform);
+            SnapBossToGround(boss.gameObject);
+            spawnPoint.linkedBoss = boss;
+            boss.SetAsBoss(engagementZone);
             Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
         }
 
@@ -626,7 +623,7 @@ namespace CoreDawn.Entities
         /// 세이브 복원 전용 — 스폰 포인트의 보스를 저장된 위치에 되살린다.
         /// 이미 보스가 붙어 있으면(중복 스폰) 먼저 치운다.
         /// </summary>
-        public Monster RestoreBoss(int index, Vector3 position, Quaternion rotation)
+        public MonsterView RestoreBoss(int index, Vector3 position, Quaternion rotation)
         {
             if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return null;
 
@@ -635,16 +632,13 @@ namespace CoreDawn.Entities
 
             if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
 
-            var go = Instantiate(sp.bossData.prefab, position, rotation, transform);
-            sp.linkedBoss = go.GetComponent<Monster>();
+            var restored = MonsterSpawner.Spawn(sp.bossData, position, rotation, transform);
+            sp.linkedBoss = restored;
 
             // 평시 스폰(SpawnBossAtPoint)과 같은 계약으로 마무리한다 — 이걸 빠뜨리면 되살아난
             // 보스가 보스 취급을 받지 못하고 교전 구역에도 묶이지 않아, 불러온 게임에서만
             // 다르게 행동하게 된다. 위치만 저장값을 쓰고 나머지는 평시와 동일하다.
             sp.linkedBoss?.SetAsBoss(engagementZone);
-            // 종류 데이터의 HP로 평시 스폰과 같게 맞춘다 — 저장된 현재/최대 HP는
-            // 세이브 모듈이 이 뒤에 덮어쓰므로 순서상 안전하다.
-            if (sp.linkedBoss != null) sp.linkedBoss.Health.SetMaxHealth(sp.bossData.maxHp);
             return sp.linkedBoss;
         }
 

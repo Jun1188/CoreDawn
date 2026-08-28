@@ -20,6 +20,9 @@ namespace CoreDawn.Entities
         public float ChaseRange => Mathf.Max(MaximumRange, chaseRange);
         public float LeashRange => Mathf.Max(1f, leashRange);
 
+        /// <summary>낮에만 반응하는 규칙인가 — 심 두뇌(EngagementZone 구조체)가 시스템 시계로 같은 판정을 한다.</summary>
+        public bool DayOnly => dayOnly;
+
         public bool IsActivePhase => !dayOnly || TimeManager.Instance == null || TimeManager.Instance.Phase == DayPhase.Day;
 
         /// <summary>맵 데이터로 세울 때 쓴다 — 같은 프리팹이라도 둥지마다 사나움이 다를 수 있다.</summary>

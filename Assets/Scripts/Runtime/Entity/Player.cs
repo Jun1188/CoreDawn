@@ -38,14 +38,22 @@ namespace CoreDawn.Entities
 
         private float lastScanTime = float.MinValue;
         private readonly List<SimEntity> scanBuffer = new List<SimEntity>();
-        private readonly HashSet<Monster> detected = new HashSet<Monster>();
-        private readonly HashSet<Monster> seenThisScan = new HashSet<Monster>();
-        private readonly List<Monster> removeBuffer = new List<Monster>();
+        private readonly HashSet<MonsterView> detected = new HashSet<MonsterView>();
+        private readonly HashSet<MonsterView> seenThisScan = new HashSet<MonsterView>();
+        private readonly List<MonsterView> removeBuffer = new List<MonsterView>();
 
         protected override void Awake()
         {
             base.Awake();
             combat.Initialize(this);
+        }
+
+        // 보스 두뇌가 "누가 때렸는지 모를 때"(타워·환경 피해) 상대로 삼는 플레이어 — 심 엔티티가 붙는 순간 알린다
+        // 보스 두뇌가 "누가 때렸는지 모를 때"(타워·환경 피해) 상대로 삼는 플레이어 — 심 엔티티가 붙는 순간 알린다
+        protected override void OnEntityAttached()
+        {
+            base.OnEntityAttached();
+            MonsterSystemHost.System.PlayerEntity = Entity;
         }
 
         protected override void Update()
@@ -67,7 +75,7 @@ namespace CoreDawn.Entities
             seenThisScan.Clear();
             foreach (var e in scanBuffer)
             {
-                var monster = EntityViewRegistry.ViewOf<Monster>(e);
+                var monster = EntityViewRegistry.ViewOf<MonsterView>(e);
                 if (monster == null || !monster.IsValidTarget()) continue;
                 seenThisScan.Add(monster);
                 if (detected.Add(monster)) monster.OnDetectedByPlayer(this);

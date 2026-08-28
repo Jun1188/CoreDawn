@@ -69,7 +69,7 @@ namespace CoreDawn.Entities
         public virtual bool CanBePinged => isActiveAndEnabled && !IsDead;
 
         [Header("Entity Settings (Compatibility)")]
-        [Tooltip("PlayerController 등 기존 코드 호환용. 몬스터 이동 속도는 MovementComponent 쪽 값을 사용한다.")]
+        [Tooltip("PlayerController 등 기존 코드 호환용. 몬스터 이동 속도는 심 Movement 쪽 값을 사용한다.")]
         public float moveSpeed = 5f;
 
         [Header("Death Settings")]
@@ -101,8 +101,7 @@ namespace CoreDawn.Entities
         private EffectController effects;
         public EffectController Effects => effects ??= new EffectController(this);
 
-        // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null)
-        public virtual MovementComponent Movement => null;
+        // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null). 이동은 심 모듈(Movement)로 갔다 — MonsterView.SimMovement
         public virtual CombatComponent Combat => null;
 
         /// <summary>죽었거나 심에서 빠졌는가. 심이 아직 안 붙은 뷰는 죽은 것이 아니다(IsValidTarget이 따로 거른다).</summary>
@@ -183,7 +182,6 @@ namespace CoreDawn.Entities
         protected virtual void Update()
         {
             Effects.Tick(Time.deltaTime);
-            if (Movement != null) Movement.SpeedMultiplier = Effects.MoveSpeedMultiplier;
         }
 
         // 위치 동기 — 물리는 뷰가 굴리고 심은 결과를 받는다. 건물은 움직이지 않으니 뷰 우선 개체만.
