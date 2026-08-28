@@ -3,6 +3,7 @@ using UnityEngine;
 using CoreDawn.DayTime;
 using CoreDawn.Entities;
 using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Navigation
 {
@@ -143,17 +144,22 @@ namespace CoreDawn.Navigation
             goalBuffer.Clear();
             var grid = GridManager.Instance;
 
-            foreach (var building in BuildingView.All)
+            var boot = FactoryBootstrap.Instance;
+            if (boot == null || boot.Factory == null) return;
+
+            foreach (var building in boot.Factory.Buildings)
             {
-                if (!building.IsValidTarget()) continue;
-                // 벨트·나무는 목표에서 뺀다 — 웨이브가 공장과 코어를 노리라고 만든 시드에
-                // 길가의 잡동사니가 섞이면 몬스터가 그쪽으로 돌아간다. 특히 나무는 다시 자라지
-                // 않아서 그 손실이 영구적이다.
+                if (!IsAlive(building)) continue;
+
+                // 웨이브의 목표는 플레이어의 것이다 — 둥지(Monster)는 자기 편이고, 나무(Neutral)는 누구의 것도 아니다.
+                // 나무를 목표에 넣으면 몬스터가 그쪽으로 돌아가고, 나무는 다시 자라지 않아 그 손실이 영구적이다.
+                // 벨트도 뺀다 — 운송로는 진격 목표가 아니다. 경로를 막는 벨트는 FlowFieldState의 사거리 판정이 부순다.
                 //
                 // <b>사거리 판정(FlowFieldState)에서는 빼지 않는다.</b> 건물이 선 칸은
                 // Walkable=false 라 "뚫고는 가도 걸어서는 못 지나간다" — 목표에서도 빼고 공격
                 // 대상에서도 빼면 나무에 막힌 몬스터가 부수지도 돌아가지도 못하고 갇힌다.
-                if (building.Data is BeltDataSO or TreeDataSO) continue;
+                if (building.Owner.Faction != Faction.Player) continue;
+                if (building.Data is BeltDataSO) continue;
 
                 // 무엇부터 노릴지는 건물이 정한다 — 코어 0(최종 목표), 공격 타워는 낮게(먼저 부순다),
                 // 일반 건물은 높게(굳이 돌아가지 않는다). 시드가 작을수록 그 목표가 가깝게 계산된다.
@@ -166,35 +172,24 @@ namespace CoreDawn.Navigation
                              : fallbackGoalCost;
                 seedCost *= Mathf.Max(1, grid.Subdiv);
 
-                // 점유 풋프린트가 기준이다 — 콜라이더는 메시마다 조각나 있어서 하나만 집으면
-                // 건물의 일부(코어의 안테나 한 짝)만 목표가 되고, 전부 합쳐도 모델일 뿐이다.
-                // 심이 없는 씬 직접 배치 건물만 콜라이더로 폴백한다.
-                bool hasRect = building.TryGetFootprintRect(out Vector3 rectMin, out Vector3 rectMax);
-                var col = hasRect ? null : building.GetComponentInChildren<Collider>();
+                // 점유 풋프린트가 기준이다 — 심이 낸다(뷰·콜라이더에 묻지 않는다). 콜라이더는 메시마다 조각나 있어서
+                // 하나만 집으면 건물의 일부(코어의 안테나 한 짝)만 목표가 되고, 전부 합쳐도 모델일 뿐이다.
+                // 풋프린트의 바깥 모서리는 이미 다음 칸이라 살짝 안쪽을 찍는다.
+                building.WorldRect(0f, out Vector3 lo, out Vector3 hi);
+                hi -= new Vector3(0.01f, 0f, 0.01f);
 
-                if (hasRect || col != null)
+                Node min = grid.NodeFromWorldPoint(lo);
+                Node max = grid.NodeFromWorldPoint(hi);
+                if (min != null && max != null)
                 {
-                    // 풋프린트의 바깥 모서리는 이미 다음 칸이라 살짝 안쪽을 찍는다
-                    Vector3 lo = hasRect ? rectMin : col.bounds.min;
-                    Vector3 hi = hasRect ? rectMax - new Vector3(0.01f, 0f, 0.01f) : col.bounds.max;
-
-                    Node min = grid.NodeFromWorldPoint(lo);
-                    Node max = grid.NodeFromWorldPoint(hi);
-                    if (min != null && max != null)
-                    {
-                        for (int x = min.gridCoord.x; x <= max.gridCoord.x; x++)
-                        {
-                            for (int y = min.gridCoord.y; y <= max.gridCoord.y; y++)
-                            {
-                                goalBuffer.Add(new FlowField.Goal(new Vector2Int(x, y), seedCost));
-                            }
-                        }
-                        continue;
-                    }
+                    for (int x = min.gridCoord.x; x <= max.gridCoord.x; x++)
+                        for (int y = min.gridCoord.y; y <= max.gridCoord.y; y++)
+                            goalBuffer.Add(new FlowField.Goal(new Vector2Int(x, y), seedCost));
+                    continue;
                 }
 
-                // 콜라이더가 없거나 그리드 밖에 걸친 경우 중심 셀 하나만 시드로
-                Node node = grid.NodeFromWorldPoint(building.transform.position);
+                // 그리드 밖에 걸친 경우 중심 셀 하나만 시드로
+                Node node = grid.NodeFromWorldPoint(building.Owner.Position);
                 if (node != null) goalBuffer.Add(new FlowField.Goal(node.gridCoord, seedCost));
             }
         }
@@ -211,7 +206,7 @@ namespace CoreDawn.Navigation
         /// "돌아가는 것보다 뚫는 게 싸다"는 판정이다 — 뚫을 건물만 여기서 잡힌다.
         /// 목표 건물(시드)은 사슬의 끝 칸이 그 건물 자리라 같은 방식으로 잡힌다.
         /// </summary>
-        public BuildingView FindBreachTarget(Vector3 from, float range)
+        public Building FindBreachTarget(Vector3 from, float range)
         {
             var grid = GridManager.Instance;
             if (grid == null || !front.HasField) return null;
@@ -225,17 +220,50 @@ namespace CoreDawn.Navigation
 
             for (int i = 0; i <= maxSteps; i++)
             {
-                var building = grid.BuildingEntityAt(cell);
-                if (building != null && building.IsValidTarget() && building.DistanceTo(from) <= range)
+                var building = grid.BuildingAt(cell);
+                if (IsAlive(building) && building.DistanceTo(from) <= range)
                     return building;
 
                 // 사슬의 끝 = 목표 칸에 닿았거나 길이 없다. 목표가 심 밖 건물(씬에 직접 놓인 코어 등)이면
                 // 위 조회가 null이라 여기서 사거리로 한 번 더 본다 — 도착했는데 손을 놓고 서 있지 않게
                 if (!front.TryGetNext(cell, out var next))
-                    return BuildingView.FindClosestInRange(from, range);
+                    return FindClosestInRange(from, range);
                 cell = next;
             }
             return null;
+        }
+
+        /// <summary>살아 있는 심 건물인가 — 제거되지 않았고 엔티티가 죽지 않았다.</summary>
+        static bool IsAlive(Building b)
+        {
+            if (b == null || b.IsRemoved) return false;
+            var e = b.Owner;
+            return e != null && !e.IsRemoved && !(e.Health != null && e.Health.IsDead);
+        }
+
+        /// <summary>
+        /// 사거리 내 가장 가까운 살아있는 건물 — 사슬의 끝에서 손을 놓지 않기 위한 폴백(구 BuildingView.FindClosestInRange).
+        /// 몬스터 편(둥지)은 뺀다 — 자기 집을 부수지 않는다. 나무(Neutral)는 길을 막으면 부순다.
+        /// 풋프린트 경계까지의 거리(Building.DistanceTo)로 잰다 — 멀티타일 건물 고려.
+        /// </summary>
+        public Building FindClosestInRange(Vector3 from, float range)
+        {
+            var boot = FactoryBootstrap.Instance;
+            if (boot == null || boot.Factory == null) return null;
+
+            Building closest = null;
+            float minDistance = float.MaxValue;
+            foreach (var b in boot.Factory.Buildings)
+            {
+                if (!IsAlive(b) || b.Owner.Faction == Faction.Monster) continue;
+                float dist = b.DistanceTo(from);
+                if (dist <= range && dist < minDistance)
+                {
+                    minDistance = dist;
+                    closest = b;
+                }
+            }
+            return closest;
         }
 
         // ── 조회 (시각화·검증용) ────────────────────────────────────

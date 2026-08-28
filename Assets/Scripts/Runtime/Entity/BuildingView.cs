@@ -101,13 +101,10 @@ namespace CoreDawn.Entities
             if (building?.Behavior is IInteractiveBehavior i) i.Interact(player);
         }
 
-        // 살아있는 건물 뷰 레지스트리 — 플로우필드 목표 수집과 몬스터의 사거리 검색용 (심 목록으로 옮기는 중)
-        private static readonly List<BuildingView> all = new List<BuildingView>();
-        public static IReadOnlyList<BuildingView> All => all;
+        // (구 뷰 레지스트리 BuildingView.All은 퇴역 — 정본 목록은 FactorySystem.Buildings)
 
         private void OnEnable()
         {
-            all.Add(this);
             // 건물 배치/파괴는 몬스터 경로에 영향을 주므로 플로우필드 갱신 예약
             RefreshPathingCosts();
             if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
@@ -115,7 +112,6 @@ namespace CoreDawn.Entities
 
         private void OnDisable()
         {
-            all.Remove(this);
             RefreshPathingCosts();
             if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
         }
@@ -224,25 +220,6 @@ namespace CoreDawn.Entities
 
             if (view.Building == null) view.Building = sim;
             return view;
-        }
-
-        // 사거리 내 가장 가까운 살아있는 건물 — 몬스터(FlowFieldState)의 도착/공격 판정용.
-        // 멀티타일 건물을 고려해 콜라이더 표면 거리(DistanceTo)를 사용한다.
-        public static BuildingView FindClosestInRange(Vector3 from, float range)
-        {
-            BuildingView closest = null;
-            float minDistance = float.MaxValue;
-            foreach (var building in all)
-            {
-                if (!building.IsValidTarget()) continue;
-                float dist = building.DistanceTo(from);
-                if (dist <= range && dist < minDistance)
-                {
-                    minDistance = dist;
-                    closest = building;
-                }
-            }
-            return closest;
         }
     }
 }

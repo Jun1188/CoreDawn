@@ -82,7 +82,7 @@ namespace CoreDawn.Save
             foreach (var b in boot.Buildings.Where(b => b != null && !b.IsRemoved)
                                             .OrderBy(b => b.Origin.x).ThenBy(b => b.Origin.y))
             {
-                var view = boot.GetView(b);
+                var hp = b.Owner?.Health;   // HP 정본은 심 — 뷰 없는 건물(둥지·헤드리스)도 같은 경로
                 dto.Buildings.Add(new BuildingDto
                 {
                     DataId = SaveRefs.IdOf(b.Data),
@@ -91,8 +91,8 @@ namespace CoreDawn.Save
                     Shape = b.Shape,
                     Input = SaveContainerDto.From(b.Input),
                     Output = SaveContainerDto.From(b.Output),
-                    HpMax = view != null ? view.Health.MaxHealth : 0f,
-                    HpCurrent = view != null ? view.Health.CurrentHealth : 0f,
+                    HpMax = hp != null ? hp.MaxHealth : 0f,
+                    HpCurrent = hp != null ? hp.CurrentHealth : 0f,
                     Behavior = b.Behavior is ISaveableBehavior s ? SaveJson.ToToken(s.CaptureState()) : null,
                 });
             }
@@ -189,9 +189,7 @@ namespace CoreDawn.Save
                 // 상태에 따라 달라지는 판단이 있고, 그 최대치는 티어(이미 복원됨)에서 나온다
                 if (b.Behavior is ISaveableBehavior s && want.Behavior != null) s.RestoreState(want.Behavior);
 
-                var view = boot.GetView(b);
-                if (view != null && want.HpMax > 0f)
-                    view.Health.RestoreState(want.HpMax, want.HpCurrent, isDead: false);
+                if (want.HpMax > 0f) b.Owner?.Health?.RestoreState(want.HpMax, want.HpCurrent, isDead: false);
 
                 boot.Factory.MarkDirty(b);
                 count++;

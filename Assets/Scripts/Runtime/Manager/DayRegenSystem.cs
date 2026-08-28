@@ -2,6 +2,8 @@ using UnityEngine;
 using CoreDawn.DayTime;
 using CoreDawn.Entities;
 using CoreDawn.Worlds;
+using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Managers
 {
@@ -30,8 +32,10 @@ namespace CoreDawn.Managers
 
         float _playerTimer, _coreTimer, _rescanTimer;
         Player _player;
-        BuildingView _core;
+        Building _core;
         World _world;
+
+        Health CoreHealth => _core?.Owner?.Health;
 
         void Update()
         {
@@ -49,8 +53,9 @@ namespace CoreDawn.Managers
             if (_coreTimer >= coreHealInterval)
             {
                 _coreTimer -= coreHealInterval;
-                if (_core != null && !_core.Health.IsDead && _core.Health.CurrentHealth < _core.Health.MaxHealth)
-                    _core.Health.Heal(coreHealAmount);
+                var coreHp = CoreHealth;
+                if (coreHp != null && !coreHp.IsDead && coreHp.CurrentHealth < coreHp.MaxHealth)
+                    coreHp.Heal(coreHealAmount);
             }
 
             _playerTimer += Time.deltaTime;
@@ -61,7 +66,7 @@ namespace CoreDawn.Managers
 
                 float cell = _world != null ? _world.CellSize : 2f;
                 float range = playerHealRangeCells * cell;
-                bool nearCore = (_player.transform.position - _core.transform.position).sqrMagnitude <= range * range;
+                bool nearCore = (_player.transform.position - _core.Owner.Position).sqrMagnitude <= range * range;
                 if (nearCore && _player.Health.CurrentHealth < _player.Health.MaxHealth)
                     _player.Health.Heal(playerHealAmount);
             }
@@ -71,11 +76,13 @@ namespace CoreDawn.Managers
         {
             if (_player == null || _player.IsDead) _player = FindFirstObjectByType<Player>();
             if (_world == null) _world = FindFirstObjectByType<World>();
-            if (_core == null || _core.Health.IsDead)
+            if (_core == null || _core.IsRemoved || CoreHealth == null || CoreHealth.IsDead)
             {
                 _core = null;
-                foreach (var b in FindObjectsByType<BuildingView>(FindObjectsSortMode.None))
-                    if (b.IsCore && !b.Health.IsDead) { _core = b; break; }
+                var boot = FactoryBootstrap.Instance;
+                if (boot == null || boot.Factory == null) return;
+                foreach (var b in boot.Factory.Buildings)
+                    if (b.IsCore && b.Owner?.Health != null && !b.Owner.Health.IsDead) { _core = b; break; }
             }
         }
     }

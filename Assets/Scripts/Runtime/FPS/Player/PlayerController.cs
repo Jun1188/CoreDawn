@@ -11,6 +11,7 @@ using CoreDawn.Managers;
 using CoreDawn.Navigation;
 using CoreDawn.UI;
 using CoreDawn.Worlds;
+using CoreDawn.Factory;
 
 namespace CoreDawn.FPS
 {
@@ -1036,7 +1037,7 @@ namespace CoreDawn.FPS
             if (playerEntity == null)
                 return;
 
-            BuildingView core = FindCore();
+            Building core = FindCore();
 
             if (core == null)
                 return;
@@ -1048,7 +1049,7 @@ namespace CoreDawn.FPS
                 return;
 
 
-            float respawnYaw = core.transform.eulerAngles.y;
+            float respawnYaw = core.RotationSteps * 90f;
 
 
             rb.isKinematic = false;
@@ -1127,17 +1128,17 @@ namespace CoreDawn.FPS
 
         }
 
-        private BuildingView FindCore()
+        private Building FindCore()
         {
-            foreach (var entity in BuildingView.All)
-            {
-                if (entity != null && entity.IsCore)
-                    return entity;
-            }
+            var boot = FactoryBootstrap.Instance;
+            if (boot == null || boot.Factory == null) return null;
+
+            foreach (var b in boot.Factory.Buildings)
+                if (b.IsCore && !b.IsRemoved) return b;
 
             return null;
         }
-        private bool TryFindCoreRespawnPosition(BuildingView core, out Vector3 respawnPosition)
+        private bool TryFindCoreRespawnPosition(Building core, out Vector3 respawnPosition)
         {
             respawnPosition = default;
 
@@ -1154,7 +1155,7 @@ namespace CoreDawn.FPS
                 return false;
             }
 
-            Node coreNode = gridManager.NodeFromWorldPoint(core.transform.position);
+            Node coreNode = gridManager.NodeFromWorldPoint(core.Owner.Position);
 
             if (coreNode == null)
             {

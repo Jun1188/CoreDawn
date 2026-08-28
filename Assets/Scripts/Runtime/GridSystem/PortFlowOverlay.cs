@@ -146,12 +146,14 @@ namespace CoreDawn.Placement
             float sqRadius = Sq(radiusTiles * _cellSize);
             var live = new HashSet<Building>();
 
-            foreach (var entity in BuildingView.All)
+            var boot = FactoryBootstrap.Instance;
+            foreach (var b in sim.Buildings)
             {
-                if (entity == null || !entity.HasBuilding) continue;
+                // 포트 표시는 뷰 위치에 눕는다 — 뷰 없는 건물(둥지)은 그릴 것이 없다
+                var entity = boot.GetView(b);
+                if (entity == null) continue;
                 if ((entity.transform.position - center).sqrMagnitude > sqRadius) continue;
 
-                var b = entity.Building;
                 var openPorts = CollectOpenPorts(sim, b);
                 if (openPorts.Count == 0) continue;
 

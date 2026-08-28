@@ -319,14 +319,11 @@ namespace CoreDawn.Navigation
         /// </summary>
         public int Subdiv => subdiv;
 
-        /// <summary>이 길찾기 칸을 점유한 건물의 씬 엔티티. 건물이 없거나 심 밖 건물이면 null.</summary>
-        public BuildingView BuildingEntityAt(Vector2Int cell)
+        /// <summary>이 길찾기 칸을 점유한 심 건물. 건물이 없으면 null.</summary>
+        public Building BuildingAt(Vector2Int cell)
         {
             var node = GetNode(cell);
-            if (node == null) return null;
-
-            var building = BuildingAt(node);
-            return building != null ? FactoryBootstrap.Instance?.GetView(building) : null;
+            return node != null ? BuildingAt(node) : null;
         }
 
         // 정적 장애물(Awake에서 구운 값) + 런타임 설치 건물(심의 GridIndex)을 함께 판정
