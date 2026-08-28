@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Entities;
 using CoreDawn.Inventories;
 
 namespace CoreDawn.Factory

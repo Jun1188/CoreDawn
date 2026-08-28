@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Entities;
 
 namespace CoreDawn.Factory
 {

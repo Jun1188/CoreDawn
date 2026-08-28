@@ -148,9 +148,8 @@ namespace CoreDawn.Sim
         public event Action<Entity> Died, Removed;
     }
 
-    public sealed class EntityWorld
+    public sealed class EntityWorld                      // 등록부·번호·이벤트뿐. 격자·시계는 여기 없다(2026-08-28 검토에서 Grid 제거)
     {
-        public GridGeometry Grid { get; }               // GameBootstrap이 맵에서 읽어 넣는다(PlacementSystem과 같은 출처)
         public ulong NextId { get; }                    // 세이브 헤더(5단계) — 재사용 없음
         public Entity Create(Faction faction, Vector3 position);
         public void Remove(Entity e);                   // Removed 발화. 모듈 OnDetach
@@ -164,9 +163,12 @@ namespace CoreDawn.Factory
     public sealed class Building : EntityModule          // 지금 필드·메서드 그대로 + Owner
     {
         public bool IsCore => Data is CoreDataSO;
-        public Rect2D WorldRect => Owner.World.Grid …;   // 구 BuildingEntity.TryGetFootprintRect
+        public void WorldRect(out min, out max) => Sim.Geometry.RectOf(Origin, Size, …);   // 구 BuildingEntity.TryGetFootprintRect
     }
-    // FactorySim(EntityWorld world, float tps …) — Place: world.Create → Add(new Health(data.maxHp)) → Add(new Building(...))
+    // FactorySystem(EntityWorld world, GridGeometry geometry, float tps …)  ← FactorySim 개명. 이름 규칙(XxxSystem)
+    //   Place: world.Create → Add(new Health(data.maxHp)) → Add(new Building(...)) → Position = 풋프린트 중심
+    //   Geometry: 셀 크기·원점 — 공장의 속성이라 여기. PlacementSystem·GridManager의 복사본은 5단계에 통합
+    // 프로퍼티 개명: FactoryBootstrap.Sim → .Factory, BuildingView.Sim → .Building (System은 System 네임스페이스를 가려 못 씀)
 }
 ```
 
