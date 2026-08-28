@@ -53,9 +53,13 @@ public class WorldHealthBar : MonoBehaviour
     ///
     /// hideWhenFull이면 체력이 만땅인 동안 바가 숨는다 — 몬스터처럼 항상 보여야 하는 대상은
     /// 기본값(false) 그대로 두고, 건물처럼 평시엔 잡음일 뿐인 대상만 켠다.
+    ///
+    /// maxHeight는 바를 앵커 위 몇 m까지만 올릴지의 상한이다. 바는 콜라이더 꼭대기에 서는데,
+    /// 키 큰 나무처럼 콜라이더가 10m짜리면 바가 시야 밖 하늘에 떠서 "피는 다는데 체력바가
+    /// 안 뜬다"가 된다. 줄기를 보는 플레이어 시야 안에 두려면 위로 무한정 따라가면 안 된다.
     /// </summary>
     public static WorldHealthBar Attach(Entity target, Transform anchor = null, bool large = false,
-                                        bool hideWhenFull = false)
+                                        bool hideWhenFull = false, float maxHeight = float.PositiveInfinity)
     {
         if (target == null) return null;
 
@@ -69,7 +73,7 @@ public class WorldHealthBar : MonoBehaviour
         bar.entity = target;
         bar.anchor = anchor != null ? anchor : target.transform;
         bar.hideWhenFull = hideWhenFull;
-        bar.heightOffset = TopOffset(bar.anchor, target);
+        bar.heightOffset = Mathf.Min(TopOffset(bar.anchor, target), maxHeight);
 
         bar.Build(large ? BossBarWidth : BarWidth);
         return bar;

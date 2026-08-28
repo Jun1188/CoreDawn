@@ -192,6 +192,9 @@ public class BuildingEntity : Entity, IInteractable
 
     // ── 머리 위 HP 바 ─────────────────────────────────────────
     // 몬스터와 같은 WorldHealthBar를 그대로 쓴다 — 건물도 Entity라 갱신 경로(HealthBarUI)가 똑같다.
+
+    /// <summary>건물 체력바가 앵커 위로 올라갈 수 있는 최대 높이(m). 포탑(≈3m)은 그대로 꼭대기, 키 큰 나무만 잘린다.</summary>
+    const float MaxHealthBarHeight = 4f;
     //
     // 다만 몬스터와 달리 처음부터 세우지 않는다. 벨트 한 칸까지 전부 건물이라 만피인 것들에도
     // 바를 얹으면 월드스페이스 Canvas가 수백 개 생기고 화면이 게이지로 덮인다.
@@ -213,7 +216,11 @@ public class BuildingEntity : Entity, IInteractable
         if (max <= 0f || current >= max) return;
 
         OnHealthChanged -= TryShowHealthBar; // 한 번 붙으면 감시는 끝 — 이후는 바가 알아서 한다
-        WorldHealthBar.Attach(this, hideWhenFull: true);
+
+        // 높이 상한 — 바는 콜라이더 꼭대기에 서는데 키 큰 나무(BroadleafTree 01·04)는 줄기 캡슐이
+        // 나무 전체 높이(≈10m)라 바가 하늘에 떠서 안 보였다. 다른 나무들의 바가 서는 높이(3.5~4.3m)에
+        // 맞춰 자른다 — 줄기를 때리는 플레이어의 시야 안이다.
+        WorldHealthBar.Attach(this, hideWhenFull: true, maxHeight: MaxHealthBarHeight);
     }
 
     /// <summary>
