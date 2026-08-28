@@ -65,8 +65,16 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 - A building is an `Entity` with a `Building` module (`CoreDawn.Factory`). `FactorySystem.Place`
   creates the entity, its `Health` (from `BuildingDataSO.maxHp`) and the module; views only follow.
   HP, faction, "is this the core", footprint and damage rules (`IDamageInterceptor`) live in the sim.
-- Views (`EntityView`, `BuildingView`, `Monster`, …) hold `Entity` and relay its events. Monsters,
-  the player and nests still create their own entity in `Awake` — a transitional state until phases 3–4.
+- A monster is an `Entity` with `Health` · `Movement` · `Attack` · `MonsterBrain` modules, built by
+  `MonsterSystem.Spawn(MonsterSpec, …)` (phase 3, 2026-08-29). `MonsterSpawner.Spawn(data, pos, rot, parent)` is the
+  single gate (waves, nest bosses, save restore): sim entity first, prefab view attached after. `MonsterSystemHost`
+  is the transitional static access point + runner (like `SimHost.World`).
+- Views (`EntityView`, `BuildingView`, `MonsterView`, …) hold `Entity` and relay its events; `MonsterView` draws the
+  sim position/facing in `LateUpdate`. The player and nests still create their own entity in `Awake` — until phase 4.
+  Effects (`EffectController`, `CombatComponent`) are still view-side: the sim decides *when* to hit
+  (`Attack.AttackRequested`), the view applies *what* (attack effects) — a bridge until phase 4.
+- Names that avoid clashes: `EntityKey` (Unity 6 has `UnityEngine.EntityId`), `Attack` (not `Combat` — that is a
+  namespace). Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
 - **Rule:** sim code (`Runtime/Sim`, `Runtime/Factory` except the bridges) must not `using CoreDawn.Entities`.
   `python tools/check-sim-imports.py` enforces it until asmdefs do (phase 5). Death is decided by the sim:
   `Health.Die → EntityWorld.Died → FactorySystem.Remove → Removed → view destroyed`.
