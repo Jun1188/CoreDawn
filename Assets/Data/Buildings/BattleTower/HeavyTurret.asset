@@ -25,7 +25,7 @@ MonoBehaviour:
     IsInput: 1
   inputSlots: 1
   outputSlots: 0
-  bufferStackCap: 30
+  bufferStackCap: 100
   threatSeedCost: 10
   requiredCoreTier: 2
   hideFromBuildMenu: 0
