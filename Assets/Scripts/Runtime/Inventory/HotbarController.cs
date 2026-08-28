@@ -25,8 +25,6 @@ public class HotbarController : MonoBehaviour, IInputReceiver
         currentHotbarIndex = Mathf.Max(0, index);
 
         EquipFromActiveSlot();
-
-        if (HotbarUI.Instance != null) HotbarUI.Instance.RefreshHotbar();
     }
 
     public int Priority => InputPriority.HudWidget;
@@ -101,8 +99,6 @@ public class HotbarController : MonoBehaviour, IInputReceiver
     {
         if (index == currentHotbarIndex) return;
         currentHotbarIndex = index;
-
-        if (HotbarUI.Instance != null) HotbarUI.Instance.RefreshHotbar();
 
         EquipFromActiveSlot();
     }

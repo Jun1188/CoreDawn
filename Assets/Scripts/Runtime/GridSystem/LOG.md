@@ -138,3 +138,12 @@
 - 진행 상황은 HUD의 홀드 링이 그린다 (UI/LOG.md 2026-08-04).
   `HoveredBuilding` · `DemolishHoldProgress` · `DemolishHoldRemaining`을 조회용으로 공개
 - **범위 철거(드래그)는 넣지 않는다** — 오조작 시 피해가 크다. 한 번에 하나씩
+
+---
+
+## 2026-08-28 — uGUI 잔재 제거
+
+- `BuildMenuPopup`·`SplitterFilterPopup` 삭제 — 런타임 코드 조립 uGUI 팝업. UITK 패널(BuildMenuView·SplitterPanelView)이
+  정본이 된 뒤 "UITK 없으면 uGUI" 폴백으로만 남아 있었다. 폴백은 UI 탑재 누락을 조용히 삼키므로 GameScreens와 같이 경고로 대체.
+- `BuildController`의 `EventSystem.IsPointerOverGameObject` 게이트 제거 — uGUI EventSystem은 게임 씬(World·Bootstrap)에 없어
+  항상 false였다. UITK 창은 UIPopup 우선순위가 입력을 먼저 삼키므로 별도 게이트가 필요 없다.

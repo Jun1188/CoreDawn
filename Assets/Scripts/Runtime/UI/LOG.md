@@ -674,3 +674,16 @@ ESC 눌러도 안 닫히고 일시정지도 안 열림 / `Close()` 호출해도 
 - 플레이어 사망(HP 0)은 여전히 게임오버가 아니다 — `GameplayHUD`의 "You Die" 오버레이만 뜨고
   `RevivePlayerIfDead()`가 새벽에 부활시킨다 (이번 범위에서 제외하기로 한 결정).
 - 승리/엔딩은 미구현 — `CoreTierDefinition.isFinal`에 런타임 핸들러가 없다. 게임오버와 대칭인 별도 작업.
+
+---
+
+## 2026-08-28 — uGUI 잔재 제거
+
+- 삭제: `ItemSocket`·`InventoryUI`·`InventorySlotUI`·`HotbarUI`·`ItemTooltipUI`·`InventoryManager`·`InventoryPopup`·
+  `CoreRequirementRowUI`·`RecipeSlotUI`·`RecipeSelector`/`RecipeSocket`·`VolumeSliderUI`, 프리팹 `ItemSocketPrefab`·
+  `Inventory/BasicInventoryPanel`·`Recipe/*`·`UI/CoreRequirementRow`. 전부 게임 씬(World·Title·Bootstrap)에는 없고
+  옛 테스트 씬에만 남아 있던 uGUI다 — 그 씬들은 GameBootstrap이 UITK HUD를 얹으면서 이미 숨겨 두던 것.
+- 살아 있는 코드에서 걷어낸 것: PlayerController의 uGUI 필드 4개, PlayerInventoryHolder/HotbarController의 HotbarUI 바인딩,
+  GameplayHUDView.ShowLegacyHud, PlayerSaveModule의 마우스 캐리지(`carried`) 훅.
+- **남은 uGUI는 `WorldHealthBar`/`HealthBarUI`(런타임 생성 월드 캔버스)뿐** — 이건 잔재가 아니라 현역이라 두었다.
+  UITK 월드 공간 UI로 옮기는 것은 별도 작업.

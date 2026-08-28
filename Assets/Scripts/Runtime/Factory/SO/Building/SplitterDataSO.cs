@@ -45,9 +45,10 @@ public class SplitterBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveab
     public string InteractPrompt => "필터 설정";
     public void Interact(PlayerController player)
     {
-        // 씬에 UITK 패널이 있으면 그쪽, 없으면 기존 uGUI 팝업 — 코어와 같은 공존 방침
+        // 필터 화면은 UITK(SplitterPanelView)뿐 — 구 uGUI 팝업(SplitterFilterPopup)은 제거.
+        // 못 열면 그 자리에서 알린다 (GameScreens와 같은 방침: 폴백이 있으면 UI 탑재 누락이 조용히 지나간다)
         if (SplitterPanelView.TryOpen(this)) return;
-        SplitterFilterPopup.Open(this);
+        Debug.LogWarning("[Splitter] 필터 화면(UITK)을 열지 못했습니다 — GameUI 씬이 탑재되지 않았습니다.");
     }
 
     // 필터 — 출구 "방향" 기준 저장: 이웃 설치/철거로 연결 목록이 재구축돼도 유지된다.

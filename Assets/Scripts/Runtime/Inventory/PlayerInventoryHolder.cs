@@ -62,18 +62,8 @@ public class PlayerInventoryHolder : MonoBehaviour
 
     private void Start()
     {
+        // UITK 인벤토리(PlayerItemPanelView)가 드롭 위치·시선을 이 참조로 얻는다 — 인스펙터 배선이 없으면 같은 오브젝트에서 찾는다
         if (playerController == null) playerController = GetComponent<PlayerController>();
-
-        if (playerController != null && playerController.inventoryUI != null)
-        {
-            playerController.inventoryUI.Bind(MainContainer);
-        }
-
-        // 핫바 UI 바인딩 (HotbarUI가 존재한다면)
-        if (HotbarUI.Instance != null)
-        {
-            HotbarUI.Instance.Bind(HotbarContainer);
-        }
     }
 
     /// <summary>

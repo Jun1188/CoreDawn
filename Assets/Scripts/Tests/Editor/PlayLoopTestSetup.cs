@@ -2,7 +2,6 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
 /// PlayLoopTest 씬 생성 — "낮에 짓고 밤에 싸운다"는 한 판을 통째로 돌려보는 통합 플레이 씬.
