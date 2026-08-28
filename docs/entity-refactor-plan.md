@@ -143,9 +143,14 @@ CoreDawn.Tests          Assets/Scripts/Tests
 ## 7. 진행 로그
 
 - **2026-08-28** 계획 합의. `feature/ping-system` 브랜치에 핑 시스템 + UI 분수 + hideFromMenu + 데이터 + 체력바 상한 커밋,
-  이어서 1a 파일 이동 커밋. 컴파일·missing script 확인 완료. PR → main 머지 → `develop` 분기 예정.
-  작업 트리에 남긴 것(PR 제외, 사용자 로컬 작업): Merger/Splitter 모델(fbx·프리팹·meta) · Storage 프리팹 · YellowLight 머티리얼 ·
-  Title/World 씬 · 터레인 데이터 · Tutorial 에셋(줄 끝만 다름).
+  이어서 1a 파일 이동 커밋. 컴파일·missing script 확인 완료. 사용자 로컬 에셋 작업(Merger/Splitter 모델·프리팹, 저장고 프리팹,
+  YellowLight, World 바위 배치, 타이틀 카메라)도 같은 PR에 포함.
+- **2026-08-28** uGUI 잔재 제거 (같은 PR). 삭제: `RecipeSelector`/`RecipeSocket`(루트, 미사용) · `ItemSocket` · `InventoryUI` ·
+  `InventorySlotUI` · `HotbarUI` · `ItemTooltipUI` · `InventoryManager` · `InventoryPopup` · `CoreRequirementRowUI` · `RecipeSlotUI` ·
+  `VolumeSliderUI` · `BuildMenuPopup` · `SplitterFilterPopup` + uGUI 프리팹 5종. 살아 있는 코드의 폴백·바인딩 제거
+  (BuildController · SplitterDataSO · PlayerController · PlayerInventoryHolder · HotbarController · GameplayHUDView · PlayerSaveModule).
+  **남은 uGUI는 `WorldHealthBar`/`HealthBarUI`(런타임 월드 캔버스) 하나** — 현역이라 유지, UITK 월드 공간 UI 이관은 별도 과제.
+  옛 테스트 씬(ItemTree · BuildingTest · Test/*)에는 삭제된 스크립트의 missing script가 남는다 — 게임 씬(World · Title · Bootstrap)은 무관.
 
 ## 8. 세션 재개 절차
 
