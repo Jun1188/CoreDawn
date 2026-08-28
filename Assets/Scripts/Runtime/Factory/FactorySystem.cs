@@ -113,6 +113,25 @@ namespace CoreDawn.Factory
             Grid  = new GridIndex();
             Graph = new BuildingGraph(this);
             Belts = new BeltSegmentManager(this);
+
+            World.Died += OnEntityDied;
+        }
+
+        /// <summary>
+        /// 월드 구독 해제 — 등록부는 씬을 넘어 살지만 이 시스템은 씬과 함께 죽는다. 드라이버(FactoryBootstrap)가 OnDestroy에서 부른다.
+        /// 안 부르면 죽은 시스템이 다음 씬의 사망 통지를 받아 남의 건물을 지우려 든다.
+        /// </summary>
+        public void Dispose() => World.Died -= OnEntityDied;
+
+        /// <summary>
+        /// 건물 엔티티의 사망 = 건물 제거. 파괴를 결정하는 것은 심이고 뷰는 Removed를 받아 따라온다 —
+        /// 구 BuildingEntity.HandleDeath(뷰가 심을 지우던 경로)를 대체한다.
+        /// 남의 엔티티에 얹힌 건물(둥지)은 주인이 죽어도 칸을 계속 차지한다 — 둥지는 며칠 뒤 되살아난다.
+        /// </summary>
+        void OnEntityDied(Entity e)
+        {
+            var b = e.Get<Building>();
+            if (b != null && b.OwnsEntity && !b.IsRemoved) Remove(b);
         }
 
         /// <summary>

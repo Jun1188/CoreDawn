@@ -55,26 +55,19 @@ namespace CoreDawn.Factory
             return b;
         }
 
+        /// <summary>
+        /// 철거 — 심에서 제거한다. 버퍼 드롭·뷰 파괴는 Removed를 받는 FactoryBootstrap이 하므로
+        /// 전투 파괴(심이 스스로 제거)와 철거가 같은 관문을 지난다.
+        /// 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지(뷰 파괴 전이라 위치 조회 가능).
+        /// </summary>
         public static void Remove(Building b)
         {
             if (b == null || b.IsRemoved) return;
-            var boot = FactoryBootstrap.Instance;
-
-            // 버퍼 내용물은 파괴 전에 월드로 — 건물이 사라져도 아이템은 보존 (철거·전투 파괴 공통 관문)
-            var view = boot.GetView(b);
-            if (view != null)
-            {
-                DropContainer(b.Input, view.transform.position);
-                DropContainer(b.Output, view.transform.position);
-            }
-
-            // 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지(뷰 파괴 전이라 위치 조회 가능),
-            // 마지막에 Removed가 발화해 FactoryBootstrap이 뷰 정리까지 끝낸다.
-            boot.Factory.Remove(b);
+            FactoryBootstrap.Instance.Factory.Remove(b);
         }
 
         /// <summary>컨테이너 내용물 전체를 위치 주변에 드롭. 스택 상한(64) 단위로 쪼갠다.</summary>
-        static void DropContainer(ItemContainer container, Vector3 position)
+        public static void DropContainer(ItemContainer container, Vector3 position)
         {
             foreach (var (item, total) in container.Snapshot())
             {

@@ -97,11 +97,13 @@ namespace CoreDawn.Sim
             OnHealthChanged?.Invoke(_current, _max);
         }
 
+        // 순서가 규칙이다: 월드(심 시스템 — 건물 제거 등)가 먼저 결정하고, OnDeath(뷰 릴레이·연출)는 그 결과를 본다.
+        // 반대로 하면 뷰가 심 대신 제거를 결정하던 옛 구조로 되돌아간다.
         void Die()
         {
             IsDead = true;
-            OnDeath?.Invoke();
             Owner?.NotifyDied();
+            OnDeath?.Invoke();
         }
 
         static float Clamp(float v, float min, float max) => v < min ? min : v > max ? max : v;

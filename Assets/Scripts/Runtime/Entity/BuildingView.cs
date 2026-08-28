@@ -105,9 +105,6 @@ namespace CoreDawn.Entities
         private static readonly List<BuildingView> all = new List<BuildingView>();
         public static IReadOnlyList<BuildingView> All => all;
 
-        // 코어 파괴 = 게임오버 조건. BattleManager가 구독한다.
-        public static event Action<BuildingView> CoreDestroyed;
-
         private void OnEnable()
         {
             all.Add(this);
@@ -200,25 +197,17 @@ namespace CoreDawn.Entities
 
         // 받는 피해 규칙(아군 공격 무시·코어 보호막)은 심의 인터셉터(Building.Intercept)로 갔다 — 여기엔 연출만 남는다.
 
-        // HP 0 → 몬스터의 사망 연출 지연 없이 즉시 소멸
+        // HP 0 → 심(FactorySystem)이 건물을 제거하고 Removed로 이 뷰를 파괴한다(월드 통지가 이 릴레이보다 먼저다).
+        // 여기엔 연출만 남는다. 코어 파괴 = 게임오버 판정도 BattleManager가 월드 Died에서 직접 본다.
         protected override void HandleDeath()
         {
-            if (IsCore) CoreDestroyed?.Invoke(this); // 소멸 전에 게임오버 통지
-
             // 파괴음 — 타워는 TowerVisualController가 종류별 클립과 폭발 연출까지 함께 내므로
             // 여기서는 그 외 건물만 맡는다. 둘 다 내면 타워가 두 번 터지는 소리가 난다.
             if (GetComponent<TowerVisualController>() == null && SoundManager.Instance != null)
                 SoundManager.Instance.Play3DSFX(destroySfx, transform.position);
 
-            if (building != null && !building.IsRemoved)
-            {
-                PlacementBridge.Remove(building); // 심 제거 + GridIndex 해제 + 뷰(GO) 파괴 일괄 처리
-            }
-            else
-            {
-                // 심 연결이 없는 건물(코어 등 씬 직접 배치)은 뷰만 정리
-                Destroy(gameObject);
-            }
+            // 심에 붙지 않은 뷰(테스트 씬의 껍데기)만 스스로 정리한다 — 나머지는 Removed가 파괴한다
+            if (building == null) Destroy(gameObject);
         }
 
         // 심 건물(모듈) → 건물 뷰 (구 BuildingDamageable.GetOrAttach).

@@ -96,11 +96,17 @@ namespace CoreDawn.Factory
 
             // 심에서 건물이 사라지면 그 씬 표현도 함께 정리 — 매핑 소유자가 한 곳에서 책임진다.
             // (전투 파괴·철거·테스트의 Factory.Remove 직접 호출까지 전부 이 경로로 모인다)
+            // 버퍼 내용물은 뷰가 사라지기 전에 월드로 — 건물이 사라져도 아이템은 보존된다.
+            // 심은 아이템을 어디에 떨굴지 모르므로(월드 좌표는 뷰의 것) 드롭은 여기 브리지의 몫이다.
             Factory.Removed += b =>
             {
                 var view = GetView(b);
                 _views.Remove(b);
-                if (view != null) Destroy(view.gameObject);
+                if (view == null) return;
+
+                PlacementBridge.DropContainer(b.Input, view.transform.position);
+                PlacementBridge.DropContainer(b.Output, view.transform.position);
+                Destroy(view.gameObject);
             };
 
             // 벨트 위 아이템 시각화 뷰 — 씬 배선 없이 드라이버가 직접 부착
@@ -124,6 +130,7 @@ namespace CoreDawn.Factory
         void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            Factory?.Dispose();
             if (quitting || Factory == null) return;
 
             var buildings = new List<Building>(Factory.Buildings);
