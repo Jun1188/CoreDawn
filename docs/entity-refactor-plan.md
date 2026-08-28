@@ -213,7 +213,8 @@ namespace CoreDawn.Factory
   - 퇴역: `MovementComponent` · `StateMachineComponent` · `State/*` · `CrowdSystem`(뷰). `KnockbackEffectSO`·타워 곡사 예측·연출 속도는 `Entity.Get<Movement>()`
   - 검증 2026-08-29: 밤 강제 — 보스 8 대기, 웨이브 4마리 이동·건물 2채 피해, 플레이어 접근 시 3마리 추적→공격(HP 300→180), 뷰 12 동기·애니메이터 12, 오류 0 (커밋 3)
 - [ ] 3c 뷰: `Monster → MonsterView`(심 위치를 따라감) · 스폰 브리지(심 Spawned → 프리팹) · 플레이어/타워 센서를 심 질의로
-- [ ] 3d 세이브: 몬스터를 심에서 캡처(dataId 추가, 버전 상승)
+- [x] 3d 세이브: `CombatSaveModule.MonsterDto.DataId`(`"data"`, MonsterDataSO.Id) — 저장 시 `MonsterView.Data`, 복원 시 `MonsterDatabaseSO.FindById` → `RestoreMonster(pos, rot, data)`. 추가 필드라 스키마 버전 그대로(옛 세이브·모르는 id → 기본 종류). 검증 2026-08-29: 밤 제자리 왕복(Capture→Restore) — Basic 4 + Spitter(35/60) 종류·HP 복원, 보스 8 재생성·뷰 8, 오류 0 (커밋 4)
+  - 기존 결함(내 변경 아님, 기록만): 복원된 웨이브 몬스터는 `nightWaveMonsters`(정량 웨이브 카운트)에 안 들어가 밤이 일찍 끝날 수 있다(`EndNightEarly → OnDayStarted → DespawnAll`). 검증 중 이 경로로 몬스터가 사라져 한동안 리팩토링 버그로 오인함 — `DespawnAll`에 스택 로그를 넣어 확정
 - [ ] 3e 정리: 뷰 쪽 `MovementComponent`·`SensorComponent`·`StateMachineComponent`·상태 클래스 삭제
 
 #### 3단계 설계 초안 (2026-08-29, 착수 전 검토용)

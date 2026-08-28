@@ -55,6 +55,8 @@ namespace CoreDawn.Save
 
         public class MonsterDto
         {
+            /// <summary>종류(MonsterDataSO.Id, 예 "Monster:Spitter"). 없거나 모르는 id면 데이터베이스의 기본 종류로 세운다 — 옛 세이브 호환.</summary>
+            [JsonProperty("data")] public string DataId;
             [JsonProperty("pos")] public Vector3 Position;
             [JsonProperty("rot")] public Quaternion Rotation;
             [JsonProperty("hpMax")] public float HpMax;
@@ -141,6 +143,7 @@ namespace CoreDawn.Save
 
         static MonsterDto Describe(MonsterView m) => new()
         {
+            DataId = m.Data != null ? m.Data.Id : null,
             Position = m.transform.position,
             Rotation = m.transform.rotation,
             HpMax = m.Health.MaxHealth,
@@ -206,10 +209,13 @@ namespace CoreDawn.Save
             // 씬을 새로 열었다면 목록은 비어 있지만, 제자리 왕복 검증에서는 채워져 있다
             spawner.DespawnAll();
 
+            var database = MonsterDatabaseSO.LoadDefault();
             foreach (var saved in dto.Monsters)
             {
                 if (saved == null) continue;
-                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation), saved);
+                // 저장된 종류로 되살린다. id가 없거나(옛 세이브) 사라진 종류면 null → 스포너가 기본 종류로 세운다
+                var data = database != null && !string.IsNullOrEmpty(saved.DataId) ? database.FindById(saved.DataId) : null;
+                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation, data), saved);
             }
 
             if (dto.Wave != null) spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay);
