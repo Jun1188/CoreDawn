@@ -88,12 +88,15 @@ CoreDawn.Tests          Assets/Scripts/Tests
 - [x] Editor 어셈블리 타입을 가리키던 `using CoreDawn.EditorTools;`가 런타임 파일 23개에 들어갔던 것 제거(주석 속 이름 매칭) → 컴파일 0 오류
 - [x] 씬·프리팹의 `m_EditorClassIdentifier`는 GUID 참조라 깨지지 않음 — 리임포트 시 갱신될 뿐
 
-### 2. 의존 방향 뒤집기
-- [ ] `EntityId` · `World`(엔티티 등록부 + 시계) · `EntityModule` 계약 도입
-- [ ] `Building`을 엔티티의 모듈로 — HP는 `Health` 모듈이 유일한 주인 (뷰 `BuildingEntity`에서 이동)
-- [ ] 심의 `BuildingEntity` 참조 7곳 제거 (`Building` · `FactorySim` · `PlacementBridge` · `CoreDataSO` · `NestDataSO` · `TreeDataSO` · `MachineProcessor`) — 이벤트로 대체
-- [ ] `IsHostile`의 레이어("Monster") 판정 → 팩션/팀 필드 (레이어 리팩토링 선행 조건)
-- [ ] 출구 조건: Runtime → 뷰 역참조 0, asmdef를 넣을 수 있는 상태
+### 2. 의존 방향 뒤집기 — 완료 2026-08-28 (`feature/entity-sim-core`, 커밋 7개)
+- [x] `CoreDawn.Sim` 핵심: `EntityId` · `EntityWorld`(등록부·번호·이벤트) · `Entity` · `EntityModule` · `Health` · `Faction` · `GridGeometry` · `IDamageInterceptor` (커밋 1)
+- [x] 뷰 개명 `Entity → EntityView`, `BuildingEntity → BuildingView` (커밋 2)
+- [x] 모든 뷰가 심 엔티티를 갖고 HP를 위임 — 몬스터·플레이어·둥지는 뷰 우선 생성(과도기), `Faction`으로 적대 판정 (커밋 3)
+- [x] `FactorySim → FactorySystem(EntityWorld, GridGeometry)`, `Building : EntityModule, IDamageInterceptor`, HP 정본 `Data.maxHp`, 코어 보호막·isAttackable을 심 인터셉터로, 둥지는 MonsterNest 엔티티에 건물을 얹음(host) (커밋 4)
+- [x] 파괴는 심이 결정: `Health.Die → World.Died → FactorySystem.Remove → Removed → 뷰 파괴`, 코어 파괴 판정도 월드 이벤트 (커밋 5)
+- [x] 소비자 교체: FlowFieldManager·GridManager·DayRegen·CorePanel·HUD·부활·PortFlowOverlay·FactorySaveModule → `FactorySystem.Buildings` / `Owner.Health`. `BuildingView.All` 퇴역 (커밋 6)
+- [x] 출구 조건: 심 폴더의 뷰 import 0 (`tools/check-sim-imports.py` 통과). 세이브 포맷 불변
+- 남은 빚(다음 단계로): 몬스터·플레이어·둥지의 엔티티 생성 주체가 아직 뷰(3·4단계) · 효과(EffectController)·이동·전투 컴포넌트가 뷰(4단계) · SO 행동의 `Interact(PlayerController)`가 UI를 직접 엶(4단계) · `SimHost.World` 정적 접근점(5단계 WorldRunner) · PlacementSystem/GridManager의 격자 복사본(5단계)
 
 #### 2단계 설계 초안 (2026-08-28, 착수 전 검토용)
 
@@ -266,6 +269,10 @@ namespace CoreDawn.Factory
 - **2026-08-28** 1b 완료 (`feature/namespaces`). 278파일에 `CoreDawn.*` 부여, 런타임 파일의 EditorTools using 23건 정리, alias 4파일.
   검증: 컴파일 0 오류, World 플레이 스모크(부트스트랩 4씬 탑재, 콘솔 오류 0), `CoreDawn.Save.SaveManager` 반사 해석 정상.
   일괄 커밋은 `.git-blame-ignore-revs`에 등록. 다음: 2단계(의존 방향 뒤집기 — `EntityId`·`World`·`Building` 모듈화).
+- **2026-08-28** 2단계 완료 (`feature/entity-sim-core`, 커밋 7개 — 위 체크리스트). 매 커밋 컴파일·World 플레이 검증
+  (심 엔티티 184개, 나무 HP가 심으로, 코어 플레이어 공격 0·몬스터 50, Kill → 심 제거가 뷰 릴레이보다 먼저, 코어 조회 3경로 일치).
+  사고 기록: 개명 스크립트의 `\.Sim\b`가 `CoreDawn.Sim` 네임스페이스까지 바꿨고 그 상태에서 Unity가 재컴파일하지 않아 "0 오류"가 거짓이었다 —
+  HEAD로 되돌려 재적용. 교훈: 컴파일 결과는 `recompile_status`가 아니라 콘솔의 `error CS`로 본다.
 
 ## 8. 세션 재개 절차
 

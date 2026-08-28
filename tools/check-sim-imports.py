@@ -48,4 +48,4 @@ if violations:
     for v in violations:
         print('  ' + v)
     sys.exit(1)
-print('ok: no sim → presentation imports')
+print('ok: no sim -> presentation imports')

@@ -57,6 +57,19 @@ and `Ping` (vs `UnityEngine.Ping`). Files that import both sides carry an alias 
 (`using InputEvent = CoreDawn.Inputs.InputEvent;`); the long-term fix is renaming ours.
 The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 `git config blame.ignoreRevsFile .git-blame-ignore-revs` once to keep blame useful.
+
+## Sim vs view (since 2026-08-28, refactor phase 2)
+
+- `Assets/Scripts/Runtime/Sim` (`CoreDawn.Sim`) is the authoritative simulation: `Entity`
+  (id · faction · position · modules), `Health`, `EntityWorld`. Plain C#, no `UnityEngine.Object`.
+- A building is an `Entity` with a `Building` module (`CoreDawn.Factory`). `FactorySystem.Place`
+  creates the entity, its `Health` (from `BuildingDataSO.maxHp`) and the module; views only follow.
+  HP, faction, "is this the core", footprint and damage rules (`IDamageInterceptor`) live in the sim.
+- Views (`EntityView`, `BuildingView`, `Monster`, …) hold `Entity` and relay its events. Monsters,
+  the player and nests still create their own entity in `Awake` — a transitional state until phases 3–4.
+- **Rule:** sim code (`Runtime/Sim`, `Runtime/Factory` except the bridges) must not `using CoreDawn.Entities`.
+  `python tools/check-sim-imports.py` enforces it until asmdefs do (phase 5). Death is decided by the sim:
+  `Health.Die → EntityWorld.Died → FactorySystem.Remove → Removed → view destroyed`.
 - Commit messages in this repo already tend to note the main edited directory
   (e.g. "main edit directory: Script - test - entity") — keep doing that, it
   mirrors the log format above.
