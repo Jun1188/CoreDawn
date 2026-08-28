@@ -611,9 +611,9 @@ namespace CoreDawn.Worlds
             if (spec.spawnPoints == null || spec.spawnPoints.Length == 0) return;
             if (nest.spawnPoints == null) nest.spawnPoints = new List<MonsterNest.NestSpawnPoint>();
 
-            GameObject bossTemplate = null;
+            MonsterDataSO bossTemplate = null;
             foreach (var existing in nest.spawnPoints)
-                if (existing != null && existing.bossPrefab != null) { bossTemplate = existing.bossPrefab; break; }
+                if (existing != null && existing.bossData != null) { bossTemplate = existing.bossData; break; }
 
             for (int i = 0; i < spec.spawnPoints.Length; i++)
             {
@@ -636,7 +636,7 @@ namespace CoreDawn.Worlds
                     else { slot = new MonsterNest.NestSpawnPoint { point = t }; nest.spawnPoints.Add(slot); }
                 }
 
-                slot.bossPrefab = point.hasBoss ? bossTemplate : null;
+                slot.bossData = point.hasBoss ? bossTemplate : null;
                 if (point.hasBoss && bossTemplate == null)
                     Debug.LogWarning($"[WorldPopulator] 둥지({spec.cell.x},{spec.cell.y}) 스폰 포인트 {i + 1}: " +
                                      "hasBoss인데 프리팹에 보스 배선이 없어 보스를 세울 수 없습니다.", nest);

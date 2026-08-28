@@ -49,6 +49,8 @@ namespace CoreDawn.EditorTools
         const string ModelFolder    = "Assets/Art/Models";
         const string EffectFolder   = "Assets/Data/Effects";
         const string GunFolder      = "Assets/Data/Guns";
+        const string MonsterFolder  = "Assets/Data/Monster";
+        const string MonsterDatabasePath = "Assets/Resources/MonsterDatabase.asset";
 
         // ── JSON DTO (스키마 문서는 Import 폴더의 샘플 참조) ──────────
 
@@ -71,6 +73,7 @@ namespace CoreDawn.EditorTools
             public ItemDto[]     items;
             public RecipeDto[]   recipes;
             public BuildingDto[] buildings;
+            public MonsterDto[]  monsters;
             public WaveDto[]     waves;
             public TutorialStepDto[] tutorial;
         }
@@ -238,6 +241,23 @@ namespace CoreDawn.EditorTools
             public bool     isFinal;
         }
 
+        /// <summary>몬스터 종류 — MonsterDataSO. 프리팹은 에셋 참조라 guid로 적는다(아이템 아이콘과 같은 규약).</summary>
+        [Serializable] internal class MonsterDto : JsonDtoBase
+        {
+            public string id;            // 필수. 예: "Monster:Basic"
+            public string displayName;   // 필수
+            public string description;
+            public string prefab;        // 프리팹 이름 — 사람이 읽는 용도
+            public string prefabGuid;    // 프리팹 에셋 guid — 이쪽이 파일을 특정한다
+            public float  maxHp;
+            public float  moveSpeed, rotateSpeed, crowdRadius, knockbackDamping;
+            public bool   stickToGround = true;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것
+            public float  attackRange, attackCooldown;
+            public EffectEntryDto[] attackEffects;
+            public float  maxPatience, patienceRadius, outsidePatienceDrain, rangedPokePatienceDrain,
+                          patienceRecoverRate, absoluteLeashMultiplier, returnRegenPerSecond, returnTimeout;
+        }
+
         [Serializable] internal class WaveDto : JsonDtoBase
         {
             public string id;
@@ -248,7 +268,8 @@ namespace CoreDawn.EditorTools
             public int baseAmount;
             public int maxAliveAmount;
             public float spawnInterval;
-            public float monsterMaxHp;   // 0 = wave_settings.json → 프리팹 기본값 폴백
+            public string monster;       // 몬스터 종류 id (MonsterDataSO). 생략 시 DB 기본 종류 — 편집기가 경고한다
+            public EffectEntryDto[] buffs;   // 스폰 시 거는 영구 효과 — 그날의 강약(주는·받는 피해 배율)
         }
 
         /// <summary>
@@ -355,6 +376,16 @@ namespace CoreDawn.EditorTools
                     foreach (var dto in root.buildings)
                         ImportBuilding(file, dto, byId, ref created, ref updated, ref errors);
 
+            // 3.5패스: 몬스터 (효과를 참조하고, 웨이브가 참조한다)
+            bool anyMonster = false;
+            foreach (var (file, root) in roots)
+                if (root?.monsters != null)
+                    foreach (var dto in root.monsters)
+                    {
+                        anyMonster = true;
+                        ImportMonster(file, dto, byId, ref created, ref updated, ref errors);
+                    }
+
             // 4패스: 웨이브
             foreach (var (file, root) in roots)
                 if (root?.waves != null)
@@ -374,6 +405,7 @@ namespace CoreDawn.EditorTools
             AssetDatabase.SaveAssets();
             BuildingDatabaseScanner.RebuildAll();   // 아이템·건물 DB 재수집
             if (anyTutorial) RebuildTutorialDatabase();   // json에 섹션이 있을 때만 — 손으로 채운 DB를 덮지 않는다
+            if (anyMonster) RebuildMonsterDatabase();
 
             Debug.Log($"[GameDataImporter] 완료 — 생성 {created}, 갱신 {updated}, 오류 {errors} (파일 {files.Length}개)");
         }
@@ -417,7 +449,7 @@ namespace CoreDawn.EditorTools
 
             if (fx is DurationEffectSO dur)
             {
-                if (dto.duration > 0f) dur.duration = dto.duration;
+                dur.duration = dto.duration;   // 0 이하 = 영구(웨이브 버프) — json이 정본이라 그대로 넣는다
                 if (!string.IsNullOrEmpty(dto.stacking))
                 {
                     if (Enum.TryParse(dto.stacking, true, out EffectStacking st)) dur.stacking = st;
@@ -732,10 +764,91 @@ namespace CoreDawn.EditorTools
             wave.baseAmount       = dto.baseAmount;
             wave.maxAliveAmount   = dto.maxAliveAmount;
             wave.spawnInterval    = dto.spawnInterval;
-            wave.monsterMaxHp     = dto.monsterMaxHp;
+            // 종류 — 비우면 DB 기본(편집기 경고). 모르는 id는 에러: 조용히 기본으로 가면 밤 공세가 엉뚱한 몬스터로 바뀐 것을 아무도 모른다
+            wave.monster = null;
+            if (!string.IsNullOrEmpty(dto.monster))
+            {
+                if (byId.TryGetValue(dto.monster, out var mso) && mso is MonsterDataSO monster) wave.monster = monster;
+                else { Debug.LogError($"[GameDataImporter] {file} waves '{dto.id}': 몬스터 id '{dto.monster}' 를 찾을 수 없습니다"); errors++; }
+            }
+            if (TryResolveEffectEntries(file, "waves", dto.id, dto.buffs, byId, out var buffs, ref errors))
+                wave.buffs = buffs ?? Array.Empty<EffectEntry>();
 
             EditorUtility.SetDirty(wave);
             if (isNew) created++; else updated++;
+        }
+
+        // ── 몬스터 ────────────────────────────────────────────────
+
+        static void ImportMonster(string file, MonsterDto dto, Dictionary<string, GameDataSO> byId,
+            ref int created, ref int updated, ref int errors)
+        {
+            if (!ValidateKey(file, "monsters", dto?.id, dto?.displayName, ref errors)) return;
+
+            var existing = Find<MonsterDataSO>(byId, dto.id, file, ref errors);
+            if (existing == null && byId.ContainsKey(dto.id)) return;
+
+            bool isNew = existing == null;
+            var m = existing != null ? existing
+                : (MonsterDataSO)CreateAsset(typeof(MonsterDataSO), dto.id, MonsterFolder, byId);
+
+            m.displayName = dto.displayName;
+            m.description = dto.description ?? "";
+
+            // 프리팹 — guid가 파일을 특정한다. 없으면 코드 조립 폴백이라 경고만
+            if (!string.IsNullOrEmpty(dto.prefabGuid))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(dto.prefabGuid);
+                var go = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (go != null) m.prefab = go;
+                else Debug.LogWarning($"[GameDataImporter] {file} monsters '{dto.id}': prefabGuid '{dto.prefabGuid}' 의 프리팹이 없습니다 — 기존 값 유지");
+            }
+
+            if (dto.maxHp > 0f) m.maxHp = dto.maxHp;
+            if (dto.moveSpeed > 0f) m.moveSpeed = dto.moveSpeed;
+            if (dto.rotateSpeed > 0f) m.rotateSpeed = dto.rotateSpeed;
+            m.crowdRadius = Mathf.Max(0f, dto.crowdRadius);
+            if (dto.knockbackDamping > 0f) m.knockbackDamping = dto.knockbackDamping;
+            m.stickToGround = dto.stickToGround;
+            if (dto.attackRange > 0f) m.attackRange = dto.attackRange;
+            if (dto.attackCooldown > 0f) m.attackCooldown = dto.attackCooldown;
+            if (TryResolveEffectEntries(file, "monsters", dto.id, dto.attackEffects, byId, out var fx, ref errors) && fx != null)
+                m.attackEffects = fx;
+
+            m.maxPatience = Mathf.Max(0f, dto.maxPatience);
+            m.patienceRadius = Mathf.Max(0f, dto.patienceRadius);
+            m.outsidePatienceDrain = Mathf.Max(0f, dto.outsidePatienceDrain);
+            m.rangedPokePatienceDrain = Mathf.Max(0f, dto.rangedPokePatienceDrain);
+            m.patienceRecoverRate = Mathf.Max(0f, dto.patienceRecoverRate);
+            m.absoluteLeashMultiplier = Mathf.Max(1f, dto.absoluteLeashMultiplier);
+            m.returnRegenPerSecond = Mathf.Max(0f, dto.returnRegenPerSecond);
+            m.returnTimeout = Mathf.Max(0f, dto.returnTimeout);
+
+            EditorUtility.SetDirty(m);
+            if (isNew) created++; else updated++;
+        }
+
+        /// <summary>Resources/MonsterDatabase를 몬스터 폴더의 에셋으로 다시 채운다(id 순). 없으면 만든다 — 세이브 복원·기본 종류가 읽는다.</summary>
+        static void RebuildMonsterDatabase()
+        {
+            var db = AssetDatabase.LoadAssetAtPath<MonsterDatabaseSO>(MonsterDatabasePath);
+            if (db == null)
+            {
+                db = ScriptableObject.CreateInstance<MonsterDatabaseSO>();
+                AssetDatabase.CreateAsset(db, MonsterDatabasePath);
+            }
+
+            var list = new List<MonsterDataSO>();
+            foreach (var guid in AssetDatabase.FindAssets("t:MonsterDataSO", new[] { MonsterFolder }))
+            {
+                var m = AssetDatabase.LoadAssetAtPath<MonsterDataSO>(AssetDatabase.GUIDToAssetPath(guid));
+                if (m != null) list.Add(m);
+            }
+            list.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
+
+            db.monsters = list.ToArray();
+            EditorUtility.SetDirty(db);
+            AssetDatabase.SaveAssets();
         }
 
         // ── 튜토리얼 ──────────────────────────────────────────────

@@ -13,8 +13,6 @@ namespace CoreDawn.Combat
     [Serializable]
     public class WaveSpawnManager
     {
-        [Tooltip("스폰할 몬스터 프리팹. 비워두면 테스트용 캡슐 몬스터를 생성한다.")]
-        [SerializeField] private GameObject monsterPrefab;
 
         [Tooltip("스폰 높이 보정")]
         [SerializeField] private float spawnHeight = 0f;
@@ -255,28 +253,8 @@ namespace CoreDawn.Combat
             {
                 MonsterNest.DefenderSpawnSlot slot = spawnSlots[i % spawnSlots.Count];
                 Vector3 position = slot.position;
-                GameObject go = monsterPrefab != null
-                    ? UnityEngine.Object.Instantiate(monsterPrefab, position, Quaternion.identity, parent)
-                    : CreateFallbackMonster(position);
-
-                go.SetActive(true);
-                SnapToGround(go);
-
-                int monsterLayer = LayerMask.NameToLayer("Monster");
-                if (monsterLayer >= 0 && go.layer == 0)
-                    SetLayerRecursively(go.transform, monsterLayer);
-
-                var rb = go.GetComponent<Rigidbody>();
-                if (rb == null) rb = go.AddComponent<Rigidbody>();
-                rb.isKinematic = true;
-                rb.useGravity = false;
-
-                var monster = go.GetComponent<Monster>();
-                if (monster == null) monster = go.AddComponent<Monster>();
-                monsters.Add(monster);
-
-                if (slot.monsterMaxHp > 0f)
-                    monster.Health.SetMaxHealth(slot.monsterMaxHp);
+                var monster = InstantiateMonster(nest.DefenderData, position, Quaternion.identity);
+                SnapToGround(monster.gameObject);
 
                 // 스폰된 몬스터에게 방어자 플래그 부여 및 타겟 강제 지정.
                 // escortBoss가 있으면(보스전 지원군) 교전 구역의 거리 규칙을 건너뛰고
@@ -316,27 +294,11 @@ namespace CoreDawn.Combat
         /// 지형 스냅을 하지 않는 이유: 저장된 좌표가 이미 지형 위에 있던 값이고,
         /// 다시 스냅하면 경사면에서 조금씩 위치가 밀린다.
         /// </summary>
-        public Monster RestoreMonster(Vector3 position, Quaternion rotation)
+        /// <param name="data">종류. null이면 DB 기본 종류(종류를 적지 않은 구 세이브).</param>
+        public Monster RestoreMonster(Vector3 position, Quaternion rotation, MonsterDataSO data = null)
         {
-            GameObject go = monsterPrefab != null
-                ? UnityEngine.Object.Instantiate(monsterPrefab, position, rotation, parent)
-                : CreateFallbackMonster(position);
-
-            go.SetActive(true);
-            go.transform.SetPositionAndRotation(position, rotation);
-
-            int monsterLayer = LayerMask.NameToLayer("Monster");
-            if (monsterLayer >= 0 && go.layer == 0)
-                SetLayerRecursively(go.transform, monsterLayer);
-
-            var rb = go.GetComponent<Rigidbody>();
-            if (rb == null) rb = go.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.useGravity = false;
-
-            var monster = go.GetComponent<Monster>();
-            if (monster == null) monster = go.AddComponent<Monster>();
-            monsters.Add(monster);
+            var monster = InstantiateMonster(data, position, rotation);
+            monster.transform.SetPositionAndRotation(position, rotation);
             return monster;
         }
 
@@ -391,34 +353,12 @@ namespace CoreDawn.Combat
 
             if (!foundPos) return false;
 
-            GameObject go = monsterPrefab != null
-                ? UnityEngine.Object.Instantiate(monsterPrefab, position, Quaternion.identity, parent)
-                : CreateFallbackMonster(position);
+            spawnedMonster = InstantiateMonster(currentWave != null ? currentWave.monster : null, position, Quaternion.identity);
+            SnapToGround(spawnedMonster.gameObject);
 
-            go.SetActive(true);
-            SnapToGround(go);
-
-            int monsterLayer = LayerMask.NameToLayer("Monster");
-            if (monsterLayer >= 0 && go.layer == 0)
-                SetLayerRecursively(go.transform, monsterLayer);
-
-            var rb = go.GetComponent<Rigidbody>();
-            if (rb == null) rb = go.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.useGravity = false;
-
-            spawnedMonster = go.GetComponent<Monster>();
-            if (spawnedMonster == null) spawnedMonster = go.AddComponent<Monster>();
-            monsters.Add(spawnedMonster);
-
-            // 밤 웨이브 몬스터 최대 HP — 웨이브 데이터(JSON→WaveDataSO)가 1순위,
-            // 없으면 wave_settings.json의 일차별 값, 그것도 없으면 프리팹 기본값.
-            int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 1;
-            float maxHp = currentWave != null && currentWave.monsterMaxHp > 0f
-                ? currentWave.monsterMaxHp
-                : WaveBalanceSettings.GetNightMonsterMaxHp(day);
-            if (maxHp > 0f)
-                spawnedMonster.Health.SetMaxHealth(maxHp);
+            // 그날의 강약 — HP 덮어쓰기가 아니라 웨이브 버프(주는·받는 피해 배율). 영구 효과라 죽을 때까지 간다
+            if (currentWave != null && currentWave.buffs != null && currentWave.buffs.Length > 0)
+                spawnedMonster.Effects.ApplyAll(currentWave.buffs, null, position);
 
             return true;
         }
@@ -469,6 +409,37 @@ namespace CoreDawn.Combat
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 종류 데이터로 몬스터 뷰를 세운다 — 밤 스폰·둥지 방어자·세이브 복원이 같은 관문을 지난다.
+        /// HP 정본은 데이터(maxHp)다 — 프리팹의 인라인 값이 아니다(이동·공격 수치도 3단계 커밋 3부터 데이터가 조립한다).
+        /// 데이터가 없으면(종류를 안 적은 웨이브·구 세이브) MonsterDatabase의 기본 종류.
+        /// </summary>
+        private Monster InstantiateMonster(MonsterDataSO data, Vector3 position, Quaternion rotation)
+        {
+            if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
+
+            GameObject go = data != null && data.prefab != null
+                ? UnityEngine.Object.Instantiate(data.prefab, position, rotation, parent)
+                : CreateFallbackMonster(position);
+            go.SetActive(true);
+
+            int monsterLayer = LayerMask.NameToLayer("Monster");
+            if (monsterLayer >= 0 && go.layer == 0)
+                SetLayerRecursively(go.transform, monsterLayer);
+
+            var rb = go.GetComponent<Rigidbody>();
+            if (rb == null) rb = go.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
+            var monster = go.GetComponent<Monster>();
+            if (monster == null) monster = go.AddComponent<Monster>();
+            monsters.Add(monster);
+
+            if (data != null) monster.Health.SetMaxHealth(data.maxHp);
+            return monster;
         }
 
         private GameObject CreateFallbackMonster(Vector3 position)

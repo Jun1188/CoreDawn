@@ -47,8 +47,23 @@ namespace CoreDawn.EditorTools
     {
         public string id = "", displayName = "", description = "";
         public int day = 1, requiredCoreTier, baseAmount = 4, maxAliveAmount = 4;
-        public float spawnInterval = 2, monsterMaxHp;
+        public float spawnInterval = 2;
+        public string monster = "";              // 몬스터 종류 id — 비면 DB 기본(경고)
+        public List<GEff> buffs = new();          // 스폰 시 영구 효과 — 그날의 강약
         [JsonIgnore] public GameDataImporter.WaveDto src;
+    }
+
+    // 몬스터 종류 — MonsterDataSO의 편집 모델. 프리팹은 guid로 든다(아이콘 규약과 같다)
+    class GMonster
+    {
+        public string id = "", displayName = "", description = "", prefab = "", prefabGuid = "";
+        public float maxHp = 30, moveSpeed = 4, rotateSpeed = 720, crowdRadius = 0.4f, knockbackDamping = 8;
+        public bool stickToGround = true;
+        public float attackRange = 1.5f, attackCooldown = 2;
+        public List<GEff> attackEffects = new();
+        public float maxPatience = 3, patienceRadius, outsidePatienceDrain = 2, rangedPokePatienceDrain = 3,
+                     patienceRecoverRate = 2, absoluteLeashMultiplier = 1, returnRegenPerSecond = 0.12f, returnTimeout = 20;
+        [JsonIgnore] public GameDataImporter.MonsterDto src;
     }
 
     class GdCombatTab : GdTab
@@ -89,6 +104,7 @@ namespace CoreDawn.EditorTools
         internal readonly List<GEffect> effects = new();
         internal readonly List<GGun> guns = new();
         internal readonly List<GWave> waves = new();
+        internal readonly List<GMonster> monsters = new();
         string curTab = "effects";
         int curE, curG;
 
@@ -98,6 +114,7 @@ namespace CoreDawn.EditorTools
         VisualElement listBox, detailBox, warnBox;
         readonly List<Button> subButtons = new();
         internal Action onWavesChanged;   // 웨이브 탭(다른 뷰)에 알림
+        internal Action onMonstersChanged; // 몬스터 탭(다른 뷰)에 알림
 
         // ═════════ 데이터 ↔ root ═════════
 
@@ -143,8 +160,28 @@ namespace CoreDawn.EditorTools
                     id = w.id ?? "", displayName = w.displayName ?? "", description = w.description ?? "",
                     day = Mathf.Max(1, w.day), requiredCoreTier = Mathf.Max(0, w.requiredCoreTier),
                     baseAmount = w.baseAmount, maxAliveAmount = w.maxAliveAmount,
-                    spawnInterval = w.spawnInterval, monsterMaxHp = w.monsterMaxHp,
+                    spawnInterval = w.spawnInterval, monster = w.monster ?? "",
+                    buffs = (w.buffs ?? Array.Empty<GameDataImporter.EffectEntryDto>())
+                        .Select(b => new GEff { effect = b.effect, value = b.value }).ToList(),
                     src = w,
+                });
+            monsters.Clear();
+            foreach (var m in win.root.monsters ?? Array.Empty<GameDataImporter.MonsterDto>())
+                monsters.Add(new GMonster
+                {
+                    id = m.id ?? "", displayName = m.displayName ?? "", description = m.description ?? "",
+                    prefab = m.prefab ?? "", prefabGuid = m.prefabGuid ?? "",
+                    maxHp = m.maxHp > 0 ? m.maxHp : 30, moveSpeed = m.moveSpeed > 0 ? m.moveSpeed : 4,
+                    rotateSpeed = m.rotateSpeed > 0 ? m.rotateSpeed : 720, crowdRadius = Mathf.Max(0, m.crowdRadius),
+                    knockbackDamping = m.knockbackDamping > 0 ? m.knockbackDamping : 8, stickToGround = m.stickToGround,
+                    attackRange = m.attackRange > 0 ? m.attackRange : 1.5f, attackCooldown = m.attackCooldown > 0 ? m.attackCooldown : 2,
+                    attackEffects = (m.attackEffects ?? Array.Empty<GameDataImporter.EffectEntryDto>())
+                        .Select(b => new GEff { effect = b.effect, value = b.value }).ToList(),
+                    maxPatience = Mathf.Max(0, m.maxPatience), patienceRadius = Mathf.Max(0, m.patienceRadius),
+                    outsidePatienceDrain = Mathf.Max(0, m.outsidePatienceDrain), rangedPokePatienceDrain = Mathf.Max(0, m.rangedPokePatienceDrain),
+                    patienceRecoverRate = Mathf.Max(0, m.patienceRecoverRate), absoluteLeashMultiplier = Mathf.Max(1, m.absoluteLeashMultiplier),
+                    returnRegenPerSecond = Mathf.Max(0, m.returnRegenPerSecond), returnTimeout = Mathf.Max(0, m.returnTimeout),
+                    src = m,
                 });
             curE = 0; curG = 0;
             hist = new GdHistory(Snapshot, Restore, 60);
@@ -157,6 +194,7 @@ namespace CoreDawn.EditorTools
             win.root.effects = effects.Select(ExportEffect).ToArray();
             win.root.guns = guns.Select(ExportGun).ToArray();
             win.root.waves = waves.Select(ExportWave).ToArray();
+            win.root.monsters = monsters.Select(ExportMonster).ToArray();
         }
 
         // 원본 getEffects — kind 형태에 맞는 필드만 내보낸다 (dur 없으면 duration 생략 등)
@@ -202,7 +240,30 @@ namespace CoreDawn.EditorTools
             o.day = w.day; o.requiredCoreTier = w.requiredCoreTier;
             o.baseAmount = w.baseAmount; o.maxAliveAmount = w.maxAliveAmount;
             o.spawnInterval = w.spawnInterval;
-            o.monsterMaxHp = w.monsterMaxHp;   // 0 = 설정 폴백 (임포터가 무조건 덮으므로 항상 내보낸다)
+            o.monster = string.IsNullOrEmpty(w.monster) ? null : w.monster;
+            o.buffs = w.buffs.Count > 0
+                ? w.buffs.Select(b => new GameDataImporter.EffectEntryDto { effect = b.effect, value = b.value }).ToArray()
+                : null;
+            return o;
+        }
+
+        GameDataImporter.MonsterDto ExportMonster(GMonster m)
+        {
+            var o = m.src ?? new GameDataImporter.MonsterDto();
+            o.id = m.id; o.displayName = m.displayName;
+            o.description = string.IsNullOrEmpty(m.description) ? null : m.description;
+            o.prefab = string.IsNullOrEmpty(m.prefab) ? null : m.prefab;
+            o.prefabGuid = string.IsNullOrEmpty(m.prefabGuid) ? null : m.prefabGuid;
+            o.maxHp = m.maxHp; o.moveSpeed = m.moveSpeed; o.rotateSpeed = m.rotateSpeed;
+            o.crowdRadius = m.crowdRadius; o.knockbackDamping = m.knockbackDamping; o.stickToGround = m.stickToGround;
+            o.attackRange = m.attackRange; o.attackCooldown = m.attackCooldown;
+            o.attackEffects = m.attackEffects.Count > 0
+                ? m.attackEffects.Select(b => new GameDataImporter.EffectEntryDto { effect = b.effect, value = b.value }).ToArray()
+                : null;
+            o.maxPatience = m.maxPatience; o.patienceRadius = m.patienceRadius;
+            o.outsidePatienceDrain = m.outsidePatienceDrain; o.rangedPokePatienceDrain = m.rangedPokePatienceDrain;
+            o.patienceRecoverRate = m.patienceRecoverRate; o.absoluteLeashMultiplier = m.absoluteLeashMultiplier;
+            o.returnRegenPerSecond = m.returnRegenPerSecond; o.returnTimeout = m.returnTimeout;
             return o;
         }
 
@@ -213,6 +274,7 @@ namespace CoreDawn.EditorTools
             effects = effects.Select(ExportEffect),
             guns = guns.Select(ExportGun),
             waves = waves.Select(ExportWave),
+            monsters = monsters.Select(ExportMonster),
         }, GameDataEditorWindow.JsonSettings);
 
         void Restore(string snap)
@@ -222,16 +284,18 @@ namespace CoreDawn.EditorTools
                 effects = Array.Empty<GameDataImporter.EffectDto>(),
                 guns = Array.Empty<GameDataImporter.GunDto>(),
                 waves = Array.Empty<GameDataImporter.WaveDto>(),
+                monsters = Array.Empty<GameDataImporter.MonsterDto>(),
             });
             // 보던 탭과 선택은 유지한다 — 되돌리기가 화면을 옮기면 어디를 고쳤는지 놓친다
             var t = curTab; int e = curE, g = curG;
-            win.root.effects = o.effects; win.root.guns = o.guns; win.root.waves = o.waves;
+            win.root.effects = o.effects; win.root.guns = o.guns; win.root.waves = o.waves; win.root.monsters = o.monsters;
             var keep = hist; OnDataLoaded(); hist = keep;
             curTab = t;
             curE = Mathf.Clamp(e, 0, Mathf.Max(0, effects.Count - 1));
             curG = Mathf.Clamp(g, 0, Mathf.Max(0, guns.Count - 1));
             Render();
             onWavesChanged?.Invoke();
+            onMonstersChanged?.Invoke();
             win.MarkDirty();
         }
 
@@ -244,6 +308,14 @@ namespace CoreDawn.EditorTools
         {
             waves.Clear();
             waves.AddRange(list.OrderBy(w => w.day));
+            PushHist();
+        }
+
+        // 몬스터 탭(다른 뷰)이 부른다
+        internal void SetMonsters(List<GMonster> list)
+        {
+            monsters.Clear();
+            monsters.AddRange(list);
             PushHist();
         }
 
@@ -760,14 +832,16 @@ namespace CoreDawn.EditorTools
                 if (x == null) return outp;
                 Identity(x.id, x.displayName, effects.Select(e => e.id));
                 var k = KindOf(x.kind);
-                if (k.dur && !(x.duration > 0)) outp.Add("지속 효과인데 duration 이 0 입니다 — 즉시 사라집니다");
+                if (k.dur && !(x.duration > 0)) outp.Add("duration 0 = 영구(대상이 죽을 때까지) — 웨이브 버프가 아니라면 시간을 넣을 것");
                 if (k.tick && !(x.tickInterval > 0)) outp.Add("DamageOverTime 인데 tickInterval 이 0 입니다");
                 if (k.affects && x.affects.Count == 0) outp.Add("AttackModifier 인데 증폭할 효과가 없습니다");
                 foreach (var id in x.affects)
                     if (!effects.Any(e => e.id == id)) outp.Add($"Affects — \"{id}\" 를 찾을 수 없습니다");
                 bool used = Items().Any(i => (i.attackEffects ?? Array.Empty<GameDataImporter.EffectEntryDto>())
-                    .Any(e => e.effect == x.id));
-                if (!used && !string.IsNullOrEmpty(x.id)) outp.Add("어떤 탄약도 이 효과를 쓰지 않습니다");
+                    .Any(e => e.effect == x.id))
+                    || monsters.Any(m => m.attackEffects.Any(e => e.effect == x.id))
+                    || waves.Any(w => w.buffs.Any(b => b.effect == x.id));
+                if (!used && !string.IsNullOrEmpty(x.id)) outp.Add("어떤 탄약·몬스터·웨이브도 이 효과를 쓰지 않습니다");
             }
             else
             {

@@ -21,7 +21,7 @@ namespace CoreDawn.Combat
     public abstract class DurationEffectSO : EffectSO
     {
         [Header("지속")]
-        [Tooltip("지속 시간(초).")]
+        [Tooltip("지속 시간(초). 0 이하 = 영구(대상이 죽을 때까지) — 웨이브 버프 등.")]
         public float duration = 3f;
 
         [Tooltip("같은 효과가 다시 적용될 때: Refresh = 남은 시간 초기화, Stack = 별개로 중첩.")]

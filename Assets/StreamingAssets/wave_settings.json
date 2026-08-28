@@ -1,9 +1,0 @@
-{
-  "entries": [
-    { "day": 1, "monsterMaxHp": 60 },
-    { "day": 3, "monsterMaxHp": 80 },
-    { "day": 5, "monsterMaxHp": 105 },
-    { "day": 7, "monsterMaxHp": 135 },
-    { "day": 10, "monsterMaxHp": 180 }
-  ]
-}

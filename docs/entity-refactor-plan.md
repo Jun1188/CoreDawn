@@ -206,7 +206,7 @@ namespace CoreDawn.Factory
 - 팀 프리즈 창(휴가) 안에 2·3번(개명·위임)을 끝내야 한다 — 이 둘이 파일 수가 가장 많다.
 
 ### 3. 몬스터 심/뷰 분리 (가장 큰 덩어리)
-- [ ] 3a 데이터: `MonsterDataSO` + GameData `monsters` · `WaveDataSO` 개편(종류 참조 + 버프 효과) · `wave_settings.json` 폐기
+- [x] 3a 데이터: `MonsterDataSO` + GameData `monsters` · `WaveDataSO` 개편(종류 참조 + 버프 효과) · `wave_settings.json` 폐기 — 2026-08-29 (`feature/monster-sim` 커밋 1)
 - [ ] 3b 심 모듈: `Movement` · `Combat` · `MonsterBrain`(상태기) · `Crowd` · 공간 질의(`EntityWorld.QueryRadius`) · `MonsterSystem`(틱) · `INavigation` 어댑터
 - [ ] 3c 뷰: `Monster → MonsterView`(심 위치를 따라감) · 스폰 브리지(심 Spawned → 프리팹) · 플레이어/타워 센서를 심 질의로
 - [ ] 3d 세이브: 몬스터를 심에서 캡처(dataId 추가, 버전 상승)

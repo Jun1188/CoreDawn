@@ -43,6 +43,27 @@
       "duration": 6.0,
       "stacking": "Refresh",
       "tickInterval": 0.0
+    },
+    {
+      "id": "Effect:AttackUp",
+      "displayName": "공격 강화",
+      "description": "value = 주는 피해 배율 (1.2 = +20%). 웨이브 버프용 — duration 0 = 영구.",
+      "kind": "AttackModifier",
+      "duration": 0.0,
+      "stacking": "Refresh",
+      "tickInterval": 0.0,
+      "affects": [
+        "Effect:Damage"
+      ]
+    },
+    {
+      "id": "Effect:DamageTaken",
+      "displayName": "받는 피해 배율",
+      "description": "value = 받는 피해 배율 (0.75 = 25% 감소, 1.5 = 50% 증가). 웨이브 버프용 — duration 0 = 영구.",
+      "kind": "IncomingDamage",
+      "duration": 0.0,
+      "stacking": "Refresh",
+      "tickInterval": 0.0
     }
   ],
   "guns": [
@@ -2820,6 +2841,95 @@
       "aimTolerance": -1.0
     }
   ],
+  "monsters": [
+    {
+      "id": "Monster:Basic",
+      "displayName": "기본 몬스터",
+      "description": "밤 웨이브의 기본 개체. Monster.prefab.",
+      "prefab": "Monster",
+      "prefabGuid": "a0ab261b89819e4489aaf424fc926d00",
+      "maxHp": 30.0,
+      "moveSpeed": 4.0,
+      "rotateSpeed": 720.0,
+      "crowdRadius": 0.4,
+      "knockbackDamping": 8.0,
+      "stickToGround": true,
+      "attackRange": 1.5,
+      "attackCooldown": 2.0,
+      "attackEffects": [
+        {
+          "effect": "Effect:Damage",
+          "value": 10.0
+        }
+      ],
+      "maxPatience": 3.0,
+      "patienceRadius": 0.0,
+      "outsidePatienceDrain": 2.0,
+      "rangedPokePatienceDrain": 3.0,
+      "patienceRecoverRate": 2.0,
+      "absoluteLeashMultiplier": 1.0,
+      "returnRegenPerSecond": 0.12,
+      "returnTimeout": 20.0
+    },
+    {
+      "id": "Monster:Spitter",
+      "displayName": "스피터",
+      "description": "원거리형 변종. Monster_Spitter.prefab.",
+      "prefab": "Monster_Spitter",
+      "prefabGuid": "ee2565cc74fdb074ca483cccf4a3be55",
+      "maxHp": 60.0,
+      "moveSpeed": 4.0,
+      "rotateSpeed": 720.0,
+      "crowdRadius": 0.4,
+      "knockbackDamping": 10.0,
+      "stickToGround": true,
+      "attackRange": 1.5,
+      "attackCooldown": 2.0,
+      "attackEffects": [
+        {
+          "effect": "Effect:Damage",
+          "value": 10.0
+        }
+      ],
+      "maxPatience": 3.0,
+      "patienceRadius": 0.0,
+      "outsidePatienceDrain": 2.0,
+      "rangedPokePatienceDrain": 3.0,
+      "patienceRecoverRate": 2.0,
+      "absoluteLeashMultiplier": 1.0,
+      "returnRegenPerSecond": 0.12,
+      "returnTimeout": 20.0
+    },
+    {
+      "id": "Monster:Boss",
+      "displayName": "보스",
+      "description": "둥지를 지키는 비선공 보스. BossMonster.prefab.",
+      "prefab": "BossMonster",
+      "prefabGuid": "67999408593709d4c995a60d2c03fac2",
+      "maxHp": 500.0,
+      "moveSpeed": 5.0,
+      "rotateSpeed": 720.0,
+      "crowdRadius": 0.4,
+      "knockbackDamping": 8.0,
+      "stickToGround": true,
+      "attackRange": 1.5,
+      "attackCooldown": 2.0,
+      "attackEffects": [
+        {
+          "effect": "Effect:Damage",
+          "value": 10.0
+        }
+      ],
+      "maxPatience": 3.0,
+      "patienceRadius": 25.0,
+      "outsidePatienceDrain": 2.0,
+      "rangedPokePatienceDrain": 1.0,
+      "patienceRecoverRate": 2.0,
+      "absoluteLeashMultiplier": 1.0,
+      "returnRegenPerSecond": 0.2,
+      "returnTimeout": 40.0
+    }
+  ],
   "waves": [
     {
       "id": "Wave:Day1",
@@ -2830,7 +2940,13 @@
       "baseAmount": 4,
       "maxAliveAmount": 4,
       "spawnInterval": 2.0,
-      "monsterMaxHp": 20.0
+      "monster": "Monster:Basic",
+      "buffs": [
+        {
+          "effect": "Effect:DamageTaken",
+          "value": 1.5
+        }
+      ]
     },
     {
       "id": "Wave:Day2",
@@ -2841,7 +2957,13 @@
       "baseAmount": 10,
       "maxAliveAmount": 6,
       "spawnInterval": 2.0,
-      "monsterMaxHp": 20.0
+      "monster": "Monster:Basic",
+      "buffs": [
+        {
+          "effect": "Effect:DamageTaken",
+          "value": 1.5
+        }
+      ]
     },
     {
       "id": "Wave:Day3",
@@ -2852,7 +2974,13 @@
       "baseAmount": 20,
       "maxAliveAmount": 10,
       "spawnInterval": 1.5,
-      "monsterMaxHp": 20.0
+      "monster": "Monster:Basic",
+      "buffs": [
+        {
+          "effect": "Effect:DamageTaken",
+          "value": 1.5
+        }
+      ]
     },
     {
       "id": "Wave:Day4",
@@ -2863,7 +2991,13 @@
       "baseAmount": 20,
       "maxAliveAmount": 15,
       "spawnInterval": 1.0,
-      "monsterMaxHp": 40.0
+      "monster": "Monster:Basic",
+      "buffs": [
+        {
+          "effect": "Effect:DamageTaken",
+          "value": 0.75
+        }
+      ]
     },
     {
       "id": "Wave:Day5",
@@ -2874,7 +3008,13 @@
       "baseAmount": 40,
       "maxAliveAmount": 15,
       "spawnInterval": 0.5,
-      "monsterMaxHp": 40.0
+      "monster": "Monster:Basic",
+      "buffs": [
+        {
+          "effect": "Effect:DamageTaken",
+          "value": 0.75
+        }
+      ]
     }
   ],
   "tutorial": [

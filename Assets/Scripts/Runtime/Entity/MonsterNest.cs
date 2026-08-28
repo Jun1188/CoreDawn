@@ -20,30 +20,18 @@ namespace CoreDawn.Entities
         {
             public Transform point;
             public Monster linkedBoss;
-            public GameObject bossPrefab;
-            [Tooltip("이 포인트에서 낮에 나오는 방어 몬스터의 최대 HP. 0 이하면 프리팹 기본값을 쓴다.")]
-            public float daySpawnMonsterMaxHp = 0f;
-            [Tooltip("이 포인트 보스의 최대 HP. 0 이하면 보스 프리팹 기본값을 쓴다.")]
-            public float bossMaxHp = 0f;
+            [Tooltip("이 포인트에 서는 보스의 종류(MonsterDataSO). 비우면 보스 없음. 프리팹·HP·공격은 전부 데이터가 정한다.")]
+            public MonsterDataSO bossData;
             [HideInInspector] public bool isDestroyed = false;
             [HideInInspector] public int destroyedDay = -1;
         }
 
-        /// <summary>
-        /// 낮 방어 스폰 한 자리 — 위치와 그 자리에서 태어날 몬스터의 최대 HP.
-        /// 위치만 넘기면 어느 포인트의 HP 설정인지 알 수 없어 자리 단위로 묶는다.
-        /// </summary>
+        /// <summary>낮 방어 스폰 한 자리. 종류·HP는 둥지의 defenderMonster(데이터)가 정하므로 위치뿐이다.</summary>
         public readonly struct DefenderSpawnSlot
         {
             public readonly Vector3 position;
-            /// <summary>0 이하 = 프리팹 기본값 유지.</summary>
-            public readonly float monsterMaxHp;
 
-            public DefenderSpawnSlot(Vector3 position, float monsterMaxHp)
-            {
-                this.position = position;
-                this.monsterMaxHp = monsterMaxHp;
-            }
+            public DefenderSpawnSlot(Vector3 position) => this.position = position;
         }
 
         [Header("Nest Settings")]
@@ -62,6 +50,12 @@ namespace CoreDawn.Entities
         [Tooltip("둥지의 건물 데이터 — 차지하는 칸과 파괴 규칙(철거 가능·공격 가능)의 출처. " +
                  "WorldPopulator가 BuildingDatabase에서 찾아 꽂는다.")]
         [SerializeField] private NestDataSO data;
+
+        [Tooltip("낮 방어 몬스터·보스전 지원군의 종류. 비우면 MonsterDatabase의 기본 종류.")]
+        [SerializeField] private MonsterDataSO defenderMonster;
+
+        /// <summary>방어자 종류 — WaveSpawnManager.SpawnNestDefenders가 읽는다. null = DB 기본.</summary>
+        public MonsterDataSO DefenderData => defenderMonster;
 
         /// <summary>둥지의 건물 데이터를 꽂는다 (WorldPopulator 전용).</summary>
         public void SetData(NestDataSO nestData) => data = nestData;
@@ -243,7 +237,7 @@ namespace CoreDawn.Entities
 
             var chosen = bestHidden ?? farthestVisible;
             if (chosen != null)
-                result.Add(new DefenderSpawnSlot(chosen.point.position, chosen.daySpawnMonsterMaxHp));
+                result.Add(new DefenderSpawnSlot(chosen.point.position));
 
             return result;
         }
@@ -471,7 +465,7 @@ namespace CoreDawn.Entities
 
             foreach (var sp in spawnPoints)
             {
-                if (sp.isDestroyed || sp.point == null || sp.bossPrefab == null) continue;
+                if (sp.isDestroyed || sp.point == null || sp.bossData == null) continue;
                 if (sp.linkedBoss != null && !sp.linkedBoss.IsDead) continue;
 
                 SpawnBossAtPoint(sp);
@@ -482,13 +476,13 @@ namespace CoreDawn.Entities
         // 지면 스냅은 Y축 보정만 하므로 수평 위치는 point와 항상 일치한다.
         private void SpawnBossAtPoint(NestSpawnPoint spawnPoint)
         {
-            var go = Instantiate(spawnPoint.bossPrefab, spawnPoint.point.position,
+            var go = Instantiate(spawnPoint.bossData.prefab, spawnPoint.point.position,
                 spawnPoint.point.rotation, transform);
             SnapBossToGround(go);
             spawnPoint.linkedBoss = go.GetComponent<Monster>();
             spawnPoint.linkedBoss?.SetAsBoss(engagementZone);
-            if (spawnPoint.linkedBoss != null && spawnPoint.bossMaxHp > 0f)
-                spawnPoint.linkedBoss.Health.SetMaxHealth(spawnPoint.bossMaxHp);
+            // HP 정본은 종류 데이터 — 프리팹 인라인 값이 아니다
+            if (spawnPoint.linkedBoss != null) spawnPoint.linkedBoss.Health.SetMaxHealth(spawnPoint.bossData.maxHp);
             Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
         }
 
@@ -549,7 +543,7 @@ namespace CoreDawn.Entities
 
                         // 보스 복구. EngagementZone은 방어 몬스터의 거리 규칙일 뿐,
                         // 보스 재배치를 차단하지 않는다.
-                        if (sp.bossPrefab != null && sp.point != null)
+                        if (sp.bossData != null && sp.point != null)
                         {
                             SpawnBossAtPoint(sp);
                             Debug.Log($"[MonsterNest] 보스 몬스터와 스폰포인트가 복구되었습니다! (Day {day})");
@@ -583,7 +577,7 @@ namespace CoreDawn.Entities
                 {
                     if (!sp.isDestroyed && (sp.linkedBoss == null || sp.linkedBoss.IsDead))
                     {
-                        if (sp.bossPrefab != null && sp.point != null)
+                        if (sp.bossData != null && sp.point != null)
                         {
                             SpawnBossAtPoint(sp);
                             Debug.Log($"[MonsterNest] 새로운 보스 몬스터가 스폰되었습니다!");
@@ -637,21 +631,20 @@ namespace CoreDawn.Entities
             if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return null;
 
             var sp = spawnPoints[index];
-            if (sp.bossPrefab == null) return null;
+            if (sp.bossData == null || sp.bossData.prefab == null) return null;
 
             if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
 
-            var go = Instantiate(sp.bossPrefab, position, rotation, transform);
+            var go = Instantiate(sp.bossData.prefab, position, rotation, transform);
             sp.linkedBoss = go.GetComponent<Monster>();
 
             // 평시 스폰(SpawnBossAtPoint)과 같은 계약으로 마무리한다 — 이걸 빠뜨리면 되살아난
             // 보스가 보스 취급을 받지 못하고 교전 구역에도 묶이지 않아, 불러온 게임에서만
             // 다르게 행동하게 된다. 위치만 저장값을 쓰고 나머지는 평시와 동일하다.
             sp.linkedBoss?.SetAsBoss(engagementZone);
-            // 포인트별 보스 HP도 평시 스폰과 같게 맞춘다 — 저장된 현재/최대 HP는
+            // 종류 데이터의 HP로 평시 스폰과 같게 맞춘다 — 저장된 현재/최대 HP는
             // 세이브 모듈이 이 뒤에 덮어쓰므로 순서상 안전하다.
-            if (sp.linkedBoss != null && sp.bossMaxHp > 0f)
-                sp.linkedBoss.Health.SetMaxHealth(sp.bossMaxHp);
+            if (sp.linkedBoss != null) sp.linkedBoss.Health.SetMaxHealth(sp.bossData.maxHp);
             return sp.linkedBoss;
         }
 
@@ -692,7 +685,7 @@ namespace CoreDawn.Entities
                     if (d > daySpawnMaxRange) continue;
                     if (d <= daySpawnMinRange) continue;
                     if (IsOnPlayerScreen(pos, player, eye)) continue;
-                    result.Add(new DefenderSpawnSlot(pos, sp.daySpawnMonsterMaxHp));
+                    result.Add(new DefenderSpawnSlot(pos));
                 }
 
             // 포인트가 하나도 <b>배선되지 않은</b> 둥지만 둥지 중심을 같은 규칙으로 판정한다
@@ -703,7 +696,7 @@ namespace CoreDawn.Entities
                 float d = Vector3.Distance(transform.position, playerPos);
                 if (d <= daySpawnMaxRange && d > daySpawnMinRange &&
                     !IsOnPlayerScreen(transform.position, player, eye))
-                    result.Add(new DefenderSpawnSlot(transform.position, 0f));
+                    result.Add(new DefenderSpawnSlot(transform.position));
             }
             return result;
         }
@@ -746,11 +739,11 @@ namespace CoreDawn.Entities
                 foreach (var sp in spawnPoints)
                 {
                     if (sp == null || sp.isDestroyed || sp.point == null) continue;
-                    slots.Add(new DefenderSpawnSlot(sp.point.position, sp.daySpawnMonsterMaxHp));
+                    slots.Add(new DefenderSpawnSlot(sp.point.position));
                 }
 
             if (slots.Count == 0)
-                slots.Add(new DefenderSpawnSlot(transform.position, 0f));
+                slots.Add(new DefenderSpawnSlot(transform.position));
             return slots;
         }
 

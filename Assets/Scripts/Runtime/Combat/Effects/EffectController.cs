@@ -105,7 +105,7 @@ namespace CoreDawn.Combat
                 foreach (var e in active)
                 {
                     if (e.def != def) continue;
-                    e.remaining = def.duration;
+                    e.remaining = Lifetime(def);
                     e.ctx = ctx;  // 갱신한 쪽의 출처·크기로 교체
                     Recompute();  // 크기가 바뀌었을 수 있다 (같은 에셋을 다른 value로 재적용)
                     return;       // OnStart 재호출 없음 — 시간만 연장
@@ -116,7 +116,7 @@ namespace CoreDawn.Combat
             {
                 def = def,
                 ctx = ctx,
-                remaining = def.duration,
+                remaining = Lifetime(def),
                 tickTimer = def.TickInterval, // 첫 틱은 한 간격 뒤 — 적용 순간의 즉발은 즉시 효과의 몫
             };
             active.Add(entry);
@@ -124,6 +124,10 @@ namespace CoreDawn.Combat
             Recompute();
             Changed?.Invoke();
         }
+
+        // 지속 시간 0 이하 = 영구(대상이 죽을 때까지). 웨이브 버프처럼 "그날 내내"인 효과가 쓴다 —
+        // 매우 큰 수로 흉내 내면 저장·표시에 그 수가 새어 나오므로 무한대를 그대로 쓴다.
+        static float Lifetime(DurationEffectSO def) => def.duration > 0f ? def.duration : float.PositiveInfinity;
 
         public void Tick(float dt)
         {
