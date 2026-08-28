@@ -1226,33 +1226,10 @@ namespace CoreDawn.EditorTools
                                  "BattleTower로 직접 교체하거나 프리팹을 지우고 재임포트하세요.");
             }
 
-            // 1-b) 코어 표식 — 이게 꺼져 있으면 코어를 아무도 못 찾는다.
-            //      내구도 UI가 비고, 플로우필드의 최종 목표도, 코어 파괴 = 게임오버 판정도 죽는다.
-            if (entity is BuildingView be)
-            {
-                var coreObj = new SerializedObject(be);
-                var isCore = coreObj.FindProperty("isCore");
-                bool wantCore = so is CoreDataSO;
-                if (isCore != null && isCore.boolValue != wantCore)
-                {
-                    isCore.boolValue = wantCore;
-                    coreObj.ApplyModifiedPropertiesWithoutUndo();
-                    changed = true;
-                }
-            }
+            // 1-b) 코어 표식은 프리팹 플래그가 아니다 — 심 건물이 설계도(Data is CoreDataSO)로 안다.
 
-            // 2) 최대 체력 — HealthComponent의 필드는 private이라 직렬화 경로로 넣는다
-            if (entity != null && so.maxHp > 0)
-            {
-                var sobj = new SerializedObject(entity);
-                var hp = sobj.FindProperty("health.maxHealth");
-                if (hp != null && !Mathf.Approximately(hp.floatValue, so.maxHp))
-                {
-                    hp.floatValue = so.maxHp;
-                    sobj.ApplyModifiedPropertiesWithoutUndo();
-                    changed = true;
-                }
-            }
+            // 2) 최대 체력은 더 이상 프리팹에 복사하지 않는다 — 정본은 데이터(maxHp)이고
+            //    심(FactorySystem.Place)이 거기서 읽는다. 프리팹의 health.maxHealth는 건물에서 무시된다.
 
             // 3) 콜라이더 — 매 임포트마다 그리는 메시 그대로 덮어쓴다(팀 결정: 예외·불변 규칙 없음).
             //    루트 상자(풋프린트·AABB)는 모델과의 괴리로 보이지 않는 벽을 만들던 원인이라 제거하고,

@@ -500,7 +500,7 @@ namespace CoreDawn.Placement
 
         /// <summary>칸 좌표로 철거 (외부 호출용 편의 오버로드).</summary>
         public void Demolish(Vector2Int cell)
-            => Demolish(FactoryBootstrap.Instance.Sim.Grid.GetAt(cell));
+            => Demolish(FactoryBootstrap.Instance.Factory.Grid.GetAt(cell));
 
         // ---- 하이라이트 적용/복원 ----
         private void SetHovered(Building b)
@@ -562,9 +562,9 @@ namespace CoreDawn.Placement
             if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, BuildRange))
             {
                 var view = bodyHit.collider.GetComponentInParent<BuildingView>();
-                if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
+                if (view != null && view.HasBuilding)   // 심 없는 건물(코어 등)은 철거 대상 아님
                 {
-                    building = view.Sim;
+                    building = view.Building;
                     return true;
                 }
             }
@@ -572,10 +572,10 @@ namespace CoreDawn.Placement
             // ② 바닥 칸 폴백 — 심이 없는 씬(UI 테스트 등)에서도 안전해야 한다.
             //    포트 흐름 표시가 붙으면서 이 쿼리가 대기 모드에서도 매 프레임 돌기 때문.
             var boot = FactoryBootstrap.Instance;
-            if (boot != null && boot.Sim != null && TryGetGroundPoint(out Vector3 cursorPoint))
+            if (boot != null && boot.Factory != null && TryGetGroundPoint(out Vector3 cursorPoint))
             {
                 Vector2Int cell = grid.WorldToGrid(cursorPoint);
-                building = boot.Sim.Grid.GetAt(cell);
+                building = boot.Factory.Grid.GetAt(cell);
             }
             return building != null;
         }
@@ -707,7 +707,7 @@ namespace CoreDawn.Placement
         /// 지형(강·절벽)은 <see cref="CanBuildTerrain"/>이 따로 판정한다.
         /// </summary>
         private static bool CanPlace(Vector2Int origin, Vector2Int size)
-            => GetCells(origin, size).All(c => !FactoryBootstrap.Instance.Sim.Grid.IsOccupied(c));
+            => GetCells(origin, size).All(c => !FactoryBootstrap.Instance.Factory.Grid.IsOccupied(c));
 
         /// <summary>
         /// 맵 타일이 건설을 허용하는가 — 지면(0)에만 짓는다. 강(1)은 지나갈 수는 있어도 지을 수 없고,

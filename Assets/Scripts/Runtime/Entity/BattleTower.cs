@@ -20,7 +20,7 @@ namespace CoreDawn.Entities
         [SerializeField] private CombatComponent combat = new CombatComponent();
         [SerializeField] private SensorComponent sensor = new SensorComponent();
 
-        [Tooltip("심 없이 씬에 직접 놓인 타워용 데이터 폴백 — 심 배치 타워는 Sim.Data가 우선한다.")]
+        [Tooltip("심 없이 씬에 직접 놓인 타워용 데이터 폴백 — 심 배치 타워는 Building.Data가 우선한다.")]
         [SerializeField] private TowerDataSO fallbackData;
 
         private int monsterMask;
@@ -72,7 +72,7 @@ namespace CoreDawn.Entities
 
         /// <summary>이 타워의 데이터 — 심 배치면 Sim.Data, 씬 배치면 인스펙터 폴백.
         /// BuildingEntity.Data(BuildingDataSO)를 타워 전용 타입으로 좁혀 가린다(의도된 가림).</summary>
-        private new TowerDataSO Data => Sim?.Data as TowerDataSO ?? fallbackData;
+        private new TowerDataSO Data => Building?.Data as TowerDataSO ?? fallbackData;
 
         // 데이터의 minRange(타일)를 월드 미터로 환산해 둔 값 — 거리 비교가 전부 미터라서.
         private float minRangeWorld;
@@ -98,7 +98,7 @@ namespace CoreDawn.Entities
             if (statsApplied || data == null) return;
             statsApplied = true;
 
-            supply = Sim?.Behavior as TowerBehavior;
+            supply = Building?.Behavior as TowerBehavior;
             float tile = TileSize();
             combat.Configure(data.range * tile, data.fireRate > 0f ? 1f / data.fireRate : 1f);
             sensor.SetDetectionRange(data.range * tile);

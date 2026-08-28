@@ -64,9 +64,9 @@ namespace CoreDawn.Factory
             used = 0;
             drawn.Clear();
             var boot = FactoryBootstrap.Instance;
-            if (boot != null && boot.Sim != null)
+            if (boot != null && boot.Factory != null)
             {
-                foreach (var seg in boot.Sim.Belts.Segments)
+                foreach (var seg in boot.Factory.Belts.Segments)
                     DrawSegment(seg, boot);
             }
 
@@ -83,7 +83,7 @@ namespace CoreDawn.Factory
             // 심은 틱(기본 10Hz) 단위로만 pos를 갱신한다 — 그대로 그리면 계단식.
             // 마지막 틱 이후 흐른 시간만큼 외삽하되, 틱과 같은 규칙(간격·출구·역주행)로 클램프해
             // 다음 틱 결과와 어긋나지 않게 한다.
-            float extra = seg.SpeedTilesPerSec * boot.Sim.TickLeftover;
+            float extra = seg.SpeedTilesPerSec * boot.Factory.TickLeftover;
 
             float prevVisual = float.MaxValue;   // index 0 = 출구 쪽 — 앞 아이템의 시각 위치
             var items = seg.Items;

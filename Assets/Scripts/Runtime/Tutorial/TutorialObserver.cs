@@ -63,7 +63,7 @@ namespace CoreDawn.Tutorial
         InventoryPanelView _inventoryView;
         BuildMenuView _buildMenuView;
         PlacementSystem _placement;
-        FactorySim _hookedSim;
+        FactorySystem _hookedSim;
         PlayerMotionState _hookedMotion;
         TutorialInputProbe _probe;
 
@@ -200,7 +200,7 @@ namespace CoreDawn.Tutorial
                 _buildMenuView = Object.FindFirstObjectByType<BuildMenuView>(FindObjectsInactive.Include);
 
             // 씬이 바뀌면 심도 새로 생긴다 — 같은 심이 아니면 다시 건다
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
             if (sim != _hookedSim)
             {
                 UnhookSim();

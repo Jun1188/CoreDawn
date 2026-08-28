@@ -243,7 +243,7 @@ namespace CoreDawn.Navigation
             maxX = Mathf.Min(gridSize.x - 1, maxX); maxY = Mathf.Min(gridSize.y - 1, maxY);
             if (minX > maxX || minY > maxY) return;
 
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
 
             for (int y = minY; y <= maxY; y++)
             {
@@ -304,12 +304,12 @@ namespace CoreDawn.Navigation
         private Building BuildingAt(Node node)
         {
             var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Sim == null) return null;
+            if (boot == null || boot.Factory == null) return null;
 
             Vector2Int simCell = simGridSystem != null
                 ? simGridSystem.WorldToGrid(node.worldPosition)
                 : node.gridCoord;
-            return boot.Sim.Grid.GetAt(simCell);
+            return boot.Factory.Grid.GetAt(simCell);
         }
 
         /// <summary>

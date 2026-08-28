@@ -87,7 +87,7 @@ namespace CoreDawn.Factory
 
             if (!_itemsByDir.TryGetValue(dir, out var set)) _itemsByDir[dir] = set = new HashSet<ItemDataSO>();
             set.Add(item);
-            _b.Sim.MarkDirty(_b);   // 대기 중이던 아이템이 새 규칙으로 흐를 수 있음
+            _b.Factory.MarkDirty(_b);   // 대기 중이던 아이템이 새 규칙으로 흐를 수 있음
         }
 
         /// <summary>출구 방향 하나에서만 해제. 다른 방향에 남아 있으면 그쪽으로는 계속 흐른다.</summary>
@@ -98,7 +98,7 @@ namespace CoreDawn.Factory
             if (dirs.Count == 0) _dirsByItem.Remove(item);
 
             RemoveFromDir(dir, item);
-            _b.Sim.MarkDirty(_b);
+            _b.Factory.MarkDirty(_b);
         }
 
         /// <summary>아이템의 모든 방향 지정 해제 — 다시 일반 출구들로 흐른다.</summary>
@@ -107,7 +107,7 @@ namespace CoreDawn.Factory
             if (item == null || !_dirsByItem.TryGetValue(item, out var dirs)) return;
             foreach (var dir in dirs) RemoveFromDir(dir, item);
             _dirsByItem.Remove(item);
-            _b.Sim.MarkDirty(_b);
+            _b.Factory.MarkDirty(_b);
         }
 
         /// <summary>출구 방향의 허용 목록 전체 해제 (전용 출구 → 일반 출구로 복귀).</summary>
@@ -121,7 +121,7 @@ namespace CoreDawn.Factory
                 if (dirs.Count == 0) _dirsByItem.Remove(item);
             }
             _itemsByDir.Remove(dir);
-            _b.Sim.MarkDirty(_b);
+            _b.Factory.MarkDirty(_b);
         }
 
         void RemoveFromDir(Direction dir, ItemDataSO item)
@@ -168,7 +168,7 @@ namespace CoreDawn.Factory
             }
             else if (!_blocked.Remove(dir)) return;
 
-            _b.Sim.MarkDirty(_b);   // 막힌 채 대기하던 아이템이 다시 흐를 수 있음
+            _b.Factory.MarkDirty(_b);   // 막힌 채 대기하던 아이템이 다시 흐를 수 있음
         }
 
         /// <summary>이 분배기를 실제로 지나간 적 있는 아이템인가 — UI의 "지나가는 중" 표시.</summary>
@@ -224,7 +224,7 @@ namespace CoreDawn.Factory
                 if (assigned ? !dirs.Contains(dir) : _itemsByDir.ContainsKey(dir)) continue;
                 if (!c.To.Input.TryAdd(item)) continue;                     // 가득 찬 출구는 건너뜀
 
-                _b.Sim.MarkDirty(c.To);
+                _b.Factory.MarkDirty(c.To);
                 _passed.Add(item);                                          // "지나가는 중" 표시의 근거
                 _next = (_next + i + 1) % conns.Count;
                 return true;

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using CoreDawn.Entities;
 using CoreDawn.FPS;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -210,6 +210,13 @@ namespace CoreDawn.Factory
 
         /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
         public abstract IBuildingBehavior CreateBehavior(Building building);
+
+        /// <summary>
+        /// 이 건물의 편 — 배치가 심 엔티티를 만들 때 넣는다. 플레이어가 짓는 것은 전부 Player,
+        /// 둥지는 Monster(타워가 노리고 플레이어가 부순다), 나무 같은 지형물은 Neutral(누구의 적도 아니다).
+        /// 적대 판정(아군 공격 무시 등)이 레이어가 아니라 이 값을 본다.
+        /// </summary>
+        public virtual Faction Faction => Faction.Player;
 
         // ── 회전 지원 (배치 시 사용, 상호작용 로직과 무관)
         //    4방향 포트 배열을 최초 요청 시 1회 계산해 캐싱한다.

@@ -89,7 +89,7 @@ namespace CoreDawn.Factory
         /// 어차피 해야 할 재평가다. 아무것도 움직이지 않는 상태에서는 Changed가 아예 발화하지
         /// 않으므로(FlushOutputs는 밀어내기에 성공했을 때만 TryConsume) 헛도는 일은 없다.
         /// </summary>
-        void Wake() => _b.Sim.MarkDirty(_b);
+        void Wake() => _b.Factory.MarkDirty(_b);
 
         // ── 설비 UI(SCR-09)가 읽는 표면 ──────────────────────────
 
@@ -108,16 +108,16 @@ namespace CoreDawn.Factory
 
             if (paused)
             {
-                if (_crafting) _pausedRemaining = Mathf.Max(0f, _readyAt - _b.Sim.Now);
+                if (_crafting) _pausedRemaining = Mathf.Max(0f, _readyAt - _b.Factory.Now);
             }
             else
             {
                 if (_crafting)
                 {
-                    _readyAt = _b.Sim.Now + _pausedRemaining;
-                    _b.Sim.ScheduleWake(_b, _pausedRemaining);
+                    _readyAt = _b.Factory.Now + _pausedRemaining;
+                    _b.Factory.ScheduleWake(_b, _pausedRemaining);
                 }
-                _b.Sim.MarkDirty(_b);
+                _b.Factory.MarkDirty(_b);
             }
         }
 
@@ -127,13 +127,13 @@ namespace CoreDawn.Factory
             get
             {
                 if (!_crafting || _craftingRecipe == null || _craftingRecipe.craftTime <= 0f) return 0f;
-                float remaining = Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Sim.Now);
+                float remaining = Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Factory.Now);
                 return Mathf.Clamp01(1f - remaining / _craftingRecipe.craftTime);
             }
         }
 
         public float RemainingTime =>
-            !_crafting ? 0f : Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Sim.Now);
+            !_crafting ? 0f : Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Factory.Now);
 
         /// <summary>막힘의 원인은 셋뿐 — 가동 중 · 재료 대기 · 출력 막힘. 넷째는 사람이 세운 것.</summary>
         public MachineState State
@@ -143,7 +143,7 @@ namespace CoreDawn.Factory
                 if (Paused) return MachineState.Stopped;
                 if (_recipe == null) return MachineState.Stopped;
                 if (_crafting)
-                    return _b.Sim.Now < _readyAt || CanStoreOutputs(_craftingRecipe)
+                    return _b.Factory.Now < _readyAt || CanStoreOutputs(_craftingRecipe)
                         ? MachineState.Running
                         : MachineState.OutputBlocked;
                 if (!HasIngredients()) return MachineState.WaitingInput;
@@ -175,7 +175,7 @@ namespace CoreDawn.Factory
             // 완성품이 되어 출구로 나간다. 건물의 물건은 건물의 출구로만 나간다 (가방 순간이동 없음).
             // 새 레시피에 안 쓰는 입력 잔여물은 Tick의 EvictForeignInputs가 출구로 밀어낸다.
             _recipe = r;
-            _b.Sim.MarkDirty(_b);
+            _b.Factory.MarkDirty(_b);
         }
 
         /// <summary>현재 해금된 레시피만 — 향후 레시피 선택 UI가 이걸로 목록을 채우면 게이팅이 자동 반영된다.</summary>
@@ -195,7 +195,7 @@ namespace CoreDawn.Factory
         public void Tick(float dt)
         {
             if (_recipe == null || Paused) return;   // 중지 — 진행률·버퍼 보존, 재개 시 MarkDirty로 깨어난다
-            var sim = _b.Sim;
+            var sim = _b.Factory;
 
             // 1. 출력 배출 시도 — 완료 판정보다 먼저 버퍼를 비워야 stall이 풀린다
             _b.FlushOutputs();
@@ -315,9 +315,9 @@ namespace CoreDawn.Factory
             _b.Input.AcceptFilter = IsIngredient;
 
             if (_crafting && !Paused)
-                _b.Sim.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Sim.Now));
+                _b.Factory.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Factory.Now));
             else
-                _b.Sim.MarkDirty(_b);
+                _b.Factory.MarkDirty(_b);
         }
     }
 }

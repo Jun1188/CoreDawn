@@ -140,7 +140,7 @@ namespace CoreDawn.Placement
             _lastCenter = center;
             _hasCenter  = true;
 
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
             if (sim == null) { ClearOpen(); return; }
 
             float sqRadius = Sq(radiusTiles * _cellSize);
@@ -148,10 +148,10 @@ namespace CoreDawn.Placement
 
             foreach (var entity in BuildingView.All)
             {
-                if (entity == null || !entity.HasSim) continue;
+                if (entity == null || !entity.HasBuilding) continue;
                 if ((entity.transform.position - center).sqrMagnitude > sqRadius) continue;
 
-                var b = entity.Sim;
+                var b = entity.Building;
                 var openPorts = CollectOpenPorts(sim, b);
                 if (openPorts.Count == 0) continue;
 
@@ -182,7 +182,7 @@ namespace CoreDawn.Placement
         /// 이웃 칸이 비어 있거나, 있어도 맞물리는 포트가 없으면 열린 포트.
         /// "맞물린다"의 정의(방향 반대 + 입출력 반대)는 BuildingGraph의 연결 규칙과 같다.
         /// </summary>
-        static List<PortDefinition> CollectOpenPorts(FactorySim sim, Building b)
+        static List<PortDefinition> CollectOpenPorts(FactorySystem sim, Building b)
         {
             var result = new List<PortDefinition>();
             var ports  = b.GetEffectivePorts();

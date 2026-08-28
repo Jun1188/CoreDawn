@@ -42,7 +42,7 @@ namespace CoreDawn.Factory
             _b.Input.Changed  += Wake;
         }
 
-        void Wake() => _b.Sim.MarkDirty(_b);
+        void Wake() => _b.Factory.MarkDirty(_b);
 
         public void OnAfterPlaced() { }
 

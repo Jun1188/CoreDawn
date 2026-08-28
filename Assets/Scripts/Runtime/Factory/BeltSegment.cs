@@ -23,12 +23,12 @@ namespace CoreDawn.Factory
 
         public const float Spacing = 0.5f;   // 아이템 간 최소 간격 (뷰의 외삽 클램프도 사용)
 
-        readonly FactorySim _sim;
+        readonly FactorySystem _sim;
 
         // 불변식: pos 내림차순. index 0 = 출구에 가장 가까움(pos 큼).
         readonly List<(ItemDataSO item, float pos)> _items = new();
 
-        public BeltSegment(FactorySim sim) => _sim = sim;
+        public BeltSegment(FactorySystem sim) => _sim = sim;
 
         public bool HasItems => _items.Count > 0;
         public IReadOnlyList<(ItemDataSO item, float pos)> Items => _items;

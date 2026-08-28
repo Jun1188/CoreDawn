@@ -14,7 +14,7 @@ namespace CoreDawn.Factory
         private void Start()
         {
             var entity = GetComponentInParent<BuildingView>();
-            _building = entity != null ? entity.Sim : null;
+            _building = entity != null ? entity.Building : null;
             if (_building == null)
                 Debug.LogWarning("[MachineProcessor] 심 건물(Sim) 연결을 찾지 못했습니다.", this);
         }

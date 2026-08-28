@@ -3,12 +3,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using CoreDawn.Combat;
-using CoreDawn.Entities;
 using CoreDawn.FPS;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
 using CoreDawn.Save;
 using CoreDawn.UI;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -122,7 +122,7 @@ namespace CoreDawn.Factory
     ///   - 플레이어가 인벤토리 UI로 직접 넣으면(TryPutAt/TryExchangeAt) 벨트 경로를 거치지 않으므로,
     ///     ItemContainer.Changed 이벤트를 구독해 그 자리에서 Sim.MarkDirty를 걸어 같은 결과를 만든다.
     /// </summary>
-    public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
+    public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior, IDamageInterceptor
     {
         readonly Building _b;
         readonly CoreDataSO _so;
@@ -132,7 +132,7 @@ namespace CoreDawn.Factory
             _b = b;
             _so = so;
             _b.Input.SingleStackPerType = true; // 한 아이템이 슬롯 전부를 독점 못하게 (Assembler와 동일 이유)
-            _b.Input.Changed += () => _b.Sim.MarkDirty(_b); // 수동 투입도 Tick 재평가 트리거
+            _b.Input.Changed += () => _b.Factory.MarkDirty(_b); // 수동 투입도 Tick 재평가 트리거
             RefreshAcceptFilter();
         }
 
@@ -287,6 +287,12 @@ namespace CoreDawn.Factory
             return damage - absorbed;
         }
 
+        /// <summary>
+        /// 받는 피해 인터셉터 — 보호막이 내구도보다 먼저 맞는다. Building 모듈이 Health.Damage 안에서 부른다
+        /// (구 BuildingEntity.ReceiveDamage override). 수렴점이 심이라 몬스터 공격·총알·DoT 전부 보호막을 거친다.
+        /// </summary>
+        public float Intercept(float amount, Entity source) => AbsorbDamage(amount);
+
         /// <summary>이 아이템이 지금 단계의 요구 목록에 있는가. 없으면 소각 대상이다.</summary>
         bool IsRequired(ItemDataSO item)
         {
@@ -340,12 +346,10 @@ namespace CoreDawn.Factory
         {
             if (bonus <= 0) return;
 
-            // 체력의 원본은 씬 껍데기(BuildingEntity)다. 심만 있는 테스트에서는 뷰가 없으니 건너뛴다.
-            var boot = FactoryBootstrap.Instance;
-            var view = boot != null ? boot.GetView(_b) : null;
-            if (view == null) return;
+            // 체력의 원본은 심 엔티티(Owner.Health)다 — 뷰를 거치지 않으니 헤드리스 테스트에서도 같은 값이다.
+            var hp = _b.Owner?.Health;
+            if (hp == null) return;
 
-            var hp = view.Health;
             hp.SetMaxHealth(hp.MaxHealth + bonus, refill: false);
             hp.Heal(bonus);
         }

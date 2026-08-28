@@ -1,6 +1,6 @@
 using UnityEngine;
-using CoreDawn.Entities;
 using CoreDawn.Placement;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -20,6 +20,9 @@ namespace CoreDawn.Factory
     public class TreeDataSO : BuildingDataSO
     {
         public override IBuildingBehavior CreateBehavior(Building building) => new TreeBehavior();
+
+        /// <summary>지형물 — 누구의 적도 아니다. 플레이어도 몬스터도 베어낼 수 있다(isAttackable).</summary>
+        public override Faction Faction => Faction.Neutral;
     }
 
     // ─── 행동 ──────────────────────────────────────────────────────

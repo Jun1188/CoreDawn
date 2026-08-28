@@ -19,15 +19,15 @@ namespace CoreDawn.Tests
         private Camera mainCamera;
         private string currentBuildingInfo = "";
 
-        FactorySim Sim => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Sim : null;
+        FactorySystem Factory => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
 
         void Start()
         {
             mainCamera = Camera.main;
 
             // 테스트용: 모든 좌표에서 철광석 채굴
-            if (Sim != null)
-                Sim.GetResourceAt = _ => ironOreSO;
+            if (Factory != null)
+                Factory.GetResourceAt = _ => ironOreSO;
         }
 
         void Update()
@@ -48,8 +48,8 @@ namespace CoreDawn.Tests
             if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
             {
                 var view = hit.collider.GetComponentInParent<BuildingView>();
-                if (view != null && view.Sim != null)
-                    PrintBuildingData(view.Sim);
+                if (view != null && view.Building != null)
+                    PrintBuildingData(view.Building);
             }
         }
 
@@ -153,13 +153,13 @@ namespace CoreDawn.Tests
 
         void OnDrawGizmos()
         {
-            if (!Application.isPlaying || Sim == null) return;
+            if (!Application.isPlaying || Factory == null) return;
 
             // 1. 모든 건물 연결선 시각화 (초록)
             Gizmos.color = Color.green;
             foreach (var view in FindObjectsByType<BuildingView>(FindObjectsSortMode.None))
             {
-                var b = view.Sim;
+                var b = view.Building;
                 if (b == null || b.OutputConnections == null) continue;
 
                 Vector3 startPos = view.transform.position + Vector3.up * 0.5f;
@@ -178,7 +178,7 @@ namespace CoreDawn.Tests
             }
 
             // 2. 벨트 세그먼트의 아이템 실시간 위치 (노랑) + 입구/출구 마커
-            foreach (var seg in Sim.Belts.Segments)
+            foreach (var seg in Factory.Belts.Segments)
             {
                 int n = seg.Belts.Count;
                 if (n == 0) continue;
