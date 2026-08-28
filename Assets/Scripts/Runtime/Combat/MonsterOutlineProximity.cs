@@ -83,24 +83,8 @@ public class MonsterOutlineProximity : MonoBehaviour
 
     Outlinable Attach(Monster m)
     {
-        var o = m.GetComponent<Outlinable>();
-        if (o == null)
-        {
-            o = m.gameObject.AddComponent<Outlinable>();
-            // 몬스터는 스킨드 메시 하나가 몸이다. 파티클·트레일 같은 부속 렌더러까지 테두리를 두르면
-            // 이펙트가 번지므로 메시 종류만 고른다
-            o.AddAllChildRenderersToRenderingList(RenderersAddingMode.SkinnedMeshRenderer | RenderersAddingMode.MeshRenderer);
-        }
-
-        o.RenderStyle = RenderStyle.Single;
-        o.DrawingMode = OutlinableDrawingMode.Normal;
-
-        var p = o.OutlineParameters;
-        p.Enabled = true;
-        p.Color = color;
-        p.DilateShift = dilateShift;
-        p.BlurShift = blurShift;
-
+        var o = EpoOutlines.Ensure(m.gameObject);   // 핑과 같은 부착 절차 — 같은 Outlinable을 나눠 쓴다
+        EpoOutlines.Style(o, color, dilateShift, blurShift);
         o.enabled = false;   // 켜는 것은 거리 판정이 한다
         return o;
     }

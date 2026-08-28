@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -15,10 +14,6 @@ public class BuildController : MonoBehaviour, IInputReceiver
 
     public int Priority => InputPriority.BuildTool;   // UI보다 아래, 플레이어보다 위
     public bool IsInputActive => isActiveAndEnabled && placement != null;
-
-    // InputAction 콜백 안에서 IsPointerOverGameObject를 호출하면 Unity가 경고를 찍는다
-    // (콜백은 어차피 직전 프레임의 UI 상태를 보게 됨) → Update에서 프레임당 1회 캐싱
-    private bool pointerOverUI;
 
     void Awake()
     {
@@ -43,8 +38,6 @@ public class BuildController : MonoBehaviour, IInputReceiver
 
     void Update()
     {
-        pointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-
         // 건설 모드 도중 밤이 되면 강제 종료
         if (!BuildingAllowed && placement != null && placement.Mode != PlacementSystem.BuildMode.None)
         {
@@ -63,7 +56,7 @@ public class BuildController : MonoBehaviour, IInputReceiver
             switch (e.Phase)
             {
                 case InputActionPhase.Started:
-                    if (!pointerOverUI) placement.BeginDemolishHold();
+                    placement.BeginDemolishHold();
                     return true;
                 case InputActionPhase.Canceled:
                     placement.EndDemolishHold();
@@ -88,9 +81,10 @@ public class BuildController : MonoBehaviour, IInputReceiver
                 if (e.Id == InputActionId.ToggleBuild)
                 {
                     placement.ExitMode();               // 진행 중 모드 정리 후
-                    // 씬에 UITK 건설 메뉴가 있으면 그쪽, 없으면 기존 uGUI 메뉴로
+                    // 건설 메뉴는 UITK(BuildMenuView)뿐이다 — GameUI 씬이 실어 오므로 플레이어가 있는 씬이면 항상 있다.
+                    // 구 uGUI 폴백(BuildMenuPopup)은 제거 — 폴백이 있으면 UI 탑재 누락이 조용히 지나간다(GameScreens와 같은 방침).
                     if (!BuildMenuView.TryToggle(placement))
-                        BuildMenuPopup.Toggle(placement);
+                        Debug.LogWarning("[BuildController] 건설 메뉴(UITK)를 열지 못했습니다 — GameUI 씬이 탑재되지 않았습니다.");
                 }
                 else placement.ToggleDemolishMode();
                 return true;
@@ -112,7 +106,6 @@ public class BuildController : MonoBehaviour, IInputReceiver
                 return placement.CycleBeltShape();    // 벨트가 아니면 하류로 통과
 
             case InputActionId.Attack:
-                if (pointerOverUI) return true;       // UI 위 클릭은 삼키기만
                 placement.ConfirmAtAim();
                 return true;   // 모드 중 좌클릭은 항상 소비 — 사격으로 새지 않게
 

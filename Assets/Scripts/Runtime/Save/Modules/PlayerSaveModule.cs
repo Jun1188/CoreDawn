@@ -35,9 +35,8 @@ public class PlayerSaveModule : ISaveModule
         // 옛 세이브에 남아 있는 두 필드는 역직렬화에서 그냥 버려진다.
 
         [JsonProperty("hotbarIndex")] public int HotbarIndex;
-
-        /// <summary>창을 연 채로 저장했을 때 마우스에 들려 있던 스택.</summary>
-        [JsonProperty("carried")] public SaveStackDto Carried;
+        // carried(마우스에 들린 스택)는 없다 — uGUI InventoryManager와 함께 제거(2026-08-28).
+        // UITK 패널은 닫힐 때 들고 있던 것을 되돌려 놓으므로(ReturnCarried) 저장할 것이 없다. 옛 세이브의 필드는 버려진다.
 
         /// <summary>무기별 장전 탄수 — WeaponManager.weapons 배열 순서.</summary>
         [JsonProperty("ammo")] public List<int> Ammo = new();
@@ -72,9 +71,6 @@ public class PlayerSaveModule : ISaveModule
             dto.Main = SaveContainerDto.From(holder.MainContainer);
         }
 
-        if (InventoryManager.Instance != null)
-            dto.Carried = SaveStackDto.From(InventoryManager.Instance.MouseCarriage);
-
         var weapons = Object.FindFirstObjectByType<WeaponManager>();
         if (weapons != null) dto.Ammo.AddRange(weapons.CaptureAmmo());
 
@@ -106,15 +102,10 @@ public class PlayerSaveModule : ISaveModule
             dto.Main?.ApplyTo(holder.MainContainer);
         }
 
-        if (InventoryManager.Instance != null)
-            InventoryManager.Instance.RestoreMouseCarriage(dto.Carried?.ToStack());
-
         var weapons = Object.FindFirstObjectByType<WeaponManager>();
         if (weapons != null) weapons.RestoreAmmo(dto.Ammo);
 
         // 소지품이 제자리를 찾은 뒤에 선택 칸을 되돌려야 그 칸의 무기가 올바로 장착된다
         if (HotbarController.Instance != null) HotbarController.Instance.RestoreSelection(dto.HotbarIndex);
-
-        InventoryManager.Instance?.RefreshAllGameUIs();
     }
 }

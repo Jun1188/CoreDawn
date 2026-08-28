@@ -275,7 +275,7 @@ public class BuildMenuView : UITKPopup
                 if (modifier != null) chip.AddToClassList(modifier);
 
                 chip.Add(new Label(DisplayNameOf(c.item)));
-                var n = new Label($"{c.amount}/{have}");
+                var n = new Label($"{have}/{c.amount}");   // 보유/필요 — 코어 납품 표시(현재/필요)와 같은 방향
                 n.AddToClassList("ui-chip__n");
                 chip.Add(n);
                 detCost.Add(chip);

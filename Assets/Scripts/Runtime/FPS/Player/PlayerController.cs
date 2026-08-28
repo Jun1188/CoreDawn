@@ -136,13 +136,6 @@ public class PlayerController : MonoBehaviour, IInputReceiver, IPlayerMotionProv
     // (구 "Inventory Backend" 필드 제거 — 플레이어의 Inventory 컴포넌트는 어떤 UI·시스템도
     //  읽지 않는 유령 컨테이너였다. 인벤토리의 정본은 PlayerInventoryHolder의 핫바/가방.)
 
-    [Header("Inventory & HUD UI")]
-    // 화면 열기 정책은 GameScreens(UITK 정본·uGUI 폴백), 아래 필드들은 uGUI 잔존 씬 전용
-    public GameObject inventoryUIPanel;
-    public InventoryUI inventoryUI;
-    public InventoryUI chestInventoryUI;
-    public GameObject crosshairUI;      // 표시/숨김은 InventoryPopup의 Enter/Exit가 수행
-
     [Header("Death & Respawn")]
     [Tooltip("부활할 코어의 위치. 씬에 있는 코어 오브젝트를 할당하세요.")]
     public float respawnTime = 3f;

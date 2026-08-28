@@ -428,6 +428,8 @@ public class SplitterPanelView : UITKPopup
 
         foreach (var item in UIItemOrder.Sorted(db.items))
         {
+            if (item.hideFromMenu) continue;   // 내부 탄약 등 — 벨트에 오를 일이 없는 것은 필터에서 뺀다
+
             string name = DisplayNameOf(item);
             if (search.Length > 0 && name.IndexOf(search, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
 
@@ -538,7 +540,7 @@ public class SplitterPanelView : UITKPopup
     {
         var db = ItemDatabaseSO.LoadDefault();
         if (db == null || db.items == null) yield break;
-        foreach (var i in db.items) if (i != null) yield return i;
+        foreach (var i in db.items) if (i != null && !i.hideFromMenu) yield return i;
     }
 
     string MetaOf(ItemDataSO item)

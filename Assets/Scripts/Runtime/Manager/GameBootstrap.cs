@@ -119,6 +119,10 @@ public static class GameBootstrap
         var outline = Object.FindFirstObjectByType<MonsterOutlineProximity>();
         if (outline != null) outline.Inject(PlayerRoot());
 
+        // 핑 입력 — 조준 카메라와 자기 루트를 꽂는다 (자기 몸·뷰모델은 조준에서 빠져야 한다)
+        var ping = Object.FindFirstObjectByType<PlayerPingInput>();
+        if (ping != null) ping.Inject(PlayerCamera(), PlayerRoot());
+
         // 둥지·광맥·밤 진입로는 맵이 정한다. 씬에 미리 놓지 않고 여기서 세우는 이유는
         // 맵을 갈아끼우면 배치도 함께 갈려야 하기 때문이다 — 씬에 박아두면 맵과 배치가
         // 따로 놀다가 "새 맵인데 옛 둥지가 서 있는" 상태가 된다.

@@ -149,6 +149,7 @@ public static class GameDataImporter
         public string type;          // ItemType 이름 — 용도 축 (Ore/Ingot/Part/RepairPart/Ammo/Weapon/...)
         public string line;          // ItemLine 이름 — 계통 축 (Iron/Copper/Crystal/Beast). 생략 시 기존 값 유지
         public int    maxStack;      // 한 슬롯 최대 개수. 0 = 생략(기존 값 유지) — 무기·설치물은 1
+        public bool   hideFromMenu;  // 아이템 고르는 목록(분배기 필터 등)에서 숨김 — 내부 탄약용
         public string icon;          // 스프라이트 이름 — 아틀라스 안에서 어느 스프라이트인지 고르는 열쇠이기도 하다
         public string iconGuid;      // 스프라이트를 담은 에셋의 guid — 이쪽이 파일을 특정한다
         public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
@@ -602,6 +603,7 @@ public static class GameDataImporter
         item.description = dto.description ?? "";
         if (hasType) item.type = type;
         if (dto.maxStack > 0) item.maxStack = dto.maxStack;
+        item.hideFromMenu = dto.hideFromMenu;
 
         if (!string.IsNullOrEmpty(dto.line))
         {

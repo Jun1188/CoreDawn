@@ -119,6 +119,24 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &606285105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019025795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f3e156676634beb8f08dbf68c4d618f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterOutlineProximity
+  radius: 50
+  interval: 0.2
+  color: {r: 1, g: 0.039215688, b: 0.039215688, a: 1}
+  dilateShift: 0.5
+  blurShift: 0
+  player: {fileID: 0}
 --- !u!1 &668416732
 GameObject:
   m_ObjectHideFlags: 0
@@ -324,6 +342,8 @@ GameObject:
   - component: {fileID: 2019025797}
   - component: {fileID: 2019025796}
   - component: {fileID: 606285105}
+  - component: {fileID: 1722144603}
+  - component: {fileID: 1618431316}
   m_Layer: 0
   m_Name: BattleManager
   m_TagString: Untagged
@@ -374,7 +394,7 @@ SceneRoots:
   - {fileID: 2019025797}
   - {fileID: 1186209666}
   - {fileID: 668416734}
---- !u!114 &606285105
+--- !u!114 &1722144603
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -383,12 +403,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 2019025795}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f3e156676634beb8f08dbf68c4d618f, type: 3}
+  m_Script: {fileID: 11500000, guid: 449078e8e37949d8b189097a66f2eb31, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MonsterOutlineProximity
-  radius: 50
-  interval: 0.2
-  color: {r: 0.9539399, g: 0.9996342, b: 1.498039, a: 1}
-  dilateShift: 0.5
-  blurShift: 0
-  player: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPingInput
+  range: 60
+  duration: 3
+  pingGroundWhenNoTarget: 0
+  aimCamera: {fileID: 0}
+--- !u!114 &1618431316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019025795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a9a02b0e3e54f799a555e044c882b54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PingOutlineView
+  lookColor: {r: 0.9539399, g: 0.9996342, b: 1.498039, a: 1}
+  tutorialColor: {r: 1.5, g: 1.2, b: 0.3, a: 1}
+  alertColor: {r: 1.6, g: 0.35, b: 0.3, a: 1}
+  markerColor: {r: 0.4, g: 1.2, b: 1.5, a: 1}
+  dilateShift: 0.6
+  blurShift: 0.1

@@ -129,7 +129,8 @@ public class BuildModeHUDView : MonoBehaviour
         ToggleClass(cardName, "ui-placecard__name--danger", false);
         Show(cardSub, false);
 
-        // 비용은 "필요/보유"로 함께 적는다 — 10/31이면 10 필요, 31 보유.
+        // 비용은 "보유/필요"로 함께 적는다 — 31/10이면 31 보유, 10 필요. 코어 납품·진행률 표시(현재/필요)와
+        // 같은 방향이라 화면마다 분수를 거꾸로 읽을 일이 없다.
         // 부족한 칩만 통째로 붉어진다. 숫자가 이미 말하므로 문장을 덧붙이지 않는다.
         cost.Clear();
         int chips = 0;
@@ -139,7 +140,7 @@ public class BuildModeHUDView : MonoBehaviour
             {
                 if (c.item == null || c.amount <= 0) continue;
                 int have = BuildCost.PlayerCountOf(c.item);
-                cost.Add(Chip(c.item, $"{c.amount}/{have}", have < c.amount ? "ui-chip--short"
+                cost.Add(Chip(c.item, $"{have}/{c.amount}", have < c.amount ? "ui-chip--short"
                                                                             : UIItemPalette.ChipClass(c.item)));
                 chips++;
             }

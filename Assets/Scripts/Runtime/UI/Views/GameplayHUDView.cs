@@ -33,7 +33,6 @@ public class GameplayHUDView : MonoBehaviour
     Entity playerEntity;
     BuildingEntity core;
     ItemContainer hotbar;
-    GameObject legacyCrosshair;   // uGUI InventoryPopup이 닫힐 때마다 도로 켜서, 살아 있는 동안 계속 눌러야 한다
 
     // ── 나침반 — 15°마다 눈금 하나, 45°마다 방위 라벨. 풀을 만들어 두고 매 프레임 배치만 ──
     const int TickCount = 24;                 // 360 / 15
@@ -135,8 +134,6 @@ public class GameplayHUDView : MonoBehaviour
         if (hotbar != null) hotbar.Changed += RebuildHotbar;
         shownHotbarIndex = -1;
         RebuildHotbar();
-
-        ShowLegacyHud(false);
     }
 
     void OnDisable()
@@ -146,8 +143,6 @@ public class GameplayHUDView : MonoBehaviour
         player = null;
         if (core != null) { core.OnHealthChanged -= OnCoreHp; core = null; }
         if (hotbar != null) hotbar.Changed -= RebuildHotbar;
-
-        ShowLegacyHud(true);
     }
 
     void Update()
@@ -163,10 +158,6 @@ public class GameplayHUDView : MonoBehaviour
         Show(crosshair, !UIPopup.AnyOpen);
         UpdateInteractPrompt();
         UpdateCenterRing();
-
-        // uGUI 크로스헤어는 InventoryPopup이 닫힐 때마다(첫 프레임의 CloseScreen 포함)
-        // 도로 켠다 — HUD가 살아 있는 동안은 UITK 크로스헤어가 유일한 조준점이어야 한다
-        if (legacyCrosshair != null && legacyCrosshair.activeSelf) legacyCrosshair.SetActive(false);
 
         // 핫바 선택 칸 — 변경 이벤트가 없어 스탬프 비교로만
         int active = HotbarController.Instance != null ? HotbarController.Instance.CurrentHotbarIndex : -1;
@@ -613,18 +604,6 @@ public class GameplayHUDView : MonoBehaviour
 
             hotbarRow.Add(slot);
         }
-    }
-
-    // ───────────────── uGUI HUD 숨김 — 같은 값이 두 번 그려지면 안 된다 ─────────────────
-
-    void ShowLegacyHud(bool show)
-    {
-        // 시간·체력 uGUI 패널은 SystemUIManager와 함께 삭제됐다 — 남은 잔재만 처리한다
-        if (HotbarUI.Instance != null) HotbarUI.Instance.gameObject.SetActive(show);
-
-        var pc = player != null ? player : FindFirstObjectByType<PlayerController>();
-        legacyCrosshair = pc != null ? pc.crosshairUI : null;
-        if (legacyCrosshair != null) legacyCrosshair.SetActive(show);
     }
 
     // ───────────────────── 잡동사니 ─────────────────────

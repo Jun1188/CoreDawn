@@ -6,6 +6,17 @@ public class DroppedItem : Interactable
     public ItemDataSO item;
     public int amount;
 
+    /// <summary>핑 이름 — "철판 ×3". 프롬프트("xN 줍기")는 동사가 붙어 있어 알림용 이름으로는 맞지 않는다.</summary>
+    public override string PingLabel
+    {
+        get
+        {
+            if (item == null) return name;
+            string itemName = string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+            return amount > 1 ? $"{itemName} ×{amount}" : itemName;
+        }
+    }
+
     [Tooltip("아이템 아이콘을 표시할 렌더러 — 공용 프리팹에서 연결 (폴백 조립 시 런타임 주입)")]
     [SerializeField] private SpriteRenderer visual;
 
