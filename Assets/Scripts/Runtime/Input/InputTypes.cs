@@ -18,6 +18,8 @@ public enum InputActionId
     Crouch,               // 좌Ctrl — 눌림 상태형(토글 옵션은 PlayerController.crouchIsToggle).
                           // 충분히 빠른 상태에서 누르면 슬라이딩으로 분기한다
     Rotate, CycleShape, ToggleBuild, ToggleDemolish,
+    Ping,                 // T — 바라본 대상을 찍는다. CycleShape와 같은 키: 건설 모드면 그쪽이 먹고 핑은 침묵한다
+
     Reload, QuickDrop,
     SwitchAmmo,           // V — 장전 가능한 탄종(GunData.ammoFilter) 순환
     Aim,                  // 우클릭 조준(ADS) — 눌림 상태형 (Performed=시작, Canceled=해제)

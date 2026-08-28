@@ -32,8 +32,14 @@ using UnityEngine;
 /// <see cref="TryExtract"/>로 그 재고를 꺼내간다 (= 생산 속도가 채굴 속도의 상한).
 /// </summary>
 [DisallowMultipleComponent]
-public class ResourceNode : MonoBehaviour, IHoldInteractable
+public class ResourceNode : MonoBehaviour, IHoldInteractable, IPingable
 {
+    // ── 핑 대상 (IPingable) — 광맥은 Entity도 Interactable도 아니라 직접 구현한다
+    public string PingLabel =>
+        resource != null ? (string.IsNullOrEmpty(resource.displayName) ? resource.name : resource.displayName) : name;
+    public GameObject PingRoot => gameObject;
+    public bool CanBePinged => isActiveAndEnabled;
+
     [Header("자원")]
     [Tooltip("이 광맥에서 채굴되는 아이템. 채굴기가 이 아이템을 그대로 생산한다.")]
     [SerializeField] private ItemDataSO resource;

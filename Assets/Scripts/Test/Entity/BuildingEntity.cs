@@ -101,6 +101,10 @@ public class BuildingEntity : Entity, IInteractable
     // ── 플레이어 상호작용(E) — 행동이 IInteractiveBehavior를 구현한 건물만 반응 (opt-in)
     public string Prompt => Sim?.Behavior is IInteractiveBehavior i ? i.InteractPrompt : null;
 
+    /// <summary>핑 이름은 설계도의 표시명 — 오브젝트 이름은 프리팹 이름(Clone)이라 사람이 읽을 것이 아니다.</summary>
+    public override string PingLabel =>
+        Data != null && !string.IsNullOrEmpty(Data.displayName) ? Data.displayName : name;
+
     public void Interact(PlayerController player)
     {
         if (Sim?.Behavior is IInteractiveBehavior i) i.Interact(player);

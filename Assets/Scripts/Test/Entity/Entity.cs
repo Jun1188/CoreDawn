@@ -50,8 +50,14 @@ public static class EntityExtensions
 // 모든 게임 개체(몬스터/플레이어/건물)의 공통 베이스.
 // HP/피격/사망은 전 엔티티 공통이고, 이동·전투·감지 컴포넌트(순수 C#)는
 // 하위 클래스가 보유한 것만 virtual 프로퍼티로 노출한다.
-public class Entity : MonoBehaviour
+public class Entity : MonoBehaviour, IPingable
 {
+    // ── 핑 대상 (IPingable) — 몬스터·건물·둥지·플레이어 공통. 표시 이름은 하위가 덮어쓴다.
+    //    자기 자신(로컬 플레이어)은 여기서 거르지 않는다 — 다른 플레이어는 찍혀야 하므로 조준이 계층으로 뺀다.
+    public virtual string PingLabel => name;
+    public GameObject PingRoot => gameObject;
+    public virtual bool CanBePinged => isActiveAndEnabled && !IsDead;
+
     [Header("Entity Settings (Compatibility)")]
     [Tooltip("PlayerController 등 기존 코드 호환용. 몬스터 이동 속도는 MovementComponent 쪽 값을 사용한다.")]
     public float moveSpeed = 5f;

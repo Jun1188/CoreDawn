@@ -43,6 +43,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Ping",
+                    "type": "Button",
+                    "id": "de36d9b1-a6db-4ca3-988f-ba48fd26ab2b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Attack",
                     "type": "Button",
                     "id": "9b26fad9-a1d1-41fa-b3de-0cef4225918d",
@@ -220,6 +229,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "CycleShape",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fa318b32-1e0f-4a8c-a7be-963fbb424af5",
+                    "path": "<Keyboard>/t",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Ping",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
