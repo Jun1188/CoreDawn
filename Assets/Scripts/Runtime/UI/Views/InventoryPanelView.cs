@@ -345,15 +345,16 @@ public class InventoryPanelView : PlayerItemPanelView
             nm.AddToClassList("ui-mat__name");
             row.Add(nm);
 
-            var need = new Label(input.amount.ToString());
-            need.AddToClassList("ui-mat__n");
-            row.Add(need);
-
+            // 보유 수가 앞, 필요 수가 뒤 — 코어 납품·건설 비용 표시(보유/필요)와 같은 방향.
             // 부족하면 보유 수만 붉어진다 (문서: 부족한 재료는 보유 수를 붉게)
-            var have_ = new Label($"/ {have}");
-            have_.AddToClassList("inv-mat__dim");
-            if (have < input.amount) have_.AddToClassList("inv-mat__dim--short");
+            var have_ = new Label(have.ToString());
+            have_.AddToClassList("ui-mat__n");
+            if (have < input.amount) have_.AddToClassList("ui-mat__n--short");
             row.Add(have_);
+
+            var need = new Label($"/ {input.amount}");
+            need.AddToClassList("inv-mat__dim");
+            row.Add(need);
 
             mats.Add(row);
         }

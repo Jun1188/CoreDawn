@@ -768,6 +768,9 @@
     color: var(--text);
 }
 
+/* 보유 수만 붉게 — 줄 전체(--short)를 쓰면 계통색 띠까지 붉어진다 */
+.ui-mat__n--short { color: var(--danger); }
+
 .ui-mat--iron { border-left-color: var(--iron); }
 .ui-mat--copper { border-left-color: var(--copper); }
 .ui-mat--crystal { border-left-color: var(--crystal); }
