@@ -71,7 +71,7 @@ CoreDawn.Tests          Assets/Scripts/Tests
 ### 0. 안전망 · 준비 — 진행 중
 - [x] 팀 프리즈 창 확보 (팀원 휴가 2026-08-28 ~ 30 — 충돌 나는 이동은 이 안에 main으로)
 - [x] gitflow: `feature/…`·`hotfix/…` 이름, PR은 gh CLI
-- [ ] `develop` 브랜치 = 회귀 기준 (핑 PR이 main에 머지된 뒤 main에서 분기)
+- [x] `develop` 브랜치 = 회귀 기준 — PR #111 머지(main `8fa89d35`) 직후 main에서 분기, origin에 푸시 (2026-08-28)
 - [ ] 회귀 체크리스트 문서화: 새 게임 → 채굴 → 건설 → 밤 → 세이브/로드 (`Tests/PlayLoopTestSetup` · `FactoryScenarioTests` 기준)
 
 ### 1a. 기계적 이동 (동작 변경 0) — 완료 2026-08-28
@@ -151,6 +151,8 @@ CoreDawn.Tests          Assets/Scripts/Tests
   (BuildController · SplitterDataSO · PlayerController · PlayerInventoryHolder · HotbarController · GameplayHUDView · PlayerSaveModule).
   **남은 uGUI는 `WorldHealthBar`/`HealthBarUI`(런타임 월드 캔버스) 하나** — 현역이라 유지, UITK 월드 공간 UI 이관은 별도 과제.
   옛 테스트 씬(ItemTree · BuildingTest · Test/*)에는 삭제된 스크립트의 missing script가 남는다 — 게임 씬(World · Title · Bootstrap)은 무관.
+- **2026-08-28** PR #111 (`feature/ping-system` → main, 커밋 10개) 머지 완료 → main `8fa89d35`. 같은 지점에서 `develop` 분기·푸시.
+  이후 작업은 `develop`에서 `feature/…`로 분기해 develop으로 PR. 다음: 1b 네임스페이스.
 
 ## 8. 세션 재개 절차
 
