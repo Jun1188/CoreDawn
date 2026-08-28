@@ -104,7 +104,6 @@ namespace CoreDawn.Entities
         // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null)
         public virtual MovementComponent Movement => null;
         public virtual CombatComponent Combat => null;
-        public virtual SensorComponent Sensor => null;
 
         /// <summary>죽었거나 심에서 빠졌는가. 심이 아직 안 붙은 뷰는 죽은 것이 아니다(IsValidTarget이 따로 거른다).</summary>
         public virtual bool IsDead =>
@@ -141,6 +140,7 @@ namespace CoreDawn.Entities
             DetachEntity();
 
             Entity = entity;
+            EntityViewRegistry.Register(this, entity);   // 심 엔티티 → 뷰 (심 질의 결과를 화면이 다룰 때)
             var h = entity.Health;
             if (h != null)
             {
@@ -161,6 +161,7 @@ namespace CoreDawn.Entities
                 h.OnHealthChanged -= RelayHealthChanged;
                 h.OnDeath -= RelayDeath;
             }
+            EntityViewRegistry.Unregister(this, Entity);
             Entity = null;
         }
 

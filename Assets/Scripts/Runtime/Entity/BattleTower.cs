@@ -3,6 +3,7 @@ using CoreDawn.Combat;
 using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.Placement;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Entities
 {
@@ -18,7 +19,6 @@ namespace CoreDawn.Entities
     {
         [Header("Tower Combat")]
         [SerializeField] private CombatComponent combat = new CombatComponent();
-        [SerializeField] private SensorComponent sensor = new SensorComponent();
 
         [Tooltip("심 없이 씬에 직접 놓인 타워용 데이터 폴백 — 심 배치 타워는 Building.Data가 우선한다.")]
         [SerializeField] private TowerDataSO fallbackData;
@@ -26,12 +26,13 @@ namespace CoreDawn.Entities
         private int monsterMask;
 
         public override CombatComponent Combat => combat;
-        public override SensorComponent Sensor => sensor;
+
+        /// <summary>목표 스캔 주기(초) — 매 프레임 훑지 않는다(구 SensorComponent.scanInterval).</summary>
+        private const float ScanInterval = 0.2f;
 
         protected override void Awake()
         {
             base.Awake();
-            sensor.Initialize(this);
             combat.Initialize(this);
             monsterMask = LayerMask.GetMask("Monster");
             visual = GetComponent<TowerVisualController>();
@@ -101,7 +102,6 @@ namespace CoreDawn.Entities
             supply = Building?.Behavior as TowerBehavior;
             float tile = TileSize();
             combat.Configure(data.range * tile, data.fireRate > 0f ? 1f / data.fireRate : 1f);
-            sensor.SetDetectionRange(data.range * tile);
             minRangeWorld = data.minRange * tile;
 
             previewRound = data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
@@ -129,7 +129,7 @@ namespace CoreDawn.Entities
             {
                 // 데이터가 아예 없는 구 씬 타워 — 근접 즉시 공격 폴백 (combat이 효과 정의)
                 if (!combat.CanAttack()) return;
-                EntityView t = sensor.GetClosestTarget(combat.AttackRange);
+                EntityView t = ClosestMonster(combat.AttackRange, 0f);
                 if (t.IsValidTarget()) combat.TryAttack(t);
                 return;
             }
@@ -235,11 +235,24 @@ namespace CoreDawn.Entities
             targetCollider = null;
 
             if (Time.time < nextScanTime) return;
-            nextScanTime = Time.time + Mathf.Max(0.05f, sensor.ScanInterval);
+            nextScanTime = Time.time + ScanInterval;
 
-            target = sensor.GetClosestTarget(combat.AttackRange, minRangeWorld);
+            target = ClosestMonster(combat.AttackRange, minRangeWorld);
             // 콜라이더는 목표를 잡을 때 한 번만 찾는다 — 조준은 매 프레임이라 여기서 캐시해야 한다
             targetCollider = target != null ? target.GetComponentInChildren<Collider>() : null;
+        }
+
+        /// <summary>
+        /// 사거리 안 가장 가까운 몬스터 — 심의 반경 질의(편=Monster). 구 SensorComponent의 OverlapSphere·레이어 대체.
+        /// 거리는 엔티티 위치로 잰다 — 콜라이더 부피가 아니라 — 잡는 쪽과 유지하는 쪽의 기준이 같아야 경계에서 떨지 않는다.
+        /// 심이 아직 안 붙은 타워(씬 배치 직후)는 아무것도 못 본다.
+        /// </summary>
+        private EntityView ClosestMonster(float range, float minRange)
+        {
+            if (Entity == null) return null;
+            var e = SimHost.World.QueryClosest(Entity.Position, range, Faction.Monster, minRange, exclude: Entity);
+            var view = EntityViewRegistry.ViewOf(e);
+            return view.IsValidTarget() ? view : null;
         }
 
         /// <summary>조준점 — 대상 콜라이더 중심(없으면 트랜스폼 위치).</summary>

@@ -157,8 +157,8 @@ namespace CoreDawn.Combat
             player.SetDeathBehavior(destroy: false, delay: 2f);
             // 런타임 부착이라 인스펙터로 HP/감지 범위를 못 만지므로 여기서 설정
             if (playerMaxHealth > 0f) player.Health.SetMaxHealth(playerMaxHealth);
-            if (playerDetectionRange > 0f && player.Sensor != null)
-                player.Sensor.SetDetectionRange(playerDetectionRange);
+            if (playerDetectionRange > 0f)
+                player.SetDetectionRange(playerDetectionRange);
 
             // 근접 자동 반격 배선은 제거됐다 — 보이지 않는 자동 타격이 "보스가 자기 자신을
             // 공격해 HP가 준다"는 혼란(버그 리포트)의 원인이었다. 플레이어 피해는 총기만 준다.

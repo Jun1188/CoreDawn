@@ -207,7 +207,8 @@ namespace CoreDawn.Factory
 
 ### 3. 몬스터 심/뷰 분리 (가장 큰 덩어리)
 - [x] 3a 데이터: `MonsterDataSO` + GameData `monsters` · `WaveDataSO` 개편(종류 참조 + 버프 효과) · `wave_settings.json` 폐기 — 2026-08-29 (`feature/monster-sim` 커밋 1)
-- [ ] 3b 심 모듈: `Movement` · `Combat` · `MonsterBrain`(상태기) · `Crowd` · 공간 질의(`EntityWorld.QueryRadius`) · `MonsterSystem`(틱) · `INavigation` 어댑터
+- [x] 3b-1 공간 질의 `EntityWorld.QueryRadius/QueryClosest`(균일 격자 해시 8m) · `Entity.Facing` · `INavigation` + `SceneNavigation` 어댑터 · `EntityViewRegistry`(불변식 ③) · 플레이어/타워 센서를 심 질의로, `SensorComponent` 퇴역 · `EntityId → EntityKey`(Unity 6 `UnityEngine.EntityId`와 충돌) — 2026-08-29 (커밋 2)
+- [ ] 3b-2 심 모듈: `Movement` · `Combat` · `MonsterBrain`(상태기) · `Crowd` · `MonsterSystem`(틱)
 - [ ] 3c 뷰: `Monster → MonsterView`(심 위치를 따라감) · 스폰 브리지(심 Spawned → 프리팹) · 플레이어/타워 센서를 심 질의로
 - [ ] 3d 세이브: 몬스터를 심에서 캡처(dataId 추가, 버전 상승)
 - [ ] 3e 정리: 뷰 쪽 `MovementComponent`·`SensorComponent`·`StateMachineComponent`·상태 클래스 삭제

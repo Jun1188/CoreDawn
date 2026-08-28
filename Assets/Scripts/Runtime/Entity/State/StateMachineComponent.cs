@@ -11,7 +11,6 @@ namespace CoreDawn.Entities
         public Transform Transform => Owner.transform;
         public MovementComponent Movement => Owner.Movement;
         public CombatComponent Combat => Owner.Combat;
-        public SensorComponent Sensor => Owner.Sensor;
 
         private IEntityState currentState;
         public IEntityState CurrentState => currentState;
