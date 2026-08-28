@@ -1,6 +1,7 @@
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Navigation;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Entities
 {
@@ -71,6 +72,7 @@ namespace CoreDawn.Entities
 
         public override MovementComponent Movement => movement;
         public override CombatComponent Combat => combat;
+        protected override Faction Faction => Faction.Monster;   // 편은 심의 상태 — 레이어가 아니다
         public StateMachineComponent StateMachine
         {
             get
@@ -211,9 +213,9 @@ namespace CoreDawn.Entities
         /// 일으키기 때문이다. 피해라는 사건 자체는 이 경로로만 들어온다
         /// (효과 시스템·DoT·총알 모두 ReceiveDamage로 수렴한다).
         /// </summary>
-        public override void ReceiveDamage(float amount)
+        public override void ReceiveDamage(float amount, EntityView source)
         {
-            base.ReceiveDamage(amount);
+            base.ReceiveDamage(amount, source);
 
             if (amount <= 0f || IsDead) return;
 
@@ -443,7 +445,7 @@ namespace CoreDawn.Entities
         {
             IsReturning = false;
             patience = maxPatience;
-            if (!IsDead) Health.Initialize();
+            if (!IsDead) Health.ResetToFull();
         }
 
         private void EnforceNestPlayerOnlyTarget()

@@ -7,6 +7,7 @@ using CoreDawn.Interaction;
 using CoreDawn.Navigation;
 using CoreDawn.Save;
 using CoreDawn.Worlds;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Entities
 {
@@ -267,6 +268,8 @@ namespace CoreDawn.Entities
         public bool IsDestroyed { get; private set; }
         private int destroyedDay = -1;
 
+        protected override Faction Faction => Faction.Monster;   // 둥지는 몬스터 편 — 타워가 노리고 플레이어가 부순다
+
         protected override void Awake()
         {
             base.Awake();
@@ -326,7 +329,7 @@ namespace CoreDawn.Entities
 
         // TakeDamage가 아니라 수렴점(ReceiveDamage)을 막는다 — 총알·몬스터 공격 같은
         // 효과 경로는 TakeDamage를 거치지 않고 ReceiveDamage로 직행하기 때문이다.
-        public override void ReceiveDamage(float amount)
+        public override void ReceiveDamage(float amount, EntityView source)
         {
             // 데이터가 공격을 거부하면 스폰 포인트와 무관하게 아무 피해도 받지 않는다 —
             // 건물의 isAttackable과 같은 규칙이다(BuildingEntity.ApplyEffects).
@@ -337,7 +340,7 @@ namespace CoreDawn.Entities
                 // Debug.Log("[MonsterNest] 둥지가 무적 상태입니다! (보스 또는 스폰포인트가 살아있음)");
                 return;
             }
-            base.ReceiveDamage(amount);
+            base.ReceiveDamage(amount, source);
         }
 
         private bool IsInvulnerable()
@@ -489,8 +492,9 @@ namespace CoreDawn.Entities
             Debug.Log($"[MonsterNest] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             if (TimeManager.Instance != null && TimeManager.Instance.Cycle != null)
             {
                 TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
@@ -561,7 +565,7 @@ namespace CoreDawn.Entities
             {
                 // 이틀 후 복구 (당일 밤 시작 시 복구됨)
                 IsDestroyed = false;
-                Health.Initialize(); // 체력 회복
+                Health.ResetToFull(); // 체력 회복
 
                 foreach (var go in destructibleVisuals)
                 {

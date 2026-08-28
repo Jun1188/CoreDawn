@@ -9,6 +9,7 @@ using CoreDawn.Managers;
 using CoreDawn.Navigation;
 using CoreDawn.Placement;
 using CoreDawn.UI;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Entities
 {
@@ -191,8 +192,9 @@ namespace CoreDawn.Entities
 
         // 뷰가 다른 경로로 파괴돼도(부모 파괴·직접 Destroy) 심이 그리드를 계속 점유하지 않게.
         // 정상 경로(철거·전투 파괴)는 이미 심이 먼저 지워져 있어 여기서는 아무 일도 하지 않는다.
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             if (quitting || !gameObject.scene.isLoaded) return;
             if (Sim == null || Sim.IsRemoved) return;
 
@@ -247,30 +249,26 @@ namespace CoreDawn.Entities
             base.ApplyEffects(entries, source, hitPoint, hitDirection);
         }
 
-        static int hostileMask = -1;
-
         /// <summary>
-        /// 이 공격이 <b>적에게서</b> 왔는가.
+        /// 이 공격이 <b>적에게서</b> 왔는가 — 편(<see cref="Faction"/>)으로 본다.
         ///
-        /// 아군을 타입으로 열거하지 않는다: <c>source is Player</c> 로 보면 공격 타워가 빠지고,
-        /// 아군이 늘 때마다 조건이 붙는다. 이 게임은 편을 <b>레이어</b>로 가르므로
-        /// (타워가 적을 찾는 마스크가 곧 Monster다) 그 기준을 그대로 쓴다.
+        /// 예전에는 레이어("Monster")로 갈랐다. 레이어는 물리·렌더링의 도구라 게임 규칙을 얹으면 원래 기능을 벗어나고,
+        /// 헤드리스 심에는 레이어가 없다. 편은 심 엔티티의 상태라 어디서 물어도 같은 답이 나온다.
         ///
         /// 출처를 모르는 피해(null)는 아군으로 본다 — 실제 공격자는 모두 자신을 넘기므로,
         /// 출처가 없다는 것은 곧 "누구의 공격도 아니다"이고 무적 건물이 그걸로 깎이면 안 된다.
         /// </summary>
-        static bool IsHostile(EntityView source)
+        bool IsHostile(EntityView source)
         {
-            if (source == null) return false;
-            if (hostileMask < 0) hostileMask = LayerMask.GetMask("Monster");
-            return (hostileMask & (1 << source.gameObject.layer)) != 0;
+            if (source == null || source.Entity == null || Entity == null) return false;
+            return source.Entity.Faction.IsHostileTo(Entity.Faction);
         }
 
         // 코어의 보호막이 내구도보다 먼저 맞는다 — 남은 몫만 HP로 내려간다.
         // 보호막의 원본은 심(CoreBehavior)이다: 자원 소각으로 차오르는 값이라
         // 자원과 같은 곳에 있어야 두 수치가 어긋나지 않는다.
         // 수렴점(ReceiveDamage)에서 막아야 몬스터 공격(ApplyEffects 경로)도 보호막을 거친다.
-        public override void ReceiveDamage(float amount)
+        public override void ReceiveDamage(float amount, EntityView source)
         {
             if (amount > 0f && Sim != null && Sim.Behavior is CoreBehavior core)
             {
@@ -278,7 +276,7 @@ namespace CoreDawn.Entities
                 if (amount <= 0f) return; // 전부 막았다 — OnHealthChanged도 뜨지 않는다
             }
 
-            base.ReceiveDamage(amount);
+            base.ReceiveDamage(amount, source);
         }
 
         // HP 0 → 몬스터의 사망 연출 지연 없이 즉시 소멸

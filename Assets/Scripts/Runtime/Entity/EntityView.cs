@@ -1,14 +1,14 @@
-using UnityEngine;
 using System;
-using Object = UnityEngine.Object;
+using System.Collections.Generic;
+using UnityEngine;
 using CoreDawn.Combat;
-using CoreDawn.FPS;
-using CoreDawn.Interaction;
 using CoreDawn.Pings;
+using CoreDawn.Sim;
+using SimEntity = CoreDawn.Sim.Entity;
 
 namespace CoreDawn.Entities
 {
-    // Entity 확장 유틸 — 타겟 유효성/거리 판정 (구 IInteractable 확장의 Entity 버전)
+    // EntityView 확장 유틸 — 타겟 유효성/거리 판정 (구 IInteractable 확장의 Entity 버전)
     public static class EntityViewExtensions
     {
         // 순수 null 체크만으로는 Destroy된 MonoBehaviour(가짜 null)를 걸러내지 못하므로
@@ -17,6 +17,7 @@ namespace CoreDawn.Entities
         {
             if (target == null) return false;
             if (!target.gameObject.activeInHierarchy) return false;
+            if (target.Entity == null) return false;   // 심이 아직 안 붙은 건물(배치 직후·씬 굳힘)은 세상에 없는 것과 같다
             return !target.IsDead;
         }
 
@@ -27,11 +28,7 @@ namespace CoreDawn.Entities
             // 작을 수 있는데(3×3칸 코어의 우주선), 몬스터의 길을 막는 것은 풋프린트라서
             // 풋프린트 경계까지 붙은 몬스터의 공격이 닿으려면 거리의 정본도 풋프린트여야 한다.
             if (target is BuildingView be && be.TryGetFootprintRect(out Vector3 min, out Vector3 max))
-            {
-                float dx = Mathf.Max(min.x - from.x, 0f, from.x - max.x);
-                float dz = Mathf.Max(min.z - from.z, 0f, from.z - max.z);
-                return Mathf.Sqrt(dx * dx + dz * dz);   // 지상전이라 높이는 무시한다
-            }
+                return GridGeometry.DistanceToRect(from, min, max);   // 지상전이라 높이는 무시한다
 
             var col = target.GetComponentInChildren<Collider>();
             if (col == null) return Vector3.Distance(from, target.GetPosition());
@@ -50,12 +47,19 @@ namespace CoreDawn.Entities
 
             return Vector3.Distance(from, col.ClosestPoint(from));
         }
-
     }
 
-    // 모든 게임 개체(몬스터/플레이어/건물)의 공통 베이스.
-    // HP/피격/사망은 전 엔티티 공통이고, 이동·전투·감지 컴포넌트(순수 C#)는
-    // 하위 클래스가 보유한 것만 virtual 프로퍼티로 노출한다.
+    /// <summary>
+    /// 게임 개체의 씬 표현(뷰) — 몬스터·플레이어·건물·둥지의 MonoBehaviour 베이스.
+    ///
+    /// 정본은 심 <see cref="SimEntity"/>다: 체력·편·번호는 그쪽에 있다. 이 컴포넌트가 하는 일은 셋뿐이다 —
+    /// ① 그 엔티티를 가리키고(<see cref="Entity"/>) ② 이벤트를 받아 연출(체력바·사망)을 하며
+    /// ③ 물리가 굴린 위치를 심에 돌려준다(서버 권위 모델에서 물리는 뷰에 남기는 하이브리드).
+    ///
+    /// 과도기(리팩토링 2단계): 몬스터·플레이어·둥지는 뷰가 Awake에서 심 엔티티를 만들어 붙인다(뷰 우선).
+    /// 건물은 FactorySystem이 먼저 만들고 뷰가 <see cref="AttachEntity"/>로 받는다(심 우선).
+    /// 3·4단계에서 생성 주체가 전부 심으로 가고, 효과(EffectController)·이동·전투 컴포넌트도 그때 옮긴다.
+    /// </summary>
     public class EntityView : MonoBehaviour, IPingable
     {
         // ── 핑 대상 (IPingable) — 몬스터·건물·둥지·플레이어 공통. 표시 이름은 하위가 덮어쓴다.
@@ -73,9 +77,25 @@ namespace CoreDawn.Entities
         [SerializeField] private float deathDelay = 2f;
         [Tooltip("true면 사망 연출 후 Destroy로 완전 소멸, false면 SetActive(false)로 비활성화만 한다.")]
         [SerializeField] private bool destroyOnDeath = true;
+
+        [Tooltip("최대 체력 씨드 — 뷰가 심 엔티티를 만들 때 넘기는 초기값. 정본은 심 Health다. " +
+                 "건물은 이 값을 쓰지 않는다(BuildingDataSO.maxHp). 프리팹 직렬화 경로를 지키려고 이름·형을 그대로 뒀다.")]
         [SerializeField] private HealthComponent health = new HealthComponent();
 
-        public HealthComponent Health => health;
+        /// <summary>심 정본. 뷰 우선 개체는 Awake에서, 건물은 브리지가 <see cref="AttachEntity"/>로 채운다. 그 전에는 null.</summary>
+        public SimEntity Entity { get; private set; }
+
+        /// <summary>체력 — 심 Health 모듈로 곧장 간다. 심이 아직 안 붙었으면 null.</summary>
+        public Health Health => Entity?.Health;
+
+        /// <summary>이 뷰가 만드는 심 엔티티의 편. 몬스터·둥지가 Monster로 덮어쓴다.</summary>
+        protected virtual Faction Faction => Faction.Player;
+
+        /// <summary>뷰가 Awake에서 심 엔티티를 스스로 만드는가. 건물(BuildingView)은 심이 먼저 만들므로 false.</summary>
+        protected virtual bool CreatesOwnEntity => true;
+
+        // 이 뷰가 만든 엔티티인가 — 만든 쪽이 지운다(OnDestroy). 심 우선 개체는 심(FactorySystem)이 지운다.
+        bool ownsEntity;
 
         // 활성 지속 효과(감속·DoT 등) 관리 — Awake 전에 맞아도 안전하게 지연 생성
         private EffectController effects;
@@ -86,19 +106,14 @@ namespace CoreDawn.Entities
         public virtual CombatComponent Combat => null;
         public virtual SensorComponent Sensor => null;
 
-        public virtual bool IsDead => health.IsDead;
+        /// <summary>죽었거나 심에서 빠졌는가. 심이 아직 안 붙은 뷰는 죽은 것이 아니다(IsValidTarget이 따로 거른다).</summary>
+        public virtual bool IsDead =>
+            Entity != null && (Entity.IsRemoved || (Entity.Health != null && Entity.Health.IsDead));
 
-        public event Action<float, float> OnHealthChanged
-        {
-            add => health.OnHealthChanged += value;
-            remove => health.OnHealthChanged -= value;
-        }
-
-        public event Action OnDeath
-        {
-            add => health.OnDeath += value;
-            remove => health.OnDeath -= value;
-        }
+        // ── 이벤트 릴레이 — 구독자는 뷰에 걸고, 뷰가 심 Health에 이어 준다.
+        //    심이 나중에 붙는 건물(브리지가 AttachEntity)이나 부착 전 구독이 안전하도록 뷰가 이벤트를 소유한다.
+        public event Action<float, float> OnHealthChanged;
+        public event Action OnDeath;
 
         public event Action OnAttackAction
         {
@@ -108,9 +123,58 @@ namespace CoreDawn.Entities
 
         protected virtual void Awake()
         {
-            health.Initialize();
-            health.OnDeath += Effects.Clear; // 사망 즉시 지속 효과 종료 (HandleDeath보다 먼저)
-            health.OnDeath += HandleDeath;
+            if (!CreatesOwnEntity) return;
+
+            var e = SimHost.World.Create(Faction, transform.position);
+            e.Add(new Health(health.MaxHealth));
+            ownsEntity = true;
+            AttachEntity(e);
+        }
+
+        /// <summary>
+        /// 심 엔티티 연결 — 뷰 우선 개체는 Awake가, 건물은 브리지(PlacementBridge)가 부른다.
+        /// 심 Health의 이벤트를 뷰 이벤트로 이어 주고, 이미 구독한 쪽에 현재 체력을 한 번 알린다.
+        /// </summary>
+        public void AttachEntity(SimEntity entity)
+        {
+            if (entity == null || ReferenceEquals(Entity, entity)) return;
+            DetachEntity();
+
+            Entity = entity;
+            var h = entity.Health;
+            if (h != null)
+            {
+                h.OnHealthChanged += RelayHealthChanged;
+                h.OnDeath += RelayDeath;
+            }
+
+            OnEntityAttached();
+            if (h != null) OnHealthChanged?.Invoke(h.CurrentHealth, h.MaxHealth);
+        }
+
+        void DetachEntity()
+        {
+            if (Entity == null) return;
+            var h = Entity.Health;
+            if (h != null)
+            {
+                h.OnHealthChanged -= RelayHealthChanged;
+                h.OnDeath -= RelayDeath;
+            }
+            Entity = null;
+        }
+
+        /// <summary>심 엔티티가 붙은 직후 — 하위가 심 상태(풋프린트 등)에 의존하는 초기화를 여기서 한다.</summary>
+        protected virtual void OnEntityAttached() { }
+
+        void RelayHealthChanged(float current, float max) => OnHealthChanged?.Invoke(current, max);
+
+        // 순서는 구 Entity.Awake의 구독 순서와 같다: 효과 정리 → 사망 처리 → 외부 구독자
+        void RelayDeath()
+        {
+            Effects.Clear();
+            HandleDeath();
+            OnDeath?.Invoke();
         }
 
         protected virtual void Start() { }
@@ -119,13 +183,12 @@ namespace CoreDawn.Entities
         {
             Effects.Tick(Time.deltaTime);
             if (Movement != null) Movement.SpeedMultiplier = Effects.MoveSpeedMultiplier;
+        }
 
-            // (팀) 체력 디버그 로그는 비활성화됨
-            /*
-            if (!health.IsDead && (int)(health.CurrentHealth)%7 == 0
-                && (this.GetType() == typeof(BattleTower)
-                || this.GetType() == typeof(Player)
-                || this.GetType() == typeof(Monster))) Debug.Log(this + "의 체력은 " + health.CurrentHealth);*/
+        // 위치 동기 — 물리는 뷰가 굴리고 심은 결과를 받는다. 건물은 움직이지 않으니 뷰 우선 개체만.
+        protected virtual void LateUpdate()
+        {
+            if (ownsEntity && Entity != null) Entity.Position = transform.position;
         }
 
         /// <summary>
@@ -136,49 +199,46 @@ namespace CoreDawn.Entities
         /// ReceiveDamage는 시전자를 모르므로(수치만 받는다) 플레이어 공격만 막는 것 같은
         /// 규칙은 이쪽을 override해야 한다.
         /// </summary>
-        public virtual void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
+        public virtual void ApplyEffects(IReadOnlyList<EffectEntry> entries,
                                          EntityView source, Vector3 hitPoint, Vector3 hitDirection = default)
             => Effects.ApplyAll(entries, source, hitPoint, hitDirection);
 
-        /// <summary>
-        /// 받는 피해의 단일 수렴점 — 방어 배율(IncomingDamageMultiplier)을 적용해 체력을 깎는다.
-        /// 피해를 주는 효과 구현(DamageEffectSO·DoT)이 Health.TakeDamage 대신 이걸 호출한다.
-        /// 무적·보호막 같은 받는 쪽 규칙은 여기를 override해야 한다 — TakeDamage만 override하면
-        /// 효과 경로(총알·몬스터 공격 = ApplyEffects → ReceiveDamage)가 그 규칙을 그냥 지나친다.
-        /// </summary>
-        public virtual void ReceiveDamage(float amount)
-        {
-            float final = amount * Effects.IncomingDamageMultiplier;
+        /// <summary>출처 없는 피해(환경 등). 새 코드는 출처를 넘기는 쪽을 쓸 것.</summary>
+        public void ReceiveDamage(float amount) => ReceiveDamage(amount, null);
 
-            if (final > 0f)
+        /// <summary>
+        /// 받는 피해의 뷰 쪽 수렴점 — 받는 배율(IncomingDamageMultiplier, 방어 디버프)을 곱해 심 Health.Damage로 넘긴다.
+        /// 보호막·무적·아군 공격 무시 같은 규칙은 심의 IDamageInterceptor가 그 안에서 거른다.
+        /// 피해를 주는 효과 구현(DamageEffectSO·DoT)이 Health.Damage 대신 이걸 호출한다.
+        /// </summary>
+        public virtual void ReceiveDamage(float amount, EntityView source)
+        {
+            var h = Health;
+            if (h == null) return;
+
+            float final = amount * Effects.IncomingDamageMultiplier;
+            if (final <= 0f)
             {
-                health.TakeDamage(final);
+                Debug.Log($"[EntityView] 데미지 무시됨 / final={final}");
+                return;
             }
-            else
-            {
-                Debug.Log(
-                    $"[Entity] 데미지 무시됨 / final={final}"
-                );
-            }
+
+            h.Damage(final, source != null ? source.Entity : null);
         }
 
         // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.
         public virtual void TakeDamage(float damageAmount) => ReceiveDamage(damageAmount);
 
         // 즉시 사망 — HP를 0으로 만들고 사망 흐름(OnDeath → HandleDeath)을 태운다
-        public void Die() => health.Kill();
+        public void Die() => Health?.Kill();
+
         public virtual void Revive(Vector3 respawnPosition)
         {
-            print("부활");
-            // 1. 위치 이동
             transform.position = respawnPosition;
-
-            // 2. 꺼져있던 게임 오브젝트 다시 활성화
             gameObject.SetActive(true);
-
-            // 3. 체력 및 IsDead 상태 초기화 (HealthComponent.Initialize 활용)
-            health.Initialize();
+            Health?.ResetToFull();   // 체력·사망 상태 초기화
         }
+
         // 런타임 부착 시 사망 방식 변경용 (예: FPS 플레이어는 Destroy 대신 비활성화)
         public void SetDeathBehavior(bool destroy, float delay)
         {
@@ -199,6 +259,19 @@ namespace CoreDawn.Entities
         {
             if (destroyOnDeath) Destroy(gameObject);
             else gameObject.SetActive(false);
+        }
+
+        // 게임 종료 중에는 심을 건드리지 않는다 — 그 시점의 제거는 드롭 같은 새 오브젝트 생성을 유발해 에러가 난다
+        private static bool quitting;
+        private void OnApplicationQuit() => quitting = true;
+
+        // 뷰가 사라지면 뷰가 만든 심 엔티티도 같이 — 하위 클래스가 OnDestroy를 쓰면 반드시 base를 부를 것
+        protected virtual void OnDestroy()
+        {
+            if (Entity == null) return;
+            var e = Entity;
+            DetachEntity();
+            if (ownsEntity && !quitting && !e.IsRemoved) SimHost.World.Remove(e);
         }
     }
 }

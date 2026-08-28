@@ -13,7 +13,7 @@ namespace CoreDawn.Combat
     {
         public override void Apply(EntityView target, in EffectContext ctx)
         {
-            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value);
+            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value, ctx.Source);
         }
     }
 }

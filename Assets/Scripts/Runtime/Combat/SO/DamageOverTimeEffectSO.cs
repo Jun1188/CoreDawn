@@ -18,7 +18,7 @@ namespace CoreDawn.Combat
 
         public override void OnTick(EntityView target, in EffectContext ctx)
         {
-            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value); // 방어 배율은 수렴점에서 적용
+            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value, ctx.Source); // 방어 배율은 수렴점에서 적용
         }
     }
 }

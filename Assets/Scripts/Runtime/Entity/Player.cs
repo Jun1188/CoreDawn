@@ -77,14 +77,14 @@ namespace CoreDawn.Entities
             PlayerController controller = GetComponent<PlayerController>();
             controller.HandlePlayerDeath(); 
         }
-        public override void ReceiveDamage(float amount)
+        public override void ReceiveDamage(float amount, EntityView source)
         {
             if (IsDead)
                 return;
 
             float oldHealth = Health.CurrentHealth;
 
-            base.ReceiveDamage(amount);
+            base.ReceiveDamage(amount, source);
 
             float newHealth = Health.CurrentHealth;
 

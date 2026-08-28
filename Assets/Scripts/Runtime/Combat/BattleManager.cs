@@ -230,7 +230,7 @@ namespace CoreDawn.Combat
             if (playerSceneRoot != null && !playerSceneRoot.activeSelf)
                 playerSceneRoot.SetActive(true);
             playerEntity.gameObject.SetActive(true);
-            playerEntity.Health.Initialize(); // IsDead 해제 + HP 전량 회복
+            playerEntity.Health.ResetToFull(); // IsDead 해제 + HP 전량 회복
             Debug.Log("[BattleManager] 아침 — 플레이어 부활 (HP 전량 회복)");
         }
     }
