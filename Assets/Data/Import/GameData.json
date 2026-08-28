@@ -1947,8 +1947,8 @@
       "displayName": "분배기",
       "description": "입력 하나를 여러 출구로 나눈다. 출구별 필터를 걸 수 있다.",
       "category": "Logistics",
-      "model": "",
-      "modelGuid": "",
+      "model": "Splitter.fbx",
+      "modelGuid": "00858b560d59d074180a59958b7d9e2d",
       "size": {
         "x": 1,
         "y": 1
@@ -2016,8 +2016,8 @@
       "displayName": "합류기",
       "description": "여러 입력을 하나로 모은다.",
       "category": "Logistics",
-      "model": "",
-      "modelGuid": "",
+      "model": "Merger.fbx",
+      "modelGuid": "f9d1fa3ef5596374ca29e18fd2cdfd74",
       "size": {
         "x": 1,
         "y": 1
