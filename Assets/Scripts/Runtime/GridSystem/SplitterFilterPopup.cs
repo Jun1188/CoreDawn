@@ -136,7 +136,7 @@ public class SplitterFilterPopup : UIPopup
 
         foreach (var item in db.items)
         {
-            if (item == null) continue;
+            if (item == null || item.hideFromMenu) continue;   // 내부 탄약 등은 고를 수 없다
             var captured = item;
 
             // 한 아이템이 여러 출구에 걸릴 수 있다 — 선택 출구 지정 여부와

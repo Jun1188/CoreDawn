@@ -777,6 +777,7 @@
       "type": "Ammo",
       "line": "Iron",
       "maxStack": 100,
+      "hideFromMenu": true,
       "icon": "",
       "iconGuid": "",
       "attackEffects": [
