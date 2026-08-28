@@ -6,7 +6,7 @@ namespace CoreDawn.Entities
     // 각 상태가 소유 Entity의 컴포넌트(순수 C#)에 접근하는 통로 역할을 겸한다.
     public class StateMachineComponent
     {
-        public Entity Owner { get; }
+        public EntityView Owner { get; }
 
         public Transform Transform => Owner.transform;
         public MovementComponent Movement => Owner.Movement;
@@ -16,7 +16,7 @@ namespace CoreDawn.Entities
         private IEntityState currentState;
         public IEntityState CurrentState => currentState;
 
-        public StateMachineComponent(Entity owner)
+        public StateMachineComponent(EntityView owner)
         {
             Owner = owner;
         }

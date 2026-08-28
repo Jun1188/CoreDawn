@@ -167,7 +167,7 @@ namespace CoreDawn.Worlds
                         if (boot.Sim.Grid.IsOccupied(origin + new Vector2Int(dx, dy))) free = false;
                 if (!free) { skipped++; continue; }
 
-                var view = placed.GetComponent<BuildingEntity>();
+                var view = placed.GetComponent<BuildingView>();
                 if (view != null) PlacementBridge.PlaceExisting(placed.Data, origin, 0, view);
                 else boot.Sim.Place(placed.Data, origin, 0);
                 connected++;
@@ -187,7 +187,7 @@ namespace CoreDawn.Worlds
         }
 
         /// <summary>런타임에 갓 세운 나무를 심에 잇는다(굳어 있지 않은 씬 경로).</summary>
-        static void ConnectTree(BuildingEntity view, TreeDataSO data, Vector2Int cell)
+        static void ConnectTree(BuildingView view, TreeDataSO data, Vector2Int cell)
             => PlacementBridge.PlaceExisting(data, cell, 0, view);
 
         // ── 시작 드롭 아이템 ───────────────────────────────────────
@@ -530,8 +530,8 @@ namespace CoreDawn.Worlds
                 // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect).
                 // 뷰는 프리팹에 없으므로 지금 붙여 둔다: 굳은 씬에서 인스펙터로 확인할 수 있고,
                 // 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
-                var view = go.GetComponent<BuildingEntity>();
-                if (view == null) view = go.AddComponent<BuildingEntity>();
+                var view = go.GetComponent<BuildingView>();
+                if (view == null) view = go.AddComponent<BuildingView>();
                 if (treeData.maxHp > 0) view.Health.SetMaxHealth(treeData.maxHp);
                 if (connecting) ConnectTree(view, treeData, cell);
                 placed++;

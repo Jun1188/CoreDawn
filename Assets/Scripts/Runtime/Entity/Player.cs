@@ -12,7 +12,7 @@ namespace CoreDawn.Entities
     // 길찾기 최적화의 핵심: 몬스터 N마리가 각자 플레이어를 스캔하는 대신,
     // 플레이어 하나가 센서 범위의 몬스터를 찾아 OnDetectedByPlayer / OnLostByPlayer로
     // 알려준다. 감지된 몬스터만 런타임 A*를 쓰고 나머지는 플로우필드를 탄다.
-    public class Player : Entity
+    public class Player : EntityView
     {
         [SerializeField] private SensorComponent sensor = new SensorComponent();
 
@@ -24,7 +24,7 @@ namespace CoreDawn.Entities
         public override SensorComponent Sensor => sensor;
         public override CombatComponent Combat => combat;
 
-        private readonly List<Entity> scanBuffer = new List<Entity>();
+        private readonly List<EntityView> scanBuffer = new List<EntityView>();
         private readonly HashSet<Monster> detected = new HashSet<Monster>();
         private readonly List<Monster> removeBuffer = new List<Monster>();
 

@@ -30,7 +30,7 @@ namespace CoreDawn.Managers
 
         float _playerTimer, _coreTimer, _rescanTimer;
         Player _player;
-        BuildingEntity _core;
+        BuildingView _core;
         World _world;
 
         void Update()
@@ -74,7 +74,7 @@ namespace CoreDawn.Managers
             if (_core == null || _core.Health.IsDead)
             {
                 _core = null;
-                foreach (var b in FindObjectsByType<BuildingEntity>(FindObjectsSortMode.None))
+                foreach (var b in FindObjectsByType<BuildingView>(FindObjectsSortMode.None))
                     if (b.IsCore && !b.Health.IsDead) { _core = b; break; }
             }
         }

@@ -8,7 +8,7 @@ namespace CoreDawn.Entities
     // 플레이어 센서에 감지되면(OnDetectedByPlayer) 런타임 A* 추적으로 전환하고,
     // 범위를 벗어나면(OnLostByPlayer) 다시 플로우필드로 복귀한다.
     // 이동/전투 컴포넌트는 순수 C#이라 별도 AddComponent 없이 이 스크립트 하나면 된다.
-    public class Monster : Entity
+    public class Monster : EntityView
     {
         [SerializeField] private MovementComponent movement = new MovementComponent();
         [SerializeField] private CombatComponent combat = new CombatComponent();

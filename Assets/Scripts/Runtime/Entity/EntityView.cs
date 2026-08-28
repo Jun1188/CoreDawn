@@ -9,11 +9,11 @@ using CoreDawn.Pings;
 namespace CoreDawn.Entities
 {
     // Entity 확장 유틸 — 타겟 유효성/거리 판정 (구 IInteractable 확장의 Entity 버전)
-    public static class EntityExtensions
+    public static class EntityViewExtensions
     {
         // 순수 null 체크만으로는 Destroy된 MonoBehaviour(가짜 null)를 걸러내지 못하므로
         // UnityEngine.Object의 == 오버로드를 활용. SetActive(false)로 내려간 엔티티도 무효 처리.
-        public static bool IsValidTarget(this Entity target)
+        public static bool IsValidTarget(this EntityView target)
         {
             if (target == null) return false;
             if (!target.gameObject.activeInHierarchy) return false;
@@ -21,12 +21,12 @@ namespace CoreDawn.Entities
         }
 
         // 멀티타일 건물처럼 부피가 있는 대상은 중심점 대신 콜라이더 표면까지의 거리를 사용
-        public static float DistanceTo(this Entity target, Vector3 from)
+        public static float DistanceTo(this EntityView target, Vector3 from)
         {
             // 심 건물은 점유 풋프린트(칸) 기준으로 잰다 — 모델(콜라이더)이 풋프린트보다 한참
             // 작을 수 있는데(3×3칸 코어의 우주선), 몬스터의 길을 막는 것은 풋프린트라서
             // 풋프린트 경계까지 붙은 몬스터의 공격이 닿으려면 거리의 정본도 풋프린트여야 한다.
-            if (target is BuildingEntity be && be.TryGetFootprintRect(out Vector3 min, out Vector3 max))
+            if (target is BuildingView be && be.TryGetFootprintRect(out Vector3 min, out Vector3 max))
             {
                 float dx = Mathf.Max(min.x - from.x, 0f, from.x - max.x);
                 float dz = Mathf.Max(min.z - from.z, 0f, from.z - max.z);
@@ -56,7 +56,7 @@ namespace CoreDawn.Entities
     // 모든 게임 개체(몬스터/플레이어/건물)의 공통 베이스.
     // HP/피격/사망은 전 엔티티 공통이고, 이동·전투·감지 컴포넌트(순수 C#)는
     // 하위 클래스가 보유한 것만 virtual 프로퍼티로 노출한다.
-    public class Entity : MonoBehaviour, IPingable
+    public class EntityView : MonoBehaviour, IPingable
     {
         // ── 핑 대상 (IPingable) — 몬스터·건물·둥지·플레이어 공통. 표시 이름은 하위가 덮어쓴다.
         //    자기 자신(로컬 플레이어)은 여기서 거르지 않는다 — 다른 플레이어는 찍혀야 하므로 조준이 계층으로 뺀다.
@@ -137,7 +137,7 @@ namespace CoreDawn.Entities
         /// 규칙은 이쪽을 override해야 한다.
         /// </summary>
         public virtual void ApplyEffects(System.Collections.Generic.IReadOnlyList<EffectEntry> entries,
-                                         Entity source, Vector3 hitPoint, Vector3 hitDirection = default)
+                                         EntityView source, Vector3 hitPoint, Vector3 hitDirection = default)
             => Effects.ApplyAll(entries, source, hitPoint, hitDirection);
 
         /// <summary>

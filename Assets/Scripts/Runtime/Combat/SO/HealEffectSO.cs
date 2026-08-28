@@ -7,7 +7,7 @@ namespace CoreDawn.Combat
     [CreateAssetMenu(fileName = "Effect_Heal", menuName = "Combat/Effect/Heal")]
     public class HealEffectSO : EffectSO
     {
-        public override void Apply(Entity target, in EffectContext ctx)
+        public override void Apply(EntityView target, in EffectContext ctx)
         {
             if (ctx.Value > 0f) target.Health.Heal(ctx.Value);
         }

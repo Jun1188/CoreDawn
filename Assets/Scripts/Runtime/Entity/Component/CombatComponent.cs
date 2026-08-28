@@ -15,7 +15,7 @@ namespace CoreDawn.Entities
         [Tooltip("명중 시 무슨 일이 일어나는가 — 이 공격의 정의 전부. 피해도 항목의 하나다: {Damage, 10}.")]
         [SerializeField] private EffectEntry[] attackEffects;
 
-        private Entity owner; // 효과의 출처(Source)로 전달 — Initialize로 주입
+        private EntityView owner; // 효과의 출처(Source)로 전달 — Initialize로 주입
         private float lastAttackTime = float.MinValue;
 
         public float AttackRange => attackRange;
@@ -27,7 +27,7 @@ namespace CoreDawn.Entities
         public event Action OnAttackAction;
 
         // 소유 엔티티 주입 — MovementComponent.Initialize와 같은 패턴. Awake에서 호출한다.
-        public void Initialize(Entity owner) => this.owner = owner;
+        public void Initialize(EntityView owner) => this.owner = owner;
 
         // 런타임 부착 엔티티(EnsurePlayerEntity 등) 전용 — 인스펙터를 못 쓰는 경우 공격 정의 주입
         public void SetAttackEffects(EffectEntry[] entries) => attackEffects = entries;
@@ -52,7 +52,7 @@ namespace CoreDawn.Entities
             OnAttackAction?.Invoke();
         }
 
-        public void TryAttack(Entity target)
+        public void TryAttack(EntityView target)
         {
             if (!target.IsValidTarget()) return;
 

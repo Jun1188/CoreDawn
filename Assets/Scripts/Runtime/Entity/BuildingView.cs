@@ -26,7 +26,7 @@ namespace CoreDawn.Entities
     //
     // 이름 주의: 심의 plain C# Building과 헷갈리지 않게 Entity 접미사를 붙였다 (2026-07-31 이전 이름: Entities.Building).
     // 코어처럼 심 없이 씬에 직접 배치하는 건물은 Sim이 null이어도 된다.
-    public class BuildingEntity : Entity, IInteractable
+    public class BuildingView : EntityView, IInteractable
     {
         [Header("Building Settings")]
         [Tooltip("맵 중앙의 코어인지 여부. 플로우필드에서 타워보다 우선하는 최종 목표가 된다.")]
@@ -121,11 +121,11 @@ namespace CoreDawn.Entities
         }
 
         // 살아있는 건물 레지스트리 — 플로우필드 목표 수집과 몬스터의 사거리 검색용
-        private static readonly List<BuildingEntity> all = new List<BuildingEntity>();
-        public static IReadOnlyList<BuildingEntity> All => all;
+        private static readonly List<BuildingView> all = new List<BuildingView>();
+        public static IReadOnlyList<BuildingView> All => all;
 
         // 코어 파괴 = 게임오버 조건. BattleManager가 구독한다.
-        public static event Action<BuildingEntity> CoreDestroyed;
+        public static event Action<BuildingView> CoreDestroyed;
 
         private void OnEnable()
         {
@@ -240,7 +240,7 @@ namespace CoreDawn.Entities
         /// 몬스터의 공격은 이 값과 무관하다 — 밤 웨이브가 무엇을 노리는지는 플로우필드의
         /// 목표 선정(threatSeedCost)이 정하고, 정한 목표는 실제로 부술 수 있어야 한다.
         /// </summary>
-        public override void ApplyEffects(IReadOnlyList<EffectEntry> entries, Entity source,
+        public override void ApplyEffects(IReadOnlyList<EffectEntry> entries, EntityView source,
                                           Vector3 hitPoint, Vector3 hitDirection = default)
         {
             if (Data != null && !Data.isAttackable && !IsHostile(source)) return;
@@ -259,7 +259,7 @@ namespace CoreDawn.Entities
         /// 출처를 모르는 피해(null)는 아군으로 본다 — 실제 공격자는 모두 자신을 넘기므로,
         /// 출처가 없다는 것은 곧 "누구의 공격도 아니다"이고 무적 건물이 그걸로 깎이면 안 된다.
         /// </summary>
-        static bool IsHostile(Entity source)
+        static bool IsHostile(EntityView source)
         {
             if (source == null) return false;
             if (hostileMask < 0) hostileMask = LayerMask.GetMask("Monster");
@@ -304,7 +304,7 @@ namespace CoreDawn.Entities
 
         // 심 건물(POCO) → 건물 엔티티 (구 BuildingDamageable.GetOrAttach).
         // PlacementBridge가 배치 시 모든 뷰 GO에 이 컴포넌트를 붙이고 매핑을 등록한다.
-        public static BuildingEntity GetOrAttach(Building sim)
+        public static BuildingView GetOrAttach(Building sim)
         {
             if (sim == null || sim.IsRemoved) return null;
 
@@ -320,9 +320,9 @@ namespace CoreDawn.Entities
 
         // 사거리 내 가장 가까운 살아있는 건물 — 몬스터(FlowFieldState)의 도착/공격 판정용.
         // 멀티타일 건물을 고려해 콜라이더 표면 거리(DistanceTo)를 사용한다.
-        public static BuildingEntity FindClosestInRange(Vector3 from, float range)
+        public static BuildingView FindClosestInRange(Vector3 from, float range)
         {
-            BuildingEntity closest = null;
+            BuildingView closest = null;
             float minDistance = float.MaxValue;
             foreach (var building in all)
             {

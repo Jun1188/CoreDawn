@@ -12,7 +12,7 @@ namespace CoreDawn.Entities
 {
     // 둥지(MonsterNest)는 파괴 가능한 Entity이나,
     // 둥지의 핵(NestCore) 부분은 파괴 불가하며 스폰 포인트 역할을 한다.
-    public class MonsterNest : Entity
+    public class MonsterNest : EntityView
     {
         [System.Serializable]
         public class NestSpawnPoint

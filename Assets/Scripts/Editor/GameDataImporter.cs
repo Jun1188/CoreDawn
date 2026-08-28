@@ -1213,10 +1213,10 @@ namespace CoreDawn.EditorTools
             changed |= EnsureRootScale(root);
 
             // 1) Entity — 포탑만 사격 로직을 가진 BattleTower가 필요하다
-            var entity = root.GetComponent<Entity>();
+            var entity = root.GetComponent<EntityView>();
             if (entity == null)
             {
-                entity = isTower ? root.AddComponent<BattleTower>() : root.AddComponent<BuildingEntity>();
+                entity = isTower ? root.AddComponent<BattleTower>() : root.AddComponent<BuildingView>();
                 changed = true;
             }
             else if (isTower && entity is not BattleTower)
@@ -1228,7 +1228,7 @@ namespace CoreDawn.EditorTools
 
             // 1-b) 코어 표식 — 이게 꺼져 있으면 코어를 아무도 못 찾는다.
             //      내구도 UI가 비고, 플로우필드의 최종 목표도, 코어 파괴 = 게임오버 판정도 죽는다.
-            if (entity is BuildingEntity be)
+            if (entity is BuildingView be)
             {
                 var coreObj = new SerializedObject(be);
                 var isCore = coreObj.FindProperty("isCore");

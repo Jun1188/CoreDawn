@@ -146,7 +146,7 @@ namespace CoreDawn.Placement
             float sqRadius = Sq(radiusTiles * _cellSize);
             var live = new HashSet<Building>();
 
-            foreach (var entity in BuildingEntity.All)
+            foreach (var entity in BuildingView.All)
             {
                 if (entity == null || !entity.HasSim) continue;
                 if ((entity.transform.position - center).sqrMagnitude > sqRadius) continue;
@@ -231,7 +231,7 @@ namespace CoreDawn.Placement
         /// 배치할 때 더해준 만큼(광맥 위 채굴기)을 도로 빼면 지면이 나온다.
         /// 포트 흐름은 지면에 눕는 표시이므로 이 값을 써야 공중에 뜨지 않는다.
         /// </summary>
-        float GroundYOf(Building b, BuildingEntity view)
+        float GroundYOf(Building b, BuildingView view)
         {
             if (view == null) view = FactoryBootstrap.Instance != null
                 ? FactoryBootstrap.Instance.GetView(b) : null;

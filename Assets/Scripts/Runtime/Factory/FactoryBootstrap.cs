@@ -62,7 +62,7 @@ namespace CoreDawn.Factory
 
         public FactorySim Sim { get; private set; }
 
-        readonly Dictionary<Building, BuildingEntity> _views = new();
+        readonly Dictionary<Building, BuildingView> _views = new();
 
         void Awake()
         {
@@ -133,7 +133,7 @@ namespace CoreDawn.Factory
 
         static bool HasCore()
         {
-            foreach (var e in BuildingEntity.All)
+            foreach (var e in BuildingView.All)
                 if (e != null && e.IsCore) return true;
             return false;
         }
@@ -156,9 +156,9 @@ namespace CoreDawn.Factory
         /// </summary>
         public IEnumerable<Building> Buildings => _views.Keys;
 
-        public void RegisterView(Building b, BuildingEntity v) => _views[b] = v;
+        public void RegisterView(Building b, BuildingView v) => _views[b] = v;
         public void UnregisterView(Building b) => _views.Remove(b);
-        public BuildingEntity GetView(Building b) =>
+        public BuildingView GetView(Building b) =>
             b != null && _views.TryGetValue(b, out var v) ? v : null;
     }
 }

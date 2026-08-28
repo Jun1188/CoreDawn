@@ -32,7 +32,7 @@ namespace CoreDawn.Combat
         public readonly float Range;
         public readonly int TargetMask;        // 효과를 적용할 레이어. 0 = 판정 없는 연출탄 — 스윕도 생략(트레이서)
         public readonly EffectEntry[] Effects; // 명중 시 무슨 일이 일어나는가 — 배율이 이미 구워진 최종 목록
-        public readonly Entity Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
+        public readonly EntityView Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
         public readonly float Gravity;         // 낙하 가속 — 0이면 직선탄, >0이면 포물선 (탄약의 성질)
         public readonly float ExplosionRadius; // 착탄 폭발 반경 — 0이면 단일 명중, >0이면 착탄점 Pulse
         public readonly FireMode Mode;         // 전달 방식 — 발사기(GunData·TowerDataSO)가 정한다
@@ -43,7 +43,7 @@ namespace CoreDawn.Combat
         public readonly GameObject HitEffect;  // 착탄/폭발 지점에서 재생할 파티클 (탄약의 hitEffectPrefab)
 
         public ProjectileShot(float speed, float lifetime, float range,
-                              EffectEntry[] effects, int targetMask, Entity source,
+                              EffectEntry[] effects, int targetMask, EntityView source,
                               float gravity = 0f, float explosionRadius = 0f,
                               FireMode mode = FireMode.Projectile, GameObject prefab = null,
                               int pierce = 0, Vector3? muzzle = null, GameObject hitEffect = null)
@@ -256,7 +256,7 @@ namespace CoreDawn.Combat
                     break;
                 }
 
-                Entity entity = h.collider.GetComponentInParent<Entity>();
+                EntityView entity = h.collider.GetComponentInParent<EntityView>();
                 if (entity == null || entity.IsDead || !pulseSeen.Add(entity)) continue;
 
                 entity.ApplyEffects(shot.Effects, shot.Source, h.point, direction);
@@ -362,7 +362,7 @@ namespace CoreDawn.Combat
             if (shot.TargetMask == 0) return;
             if ((shot.TargetMask & (1 << hit.gameObject.layer)) == 0) return;
 
-            Entity entity = hit.GetComponentInParent<Entity>();
+            EntityView entity = hit.GetComponentInParent<EntityView>();
             if (entity != null && !entity.IsDead)
             {
                 entity.ApplyEffects(shot.Effects, shot.Source, point, direction);
@@ -376,7 +376,7 @@ namespace CoreDawn.Combat
         // ── 오라(펄스) — 세 번째 전달 방식 ──────────────────────────
 
         private static readonly Collider[] pulseBuffer = new Collider[64];
-        private static readonly HashSet<Entity> pulseSeen = new HashSet<Entity>();
+        private static readonly HashSet<EntityView> pulseSeen = new HashSet<EntityView>();
 
         /// <summary>
         /// 원점 반경의 대상 전원에게 효과를 적용한다 (펄스형 오라 — 감속 필드 등).
@@ -396,7 +396,7 @@ namespace CoreDawn.Combat
 
             for (int i = 0; i < count; i++)
             {
-                Entity entity = pulseBuffer[i].GetComponentInParent<Entity>();
+                EntityView entity = pulseBuffer[i].GetComponentInParent<EntityView>();
                 if (entity == null || entity.IsDead) continue;
                 if (!pulseSeen.Add(entity)) continue;   // 콜라이더 여러 개인 대상 중복 방지
 
@@ -423,7 +423,7 @@ namespace CoreDawn.Combat
             pulseSeen.Clear();
             for (int i = 0; i < count; i++)
             {
-                Entity entity = pulseBuffer[i].GetComponentInParent<Entity>();
+                EntityView entity = pulseBuffer[i].GetComponentInParent<EntityView>();
                 if (entity != null && !entity.IsDead) pulseSeen.Add(entity);
             }
             return pulseSeen.Count;

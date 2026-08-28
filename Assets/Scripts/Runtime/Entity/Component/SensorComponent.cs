@@ -16,7 +16,7 @@ namespace CoreDawn.Entities
         [SerializeField] private string targetLayerName = "Monster";
         [SerializeField] private float scanInterval = 0.2f; // 매 프레임 OverlapSphere 방지
 
-        private Entity owner;
+        private EntityView owner;
         private Transform transform;
         private LayerMask targetLayer;
         private float lastScanTime = float.MinValue;
@@ -38,7 +38,7 @@ namespace CoreDawn.Entities
             targetLayer = LayerMask.GetMask(layerNames);
         }
 
-        public void Initialize(Entity owner)
+        public void Initialize(EntityView owner)
         {
             this.owner = owner;
             transform = owner.transform;
@@ -52,7 +52,7 @@ namespace CoreDawn.Entities
 
         // 스캔 주기가 됐을 때만 true를 반환하며 results를 범위 내 유효 Entity로 채운다.
         // (플레이어가 몬스터 감지/해제 콜백을 쏘는 용도)
-        public bool TryScan(List<Entity> results)
+        public bool TryScan(List<EntityView> results)
         {
             if (transform == null || Time.time < lastScanTime + scanInterval) return false;
             lastScanTime = Time.time;
@@ -62,7 +62,7 @@ namespace CoreDawn.Entities
             for (int i = 0; i < count; i++)
             {
                 // 콜라이더가 자식 모델에 붙어 있는 프리팹 구조를 지원하기 위해 부모까지 탐색
-                Entity entity = overlapBuffer[i].GetComponentInParent<Entity>();
+                EntityView entity = overlapBuffer[i].GetComponentInParent<EntityView>();
                 if (entity == null || entity == owner || !entity.IsValidTarget()) continue;
                 if (!results.Contains(entity)) results.Add(entity); // 콜라이더 여러 개인 대상 중복 방지
             }
@@ -77,17 +77,17 @@ namespace CoreDawn.Entities
         // 중심이 사거리 밖인 대상까지 잡힌다(몬스터 캡슐 반지름 0.5 → 사거리+0.5까지).
         // 그러면 잡는 쪽과 유지하는 쪽의 기준이 어긋나, 경계에 선 몬스터를 스캔마다
         // 잡았다 버렸다 하며 포탑이 초당 몇 번씩 홱홱 돌아간다.
-        public Entity GetClosestTarget(float rangeOverride = -1f, float minRange = 0f)
+        public EntityView GetClosestTarget(float rangeOverride = -1f, float minRange = 0f)
         {
             if (transform == null) return null;
             float range = rangeOverride > 0f ? rangeOverride : detectionRange;
 
             int count = Physics.OverlapSphereNonAlloc(transform.position, range, overlapBuffer, targetLayer);
-            Entity closest = null;
+            EntityView closest = null;
             float minDistance = float.MaxValue;
             for (int i = 0; i < count; i++)
             {
-                Entity entity = overlapBuffer[i].GetComponentInParent<Entity>();
+                EntityView entity = overlapBuffer[i].GetComponentInParent<EntityView>();
                 if (entity == null || entity == owner || !entity.IsValidTarget()) continue;
 
                 float dist = Vector3.Distance(transform.position, entity.GetPosition());

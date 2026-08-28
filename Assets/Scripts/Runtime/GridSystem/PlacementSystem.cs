@@ -561,7 +561,7 @@ namespace CoreDawn.Placement
             // ① 몸체 직접 조준 — 건물은 Default 레이어라 마스크 없이 쏘고 엔티티 컴포넌트로 판별
             if (Physics.Raycast(AimRay(), out RaycastHit bodyHit, BuildRange))
             {
-                var view = bodyHit.collider.GetComponentInParent<BuildingEntity>();
+                var view = bodyHit.collider.GetComponentInParent<BuildingView>();
                 if (view != null && view.HasSim)   // 심 없는 건물(코어 등)은 철거 대상 아님
                 {
                     building = view.Sim;
@@ -748,7 +748,7 @@ namespace CoreDawn.Placement
         /// </summary>
         private static void StripLogic(GameObject ghost)
         {
-            foreach (var entity in ghost.GetComponentsInChildren<Entity>(true)) Destroy(entity);
+            foreach (var entity in ghost.GetComponentsInChildren<EntityView>(true)) Destroy(entity);
             foreach (var visual in ghost.GetComponentsInChildren<TowerVisualController>(true)) Destroy(visual);
 
             foreach (var animator in ghost.GetComponentsInChildren<Animator>(true)) animator.enabled = false;

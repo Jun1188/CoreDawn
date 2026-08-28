@@ -38,7 +38,7 @@ namespace CoreDawn.Combat
                  "Radial = 명중점에서 바깥(폭발·오라).")]
         public KnockbackMode mode = KnockbackMode.Directional;
 
-        public override void Apply(Entity target, in EffectContext ctx)
+        public override void Apply(EntityView target, in EffectContext ctx)
         {
             var movement = target.Movement;
             if (movement == null || ctx.Value <= 0f) return;
@@ -54,7 +54,7 @@ namespace CoreDawn.Combat
         /// 있으므로 방사형으로 물러나고, 그것마저 0이면(근접처럼 명중점 = 대상 위치)
         /// 시전자 위치로 한 번 더 물러난다. 세 단계 모두 실패할 때만 포기한다.
         /// </summary>
-        Vector3 ResolveDirection(Entity target, in EffectContext ctx)
+        Vector3 ResolveDirection(EntityView target, in EffectContext ctx)
         {
             if (mode == KnockbackMode.Directional && ctx.HitDirection.sqrMagnitude > 0.0001f)
                 return ctx.HitDirection;

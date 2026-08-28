@@ -9,14 +9,14 @@ namespace CoreDawn.Entities
     // Player의 해제 콜백(Monster.OnLostByPlayer)이 담당한다.
     public class ChaseState : IEntityState
     {
-        private Entity target;
+        private EntityView target;
         private float pathUpdateInterval = 0.5f;
         private float lastPathUpdateTime;
         private StateMachineComponent owner;
 
-        public Entity Target => target;
+        public EntityView Target => target;
 
-        public ChaseState(Entity target)
+        public ChaseState(EntityView target)
         {
             this.target = target;
         }
@@ -116,7 +116,7 @@ namespace CoreDawn.Entities
             {
                 if (!IsStillCurrent(sm)) return;
 
-                var buildingEntity = BuildingEntity.GetOrAttach(blocker);
+                var buildingEntity = BuildingView.GetOrAttach(blocker);
                 if (buildingEntity != null && !ReferenceEquals(buildingEntity, target))
                 {
                     sm.SetState(new ChaseState(buildingEntity));

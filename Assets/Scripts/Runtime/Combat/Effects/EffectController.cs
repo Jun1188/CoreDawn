@@ -25,7 +25,7 @@ namespace CoreDawn.Combat
             public float tickTimer;
         }
 
-        private readonly Entity owner;
+        private readonly EntityView owner;
         private readonly List<ActiveEffect> active = new List<ActiveEffect>();
 
         /// <summary>활성 이동 속도 배율 — Entity가 Movement에 밀어 넣는다.</summary>
@@ -40,7 +40,7 @@ namespace CoreDawn.Combat
         /// <summary>지속 효과 시작/종료 시 발화 — 상태 아이콘 UI 등 표시용.</summary>
         public event Action Changed;
 
-        public EffectController(Entity owner) => this.owner = owner;
+        public EffectController(EntityView owner) => this.owner = owner;
 
         // ── 적용 진입점 ──────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ namespace CoreDawn.Combat
         /// <param name="hitDirection">
         /// 공격이 날아온 방향. 모르면(폭발·오라) 기본값 — 방향을 보는 효과가 스스로 대체 규칙을 쓴다.
         /// </param>
-        public void ApplyAll(IReadOnlyList<EffectEntry> entries, Entity source,
+        public void ApplyAll(IReadOnlyList<EffectEntry> entries, EntityView source,
                              UnityEngine.Vector3 hitPoint, UnityEngine.Vector3 hitDirection = default)
         {
             if (owner.IsDead || entries == null) return;

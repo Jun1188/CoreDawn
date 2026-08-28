@@ -80,7 +80,7 @@ namespace CoreDawn.Entities
         private static readonly int HashAlert = Animator.StringToHash("Alert");
         private static readonly int HashDead = Animator.StringToHash("Dead");
 
-        private Entity entity;
+        private EntityView entity;
         private Renderer[] renderers;
 
         private Vector3 lastPosition;
@@ -99,8 +99,8 @@ namespace CoreDawn.Entities
 
         private void Awake()
         {
-            entity = GetComponent<Entity>();
-            if (entity == null) entity = GetComponentInParent<Entity>();
+            entity = GetComponent<EntityView>();
+            if (entity == null) entity = GetComponentInParent<EntityView>();
 
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (view == null && animator != null) view = animator.transform.parent;

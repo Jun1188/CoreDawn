@@ -21,6 +21,6 @@ namespace CoreDawn.Combat
     /// </summary>
     public abstract class EffectSO : GameDataSO
     {
-        public abstract void Apply(Entity target, in EffectContext ctx);
+        public abstract void Apply(EntityView target, in EffectContext ctx);
     }
 }

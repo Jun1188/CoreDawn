@@ -9,11 +9,11 @@ namespace CoreDawn.Entities
         // 이탈은 사거리보다 이만큼 여유를 두고 판정한다.
         private const float ExitRangeBuffer = 1.15f;
 
-        private Entity target;
+        private EntityView target;
 
-        public Entity Target => target;
+        public EntityView Target => target;
 
-        public AttackState(Entity target)
+        public AttackState(EntityView target)
         {
             this.target = target;
         }

@@ -32,8 +32,8 @@ namespace CoreDawn.Factory
                 : new GameObject(so.name);   // 프리팹 누락 시 빈 오브젝트
 
             // 프리팹에 미리 붙어 있으면(타워의 canAttack 설정 등) 그대로 쓰고, 없으면 부착
-            var view = go.GetComponent<BuildingEntity>();
-            if (view == null) view = go.AddComponent<BuildingEntity>();
+            var view = go.GetComponent<BuildingView>();
+            if (view == null) view = go.AddComponent<BuildingView>();
             view.Sim = b;
             boot.RegisterView(b, view);
 
@@ -45,7 +45,7 @@ namespace CoreDawn.Factory
         /// 배치 자체(Grid/Graph 등록)는 Place와 동일하게 FactorySim이 담당한다.
         /// </summary>
         public static Building PlaceExisting(BuildingDataSO so, Vector2Int origin, int rotSteps,
-            BuildingEntity existingView, PortDefinition[] portOverride = null)
+            BuildingView existingView, PortDefinition[] portOverride = null)
         {
             var boot = FactoryBootstrap.Instance;
             var b = boot.Sim.Place(so, origin, rotSteps, portOverride);

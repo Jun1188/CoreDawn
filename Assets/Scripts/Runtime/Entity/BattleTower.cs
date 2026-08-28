@@ -14,7 +14,7 @@ namespace CoreDawn.Entities
     //   타워   = 각도(조준·곡사) · 배율(damageMultiplier) · 소비 시점 · 펄스 주기
     //   전달   = ProjectileSystem — fireMode(Projectile/Hitscan/Aura)는 TowerDataSO(데이터)가 정한다
     //   연출   = TowerVisualController — 포탑 회전·반동·사운드. 판정은 모른다.
-    public class BattleTower : BuildingEntity
+    public class BattleTower : BuildingView
     {
         [Header("Tower Combat")]
         [SerializeField] private CombatComponent combat = new CombatComponent();
@@ -66,7 +66,7 @@ namespace CoreDawn.Entities
         // 목표 캐시 — 매 프레임 OverlapSphere를 돌리지 않기 위한 것.
         // 붙잡은 목표는 죽거나 사거리를 벗어날 때까지 유지한다: 느린 포탑이 매 프레임
         // 더 가까운 적으로 갈아타면 영원히 조준을 못 끝낸다.
-        private Entity target;
+        private EntityView target;
         private Collider targetCollider;
         private float nextScanTime;
 
@@ -129,7 +129,7 @@ namespace CoreDawn.Entities
             {
                 // 데이터가 아예 없는 구 씬 타워 — 근접 즉시 공격 폴백 (combat이 효과 정의)
                 if (!combat.CanAttack()) return;
-                Entity t = sensor.GetClosestTarget(combat.AttackRange);
+                EntityView t = sensor.GetClosestTarget(combat.AttackRange);
                 if (t.IsValidTarget()) combat.TryAttack(t);
                 return;
             }
@@ -243,11 +243,11 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>조준점 — 대상 콜라이더 중심(없으면 트랜스폼 위치).</summary>
-        private Vector3 AimPointOf(Entity t)
+        private Vector3 AimPointOf(EntityView t)
             => targetCollider != null ? targetCollider.bounds.center : t.GetPosition();
 
         /// <summary>목표의 수평 이동 속도 — 곡사 탄착 예측이 쓴다. 움직이지 않는 대상은 0.</summary>
-        private static Vector3 VelocityOf(Entity t)
+        private static Vector3 VelocityOf(EntityView t)
         {
             var movement = t != null ? t.Movement : null;
             return movement != null ? movement.Velocity : Vector3.zero;
@@ -326,7 +326,7 @@ namespace CoreDawn.Entities
         /// <summary>탄이 타워 모델 안에서 태어나지 않게 밀어내는 거리 — 진짜 총구가 있으면 필요 없다.</summary>
         private const float MuzzlePushout = 0.6f;
 
-        private void FireAt(Entity target, TowerDataSO data, AmmoModuleSO round, EffectEntry[] effects)
+        private void FireAt(EntityView target, TowerDataSO data, AmmoModuleSO round, EffectEntry[] effects)
         {
             Vector3 aimPoint = AimPointOf(target);
 

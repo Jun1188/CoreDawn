@@ -30,11 +30,11 @@ namespace CoreDawn.Combat
         /// <summary>틱 간격(초). 0 이하면 틱 없음 (시작/종료만 있는 상태 효과 — 감속 등).</summary>
         public virtual float TickInterval => 0f;
 
-        public sealed override void Apply(Entity target, in EffectContext ctx)
+        public sealed override void Apply(EntityView target, in EffectContext ctx)
             => target.Effects.Add(this, ctx);
 
-        public virtual void OnStart(Entity target, in EffectContext ctx) { }
-        public virtual void OnTick(Entity target, in EffectContext ctx) { }
-        public virtual void OnEnd(Entity target) { }
+        public virtual void OnStart(EntityView target, in EffectContext ctx) { }
+        public virtual void OnTick(EntityView target, in EffectContext ctx) { }
+        public virtual void OnEnd(EntityView target) { }
     }
 }

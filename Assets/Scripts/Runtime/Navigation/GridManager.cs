@@ -320,7 +320,7 @@ namespace CoreDawn.Navigation
         public int Subdiv => subdiv;
 
         /// <summary>이 길찾기 칸을 점유한 건물의 씬 엔티티. 건물이 없거나 심 밖 건물이면 null.</summary>
-        public BuildingEntity BuildingEntityAt(Vector2Int cell)
+        public BuildingView BuildingEntityAt(Vector2Int cell)
         {
             var node = GetNode(cell);
             if (node == null) return null;

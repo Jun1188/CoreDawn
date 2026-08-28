@@ -41,7 +41,7 @@ namespace CoreDawn.UI
         Label hpText, hpMax, shieldText, shieldMax, repairText, repairMax, radarChipText;
         Label waveNext, waveNumber, waveIncoming, waveNests;
         RadarScope radar;
-        BuildingEntity coreEntity;   // 내구도 원본 — 심(Building)이 아니라 씬 껍데기가 갖고 있다
+        BuildingView coreEntity;   // 내구도 원본 — 심(Building)이 아니라 씬 껍데기가 갖고 있다
         WaveSpawnManager subscribedWaveSpawner;
 
         /// <summary>레이더 해금 단계. 설계상 게이트②(항법·제어 복구) 완료 시 켜진다.</summary>
@@ -242,9 +242,9 @@ namespace CoreDawn.UI
         // ─────────────────── 코어 정보 탭 (SCR-01c) ───────────────────
 
         /// <summary>씬의 코어 껍데기를 찾는다 — 내구도는 심(Building)이 아니라 BuildingEntity가 원본이다.</summary>
-        static BuildingEntity FindCoreEntity()
+        static BuildingView FindCoreEntity()
         {
-            foreach (var e in BuildingEntity.All)
+            foreach (var e in BuildingView.All)
                 if (e != null && e.IsCore) return e;
             return null;
         }

@@ -1036,7 +1036,7 @@ namespace CoreDawn.FPS
             if (playerEntity == null)
                 return;
 
-            BuildingEntity core = FindCore();
+            BuildingView core = FindCore();
 
             if (core == null)
                 return;
@@ -1127,9 +1127,9 @@ namespace CoreDawn.FPS
 
         }
 
-        private BuildingEntity FindCore()
+        private BuildingView FindCore()
         {
-            foreach (var entity in BuildingEntity.All)
+            foreach (var entity in BuildingView.All)
             {
                 if (entity != null && entity.IsCore)
                     return entity;
@@ -1137,7 +1137,7 @@ namespace CoreDawn.FPS
 
             return null;
         }
-        private bool TryFindCoreRespawnPosition(BuildingEntity core, out Vector3 respawnPosition)
+        private bool TryFindCoreRespawnPosition(BuildingView core, out Vector3 respawnPosition)
         {
             respawnPosition = default;
 

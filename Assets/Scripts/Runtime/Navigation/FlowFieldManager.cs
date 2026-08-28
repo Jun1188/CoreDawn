@@ -143,7 +143,7 @@ namespace CoreDawn.Navigation
             goalBuffer.Clear();
             var grid = GridManager.Instance;
 
-            foreach (var building in BuildingEntity.All)
+            foreach (var building in BuildingView.All)
             {
                 if (!building.IsValidTarget()) continue;
                 // 벨트·나무는 목표에서 뺀다 — 웨이브가 공장과 코어를 노리라고 만든 시드에
@@ -211,7 +211,7 @@ namespace CoreDawn.Navigation
         /// "돌아가는 것보다 뚫는 게 싸다"는 판정이다 — 뚫을 건물만 여기서 잡힌다.
         /// 목표 건물(시드)은 사슬의 끝 칸이 그 건물 자리라 같은 방식으로 잡힌다.
         /// </summary>
-        public BuildingEntity FindBreachTarget(Vector3 from, float range)
+        public BuildingView FindBreachTarget(Vector3 from, float range)
         {
             var grid = GridManager.Instance;
             if (grid == null || !front.HasField) return null;
@@ -232,7 +232,7 @@ namespace CoreDawn.Navigation
                 // 사슬의 끝 = 목표 칸에 닿았거나 길이 없다. 목표가 심 밖 건물(씬에 직접 놓인 코어 등)이면
                 // 위 조회가 null이라 여기서 사거리로 한 번 더 본다 — 도착했는데 손을 놓고 서 있지 않게
                 if (!front.TryGetNext(cell, out var next))
-                    return BuildingEntity.FindClosestInRange(from, range);
+                    return BuildingView.FindClosestInRange(from, range);
                 cell = next;
             }
             return null;

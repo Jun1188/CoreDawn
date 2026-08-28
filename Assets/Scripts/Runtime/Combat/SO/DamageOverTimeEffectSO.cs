@@ -16,7 +16,7 @@ namespace CoreDawn.Combat
 
         public override float TickInterval => Mathf.Max(0.05f, tickInterval);
 
-        public override void OnTick(Entity target, in EffectContext ctx)
+        public override void OnTick(EntityView target, in EffectContext ctx)
         {
             if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value); // 방어 배율은 수렴점에서 적용
         }

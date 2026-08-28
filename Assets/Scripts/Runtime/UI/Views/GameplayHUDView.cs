@@ -40,8 +40,8 @@ namespace CoreDawn.UI
 
         PlayerController player;
         PlayerInteractionManager interaction;
-        Entity playerEntity;
-        BuildingEntity core;
+        EntityView playerEntity;
+        BuildingView core;
         ItemContainer hotbar;
 
         // ── 나침반 — 15°마다 눈금 하나, 45°마다 방위 라벨. 풀을 만들어 두고 매 프레임 배치만 ──
@@ -421,7 +421,7 @@ namespace CoreDawn.UI
         {
             if (core != null) return;
 
-            foreach (var e in BuildingEntity.All)
+            foreach (var e in BuildingView.All)
                 if (e != null && e.IsCore) { core = e; break; }
 
             if (core == null) { OnCoreHp(0f, 1f); return; }
