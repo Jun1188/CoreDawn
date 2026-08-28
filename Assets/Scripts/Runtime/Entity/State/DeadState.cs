@@ -1,17 +1,20 @@
 using UnityEngine;
 
-public class DeadState : IEntityState
+namespace CoreDawn.Entities
 {
-    public void Enter(StateMachineComponent stateMachine)
+    public class DeadState : IEntityState
     {
-        stateMachine.Movement?.StopMoving();
-    }
+        public void Enter(StateMachineComponent stateMachine)
+        {
+            stateMachine.Movement?.StopMoving();
+        }
 
-    public void Update(StateMachineComponent stateMachine) 
-    {
-    }
+        public void Update(StateMachineComponent stateMachine) 
+        {
+        }
 
-    public void Exit(StateMachineComponent stateMachine) 
-    {
+        public void Exit(StateMachineComponent stateMachine) 
+        {
+        }
     }
 }

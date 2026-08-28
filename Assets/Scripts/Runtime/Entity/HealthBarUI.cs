@@ -1,59 +1,62 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class HealthBarUI : MonoBehaviour
+namespace CoreDawn.Entities
 {
-    [SerializeField] private Entity entity;
-    [SerializeField] private Image fillImage; // UI의 전경 이미지 (Image Type: Filled)
-
-    private void Awake()
+    public class HealthBarUI : MonoBehaviour
     {
-        if (entity == null)
-            entity = GetComponentInParent<Entity>();
-    }
+        [SerializeField] private Entity entity;
+        [SerializeField] private Image fillImage; // UI의 전경 이미지 (Image Type: Filled)
 
-    /// <summary>
-    /// 런타임 생성 바(WorldHealthBar)용 배선 — 인스펙터를 못 쓰는 경우의 통로.
-    /// 이미 활성화된 뒤라면 구독을 새 대상으로 옮긴다.
-    /// </summary>
-    public void Bind(Entity target, Image fill)
-    {
-        if (isActiveAndEnabled && entity != null)
-            entity.OnHealthChanged -= UpdateHealthBar;
-
-        entity = target;
-        fillImage = fill;
-
-        if (isActiveAndEnabled && entity != null)
+        private void Awake()
         {
-            entity.OnHealthChanged += UpdateHealthBar;
-            UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+            if (entity == null)
+                entity = GetComponentInParent<Entity>();
         }
-    }
 
-    private void OnEnable()
-    {
-        if (entity != null)
+        /// <summary>
+        /// 런타임 생성 바(WorldHealthBar)용 배선 — 인스펙터를 못 쓰는 경우의 통로.
+        /// 이미 활성화된 뒤라면 구독을 새 대상으로 옮긴다.
+        /// </summary>
+        public void Bind(Entity target, Image fill)
         {
-            entity.OnHealthChanged += UpdateHealthBar;
-            // 활성화 시점의 현재 체력 즉시 반영
-            UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+            if (isActiveAndEnabled && entity != null)
+                entity.OnHealthChanged -= UpdateHealthBar;
+
+            entity = target;
+            fillImage = fill;
+
+            if (isActiveAndEnabled && entity != null)
+            {
+                entity.OnHealthChanged += UpdateHealthBar;
+                UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+            }
         }
-    }
 
-    private void OnDisable()
-    {
-        if (entity != null)
+        private void OnEnable()
         {
-            entity.OnHealthChanged -= UpdateHealthBar;
+            if (entity != null)
+            {
+                entity.OnHealthChanged += UpdateHealthBar;
+                // 활성화 시점의 현재 체력 즉시 반영
+                UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+            }
         }
-    }
 
-    private void UpdateHealthBar(float currentHealth, float maxHealth)
-    {
-        if (fillImage != null && maxHealth > 0)
+        private void OnDisable()
         {
-            fillImage.fillAmount = currentHealth / maxHealth;
+            if (entity != null)
+            {
+                entity.OnHealthChanged -= UpdateHealthBar;
+            }
+        }
+
+        private void UpdateHealthBar(float currentHealth, float maxHealth)
+        {
+            if (fillImage != null && maxHealth > 0)
+            {
+                fillImage.fillAmount = currentHealth / maxHealth;
+            }
         }
     }
 }

@@ -1,6 +1,9 @@
-public interface IEntityState
+namespace CoreDawn.Entities
 {
-    void Enter(StateMachineComponent stateMachine);
-    void Update(StateMachineComponent stateMachine);
-    void Exit(StateMachineComponent stateMachine);
+    public interface IEntityState
+    {
+        void Enter(StateMachineComponent stateMachine);
+        void Update(StateMachineComponent stateMachine);
+        void Exit(StateMachineComponent stateMachine);
+    }
 }

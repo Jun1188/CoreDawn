@@ -1,41 +1,45 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using CoreDawn.Factory;
 
-public class GameDataIDFixer
+namespace CoreDawn.EditorTools
 {
-    [MenuItem("Tools/Fix Missing GameDataSO IDs")]
-    public static void FixMissingIds()
+    public class GameDataIDFixer
     {
-        string[] guids = AssetDatabase.FindAssets("t:GameDataSO");
-        int fixedCount = 0;
-
-        foreach (string guid in guids)
+        [MenuItem("Tools/Fix Missing GameDataSO IDs")]
+        public static void FixMissingIds()
         {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            GameDataSO data = AssetDatabase.LoadAssetAtPath<GameDataSO>(path);
+            string[] guids = AssetDatabase.FindAssets("t:GameDataSO");
+            int fixedCount = 0;
 
-            if (data != null && string.IsNullOrEmpty(data.Id))
+            foreach (string guid in guids)
             {
-                // SerializedObject를 이용해 private 필드인 id 변경
-                SerializedObject serializedObj = new SerializedObject(data);
-                SerializedProperty idProperty = serializedObj.FindProperty("id");
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameDataSO data = AssetDatabase.LoadAssetAtPath<GameDataSO>(path);
 
-                if (idProperty != null)
+                if (data != null && string.IsNullOrEmpty(data.Id))
                 {
-                    // 예시: 분류 기본값 Item: + 에셋 이름
-                    string defaultCategory = data is RecipeDataSO ? "Recipe" : "Item";
-                    idProperty.stringValue = $"{defaultCategory}:{data.name}";
-                    
-                    serializedObj.ApplyModifiedProperties();
-                    EditorUtility.SetDirty(data);
-                    fixedCount++;
+                    // SerializedObject를 이용해 private 필드인 id 변경
+                    SerializedObject serializedObj = new SerializedObject(data);
+                    SerializedProperty idProperty = serializedObj.FindProperty("id");
+
+                    if (idProperty != null)
+                    {
+                        // 예시: 분류 기본값 Item: + 에셋 이름
+                        string defaultCategory = data is RecipeDataSO ? "Recipe" : "Item";
+                        idProperty.stringValue = $"{defaultCategory}:{data.name}";
+
+                        serializedObj.ApplyModifiedProperties();
+                        EditorUtility.SetDirty(data);
+                        fixedCount++;
+                    }
                 }
             }
-        }
 
-        AssetDatabase.SaveAssets();
-        Debug.Log($"<color=cyan>[GameDataIDFixer] 총 {fixedCount}개 에셋의 ID를 성공적으로 채웠습니다!</color>");
+            AssetDatabase.SaveAssets();
+            Debug.Log($"<color=cyan>[GameDataIDFixer] 총 {fixedCount}개 에셋의 ID를 성공적으로 채웠습니다!</color>");
+        }
     }
 }
 #endif

@@ -1,11 +1,15 @@
 using UnityEngine;
+using CoreDawn.Entities;
 
-/// <summary>회복 — 즉시 효과. 회복량 = ctx.Value (시전측 EffectEntry가 정한다).</summary>
-[CreateAssetMenu(fileName = "Effect_Heal", menuName = "Combat/Effect/Heal")]
-public class HealEffectSO : EffectSO
+namespace CoreDawn.Combat
 {
-    public override void Apply(Entity target, in EffectContext ctx)
+    /// <summary>회복 — 즉시 효과. 회복량 = ctx.Value (시전측 EffectEntry가 정한다).</summary>
+    [CreateAssetMenu(fileName = "Effect_Heal", menuName = "Combat/Effect/Heal")]
+    public class HealEffectSO : EffectSO
     {
-        if (ctx.Value > 0f) target.Health.Heal(ctx.Value);
+        public override void Apply(Entity target, in EffectContext ctx)
+        {
+            if (ctx.Value > 0f) target.Health.Heal(ctx.Value);
+        }
     }
 }

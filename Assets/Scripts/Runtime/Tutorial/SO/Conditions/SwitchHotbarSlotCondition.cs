@@ -1,9 +1,12 @@
 using UnityEngine;
 
-[TutorialConditionMenu("기본/핫바 칸 바꾸기")]
-public class SwitchHotbarSlotCondition : CumulativeConditionSO
+namespace CoreDawn.Tutorial
 {
-    protected override int Counter(TutorialObserver w) => w.HotbarSwitches;
+    [TutorialConditionMenu("기본/핫바 칸 바꾸기")]
+    public class SwitchHotbarSlotCondition : CumulativeConditionSO
+    {
+        protected override int Counter(TutorialObserver w) => w.HotbarSwitches;
 
-    protected override string Verb => "핫바 칸 바꾸기";
+        protected override string Verb => "핫바 칸 바꾸기";
+    }
 }
