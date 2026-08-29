@@ -263,6 +263,8 @@ namespace CoreDawn.Entities
         private int destroyedDay = -1;
 
         protected override Faction Faction => Faction.Monster;   // 둥지는 몬스터 편 — 타워가 노리고 플레이어가 부순다
+        // 엔티티는 심에 먼저 만들어진다(WorldPopulator가 생성 주체) — 뷰는 받아서 그린다
+        protected override bool CreatesOwnEntity => false;
 
         protected override void Awake()
         {
@@ -274,6 +276,15 @@ namespace CoreDawn.Entities
         protected override void Start()
         {
             base.Start();
+            // 생성 주체는 WorldPopulator다. 그 경로를 안 탄 둥지(옛 씬에 직접 놓인 것)만 여기서 스스로 세운다 — 보이게 경고
+            if (Entity == null)
+            {
+                Debug.LogWarning("[MonsterNest] 심 엔티티 없이 시작했습니다 — WorldPopulator를 거치지 않은 둥지. 프리팹 시드로 직접 세웁니다.", this);
+                var e = SimHost.World.Create(Faction.Monster, transform.position);
+                e.Add(new Health(Mathf.Max(1f, SeedMaxHealth)));
+                e.Add(new Effects());
+                AttachEntity(e);
+            }
 
             // 교전 구역은 Awake가 아니라 여기서 찾는다 — WorldPopulator는 Instantiate(→Awake 즉시
             // 실행) <b>뒤에</b> AddComponent<NestEngagementZone>()을 하므로, Awake에서 캐시하면
@@ -479,7 +490,10 @@ namespace CoreDawn.Entities
 
         protected override void OnDestroy()
         {
+            var e = Entity;
             base.OnDestroy();
+            // 심이 만들었지만 뷰와 수명을 같이한다(씬 전환) — 종료 중엔 심을 건드리지 않는다
+            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimHost.World.Remove(e);
             if (TimeManager.Instance != null && TimeManager.Instance.Cycle != null)
             {
                 TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;

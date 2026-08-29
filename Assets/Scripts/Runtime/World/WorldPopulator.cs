@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Combat;
+using CoreDawn.Sim;
 using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Interaction;
@@ -171,9 +172,11 @@ namespace CoreDawn.Worlds
                 if (view != null) PlacementBridge.PlaceExisting(placed.Data, origin, 0, view);
                 else
                 {
-                    // 둥지처럼 스스로 심 엔티티를 가진 개체(MonsterNest)는 그 엔티티에 건물을 얹는다 —
+                    // 둥지처럼 뷰가 따로 있는 개체(MonsterNest)는 심 엔티티를 여기서 만들어 붙이고 그 위에 건물을 얹는다 —
                     // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
+                    // 굳어 있는(씬에 구운) 둥지는 PlaceNests를 안 타므로 생성 주체는 이 자리다.
                     var host = placed.GetComponent<EntityView>();
+                    if (host != null && host.Entity == null) AttachFreshEntity(host, placed.Data.Faction);
                     boot.Factory.Place(placed.Data, origin, 0, host: host != null ? host.Entity : null);
                 }
                 connected++;
@@ -343,6 +346,18 @@ namespace CoreDawn.Worlds
 
         // ── 둥지 ────────────────────────────────────────────────────
 
+        /// <summary>
+        /// 데이터 없이 프리팹 시드로 사는 뷰(둥지)의 심 엔티티를 만들어 붙인다 — 생성 주체는 월드(populator)다.
+        /// HP는 프리팹의 HealthComponent 시드(구 뷰 우선 경로와 같은 값) — 둥지 데이터의 maxHp는 아직 정본이 아니다.
+        /// </summary>
+        static void AttachFreshEntity(EntityView view, Faction faction)
+        {
+            var entity = SimHost.World.Create(faction, view.transform.position);
+            entity.Add(new Health(Mathf.Max(1f, view.SeedMaxHealth)));
+            entity.Add(new Effects());
+            view.AttachEntity(entity);
+        }
+
         static int PlaceNests(World world, Transform root)
         {
             var map = world.Map;
@@ -365,6 +380,10 @@ namespace CoreDawn.Worlds
                 var nest = go.GetComponent<MonsterNest>();
                 if (nest != null)
                 {
+                    // 둥지 엔티티는 심에 먼저 만든다(편=Monster, Health, Effects) — 뷰는 받아서 그린다. HP는 프리팹의 HealthComponent 시드(구 뷰 우선 경로와 같은 값) — 둥지 데이터의 maxHp는 아직 정본이 아니다.
+                    // 건물 모듈은 뒤의 ConnectPlaced가 이 엔티티를 호스트로 얹는다(둥지 하나에 엔티티 하나).
+                    AttachFreshEntity(nest, nestData != null ? nestData.Faction : Faction.Monster);
+
                     nest.Configure(spec.warningRange, spec.triggerRange,
                                    spec.defenseSpawnAmount, spec.defenseSpawnCooldown,
                                    spec.bossRecoveryDays, spec.nestRecoveryDays);

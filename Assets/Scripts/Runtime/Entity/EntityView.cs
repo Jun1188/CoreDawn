@@ -82,6 +82,9 @@ namespace CoreDawn.Entities
                  "건물은 이 값을 쓰지 않는다(BuildingDataSO.maxHp). 프리팹 직렬화 경로를 지키려고 이름·형을 그대로 뒀다.")]
         [SerializeField] private HealthComponent health = new HealthComponent();
 
+        /// <summary>프리팹이 든 최대 HP 시드 — 심이 엔티티를 만들 때 데이터가 따로 없는 개체(둥지)의 HP 정본으로 읽는다.</summary>
+        public float SeedMaxHealth => health.MaxHealth;
+
         /// <summary>심 정본. 뷰 우선 개체는 Awake에서, 건물은 브리지가 <see cref="AttachEntity"/>로 채운다. 그 전에는 null.</summary>
         public SimEntity Entity { get; private set; }
 
