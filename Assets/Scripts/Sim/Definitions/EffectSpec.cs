@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace CoreDawn.Sim
 {
@@ -23,52 +24,54 @@ namespace CoreDawn.Sim
     }
 
     /// <summary>
-    /// 효과 정의 — 심이 읽는 순수 데이터. 에셋(EffectSO)에서 한 번 변환되고 같은 에셋은 같은 인스턴스다:
-    /// "같은 효과인가"(재적용 갱신·AttackModifier의 대상)를 참조 동일성으로 판정한다. 심은 에셋을 모른다.
-    /// 크기는 여기 없다 — <see cref="Effect"/>가 정의와 크기를 묶는다.
+    /// 효과 정의 — json effects 섹션 항목. 종류·중첩 규칙·틱 간격·기본 지속 시간만 갖고, 크기·시간은 적용(<see cref="Effect"/>)이 든다.
+    /// 정의당 하나라 "같은 효과인가"(재적용 갱신·AttackModifier의 대상)는 참조 동일성으로 판정한다.
     /// </summary>
-    public sealed class EffectSpec
+    public sealed class EffectSpec : Def
     {
-        public readonly string Id;
-        public readonly EffectKind Kind;
+        [JsonProperty("type")] public EffectKind Kind;
 
-        /// <summary>지속 시간(초). 0 이하 = 영구(대상이 죽을 때까지). 즉시 효과는 무시한다.</summary>
-        public readonly float Duration;
+        /// <summary>기본 지속 시간(초). 0 이하 = 영구(대상이 죽을 때까지). 적용이 duration을 주면 그것이 우선.</summary>
+        [JsonProperty("duration")] public float Duration;
 
-        /// <summary>true = 별개 인스턴스로 중첩, false = 재적용 시 남은 시간과 크기를 갱신(Refresh).</summary>
-        public readonly bool Stacks;
+        /// <summary>"Refresh" = 재적용 시 남은 시간·크기 갱신, "Stack" = 별개 인스턴스로 중첩.</summary>
+        [JsonProperty("stacking")] public string Stacking = "Refresh";
 
-        /// <summary>틱 간격(초). 0 이하 = 틱 없음(시작/종료만 있는 상태 효과).</summary>
-        public readonly float TickInterval;
+        /// <summary>기본 틱 간격(초). 0 이하 = 틱 없음.</summary>
+        [JsonProperty("tickInterval")] public float TickInterval;
 
-        /// <summary>넉백 방향 — true면 명중점에서 바깥(폭발·오라), false면 공격이 날아온 방향(총알·근접).</summary>
-        public readonly bool RadialKnockback;
+        /// <summary>넉백 방향 — "Directional" = 공격이 날아온 방향, "Radial" = 명중점에서 바깥.</summary>
+        [JsonProperty("knockbackMode")] public string KnockbackMode = "Directional";
+
+        /// <summary>AttackModifier가 증폭(또는 약화)하는 효과 id들.</summary>
+        [JsonProperty("affects")] public List<string> AffectIds = new List<string>();
+
+        [JsonIgnore] public bool Stacks => Stacking == "Stack";
+        [JsonIgnore] public bool RadialKnockback => KnockbackMode == "Radial";
+        [JsonIgnore] public bool IsInstant => Kind == EffectKind.Damage || Kind == EffectKind.Heal || Kind == EffectKind.Knockback;
+
+        /// <summary>남은 시간의 시작값. 영구 효과는 무한대 — 큰 수로 흉내 내면 저장·표시에 새어 나온다.</summary>
+        [JsonIgnore] public float Lifetime => Duration > 0f ? Duration : float.PositiveInfinity;
 
         EffectSpec[] affects = Array.Empty<EffectSpec>();
 
+        [JsonIgnore] public IReadOnlyList<EffectSpec> Affects => affects;
+
+        public EffectSpec() { }
+
+        /// <summary>코드·테스트·에셋 브리지용 — json을 거치지 않고 정의를 만든다.</summary>
         public EffectSpec(string id, EffectKind kind, float duration = 0f, bool stacks = false,
                           float tickInterval = 0f, bool radialKnockback = false)
         {
             Id = string.IsNullOrEmpty(id) ? kind.ToString() : id;
             Kind = kind;
             Duration = duration;
-            Stacks = stacks;
+            Stacking = stacks ? "Stack" : "Refresh";
             TickInterval = tickInterval;
-            RadialKnockback = radialKnockback;
+            KnockbackMode = radialKnockback ? "Radial" : "Directional";
         }
 
-        public bool IsInstant => Kind == EffectKind.Damage || Kind == EffectKind.Heal || Kind == EffectKind.Knockback;
-
-        /// <summary>남은 시간의 시작값. 영구 효과는 무한대 — 큰 수로 흉내 내면 저장·표시에 새어 나온다.</summary>
-        public float Lifetime => Duration > 0f ? Duration : float.PositiveInfinity;
-
-        /// <summary>AttackModifier가 증폭(또는 약화)하는 효과 정의들. 비어 있으면 아무것도 건드리지 않는 버프.</summary>
-        public IReadOnlyList<EffectSpec> Affects => affects;
-
-        /// <summary>
-        /// AttackModifier 전용. 생성 뒤에 따로 채우는 이유: 버프가 버프를 가리킬 수 있어(순환) 변환기가
-        /// 정의를 먼저 등록하고 나중에 잇는다.
-        /// </summary>
+        /// <summary>AttackModifier 전용. 생성 뒤에 따로 채우는 이유: 버프가 버프를 가리킬 수 있어(순환) 먼저 등록하고 나중에 잇는다.</summary>
         public void SetAffects(EffectSpec[] targets) => affects = targets ?? Array.Empty<EffectSpec>();
 
         public bool DoesAffect(EffectSpec other)
@@ -79,6 +82,15 @@ namespace CoreDawn.Sim
             return false;
         }
 
-        public override string ToString() => Id;
+        public override void Resolve(SimDatabase db, List<string> errors)
+        {
+            var list = new List<EffectSpec>(AffectIds.Count);
+            foreach (var id in AffectIds)
+            {
+                var t = db.ResolveEffect(id, errors, Id);
+                if (t != null) list.Add(t);
+            }
+            affects = list.ToArray();
+        }
     }
 }
