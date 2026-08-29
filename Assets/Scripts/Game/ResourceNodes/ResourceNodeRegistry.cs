@@ -8,6 +8,7 @@ using CoreDawn.Managers;
 using CoreDawn.Pings;
 using CoreDawn.Placement;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.ResourceNodes
 {
@@ -132,7 +133,7 @@ namespace CoreDawn.ResourceNodes
             => _byCell.TryGetValue(cell, out var n) && n != null ? n : null;
 
         /// <summary>해당 칸에 묻힌 자원. 광맥이 없으면 null.</summary>
-        public static ItemDataSO ResourceAt(Vector2Int cell) => NodeAt(cell)?.Resource;
+        public static ItemDef ResourceAt(Vector2Int cell) => NodeAt(cell)?.Resource;
 
         public static bool HasResourceAt(Vector2Int cell) => ResourceAt(cell) != null;
 
@@ -189,7 +190,7 @@ namespace CoreDawn.ResourceNodes
         /// 채굴기 배치 판정 — 풋프린트의 모든 칸이 같은 자원의 광맥 위여야 한다.
         /// </summary>
         public static bool CanPlaceMiner(Vector2Int origin, Vector2Int size,
-                                         out ItemDataSO resource, out string reason)
+                                         out ItemDef resource, out string reason)
         {
             resource = null;
             reason   = null;
@@ -209,7 +210,7 @@ namespace CoreDawn.ResourceNodes
                     if (resource == null) resource = item;
                     else if (resource != item)
                     {
-                        reason = $"서로 다른 광맥({resource.displayName} / {item.displayName})에 걸쳐 있습니다.";
+                        reason = $"서로 다른 광맥({resource.DisplayName} / {item.DisplayName})에 걸쳐 있습니다.";
                         return false;
                     }
                 }
@@ -220,7 +221,7 @@ namespace CoreDawn.ResourceNodes
         // ── 심 주입 — 채굴기는 이 두 함수를 통해서만 광맥을 만난다
 
         // 소켓에 꽂는 델리게이트는 한 번만 만들어 둔다 — 매 프레임 동일성 비교에 쓰기 위함
-        static readonly System.Func<Vector2Int, ItemDataSO> _resolveHook  = ResolveMinerTarget;
+        static readonly System.Func<Vector2Int, ItemDef> _resolveHook  = ResolveMinerTarget;
         static readonly System.Func<Vector2Int, int, int>   _extractHook  = ExtractForMiner;
         static readonly System.Func<Vector2Int, float>      _intervalHook = ExtractIntervalAt;
 
@@ -261,7 +262,7 @@ namespace CoreDawn.ResourceNodes
         /// 심이 채굴기 배치 직후(OnAfterPlaced) 한 번 호출하는 서비스.
         /// 광맥이 없으면 null을 돌려 채굴을 막고, 그 채굴기를 철거 대기열에 올린다.
         /// </summary>
-        static ItemDataSO ResolveMinerTarget(Vector2Int origin)
+        static ItemDef ResolveMinerTarget(Vector2Int origin)
         {
             var item = ResourceAt(origin);
             if (item == null && EnforceMinerPlacement) QueueReject(origin);

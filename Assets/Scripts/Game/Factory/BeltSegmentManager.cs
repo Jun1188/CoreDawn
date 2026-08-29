@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -18,7 +19,7 @@ namespace CoreDawn.Factory
         /// 심은 월드를 모르므로 여기서 버리기만 하고, 드라이버(FactoryBootstrap)가
         /// 구독해 월드 드롭으로 되살린다.
         /// </summary>
-        public event System.Action<BuildingModule, ItemDataSO> ItemDiscarded;
+        public event System.Action<BuildingModule, ItemDef> ItemDiscarded;
 
         readonly Dictionary<BuildingModule, BeltSegment> _map = new();
         readonly List<BeltSegment> _segs = new();

@@ -9,6 +9,7 @@ using CoreDawn.Save;
 using CoreDawn.UI;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -16,8 +17,8 @@ namespace CoreDawn.Factory
     {
         readonly BuildingModule _b;
         readonly AssemblerDataSO _data;
-        RecipeDataSO _recipe;           // 다음 조합이 따를 레시피 (UI에서 교체 가능)
-        RecipeDataSO _craftingRecipe;   // 진행 중인 1회가 따르는 레시피 — 교체돼도 이 1회는 이것으로 끝난다
+        RecipeDef _recipe;           // 다음 조합이 따를 레시피 (UI에서 교체 가능)
+        RecipeDef _craftingRecipe;   // 진행 중인 1회가 따르는 레시피 — 교체돼도 이 1회는 이것으로 끝난다
         float        _readyAt;          // 조합 완료 예정 시각
         bool         _crafting;
         float        _pausedRemaining;  // 중지 시점의 잔여 시간 — 진행률은 보존된다
@@ -55,7 +56,7 @@ namespace CoreDawn.Factory
 
         public BuildingModule Building => _b;
         public AssemblerDataSO Data => _data;
-        public RecipeDataSO CurrentRecipe => _recipe;
+        public RecipeDef CurrentRecipe => _recipe;
 
         /// <summary>사람이 세워둔 상태. 진행률과 버퍼는 보존된다 — "잠깐 자원을 아끼려고
         /// 세워둔다"가 안전한 조작이어야 한다 (재료가 귀한 라인에서 실제로 쓰는 기능).</summary>
@@ -86,9 +87,9 @@ namespace CoreDawn.Factory
         {
             get
             {
-                if (!_crafting || _craftingRecipe == null || _craftingRecipe.craftTime <= 0f) return 0f;
+                if (!_crafting || _craftingRecipe == null || _craftingRecipe.Seconds <= 0f) return 0f;
                 float remaining = Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Factory.Now);
-                return Mathf.Clamp01(1f - remaining / _craftingRecipe.craftTime);
+                return Mathf.Clamp01(1f - remaining / _craftingRecipe.Seconds);
             }
         }
 
@@ -116,17 +117,17 @@ namespace CoreDawn.Factory
 
         public void Interact(PlayerController player) => MachinePanelView.TryOpen(this);
 
-        public void SetRecipe(RecipeDataSO r)
+        public void SetRecipe(RecipeDef r)
         {
-            if (r != null && r.inputs != null && r.inputs.Length > _b.Input.SlotCount)
+            if (r != null && r.Inputs != null && r.Inputs.Count > _b.Input.SlotCount)
             {
-                Debug.LogWarning($"[Assembler] 레시피 '{r.displayName}'의 재료 종류({r.inputs.Length})가 " +
+                Debug.LogWarning($"[Assembler] 레시피 '{r.DisplayName}'의 재료 종류({r.Inputs.Count})가 " +
                                  $"입력 슬롯({_b.Input.SlotCount})보다 많아 거부됨");
                 return;
             }
             if (r != null && !RecipeDatabaseSO.IsUnlocked(r))
             {
-                Debug.LogWarning($"[Assembler] 레시피 '{r.displayName}'는 아직 해금되지 않음 (요구 Tier {r.tier})");
+                Debug.LogWarning($"[Assembler] 레시피 '{r.DisplayName}'는 아직 해금되지 않음 (요구 Tier {r.Tier})");
                 return;
             }
             if (r == _recipe) return;
@@ -139,14 +140,14 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>현재 해금된 레시피만 — 향후 레시피 선택 UI가 이걸로 목록을 채우면 게이팅이 자동 반영된다.</summary>
-        public IEnumerable<RecipeDataSO> GetUnlockedRecipes() =>
-            _data.availableRecipes.Where(RecipeDatabaseSO.IsUnlocked);
+        public IEnumerable<RecipeDef> GetUnlockedRecipes() =>
+            _data.availableRecipes.Where(RecipeDatabaseSO.IsUnlocked).Select(r => (RecipeDef)r);
 
-        bool IsIngredient(ItemDataSO item)
+        bool IsIngredient(ItemDef item)
         {
-            if (_recipe?.inputs == null) return false;
-            foreach (var i in _recipe.inputs)
-                if (i.item == item) return true;
+            if (_recipe?.Inputs == null) return false;
+            foreach (var i in _recipe.Inputs)
+                if (i.Item == item) return true;
             return false;
         }
 
@@ -166,8 +167,8 @@ namespace CoreDawn.Factory
                 if (sim.Now < _readyAt) return;  // 이른 기상 (재료 도착 등) → 완료 시각에 다시 깨어남
                 if (!CanStoreOutputs(_craftingRecipe)) return;  // 출력 버퍼 막힘 → 완료 보류 (stall)
 
-                foreach (var o in _craftingRecipe.outputs)
-                    _b.Output.TryAdd(o.item, o.amount);
+                foreach (var o in _craftingRecipe.Outputs)
+                    _b.Output.TryAdd(o.Item, o.Amount);
                 _crafting = false;
                 _b.FlushOutputs();
             }
@@ -183,8 +184,8 @@ namespace CoreDawn.Factory
             _b.NotifyUpstream();   // 입력 버퍼에 자리 생김 → 막혀 있던 상류 깨움
             _crafting = true;
             _craftingRecipe = _recipe;
-            _readyAt  = sim.Now + _recipe.craftTime;
-            sim.ScheduleWake(_b, _recipe.craftTime);
+            _readyAt  = sim.Now + _recipe.Seconds;
+            sim.ScheduleWake(_b, _recipe.Seconds);
         }
 
         /// <summary>
@@ -211,8 +212,8 @@ namespace CoreDawn.Factory
 
         bool HasIngredients()
         {
-            foreach (var i in _recipe.inputs)
-                if (_b.Input.CountOf(i.item) < i.amount) return false;
+            foreach (var i in _recipe.Inputs)
+                if (_b.Input.CountOf(i.Item) < i.Amount) return false;
             return true;
         }
 
@@ -221,18 +222,18 @@ namespace CoreDawn.Factory
         /// 주의: 출력이 여러 종류면 슬롯을 서로 나눠 써야 하므로 근사 검사 —
         /// 현재 레시피는 전부 단일 출력이라 정확하다.
         /// </summary>
-        bool CanStoreOutputs(RecipeDataSO r)
+        bool CanStoreOutputs(RecipeDef r)
         {
-            foreach (var o in r.outputs)
-                if (!_b.Output.HasRoomFor(o.item, o.amount))
+            foreach (var o in r.Outputs)
+                if (!_b.Output.HasRoomFor(o.Item, o.Amount))
                     return false;
             return true;
         }
 
         void ConsumeIngredients()
         {
-            foreach (var i in _recipe.inputs)
-                _b.Input.TryConsume(i.item, i.amount);
+            foreach (var i in _recipe.Inputs)
+                _b.Input.TryConsume(i.Item, i.Amount);
         }
 
         // ── 세이브 ────────────────────────────────────────────────────

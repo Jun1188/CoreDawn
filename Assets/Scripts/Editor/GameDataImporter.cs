@@ -11,6 +11,7 @@ using CoreDawn.Factory;
 using CoreDawn.Tutorial;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.EditorTools
 {

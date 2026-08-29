@@ -79,7 +79,7 @@ namespace CoreDawn.Factory
         public void RestoreClock(float now) => Now = now;
 
         /// <summary>마이너가 채굴 대상을 결정하는 서비스 포인트 (ResourceGrid 등에서 주입).</summary>
-        public Func<Vector2Int, ItemDataSO> GetResourceAt;
+        public Func<Vector2Int, ItemDef> GetResourceAt;
 
         /// <summary>
         /// 마이너가 채굴 1회분을 실제로 꺼내가는 서비스 포인트 (셀, 요청 개수) → 실제로 꺼낸 개수.

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -27,12 +28,12 @@ namespace CoreDawn.Factory
         readonly FactorySystem _sim;
 
         // 불변식: pos 내림차순. index 0 = 출구에 가장 가까움(pos 큼).
-        readonly List<(ItemDataSO item, float pos)> _items = new();
+        readonly List<(ItemDef item, float pos)> _items = new();
 
         public BeltSegment(FactorySystem sim) => _sim = sim;
 
         public bool HasItems => _items.Count > 0;
-        public IReadOnlyList<(ItemDataSO item, float pos)> Items => _items;
+        public IReadOnlyList<(ItemDef item, float pos)> Items => _items;
         public int BeltCount => Belts.Count;
 
         /// <summary>입구(pos 0)에 새 아이템 올릴 공간이 있는가. 입구 쪽 = 마지막 인덱스.</summary>
@@ -40,7 +41,7 @@ namespace CoreDawn.Factory
             => _items.Count == 0 || _items[^1].pos >= Spacing;
 
         /// <summary>입구에 아이템 투입. 막혀 있으면 false(버퍼 유지용). O(1).</summary>
-        public bool TryAddItem(ItemDataSO item)
+        public bool TryAddItem(ItemDef item)
         {
             if (!CanAcceptAtEntry()) return false;
             _items.Add((item, 0f));   // pos 0 = 최소 = 리스트 끝. 정렬 유지.
@@ -48,7 +49,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>임의 pos에 삽입(merge/split 이관용). 내림차순 위치 유지.</summary>
-        public void AddItemAt(ItemDataSO item, float pos)
+        public void AddItemAt(ItemDef item, float pos)
         {
             int i = 0;
             while (i < _items.Count && _items[i].pos > pos) i++;
@@ -66,7 +67,7 @@ namespace CoreDawn.Factory
         /// 벨트를 거치지 않은 변화라 아무도 깨워 주지 않으므로(보관소·설비와 같은 이유)
         /// 여기서 걸어 주지 않으면 뒤 아이템이 다음 입고 때까지 그 자리에 선다.
         /// </summary>
-        public bool TryTakeAt(int index, out ItemDataSO item)
+        public bool TryTakeAt(int index, out ItemDef item)
         {
             item = null;
             if (index < 0 || index >= _items.Count) return false;

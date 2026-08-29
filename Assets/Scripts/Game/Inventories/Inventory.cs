@@ -3,6 +3,7 @@ using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Save;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Inventories
 {
@@ -12,7 +13,7 @@ namespace CoreDawn.Inventories
         /// <summary>아이템 데이터를 모를 때만 쓰는 폴백 — 정상 경로에서는 항상 SO 값이 이긴다.</summary>
         public const int DefaultMaxStack = 64;
 
-        public ItemDataSO item; // 팀원들이 만든 아이템 원본 데이터
+        public ItemDef item; // 팀원들이 만든 아이템 원본 데이터
         public int amount;      // 현재 쌓인 개수
 
         // 상한은 스택이 들고 있지 않다. 예전의 maxStackSize 필드는 같은 아이템인데도 어디서
@@ -23,7 +24,7 @@ namespace CoreDawn.Inventories
         // 가방에서는 100개, 포탑 탄약함에서는 20개다. 담는 그릇을 알아야 하므로
         // ItemContainer.CapFor(item) / RoomAt(slot, item)에 물을 것.
 
-        public ItemStack(ItemDataSO item, int amount)
+        public ItemStack(ItemDef item, int amount)
         {
             this.item = item;
             this.amount = amount;
@@ -100,7 +101,7 @@ namespace CoreDawn.Inventories
         // ── 위치 무관 연산 (루팅·드롭 등) ──────────────────────────
 
         /// <summary>전량 수용 가능할 때만 추가 (all-or-nothing). 실패 시 false — 호출자가 아이템을 보존할 것.</summary>
-        public bool AddItem(ItemDataSO newItem, int count) => Container.TryAdd(newItem, count);
+        public bool AddItem(ItemDef newItem, int count) => Container.TryAdd(newItem, count);
 
         // ── 위치(슬롯 인덱스) 연산 — UI 드래그·분할·교환용 위임 ──────
 

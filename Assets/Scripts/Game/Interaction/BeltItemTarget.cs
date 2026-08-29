@@ -4,6 +4,7 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Interaction
 {
@@ -26,7 +27,7 @@ namespace CoreDawn.Interaction
     {
         BeltSegment seg;
         int index = -1;
-        ItemDataSO item;
+        ItemDef item;
 
         /// <summary>
         /// 조준선에 가장 먼저 걸리는 벨트 아이템을 이번 프레임의 대상으로 잡는다.
@@ -121,7 +122,7 @@ namespace CoreDawn.Interaction
             return -1;
         }
 
-        static string DisplayNameOf(ItemDataSO i) =>
-            i == null ? "" : string.IsNullOrEmpty(i.displayName) ? i.name : i.displayName;
+        static string DisplayNameOf(ItemDef i) =>
+            i == null ? "" : string.IsNullOrEmpty(i.DisplayName) ? i.Id : i.DisplayName;
     }
 }

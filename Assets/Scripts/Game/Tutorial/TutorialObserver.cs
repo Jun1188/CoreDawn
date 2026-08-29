@@ -10,6 +10,7 @@ using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
 using CoreDawn.UI;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tutorial
 {
@@ -332,7 +333,7 @@ namespace CoreDawn.Tutorial
             {
                 var s = c.PeekAt(i);
                 if (s == null || s.item == null || s.amount <= 0) continue;
-                if (s.item.type == type) n += s.amount;
+                if (s.item.Type == type) n += s.amount;
             }
             return n;
         }

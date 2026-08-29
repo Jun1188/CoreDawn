@@ -154,7 +154,7 @@ namespace CoreDawn.Tests
                 Expect(ResourceNodeRegistry.NodeAt(c) == node, $"셀 {c}가 색인돼야 함");
 
             Expect(ResourceNodeRegistry.NodeAt(new Vector2Int(4, 3)) == null, "풋프린트 밖은 null");
-            Expect(ResourceNodeRegistry.ResourceAt(new Vector2Int(2, 3)) == _ore, "ResourceAt이 자원을 돌려줘야 함");
+            Expect(ResourceNodeRegistry.ResourceAt(new Vector2Int(2, 3)) == (ItemDef)_ore, "ResourceAt이 자원을 돌려줘야 함");
 
             // 생명주기 배선(OnEnable/OnDisable)은 플레이모드에서만 검증할 수 있다 —
             // ExecuteAlways가 아닌 MonoBehaviour는 에디트 모드에서 콜백이 돌지 않기 때문.

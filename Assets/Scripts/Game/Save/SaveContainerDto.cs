@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Save
 {
@@ -76,7 +77,7 @@ namespace CoreDawn.Save
         [JsonProperty("n")]
         public int Amount;
 
-        // (구 "max" — 스택마다의 상한. ItemDataSO.maxStack이 유일한 주인이 되면서 저장할 것이 없어졌다.
+        // (구 "max" — 스택마다의 상한. ItemDef.maxStack이 유일한 주인이 되면서 저장할 것이 없어졌다.
         //  옛 세이브에 남은 키는 역직렬화에서 조용히 무시된다.)
 
         public static SaveStackDto From(ItemStack s) =>

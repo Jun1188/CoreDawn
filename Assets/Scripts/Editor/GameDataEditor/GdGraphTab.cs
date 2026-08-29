@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using CoreDawn.Factory;
 using CoreDawn.UI;
+using CoreDawn.Sim;
 
 namespace CoreDawn.EditorTools
 {

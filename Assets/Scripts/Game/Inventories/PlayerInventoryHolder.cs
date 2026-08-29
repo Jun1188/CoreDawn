@@ -6,6 +6,7 @@ using CoreDawn.Save;
 using CoreDawn.UI;
 using CoreDawn.Data;
 using CoreDawn.Sound;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Inventories
 {
@@ -85,7 +86,7 @@ namespace CoreDawn.Inventories
         /// silent: 호출처가 같은 순간 자기 소리를 내는 경우(손 채굴의 Mine음 등) 획득음을 건너뛴다 —
         /// 같은 프레임에 같은 AudioSource로 두 소리를 겹치면 파형이 합산돼 찢어진 소리가 난다.
         /// </summary>
-        public bool AddItemToPlayer(ItemDataSO item, int amount, bool silent = false)
+        public bool AddItemToPlayer(ItemDef item, int amount, bool silent = false)
         {
             if (item == null || amount <= 0) return false;
 

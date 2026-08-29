@@ -7,6 +7,7 @@ using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -462,7 +463,7 @@ namespace CoreDawn.UI
             RefreshValues(progress);
         }
 
-        void RebuildRows(IReadOnlyList<(ItemDataSO item, int required, int current)> progress)
+        void RebuildRows(IReadOnlyList<(ItemDef item, int required, int current)> progress)
         {
             rows.Clear();
             builtRows.Clear();
@@ -477,7 +478,7 @@ namespace CoreDawn.UI
         }
 
         /// <summary>값만 제자리 갱신 — 요소를 새로 만들지 않는다.</summary>
-        void RefreshValues(IReadOnlyList<(ItemDataSO item, int required, int current)> progress)
+        void RefreshValues(IReadOnlyList<(ItemDef item, int required, int current)> progress)
         {
             int metCount = 0;
             int totalRequired = 0, totalCurrent = 0;
