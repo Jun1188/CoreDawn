@@ -12,7 +12,7 @@ namespace CoreDawn.Sim
     /// 받는 피해의 단일 수렴점은 <see cref="Damage"/>다 — 보호막·무적·아군 공격 무시 같은 규칙은
     /// 소유 엔티티의 <see cref="IDamageInterceptor"/> 모듈이 여기서 한 번에 걸러낸다.
     /// </summary>
-    public sealed class Health : EntityModule
+    public sealed class HealthModule : EntityModule
     {
         float _max;
         float _current;
@@ -30,7 +30,7 @@ namespace CoreDawn.Sim
         /// <summary>실제로 깎였을 때 — (깎인 양, 때린 엔티티). "HP가 max 미만"이라는 프록시 대신 피해라는 사건 자체(보스 각성이 쓴다).</summary>
         public event Action<float, Entity> Damaged;
 
-        public Health(float max)
+        public HealthModule(float max)
         {
             _max = Math.Max(1f, max);
             _current = _max;

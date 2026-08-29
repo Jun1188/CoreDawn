@@ -210,7 +210,7 @@ namespace CoreDawn.Data
         public bool isAttackable = false;
 
         /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
-        public abstract IBuildingBehavior CreateBehavior(Building building);
+        public abstract IBuildingBehavior CreateBehavior(BuildingModule building);
 
         /// <summary>
         /// 이 건물의 편 — 배치가 심 엔티티를 만들 때 넣는다. 플레이어가 짓는 것은 전부 Player,

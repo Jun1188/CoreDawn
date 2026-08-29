@@ -5,13 +5,13 @@ namespace CoreDawn.Sim
 {
     /// <summary>
     /// 공격 — 심 모듈. 사거리·쿨다운·명중 효과를 갖고, "지금 누구를 때린다"를 여기서 끝낸다:
-    /// 직접 공격(근접)은 <see cref="TryAttack"/>이 대상의 <see cref="Effects"/>에 효과를 바로 건다.
+    /// 직접 공격(근접)은 <see cref="TryAttack"/>이 대상의 <see cref="EffectsModule"/>에 효과를 바로 건다.
     /// 투사체·오라처럼 효과를 전달 계층에 위임하는 공격은 <see cref="MarkPerformed"/>로 쿨다운만 소비한다 —
     /// 그 효과는 명중 시 뷰가 심에 넘긴다(EntityView.ApplyEffects → Effects).
     /// 언제 때릴지(사거리 판정·표적 선택)는 두뇌(MonsterBrain)나 뷰(타워)가 정한다 — 이 모듈은 규칙만.
     /// (이름이 Combat이 아닌 이유: CoreDawn.Combat 네임스페이스와 단순명이 겹친다 — AGENTS.md 네임스페이스 규칙)
     /// </summary>
-    public sealed class Attack : EntityModule
+    public sealed class AttackModule : EntityModule
     {
         public float Range { get; private set; }
         public float Cooldown { get; private set; }
@@ -24,7 +24,7 @@ namespace CoreDawn.Sim
         /// <summary>공격이 일어났다 — (대상, null 가능). 연출(애니메이션·소리)용. 효과는 이미 심에서 적용됐거나 전달 계층이 맡는다.</summary>
         public event Action<Entity> Attacked;
 
-        public Attack(float range, float cooldown, Effect[] effects = null)
+        public AttackModule(float range, float cooldown, Effect[] effects = null)
         {
             Configure(range, cooldown);
             SetEffects(effects);
@@ -51,10 +51,10 @@ namespace CoreDawn.Sim
             lastAttackTime = now;
 
             var effects = Effects;
-            var mine = Owner?.Get<Effects>();
+            var mine = Owner?.Get<EffectsModule>();
             if (mine != null) effects = mine.BakeOutgoing(effects);
             Vector3 dir = Owner != null ? target.Position - Owner.Position : Vector3.zero;
-            target.Get<Effects>()?.Apply(effects, Owner, target.Position, dir);
+            target.Get<EffectsModule>()?.Apply(effects, Owner, target.Position, dir);
 
             Attacked?.Invoke(target);
             return true;

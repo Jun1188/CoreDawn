@@ -19,7 +19,7 @@ namespace CoreDawn.Factory
     /// 연결 목록(InputConnections/OutputConnections)은 BuildingGraph가 채우고,
     /// 행동(IBuildingBehavior)은 SO의 CreateBehavior()가 결정한다.
     /// </summary>
-    public class Building : EntityModule, IDamageInterceptor, IFootprint
+    public class BuildingModule : EntityModule, IDamageInterceptor, IFootprint
     {
         public readonly FactorySystem Factory;
 
@@ -56,7 +56,7 @@ namespace CoreDawn.Factory
 
         readonly IBuildingBehavior _behavior;
 
-        public Building(FactorySystem factory, BuildingDataSO data, Vector2Int origin, int rotSteps,
+        public BuildingModule(FactorySystem factory, BuildingDataSO data, Vector2Int origin, int rotSteps,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, bool ownsEntity = true)
         {
             Factory       = factory;

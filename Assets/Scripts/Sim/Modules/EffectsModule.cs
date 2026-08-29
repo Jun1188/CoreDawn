@@ -9,7 +9,7 @@ namespace CoreDawn.Sim
     /// 갖는다. 피해·효과·사망이 여기서 심 안에 끝난다 — 뷰는 명중을 감지해 넘기고 결과를 그릴 뿐이다.
     /// (구 EffectController: 뷰가 소유하고 Time.deltaTime으로 돌리던 것을 그대로 옮겼다. 동작 변경 0.)
     ///
-    /// 받는 피해 배율은 <see cref="IDamageInterceptor"/>로 <see cref="Health.Damage"/> 안에서 곱한다 —
+    /// 받는 피해 배율은 <see cref="IDamageInterceptor"/>로 <see cref="HealthModule.Damage"/> 안에서 곱한다 —
     /// 출처가 무엇이든(투사체·근접·DoT·환경) 한 번 걸러진다. 뷰가 곱해서 넘기던 옛 구조는 뷰를 거치지 않는 피해를 놓친다.
     ///
     /// 채널 집계 — 값은 정의(공유)가 아니라 활성 인스턴스의 Value에서 읽는다:
@@ -18,7 +18,7 @@ namespace CoreDawn.Sim
     ///
     /// 틱은 <see cref="EffectSystem"/>이 돌린다. Health가 있는 엔티티는 전부 이 모듈을 갖는다(공장·몬스터·플레이어·뷰 우선 개체).
     /// </summary>
-    public sealed class Effects : EntityModule, IDamageInterceptor
+    public sealed class EffectsModule : EntityModule, IDamageInterceptor
     {
         // 지속 효과 1건의 진행 상태
         sealed class Active
@@ -87,7 +87,7 @@ namespace CoreDawn.Sim
 
         void ApplyKnockback(EffectSpec spec, float distance, Entity source, Vector3 hitPoint, Vector3 hitDirection)
         {
-            var movement = Owner.Get<Movement>();   // 이동이 없는 개체(건물)는 밀리지 않는다
+            var movement = Owner.Get<MovementModule>();   // 이동이 없는 개체(건물)는 밀리지 않는다
             if (movement == null || distance <= 0f) return;
 
             // 방향 — 날아온 방향(총알·근접) → 명중점에서 바깥(폭발·오라, 또는 방향을 모를 때) → 시전자에서 바깥

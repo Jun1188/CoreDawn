@@ -207,7 +207,7 @@ namespace CoreDawn.Navigation
         /// "돌아가는 것보다 뚫는 게 싸다"는 판정이다 — 뚫을 건물만 여기서 잡힌다.
         /// 목표 건물(시드)은 사슬의 끝 칸이 그 건물 자리라 같은 방식으로 잡힌다.
         /// </summary>
-        public Building FindBreachTarget(Vector3 from, float range)
+        public BuildingModule FindBreachTarget(Vector3 from, float range)
         {
             var grid = GridManager.Instance;
             if (grid == null || !front.HasField) return null;
@@ -235,7 +235,7 @@ namespace CoreDawn.Navigation
         }
 
         /// <summary>살아 있는 심 건물인가 — 제거되지 않았고 엔티티가 죽지 않았다.</summary>
-        static bool IsAlive(Building b)
+        static bool IsAlive(BuildingModule b)
         {
             if (b == null || b.IsRemoved) return false;
             var e = b.Owner;
@@ -247,12 +247,12 @@ namespace CoreDawn.Navigation
         /// 몬스터 편(둥지)은 뺀다 — 자기 집을 부수지 않는다. 나무(Neutral)는 길을 막으면 부순다.
         /// 풋프린트 경계까지의 거리(Building.DistanceTo)로 잰다 — 멀티타일 건물 고려.
         /// </summary>
-        public Building FindClosestInRange(Vector3 from, float range)
+        public BuildingModule FindClosestInRange(Vector3 from, float range)
         {
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null) return null;
 
-            Building closest = null;
+            BuildingModule closest = null;
             float minDistance = float.MaxValue;
             foreach (var b in boot.Factory.Buildings)
             {

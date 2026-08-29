@@ -53,7 +53,7 @@ namespace CoreDawn.Data
             return Mathf.Max(0f, shieldPerItem);
         }
 
-        public override IBuildingBehavior CreateBehavior(Building building) => new CoreBehavior(building, this);
+        public override IBuildingBehavior CreateBehavior(BuildingModule building) => new CoreBehavior(building, this);
 
         protected override void OnValidate()
         {
@@ -125,10 +125,10 @@ namespace CoreDawn.Data
     /// </summary>
     public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior, IDamageInterceptor
     {
-        readonly Building _b;
+        readonly BuildingModule _b;
         readonly CoreDataSO _so;
 
-        public CoreBehavior(Building b, CoreDataSO so)
+        public CoreBehavior(BuildingModule b, CoreDataSO so)
         {
             _b = b;
             _so = so;

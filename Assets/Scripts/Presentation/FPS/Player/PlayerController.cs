@@ -1038,7 +1038,7 @@ namespace CoreDawn.FPS
             if (playerEntity == null)
                 return;
 
-            Building core = FindCore();
+            BuildingModule core = FindCore();
 
             if (core == null)
                 return;
@@ -1129,7 +1129,7 @@ namespace CoreDawn.FPS
 
         }
 
-        private Building FindCore()
+        private BuildingModule FindCore()
         {
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null) return null;
@@ -1139,7 +1139,7 @@ namespace CoreDawn.FPS
 
             return null;
         }
-        private bool TryFindCoreRespawnPosition(Building core, out Vector3 respawnPosition)
+        private bool TryFindCoreRespawnPosition(BuildingModule core, out Vector3 respawnPosition)
         {
             respawnPosition = default;
 

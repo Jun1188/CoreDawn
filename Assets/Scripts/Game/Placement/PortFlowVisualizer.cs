@@ -14,7 +14,7 @@ namespace CoreDawn.Placement
     ///   바닥판   — 바닥에 번지는 그라디언트. 흐름 방향
     ///   지느러미 — 흐름 축을 따라 선 수직 판. 위에서 내려다볼 때 납작해 보이지 않게
     ///
-    /// 좌표는 **그리드 공간**으로 받는다 — 회전은 <see cref="Building.GetEffectivePorts"/>가
+    /// 좌표는 **그리드 공간**으로 받는다 — 회전은 <see cref="BuildingModule.GetEffectivePorts"/>가
     /// 이미 적용해 두므로 여기서 다시 계산하지 않는다. 그래서 이 오브젝트의 transform은
     /// 항상 회전 없이 풋프린트 원점 칸의 모서리에 놓인다 (건물 뷰에 붙이면 회전이 두 번 먹는다).
     ///

@@ -42,7 +42,7 @@ namespace CoreDawn.UI
         PlayerController player;
         PlayerInteractionManager interaction;
         EntityView playerEntity;
-        Building core;
+        BuildingModule core;
         ItemContainer hotbar;
 
         // ── 나침반 — 15°마다 눈금 하나, 45°마다 방위 라벨. 풀을 만들어 두고 매 프레임 배치만 ──

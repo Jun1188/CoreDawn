@@ -22,7 +22,7 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewSplitter", menuName = "Factory/Buildings/Splitter")]
     public class SplitterDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(Building building)
+        public override IBuildingBehavior CreateBehavior(BuildingModule building)
             => new SplitterBehavior(building);
     }
 
@@ -41,11 +41,11 @@ namespace CoreDawn.Data
 
     public class SplitterBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
     {
-        readonly Building _b;
+        readonly BuildingModule _b;
         int _next;   // 라운드로빈 커서 — 다음에 밀어볼 출력 연결 인덱스
 
         /// <summary>필터 UI가 출력 포트 방향을 조회할 때 사용.</summary>
-        public Building Building => _b;
+        public BuildingModule Building => _b;
 
         // E 상호작용 — 필터 설정 팝업 (Storage 보관함과 같은 opt-in 패턴)
         public string InteractPrompt => "필터 설정";
@@ -73,7 +73,7 @@ namespace CoreDawn.Data
         // 라인을 잘못 이었을 때도 여기가 비어 있어 드러난다.
         readonly HashSet<ItemDataSO> _passed = new();
 
-        public SplitterBehavior(Building b) => _b = b;
+        public SplitterBehavior(BuildingModule b) => _b = b;
         public void OnAfterPlaced() { }
 
         // ── 필터 설정 표면 (UI/상호작용이 호출 — 심 API)

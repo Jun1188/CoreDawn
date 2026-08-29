@@ -15,7 +15,7 @@ namespace CoreDawn.Factory
         /// <param name="portOverride">인스턴스별 포트 형상 (벨트 커브 등). null이면 SO 포트 사용.</param>
         /// <param name="prefabOverride">인스턴스별 프리팹 (벨트 커브 메시 등). null이면 SO 프리팹 사용.</param>
         /// <param name="shape">벨트 모양. 세이브가 그대로 되살릴 수 있도록 심에도 기록된다.</param>
-        public static Building Place(BuildingDataSO so, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
+        public static BuildingModule Place(BuildingDataSO so, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
             PortDefinition[] portOverride = null, GameObject prefabOverride = null,
             BeltShape shape = BeltShape.Straight)
         {
@@ -44,7 +44,7 @@ namespace CoreDawn.Factory
         /// 씬에 이미 있는 뷰(코어 같은 싱글턴)를 심에 연결한다 — 새 프리팹을 Instantiate하지 않는다.
         /// 배치 자체(Grid/Graph 등록)는 Place와 동일하게 FactorySystem이 담당한다.
         /// </summary>
-        public static Building PlaceExisting(BuildingDataSO so, Vector2Int origin, int rotSteps,
+        public static BuildingModule PlaceExisting(BuildingDataSO so, Vector2Int origin, int rotSteps,
             BuildingView existingView, PortDefinition[] portOverride = null)
         {
             var boot = FactoryBootstrap.Instance;
@@ -61,7 +61,7 @@ namespace CoreDawn.Factory
         /// 전투 파괴(심이 스스로 제거)와 철거가 같은 관문을 지난다.
         /// 벨트면 이 안에서 세그먼트 분할 + ItemDiscarded 통지(뷰 파괴 전이라 위치 조회 가능).
         /// </summary>
-        public static void Remove(Building b)
+        public static void Remove(BuildingModule b)
         {
             if (b == null || b.IsRemoved) return;
             FactoryBootstrap.Instance.Factory.Remove(b);

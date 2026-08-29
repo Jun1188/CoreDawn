@@ -48,7 +48,7 @@ namespace CoreDawn.Sim
         public void SetNavigation(INavigation nav)
         {
             Nav = nav;
-            foreach (var e in _monsters) e.Get<Movement>()?.SetNavigation(nav);
+            foreach (var e in _monsters) e.Get<MovementModule>()?.SetNavigation(nav);
         }
 
         /// <summary>
@@ -59,11 +59,11 @@ namespace CoreDawn.Sim
             var e = World.Create(Faction.Monster, position);
             if (facing.sqrMagnitude > 0.0001f) { facing.y = 0f; e.Facing = facing.normalized; }
 
-            e.Add(new Health(spec.MaxHp));
-            e.Add(new Effects());   // 받는 배율·지속 효과 — Movement보다 먼저(속도 배율을 읽는다)
-            e.Add(new Movement(spec, Nav));
-            e.Add(new Attack(spec.AttackRange, spec.AttackCooldown, spec.AttackEffects));
-            e.Add(new MonsterBrain(this, spec));
+            e.Add(new HealthModule(spec.MaxHp));
+            e.Add(new EffectsModule());   // 받는 배율·지속 효과 — Movement보다 먼저(속도 배율을 읽는다)
+            e.Add(new MovementModule(spec, Nav));
+            e.Add(new AttackModule(spec.AttackRange, spec.AttackCooldown, spec.AttackEffects));
+            e.Add(new MonsterBrainModule(this, spec));
 
             _monsters.Add(e);
             Spawned?.Invoke(e);
@@ -91,9 +91,9 @@ namespace CoreDawn.Sim
             {
                 var e = _tickBuffer[i];
                 if (e.IsRemoved) continue;
-                e.Get<MonsterBrain>()?.Tick(dt);
+                e.Get<MonsterBrainModule>()?.Tick(dt);
                 if (e.IsRemoved) continue;   // 두뇌가 소멸시켰을 수 있다(복귀 도착)
-                e.Get<Movement>()?.Tick(dt);
+                e.Get<MovementModule>()?.Tick(dt);
             }
 
             SolveCrowd(dt);
@@ -182,10 +182,10 @@ namespace CoreDawn.Sim
         }
 
         // 시체·제거된 개체·반지름 0은 밀지도 밀리지도 않는다
-        static Movement CrowdMember(Entity e)
+        static MovementModule CrowdMember(Entity e)
         {
             if (e == null || !e.IsAlive) return null;
-            var m = e.Get<Movement>();
+            var m = e.Get<MovementModule>();
             return m != null && m.CrowdRadius > 0f ? m : null;
         }
     }

@@ -54,7 +54,7 @@ namespace CoreDawn.Tests
             }
         }
 
-        private void PrintBuildingData(Building building)
+        private void PrintBuildingData(BuildingModule building)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -94,7 +94,7 @@ namespace CoreDawn.Tests
 
         // ─── Gizmo — 심 상태 시각화 (뷰 transform 경유) ─────────────
 
-        static Transform ViewOf(Building b)
+        static Transform ViewOf(BuildingModule b)
         {
             var view = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.GetView(b) : null;
             return view != null ? view.transform : null;
@@ -140,7 +140,7 @@ namespace CoreDawn.Tests
             return Vector3.Lerp(a.position, b.position, frac);
         }
 
-        static Vector3 ExitDir(Building b)
+        static Vector3 ExitDir(BuildingModule b)
         {
             var self = ViewOf(b);
             if (self == null) return Vector3.forward;

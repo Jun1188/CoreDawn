@@ -32,10 +32,10 @@ namespace CoreDawn.Managers
 
         float _playerTimer, _coreTimer, _rescanTimer;
         PlayerView _player;
-        Building _core;
+        BuildingModule _core;
         World _world;
 
-        Health CoreHealth => _core?.Owner?.Health;
+        HealthModule CoreHealth => _core?.Owner?.Health;
 
         void Update()
         {

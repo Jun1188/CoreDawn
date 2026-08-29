@@ -11,7 +11,7 @@ namespace CoreDawn.Sim
     /// 구 MovementComponent(뷰, transform 직접 적분)의 이식. Rigidbody가 아니라 transform을 적분하던 코드라
     /// 심에 통째로 들어온다 — 뷰는 결과 위치를 그릴 뿐이다. 격자 통행·지형 배율·지면 높이는 <see cref="INavigation"/>에 묻는다.
     /// </summary>
-    public sealed class Movement : EntityModule
+    public sealed class MovementModule : EntityModule
     {
         readonly float moveSpeed;
         readonly float rotateSpeed;     // 도/초 — 이동 방향으로 몸 돌리는 속도
@@ -46,14 +46,14 @@ namespace CoreDawn.Sim
         /// <summary>군중 겹침 해소용 개체 반지름 — MonsterSystem의 군중 패스가 읽는다.</summary>
         public float CrowdRadius => crowdRadius;
 
-        Effects effects;   // 같은 엔티티의 효과 모듈 — 감속·가속 배율의 정본 (없으면 1)
+        EffectsModule effects;   // 같은 엔티티의 효과 모듈 — 감속·가속 배율의 정본 (없으면 1)
 
         /// <summary>효과 시스템의 이동 속도 배율(감속 등). 심 Effects 모듈에서 읽는다 — 뷰가 밀어 넣지 않는다.</summary>
         public float SpeedMultiplier
         {
             get
             {
-                if (effects == null && Owner != null) effects = Owner.Get<Effects>();   // 부착 순서와 무관하게 늦게 찾는다
+                if (effects == null && Owner != null) effects = Owner.Get<EffectsModule>();   // 부착 순서와 무관하게 늦게 찾는다
                 return effects != null ? effects.MoveSpeedMultiplier : 1f;
             }
         }
@@ -67,7 +67,7 @@ namespace CoreDawn.Sim
         public event Action OnDestinationReached;
         public event Action OnPathBlocked;
 
-        public Movement(in MonsterSpec spec, INavigation navigation)
+        public MovementModule(in MonsterSpec spec, INavigation navigation)
         {
             moveSpeed = spec.MoveSpeed;
             rotateSpeed = spec.RotateSpeed;

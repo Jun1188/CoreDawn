@@ -35,7 +35,7 @@ namespace CoreDawn.UI
         // 다시 만들어야 하는지 판정하는 키 — 이게 그대로면 매 프레임 손대지 않는다
         PlacementSystem.BuildMode _shownMode = PlacementSystem.BuildMode.None;
         BuildingDataSO _shownSo;
-        Building _shownTarget;
+        BuildingModule _shownTarget;
         int _shownCostStamp;
 
         void Awake()

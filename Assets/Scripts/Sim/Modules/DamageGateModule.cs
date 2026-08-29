@@ -8,7 +8,7 @@ namespace CoreDawn.Sim
     /// 피해가 뷰를 거치지 않고 심 안에서 끝나는 지금, 뷰의 ReceiveDamage override로는 이 규칙을 지킬 수 없다.
     /// 규칙이 심으로 오면(5단계 둥지 모듈) 이 문은 사라진다.
     /// </summary>
-    public sealed class DamageGate : EntityModule, IDamageInterceptor
+    public sealed class DamageGateModule : EntityModule, IDamageInterceptor
     {
         /// <summary>(때린 엔티티) → 막는가. null이면 막지 않는다.</summary>
         public Func<Entity, bool> Blocks { get; set; }

@@ -30,8 +30,8 @@ namespace CoreDawn.Sim
             if (Entity != null && !Entity.IsRemoved) return Entity;
 
             var e = world.Create(Faction.Player, position);
-            e.Add(new Health(Math.Max(1f, maxHp)));
-            e.Add(new Effects());
+            e.Add(new HealthModule(Math.Max(1f, maxHp)));
+            e.Add(new EffectsModule());
             Entity = e;
             Spawned?.Invoke(e);
             return e;

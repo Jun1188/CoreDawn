@@ -18,7 +18,7 @@ namespace CoreDawn.EditorTools
 
             EditorGUILayout.HelpBox(
                 "자동 수집 목록 — 직접 편집할 수 없습니다.\n" +
-                "건물 SO를 만들거나 지우면 자동 반영됩니다. (수동: Tools/Factory/Rebuild Building Database)",
+                "건물 SO를 만들거나 지우면 자동 반영됩니다. (수동: Tools/Factory/Rebuild BuildingModule Database)",
                 MessageType.Info);
 
             if (GUILayout.Button("지금 재수집"))

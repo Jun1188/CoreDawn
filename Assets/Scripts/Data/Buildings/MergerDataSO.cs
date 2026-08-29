@@ -14,7 +14,7 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewMerger", menuName = "Factory/Buildings/Merger")]
     public class MergerDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(Building building)
+        public override IBuildingBehavior CreateBehavior(BuildingModule building)
             => new MergerBehavior(building);
     }
 
@@ -22,8 +22,8 @@ namespace CoreDawn.Data
 
     public class MergerBehavior : IBuildingBehavior
     {
-        readonly Building _b;
-        public MergerBehavior(Building b) => _b = b;
+        readonly BuildingModule _b;
+        public MergerBehavior(BuildingModule b) => _b = b;
         public void OnAfterPlaced() { }
 
         public void Tick(float dt)

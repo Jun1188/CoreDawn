@@ -16,7 +16,7 @@ namespace CoreDawn.Data
                  "\"얼마나 좋은 채굴기인가\"는 건물이, \"얼마나 캐기 어려운 광맥인가\"는 땅이 갖는다.")]
         public float speedMultiplier = 1f;
 
-        public override IBuildingBehavior CreateBehavior(Building building)
+        public override IBuildingBehavior CreateBehavior(BuildingModule building)
             => new MinerBehavior(building, this);
     }
 
@@ -33,12 +33,12 @@ namespace CoreDawn.Data
     /// </summary>
     public class MinerBehavior : IBuildingBehavior, ISaveableBehavior
     {
-        readonly Building    _b;
+        readonly BuildingModule    _b;
         readonly MinerDataSO _data;
         ItemDataSO _target;
         float      _readyAt = -1f;   // 채굴 완료 예정 시각 (-1 = 예약 없음 = 정지 상태)
 
-        public MinerBehavior(Building b, MinerDataSO data) { _b = b; _data = data; }
+        public MinerBehavior(BuildingModule b, MinerDataSO data) { _b = b; _data = data; }
 
         // 외부(ResourceGrid 등)에서 OnAfterPlaced 이후 주입
         public void SetTarget(ItemDataSO item)

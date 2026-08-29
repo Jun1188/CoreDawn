@@ -9,7 +9,7 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewStorage", menuName = "Factory/Buildings/Storage")]
     public class StorageDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(Building building)
+        public override IBuildingBehavior CreateBehavior(BuildingModule building)
             => new StorageBehavior(building);
     }
 
@@ -29,9 +29,9 @@ namespace CoreDawn.Data
     /// </summary>
     public class StorageBehavior : IBuildingBehavior, IInteractiveBehavior
     {
-        readonly Building _b;
+        readonly BuildingModule _b;
 
-        public StorageBehavior(Building b)
+        public StorageBehavior(BuildingModule b)
         {
             _b = b;
 

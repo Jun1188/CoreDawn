@@ -172,7 +172,7 @@ namespace CoreDawn.Combat
 
         private void OnEntityDied(Entity e)
         {
-            var building = e.Get<Building>();
+            var building = e.Get<BuildingModule>();
             if (building != null && building.IsCore) OnCoreDestroyed();
         }
 

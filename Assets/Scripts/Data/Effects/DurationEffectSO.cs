@@ -12,7 +12,7 @@ namespace CoreDawn.Data
     }
 
     /// <summary>
-    /// 지속 효과의 베이스 — 지속 시간·중첩 규칙·틱 간격. 진행(남은 시간·틱 타이머)은 심 <see cref="Effects"/>의
+    /// 지속 효과의 베이스 — 지속 시간·중첩 규칙·틱 간격. 진행(남은 시간·틱 타이머)은 심 <see cref="EffectsModule"/>의
     /// 활성 인스턴스가 갖는다: SO는 공유 에셋이라 상태를 두면 모든 대상이 공유해 버린다.
     /// </summary>
     public abstract class DurationEffectSO : EffectSO

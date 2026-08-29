@@ -6,7 +6,7 @@ namespace CoreDawn.Factory
     [RequireComponent(typeof(BuildingView))]
     public class MachineProcessor : BaseProcessor
     {
-        private Building _building;   
+        private BuildingModule _building;   
 
         // 공장 기계는 재료가 공급되는 한 계속 자동 순환
         protected override bool IsAutomation => true; 

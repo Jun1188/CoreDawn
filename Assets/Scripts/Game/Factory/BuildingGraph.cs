@@ -17,13 +17,13 @@ namespace CoreDawn.Factory
     //  관련 (별도 파일):
     //    ItemContainer — 건물 입출력 버퍼 (슬롯 기반)
     //    Building      — 심 엔티티
-    //    GridIndex     — 좌표 → Building O(1) 조회 (FactorySystem.cs)
+    //    GridIndex     — 좌표 → BuildingModule O(1) 조회 (FactorySystem.cs)
     // ================================================================
 
     /// <summary>두 Building 간의 단방향 아이템 연결.</summary>
     public class BuildingConnection
     {
-        public Building       From, To;
+        public BuildingModule       From, To;
         public PortDefinition FromPort, ToPort;
     }
 
@@ -46,15 +46,15 @@ namespace CoreDawn.Factory
         readonly FactorySystem _sim;
 
         // 인접 리스트 — 나가는/들어오는 연결 분리 저장
-        readonly Dictionary<Building, List<BuildingConnection>> _out = new();
-        readonly Dictionary<Building, List<BuildingConnection>> _in  = new();
+        readonly Dictionary<BuildingModule, List<BuildingConnection>> _out = new();
+        readonly Dictionary<BuildingModule, List<BuildingConnection>> _in  = new();
 
         public BuildingGraph(FactorySystem sim) => _sim = sim;
 
         // ── FactorySim이 호출하는 진입점
 
         /// <summary>건물이 GridIndex에 등록된 직후 호출.</summary>
-        public void OnPlaced(Building b)
+        public void OnPlaced(BuildingModule b)
         {
             _out[b] = new List<BuildingConnection>();
             _in[b]  = new List<BuildingConnection>();
@@ -63,7 +63,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>건물 제거 시 호출. GridIndex에서 빠지기 전에 호출해야 한다.</summary>
-        public void OnRemoved(Building b)
+        public void OnRemoved(BuildingModule b)
         {
             foreach (var c in _out[b])
             {
@@ -83,7 +83,7 @@ namespace CoreDawn.Factory
 
         // ── 포트 매칭 (핵심 알고리즘)
 
-        void FindAndRegister(Building nb)
+        void FindAndRegister(BuildingModule nb)
         {
             var ports = nb.GetEffectivePorts();
             if (ports == null) return;

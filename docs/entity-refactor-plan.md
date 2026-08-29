@@ -439,6 +439,12 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 둥지 HP 정본을 데이터(500)로 통일하고, 이제 어떤 뷰도 엔티티를 만들지 않으므로 `HealthComponent`·`CreatesOwnEntity`·`EntityView.Awake` 생성 경로·`SeedMaxHealth` 삭제.
 - 검증: 컴파일 0 오류, 밤 강제 플레이(둥지·몬스터·플레이어 검증값 동일, UI 문서 렌더), 오류 0.
 
+
+### 2026-08-29 — 모듈 이름 규칙 + Sim 하위 폴더 (`feature/module-naming`)
+- 사용자 지시: 모듈인데 이름에 Module이 없는 타입을 고칠 것. `Health·Effects·Movement·Attack·MonsterBrain·DamageGate·Building` → `*Module`(7개, 60파일). 같은 이름의 프로퍼티(`Entity.Health`·`EntityView.Effects`·`BuildingView.Building`·`MonsterBrainModule.Attack`)는 그대로 — 타입 위치만 바꿨다(생성자 포함).
+- `Sim/`을 루트(엔티티·월드·기하·인터페이스) / `Modules/` / `Systems/` / `Definitions/`(EffectSpec·MonsterSpec·Effect)로 나눴다. 네임스페이스는 전부 `CoreDawn.Sim`(Data와 같은 예외).
+- 검증: 컴파일 0 오류, 밤 강제 플레이(둥지·몬스터·플레이어 검증값 동일), 오류 0.
+
 ## 8. 세션 재개 절차
 
 1. 이 문서와 `AGENTS.md`를 읽는다. `git branch --show-current`, `git log --oneline -10`으로 어디까지 왔는지 본다.

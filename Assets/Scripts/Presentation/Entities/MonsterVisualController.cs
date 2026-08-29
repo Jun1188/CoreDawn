@@ -43,7 +43,7 @@ namespace CoreDawn.Entities
         [SerializeField] private Animator animator;
 
         [Header("이동 → Speed 파라미터")]
-        [Tooltip("이 속도(월드 단위/초)에서 Speed=1(달리기)이 된다. 0 이하면 심 Movement.MoveSpeed를 쓴다.")]
+        [Tooltip("이 속도(월드 단위/초)에서 Speed=1(달리기)이 된다. 0 이하면 심 MovementModule.MoveSpeed를 쓴다.")]
         [SerializeField] private float runSpeed = 0f;
 
         [Tooltip("Speed 파라미터 감쇠 시간(초). 클수록 걷기↔달리기 전환이 느긋해진다.")]

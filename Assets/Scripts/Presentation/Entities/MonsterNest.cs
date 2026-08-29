@@ -279,8 +279,8 @@ namespace CoreDawn.Entities
             {
                 Debug.LogWarning("[MonsterNest] 심 엔티티 없이 시작했습니다 — WorldPopulator를 거치지 않은 둥지. 데이터 HP로 직접 세웁니다.", this);
                 var e = SimHost.World.Create(Faction.Monster, transform.position);   // 둥지는 몬스터 편 — 타워가 노리고 플레이어가 부순다
-                e.Add(new Health(Mathf.Max(1f, data != null ? data.maxHp : 500f)));
-                e.Add(new Effects());
+                e.Add(new HealthModule(Mathf.Max(1f, data != null ? data.maxHp : 500f)));
+                e.Add(new EffectsModule());
                 AttachEntity(e);
             }
 
@@ -336,8 +336,8 @@ namespace CoreDawn.Entities
         protected override void OnEntityAttached()
         {
             base.OnEntityAttached();
-            if (!Entity.Has<DamageGate>())
-                Entity.Add(new DamageGate()).Blocks = _ => (data != null && !data.isAttackable) || IsInvulnerable();
+            if (!Entity.Has<DamageGateModule>())
+                Entity.Add(new DamageGateModule()).Blocks = _ => (data != null && !data.isAttackable) || IsInvulnerable();
         }
 
         private bool IsInvulnerable()

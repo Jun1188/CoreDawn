@@ -354,8 +354,8 @@ namespace CoreDawn.Worlds
         static void AttachFreshEntity(EntityView view, BuildingDataSO data)
         {
             var entity = SimHost.World.Create(data.Faction, view.transform.position);
-            entity.Add(new Health(Mathf.Max(1f, data.maxHp)));
-            entity.Add(new Effects());
+            entity.Add(new HealthModule(Mathf.Max(1f, data.maxHp)));
+            entity.Add(new EffectsModule());
             view.AttachEntity(entity);
         }
 

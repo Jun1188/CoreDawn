@@ -31,7 +31,7 @@ namespace CoreDawn.FPS
         public float swaySharpness = 9f;
 
         // ─── Movement Sway ────────────────────────────────────────────────
-        [Header("Movement Sway (이동 관성)")]
+        [Header("MovementModule Sway (이동 관성)")]
         public bool moveSwayEnabled = true;
         [Tooltip("속도에 따른 위치 관성 최대치. (X 좌우, Y 상하, Z 앞뒤)")]
         public Vector3 movePosSway = new Vector3(0.022f, 0.018f, 0.03f);

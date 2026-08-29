@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CoreDawn.Sim
 {
-    /// <summary>효과의 종류 — 심이 아는 전부. 새 종류는 여기와 <see cref="Effects"/>의 Apply/Tick/Recompute 분기에 함께 추가한다.</summary>
+    /// <summary>효과의 종류 — 심이 아는 전부. 새 종류는 여기와 <see cref="EffectsModule"/>의 Apply/Tick/Recompute 분기에 함께 추가한다.</summary>
     public enum EffectKind
     {
         /// <summary>즉시 피해 (Value = 피해량).</summary>

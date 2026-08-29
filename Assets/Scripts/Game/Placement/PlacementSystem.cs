@@ -92,12 +92,12 @@ namespace CoreDawn.Placement
         private Vector3 lastPos;
 
         // 철거 모드 상태
-        private Building hovered;                                          // 지금 하이라이트 중인 건물
+        private BuildingModule hovered;                                          // 지금 하이라이트 중인 건물
         private readonly Dictionary<Renderer, Material[]> savedMats = new(); // 원본 머티리얼 백업
 
         // 홀드 철거 — 누르고 있는 동안만 진행한다
         private bool holdPressed;
-        private Building holdTarget;
+        private BuildingModule holdTarget;
         private float holdElapsed;
 
         // ── 외부(UI) 조회용
@@ -127,7 +127,7 @@ namespace CoreDawn.Placement
         public BuildingDatabaseSO Database => database;
 
         /// <summary>철거 모드에서 지금 조준 중인 건물. 없으면 null (HUD가 카드를 접는다).</summary>
-        public Building HoveredBuilding => hovered;
+        public BuildingModule HoveredBuilding => hovered;
 
         /// <summary>철거 홀드 진행도 0~1. 누르고 있지 않으면 0.</summary>
         public float DemolishHoldProgress =>
@@ -396,7 +396,7 @@ namespace CoreDawn.Placement
         /// <param name="shape">벨트 모양. 벨트가 아닌 건물에서는 무시된다.</param>
         /// <returns>배치 성공 여부. 실패 사유는 reason으로 돌려준다.</returns>
         public bool TryPlaceAt(BuildingDataSO so, Vector2Int origin, int rotSteps,
-            out Building placed, out string reason, BeltShape shape = BeltShape.Straight)
+            out BuildingModule placed, out string reason, BeltShape shape = BeltShape.Straight)
         {
             placed = null;
             reason = null;
@@ -432,7 +432,7 @@ namespace CoreDawn.Placement
             // 건물 몸체 직접 조준 우선, 실패하면 바닥 칸 폴백.
             // 철거를 거부하는 건물(코어·둥지 등)은 데이터가 스스로 선언한다 — 종류가 늘 때마다
             // 여기에 조건이 붙지 않도록. 조준 단계에서 걸러 하이라이트도, 홀드 카운트도 걸리지 않게 한다.
-            SetHovered(TryGetAimedBuilding(out Building target) && IsDemolishable(target)
+            SetHovered(TryGetAimedBuilding(out BuildingModule target) && IsDemolishable(target)
                 ? target : null);
 
             if (!holdPressed) { holdTarget = null; holdElapsed = 0f; return; }
@@ -469,10 +469,10 @@ namespace CoreDawn.Placement
         }
 
         /// <summary>철거를 허용하는 건물인가 — 데이터가 없는 건물은 허용한다(테스트용 심 배치).</summary>
-        static bool IsDemolishable(Building b) => b != null && (b.Data == null || b.Data.isDemolishable);
+        static bool IsDemolishable(BuildingModule b) => b != null && (b.Data == null || b.Data.isDemolishable);
 
         /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴. 코어·둥지는 거부한다.</summary>
-        public void Demolish(Building b)
+        public void Demolish(BuildingModule b)
         {
             if (b == null) return;
             if (!IsDemolishable(b)) return;   // 조준 필터를 우회한 외부 호출까지 방어
@@ -504,7 +504,7 @@ namespace CoreDawn.Placement
             => Demolish(FactoryBootstrap.Instance.Factory.Grid.GetAt(cell));
 
         // ---- 하이라이트 적용/복원 ----
-        private void SetHovered(Building b)
+        private void SetHovered(BuildingModule b)
         {
             if (hovered == b) return;   // 변화 없으면 그대로
             ClearHovered();             // 이전 대상 원복
@@ -555,7 +555,7 @@ namespace CoreDawn.Placement
         /// 조준한 건물 찾기 — 공용 쿼리 (철거 하이라이트가 사용, 이후 기계 UI 열기 등도 여기로).
         /// ① 건물 콜라이더 직접 히트(몸체 조준) ② 실패 시 바닥 칸의 건물 폴백(벨트처럼 낮은 건물 대비).
         /// </summary>
-        public bool TryGetAimedBuilding(out Building building)
+        public bool TryGetAimedBuilding(out BuildingModule building)
         {
             building = null;
 

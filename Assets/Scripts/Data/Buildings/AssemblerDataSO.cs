@@ -18,7 +18,7 @@ namespace CoreDawn.Data
         [Header("레시피")]
         public RecipeDataSO[] availableRecipes;
 
-        public override IBuildingBehavior CreateBehavior(Building building)
+        public override IBuildingBehavior CreateBehavior(BuildingModule building)
             => new AssemblerBehavior(building, this);
 
         protected override void OnValidate()
@@ -55,7 +55,7 @@ namespace CoreDawn.Data
 
     public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
     {
-        readonly Building _b;
+        readonly BuildingModule _b;
         readonly AssemblerDataSO _data;
         RecipeDataSO _recipe;           // 다음 조합이 따를 레시피 (UI에서 교체 가능)
         RecipeDataSO _craftingRecipe;   // 진행 중인 1회가 따르는 레시피 — 교체돼도 이 1회는 이것으로 끝난다
@@ -63,7 +63,7 @@ namespace CoreDawn.Data
         bool         _crafting;
         float        _pausedRemaining;  // 중지 시점의 잔여 시간 — 진행률은 보존된다
 
-        public AssemblerBehavior(Building b, AssemblerDataSO data)
+        public AssemblerBehavior(BuildingModule b, AssemblerDataSO data)
         {
             _b = b;
             _data = data;
@@ -94,7 +94,7 @@ namespace CoreDawn.Data
 
         // ── 설비 UI(SCR-09)가 읽는 표면 ──────────────────────────
 
-        public Building Building => _b;
+        public BuildingModule Building => _b;
         public AssemblerDataSO Data => _data;
         public RecipeDataSO CurrentRecipe => _recipe;
 

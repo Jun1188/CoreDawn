@@ -28,7 +28,7 @@ namespace CoreDawn.Entities
         private int monsterMask;
 
         // 심 공격 모듈 — 사거리·쿨다운의 정본. 심 배치 타워는 FactorySystem.Place가 TowerDataSO에서 넣는다.
-        private Attack attack => Entity?.Get<Attack>();
+        private AttackModule attack => Entity?.Get<AttackModule>();
         private static float Now => SimRunner.Monsters.Now;   // 심 시계 — 몬스터와 같은 시계로 쿨다운을 센다
         private float AttackRange => attack != null ? attack.Range : 0f;
         private bool CanAttackNow() => attack != null && attack.CanAttack(Now);
@@ -113,7 +113,7 @@ namespace CoreDawn.Entities
             float range = data.range * tile, cooldown = data.fireRate > 0f ? 1f / data.fireRate : 1f;
             if (Entity != null)
             {
-                var a = Entity.Get<Attack>() ?? Entity.Add(new Attack(range, cooldown));   // 호스트·폴백 경로엔 아직 없다
+                var a = Entity.Get<AttackModule>() ?? Entity.Add(new AttackModule(range, cooldown));   // 호스트·폴백 경로엔 아직 없다
                 a.Configure(range, cooldown);
                 if (fallbackAttackEffects != null && fallbackAttackEffects.Length > 0) a.SetEffects(EffectSpecs.ToSim(fallbackAttackEffects));
             }
@@ -277,7 +277,7 @@ namespace CoreDawn.Entities
         /// <summary>목표의 수평 이동 속도 — 곡사 탄착 예측이 쓴다. 움직이지 않는 대상은 0.</summary>
         private static Vector3 VelocityOf(EntityView t)
         {
-            var movement = t != null ? t.Entity?.Get<Movement>() : null;
+            var movement = t != null ? t.Entity?.Get<MovementModule>() : null;
             return movement != null ? movement.Velocity : Vector3.zero;
         }
 

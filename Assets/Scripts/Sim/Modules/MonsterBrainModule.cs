@@ -7,9 +7,9 @@ namespace CoreDawn.Sim
     /// <summary>몬스터 두뇌의 상태 — 매 틱 두뇌가 Update를 부른다. 구 IEntityState(뷰 상태기)의 심 판.</summary>
     public interface IEntityState
     {
-        void Enter(MonsterBrain brain);
-        void Update(MonsterBrain brain, float dt);
-        void Exit(MonsterBrain brain);
+        void Enter(MonsterBrainModule brain);
+        void Update(MonsterBrainModule brain, float dt);
+        void Exit(MonsterBrainModule brain);
     }
 
     /// <summary>
@@ -21,20 +21,20 @@ namespace CoreDawn.Sim
     /// 밤에 스폰되어 플로우필드를 따라 코어/타워로 전진·공격한다. 플레이어에 감지되면(OnDetected) 런타임 A* 추적으로
     /// 전환하고, 범위를 벗어나면(OnLost) 다시 플로우필드로 복귀한다.
     /// </summary>
-    public sealed class MonsterBrain : EntityModule
+    public sealed class MonsterBrainModule : EntityModule
     {
         readonly MonsterSystem system;
         readonly MonsterSpec spec;
 
-        Movement movement;
-        Attack attack;
+        MovementModule movement;
+        AttackModule attack;
         IEntityState currentState;
 
         public MonsterSystem System => system;
         public INavigation Nav => system.Nav;
         public float Now => system.Now;
-        public Movement Movement => movement;
-        public Attack Attack => attack;
+        public MovementModule Movement => movement;
+        public AttackModule Attack => attack;
         public IEntityState CurrentState => currentState;
 
         /// <summary>플레이어를 발견했거나 각성했다 — 뷰가 경계 모션을 튼다. 추적 시작을 지연시키지 않는다.</summary>
@@ -66,7 +66,7 @@ namespace CoreDawn.Sim
         // 값이 있으면 거리가 아니라 보스의 교전 지속 여부로 이탈을 판정한다.
         Entity escortBoss;
 
-        public MonsterBrain(MonsterSystem system, in MonsterSpec spec)
+        public MonsterBrainModule(MonsterSystem system, in MonsterSpec spec)
         {
             this.system = system ?? throw new ArgumentNullException(nameof(system));
             this.spec = spec;
@@ -74,8 +74,8 @@ namespace CoreDawn.Sim
 
         protected internal override void OnAttach()
         {
-            movement = Owner.Get<Movement>();
-            attack = Owner.Get<Attack>();
+            movement = Owner.Get<MovementModule>();
+            attack = Owner.Get<AttackModule>();
             patience = spec.MaxPatience;
 
             Owner.Died += OnDied;
@@ -253,7 +253,7 @@ namespace CoreDawn.Sim
             // 깨어난 보스는 플레이어 센서 반경이 아니라 인내심으로 교전을 유지한다.
             if (isBoss && hasBeenAttacked) return;
             // 보스전 지원군도 마찬가지 — 이탈은 보스의 교전 지속 여부가 정한다.
-            var escortBrain = escortBoss?.Get<MonsterBrain>();
+            var escortBrain = escortBoss?.Get<MonsterBrainModule>();
             if (escortBoss != null && escortBoss.IsAlive && escortBrain != null && escortBrain.HasBeenAttacked) return;
             aggroOnPlayer = false;
             currentTarget = null;
@@ -366,7 +366,7 @@ namespace CoreDawn.Sim
             // 보스전 지원군은 보스의 교전에 종속된다 — 보스가 아직 싸우는 한 거리를 이유로 포기하지 않는다.
             if (escortBoss != null)
             {
-                var escortBrain = escortBoss.Get<MonsterBrain>();
+                var escortBrain = escortBoss.Get<MonsterBrainModule>();
                 return !escortBoss.IsAlive || escortBrain == null || !escortBrain.HasBeenAttacked;
             }
 
@@ -446,7 +446,7 @@ namespace CoreDawn.Sim
 
             Vector3 d = target.Position - from;
             d.y = 0f;
-            float radius = target.Get<Movement>()?.CrowdRadius ?? 0.5f;
+            float radius = target.Get<MovementModule>()?.CrowdRadius ?? 0.5f;
             return Mathf.Max(0f, d.magnitude - radius);
         }
     }
@@ -456,14 +456,14 @@ namespace CoreDawn.Sim
     /// <summary>대기 — 플로우필드가 준비되면 기본 이동(FlowFieldState)으로 전환한다. 플레이어 감지는 플레이어 센서 콜백이 담당한다.</summary>
     public sealed class IdleState : IEntityState
     {
-        public void Enter(MonsterBrain b) => b.Movement?.StopMoving();
+        public void Enter(MonsterBrainModule b) => b.Movement?.StopMoving();
 
-        public void Update(MonsterBrain b, float dt)
+        public void Update(MonsterBrainModule b, float dt)
         {
             if (b.Nav != null && b.Nav.HasFlowField) b.SetState(new FlowFieldState());
         }
 
-        public void Exit(MonsterBrain b) { }
+        public void Exit(MonsterBrainModule b) { }
     }
 
     /// <summary>
@@ -472,9 +472,9 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class FlowFieldState : IEntityState
     {
-        public void Enter(MonsterBrain b) { }
+        public void Enter(MonsterBrainModule b) { }
 
-        public void Update(MonsterBrain b, float dt)
+        public void Update(MonsterBrainModule b, float dt)
         {
             var nav = b.Nav;
             if (nav == null || !nav.HasFlowField)
@@ -486,7 +486,7 @@ namespace CoreDawn.Sim
             if (b.Attack != null)
             {
                 var building = nav.FindBreachTarget(b.Owner.Position, b.Attack.Range);
-                if (MonsterBrain.IsValidTarget(building))
+                if (MonsterBrainModule.IsValidTarget(building))
                 {
                     b.SetState(new AttackState(building));
                     return;
@@ -497,7 +497,7 @@ namespace CoreDawn.Sim
             b.Movement?.SetDirection(nav.FlowDirectionAt(b.Owner.Position));
         }
 
-        public void Exit(MonsterBrain b) => b.Movement?.StopMoving();
+        public void Exit(MonsterBrainModule b) => b.Movement?.StopMoving();
     }
 
     /// <summary>런타임 A* 추적 — 플레이어 센서에 감지된 몬스터만 쓰는 무거운 길찾기. 추적 포기는 OnLost가 담당한다.</summary>
@@ -506,28 +506,28 @@ namespace CoreDawn.Sim
         readonly Entity target;
         const float PathUpdateInterval = 0.5f;
         float lastPathUpdateTime;
-        MonsterBrain owner;
+        MonsterBrainModule owner;
 
         public Entity Target => target;
 
         public ChaseState(Entity target) => this.target = target;
 
-        public void Enter(MonsterBrain b)
+        public void Enter(MonsterBrainModule b)
         {
             owner = b;
             if (b.Movement != null) b.Movement.OnPathBlocked += HandlePathBlocked;
             UpdatePath(b);
         }
 
-        public void Update(MonsterBrain b, float dt)
+        public void Update(MonsterBrainModule b, float dt)
         {
-            if (!MonsterBrain.IsValidTarget(target))
+            if (!MonsterBrainModule.IsValidTarget(target))
             {
                 b.SetState(new IdleState());
                 return;
             }
 
-            float distance = MonsterBrain.DistanceTo(target, b.Owner.Position);
+            float distance = MonsterBrainModule.DistanceTo(target, b.Owner.Position);
             if (b.Attack != null && distance <= b.Attack.Range)
             {
                 b.SetState(new AttackState(target));
@@ -537,7 +537,7 @@ namespace CoreDawn.Sim
             if (b.Now >= lastPathUpdateTime + PathUpdateInterval) UpdatePath(b);
         }
 
-        public void Exit(MonsterBrain b)
+        public void Exit(MonsterBrainModule b)
         {
             if (b.Movement != null)
             {
@@ -551,9 +551,9 @@ namespace CoreDawn.Sim
             if (owner != null) UpdatePath(owner);
         }
 
-        void UpdatePath(MonsterBrain b)
+        void UpdatePath(MonsterBrainModule b)
         {
-            if (!MonsterBrain.IsValidTarget(target) || b.Nav == null) return;
+            if (!MonsterBrainModule.IsValidTarget(target) || b.Nav == null) return;
 
             lastPathUpdateTime = b.Now;
 
@@ -574,17 +574,17 @@ namespace CoreDawn.Sim
         }
 
         /// <summary>콜백이 도착했을 때 아직 이 상태가 돌고 있는가 — 늦게 온 답을 거르는 유일한 관문.</summary>
-        bool IsStillCurrent(MonsterBrain b)
-            => owner == b && b != null && b.Owner.IsAlive && ReferenceEquals(b.CurrentState, this) && MonsterBrain.IsValidTarget(target);
+        bool IsStillCurrent(MonsterBrainModule b)
+            => owner == b && b != null && b.Owner.IsAlive && ReferenceEquals(b.CurrentState, this) && MonsterBrainModule.IsValidTarget(target);
 
         /// <summary>길이 완전히 막혔다 → 경로를 막는 건물을 새 타겟으로 삼아 부순다.</summary>
-        void HandleFullyBlocked(MonsterBrain b)
+        void HandleFullyBlocked(MonsterBrainModule b)
         {
             b.Nav.FindBlockingBuilding(b.Owner.Position, target.Position, blocker =>
             {
                 if (!IsStillCurrent(b)) return;
 
-                if (MonsterBrain.IsValidTarget(blocker) && !ReferenceEquals(blocker, target))
+                if (MonsterBrainModule.IsValidTarget(blocker) && !ReferenceEquals(blocker, target))
                 {
                     b.SetState(new ChaseState(blocker));
                     return;
@@ -606,21 +606,21 @@ namespace CoreDawn.Sim
 
         public AttackState(Entity target) => this.target = target;
 
-        public void Enter(MonsterBrain b)
+        public void Enter(MonsterBrainModule b)
         {
             b.Movement?.StopMoving();
             TryAttackTarget(b);
         }
 
-        public void Update(MonsterBrain b, float dt)
+        public void Update(MonsterBrainModule b, float dt)
         {
-            if (!MonsterBrain.IsValidTarget(target))
+            if (!MonsterBrainModule.IsValidTarget(target))
             {
                 b.SetState(new IdleState());
                 return;
             }
 
-            float distance = MonsterBrain.DistanceTo(target, b.Owner.Position);
+            float distance = MonsterBrainModule.DistanceTo(target, b.Owner.Position);
             if (b.Attack == null || distance > b.Attack.Range * ExitRangeBuffer)
             {
                 b.SetState(new ChaseState(target));   // 같은 타겟을 유지한 채 재추적
@@ -631,11 +631,11 @@ namespace CoreDawn.Sim
             if (b.Attack.CanAttack(b.Now)) TryAttackTarget(b);
         }
 
-        public void Exit(MonsterBrain b) { }
+        public void Exit(MonsterBrainModule b) { }
 
-        void TryAttackTarget(MonsterBrain b)
+        void TryAttackTarget(MonsterBrainModule b)
         {
-            if (!MonsterBrain.IsValidTarget(target) || b.Attack == null) return;
+            if (!MonsterBrainModule.IsValidTarget(target) || b.Attack == null) return;
 
             // 수평으로만 타겟을 바라본다
             b.Movement?.FaceImmediately(target.Position - b.Owner.Position);
@@ -645,17 +645,17 @@ namespace CoreDawn.Sim
 
     public sealed class DeadState : IEntityState
     {
-        public void Enter(MonsterBrain b) => b.Movement?.StopMoving();
-        public void Update(MonsterBrain b, float dt) { }
-        public void Exit(MonsterBrain b) { }
+        public void Enter(MonsterBrainModule b) => b.Movement?.StopMoving();
+        public void Update(MonsterBrainModule b, float dt) { }
+        public void Exit(MonsterBrainModule b) { }
     }
 
     /// <summary>방어자 전용 대기 상태 (FlowFieldState로 넘어가지 않음).</summary>
     public sealed class DefenderIdleState : IEntityState
     {
-        public void Enter(MonsterBrain b) => b.Movement?.StopMoving();
-        public void Update(MonsterBrain b, float dt) { }
-        public void Exit(MonsterBrain b) { }
+        public void Enter(MonsterBrainModule b) => b.Movement?.StopMoving();
+        public void Update(MonsterBrainModule b, float dt) { }
+        public void Exit(MonsterBrainModule b) { }
     }
 
     /// <summary>원위치 복귀. 일회성 방어 몬스터는 도착 후 소멸하고, 보스는 비선공 대기로 남는다.</summary>
@@ -670,7 +670,7 @@ namespace CoreDawn.Sim
             this.despawnOnArrival = despawnOnArrival;
         }
 
-        public void Enter(MonsterBrain b)
+        public void Enter(MonsterBrainModule b)
         {
             // 경로가 올 때까지는 둥지 쪽으로 곧장 걷는다 — 워커의 답을 기다리며 멈춰 서 있으면 복귀가 한 박자 늦어 보인다.
             b.Movement?.SetDirection((origin - b.Owner.Position).normalized);
@@ -682,7 +682,7 @@ namespace CoreDawn.Sim
             });
         }
 
-        public void Update(MonsterBrain b, float dt)
+        public void Update(MonsterBrainModule b, float dt)
         {
             Vector3 pos = b.Owner.Position;
             float dist = Vector3.Distance(pos, origin);
@@ -718,6 +718,6 @@ namespace CoreDawn.Sim
             }
         }
 
-        public void Exit(MonsterBrain b) => b.Movement?.StopMoving();
+        public void Exit(MonsterBrainModule b) => b.Movement?.StopMoving();
     }
 }

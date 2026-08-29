@@ -24,7 +24,7 @@ namespace CoreDawn.Sim
 
     /// <summary>
     /// 받는 피해를 가로채는 모듈 — 체력이 깎이기 전에 값을 줄이거나(보호막) 없앤다(아군 공격 무시).
-    /// <see cref="Health.Damage"/>가 소유 엔티티의 모듈을 붙은 순서대로 거친다. 0 이하를 돌려주면 그 자리에서 끝난다.
+    /// <see cref="HealthModule.Damage"/>가 소유 엔티티의 모듈을 붙은 순서대로 거친다. 0 이하를 돌려주면 그 자리에서 끝난다.
     ///
     /// 예전에는 이 규칙들이 뷰(BuildingEntity)의 ReceiveDamage/ApplyEffects override에 흩어져 있었다 —
     /// 규칙이 뷰에 있으면 헤드리스 심에서는 사라지고, 서버 권위 멀티에서는 클라이언트가 규칙을 쥐게 된다.

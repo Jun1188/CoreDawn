@@ -302,7 +302,7 @@ namespace CoreDawn.Navigation
             map != null ? TileRules.SpeedMultiplier(map.TileAt(TileOf(cell))) : 1f;
 
         /// <summary>이 칸을 점유한 심 건물 — 좌표계가 달라 월드 좌표를 경유한다. 없으면 null.</summary>
-        private Building BuildingAt(Node node)
+        private BuildingModule BuildingAt(Node node)
         {
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null) return null;
@@ -321,7 +321,7 @@ namespace CoreDawn.Navigation
         public int Subdiv => subdiv;
 
         /// <summary>이 길찾기 칸을 점유한 심 건물. 건물이 없으면 null.</summary>
-        public Building BuildingAt(Vector2Int cell)
+        public BuildingModule BuildingAt(Vector2Int cell)
         {
             var node = GetNode(cell);
             return node != null ? BuildingAt(node) : null;

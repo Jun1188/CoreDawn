@@ -314,7 +314,7 @@ namespace CoreDawn.Tests
 
         static void Produce(float now) => ResourceNodeRegistry.TickProduction(now);
 
-        static int Stored(Building store, ItemDataSO item)
+        static int Stored(BuildingModule store, ItemDataSO item)
             => store.Input.CountOf(item) + store.Output.CountOf(item);
 
         /// <summary>광맥 하나를 만들어 지정 셀에 정확히 얹는다 (셀 중앙 = 풋프린트 중앙).</summary>

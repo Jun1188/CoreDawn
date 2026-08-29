@@ -51,7 +51,7 @@ namespace CoreDawn.Navigation
         /// 길이 완전히 막혔을 때, 건물을 없는 셈 친 이상 경로 위에서 처음 만나는 건물을 찾는다.
         /// "무엇을 부수면 길이 열리는가"에 대한 답이다. 없으면 null(지형이 막은 것이라 부숴도 소용없다).
         /// </summary>
-        public static void FindBlockingBuilding(Vector3 startPos, Vector3 targetPos, Action<Building> onDone)
+        public static void FindBlockingBuilding(Vector3 startPos, Vector3 targetPos, Action<BuildingModule> onDone)
         {
             if (onDone == null) return;
 

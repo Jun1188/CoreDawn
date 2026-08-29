@@ -80,7 +80,7 @@ namespace CoreDawn.Factory
 
         public FactorySystem Factory { get; private set; }
 
-        readonly Dictionary<Building, BuildingView> _views = new();
+        readonly Dictionary<BuildingModule, BuildingView> _views = new();
 
         void Awake()
         {
@@ -134,7 +134,7 @@ namespace CoreDawn.Factory
             Factory?.Dispose();
             if (quitting || Factory == null) return;
 
-            var buildings = new List<Building>(Factory.Buildings);
+            var buildings = new List<BuildingModule>(Factory.Buildings);
             foreach (var b in buildings)
                 if (b.OwnsEntity && b.Owner != null && !b.Owner.IsRemoved) Factory.World.Remove(b.Owner);
         }
@@ -191,11 +191,11 @@ namespace CoreDawn.Factory
         // ── Building ↔ View 매핑 (PlacementBridge가 등록/해제)
 
         /// <summary>배치된 모든 건물 — 심의 정본 목록(FactorySystem.Buildings)을 그대로 낸다.</summary>
-        public IEnumerable<Building> Buildings => Factory.Buildings;
+        public IEnumerable<BuildingModule> Buildings => Factory.Buildings;
 
-        public void RegisterView(Building b, BuildingView v) => _views[b] = v;
-        public void UnregisterView(Building b) => _views.Remove(b);
-        public BuildingView GetView(Building b) =>
+        public void RegisterView(BuildingModule b, BuildingView v) => _views[b] = v;
+        public void UnregisterView(BuildingModule b) => _views.Remove(b);
+        public BuildingView GetView(BuildingModule b) =>
             b != null && _views.TryGetValue(b, out var v) ? v : null;
     }
 }
