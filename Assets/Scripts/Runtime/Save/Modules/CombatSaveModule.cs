@@ -55,6 +55,8 @@ namespace CoreDawn.Save
 
         public class MonsterDto
         {
+            /// <summary>종류(MonsterDataSO.Id, 예 "Monster:Spitter"). 없거나 모르는 id면 데이터베이스의 기본 종류로 세운다 — 옛 세이브 호환.</summary>
+            [JsonProperty("data")] public string DataId;
             [JsonProperty("pos")] public Vector3 Position;
             [JsonProperty("rot")] public Quaternion Rotation;
             [JsonProperty("hpMax")] public float HpMax;
@@ -71,6 +73,11 @@ namespace CoreDawn.Save
 
             /// <summary>다음 스폰까지 남은 시간(초) — 절대 시각은 다음 실행에서 뜻이 없다.</summary>
             [JsonProperty("nextIn")] public float NextSpawnDelay;
+
+            /// <summary>정량 웨이브 진행 — 목표가 0 이하면 "진행 중인 정량 웨이브 없음"(낮, 또는 옛 세이브).</summary>
+            [JsonProperty("spawned")] public int SpawnedThisWave = -1;
+            [JsonProperty("target")] public int TargetSpawnAmount = -1;
+            [JsonProperty("completed")] public bool WaveCompleted;
         }
 
         // ── 저장 ──────────────────────────────────────────────────────
@@ -121,7 +128,7 @@ namespace CoreDawn.Save
                 var spawner = battle.Spawner;
 
                 // 둥지에 매인 보스는 위에서 이미 적었으므로 여기서는 뺀다 (되살릴 때 두 번 나오면 안 된다)
-                var bosses = new HashSet<Monster>(
+                var bosses = new HashSet<MonsterView>(
                     nests.SelectMany(n => n.Points).Select(p => p.linkedBoss).Where(b => b != null));
 
                 foreach (var m in spawner.Monsters
@@ -129,18 +136,23 @@ namespace CoreDawn.Save
                             .OrderBy(m => m.transform.position.x).ThenBy(m => m.transform.position.z))
                     dto.Monsters.Add(Describe(m));
 
+                bool waveInProgress = spawner.IsQuantityWaveActive || spawner.IsQuantityWaveCompleted;
                 dto.Wave = new WaveDto
                 {
                     SpawningEnabled = spawner.SpawningEnabled,
                     NextSpawnDelay = spawner.NextSpawnDelay,
+                    SpawnedThisWave = waveInProgress ? spawner.SpawnedThisWave : -1,
+                    TargetSpawnAmount = waveInProgress ? spawner.TargetSpawnAmount : -1,
+                    WaveCompleted = spawner.IsQuantityWaveCompleted,
                 };
             }
 
             return dto;
         }
 
-        static MonsterDto Describe(Monster m) => new()
+        static MonsterDto Describe(MonsterView m) => new()
         {
+            DataId = m.Data != null ? m.Data.Id : null,
             Position = m.transform.position,
             Rotation = m.transform.rotation,
             HpMax = m.Health.MaxHealth,
@@ -206,16 +218,23 @@ namespace CoreDawn.Save
             // 씬을 새로 열었다면 목록은 비어 있지만, 제자리 왕복 검증에서는 채워져 있다
             spawner.DespawnAll();
 
+            var database = MonsterDatabaseSO.LoadDefault();
             foreach (var saved in dto.Monsters)
             {
                 if (saved == null) continue;
-                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation), saved);
+                // 저장된 종류로 되살린다. id가 없거나(옛 세이브) 사라진 종류면 null → 스포너가 기본 종류로 세운다
+                var data = database != null && !string.IsNullOrEmpty(saved.DataId) ? database.FindById(saved.DataId) : null;
+                // 둥지 방어·보스가 아니면 이 밤의 웨이브 몬스터 — 정량 웨이브 생존 수에 다시 포함시킨다
+                bool nightWave = !saved.IsBoss && !saved.IsNestDefender;
+                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation, data, nightWave), saved);
             }
 
-            if (dto.Wave != null) spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay);
+            if (dto.Wave != null)
+                spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay,
+                                     dto.Wave.SpawnedThisWave, dto.Wave.TargetSpawnAmount, dto.Wave.WaveCompleted);
         }
 
-        static void Apply(Monster m, MonsterDto saved)
+        static void Apply(MonsterView m, MonsterDto saved)
         {
             if (m == null || saved == null) return;
 

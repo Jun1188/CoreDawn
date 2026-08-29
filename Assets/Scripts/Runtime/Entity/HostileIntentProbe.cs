@@ -68,10 +68,10 @@ namespace CoreDawn.Entities
             if (aimDir.sqrMagnitude < 1e-6f) return;
             Vector3 aim = aimDir.normalized;
 
-            var members = CrowdSystem.Members;
-            for (int i = 0; i < members.Count; i++)
+            var monsters = MonsterSystemHost.System.Monsters;
+            for (int i = 0; i < monsters.Count; i++)
             {
-                Monster boss = members[i];
+                MonsterView boss = EntityViewRegistry.ViewOf<MonsterView>(monsters[i]);
 
                 // 보스만, 그리고 아직 자고 있는 보스만 — 이미 깨어난 쪽은 인내심이 알아서 굴린다.
                 // 집으로 돌아가는 중인 보스도 건너뛴다: 그 복귀는 되돌릴 수 없어서
@@ -100,7 +100,7 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>보스의 조준 기준점 — 콜라이더 중심(없으면 몸통 높이 추정).</summary>
-        private static Vector3 AimPointOf(Monster boss)
+        private static Vector3 AimPointOf(MonsterView boss)
         {
             var col = boss.GetComponentInChildren<Collider>();
             return col != null ? col.bounds.center : boss.transform.position + Vector3.up * 1.2f;

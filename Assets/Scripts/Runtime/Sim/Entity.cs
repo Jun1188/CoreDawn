@@ -15,17 +15,32 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class Entity
     {
-        public EntityId Id { get; }
+        public EntityUUID Id { get; }
         public EntityWorld World { get; }
 
         /// <summary>편 — 적대 판정의 기준. 생성 후 바뀌는 일은 드물지만(포섭 등) 막지는 않는다.</summary>
         public Faction Faction { get; set; }
 
+        Vector3 _position;
+
         /// <summary>
-        /// 월드 위치. 건물은 배치 시 풋프린트 중심으로 확정되고, 이동체는 뷰(물리)가 매 프레임 돌려준다 —
-        /// 서버 권위 모델에서 물리는 뷰에 남기는 하이브리드라 방향이 이렇다(3단계).
+        /// 월드 위치. 건물은 배치 시 풋프린트 중심으로 확정되고, 이동체는 심 Movement가 매 틱 옮긴다
+        /// (과도기에는 뷰가 물리 위치를 돌려준다). 바뀌면 월드의 공간 해시가 따라 움직인다 — 반경 질의의 정본.
         /// </summary>
-        public Vector3 Position { get; set; }
+        public Vector3 Position
+        {
+            get => _position;
+            set
+            {
+                if (_position == value) return;
+                var old = _position;
+                _position = value;
+                World.OnEntityMoved(this, old, value);
+            }
+        }
+
+        /// <summary>바라보는 수평 방향(단위 벡터). 이동이 돌리고 뷰가 그대로 그린다. 기본은 +Z.</summary>
+        public Vector3 Facing { get; set; } = Vector3.forward;
 
         /// <summary>월드에서 빠졌는가. 빠진 엔티티를 쥔 참조는 이 플래그로 걸러낸다(큐·캐시에 남은 것들).</summary>
         public bool IsRemoved { get; private set; }
@@ -38,18 +53,21 @@ namespace CoreDawn.Sim
         /// <summary>체력 모듈. 없으면 null(때릴 수 없는 개체).</summary>
         public Health Health => Get<Health>();
 
+        /// <summary>살아 있는가 — 월드에 있고, 체력이 있다면 죽지 않았다. 표적 유효성의 심 쪽 기준.</summary>
+        public bool IsAlive => !IsRemoved && !(Health != null && Health.IsDead);
+
         /// <summary>죽는 순간 1회 (Health가 알린다). 월드의 Died보다 먼저 발화한다.</summary>
         public event Action<Entity> Died;
 
         /// <summary>월드에서 빠지는 순간 1회. 모듈 OnDetach 뒤에 발화한다.</summary>
         public event Action<Entity> Removed;
 
-        internal Entity(EntityWorld world, EntityId id, Faction faction, Vector3 position)
+        internal Entity(EntityWorld world, EntityUUID id, Faction faction, Vector3 position)
         {
             World = world;
             Id = id;
             Faction = faction;
-            Position = position;
+            _position = position;
         }
 
         /// <summary>모듈 부착. 한 모듈은 한 엔티티에만 붙는다 — 두 번 붙이면 상태가 둘로 갈라진다.</summary>

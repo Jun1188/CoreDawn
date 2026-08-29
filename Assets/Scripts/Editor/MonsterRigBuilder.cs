@@ -299,7 +299,7 @@ namespace CoreDawn.EditorTools
         /// </summary>
         private static string RepairMonsterData(GameObject root, MonsterCatalog.Species species)
         {
-            var monster = root.GetComponent<Monster>();
+            var monster = root.GetComponent<MonsterView>();
             if (monster == null) return "";
 
             var so = new SerializedObject(monster);
@@ -307,7 +307,7 @@ namespace CoreDawn.EditorTools
             if (effects == null || !effects.isArray || effects.arraySize > 0) return "";
 
             var template = AssetDatabase.LoadAssetAtPath<GameObject>(DefaultTemplate);
-            var source = template != null ? template.GetComponent<Monster>() : null;
+            var source = template != null ? template.GetComponent<MonsterView>() : null;
             if (source == null) return "  [경고] attackEffects 비어 있음 — 템플릿을 찾지 못해 복구 못 함";
 
             SerializedProperty from = new SerializedObject(source).FindProperty("combat.attackEffects");

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -41,7 +42,8 @@ namespace CoreDawn.EditorTools
             new("baseAmount", "총 마리수", "밤에 전멸시켜야 하는 총량 (물량제 밤의 길이)"),
             new("maxAliveAmount", "동시 상한", "한 번에 살아 있을 수 있는 수"),
             new("spawnInterval", "스폰 간격", "스폰 시도 간격(초)"),
-            new("monsterMaxHp", "몬스터 HP", "0 = wave_settings.json → 프리팹 기본값 폴백"),
+            new("monster", "몬스터", "이 웨이브가 내보내는 종류 — 몬스터 탭에서 정의. 비우면 기본 종류(경고)"),
+            new("buffs", "버프", "스폰 시 거는 영구 효과: id=값, id=값 (예: Effect:DamageTaken=0.75 → 받는 피해 25% 감소)"),
         };
 
         public override void Build(VisualElement host)
@@ -74,7 +76,8 @@ namespace CoreDawn.EditorTools
             scroll.Add(warnLabel);
             scroll.Add(Hint(
                 "웨이브 — 일차별 밤 공세. Day 가 오는 시점, Core Tier 는 그 웨이브가 나오기 위한 코어 조건이다" +
-                "(모자라면 이전 웨이브가 반복된다). 몬스터 HP 0 = wave_settings.json → 프리팹 기본값 폴백."));
+                "(모자라면 이전 웨이브가 반복된다). 그날의 강약은 HP가 아니라 버프(효과)로 준다 — " +
+                "Effect:DamageTaken=0.75 는 받는 피해 25% 감소, Effect:AttackUp=1.2 는 주는 피해 20% 증가."));
 
             Render();
         }
@@ -91,7 +94,8 @@ namespace CoreDawn.EditorTools
                 baseAmount = last != null ? last.baseAmount + 2 : 4,
                 maxAliveAmount = last != null ? last.maxAliveAmount + 2 : 4,
                 spawnInterval = last?.spawnInterval ?? 2,
-                monsterMaxHp = last?.monsterMaxHp ?? 0,
+                monster = last?.monster ?? "",
+                buffs = last != null ? last.buffs.Select(b => new GEff { effect = b.effect, value = b.value }).ToList() : new List<GEff>(),
             });
             combat.SetWaves(rows);
             Render();
@@ -119,7 +123,7 @@ namespace CoreDawn.EditorTools
                 }
                 Th("Id", 166, "Wave: 접두는 자동으로 붙는다");
                 Th("이름", 166);
-                foreach (var c in Cols) Th(c.th, 100, c.title);
+                foreach (var c in Cols) Th(c.th, ColWidth(c.key), c.title);
                 Th("", 60);
                 tableHost.Add(head);
 
@@ -177,7 +181,30 @@ namespace CoreDawn.EditorTools
                     NumCell(x => x.baseAmount, (x, v) => x.baseAmount = (int)v, Cols[2].title, true);
                     NumCell(x => x.maxAliveAmount, (x, v) => x.maxAliveAmount = (int)v, Cols[3].title, true);
                     NumCell(x => x.spawnInterval, (x, v) => x.spawnInterval = v, Cols[4].title, false);
-                    NumCell(x => x.monsterMaxHp, (x, v) => x.monsterMaxHp = v, Cols[5].title, false);
+                    // 몬스터 종류 — 몬스터 탭의 id 목록에서 고른다
+                    var monsterIds = combat.monsters.Select(m => m.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
+                    var mChoices = new List<string> { DefaultMonsterLabel };
+                    mChoices.AddRange(monsterIds);
+                    if (!string.IsNullOrEmpty(w.monster) && !monsterIds.Contains(w.monster)) mChoices.Add(w.monster + " (없음)");
+                    var mPick = new DropdownField(mChoices, 0) { tooltip = Cols[5].title };
+                    if (!string.IsNullOrEmpty(w.monster))
+                        mPick.SetValueWithoutNotify(monsterIds.Contains(w.monster) ? w.monster : w.monster + " (없음)");
+                    mPick.RegisterValueChangedCallback(e =>
+                    {
+                        w.monster = e.newValue == DefaultMonsterLabel ? "" : e.newValue.Replace(" (없음)", "");
+                        combat.PushHist(); RefreshMeta();
+                    });
+                    Td(ColWidth("monster"), mPick);
+
+                    // 버프 — "id=값, id=값" 한 줄. 표 안에서 편집하기엔 이 문법이 가장 읽힌다
+                    var buffF = Mono(new TextField { value = BuffsText(w), tooltip = Cols[6].title });
+                    buffF.RegisterCallback<FocusOutEvent>(_ =>
+                    {
+                        w.buffs = ParseBuffs(buffF.value);
+                        buffF.SetValueWithoutNotify(BuffsText(w));
+                        combat.PushHist(); RefreshMeta();
+                    });
+                    Td(ColWidth("buffs"), buffF);
 
                     var delB = new Button(() =>
                     {
@@ -196,6 +223,29 @@ namespace CoreDawn.EditorTools
             RefreshMeta();
         }
 
+        const string DefaultMonsterLabel = "(기본 종류)";
+
+        static float ColWidth(string key) => key == "monster" ? 150 : key == "buffs" ? 220 : 100;
+
+        static string BuffsText(GWave w)
+            => string.Join(", ", w.buffs.Select(b => $"{b.effect}={b.value.ToString("0.###", CultureInfo.InvariantCulture)}"));
+
+        /// <summary>"Effect:A=1.2, Effect:B=0.75" → 항목 목록. 값이 안 읽히는 조각은 버린다(입력 칸이 정리된 형태로 되돌려 보여준다).</summary>
+        static List<GEff> ParseBuffs(string text)
+        {
+            var list = new List<GEff>();
+            foreach (var part in (text ?? "").Split(new[] { ',', ';' }, System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                var kv = part.Split('=');
+                if (kv.Length != 2) continue;
+                string id = kv[0].Trim();
+                if (id.Length == 0) continue;
+                if (!float.TryParse(kv[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float v)) continue;
+                list.Add(new GEff { effect = id, value = v });
+            }
+            return list;
+        }
+
         void RefreshMeta()
         {
             var waves = combat.waves;
@@ -212,6 +262,10 @@ namespace CoreDawn.EditorTools
                 if (!seen.Add(key)) warn.Add($"Day {w.day} · 티어 {w.requiredCoreTier} 조합이 중복입니다 — 뒤 항목만 적용됩니다");
                 if (w.maxAliveAmount > w.baseAmount) warn.Add($"Day {w.day}: 동시 상한이 총량보다 큽니다 — 상한이 의미 없습니다");
                 if (!(w.spawnInterval > 0)) warn.Add($"Day {w.day}: 스폰 간격은 0보다 커야 합니다");
+                if (string.IsNullOrEmpty(w.monster)) warn.Add($"Day {w.day}: 몬스터 종류가 비어 있습니다 — 기본 종류(id 순 첫 항목)로 나옵니다");
+                else if (!combat.monsters.Any(m => m.id == w.monster)) warn.Add($"Day {w.day}: 몬스터 \"{w.monster}\" 를 찾을 수 없습니다");
+                foreach (var b in w.buffs)
+                    if (!combat.effects.Any(e => e.id == b.effect)) warn.Add($"Day {w.day}: 효과 \"{b.effect}\" 를 찾을 수 없습니다");
             }
             warnLabel.text = string.Join("\n", warn);
             win.RefreshSharedStat();

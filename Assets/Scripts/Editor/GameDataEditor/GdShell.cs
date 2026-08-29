@@ -62,6 +62,7 @@ namespace CoreDawn.EditorTools
                 combat,
                 new GdMapTab(this),
                 new GdWaveTab(this, combat),   // 웨이브 데이터의 정본은 전투 탭 — 같은 배열의 표 뷰
+                new GdMonsterTab(this, combat),   // 몬스터 종류 — 정본은 전투 탭의 monsters
                 new GdTutorialTab(this),
             };
             LoadFile();
@@ -224,6 +225,7 @@ namespace CoreDawn.EditorTools
             sharedStat.text =
                 $"아이템 {root.items?.Length ?? 0} · 레시피 {root.recipes?.Length ?? 0} · 건물 {root.buildings?.Length ?? 0}" +
                 $" · 효과 {root.effects?.Length ?? 0} · 화기 {root.guns?.Length ?? 0} · 웨이브 {root.waves?.Length ?? 0}" +
+                $" · 몬스터 {root.monsters?.Length ?? 0}" +
                 $" · 튜토리얼 {root.tutorial?.Length ?? 0}" +
                 (hasUnsavedChanges ? "  ●" : "");
         }

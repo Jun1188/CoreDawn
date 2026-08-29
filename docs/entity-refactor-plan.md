@@ -36,7 +36,7 @@
   모듈은 상태 + 자기 로컬 로직(`Health.TakeDamage`), 시스템은 엔티티를 가로지르는 로직과 틱 순서.
 - **심 호스트는 하나** — `WorldRunner`(MonoBehaviour)가 `World`(엔티티 + 시스템 + 시계)를 고정 틱으로 돌리고 뷰 등록부를 가진다.
   `FactoryBootstrap`은 시스템 등록 + 뷰 스포너로 줄어들고, `GameBootstrap`은 지금처럼 씬 경계 참조만 꽂는다.
-- **Id**: 월드 엔티티는 64비트 단조 카운터 `EntityId`(월드 헤더에 `NextEntityId` 저장, 재사용 없음). 플레이어(프로필)만 `Guid`.
+- **Id**: 엔티티 정체성은 **UUID**(`EntityUUID`, Guid v4, `EntityUUID.New()`) — 2026-08-29 사용자 결정(처음엔 64비트 카운터 `EntityId`+헤더 `NextEntityId`). 이유: "발급자 하나" 가정을 버린다 — 클라이언트 예측·구조물 붙여넣기·세이브 병합·서버 간 이동·모드 도구가 만든 엔티티도 번호 재매김 없이 그대로 가고, 세이브 안의 참조(소유자·표적)가 보존된다. 세션용 정수 핸들은 넷코드 라이브러리가 따로 준다. 플레이어(프로필) Guid와 타입 통일. 복원은 `EntityWorld.Create(id, faction, pos)`(중복 id는 예외). 세이브엔 "N" 32자 문자열로(5단계 SharpNBT 엔티티 레코드).
 - **공간 질의는 심 쪽 균일 격자 해시**(셀 4~8m). Job · ComputeShader 불필요. 사격 판정(레이캐스트)과 LOS만 PhysX에 남는다.
 - **세이브는 JSON → SharpNBT**로 교체 예정 (5단계에서 심 스냅샷 직렬화와 함께).
 - **테스트는 `Assets/Scripts/Tests/`** (`Assets/Tests` 아님).
@@ -206,10 +206,101 @@ namespace CoreDawn.Factory
 - 팀 프리즈 창(휴가) 안에 2·3번(개명·위임)을 끝내야 한다 — 이 둘이 파일 수가 가장 많다.
 
 ### 3. 몬스터 심/뷰 분리 (가장 큰 덩어리)
-- [ ] `MonsterDataSO.Build(entity)` → Health · Movement(의도) · Combat · Brain(기존 상태기) 모듈
-- [ ] `MonsterView`: Rigidbody 적분 · 애니 · 군중 분리 · 위치 보고(뷰→심)
-- [ ] `SensorComponent`의 `OverlapSphere` → 심 공간 해시 (`CrowdSystem` 등록부가 씨앗)
-- [ ] 둥지 · 타워도 같은 틀로 (`MonsterNest` · `BattleTower`)
+- [x] 3a 데이터: `MonsterDataSO` + GameData `monsters` · `WaveDataSO` 개편(종류 참조 + 버프 효과) · `wave_settings.json` 폐기 — 2026-08-29 (`feature/monster-sim` 커밋 1)
+- [x] 3b-1 공간 질의 `EntityWorld.QueryRadius/QueryClosest`(균일 격자 해시 8m) · `Entity.Facing` · `INavigation` + `SceneNavigation` 어댑터 · `EntityViewRegistry`(불변식 ③) · 플레이어/타워 센서를 심 질의로, `SensorComponent` 퇴역 · `EntityId → EntityUUID`(Unity 6 `UnityEngine.EntityId`와 충돌; EntityKey → Id를 거쳐 UUID 전환과 함께 EntityUUID) — 2026-08-29 (커밋 2)
+- [x] 3b-2 심 모듈: `Movement` · `Attack`(이름이 Combat이 아닌 이유: `CoreDawn.Combat` 네임스페이스와 충돌) · `MonsterBrain`+상태 7종(구 Monster.cs 로직 동작 변경 0으로 이식) · `MonsterSystem`(두뇌→이동→군중 한 틱, 스폰/소멸, 시계, PlayerEntity, IsDay) · `MonsterSpec`/`EngagementZone`(순수 데이터, SO 참조 없음) · `IFootprint`(Building 구현 — 두뇌의 사거리 판정) · `Health.Damaged` 이벤트(보스 각성 경로)
+  - 뷰: `Monster → MonsterView`(GUID 유지, CreatesOwnEntity=false, LateUpdate가 심 위치·방향을 그림, 옛 표면은 두뇌 위임) · `MonsterSpawner.Spawn(data, pos, rot, parent)` 한 관문(웨이브·둥지 보스·복원) · `MonsterSystemHost`(정적 접근점 + 러너, SimHost.World와 같은 과도기) · 공격은 `Attack.AttackRequested` → 뷰 `CombatComponent.TryAttack`(효과 적용, 4단계까지의 다리)
+  - 퇴역: `MovementComponent` · `StateMachineComponent` · `State/*` · `CrowdSystem`(뷰). `KnockbackEffectSO`·타워 곡사 예측·연출 속도는 `Entity.Get<Movement>()`
+  - 검증 2026-08-29: 밤 강제 — 보스 8 대기, 웨이브 4마리 이동·건물 2채 피해, 플레이어 접근 시 3마리 추적→공격(HP 300→180), 뷰 12 동기·애니메이터 12, 오류 0 (커밋 3)
+- [x] 3c 뷰: `Monster → MonsterView`(심 위치·방향을 LateUpdate에서 그림) · 스폰은 `MonsterSpawner.Spawn` 한 관문(심 엔티티 먼저, 프리팹은 따라옴 — 웨이브·둥지 보스·복원) · 둥지/스포너/프로브/아웃라인/연출/넉백/타워 예측이 심 API(`Entity.Get<Movement>()`, `MonsterSystemHost.System.Monsters` + `EntityViewRegistry`) — 2026-08-29 (커밋 3)
+- [x] 3d 세이브: `CombatSaveModule.MonsterDto.DataId`(`"data"`, MonsterDataSO.Id) — 저장 시 `MonsterView.Data`, 복원 시 `MonsterDatabaseSO.FindById` → `RestoreMonster(pos, rot, data)`. 추가 필드라 스키마 버전 그대로(옛 세이브·모르는 id → 기본 종류). 검증 2026-08-29: 밤 제자리 왕복(Capture→Restore) — Basic 4 + Spitter(35/60) 종류·HP 복원, 보스 8 재생성·뷰 8, 오류 0 (커밋 4)
+  - 기존 결함 수정(사용자 지시): 복원된 웨이브 몬스터가 `nightWaveMonsters`(정량 웨이브 생존 수)에 안 들어가고 진행(스폰 수·목표)도 저장되지 않아, 불러온 밤이 0부터 다시 세다 새로 스폰한 것만 잡아도 "전멸"→아침→되살린 몬스터 일괄 소멸. `WaveDto`에 `spawned`/`target`/`completed` 추가(옛 세이브는 -1 → 예전 동작), `RestoreMonster(nightWave)`가 명단에 넣고 `RestoreState`가 진행을 이어받는다. 검증: 4/4 스폰·1 처치 상태 왕복 후 8초 — 밤 유지, 생존 3 = 명단 3
+- [x] 3e 정리: 뷰 쪽 `MovementComponent`·`SensorComponent`·`StateMachineComponent`·`State/*`·`CrowdSystem` 삭제 (커밋 2·3). `CombatComponent`는 타워·플레이어·몬스터 효과 적용기로 4단계까지 유지
+- [ ] 3f PR: `feature/monster-sim` → develop (푸시는 사용자 승인 뒤)
+
+#### 3단계 설계 초안 (2026-08-29, 착수 전 검토용)
+
+**실측 근거**
+- 몬스터의 정의는 데이터가 아니라 **프리팹 3개**(`Monster`·`Monster_Spitter`·`BossMonster`)의 인라인 값이다:
+  `health.maxHealth`(30) · `movement.moveSpeed`(4)/rotateSpeed/crowdRadius/knockbackDamping/stickToGround · `combat.attackRange`(1.5)/attackCooldown(2)/attackEffects ·
+  보스 리쉬·인내심 8개. `WaveDataSO`(GameData `waves`)는 규모(day·amount·interval)와 `monsterMaxHp`(절대값 덮어쓰기)뿐이고 종류는 `WaveSpawnManager.monsterPrefab`(인스펙터, 프리팹 하나).
+  둥지 보스는 `NestSpawnPoint.bossPrefab`+`bossMaxHp`. HP를 덮어쓰는 곳이 셋(프리팹·WaveDataSO·`wave_settings.json`).
+- `MovementComponent`(320줄)는 **Rigidbody가 아니라 transform을 직접 적분**한다 — 경로/플로우 방향 이동, 격자 통행 판정(`GridManager.IsWalkable`), 지면 높이(`GroundSampler`), 넉백, 지형 배율.
+  Rigidbody는 kinematic으로 플레이어 접촉에만 쓰인다. 즉 이동은 물리가 아니라 **심 로직**이고, 통째로 심에 둘 수 있다(하이브리드 불필요).
+- `SensorComponent`는 `OverlapSphere`+레이어. 플레이어(몬스터 감지→콜백)와 타워(가장 가까운 몬스터)가 쓴다.
+- `Monster.cs`(621줄) = 두뇌: 상태기 구동, 보스 인내심(자리·반경·드레인·복귀 재생·타임아웃), 둥지 방어자(호위 보스·교전 구역), 플레이어 센서 콜백, 세이브 복원.
+  뷰 참조: `Player`(표적), `NestEngagementZone`(구역 반경), `Monster`(호위 보스), `MonsterVisualController`(연출), `Transform`, `Time.time`, `FlowFieldManager.Instance`, `PathRequest`.
+- `CrowdSystem`은 정적 등록부 + LateUpdate 한 패스(위치 보정). `EffectController`·효과 SO는 `EntityView` 타입(4단계).
+
+**결정 사항(사용자, 2026-08-29)**: `wave_settings.json`/`WaveBalanceSettings` 폐기. `monsterMaxHp` 절대값 대신 웨이브가 몬스터에게 **효과**(주는 피해 증가·받는 피해 감소)를 건다.
+
+**3a 데이터 계약**
+```
+MonsterDataSO : GameDataSO   (GameData.json "monsters", Data/Monster/*.asset, GdMonsterTab)
+  id · displayName · description · prefab(뷰 프리팹, 에셋 참조라 인스펙터/guid) · maxHp
+  moveSpeed · rotateSpeed · crowdRadius · knockbackDamping · stickToGround
+  attackRange · attackCooldown · attackEffects[]           ← 프리팹 3개의 현재 값을 그대로 옮긴다(마이그레이션 스크립트)
+  boss: maxPatience · patienceRadius · outsidePatienceDrain · rangedPokePatienceDrain · patienceRecoverRate · absoluteLeashMultiplier · returnRegenPerSecond · returnTimeout
+  Build(Entity e): e.Add(Health(maxHp)) · e.Add(Movement(...)) · e.Add(Combat(...)) · e.Add(MonsterBrain(this))
+
+WaveDataSO: day · requiredCoreTier · baseAmount · maxAliveAmount · spawnInterval
+          + monster(MonsterDataSO 참조, "Monster:Basic") + buffs[](EffectEntry — 스폰 시 적용, 죽을 때까지)
+          − monsterMaxHp (삭제)
+효과 에셋 추가: Effect:AttackUp (AttackModifierEffectSO, affects=[Damage]) · Effect:Armor (IncomingDamageEffectSO)
+  duration ≤ 0 = 영구(사망까지) — EffectController.Add가 remaining = +∞로 처리 (지금은 3초 기본)
+둥지: NestSpawnPoint.bossPrefab/bossMaxHp → bossData(MonsterDataSO) · DefenderSpawnSlot.monsterMaxHp → 둥지의 defenderData
+WaveSpawnManager.monsterPrefab(인스펙터) → currentWave.monster
+```
+
+**3b 심 계약(초안)**
+```csharp
+namespace CoreDawn.Sim
+{
+    public sealed class Movement : EntityModule      // 구 MovementComponent 그대로, transform 대신 Owner.Position/Facing
+    { MoveSpeed·RotateSpeed·CrowdRadius·SpeedMultiplier·Velocity·IsMoving·HasPath·IgnoreKnockback;
+      StartMoving(path)·SetDirection(dir)·StopMoving()·AddKnockback(dir, dist)·Tick(dt, INavigation nav); OnDestinationReached·OnPathBlocked }
+    public sealed class Combat : EntityModule        // 사거리·쿨다운·공격 정의. 실제 효과 적용은 4단계까지 뷰가 다리를 놓는다
+    { AttackRange·AttackCooldown·AttackEffects; CanAttack(now)·TryAttack(target Entity, now) → AttackRequested(target) 이벤트 }
+    public interface IEntityState { Enter(Brain)·Update(Brain, dt)·Exit(Brain) }
+    public sealed class MonsterBrain : EntityModule  // 구 Monster.cs의 로직 전부: 상태기·보스 인내심·둥지 방어·표적. Player 대신 Entity, Zone 대신 EngagementZone 구조체, Time.time 대신 now
+    { SetState·CurrentState·IsBoss·HasBeenAttacked·IsNestDefender·DefendOrigin·PatienceRatio; SetAsBoss(zone)·SetAsNestDefender(target, zone, escort)·Provoke(attacker)·OnDetected(by)·OnLost(); Alerted 이벤트(연출) }
+    public readonly struct EngagementZone { Center·ChaseRange·LeashRange; CanChase(origin, pos) }
+    public interface INavigation                      // 길찾기 어댑터 — GridManager·FlowFieldManager·PathRequest·GroundSampler를 감싼다. 5단계에서 심 내부로
+    { bool IsWalkable(Vector3)·float TerrainSpeedAt(Vector3)·float GroundHeightAt(Vector3)·bool HasFlowField·Vector3 FlowDirectionAt(Vector3)·
+      Building FindBreachTarget(Vector3, float)·void FindPath(Vector3, Vector3, Action<IReadOnlyList<Vector3>>)·void FindBlockingBuilding(Vector3, Vector3, Action<Building>) }
+    public sealed class MonsterSystem                 // 틱 주체: 두뇌 → 이동 → 군중 보정. BattleManager가 구동(FactoryBootstrap이 FactorySystem을 구동하듯)
+    { MonsterSystem(EntityWorld world, INavigation nav); Entity Spawn(MonsterDataSO data, Vector3 pos, Faction f = Monster); Despawn(Entity); Tick(dt);
+      IReadOnlyList<Entity> Monsters; event Action<Entity, MonsterDataSO> Spawned; }
+    // EntityWorld에 공간 질의 추가: QueryRadius(Vector3 center, float radius, Faction? faction, List<Entity> out) — 균일 격자 해시(셀 8m), Position setter가 갱신
+    // CrowdSystem → MonsterSystem 안의 한 패스 (Movement.CrowdRadius·IsMoving·Owner.Position 위에서, walkable은 nav)
+}
+```
+- `Entity`에 `Facing`(수평 방향) 추가 — 이동이 몸을 돌리고 뷰가 따라 그린다.
+- 시계: `MonsterSystem.Now`(dt 누적). 고정 틱·`World.Now` 통합은 5단계.
+
+**3c 뷰**
+- `Monster → MonsterView`(파일·클래스 개명, GUID 유지). `CreatesOwnEntity=false`. 매 프레임(LateUpdate) `transform.position/rotation ← Entity.Position/Facing`. `Alerted`·`AttackRequested`·`Died` 이벤트로 연출.
+- **스폰 브리지**: `MonsterSystem.Spawned(entity, data)` → `data.prefab` Instantiate → `MonsterView.AttachEntity`. `BattleManager`(Combat 씬)가 소유 — 건물의 `PlacementBridge`와 같은 자리.
+- `AttackRequested(target)`: 뷰가 `EntityViewRegistry`로 표적 뷰를 찾아 `target.ApplyEffects(...)` — 효과 시스템이 뷰에 있는 4단계까지의 다리(FlowFieldState의 GetOrAttach와 같은 성격).
+- `Player`(뷰)의 `SensorComponent` → `MonsterSystem.TickPlayerSensor(playerEntity, range)`: `QueryRadius(Monster)`로 감지/해제 콜백. `BattleTower`의 `GetClosestTarget` → `QueryRadius` 최근접. `HostileIntentProbe`·`MonsterOutlineProximity`·`MonsterAnimationSystem`은 `MonsterSystem.Monsters` + 뷰 등록부.
+- `MonsterNest`(뷰, 781줄)는 이번엔 **오케스트레이터로 남긴다** — 보스·방어자 스폰을 `MonsterSystem.Spawn` + `brain.SetAsBoss/SetAsNestDefender`로 바꾸고, `NestEngagementZone`(뷰)의 반경을 `EngagementZone` 구조체로 넘긴다. 둥지 자체의 심화(스포너 모듈)는 4단계 이후.
+- `WaveSpawnManager`: 프리팹 Instantiate → `MonsterSystem.Spawn(wave.monster, pos)` + `view.Effects.ApplyAll(wave.buffs)`(브리지). 생존 수·전멸 판정은 심 목록.
+
+**3d 세이브** — `CombatSaveModule.MonsterDto`에 `DataId` 추가(어떤 종류인지), 복원은 `MonsterSystem.Spawn(data, pos)` + `brain.RestoreSaveState`. 옛 세이브의 몬스터는 `DataId` 없음 → 기본 종류로 복원(버전 상승, `SaveMigrations`).
+
+**3e 정리** — `MovementComponent`·`SensorComponent`·`StateMachineComponent`·`State/*`·`CrowdSystem`(뷰 쪽) 삭제. `CombatComponent`는 타워·플레이어가 쓰므로 4단계까지 남는다.
+
+**커밋 순서(각각 플레이 가능)**
+1. 3a — 효과 영구 지속(duration ≤ 0) · `MonsterDataSO`·임포터·Gd 탭·json `monsters`·프리팹 값 마이그레이션 · `WaveDataSO`(monster·buffs) · 스포너가 데이터에서 프리팹/버프를 읽음 · `wave_settings` 폐기. **몬스터 로직은 아직 뷰** — 동작 변화는 "HP 덮어쓰기 → 버프"뿐
+2. `EntityWorld.QueryRadius`(공간 해시) · `Entity.Facing` · `INavigation` 어댑터 · 플레이어/타워 센서를 심 질의로(`SensorComponent` 삭제)
+3. 심 `Movement`·`Combat`·`MonsterBrain`·상태기 이식 · `MonsterSystem` · `Monster → MonsterView`(따라 그리기) · 스폰 브리지 · `CrowdSystem` 이식
+4. 둥지·웨이브 스포너·HostileIntentProbe·아웃라인·애니를 심 API로 · 세이브 dataId · 뷰 쪽 컴포넌트 삭제
+5. 문서 · 검사 스크립트(`Runtime/Sim`에 Navigation/Entities import 금지) · PR
+
+**리스크**
+- `Monster.cs`·`MonsterNest.cs`·`WaveSpawnManager.cs`·`BattleTower.cs`는 **팀원이 가장 자주 만지는 파일**이다(AGENTS 옛 안내: "Main active work area"). 커밋 3·4는 휴가 창 안에 끝내거나, 복귀 후 하루 프리즈를 잡아야 한다.
+- 보스 인내심·둥지 방어 로직은 검증이 어렵다(밤 강제 + 보스 도발 시나리오를 eval로 재현). 이식은 **동작 변경 0**을 원칙으로, 변수명·주석까지 그대로 옮긴다.
+- 세이브 포맷이 바뀐다(몬스터 dataId). 베타 전이라 버전 상승으로 처리.
 
 ### 4. 플레이어 · 피해 경로
 - [ ] `PlayerSim`(Health · Effects · 위치 미러) + `PlayerController`(입력 · 이동 뷰) — 런타임에 `Player : Entity`를 붙이는 이중 구조 정리
@@ -273,6 +364,17 @@ namespace CoreDawn.Factory
   (심 엔티티 184개, 나무 HP가 심으로, 코어 플레이어 공격 0·몬스터 50, Kill → 심 제거가 뷰 릴레이보다 먼저, 코어 조회 3경로 일치).
   사고 기록: 개명 스크립트의 `\.Sim\b`가 `CoreDawn.Sim` 네임스페이스까지 바꿨고 그 상태에서 Unity가 재컴파일하지 않아 "0 오류"가 거짓이었다 —
   HEAD로 되돌려 재적용. 교훈: 컴파일 결과는 `recompile_status`가 아니라 콘솔의 `error CS`로 본다.
+
+
+### 2026-08-29 — 3단계 몬스터 심/뷰 분리 (`feature/monster-sim`, 커밋 5개)
+- 커밋 1 데이터(3a) → 2 공간 질의·센서(3b-1) → 3 심 모듈·MonsterView(3b-2·3c·3e) → 4 세이브 DataId(3d) → 5 문서. 각 커밋마다 World 씬 밤 강제 플레이로 검증(오류 0).
+- 이름 충돌 둘: Unity 6에 `UnityEngine.EntityId`가 있어 `EntityId → EntityUUID`(EntityKey·Id를 거침; 값도 카운터 → Guid, 아래 참고); 심 공격 모듈은 `CoreDawn.Combat` 네임스페이스와 겹쳐 `Attack`(AGENTS 규칙 "네임스페이스와 타입 단순명 불일치"의 실례).
+- 사고 1: 편집 스크립트의 "이미 적용됨" 판정을 접두 일치로 하면 안 된다 — 옛 문구가 새 문구의 접두라 두 번 적용돼 `Health.Damaged`·`Player.OnEntityAttached`가 중복 선언됨. 고유 마커로 판정할 것.
+- 사고 2: Unity가 새 파일을 안 집는 경우가 있다 — `AssetDatabase.Refresh()`+`RequestScriptCompilation()`로는 부족했고 `ImportAsset("Assets/Scripts", ImportRecursive|ForceUpdate)` 뒤에 돌아왔다. 컴파일 반영은 eval로 타입 존재(`Type.GetType`)를 확인해야 한다.
+- 사고 3: 세이브 왕복 검증에서 복원된 몬스터가 사라져 리팩토링 버그로 오인 — `DespawnAll`에 스택 로그를 넣어 보니 아침 전환(`EndNightEarly → OnDayStarted`)이었다. 시간 기반 사라짐은 먼저 주야 상태를 찍어 볼 것. 임시 진단 로그의 문자열에 `
+`을 쓰다 줄바꿈이 끼어 컴파일이 깨졌다 — `Environment.NewLine`으로.
+- 정체성 카운터 → UUID(2026-08-29, 사용자 질문 "서버를 고려하면 uuid가 낫지 않나"에서): 카운터의 이점(8바이트·순서·결정론)은 넷코드의 세션 핸들과 서버 권위가 대신하고, 약점(발급자 하나 가정 — 클라 예측·붙여넣기·병합 시 재매김)은 실제 비용이라 바꿈. 아직 어떤 세이브도 번호를 적지 않아 지금이 가장 쌌다. `EntityWorld.NextId/RestoreNextId` 제거, `Create(id, …)` 오버로드 추가. 검증: 엔티티 188 전부 고유·조회 일치, 고정 id 생성·중복 예외, 오류 0.
+- 남은 빚(4단계로): 효과 시스템(EffectController)·CombatComponent가 뷰 → 공격 적용이 `AttackRequested` 이벤트 다리 · 플레이어·둥지는 아직 뷰가 엔티티 생성 · `MonsterSystemHost`·`SimHost.World` 정적 접근점(5단계 WorldRunner). (복원된 웨이브 몬스터 카운트 결함은 같은 브랜치에서 수정 — 3d 참고.)
 
 ## 8. 세션 재개 절차
 

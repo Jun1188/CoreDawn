@@ -112,12 +112,12 @@ MonoBehaviour:
   spawnPoints:
   - point: {fileID: 0}
     linkedBoss: {fileID: 0}
-    bossPrefab: {fileID: 1332241365330258894, guid: 67999408593709d4c995a60d2c03fac2, type: 3}
+    bossData: {fileID: 11400000, guid: 6b6c8f9c2ce6fec43bda25f75dba63b7, type: 2}
     isDestroyed: 0
     destroyedDay: -1
   - point: {fileID: 0}
     linkedBoss: {fileID: 0}
-    bossPrefab: {fileID: 1332241365330258894, guid: 67999408593709d4c995a60d2c03fac2, type: 3}
+    bossData: {fileID: 11400000, guid: 6b6c8f9c2ce6fec43bda25f75dba63b7, type: 2}
     isDestroyed: 0
     destroyedDay: -1
   indestructibleVisuals:

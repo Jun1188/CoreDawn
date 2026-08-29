@@ -27,6 +27,9 @@ namespace CoreDawn.Sim
         /// <summary>죽는 순간 1회. 복원으로 "죽어 있던 상태"가 될 때는 발화하지 않는다(연출·드롭이 로드마다 도는 것 방지).</summary>
         public event Action OnDeath;
 
+        /// <summary>실제로 깎였을 때 — (깎인 양, 때린 엔티티). "HP가 max 미만"이라는 프록시 대신 피해라는 사건 자체(보스 각성이 쓴다).</summary>
+        public event Action<float, Entity> Damaged;
+
         public Health(float max)
         {
             _max = Math.Max(1f, max);
@@ -48,6 +51,7 @@ namespace CoreDawn.Sim
             float before = _current;
             _current = Clamp(_current - amount, 0f, _max);
             OnHealthChanged?.Invoke(_current, _max);
+            Damaged?.Invoke(before - _current, source);
 
             if (_current <= 0f) Die();
             return before - _current;

@@ -36,8 +36,8 @@ namespace CoreDawn.Combat
         [Tooltip("반경의 기준점. Combat이 별도 씬으로 올라오므로 GameBootstrap이 플레이어를 꽂는다.")]
         [SerializeField] Transform player;
 
-        readonly Dictionary<Monster, Outlinable> outlines = new();
-        readonly List<Monster> stale = new();
+        readonly Dictionary<MonsterView, Outlinable> outlines = new();
+        readonly List<MonsterView> stale = new();
         float nextTick;
 
         /// <summary>플레이어 루트 주입. 인스펙터 배선이 이미 있으면 덮지 않는다 (PlacementSystem.Inject와 같은 규칙).</summary>
@@ -57,10 +57,10 @@ namespace CoreDawn.Combat
             float r2 = radius * radius;
 
             // 살아 있는 몬스터 — 거리로 켜고 끈다. 죽어가는 것은 끈다(시체에 테두리가 남지 않게)
-            var members = CrowdSystem.Members;
-            for (int i = 0; i < members.Count; i++)
+            var monsters = MonsterSystemHost.System.Monsters;
+            for (int i = 0; i < monsters.Count; i++)
             {
-                var m = members[i];
+                var m = EntityViewRegistry.ViewOf<MonsterView>(monsters[i]);
                 if (m == null) continue;
 
                 bool near = !m.IsDead && (m.transform.position - origin).sqrMagnitude <= r2;
@@ -87,7 +87,7 @@ namespace CoreDawn.Combat
             }
         }
 
-        Outlinable Attach(Monster m)
+        Outlinable Attach(MonsterView m)
         {
             var o = EpoOutlines.Ensure(m.gameObject);   // 핑과 같은 부착 절차 — 같은 Outlinable을 나눠 쓴다
             EpoOutlines.Style(o, color, dilateShift, blurShift);

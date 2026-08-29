@@ -1,5 +1,6 @@
 using UnityEngine;
 using CoreDawn.Entities;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Combat
 {
@@ -40,7 +41,7 @@ namespace CoreDawn.Combat
 
         public override void Apply(EntityView target, in EffectContext ctx)
         {
-            var movement = target.Movement;
+            var movement = target.Entity?.Get<Movement>();   // 이동은 심 모듈 — 넉백도 그쪽에 쌓인다
             if (movement == null || ctx.Value <= 0f) return;
 
             Vector3 dir = ResolveDirection(target, ctx);

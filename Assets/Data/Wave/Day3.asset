@@ -21,4 +21,7 @@ MonoBehaviour:
   baseAmount: 20
   maxAliveAmount: 10
   spawnInterval: 1.5
-  monsterMaxHp: 20
+  monster: {fileID: 11400000, guid: f1c332d2ef3daa64b887fdf2078f8256, type: 2}
+  buffs:
+  - effect: {fileID: 11400000, guid: 3add61bd42b9033498bd69d4e4070595, type: 2}
+    value: 1.5

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54a603a8635ae834695bdbcc1c106c9e, type: 3}
+  m_Name: Basic
+  m_EditorClassIdentifier: Assembly-CSharp::CoreDawn.Combat.MonsterDataSO
+  id: Monster:Basic
+  displayName: "\uAE30\uBCF8 \uBAAC\uC2A4\uD130"
+  description: "\uBC24 \uC6E8\uC774\uBE0C\uC758 \uAE30\uBCF8 \uAC1C\uCCB4. Monster.prefab."
+  icon: {fileID: 0}
+  prefab: {fileID: 1332241365330258894, guid: a0ab261b89819e4489aaf424fc926d00, type: 3}
+  maxHp: 30
+  moveSpeed: 4
+  rotateSpeed: 720
+  crowdRadius: 0.4
+  knockbackDamping: 8
+  stickToGround: 1
+  attackRange: 1.5
+  attackCooldown: 2
+  attackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 10
+  maxPatience: 3
+  patienceRadius: 0
+  outsidePatienceDrain: 2
+  rangedPokePatienceDrain: 3
+  patienceRecoverRate: 2
+  absoluteLeashMultiplier: 1
+  returnRegenPerSecond: 0.12
+  returnTimeout: 20
