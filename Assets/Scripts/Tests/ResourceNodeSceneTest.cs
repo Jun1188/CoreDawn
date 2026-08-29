@@ -8,6 +8,7 @@ using CoreDawn.Factory;
 using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tests
 {
@@ -109,7 +110,7 @@ namespace CoreDawn.Tests
             // 광맥이 있는 씬에서는 레지스트리가 소켓을 되찾아와야 한다 (실행 순서에 흔들리면 안 됨).
             Case("D1 광맥이 자원 소켓의 주인 (FactoryTest 오버라이드 복구)",
                  Factory.GetResourceAt != null &&
-                 Factory.GetResourceAt(nodeA.Origin) == _ore &&
+                 Factory.GetResourceAt(nodeA.Origin) == (ItemDef)_ore &&
                  Factory.GetResourceAt(FarEmptyCell()) == null,
                  $"광맥 위={Name(Factory.GetResourceAt?.Invoke(nodeA.Origin))}, " +
                  $"광맥 밖={Name(Factory.GetResourceAt?.Invoke(FarEmptyCell()))}");

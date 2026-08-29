@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Inventories
 {
@@ -18,7 +19,7 @@ namespace CoreDawn.Inventories
     public class ItemContainer
     {
         readonly ItemStack[] _slots;
-        readonly int _stackCap;   // 0 = 아이템 상한(ItemDataSO.maxStack) 그대로. 기계 버퍼는 작게 제한 가능.
+        readonly int _stackCap;   // 0 = 아이템 상한(ItemDef.MaxStack) 그대로. 기계 버퍼는 작게 제한 가능.
 
         /// <summary>
         /// true면 같은 아이템은 슬롯 1개까지만 (기계 입력용).
@@ -31,7 +32,7 @@ namespace CoreDawn.Inventories
         /// 수용 필터. null = 전부 허용. 어셈블러가 "현재 레시피의 재료만"으로 설정한다.
         /// 거절된 push는 상류에 자연스러운 배압으로 전달된다.
         /// </summary>
-        public Func<ItemDataSO, bool> AcceptFilter;
+        public Func<ItemDef, bool> AcceptFilter;
 
         public ItemContainer(int slotCount, int stackCap = 0)
         {
@@ -49,14 +50,14 @@ namespace CoreDawn.Inventories
         /// 그쪽이 아이템 상한만 보던 탓에 포탑 탄약함처럼 stackCap이 좁은 버퍼가
         /// 손으로는 3배까지 찼다. 상한을 묻는 창구는 여기 하나여야 한다.
         /// </summary>
-        public int CapFor(ItemDataSO item)
+        public int CapFor(ItemDef item)
         {
-            int itemCap = item != null ? Mathf.Max(1, item.maxStack) : ItemStack.DefaultMaxStack;
+            int itemCap = item != null ? Mathf.Max(1, item.MaxStack) : ItemStack.DefaultMaxStack;
             return _stackCap > 0 ? Mathf.Min(_stackCap, itemCap) : itemCap;
         }
 
         /// <summary>이 슬롯에 이 아이템을 몇 개 더 얹을 수 있는가 (음수 없음). UI 병합용.</summary>
-        public int RoomAt(int i, ItemDataSO item)
+        public int RoomAt(int i, ItemDef item)
         {
             if (i < 0 || i >= _slots.Length || item == null) return 0;
             var s = _slots[i];
@@ -74,7 +75,7 @@ namespace CoreDawn.Inventories
             }
         }
 
-        public int CountOf(ItemDataSO item)
+        public int CountOf(ItemDef item)
         {
             int total = 0;
             foreach (var s in _slots)
@@ -83,7 +84,7 @@ namespace CoreDawn.Inventories
         }
 
         /// <summary>이 아이템을 몇 개까지 더 받을 수 있는가. 필터·슬롯 규칙 반영.</summary>
-        public int RoomFor(ItemDataSO item)
+        public int RoomFor(ItemDef item)
         {
             if (item == null || (AcceptFilter != null && !AcceptFilter(item))) return 0;
 
@@ -107,7 +108,7 @@ namespace CoreDawn.Inventories
             return hasStack ? stackRoom : (emptyRoom > 0 ? cap : 0);
         }
 
-        public bool HasRoomFor(ItemDataSO item, int n = 1) => RoomFor(item) >= n;
+        public bool HasRoomFor(ItemDef item, int n = 1) => RoomFor(item) >= n;
 
         // ───────────────────────────────────────────────────────────
         //  변경 추적 — UI가 "다시 그릴 필요가 있나"를 싸게 판단하는 용도.
@@ -176,7 +177,7 @@ namespace CoreDawn.Inventories
         }
 
         /// <summary>이 아이템의 새 스택을 슬롯에 둘 수 있는가 (필터 + 종류당 1스택 검사).</summary>
-        bool AllowsPlacement(ItemDataSO item, int exceptSlot)
+        bool AllowsPlacement(ItemDef item, int exceptSlot)
         {
             if (AcceptFilter != null && !AcceptFilter(item)) return false;
             if (!SingleStackPerType) return true;
@@ -188,7 +189,7 @@ namespace CoreDawn.Inventories
         }
 
         /// <summary>n개 전량 수용 가능할 때만 추가. 기존 스택부터 채우고 빈 슬롯에 새 스택.</summary>
-        public bool TryAdd(ItemDataSO item, int n = 1)
+        public bool TryAdd(ItemDef item, int n = 1)
         {
             if (item == null || n <= 0 || !HasRoomFor(item, n)) return false;
 
@@ -219,7 +220,7 @@ namespace CoreDawn.Inventories
         }
 
         /// <summary>n개 전량 있을 때만 소비.</summary>
-        public bool TryConsume(ItemDataSO item, int n = 1)
+        public bool TryConsume(ItemDef item, int n = 1)
         {
             if (item == null || n <= 0 || CountOf(item) < n) return false;
 
@@ -254,14 +255,14 @@ namespace CoreDawn.Inventories
         }
 
         /// <summary>아이템 종류별 (item, 총 개수) 목록 — 순회 중 컨테이너 수정에 안전한 사본.</summary>
-        public List<(ItemDataSO item, int n)> Snapshot()
+        public List<(ItemDef item, int n)> Snapshot()
         {
-            var seen = new Dictionary<ItemDataSO, int>();
+            var seen = new Dictionary<ItemDef, int>();
             foreach (var s in _slots)
                 if (s != null && s.item != null && s.amount > 0)
                     seen[s.item] = seen.TryGetValue(s.item, out var c) ? c + s.amount : s.amount;
 
-            var list = new List<(ItemDataSO, int)>(seen.Count);
+            var list = new List<(ItemDef, int)>(seen.Count);
             foreach (var kv in seen) list.Add((kv.Key, kv.Value));
             return list;
         }

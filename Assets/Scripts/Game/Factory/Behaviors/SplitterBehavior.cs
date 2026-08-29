@@ -8,6 +8,7 @@ using CoreDawn.Save;
 using CoreDawn.UI;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -33,8 +34,8 @@ namespace CoreDawn.Factory
         // 방향당 아이템 여러 종, 아이템당 방향도 여러 개. 한 아이템을 두 출구로 보내면
         // 그 둘 사이에서 라운드로빈한다 — 같은 물건을 두 라인에 나눠 먹이는 배치가 흔하다.
         // 판정은 여전히 O(1): 두 딕셔너리가 서로의 역인덱스라 조회가 해시 한 번이다.
-        readonly Dictionary<ItemDataSO, HashSet<Direction>> _dirsByItem = new();
-        readonly Dictionary<Direction, HashSet<ItemDataSO>> _itemsByDir = new();
+        readonly Dictionary<ItemDef, HashSet<Direction>> _dirsByItem = new();
+        readonly Dictionary<Direction, HashSet<ItemDef>> _itemsByDir = new();
 
         // 완전히 막은 출구. 필터가 "이것만 보낸다"라면 이쪽은 "아무것도 안 보낸다"다.
         // 빈 허용 목록으로 대신할 수 없다 — _itemsByDir는 빈 집합을 지우는 것이 불변식이고,
@@ -43,7 +44,7 @@ namespace CoreDawn.Factory
 
         // 이 분배기를 실제로 지나간 아이템. UI가 "지나가는 중"을 붙여 전체 목록에서 찾는 수고를 던다 —
         // 라인을 잘못 이었을 때도 여기가 비어 있어 드러난다.
-        readonly HashSet<ItemDataSO> _passed = new();
+        readonly HashSet<ItemDef> _passed = new();
 
         public SplitterBehavior(BuildingModule b) => _b = b;
         public void OnAfterPlaced() { }
@@ -51,20 +52,20 @@ namespace CoreDawn.Factory
         // ── 필터 설정 표면 (UI/상호작용이 호출 — 심 API)
 
         /// <summary>출구 방향에 아이템을 허용한다. 다른 방향의 지정은 건드리지 않는다 — 둘 다 열어 두면 나눠 흐른다.</summary>
-        public void AddFilter(Direction dir, ItemDataSO item)
+        public void AddFilter(Direction dir, ItemDef item)
         {
             if (item == null) return;
 
             if (!_dirsByItem.TryGetValue(item, out var dirs)) _dirsByItem[item] = dirs = new HashSet<Direction>();
             if (!dirs.Add(dir)) return;   // 이미 허용돼 있음
 
-            if (!_itemsByDir.TryGetValue(dir, out var set)) _itemsByDir[dir] = set = new HashSet<ItemDataSO>();
+            if (!_itemsByDir.TryGetValue(dir, out var set)) _itemsByDir[dir] = set = new HashSet<ItemDef>();
             set.Add(item);
             _b.Factory.MarkDirty(_b);   // 대기 중이던 아이템이 새 규칙으로 흐를 수 있음
         }
 
         /// <summary>출구 방향 하나에서만 해제. 다른 방향에 남아 있으면 그쪽으로는 계속 흐른다.</summary>
-        public void RemoveFilter(Direction dir, ItemDataSO item)
+        public void RemoveFilter(Direction dir, ItemDef item)
         {
             if (item == null || !_dirsByItem.TryGetValue(item, out var dirs)) return;
             if (!dirs.Remove(dir)) return;
@@ -75,7 +76,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>아이템의 모든 방향 지정 해제 — 다시 일반 출구들로 흐른다.</summary>
-        public void RemoveFilter(ItemDataSO item)
+        public void RemoveFilter(ItemDef item)
         {
             if (item == null || !_dirsByItem.TryGetValue(item, out var dirs)) return;
             foreach (var dir in dirs) RemoveFromDir(dir, item);
@@ -97,7 +98,7 @@ namespace CoreDawn.Factory
             _b.Factory.MarkDirty(_b);
         }
 
-        void RemoveFromDir(Direction dir, ItemDataSO item)
+        void RemoveFromDir(Direction dir, ItemDef item)
         {
             if (!_itemsByDir.TryGetValue(dir, out var set)) return;
             set.Remove(item);
@@ -107,16 +108,16 @@ namespace CoreDawn.Factory
         // ── 조회 (UI 표시용)
 
         /// <summary>이 아이템이 허용된 출구 방향들. 지정이 없으면 빈 목록 = 일반 출구로 흐른다.</summary>
-        public IReadOnlyCollection<Direction> DirectionsOf(ItemDataSO item) =>
+        public IReadOnlyCollection<Direction> DirectionsOf(ItemDef item) =>
             item != null && _dirsByItem.TryGetValue(item, out var dirs)
                 ? dirs : (IReadOnlyCollection<Direction>)System.Array.Empty<Direction>();
 
         /// <summary>이 출구가 허용하는 아이템들. 비어 있으면 전용 출구가 아니다(일반 출구).</summary>
-        public IReadOnlyCollection<ItemDataSO> AllowedAt(Direction dir) =>
+        public IReadOnlyCollection<ItemDef> AllowedAt(Direction dir) =>
             _itemsByDir.TryGetValue(dir, out var set)
-                ? set : (IReadOnlyCollection<ItemDataSO>)System.Array.Empty<ItemDataSO>();
+                ? set : (IReadOnlyCollection<ItemDef>)System.Array.Empty<ItemDef>();
 
-        public bool IsAllowedAt(Direction dir, ItemDataSO item) =>
+        public bool IsAllowedAt(Direction dir, ItemDef item) =>
             item != null && _dirsByItem.TryGetValue(item, out var dirs) && dirs.Contains(dir);
 
         /// <summary>이 출구에 허용 목록이 걸려 있는가 — 그렇다면 무지정 아이템은 통과하지 못한다.</summary>
@@ -145,7 +146,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>이 분배기를 실제로 지나간 적 있는 아이템인가 — UI의 "지나가는 중" 표시.</summary>
-        public bool HasPassed(ItemDataSO item) => item != null && _passed.Contains(item);
+        public bool HasPassed(ItemDef item) => item != null && _passed.Contains(item);
 
         /// <summary>출구의 현재 상태 — 화면이 세 가지를 그림으로 구분한다 (SCR-07).</summary>
         public OutletState StateOf(Direction dir) =>
@@ -181,7 +182,7 @@ namespace CoreDawn.Factory
         ///
         /// 연결 수는 포트 수(≤4)라 상수 순회다.
         /// </summary>
-        bool TryPush(ItemDataSO item)
+        bool TryPush(ItemDef item)
         {
             var conns = _b.OutputConnections;
             if (conns.Count == 0) return false;

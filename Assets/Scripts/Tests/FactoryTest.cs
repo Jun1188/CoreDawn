@@ -5,6 +5,7 @@ using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tests
 {
@@ -81,7 +82,7 @@ namespace CoreDawn.Tests
             var entries = c.Snapshot();
             if (entries.Count == 0) { sb.AppendLine("  * (비어 있음)"); return; }
             foreach (var (item, n) in entries)
-                sb.AppendLine($"  * {item.displayName} : {n}개");
+                sb.AppendLine($"  * {item.DisplayName} : {n}개");
         }
 
         void OnGUI()

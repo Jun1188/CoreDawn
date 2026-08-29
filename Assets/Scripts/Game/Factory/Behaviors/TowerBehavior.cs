@@ -5,6 +5,7 @@ using CoreDawn.FPS;
 using CoreDawn.UI;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -47,7 +48,7 @@ namespace CoreDawn.Factory
 
         public TowerDataSO Data => _data;
 
-        bool Accepts(ItemDataSO item)
+        bool Accepts(ItemDef item)
         {
             if (item == null) return false;
             var filter = _data.ammoFilter;
@@ -74,7 +75,7 @@ namespace CoreDawn.Factory
                 if (n <= 0 || !_b.Input.TryConsume(item, 1)) continue;
 
                 // 효과·탄도는 탄약(모듈)이 갖고 포탑은 배율·각도만 갖는다
-                round = item.GetModule<AmmoModuleSO>();
+                round = ItemAssets.Of(item)?.GetModule<AmmoModuleSO>();   // 탄의 프리팹·연출은 아직 SO 모듈에
                 _b.NotifyUpstream();
                 return true;
             }

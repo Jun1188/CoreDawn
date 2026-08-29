@@ -69,9 +69,9 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>현재 티어 요구 아이템별 (아이템, 필요량, 현재량) — 진행률 UI용.</summary>
-        public IReadOnlyList<(ItemDataSO item, int required, int current)> GetProgress()
+        public IReadOnlyList<(ItemDef item, int required, int current)> GetProgress()
         {
-            var list = new List<(ItemDataSO, int, int)>();
+            var list = new List<(ItemDef, int, int)>();
             var reqs = CurrentTier?.requirements;
             if (reqs == null) return list;
             foreach (var r in reqs) list.Add((r.item, r.amount, _b.Input.CountOf(r.item)));
@@ -199,10 +199,10 @@ namespace CoreDawn.Factory
         public float Intercept(float amount, Entity source) => AbsorbDamage(amount);
 
         /// <summary>이 아이템이 지금 단계의 요구 목록에 있는가. 없으면 소각 대상이다.</summary>
-        bool IsRequired(ItemDataSO item)
+        bool IsRequired(ItemDef item)
         {
             var reqs = CurrentTier?.requirements;
-            return reqs != null && System.Array.Exists(reqs, r => r != null && r.item == item);
+            return reqs != null && System.Array.Exists(reqs, r => r != null && (ItemDef)r.item == item);
         }
 
         /// <summary>

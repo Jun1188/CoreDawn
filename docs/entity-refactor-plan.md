@@ -378,10 +378,11 @@ namespace CoreDawn.Sim
 - [ ] 5a-1 스키마 v2 + `SimDatabase` + 컨버터 표 + 파생 id + 효과 value/duration + **제네릭 모듈 편집기** + 마이그레이션 + `SaveMigrations` id 변환
   - [x] 5a-1a 골격(2026-08-30): `Sim/Definitions/`에 `Def`·`EntityDef`·`ItemDef`(+Ammo·Weapon 모듈)·`RecipeDef`·`WaveDef`·`EffectSpec`(json)·`Effect`(value·duration·tickInterval)·엔티티 모듈 정의 22종·`SimSchema`(명시 표)·`ModuleDefConverter`·`SimDatabase`(파생 id, 키 규칙 검사, Resolve 패스, strict). `tools/migrate`: v1 `GameData.json` → `StreamingAssets/packs/coredawn/data.json`(entities 25·items 30·recipes 24·effects 7·waves 5, guns·tutorial는 원본 보관) + `tools/id-migration-v1-v2.json`(114개). 검증: 로드 오류 0, 참조 해석(벨트 cost·터렛 탄약·코어 티어·웨이브 몬스터·attack_up affects), `EntityDef.Assemble` 동작. 게임은 아직 SO로 돈다(플레이 회귀 통과)
   - [x] 5a-1b-1 C# 내보내기(2026-08-30): `GameDataExporterV2`(python 마이그레이션의 C# 판, 구조 동일 검증 0 diff)가 GameData 에디터 **저장 시 자동 실행** — v1(편집 형식) → v2 `packs/coredawn/data.json`(게임·모드 형식) + id 변환표, 내보낸 결과를 `SimDatabase`로 즉시 검증(깨진 참조를 저장 시점에 잡음)
-  - [ ] 5a-1b-2 편집기 방향(사용자 결정 대기): A) 기존 편집기가 편집 UI로 남고 v2는 저장 시 생성(SO 퇴역 후 v2 직접 편집으로 전환) / B) 정의 타입에서 폼을 만드는 제네릭 v2 편집기를 지금 작성하고 옛 심 관련 탭 퇴역
+  - [x] 5a-1b-2 편집기 방향(2026-08-30 결정, "간단한 쪽"): **A** — 기존 GameDataEditor가 편집 UI로 남고 v2는 저장 시 생성. SO 퇴역(5a-3) 때 편집기를 v2 직접 편집으로 바꾸고 v1 파일 퇴역 — 최종은 v2 하나만 남는다
   - [ ] 5a-1c `SaveMigrations` id 변환표 적용
 - [ ] 5a-2 심 모듈화: 정의에서 조립(공장·몬스터·플레이어), 건물 행동 → 모듈, `InventoryModule`·`CrafterModule`(수제작·조합기 통합, `InventoryPanelView.CraftOnce` 제거)·`ResourceDeposit`(광맥 → 엔티티)·`Loot`·`CoreModule`·`TowerBrain`·`NestModule`, 공장을 `Sim/Factory/`로, `IInteractiveBehavior.Interact`는 뷰 등록부로
   - [x] 5a-2a 런타임 팩 로드 + 효과·몬스터를 정의에서(2026-08-30): `PackLoader`(StreamingAssets, BeforeSceneLoad에 `SimHost.DatabaseLoader` 등록) · `SimHost.Database` · `SimDatabase.LegacyId`(옛 id → v2 id, 순수 규칙) · `MonsterSystem.Spawn(EntityDef)` = `def.Assemble` + 내비게이션·시스템 후주입(`MovementModule(def)`, `MonsterBrainModule(def).Bind`) · `MonsterSpawner`가 SO id로 정의를 찾음 · `EffectSpecs.Of`는 팩 정의 우선(SO 폴백 카운트 0 검증) · `MonsterSpec`·`ToSpec` 삭제, `EngagementZone` 분리. 검증: 몬스터 12 정의 조립, 웨이브 버프 = 팩 정의 참조, DoT·넉백·공격·세이브 왕복, 오류 0
+  - [x] 5a-2b 아이템·레시피를 정의로(2026-08-30, `feature/item-defs`): 게임 코드의 `ItemDataSO`/`RecipeDataSO` 참조를 `ItemDef`/`RecipeDef`로(인벤토리·컨테이너·벨트·건물 행동·배치 비용·자원 노드·세이브 DTO·UI 뷰·테스트). `ItemType`/`ItemLine`은 `Sim/Definitions/ItemKinds.cs`로 이동. SO는 표현 에셋(아이콘·탄·무기 모듈 프리팹)으로만 남고 `ItemAssets.Of(def)`/`RecipeAssets.Of(def)`(LegacyId 색인)와 SO↔Def 암시 변환 브리지로 UI(`UIItemIcon`·`UIItemOrder`)와 잇는다. `SaveRefs.Item/Recipe`는 옛 id를 `LegacyId`로 읽어 정의를 돌려주므로 세이브 id 변환은 필요 없음. 미사용 `BaseProcessor`·`MachineProcessor` 삭제. 검증: SO 30 ↔ 정의 30 전부 대응, 인벤토리 추가·세이브 왕복·밤 전투·효과·공장 회귀 통과, 오류 0
 - [ ] 5a-3 뷰 카탈로그(id → 프리팹·아이콘) · SO 삭제 · 인벤토리·UI·배치·세이브가 `Def`+id로
 - [ ] 5a-4 리소스팩: `StreamingAssets/packs/`, 모델(glTFast)·텍스처(`LoadImage`)·팔레트·emission — 건물 → 아이콘 순. 몬스터(애니메이션)는 내장 유지
 
@@ -500,6 +501,11 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 위치: `SoundManager → Game/Sound`, `DayRegenSystem → Game/DayTime`, `CombatEvents → Game/Combat`, `CameraShakeManager → FPS/Camera`, `UIPopup·UICursor → Presentation/UI`, `ItemDataHolder → Game/Interaction`(네임스페이스는 폴더를 따름).
 - 분할: `SimHost` 별도 파일, 몬스터 두뇌 상태 7개 → `Sim/Modules/MonsterBrain/`, `ResourceNode{Registry,Runtime}`, `ProjectileShot`·`FireMode`, **건물 행동 11개 + `IBuildingBehavior`/`IInteractiveBehavior` → `Game/Factory/Behaviors/`**(데이터 SO 파일에서 분리 — 5a 등록부의 전 단계), `Direction·Dir·PortDefinition·BuildingCategory·BeltShape` 각자 파일.
 - 검증: 컴파일 0 오류(`entity is not BattleTower` 패턴 하나 수동), 밤 강제 플레이 — 둥지·몬스터·플레이어·타워 배치 정상, 오류 0.
+
+### 2026-08-30 — 5a-2b 아이템·레시피를 정의로 (`feature/item-defs`)
+- 심·게임 코드는 `ItemDef`/`RecipeDef`만 본다. SO(`ItemDataSO`·`RecipeDataSO`)는 아이콘·모듈 프리팹을 가진 표현 에셋으로 격하 — `Def` 속성(팩 정의를 `LegacyId`로 찾음)과 암시 변환으로 과도기 브리지, `ItemAssets`/`RecipeAssets`가 정의 → SO 역색인. 5a-3에서 뷰 카탈로그로 대체·삭제.
+- 멤버 이름이 바뀐 자리(`craftTime→Seconds`, `inputs→Inputs(List<ItemAmount>)`, `displayName→DisplayName`, `maxStack→MaxStack`, `type→Type`)와 SO↔Def `==` 모호(한쪽을 캐스팅) 48건을 두 차례 스크립트로 정리. `ResourceNodeRegistry`의 파일 전체 `displayName` 치환이 `BuildingDataSO` 줄까지 건드린 것 하나 되돌림(건물은 아직 SO).
+- 검증: 컴파일 0 오류, 플레이 — SO 30/정의 30 양방향 대응, `SaveRefs.Item("Item:IronOre")` → `coredawn:item/iron_ore`, 인벤토리 추가 3/3, 밤 전투·DoT·넉백·세이브 왕복·둥지 4/4, 콘솔 오류 0.
 
 ## 8. 세션 재개 절차
 

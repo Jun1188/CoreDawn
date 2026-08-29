@@ -2,6 +2,7 @@ using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Placement
 {
@@ -23,7 +24,7 @@ namespace CoreDawn.Placement
         /// <summary>비용이 정의돼 있는가. 비어 있으면 공짜 건물(코어 등).</summary>
         public static bool HasCost(BuildingDataSO so) => so != null && so.buildCost != null && so.buildCost.Length > 0;
 
-        public static int PlayerCountOf(ItemDataSO item)
+        public static int PlayerCountOf(ItemDef item)
         {
             if (item == null) return 0;
             int n = 0;
@@ -51,7 +52,7 @@ namespace CoreDawn.Placement
 
 
         /// <summary>부족한 첫 재료 — 건설 메뉴가 "무엇이 모자란지" 보여줄 때 쓴다.</summary>
-        public static bool TryGetMissing(BuildingDataSO so, out ItemDataSO item, out int shortBy)
+        public static bool TryGetMissing(BuildingDataSO so, out ItemDef item, out int shortBy)
         {
             item = null;
             shortBy = 0;
@@ -108,7 +109,7 @@ namespace CoreDawn.Placement
         }
 
         /// <summary>가방부터 소진하고 모자라면 핫바에서 뺀다 — 핫바를 최대한 유지한다.</summary>
-        static void Consume(ItemDataSO item, int n)
+        static void Consume(ItemDef item, int n)
         {
             int fromBag = Bag != null ? Mathf.Min(n, Bag.CountOf(item)) : 0;
             if (fromBag > 0) Bag.TryConsume(item, fromBag);

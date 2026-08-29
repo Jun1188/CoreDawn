@@ -236,7 +236,7 @@ namespace CoreDawn.Worlds
                     continue;
 
                 item ??= marker.item;
-                if (marker.item == item) total += marker.amount;
+                if (marker.item == (ItemDef)item) total += marker.amount;
                 Object.Destroy(marker.gameObject);
             }
 

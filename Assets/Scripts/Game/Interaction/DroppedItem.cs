@@ -4,12 +4,13 @@ using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Interaction
 {
     public class DroppedItem : Interactable
     {
-        public ItemDataSO item;
+        public ItemDef item;
         public int amount;
 
         /// <summary>핑 이름 — "철판 ×3". 프롬프트("xN 줍기")는 동사가 붙어 있어 알림용 이름으로는 맞지 않는다.</summary>
@@ -18,7 +19,7 @@ namespace CoreDawn.Interaction
             get
             {
                 if (item == null) return name;
-                string itemName = string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+                string itemName = string.IsNullOrEmpty(item.DisplayName) ? item.Id : item.DisplayName;
                 return amount > 1 ? $"{itemName} ×{amount}" : itemName;
             }
         }
@@ -77,16 +78,16 @@ namespace CoreDawn.Interaction
         // 프리팹이 비활성으로 저장돼 있으면 Awake가 늦게 오므로 첫 접근에 잡는다
         Rigidbody Body => body != null ? body : (body = GetComponent<Rigidbody>());
 
-        public void Setup(ItemDataSO itemData, int count)
+        public void Setup(ItemDef itemData, int count)
         {
             item = itemData;
             amount = count;
 
             // 조준했을 때 화면에 뜰 메시지 세팅
-            promptMessage = $"{item.name} x{amount} 줍기";
+            promptMessage = $"{item.DisplayName ?? item.Id} x{amount} 줍기";
 
             // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
-            if (visual != null) visual.sprite = itemData.icon;
+            if (visual != null) visual.sprite = ItemAssets.Of(itemData)?.icon;
         }
 
         /// <summary>
@@ -94,7 +95,7 @@ namespace CoreDawn.Interaction
         /// 마크처럼 정형화: ItemDatabase의 공용 프리팹 하나를 모든 아이템이 쓴다 (아이콘만 교체).
         /// 프리팹 미지정 시 코드 조립 폴백 — 테스트 씬 안전.
         /// </summary>
-        public static DroppedItem Spawn(ItemDataSO item, int amount, Vector3 position, Vector3 throwDirection)
+        public static DroppedItem Spawn(ItemDef item, int amount, Vector3 position, Vector3 throwDirection)
         {
             DroppedItem dropped = Rent(position);
             if (dropped == null) return null;
@@ -204,7 +205,7 @@ namespace CoreDawn.Interaction
             if (item == null || other.item != item) return;
             if (amount <= 0 || other.amount <= 0) return;          // 이미 병합/줍기로 소멸 예정인 상대
             if (GetInstanceID() > other.GetInstanceID()) return;   // 한쪽만 수행
-            if (amount + other.amount > item.maxStack) return;
+            if (amount + other.amount > item.MaxStack) return;
 
             amount += other.amount;
             other.amount = 0;                                      // 상대의 후속 병합/줍기 차단

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -220,7 +221,7 @@ namespace CoreDawn.UI
             // AllowedAt은 HashSet이라 순서가 없다 — 목록과 같은 기준으로 정렬해야
             // 왼쪽 점과 오른쪽 목록이 같은 물건을 같은 자리에서 말한다
             var colors = new List<Color>();
-            foreach (var item in UIItemOrder.Sorted(target.AllowedAt(dir)))
+            foreach (var item in UIItemOrder.Sorted(target.AllowedAt(dir).Select(d => (ItemDataSO)d)))
                 colors.Add(UIFlowColors.Of(item.line));
 
             var (cols, size, gap) = FitGrid(colors.Count);

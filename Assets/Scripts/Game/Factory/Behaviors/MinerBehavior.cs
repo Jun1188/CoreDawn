@@ -4,6 +4,7 @@ using UnityEngine;
 using CoreDawn.Save;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -20,13 +21,13 @@ namespace CoreDawn.Factory
     {
         readonly BuildingModule    _b;
         readonly MinerDataSO _data;
-        ItemDataSO _target;
+        ItemDef _target;
         float      _readyAt = -1f;   // 채굴 완료 예정 시각 (-1 = 예약 없음 = 정지 상태)
 
         public MinerBehavior(BuildingModule b, MinerDataSO data) { _b = b; _data = data; }
 
         // 외부(ResourceGrid 등)에서 OnAfterPlaced 이후 주입
-        public void SetTarget(ItemDataSO item)
+        public void SetTarget(ItemDef item)
         {
             _target = item;
             _b.Factory.MarkDirty(_b);

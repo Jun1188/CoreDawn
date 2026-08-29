@@ -162,7 +162,7 @@ namespace CoreDawn.Factory
         /// 먼저 이은 라인이 전부를 독식하고 나머지 셋은 첫 라인이 막힐 때만 받았다.
         /// 가득 찬 출구는 건너뛰므로 한쪽이 막혀도 나머지로 계속 흐른다.
         /// </summary>
-        public bool TryPushOutput(ItemDataSO item)
+        public bool TryPushOutput(ItemDef item)
         {
             var conns = OutputConnections;
             int n = conns.Count;

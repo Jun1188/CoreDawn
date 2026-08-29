@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Save
 {
@@ -14,40 +15,31 @@ namespace CoreDawn.Save
     /// </summary>
     public static class SaveRefs
     {
-        static Dictionary<string, ItemDataSO> _items;
         static Dictionary<string, BuildingDataSO> _buildings;
-        static Dictionary<string, RecipeDataSO> _recipes;
         static readonly HashSet<string> _warned = new();
 
         /// <summary>데이터베이스 에셋이 다시 로드된 경우(에디터 재생 등) 캐시를 버린다.</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void ClearCache()
         {
-            _items = null;
             _buildings = null;
-            _recipes = null;
             _warned.Clear();
         }
 
         // ── 아이템 ────────────────────────────────────────────────────
 
-        public static ItemDataSO Item(string id)
+        /// <summary>아이템 — 정의의 정본은 팩(json). 세이브에는 새 id(coredawn:item/…)를 쓰고, 옛 id(Item:…)도 같은 규칙으로 읽는다.</summary>
+        public static ItemDef Item(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-
-            if (_items == null)
-            {
-                _items = new Dictionary<string, ItemDataSO>();
-                var db = ItemDatabaseSO.LoadDefault();
-                if (db?.items != null)
-                    foreach (var it in db.items) Index(_items, it);
-                else WarnOnce("__itemdb", "Resources/ItemDatabase.asset 을 찾지 못했습니다 — 아이템 복원이 전부 실패합니다.");
-            }
-
-            return Lookup(_items, id, "아이템");
+            var db = SimHost.Database;
+            if (db == null) { WarnOnce("__pack", "팩 정의가 로드되지 않아 아이템을 복원할 수 없습니다."); return null; }
+            var def = db.Item(db.LegacyId(id));
+            if (def == null) WarnOnce(id, $"세이브의 아이템 id \"{id}\"가 팩에 없습니다 — 그 항목은 건너뜁니다.");
+            return def;
         }
 
-        public static string IdOf(ItemDataSO item) => item != null ? item.Id : null;
+        public static string IdOf(ItemDef item) => item != null ? item.Id : null;
 
         // ── 건물 ──────────────────────────────────────────────────────
 
@@ -71,23 +63,17 @@ namespace CoreDawn.Save
 
         // ── 레시피 ────────────────────────────────────────────────────
 
-        public static RecipeDataSO Recipe(string id)
+        public static RecipeDef Recipe(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-
-            if (_recipes == null)
-            {
-                _recipes = new Dictionary<string, RecipeDataSO>();
-                var db = RecipeDatabaseSO.LoadDefault();
-                if (db?.recipes != null)
-                    foreach (var r in db.recipes) Index(_recipes, r);
-                else WarnOnce("__recipedb", "Resources/RecipeDatabase.asset 을 찾지 못했습니다 — 레시피 복원이 전부 실패합니다.");
-            }
-
-            return Lookup(_recipes, id, "레시피");
+            var db = SimHost.Database;
+            if (db == null) { WarnOnce("__pack", "팩 정의가 로드되지 않아 레시피를 복원할 수 없습니다."); return null; }
+            var def = db.Recipe(db.LegacyId(id));
+            if (def == null) WarnOnce(id, $"세이브의 레시피 id \"{id}\"가 팩에 없습니다 — 그 항목은 건너뜁니다.");
+            return def;
         }
 
-        public static string IdOf(RecipeDataSO recipe) => recipe != null ? recipe.Id : null;
+        public static string IdOf(RecipeDef recipe) => recipe != null ? recipe.Id : null;
 
         // ── 공통 ──────────────────────────────────────────────────────
 

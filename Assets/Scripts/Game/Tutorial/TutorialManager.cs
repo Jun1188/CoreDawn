@@ -6,6 +6,7 @@ using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.Data;
 using CoreDawn.UI;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tutorial
 {

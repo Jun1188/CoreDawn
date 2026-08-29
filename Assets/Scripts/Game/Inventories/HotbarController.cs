@@ -123,7 +123,8 @@ namespace CoreDawn.Inventories
             if (currentHotbarIndex < 0 || currentHotbarIndex >= holder.HotbarContainer.SlotCount) return;
 
             var slot = holder.HotbarContainer.PeekAt(currentHotbarIndex);
-            if (slot != null && slot.item != null && slot.item.TryGetModule<WeaponModuleSO>(out var weaponModule))
+            var so = slot != null ? ItemAssets.Of(slot.item) : null;
+            if (so != null && so.TryGetModule<WeaponModuleSO>(out var weaponModule))
                 weaponManager.EquipWeapon(weaponModule.gun);
             else
                 weaponManager.UnequipWeapon();

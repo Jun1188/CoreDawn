@@ -6,6 +6,7 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -261,7 +262,7 @@ namespace CoreDawn.UI
             var row = new VisualElement();
             row.AddToClassList("ui-row");
             row.AddToClassList("ui-row--compact");
-            if (r == target.CurrentRecipe) row.AddToClassList("ui-row--selected");
+            if ((RecipeDef)r == target.CurrentRecipe) row.AddToClassList("ui-row--selected");
 
             var ic = new VisualElement();
             ic.AddToClassList("ui-slot__icon");
@@ -302,16 +303,16 @@ namespace CoreDawn.UI
             if (!has) return;
 
             var item = PrimaryOutput(recipe);
-            int per = recipe.outputs != null && recipe.outputs.Length > 0 ? recipe.outputs[0].amount : 1;
+            int per = recipe.Outputs != null && recipe.Outputs.Count > 0 ? recipe.Outputs[0].Amount : 1;
 
             UIItemIcon.Apply(yieldIcon, item);
             yieldName.text = DisplayNameOf(item);
             if (item != null) yieldName.style.color = UIFlowColors.Of(item.line);
 
             // N개/분 — 벨트 처리량과 비교해 라인을 몇 개 물릴지 계산하는 값이라 항상 띄운다
-            float perMinute = recipe.craftTime > 0f ? 60f / recipe.craftTime * per : 0f;
+            float perMinute = recipe.Seconds > 0f ? 60f / recipe.Seconds * per : 0f;
             yieldSub.text = $"회당 {per}개 · {Mathf.RoundToInt(perMinute)}개 / 분";
-            yieldTime.text = $"◷ {recipe.craftTime:0.0}s";
+            yieldTime.text = $"◷ {recipe.Seconds:0.0}s";
         }
 
         // ───────────────────── IO 슬롯 ─────────────────────

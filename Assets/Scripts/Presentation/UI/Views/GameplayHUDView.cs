@@ -10,6 +10,7 @@ using CoreDawn.Inputs;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
