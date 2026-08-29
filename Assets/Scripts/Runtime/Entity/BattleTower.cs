@@ -207,8 +207,8 @@ namespace CoreDawn.Entities
                 return;
             }
 
-            var effects = ProjectileSystem.ScaleDamage(round.attackEffects, data.damageMultiplier);
-            effects = Effects.BakeOutgoing(effects); // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
+            var effects = EffectSpecs.ToSim(ProjectileSystem.ScaleDamage(round.attackEffects, data.damageMultiplier));
+            if (Effects != null) effects = Effects.BakeOutgoing(effects); // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
 
             FireAt(target, data, round, effects);
             combat.MarkAttackPerformed(); // 효과는 전달 계층이 적용, 여긴 쿨다운만 소비
@@ -321,11 +321,11 @@ namespace CoreDawn.Entities
                 return;
             }
 
-            EffectEntry[] effects = round != null ? round.attackEffects : combat.AttackEffects; // 구 씬 오라 폴백
-            if (effects == null || effects.Length == 0) { SetState(TowerState.Idle); return; }
+            EffectEntry[] entries = round != null ? round.attackEffects : combat.AttackEffects; // 구 씬 오라 폴백
+            if (entries == null || entries.Length == 0) { SetState(TowerState.Idle); return; }
 
-            effects = ProjectileSystem.ScaleDamage(effects, data.damageMultiplier);
-            effects = Effects.BakeOutgoing(effects);
+            var effects = EffectSpecs.ToSim(ProjectileSystem.ScaleDamage(entries, data.damageMultiplier));
+            if (Effects != null) effects = Effects.BakeOutgoing(effects);
 
             ProjectileSystem.Fire(transform.position, transform.forward,
                 new ProjectileShot(0f, 0f, combat.AttackRange, effects, monsterMask, this,
@@ -339,7 +339,7 @@ namespace CoreDawn.Entities
         /// <summary>탄이 타워 모델 안에서 태어나지 않게 밀어내는 거리 — 진짜 총구가 있으면 필요 없다.</summary>
         private const float MuzzlePushout = 0.6f;
 
-        private void FireAt(EntityView target, TowerDataSO data, AmmoModuleSO round, EffectEntry[] effects)
+        private void FireAt(EntityView target, TowerDataSO data, AmmoModuleSO round, Effect[] effects)
         {
             Vector3 aimPoint = AimPointOf(target);
 

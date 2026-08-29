@@ -15,6 +15,7 @@ namespace CoreDawn.Combat
     public static class MonsterSystemHost
     {
         static MonsterSystem system;
+        static EffectSystem effects;
         static MonsterSystemRunner runner;
 
         public static MonsterSystem System
@@ -32,6 +33,17 @@ namespace CoreDawn.Combat
             }
         }
 
+        /// <summary>효과 시스템 — 월드 전체(몬스터·건물·플레이어)의 지속 효과 틱. 몬스터 시스템과 같은 러너가 돌린다.</summary>
+        public static EffectSystem Effects
+        {
+            get
+            {
+                if (effects == null) effects = new EffectSystem(SimHost.World);
+                EnsureRunner();
+                return effects;
+            }
+        }
+
         static void EnsureRunner()
         {
             if (runner != null || !Application.isPlaying) return;
@@ -46,6 +58,8 @@ namespace CoreDawn.Combat
         {
             system?.Dispose();
             system = null;
+            effects?.Dispose();
+            effects = null;
             runner = null;
         }
     }
@@ -53,6 +67,11 @@ namespace CoreDawn.Combat
     /// <summary>구동용 러너 — Update에서 두뇌→이동→군중을 한 틱 돌린다. 뷰는 LateUpdate에서 결과를 그린다.</summary>
     public class MonsterSystemRunner : MonoBehaviour
     {
-        void Update() => MonsterSystemHost.System.Tick(Time.deltaTime);
+        void Update()
+        {
+            float dt = Time.deltaTime;
+            MonsterSystemHost.Effects.Tick(dt);   // 효과가 먼저 — 이번 틱의 속도 배율이 이번 틱의 이동에 쓰이게
+            MonsterSystemHost.System.Tick(dt);
+        }
     }
 }

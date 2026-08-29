@@ -46,8 +46,17 @@ namespace CoreDawn.Sim
         /// <summary>군중 겹침 해소용 개체 반지름 — MonsterSystem의 군중 패스가 읽는다.</summary>
         public float CrowdRadius => crowdRadius;
 
-        /// <summary>효과 시스템의 이동 속도 배율(감속 등) — 뷰(효과가 아직 뷰에 있다)가 매 프레임 밀어 넣는다.</summary>
-        public float SpeedMultiplier { get; set; } = 1f;
+        Effects effects;   // 같은 엔티티의 효과 모듈 — 감속·가속 배율의 정본 (없으면 1)
+
+        /// <summary>효과 시스템의 이동 속도 배율(감속 등). 심 Effects 모듈에서 읽는다 — 뷰가 밀어 넣지 않는다.</summary>
+        public float SpeedMultiplier
+        {
+            get
+            {
+                if (effects == null && Owner != null) effects = Owner.Get<Effects>();   // 부착 순서와 무관하게 늦게 찾는다
+                return effects != null ? effects.MoveSpeedMultiplier : 1f;
+            }
+        }
 
         /// <summary>
         /// 넉백을 받지 않는가. 교전을 포기하고 자기 자리로 돌아가는 개체가 켠다 — 그 복귀는 되돌릴 수 없다고 정해 놓고

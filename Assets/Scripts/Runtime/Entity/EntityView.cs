@@ -97,9 +97,8 @@ namespace CoreDawn.Entities
         // 이 뷰가 만든 엔티티인가 — 만든 쪽이 지운다(OnDestroy). 심 우선 개체는 심(FactorySystem)이 지운다.
         bool ownsEntity;
 
-        // 활성 지속 효과(감속·DoT 등) 관리 — Awake 전에 맞아도 안전하게 지연 생성
-        private EffectController effects;
-        public EffectController Effects => effects ??= new EffectController(this);
+        /// <summary>심 효과 모듈 — 활성 지속 효과·배율. 심이 아직 안 붙었으면 null(뷰 우선 개체는 Awake에서 붙는다).</summary>
+        public Effects Effects => Entity?.Get<Effects>();
 
         // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null). 이동은 심 모듈(Movement)로 갔다 — MonsterView.SimMovement
         public virtual CombatComponent Combat => null;
@@ -125,6 +124,7 @@ namespace CoreDawn.Entities
 
             var e = SimHost.World.Create(Faction, transform.position);
             e.Add(new Health(health.MaxHealth));
+            e.Add(new Effects());   // Health가 있는 엔티티는 전부 효과 모듈을 갖는다 — 받는 배율·지속 효과
             ownsEntity = true;
             AttachEntity(e);
         }
@@ -169,20 +169,16 @@ namespace CoreDawn.Entities
 
         void RelayHealthChanged(float current, float max) => OnHealthChanged?.Invoke(current, max);
 
-        // 순서는 구 Entity.Awake의 구독 순서와 같다: 효과 정리 → 사망 처리 → 외부 구독자
+        // 순서: 심(EffectSystem이 효과 정리, 공장이 건물 제거)이 먼저 결정하고 → 사망 연출 → 외부 구독자
         void RelayDeath()
         {
-            Effects.Clear();
             HandleDeath();
             OnDeath?.Invoke();
         }
 
         protected virtual void Start() { }
 
-        protected virtual void Update()
-        {
-            Effects.Tick(Time.deltaTime);
-        }
+        protected virtual void Update() { }   // 효과 틱은 심(EffectSystem)이 돌린다
 
         // 위치 동기 — 물리는 뷰가 굴리고 심은 결과를 받는다. 건물은 움직이지 않으니 뷰 우선 개체만.
         protected virtual void LateUpdate()
@@ -200,29 +196,27 @@ namespace CoreDawn.Entities
         /// </summary>
         public virtual void ApplyEffects(IReadOnlyList<EffectEntry> entries,
                                          EntityView source, Vector3 hitPoint, Vector3 hitDirection = default)
-            => Effects.ApplyAll(entries, source, hitPoint, hitDirection);
+            => ApplyEffects(EffectSpecs.ToSim(entries), source != null ? source.Entity : null, hitPoint, hitDirection);
+
+        /// <summary>
+        /// 심 효과 목록 적용 — 투사체·오라처럼 발사 시점에 이미 변환·베이크된 목록이 명중했을 때.
+        /// 여기서부터는 심 안이다: 피해·넉백·지속 효과·사망이 Effects → Health/Movement에서 끝난다. 심이 없으면 무시.
+        /// </summary>
+        public void ApplyEffects(IReadOnlyList<Effect> effects, SimEntity source, Vector3 hitPoint, Vector3 hitDirection = default)
+            => Effects?.Apply(effects, source, hitPoint, hitDirection);
 
         /// <summary>출처 없는 피해(환경 등). 새 코드는 출처를 넘기는 쪽을 쓸 것.</summary>
         public void ReceiveDamage(float amount) => ReceiveDamage(amount, null);
 
         /// <summary>
-        /// 받는 피해의 뷰 쪽 수렴점 — 받는 배율(IncomingDamageMultiplier, 방어 디버프)을 곱해 심 Health.Damage로 넘긴다.
-        /// 보호막·무적·아군 공격 무시 같은 규칙은 심의 IDamageInterceptor가 그 안에서 거른다.
-        /// 피해를 주는 효과 구현(DamageEffectSO·DoT)이 Health.Damage 대신 이걸 호출한다.
+        /// 뷰에서 직접 피해를 넣는 얇은 호환 경로(환경·구 코드). 받는 배율(Effects)·보호막·무적·아군 무시는
+        /// 전부 심 Health.Damage 안의 인터셉터가 거른다 — 뷰는 아무 규칙도 갖지 않는다.
         /// </summary>
         public virtual void ReceiveDamage(float amount, EntityView source)
         {
             var h = Health;
-            if (h == null) return;
-
-            float final = amount * Effects.IncomingDamageMultiplier;
-            if (final <= 0f)
-            {
-                Debug.Log($"[EntityView] 데미지 무시됨 / final={final}");
-                return;
-            }
-
-            h.Damage(final, source != null ? source.Entity : null);
+            if (h == null || amount <= 0f) return;
+            h.Damage(amount, source != null ? source.Entity : null);
         }
 
         // 구 호환 — 출처·효과 없는 순수 피해. 새 코드는 ApplyEffects를 쓸 것.

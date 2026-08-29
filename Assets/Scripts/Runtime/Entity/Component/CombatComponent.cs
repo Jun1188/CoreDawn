@@ -61,11 +61,12 @@ namespace CoreDawn.Entities
                 lastAttackTime = Time.time;
 
                 // 공격 정의를 통째로 적용 — 공격 버프는 항목별로 구워서(affects 목록 대상만) 나간다
-                var effects = owner != null ? owner.Effects.BakeOutgoing(attackEffects) : attackEffects;
+                var effects = EffectSpecs.ToSim(attackEffects);
+                if (owner != null && owner.Effects != null) effects = owner.Effects.BakeOutgoing(effects);
                 // 근접은 명중점이 곧 대상 위치라 그것만으로는 방향이 나오지 않는다 —
                 // 때린 사람에게서 대상 쪽으로가 곧 "날아온 방향"이다.
                 Vector3 dir = owner != null ? target.GetPosition() - owner.GetPosition() : Vector3.zero;
-                target.ApplyEffects(effects, owner, target.GetPosition(), dir);
+                target.ApplyEffects(effects, owner != null ? owner.Entity : null, target.GetPosition(), dir);
 
                 // 이벤트 발생 (애니메이션, 사운드 등에서 구독)
                 OnAttackAction?.Invoke();

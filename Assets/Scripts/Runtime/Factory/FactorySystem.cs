@@ -161,7 +161,11 @@ namespace CoreDawn.Factory
             bool ownsEntity = host == null;
 
             var entity = host ?? World.Create(so.Faction, Geometry.CenterOf(origin, size));
-            if (ownsEntity) entity.Add(new Health(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
+            if (ownsEntity)
+            {
+                entity.Add(new Health(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
+                entity.Add(new Effects());                        // 받는 배율·지속 효과 — Building(보호막·아군 무시)보다 먼저 걸러진다
+            }
 
             var b = new Building(this, so, origin, rotSteps, portOverride, shape, ownsEntity);
             entity.Add(b);

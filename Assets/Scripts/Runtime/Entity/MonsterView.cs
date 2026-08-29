@@ -125,7 +125,6 @@ namespace CoreDawn.Entities
         {
             base.Update();
             // 효과 시스템(감속)은 아직 뷰에 있다 — 심 이동에 배율을 밀어 넣는다
-            if (movement != null) movement.SpeedMultiplier = Effects.MoveSpeedMultiplier;
         }
 
         // 심이 옮긴 위치·방향을 그린다. 군중 겹침 해소까지 끝난 뒤(시스템 Update)라 LateUpdate.

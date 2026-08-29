@@ -49,11 +49,20 @@ namespace CoreDawn.Entities
         }
 
         // 보스 두뇌가 "누가 때렸는지 모를 때"(타워·환경 피해) 상대로 삼는 플레이어 — 심 엔티티가 붙는 순간 알린다
-        // 보스 두뇌가 "누가 때렸는지 모를 때"(타워·환경 피해) 상대로 삼는 플레이어 — 심 엔티티가 붙는 순간 알린다
         protected override void OnEntityAttached()
         {
             base.OnEntityAttached();
             MonsterSystemHost.System.PlayerEntity = Entity;
+            if (Entity.Health != null) Entity.Health.Damaged += OnDamaged;   // 피격 연출 — 피해가 뷰를 거치지 않으므로 심 이벤트로 듣는다
+        }
+
+        // 죽은 경우에는 일반 피격 연출을 실행하지 않는다 (사망 연출은 HandleDeath)
+        void OnDamaged(float amount, SimEntity source)
+        {
+            if (amount <= 0f) return;
+            float newHealth = Health.CurrentHealth;
+            if (newHealth <= 0f) return;
+            GetComponent<PlayerController>()?.HandlePlayerDamaged(newHealth + amount, newHealth);
         }
 
         protected override void Update()
@@ -100,30 +109,6 @@ namespace CoreDawn.Entities
         {
             PlayerController controller = GetComponent<PlayerController>();
             controller.HandlePlayerDeath();
-        }
-
-        public override void ReceiveDamage(float amount, EntityView source)
-        {
-            if (IsDead)
-                return;
-
-            float oldHealth = Health.CurrentHealth;
-
-            base.ReceiveDamage(amount, source);
-
-            float newHealth = Health.CurrentHealth;
-
-            // 죽은 경우에는 일반 피격 연출을 실행하지 않음
-            if (newHealth > 0f && newHealth < oldHealth)
-            {
-                PlayerController controller =
-                    GetComponent<PlayerController>();
-
-                controller?.HandlePlayerDamaged(
-                    oldHealth,
-                    newHealth
-                );
-            }
         }
 
         private void OnDisable()

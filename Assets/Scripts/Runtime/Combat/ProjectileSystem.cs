@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using CoreDawn.Entities;
+using CoreDawn.Sim;
 using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.UI;
@@ -31,7 +32,7 @@ namespace CoreDawn.Combat
         public readonly float Lifetime;
         public readonly float Range;
         public readonly int TargetMask;        // 효과를 적용할 레이어. 0 = 판정 없는 연출탄 — 스윕도 생략(트레이서)
-        public readonly EffectEntry[] Effects; // 명중 시 무슨 일이 일어나는가 — 배율이 이미 구워진 최종 목록
+        public readonly Effect[] Effects;      // 명중 시 무슨 일이 일어나는가 — 심 효과, 배율이 이미 구워진 최종 목록
         public readonly EntityView Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
         public readonly float Gravity;         // 낙하 가속 — 0이면 직선탄, >0이면 포물선 (탄약의 성질)
         public readonly float ExplosionRadius; // 착탄 폭발 반경 — 0이면 단일 명중, >0이면 착탄점 Pulse
@@ -43,7 +44,7 @@ namespace CoreDawn.Combat
         public readonly GameObject HitEffect;  // 착탄/폭발 지점에서 재생할 파티클 (탄약의 hitEffectPrefab)
 
         public ProjectileShot(float speed, float lifetime, float range,
-                              EffectEntry[] effects, int targetMask, EntityView source,
+                              Effect[] effects, int targetMask, EntityView source,
                               float gravity = 0f, float explosionRadius = 0f,
                               FireMode mode = FireMode.Projectile, GameObject prefab = null,
                               int pierce = 0, Vector3? muzzle = null, GameObject hitEffect = null)
@@ -259,7 +260,7 @@ namespace CoreDawn.Combat
                 EntityView entity = h.collider.GetComponentInParent<EntityView>();
                 if (entity == null || entity.IsDead || !pulseSeen.Add(entity)) continue;
 
-                entity.ApplyEffects(shot.Effects, shot.Source, h.point, direction);
+                entity.ApplyEffects(shot.Effects, shot.Source != null ? shot.Source.Entity : null, h.point, direction);
                 PlayEffect(shot.HitEffect, h.point, Quaternion.identity); // 뚫린 대상마다 착탄 연출
                 applied++;
                 if (applied > shot.Pierce)
@@ -365,7 +366,7 @@ namespace CoreDawn.Combat
             EntityView entity = hit.GetComponentInParent<EntityView>();
             if (entity != null && !entity.IsDead)
             {
-                entity.ApplyEffects(shot.Effects, shot.Source, point, direction);
+                entity.ApplyEffects(shot.Effects, shot.Source != null ? shot.Source.Entity : null, point, direction);
                 if (shot.Source != null && shot.Source.GetComponent<PlayerController>() != null)
                 {
                     CombatEvents.OnPlayerHitEnemy?.Invoke();
@@ -401,7 +402,7 @@ namespace CoreDawn.Combat
                 if (!pulseSeen.Add(entity)) continue;   // 콜라이더 여러 개인 대상 중복 방지
 
                 // 오라·폭발은 방향이 없다 — 방향을 보는 효과가 원점 기준 방사형으로 대체한다
-                entity.ApplyEffects(shot.Effects, shot.Source, origin);
+                entity.ApplyEffects(shot.Effects, shot.Source != null ? shot.Source.Entity : null, origin);
                 applied++;
 
                 if (!playerHitTriggered && shot.Source != null && shot.Source.GetComponent<PlayerController>() != null)
@@ -455,21 +456,19 @@ namespace CoreDawn.Combat
         /// 탄약이 넉백을 직접 명시했으면(유탄 등 수동 튜닝) 그것을 존중하고 얹지 않는다.
         /// 배율(ScaleDamage·BakeOutgoing)이 구워진 뒤에 불러야 최종 피해에 비례한다.
         /// </summary>
-        public static EffectEntry[] AppendDamageKnockback(EffectEntry[] effects, EffectSO knockback, float perDamage)
+        public static Effect[] AppendDamageKnockback(Effect[] effects, EffectSpec knockback, float perDamage)
         {
             if (effects == null || knockback == null || perDamage <= 0f) return effects;
-
             float damage = 0f;
             for (int i = 0; i < effects.Length; i++)
             {
-                if (effects[i].effect is KnockbackEffectSO) return effects; // 명시 넉백 우선
-                if (effects[i].effect is DamageEffectSO) damage += effects[i].value;
+                if (effects[i].Spec.Kind == EffectKind.Knockback) return effects; // 명시 넉백 우선
+                if (effects[i].Spec.Kind == EffectKind.Damage) damage += effects[i].Value;
             }
             if (damage <= 0f) return effects;
-
-            var result = new EffectEntry[effects.Length + 1];
+            var result = new Effect[effects.Length + 1];
             effects.CopyTo(result, 0);
-            result[effects.Length] = new EffectEntry(knockback, damage * perDamage);
+            result[effects.Length] = new Effect(knockback, damage * perDamage);
             return result;
         }
 

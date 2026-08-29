@@ -34,6 +34,7 @@ namespace CoreDawn.Combat
 
         private List<WaveDataSO> waves = new List<WaveDataSO>();
         private WaveDataSO currentWave;
+        private CoreDawn.Sim.Effect[] currentWaveBuffs = System.Array.Empty<CoreDawn.Sim.Effect>();   // 웨이브 결정 시 한 번 변환
 
         // 파괴되지 않은 둥지 캐시
         private List<MonsterNest> activeNests = new List<MonsterNest>();
@@ -168,6 +169,7 @@ namespace CoreDawn.Combat
             {
                 currentWave = waves.FirstOrDefault(); // fallback
             }
+            currentWaveBuffs = currentWave != null ? EffectSpecs.ToSim(currentWave.buffs) : System.Array.Empty<CoreDawn.Sim.Effect>();
 
             Debug.Log($"[WaveSpawnManager] Day {day}, CoreTier {coreTier} -> 선택된 웨이브: {(currentWave != null ? currentWave.displayName : "None")}");
         }
@@ -375,8 +377,7 @@ namespace CoreDawn.Combat
             SnapToGround(spawnedMonster.gameObject);
 
             // 그날의 강약 — HP 덮어쓰기가 아니라 웨이브 버프(주는·받는 피해 배율). 영구 효과라 죽을 때까지 간다
-            if (currentWave != null && currentWave.buffs != null && currentWave.buffs.Length > 0)
-                spawnedMonster.Effects.ApplyAll(currentWave.buffs, null, position);
+            if (currentWaveBuffs.Length > 0) spawnedMonster.Effects?.Apply(currentWaveBuffs, null, position);
 
             return true;
         }

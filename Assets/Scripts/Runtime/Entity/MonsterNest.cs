@@ -321,20 +321,14 @@ namespace CoreDawn.Entities
             }
         }
 
-        // TakeDamage가 아니라 수렴점(ReceiveDamage)을 막는다 — 총알·몬스터 공격 같은
-        // 효과 경로는 TakeDamage를 거치지 않고 ReceiveDamage로 직행하기 때문이다.
-        public override void ReceiveDamage(float amount, EntityView source)
+        // 무적 규칙(보스·스폰 포인트가 살아 있는 동안, 데이터가 공격을 거부할 때)은 심의 피해 인터셉터로 건다 —
+        // 피해가 뷰를 거치지 않고 심 안에서 끝나므로(투사체 → Effects → Health) 뷰의 ReceiveDamage override로는 지킬 수 없다.
+        // 규칙의 주인(스폰 포인트 상태)은 아직 뷰라 술어만 꽂는다 — 둥지가 심으로 가면(5단계) 문도 심 모듈이 된다.
+        protected override void OnEntityAttached()
         {
-            // 데이터가 공격을 거부하면 스폰 포인트와 무관하게 아무 피해도 받지 않는다 —
-            // 건물의 isAttackable과 같은 규칙이다(BuildingEntity.ApplyEffects).
-            if (data != null && !data.isAttackable) return;
-
-            if (IsInvulnerable())
-            {
-                // Debug.Log("[MonsterNest] 둥지가 무적 상태입니다! (보스 또는 스폰포인트가 살아있음)");
-                return;
-            }
-            base.ReceiveDamage(amount, source);
+            base.OnEntityAttached();
+            if (!Entity.Has<DamageGate>())
+                Entity.Add(new DamageGate()).Blocks = _ => (data != null && !data.isAttackable) || IsInvulnerable();
         }
 
         private bool IsInvulnerable()

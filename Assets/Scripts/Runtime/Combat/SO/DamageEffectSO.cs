@@ -1,19 +1,12 @@
 using UnityEngine;
-using CoreDawn.Entities;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Combat
 {
-    /// <summary>
-    /// 피해 — 즉시 효과. 피해량 = ctx.Value (시전측 EffectEntry가 정한다).
-    /// 정의는 행동만 갖고 수치가 없다 — 모든 총·탄약·몬스터가 에셋 하나를 공유한다.
-    /// 방어 배율·저항 같은 받는 쪽 규칙은 수렴점(Entity.ReceiveDamage)에 얹는다.
-    /// </summary>
+    /// <summary>즉시 피해 — Value = 피해량. 받는 배율·보호막·아군 무시는 심 Health의 인터셉터가 거른다.</summary>
     [CreateAssetMenu(fileName = "Effect_Damage", menuName = "Combat/Effect/Damage")]
     public class DamageEffectSO : EffectSO
     {
-        public override void Apply(EntityView target, in EffectContext ctx)
-        {
-            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value, ctx.Source);
-        }
+        public override EffectKind Kind => EffectKind.Damage;
     }
 }

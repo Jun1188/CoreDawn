@@ -329,7 +329,7 @@ namespace CoreDawn.Sim
 - 리스크: 효과 SO의 `Apply` 서명을 지우면 팀원 브랜치의 새 효과 클래스가 깨진다(휴가 중 — PR 본문에 "새 효과는 Kind + 심 Effects 분기" 안내). 웨이브 버프 재적용(세이브 복원 후)은 기존에도 없던 것 — 범위 밖(기록만).
 
 - [x] 4a 설계 초안 (위) — 2026-08-29
-- [ ] 4b 심 효과 모델: `EffectKind/EffectSpec/Effect/Effects/EffectSystem` · `EffectSpecs` 브리지 · SO 데이터화 · `EffectController`/`EffectContext` 삭제 · 투사체·총·웨이브 버프 경로 전환 · Health 있는 엔티티마다 Effects
+- [x] 4b 심 효과 모델: `EffectKind/EffectSpec/Effect/Effects(IDamageInterceptor)/EffectSystem` · `EffectSpecs` 브리지 · SO 데이터화(`Kind`+`BuildSpec`) · `EffectController`/`EffectContext` 삭제 · 투사체(`ProjectileShot.Effects`는 심 `Effect[]`)·총·타워·웨이브 버프 경로 전환 · Health 있는 엔티티마다 Effects · `Movement`가 속도 배율을 심에서 읽음 · 둥지 무적은 `DamageGate` 인터셉터, 플레이어 피격 연출은 `Health.Damaged` — 2026-08-29. 검증: 엔티티 188 전부 Effects, 웨이브 버프 ×1.5가 `Health.Damage` 안에서 적용(4→6), DoT 1초/0.5초 = 2틱 −6, 넉백, 몬스터→플레이어 300→200, 오류 0
 - [ ] 4c 공격을 심에서: `Attack.Effects`·`TryAttack` 심 적용·`MarkPerformed` · `MonsterSpec.AttackEffects` · 몬스터 다리 제거 · 타워 → 심 Attack · `CombatComponent` 삭제 · `EntityView.OnAttackAction` 릴레이
 - [ ] 4d 플레이어: `PlayerSystem` · `Player → PlayerView`(CreatesOwnEntity=false, 위치 뷰→심) · `MonsterSystemHost → SimRunner` · BattleManager 부착 경로
 - [ ] 4e 둥지: 생성 주체를 심으로(WorldPopulator)

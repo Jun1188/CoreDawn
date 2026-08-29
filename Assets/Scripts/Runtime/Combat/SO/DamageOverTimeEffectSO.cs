@@ -1,12 +1,9 @@
 using UnityEngine;
-using CoreDawn.Entities;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Combat
 {
-    /// <summary>
-    /// 지속 피해(DoT) — duration 동안 tickInterval마다 ctx.Value만큼 피해 (화상·중독 등).
-    /// 틱당 피해는 시전측 EffectEntry가, 간격·지속·중첩(형태)은 이 정의가 갖는다.
-    /// </summary>
+    /// <summary>지속 피해 — Value = 틱당 피해. 받는 배율은 틱마다 심 Health 안에서 곱한다.</summary>
     [CreateAssetMenu(fileName = "Effect_DoT", menuName = "Combat/Effect/Damage Over Time")]
     public class DamageOverTimeEffectSO : DurationEffectSO
     {
@@ -14,11 +11,8 @@ namespace CoreDawn.Combat
         [Tooltip("틱 간격(초).")]
         public float tickInterval = 0.5f;
 
-        public override float TickInterval => Mathf.Max(0.05f, tickInterval);
+        public override EffectKind Kind => EffectKind.DamageOverTime;
 
-        public override void OnTick(EntityView target, in EffectContext ctx)
-        {
-            if (ctx.Value > 0f) target.ReceiveDamage(ctx.Value, ctx.Source); // 방어 배율은 수렴점에서 적용
-        }
+        public override float TickInterval => Mathf.Max(0.05f, tickInterval);
     }
 }
