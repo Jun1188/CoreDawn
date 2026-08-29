@@ -377,7 +377,8 @@ namespace CoreDawn.Sim
 - [ ] 5a-0 모듈 사전 조회(종류당 하나) · 인터셉터 체인을 `HealthModule`로(자기 등록) · 인터페이스 순회 폴백
 - [ ] 5a-1 스키마 v2 + `SimDatabase` + 컨버터 표 + 파생 id + 효과 value/duration + **제네릭 모듈 편집기** + 마이그레이션 + `SaveMigrations` id 변환
   - [x] 5a-1a 골격(2026-08-30): `Sim/Definitions/`에 `Def`·`EntityDef`·`ItemDef`(+Ammo·Weapon 모듈)·`RecipeDef`·`WaveDef`·`EffectSpec`(json)·`Effect`(value·duration·tickInterval)·엔티티 모듈 정의 22종·`SimSchema`(명시 표)·`ModuleDefConverter`·`SimDatabase`(파생 id, 키 규칙 검사, Resolve 패스, strict). `tools/migrate`: v1 `GameData.json` → `StreamingAssets/packs/coredawn/data.json`(entities 25·items 30·recipes 24·effects 7·waves 5, guns·tutorial는 원본 보관) + `tools/id-migration-v1-v2.json`(114개). 검증: 로드 오류 0, 참조 해석(벨트 cost·터렛 탄약·코어 티어·웨이브 몬스터·attack_up affects), `EntityDef.Assemble` 동작. 게임은 아직 SO로 돈다(플레이 회귀 통과)
-  - [ ] 5a-1b 제네릭 모듈 편집기(v2 json 편집, 정의 타입에서 폼 생성) · v1 json은 v2에서 역생성(임포터 퇴역 전까지)
+  - [x] 5a-1b-1 C# 내보내기(2026-08-30): `GameDataExporterV2`(python 마이그레이션의 C# 판, 구조 동일 검증 0 diff)가 GameData 에디터 **저장 시 자동 실행** — v1(편집 형식) → v2 `packs/coredawn/data.json`(게임·모드 형식) + id 변환표, 내보낸 결과를 `SimDatabase`로 즉시 검증(깨진 참조를 저장 시점에 잡음)
+  - [ ] 5a-1b-2 편집기 방향(사용자 결정 대기): A) 기존 편집기가 편집 UI로 남고 v2는 저장 시 생성(SO 퇴역 후 v2 직접 편집으로 전환) / B) 정의 타입에서 폼을 만드는 제네릭 v2 편집기를 지금 작성하고 옛 심 관련 탭 퇴역
   - [ ] 5a-1c `SaveMigrations` id 변환표 적용
 - [ ] 5a-2 심 모듈화: 정의에서 조립(공장·몬스터·플레이어), 건물 행동 → 모듈, `InventoryModule`·`CrafterModule`(수제작·조합기 통합, `InventoryPanelView.CraftOnce` 제거)·`ResourceDeposit`(광맥 → 엔티티)·`Loot`·`CoreModule`·`TowerBrain`·`NestModule`, 공장을 `Sim/Factory/`로, `IInteractiveBehavior.Interact`는 뷰 등록부로
 - [ ] 5a-3 뷰 카탈로그(id → 프리팹·아이콘) · SO 삭제 · 인벤토리·UI·배치·세이브가 `Def`+id로

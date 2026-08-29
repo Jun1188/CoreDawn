@@ -86,6 +86,9 @@ namespace CoreDawn.EditorTools
             foreach (var t in tabs) t.SyncToRoot();   // 그래프처럼 자체 모델을 가진 탭이 root 에 반영한다
             File.WriteAllText(JsonPath, JsonConvert.SerializeObject(root, JsonSettings) + "\n");
             AssetDatabase.ImportAsset(JsonPath);
+            // 심이 읽는 v2 팩 data.json은 여기서 생성된다 — v1은 편집 형식, v2는 게임·모드 형식(편집 정본 하나, 파생 산출물 둘)
+            try { Debug.Log(GameDataExporterV2.Export()); }
+            catch (System.Exception e) { Debug.LogError("[v2 export] 실패: " + e.Message); }
             foreach (var t in tabs) t.SaveExtraFiles(import);
             hasUnsavedChanges = false;
             if (import) GameDataImporter.ImportAll();

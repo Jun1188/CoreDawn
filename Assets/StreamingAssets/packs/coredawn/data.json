@@ -2605,7 +2605,7 @@
         {
           "type": "AuraEmitter",
           "radius": 7.0,
-          "interval": 5.0,
+          "interval": 4.9999999254941949,
           "effects": []
         },
         {
