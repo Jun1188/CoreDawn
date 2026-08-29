@@ -31,7 +31,7 @@ namespace CoreDawn.Managers
         [SerializeField] float coreHealInterval = 1f;
 
         float _playerTimer, _coreTimer, _rescanTimer;
-        Player _player;
+        PlayerView _player;
         Building _core;
         World _world;
 
@@ -74,7 +74,7 @@ namespace CoreDawn.Managers
 
         void Rescan()
         {
-            if (_player == null || _player.IsDead) _player = FindFirstObjectByType<Player>();
+            if (_player == null || _player.IsDead) _player = FindFirstObjectByType<PlayerView>();
             if (_world == null) _world = FindFirstObjectByType<World>();
             if (_core == null || _core.IsRemoved || CoreHealth == null || CoreHealth.IsDead)
             {

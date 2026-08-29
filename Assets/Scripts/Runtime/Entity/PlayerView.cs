@@ -7,8 +7,9 @@ using SimEntity = CoreDawn.Sim.Entity;
 
 namespace CoreDawn.Entities
 {
-    // 플레이어 엔티티 — 조작/건설(PlayerController, PlacementSystem 등)은 기존 시스템이
-    // 담당하고, 여기서는 엔티티 측면(HP, 몬스터 감지 콜백)만 다룬다.
+    // 플레이어 뷰 — 심(PlayerSystem)이 만든 플레이어 엔티티를 받아 그린다. 조작/건설(PlayerController, PlacementSystem 등)은
+    // 기존 시스템이 담당하고, 여기서는 엔티티 측면(HP 이벤트 릴레이, 몬스터 감지 콜백, 위치 미러)만 다룬다.
+    // 물리 이동은 뷰(CharacterController)가 굴리고 위치를 심으로 밀어 넣는다 — 서버 권위 하이브리드 결정.
     //
     // 길찾기 최적화의 핵심: 몬스터 N마리가 각자 플레이어를 스캔하는 대신,
     // 플레이어 하나가 센서 범위의 몬스터를 찾아 OnDetectedByPlayer / OnLostByPlayer로
@@ -16,8 +17,14 @@ namespace CoreDawn.Entities
     //
     // 감지는 PhysX(OverlapSphere·레이어)가 아니라 심의 반경 질의(EntityWorld.QueryRadius, 편=Monster)다 —
     // 레이어는 물리·렌더링의 도구이고, 헤드리스 심에는 콜라이더가 없다.
-    public class Player : EntityView
+    public class PlayerView : EntityView
     {
+        // 심(PlayerSystem.Spawn)이 먼저 만든다 — BattleManager가 붙여 준 것을 받는다
+        protected override bool CreatesOwnEntity => false;
+        protected override Faction Faction => Faction.Player;
+        // 이동은 뷰가 굴린다 — 매 프레임 위치를 심으로 미러(몬스터는 반대 방향)
+        protected override bool PushesPositionToSim => true;
+
         [Header("감지")]
         [Tooltip("이 반경(m) 안의 몬스터를 감지한다. BattleManager가 런타임 부착 시 덮어쓴다.")]
         [SerializeField] private float detectionRange = 10f;
@@ -38,12 +45,19 @@ namespace CoreDawn.Entities
         private readonly HashSet<MonsterView> seenThisScan = new HashSet<MonsterView>();
         private readonly List<MonsterView> removeBuffer = new List<MonsterView>();
 
-        // 보스 두뇌가 "누가 때렸는지 모를 때"(타워·환경 피해) 상대로 삼는 플레이어 — 심 엔티티가 붙는 순간 알린다
+        // 보스 두뇌가 보는 PlayerEntity는 SimRunner가 PlayerSystem.Spawned에서 이어 준다 — 뷰는 이벤트만 듣는다
         protected override void OnEntityAttached()
         {
             base.OnEntityAttached();
-            MonsterSystemHost.System.PlayerEntity = Entity;
             if (Entity.Health != null) Entity.Health.Damaged += OnDamaged;   // 피격 연출 — 피해가 뷰를 거치지 않으므로 심 이벤트로 듣는다
+        }
+
+        // 뷰가 사라지면(씬 전환) 심의 플레이어도 내린다 — 죽음(부활 가능)과는 다르다. 종료 중엔 심을 건드리지 않는다
+        protected override void OnDestroy()
+        {
+            var e = Entity;
+            base.OnDestroy();
+            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimRunner.Players.Despawn();
         }
 
         // 죽은 경우에는 일반 피격 연출을 실행하지 않는다 (사망 연출은 HandleDeath)

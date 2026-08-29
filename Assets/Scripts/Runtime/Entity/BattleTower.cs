@@ -28,7 +28,7 @@ namespace CoreDawn.Entities
 
         // 심 공격 모듈 — 사거리·쿨다운의 정본. 심 배치 타워는 FactorySystem.Place가 TowerDataSO에서 넣는다.
         private Attack attack => Entity?.Get<Attack>();
-        private static float Now => MonsterSystemHost.System.Now;   // 심 시계 — 몬스터와 같은 시계로 쿨다운을 센다
+        private static float Now => SimRunner.Monsters.Now;   // 심 시계 — 몬스터와 같은 시계로 쿨다운을 센다
         private float AttackRange => attack != null ? attack.Range : 0f;
         private bool CanAttackNow() => attack != null && attack.CanAttack(Now);
         // 즉시 적용 폴백(탄 정의 없음) — 효과는 심 Attack.Effects(= fallbackAttackEffects)가 심 안에서 건다

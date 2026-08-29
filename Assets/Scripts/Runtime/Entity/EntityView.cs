@@ -179,10 +179,13 @@ namespace CoreDawn.Entities
 
         protected virtual void Update() { }   // 효과 틱은 심(EffectSystem)이 돌린다
 
-        // 위치 동기 — 물리는 뷰가 굴리고 심은 결과를 받는다. 건물은 움직이지 않으니 뷰 우선 개체만.
+        /// <summary>뷰 → 심 위치 미러를 하는가. 기본은 뷰 우선 개체(자기가 만든 엔티티). 심이 만들었지만 물리는 뷰가 굴리는 플레이어가 켠다.</summary>
+        protected virtual bool PushesPositionToSim => ownsEntity;
+
+        // 위치 동기 — 물리는 뷰가 굴리고 심은 결과를 받는다. 건물은 움직이지 않고, 몬스터는 반대 방향(심 → 뷰).
         protected virtual void LateUpdate()
         {
-            if (ownsEntity && Entity != null) Entity.Position = transform.position;
+            if (PushesPositionToSim && Entity != null) Entity.Position = transform.position;
         }
 
         /// <summary>
@@ -247,6 +250,9 @@ namespace CoreDawn.Entities
         private void OnApplicationQuit() => quitting = true;
 
         // 뷰가 사라지면 뷰가 만든 심 엔티티도 같이 — 하위 클래스가 OnDestroy를 쓰면 반드시 base를 부를 것
+        /// <summary>앱 종료 중인가 — 종료 시 파괴되는 뷰가 심을 건드리지 않게(정적 심이 먼저 사라질 수 있다). 하위 뷰(몬스터·플레이어)가 쓴다.</summary>
+        protected static bool ApplicationQuitting => quitting;
+
         protected virtual void OnDestroy()
         {
             if (Entity == null) return;

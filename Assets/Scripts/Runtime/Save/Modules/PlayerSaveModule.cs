@@ -62,7 +62,7 @@ namespace CoreDawn.Save
                 HotbarIndex = HotbarController.Instance != null ? HotbarController.Instance.CurrentHotbarIndex : 0,
             };
 
-            var entity = controller.GetComponent<Player>();
+            var entity = controller.GetComponent<PlayerView>();
             if (entity != null)
             {
                 dto.HpMax = entity.Health.MaxHealth;
@@ -95,7 +95,7 @@ namespace CoreDawn.Save
                 controller.RestoreTransform(dto.Position, dto.Yaw);
                 if (controller.CameraRig != null) controller.CameraRig.RestorePitch(dto.Pitch);
 
-                var entity = controller.GetComponent<Player>();
+                var entity = controller.GetComponent<PlayerView>();
                 if (entity != null && dto.HpMax > 0f)
                     entity.Health.RestoreState(dto.HpMax, dto.HpCurrent, isDead: false);
             }

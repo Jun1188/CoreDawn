@@ -67,7 +67,7 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   HP, faction, "is this the core", footprint and damage rules (`IDamageInterceptor`) live in the sim.
 - A monster is an `Entity` with `Health` · `Movement` · `Attack` · `MonsterBrain` modules, built by
   `MonsterSystem.Spawn(MonsterSpec, …)` (phase 3, 2026-08-29). `MonsterSpawner.Spawn(data, pos, rot, parent)` is the
-  single gate (waves, nest bosses, save restore): sim entity first, prefab view attached after. `MonsterSystemHost`
+  single gate (waves, nest bosses, save restore): sim entity first, prefab view attached after. `SimRunner`
   is the transitional static access point + runner (like `SimHost.World`).
 - Views (`EntityView`, `BuildingView`, `MonsterView`, …) hold `Entity` and relay its events; `MonsterView` draws the
   sim position/facing in `LateUpdate`. The player and nests still create their own entity in `Awake` — until phase 4.

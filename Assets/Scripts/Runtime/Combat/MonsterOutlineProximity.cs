@@ -57,7 +57,7 @@ namespace CoreDawn.Combat
             float r2 = radius * radius;
 
             // 살아 있는 몬스터 — 거리로 켜고 끈다. 죽어가는 것은 끈다(시체에 테두리가 남지 않게)
-            var monsters = MonsterSystemHost.System.Monsters;
+            var monsters = SimRunner.Monsters.Monsters;
             for (int i = 0; i < monsters.Count; i++)
             {
                 var m = EntityViewRegistry.ViewOf<MonsterView>(monsters[i]);

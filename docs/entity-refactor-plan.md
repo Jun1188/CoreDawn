@@ -331,7 +331,7 @@ namespace CoreDawn.Sim
 - [x] 4a 설계 초안 (위) — 2026-08-29
 - [x] 4b 심 효과 모델: `EffectKind/EffectSpec/Effect/Effects(IDamageInterceptor)/EffectSystem` · `EffectSpecs` 브리지 · SO 데이터화(`Kind`+`BuildSpec`) · `EffectController`/`EffectContext` 삭제 · 투사체(`ProjectileShot.Effects`는 심 `Effect[]`)·총·타워·웨이브 버프 경로 전환 · Health 있는 엔티티마다 Effects · `Movement`가 속도 배율을 심에서 읽음 · 둥지 무적은 `DamageGate` 인터셉터, 플레이어 피격 연출은 `Health.Damaged` — 2026-08-29. 검증: 엔티티 188 전부 Effects, 웨이브 버프 ×1.5가 `Health.Damage` 안에서 적용(4→6), DoT 1초/0.5초 = 2틱 −6, 넉백, 몬스터→플레이어 300→200, 오류 0
 - [x] 4c 공격을 심에서: `Attack.Effects`·`TryAttack`이 대상 `Effects`에 직접 적용·`MarkPerformed`(위임 공격) · `MonsterSpec.AttackEffects` · 몬스터 다리(`AttackRequested → CombatComponent`) 제거 · 타워는 `FactorySystem.Place`가 `TowerDataSO`에서 넣은 심 `Attack`(사거리·연사·심 시계) · `CombatComponent` 삭제(타워 프리팹 8개의 폴백 `combat.attackEffects` → `fallbackAttackEffects`로 YAML 이전) · `EntityView.OnAttackAction`은 심 `Attack.Attacked` 릴레이 — 2026-08-29. 검증: 몬스터 12 전부 스펙 효과 보유·연출 이벤트 배선, 건물 피해 3채, 플레이어 300→260, 타워 엔티티에 Attack(36m/0.5s), 오류 0
-- [ ] 4d 플레이어: `PlayerSystem` · `Player → PlayerView`(CreatesOwnEntity=false, 위치 뷰→심) · `MonsterSystemHost → SimRunner` · BattleManager 부착 경로
+- [x] 4d 플레이어: `PlayerSystem`(Spawn/Despawn/Spawned·Despawned, 플레이어는 하나) · `Player → PlayerView`(CreatesOwnEntity=false, `PushesPositionToSim`로 뷰→심 위치 미러, OnDestroy가 Despawn) · `MonsterSystemHost → SimRunner`(`Monsters`·`Effects`·`Players`, 러너가 효과→몬스터 순으로 틱; `Players.Spawned`가 `Monsters.PlayerEntity`를 잇는다) · BattleManager가 `Players.Spawn(playerMaxHealth)` 뒤 `AttachEntity` · `ApplicationQuitting`을 EntityView로 — 2026-08-29. 검증: 심 플레이어 Faction.Player 300/300·Effects, 뷰=심·등록부·두뇌 참조 일치, 텔레포트 후 위치차 0.00, 피해 300→240, 오류 0
 - [ ] 4e 둥지: 생성 주체를 심으로(WorldPopulator)
 - [ ] 4f 문서·검사 스크립트 → PR
 

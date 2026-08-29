@@ -244,7 +244,7 @@ namespace CoreDawn.Combat
         /// 반경 값을 소유한 둥지 쪽에 있고, 자리마다 포인트별 몬스터 최대 HP가 실려 온다.
         /// null이면 모든 활성 포인트를 쓴다(레거시 호출).
         /// </summary>
-        public void SpawnNestDefenders(MonsterNest nest, Player target, int amount,
+        public void SpawnNestDefenders(MonsterNest nest, PlayerView target, int amount,
                                        List<MonsterNest.DefenderSpawnSlot> spawnSlots = null,
                                        MonsterView escortBoss = null)
         {

@@ -62,13 +62,13 @@ namespace CoreDawn.Entities
         /// <param name="source">사격 주체. 플레이어가 아니면(포탑 등) 아무것도 하지 않는다.</param>
         public static void Report(Vector3 eye, Vector3 aimDir, EntityView source)
         {
-            var attacker = source as Player;
+            var attacker = source as PlayerView;
             if (!attacker.IsValidTarget()) return;
 
             if (aimDir.sqrMagnitude < 1e-6f) return;
             Vector3 aim = aimDir.normalized;
 
-            var monsters = MonsterSystemHost.System.Monsters;
+            var monsters = SimRunner.Monsters.Monsters;
             for (int i = 0; i < monsters.Count; i++)
             {
                 MonsterView boss = EntityViewRegistry.ViewOf<MonsterView>(monsters[i]);

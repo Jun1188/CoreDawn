@@ -97,7 +97,7 @@ namespace CoreDawn.Entities
         // 둥지마다 OverlapSphere를 돌리지 않는다 — 플레이어는 하나뿐이라 참조를 캐시해 두고
         // 거리 계산(산술)만으로 감지한다. Monster가 "플레이어가 몬스터를 찾아 콜백"으로
         // 개체별 물리 쿼리를 없앤 것과 같은 방향의 최적화다.
-        private Player cachedPlayer;
+        private PlayerView cachedPlayer;
         private float nextPlayerSearch;   // 플레이어 사망·교체 대비 저빈도 재탐색 타이머
 
         /// <summary>
@@ -110,13 +110,13 @@ namespace CoreDawn.Entities
             engagementZone != null ? engagementZone.MaximumRange : daySpawnMaxRange)) + MaxSpawnPointOffset;
 
         /// <summary>유효한 플레이어 참조. 캐시가 죽으면 1초에 한 번만 다시 찾는다.</summary>
-        private Player FindPlayer()
+        private PlayerView FindPlayer()
         {
             if (cachedPlayer != null && cachedPlayer.IsValidTarget()) return cachedPlayer;
             if (Time.time < nextPlayerSearch) return null;
 
             nextPlayerSearch = Time.time + 1f;
-            cachedPlayer = FindFirstObjectByType<Player>();
+            cachedPlayer = FindFirstObjectByType<PlayerView>();
             return cachedPlayer != null && cachedPlayer.IsValidTarget() ? cachedPlayer : null;
         }
 
@@ -203,7 +203,7 @@ namespace CoreDawn.Entities
         /// 다음으로 가까운 안 보이는 포인트로 넘어간다(눈앞 팝인 방지). 전부 보이면
         /// 플레이어에게서 가장 먼 포인트를 쓴다 — 스폰 자체는 절대 멈추지 않는다.
         /// </summary>
-        private List<DefenderSpawnSlot> GetBossReinforcementSlots(MonsterView boss, Player player)
+        private List<DefenderSpawnSlot> GetBossReinforcementSlots(MonsterView boss, PlayerView player)
         {
             var result = new List<DefenderSpawnSlot>();
             if (spawnPoints == null || boss == null) return result;
@@ -363,7 +363,7 @@ namespace CoreDawn.Entities
             if (IsDestroyed) return;
 
             // 물리 쿼리 없는 감지 — 캐시한 플레이어와의 거리(산술)로만 판정한다.
-            Player player = FindPlayer();
+            PlayerView player = FindPlayer();
 
             // 보스가 교전 중이면 거리 규칙 전부(SensorRange·CanSpawnFor·daySpawnMaxRange)를
             // 우회한다. 대장이 맞고 있는데 "플레이어가 둥지에서 멀다"는 이유로 지원군을 안 보내는 건
@@ -656,7 +656,7 @@ namespace CoreDawn.Entities
         ///     거리와 무관하게 그 포인트만 멈춘다 — 눈앞 팝인 방지.
         ///     화면 밖(옆·뒤)이거나 벽·절벽에 가려져 있으면 계속 나온다.
         /// </summary>
-        public List<DefenderSpawnSlot> GetDaySpawnableSlots(Player player)
+        public List<DefenderSpawnSlot> GetDaySpawnableSlots(PlayerView player)
         {
             var result = new List<DefenderSpawnSlot>();
             if (player == null) return result;
@@ -695,7 +695,7 @@ namespace CoreDawn.Entities
         ///   ② 시야각 안이라면, 벽·절벽에 가려져 있지는 않은가(포인트 눈높이 → 플레이어 머리 레이캐스트)
         /// 몬스터·플레이어 콜라이더는 벽이 아니므로 마스크에서 뺀다.
         /// </summary>
-        private static bool IsOnPlayerScreen(Vector3 spawnPos, Player player, Camera eye)
+        private static bool IsOnPlayerScreen(Vector3 spawnPos, PlayerView player, Camera eye)
         {
             Vector3 probe = spawnPos + Vector3.up * 1.2f;   // 스폰될 몬스터의 몸통 높이
 

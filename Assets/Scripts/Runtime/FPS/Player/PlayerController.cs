@@ -150,7 +150,7 @@ namespace CoreDawn.FPS
         [Header("Death & Respawn")]
         [Tooltip("부활할 코어의 위치. 씬에 있는 코어 오브젝트를 할당하세요.")]
         public float respawnTime = 3f;
-        private Player playerEntity;
+        private PlayerView playerEntity;
 
         [Header("Damage Vignette")]
         private Vignette vignette;
@@ -1124,7 +1124,7 @@ namespace CoreDawn.FPS
             if (playerEntity != null)
                 return;
 
-            playerEntity = GetComponent<Player>();
+            playerEntity = GetComponent<PlayerView>();
 
         }
 

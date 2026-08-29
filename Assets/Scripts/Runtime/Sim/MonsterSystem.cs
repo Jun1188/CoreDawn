@@ -6,7 +6,7 @@ namespace CoreDawn.Sim
 {
     /// <summary>
     /// 몬스터 시스템 — 몬스터 엔티티의 생성·소멸과 틱 순서(두뇌 → 이동 → 군중 겹침 해소)를 소유한다.
-    /// FactorySystem이 건물에 대해 하는 역할을 몬스터에 대해 한다. 구동은 뷰 쪽 러너(MonsterSystemHost)가 매 프레임 Tick.
+    /// FactorySystem이 건물에 대해 하는 역할을 몬스터에 대해 한다. 구동은 뷰 쪽 러너(SimRunner)가 매 프레임 Tick.
     ///
     /// 시계(<see cref="Now"/>)는 dt 누적 — 두뇌의 쿨다운·타임아웃이 Time.time 대신 이것을 본다.
     /// 고정 틱·월드 시계 통합은 5단계.

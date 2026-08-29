@@ -66,11 +66,9 @@ namespace CoreDawn.Entities
             if (e != null) e.Removed -= OnEntityRemoved;
             base.OnDestroy();
             // 뷰가 먼저 사라지면(사망 연출 끝·씬 언로드) 심 엔티티도 치운다 — 심이 지운 경우(복귀 소멸)는 이미 제거돼 있다
-            if (e != null && !e.IsRemoved && !ApplicationQuitting) MonsterSystemHost.System.Despawn(e);
+            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimRunner.Monsters.Despawn(e);
         }
 
-        static bool ApplicationQuitting;
-        void OnApplicationQuit() => ApplicationQuitting = true;
 
         // 심이 먼저 지웠다(복귀 도착 소멸 등) — 껍데기도 사라진다
         void OnEntityRemoved(SimEntity _)
@@ -127,10 +125,10 @@ namespace CoreDawn.Entities
         // ── 옛 표면 → 두뇌 ──────────────────────────────────────────
 
         /// <summary>보스를 각성시킨다 — 피해·명백한 적의(빗맞은 사격). attacker가 null이면 플레이어를 찾는다.</summary>
-        public void Provoke(Player attacker) => brain?.Provoke(attacker != null ? attacker.Entity : null);
+        public void Provoke(PlayerView attacker) => brain?.Provoke(attacker != null ? attacker.Entity : null);
 
         // 플레이어 센서 콜백 — 플레이어가 자기 범위의 몬스터를 찾아 부른다
-        public void OnDetectedByPlayer(Player player)
+        public void OnDetectedByPlayer(PlayerView player)
         {
             if (player == null || player.Entity == null) return;
             brain?.OnDetected(player.Entity);
@@ -143,11 +141,11 @@ namespace CoreDawn.Entities
         /// <summary>보스로 배선한다. 교전 반경의 중심은 지금 서 있는 자리다.</summary>
         public void SetAsBoss(NestEngagementZone zone) => brain?.SetAsBoss(ZoneOf(zone));
 
-        public void SetAsNestDefender(Player target) => SetAsNestDefender(target, null, null);
-        public void SetAsNestDefender(Player target, NestEngagementZone zone) => SetAsNestDefender(target, zone, null);
+        public void SetAsNestDefender(PlayerView target) => SetAsNestDefender(target, null, null);
+        public void SetAsNestDefender(PlayerView target, NestEngagementZone zone) => SetAsNestDefender(target, zone, null);
 
         /// <summary>둥지 방어자로 배선한다. escort(보스전 지원군)가 있으면 거리 규칙을 건너뛰고 보스의 교전에 종속된다.</summary>
-        public void SetAsNestDefender(Player target, NestEngagementZone zone, MonsterView escort)
+        public void SetAsNestDefender(PlayerView target, NestEngagementZone zone, MonsterView escort)
             => brain?.SetAsNestDefender(target != null ? target.Entity : null, ZoneOf(zone), escort != null ? escort.Entity : null);
 
         /// <summary>세이브 복원 전용 — 정체성(보스/방어자)과 각성 여부를 되돌린다.</summary>
