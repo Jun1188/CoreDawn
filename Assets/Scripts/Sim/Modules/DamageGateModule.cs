@@ -13,6 +13,9 @@ namespace CoreDawn.Sim
         /// <summary>(때린 엔티티) → 막는가. null이면 막지 않는다.</summary>
         public Func<Entity, bool> Blocks { get; set; }
 
+        protected internal override void OnAttach() => Owner.Health?.AddInterceptor(this);
+        protected internal override void OnDetach() => Owner.Health?.RemoveInterceptor(this);
+
         public float Intercept(float amount, Entity source) => Blocks != null && Blocks(source) ? 0f : amount;
     }
 }

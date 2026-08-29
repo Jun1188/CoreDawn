@@ -260,8 +260,11 @@ namespace CoreDawn.Sim
         /// <summary>받는 피해 배율(방어 디버프·웨이브 버프) — Health.Damage의 인터셉터 체인에서 곱한다.</summary>
         public float Intercept(float amount, Entity source) => amount * IncomingDamageMultiplier;
 
+        protected internal override void OnAttach() => Owner.Health?.AddInterceptor(this);   // Health가 뒤에 붙으면 Health가 훑어 등록한다
+
         protected internal override void OnDetach()
         {
+            Owner.Health?.RemoveInterceptor(this);
             active.Clear();
             Recompute();
         }
