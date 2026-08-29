@@ -23,7 +23,7 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewNest", menuName = "Factory/Buildings/Nest")]
     public class NestDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(Building building) => new NestBehavior();
+        public override IBuildingBehavior CreateBehavior(BuildingModule building) => new NestBehavior();
 
         /// <summary>둥지는 몬스터 편. 보통은 MonsterNest 뷰의 엔티티에 얹히므로(Place host) 이 값은 뷰 없는 배치에서만 쓰인다.</summary>
         public override Faction Faction => Faction.Monster;
@@ -31,13 +31,4 @@ namespace CoreDawn.Data
 
     // ─── 행동 ──────────────────────────────────────────────────────
 
-    /// <summary>
-    /// 아무 일도 하지 않는 행동. 둥지는 아이템을 주고받지 않으므로 심의 틱에 걸릴 일이 없다
-    /// (Dirty 큐에 들어가지 않으면 Tick 자체가 호출되지 않는다).
-    /// </summary>
-    public class NestBehavior : IBuildingBehavior
-    {
-        public void Tick(float dt) { }
-        public void OnAfterPlaced() { }
-    }
 }

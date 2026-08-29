@@ -418,11 +418,11 @@ namespace CoreDawn.Tests
                 _sim.Advance(0.1f);
         }
 
-        static int StoredCount(Building store, ItemDataSO item)
+        static int StoredCount(BuildingModule store, ItemDataSO item)
             => store.Input.CountOf(item) + store.Output.CountOf(item);
 
         /// <summary>막힌 체인 검증용: 마이너 출력 + 벨트 입력 버퍼 + 벨트 위 아이템 총합.</summary>
-        int SystemTotal(Building miner, Building belt)
+        int SystemTotal(BuildingModule miner, BuildingModule belt)
         {
             int total = miner.Output.CountOf(_ore) + belt.Input.CountOf(_ore);
             var seg = _sim.Belts.GetSegment(belt);
@@ -432,10 +432,10 @@ namespace CoreDawn.Tests
 
         // ─── 배치/SO 생성 헬퍼 (심 직접 호출 — 뷰/GameObject 불필요) ──
 
-        Building Place(BuildingDataSO so, int x, int y, int rot = 0)
+        BuildingModule Place(BuildingDataSO so, int x, int y, int rot = 0)
             => _sim.Place(so, new Vector2Int(x, y), rot);
 
-        Building PlaceBelt(int x, int y, int rot, BeltShape shape)
+        BuildingModule PlaceBelt(int x, int y, int rot, BeltShape shape)
             => _sim.Place(Belt(), new Vector2Int(x, y), rot, BeltDataSO.BuildPorts(shape, rot));
 
         BuildingDataSO Miner(float ptime = 0.2f, int outBuf = 5)

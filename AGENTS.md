@@ -25,21 +25,21 @@ Every script has a `CoreDawn.*` namespace decided by its folder (`LevelUp` is th
 name — never use it). New files go in the namespace of their folder:
 
 Top-level folders are **layers** (the phase-5 asmdef boundaries); inside a layer, **folder name = last segment of the
-namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Presentation/`) is not part of the namespace.
+namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Presentation/`) is not part of the namespace. **Entity module types end in `Module`** (`HealthModule`, `EffectsModule`, `AttackModule`, `BuildingModule` …); the property that exposes one may keep the short name (`Entity.Health`, `EntityView.Effects`, `BuildingView.Building`).
 
 | Folder (`Assets/Scripts/…`) | Namespace | What lives there |
 |---|---|---|
-| `Sim` | `CoreDawn.Sim` | plain C# simulation — entities, modules, systems, grid geometry, navigation interface |
+| `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces, `Modules/` = entity modules (`*Module`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
 | `Data/**` | `CoreDawn.Data` | every ScriptableObject definition + databases + `EffectEntry`/`EffectSpecs` (items, buildings, recipes, effects, monsters, waves, maps, tutorial, weapons) |
-| `Game/Factory` | `CoreDawn.Factory` | FactorySystem, Building, belts, processors, bootstrap/bridge |
-| `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles, HostileIntentProbe |
+| `Game/Factory` | `CoreDawn.Factory` | FactorySystem, BuildingModule, belts, processors, bootstrap/bridge; `Behaviors/` = building behaviors (`*Behavior`, `IBuildingBehavior`) split out of the data SOs |
+| `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
 | `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
 | `Game/Placement` | `CoreDawn.Placement` | build mode, placement, port overlay |
 | `Game/Worlds` | `CoreDawn.Worlds` | World, WorldPopulator, tile rules |
-| `Game/DayTime` · `Game/Save` · `Game/Interaction` · `Game/Inventories` · `Game/Tutorial` · `Game/Pings` · `Game/Managers` · `Game/Sound` · `Game/Settings` · `Game/ResourceNodes` | `CoreDawn.<FolderName>` | gameplay systems and managers |
-| `Presentation/Entities` | `CoreDawn.Entities` | views: EntityView, BuildingView, MonsterView, PlayerView, MonsterNest, BattleTower, registry, visual controllers |
+| `Game/DayTime`(DayCycle·TimeManager·DayRegenSystem) · `Game/Save` · `Game/Interaction` · `Game/Inventories` · `Game/Tutorial` · `Game/Pings` · `Game/Managers`(GameManager·GameBootstrap) · `Game/Sound`(SoundManager + audio settings) · `Game/Settings` · `Game/ResourceNodes` | `CoreDawn.<FolderName>` | gameplay systems and managers |
+| `Presentation/Entities` | `CoreDawn.Entities` | views: EntityView, BuildingView, MonsterView, PlayerView, NestView, TowerView, registry, visual controllers. **Entity views end in `View`** |
 | `Presentation/Visuals` | `CoreDawn.Visuals` | VFX/animation/outline presentation (pooled effects, monster animation, outlines) |
-| `Presentation/UI` | `CoreDawn.UI` | UITK views, uxml/uss, health bars, HUDs |
+| `Presentation/UI` | `CoreDawn.UI` | UITK views, uxml/uss, health bars, HUDs, `UIPopup`/`UICursor` bases |
 | `Presentation/FPS` · `Presentation/Inputs` · `Presentation/DayTime` | `CoreDawn.FPS` · `CoreDawn.Inputs` · `CoreDawn.DayTime` | player controller/weapons/camera, input, lighting/skybox views |
 | `Editor` | `CoreDawn.EditorTools` | editor tooling |
 | `Tests` | `CoreDawn.Tests` | tests |
@@ -59,31 +59,31 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 ## Sim vs view (since 2026-08-28, refactor phase 2)
 
 - `Assets/Scripts/Runtime/Sim` (`CoreDawn.Sim`) is the authoritative simulation: `Entity`
-  (id · faction · position · modules), `Health`, `EntityWorld`. Plain C#, no `UnityEngine.Object`.
-- A building is an `Entity` with a `Building` module (`CoreDawn.Factory`). `FactorySystem.Place`
-  creates the entity, its `Health` (from `BuildingDataSO.maxHp`) and the module; views only follow.
+  (id · faction · position · modules), `HealthModule`, `EntityWorld`. Plain C#, no `UnityEngine.Object`.
+- A building is an `Entity` with a `BuildingModule` module (`CoreDawn.Factory`). `FactorySystem.Place`
+  creates the entity, its `HealthModule` (from `BuildingDataSO.maxHp`) and the module; views only follow.
   HP, faction, "is this the core", footprint and damage rules (`IDamageInterceptor`) live in the sim.
-- A monster is an `Entity` with `Health` · `Movement` · `Attack` · `MonsterBrain` modules, built by
+- A monster is an `Entity` with `HealthModule` · `MovementModule` · `AttackModule` · `MonsterBrainModule` modules, built by
   `MonsterSystem.Spawn(MonsterSpec, …)` (phase 3, 2026-08-29). `MonsterSpawner.Spawn(data, pos, rot, parent)` is the
   single gate (waves, nest bosses, save restore): sim entity first, prefab view attached after. `SimRunner`
   is the transitional static access point + runner (like `SimHost.World`).
-- Views (`EntityView`, `BuildingView`, `MonsterView`, `PlayerView`, `MonsterNest`, …) hold `Entity` and relay its events;
+- Views (`EntityView`, `BuildingView`, `MonsterView`, `PlayerView`, `NestView`, …) hold `Entity` and relay its events;
   `MonsterView` draws the sim position/facing in `LateUpdate`, `PlayerView` pushes the physics-driven position back into
   the sim (`PushesPositionToSim`). Creation owners (phase 4, 2026-08-29): buildings = `FactorySystem`, monsters =
   `MonsterSystem`, the player = `PlayerSystem`, nests = `WorldPopulator`. No view creates its own entity any more
   (`CreatesOwnEntity` remains only for legacy scenes).
 - Damage, effects and death end inside the sim. Effect *definitions* are `EffectSpec` (converted once per `EffectSO` by
-  `EffectSpecs`), a hit is an `Effect[]` (spec + value) applied to the target's `Effects` module; `EffectSystem` ticks
-  duration effects. Melee: the sim `Attack` module applies directly. Projectiles/auras: PhysX detects the hit, then
+  `EffectSpecs`), a hit is an `Effect[]` (spec + value) applied to the target's `EffectsModule` module; `EffectSystem` ticks
+  duration effects. Melee: the sim `AttackModule` module applies directly. Projectiles/auras: PhysX detects the hit, then
   `EntityView.ApplyEffects(Effect[], Entity source, point, dir)` hands it to the sim — the only view entry point.
   Incoming multipliers, shields, ally-ignore and nest invulnerability are all `IDamageInterceptor`s inside
-  `Health.Damage` (`Effects`, `Building`, `DamageGate`). `EffectSO` subclasses are data only (`Kind` + fields).
-- `SimRunner` (static, `Monsters` · `Effects` · `Players`) drives the sim every frame in that order — the transitional
+  `HealthModule.Damage` (`EffectsModule`, `BuildingModule`, `DamageGateModule`). `EffectSO` subclasses are data only (`Kind` + fields).
+- `SimRunner` (static, `Monsters` · `EffectsModule` · `Players`) drives the sim every frame in that order — the transitional
   access point until the phase-5 `WorldRunner` (fixed tick, scene lifecycle).
 - Entity identity is `EntityUUID` (a Guid; `Entity.Id`, `EntityUUID.New()`), minted by whoever creates the entity —
   no central counter, so client prediction, pasted structures and save restores keep their ids. The per-session
   integer handle for packets is the netcode library's, not ours. Not named `EntityId`: Unity 6 has `UnityEngine.EntityId`.
-  The sim attack module is `Attack` (not `Combat` — that is a namespace); the effects module is `Effects`. Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
+  The sim attack module is `AttackModule` (not `Combat` — that is a namespace); the effects module is `EffectsModule`. Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
 - **Rule:** sim code (`Runtime/Sim`, `Runtime/Factory` except the bridges) must not `using CoreDawn.Entities`.
   `python tools/check-sim-imports.py` enforces it until asmdefs do (phase 5). Death is decided by the sim:
   `Health.Die → EntityWorld.Died → FactorySystem.Remove → Removed → view destroyed`.

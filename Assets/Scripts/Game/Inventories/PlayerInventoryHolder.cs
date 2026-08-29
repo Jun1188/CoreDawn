@@ -5,6 +5,7 @@ using CoreDawn.Managers;
 using CoreDawn.Save;
 using CoreDawn.UI;
 using CoreDawn.Data;
+using CoreDawn.Sound;
 
 namespace CoreDawn.Inventories
 {

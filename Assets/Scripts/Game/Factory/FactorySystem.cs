@@ -12,20 +12,20 @@ namespace CoreDawn.Factory
     //
     //  포함:
     //    FactorySystem — 시계 + Dirty Queue + Wake 예약 + 배치/제거 진입점
-    //    GridIndex     — 좌표 → Building O(1) 조회
+    //    GridIndex     — 좌표 → BuildingModule O(1) 조회
     //
     //  Unity와의 접점은 FactoryBootstrap(드라이버)과 BuildingView(씬 표현)뿐.
     //  씬 없이 생성해 Advance()를 직접 호출하면 헤드리스로 돌릴 수 있다 (테스트용).
     // ================================================================
 
-    /// <summary>좌표 → Building O(1) 조회. 배치 로직은 없다 — FactorySystem이 채운다.</summary>
+    /// <summary>좌표 → BuildingModule O(1) 조회. 배치 로직은 없다 — FactorySystem이 채운다.</summary>
     public class GridIndex
     {
-        readonly Dictionary<Vector2Int, Building> _grid = new();
+        readonly Dictionary<Vector2Int, BuildingModule> _grid = new();
 
-        public void Add(Vector2Int cell, Building b) => _grid[cell] = b;
+        public void Add(Vector2Int cell, BuildingModule b) => _grid[cell] = b;
         public void Remove(Vector2Int cell) => _grid.Remove(cell);
-        public Building GetAt(Vector2Int cell) => _grid.TryGetValue(cell, out var b) ? b : null;
+        public BuildingModule GetAt(Vector2Int cell) => _grid.TryGetValue(cell, out var b) ? b : null;
         public bool IsOccupied(Vector2Int cell) => _grid.ContainsKey(cell);
     }
 
@@ -40,7 +40,7 @@ namespace CoreDawn.Factory
     ///   MarkDirty(b)        — "지금 변화가 생겼다" (아이템 수신, 상류/하류 상태 변화, 새 연결)
     ///   ScheduleWake(b, t)  — "t초 후에 깨워라"   (채굴/조합 타이머의 완료 시점 예약)
     ///
-    /// 건물은 심 엔티티(<see cref="Entity"/>)에 붙는 모듈(<see cref="Building"/>)이다. 배치가 엔티티를 먼저 만들고
+    /// 건물은 심 엔티티(<see cref="Entity"/>)에 붙는 모듈(<see cref="BuildingModule"/>)이다. 배치가 엔티티를 먼저 만들고
     /// 체력(Data.maxHp)과 건물 모듈을 붙인다 — HP·편·번호는 엔티티의 것이고, 칸·포트·버퍼·행동은 모듈의 것.
     /// </summary>
     public class FactorySystem
@@ -63,8 +63,8 @@ namespace CoreDawn.Factory
         /// 그리드(GridIndex)를 훑으면 안 되는 이유: 멀티타일 건물은 여러 칸이 같은 Building을 가리켜 중복된다.
         /// 순회 중 배치·제거 금지.
         /// </summary>
-        public IReadOnlyList<Building> Buildings => _buildings;
-        readonly List<Building> _buildings = new();
+        public IReadOnlyList<BuildingModule> Buildings => _buildings;
+        readonly List<BuildingModule> _buildings = new();
 
         /// <summary>시뮬레이션 누적 시간(초). 틱마다 틱 간격씩 증가한다.</summary>
         public float Now { get; private set; }
@@ -95,11 +95,11 @@ namespace CoreDawn.Factory
         /// </summary>
         public Func<Vector2Int, float> GetExtractIntervalAt;
 
-        readonly Queue<Building>   _queue = new();
-        readonly HashSet<Building> _inQ   = new(); // 중복 등록 방지 O(1)
+        readonly Queue<BuildingModule>   _queue = new();
+        readonly HashSet<BuildingModule> _inQ   = new(); // 중복 등록 방지 O(1)
 
         // wake 예약 — (깨울 시각, 건물) 이진 min-heap. index 0 = 가장 이른 예약.
-        readonly List<(float time, Building b)> _wake = new();
+        readonly List<(float time, BuildingModule b)> _wake = new();
 
         readonly float _interval;
         readonly int   _maxCatchUpTicks;
@@ -131,7 +131,7 @@ namespace CoreDawn.Factory
         /// </summary>
         void OnEntityDied(Entity e)
         {
-            var b = e.Get<Building>();
+            var b = e.Get<BuildingModule>();
             if (b != null && b.OwnsEntity && !b.IsRemoved) Remove(b);
         }
 
@@ -155,7 +155,7 @@ namespace CoreDawn.Factory
         /// 이미 있는 엔티티에 건물을 붙일 때(둥지처럼 스스로 엔티티를 가진 개체가 칸만 차지하는 경우).
         /// null이면 새 엔티티를 만들고, 그 엔티티의 생사는 이 시스템이 책임진다(OwnsEntity).
         /// </param>
-        public Building Place(BuildingDataSO so, Vector2Int origin, int rotSteps = 0,
+        public BuildingModule Place(BuildingDataSO so, Vector2Int origin, int rotSteps = 0,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, Entity host = null)
         {
             var size = so.GetRotatedSize(rotSteps);
@@ -164,13 +164,13 @@ namespace CoreDawn.Factory
             var entity = host ?? World.Create(so.Faction, Geometry.CenterOf(origin, size));
             if (ownsEntity)
             {
-                entity.Add(new Health(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
-                entity.Add(new Effects());                        // 받는 배율·지속 효과 — Building(보호막·아군 무시)보다 먼저 걸러진다
+                entity.Add(new HealthModule(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
+                entity.Add(new EffectsModule());                        // 받는 배율·지속 효과 — Building(보호막·아군 무시)보다 먼저 걸러진다
                 if (so is TowerDataSO tower)                      // 타워의 사거리·연사는 데이터 — 심 공격 모듈. 효과는 탄(전달 계층)이 정하므로 비워 둔다
-                    entity.Add(new Attack(tower.range * Geometry.CellSize, tower.fireRate > 0f ? 1f / tower.fireRate : 1f));
+                    entity.Add(new AttackModule(tower.range * Geometry.CellSize, tower.fireRate > 0f ? 1f / tower.fireRate : 1f));
             }
 
-            var b = new Building(this, so, origin, rotSteps, portOverride, shape, ownsEntity);
+            var b = new BuildingModule(this, so, origin, rotSteps, portOverride, shape, ownsEntity);
             entity.Add(b);
 
             for (int x = 0; x < size.x; x++)
@@ -189,9 +189,9 @@ namespace CoreDawn.Factory
         /// 벨트 폐기 통지(Belts.ItemDiscarded)보다 항상 뒤에 오고(그때는 뷰가 아직 살아 있어야 하므로),
         /// 엔티티가 월드에서 빠지기 전이라 수신자는 b.Owner를 아직 읽을 수 있다.
         /// </summary>
-        public event Action<Building> Removed;
+        public event Action<BuildingModule> Removed;
 
-        public void Remove(Building b)
+        public void Remove(BuildingModule b)
         {
             if (b == null || b.IsRemoved) return;
             b.IsRemoved = true;            // 큐/힙에 남은 참조는 틱에서 걸러진다
@@ -215,7 +215,7 @@ namespace CoreDawn.Factory
         // ── 깨우기
 
         /// <summary>건물을 다음 틱 처리 대상에 추가. O(1). 중복 호출 안전.</summary>
-        public void MarkDirty(Building b)
+        public void MarkDirty(BuildingModule b)
         {
             if (b == null || b.IsRemoved) return;
             if (_inQ.Add(b)) _queue.Enqueue(b);
@@ -225,7 +225,7 @@ namespace CoreDawn.Factory
         /// delay초 후 건물을 깨운다(= MarkDirty). 타이머 완료 시점 예약용.
         /// 같은 건물을 중복 예약해도 안전하다 — 이른 기상은 각 행동이 Now로 걸러낸다.
         /// </summary>
-        public void ScheduleWake(Building b, float delay)
+        public void ScheduleWake(BuildingModule b, float delay)
         {
             if (b == null || b.IsRemoved) return;
             _wake.Add((Now + delay, b));

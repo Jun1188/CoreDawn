@@ -51,7 +51,7 @@ namespace CoreDawn.Sim
         public IReadOnlyList<EntityModule> Modules => _modules;
 
         /// <summary>체력 모듈. 없으면 null(때릴 수 없는 개체).</summary>
-        public Health Health => Get<Health>();
+        public HealthModule Health => Get<HealthModule>();
 
         /// <summary>살아 있는가 — 월드에 있고, 체력이 있다면 죽지 않았다. 표적 유효성의 심 쪽 기준.</summary>
         public bool IsAlive => !IsRemoved && !(Health != null && Health.IsDead);

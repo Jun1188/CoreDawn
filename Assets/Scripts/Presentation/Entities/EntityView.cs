@@ -85,10 +85,10 @@ namespace CoreDawn.Entities
         public SimEntity Entity { get; private set; }
 
         /// <summary>체력 — 심 Health 모듈로 곧장 간다. 심이 아직 안 붙었으면 null.</summary>
-        public Health Health => Entity?.Health;
+        public HealthModule Health => Entity?.Health;
 
         /// <summary>심 효과 모듈 — 활성 지속 효과·배율. 심이 아직 안 붙었으면 null.</summary>
-        public Effects Effects => Entity?.Get<Effects>();
+        public EffectsModule Effects => Entity?.Get<EffectsModule>();
 
         /// <summary>죽었거나 심에서 빠졌는가. 심이 아직 안 붙은 뷰는 죽은 것이 아니다(IsValidTarget이 따로 거른다).</summary>
         public virtual bool IsDead =>
@@ -123,7 +123,7 @@ namespace CoreDawn.Entities
                 h.OnDeath += RelayDeath;
             }
 
-            var a = entity.Get<Attack>();
+            var a = entity.Get<AttackModule>();
             if (a != null) a.Attacked += RelayAttacked;   // 공격 연출 이벤트 — 심이 때렸다고 하면 뷰가 애니메이션
             OnEntityAttached();
             if (h != null) OnHealthChanged?.Invoke(h.CurrentHealth, h.MaxHealth);
@@ -138,7 +138,7 @@ namespace CoreDawn.Entities
                 h.OnHealthChanged -= RelayHealthChanged;
                 h.OnDeath -= RelayDeath;
             }
-            var a = Entity.Get<Attack>();
+            var a = Entity.Get<AttackModule>();
             if (a != null) a.Attacked -= RelayAttacked;
             EntityViewRegistry.Unregister(this, Entity);
             Entity = null;

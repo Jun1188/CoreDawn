@@ -48,7 +48,7 @@ namespace CoreDawn.Placement
         Vector3 _gridOrigin;
 
         // 건물별 열린 포트 표시 — 그리드가 바뀔 때만 다시 만든다
-        readonly Dictionary<Building, PortFlowVisualizer> _open = new();
+        readonly Dictionary<BuildingModule, PortFlowVisualizer> _open = new();
         Vector3 _lastCenter;
         bool _hasCenter;
 
@@ -145,7 +145,7 @@ namespace CoreDawn.Placement
             if (sim == null) { ClearOpen(); return; }
 
             float sqRadius = Sq(radiusTiles * _cellSize);
-            var live = new HashSet<Building>();
+            var live = new HashSet<BuildingModule>();
 
             var boot = FactoryBootstrap.Instance;
             foreach (var b in sim.Buildings)
@@ -170,7 +170,7 @@ namespace CoreDawn.Placement
             }
 
             // 범위 밖으로 나갔거나 포트가 전부 막힌 건물 정리
-            var stale = new List<Building>();
+            var stale = new List<BuildingModule>();
             foreach (var kv in _open)
                 if (!live.Contains(kv.Key)) stale.Add(kv.Key);
 
@@ -185,7 +185,7 @@ namespace CoreDawn.Placement
         /// 이웃 칸이 비어 있거나, 있어도 맞물리는 포트가 없으면 열린 포트.
         /// "맞물린다"의 정의(방향 반대 + 입출력 반대)는 BuildingGraph의 연결 규칙과 같다.
         /// </summary>
-        static List<PortDefinition> CollectOpenPorts(FactorySystem sim, Building b)
+        static List<PortDefinition> CollectOpenPorts(FactorySystem sim, BuildingModule b)
         {
             var result = new List<PortDefinition>();
             var ports  = b.GetEffectivePorts();
@@ -234,7 +234,7 @@ namespace CoreDawn.Placement
         /// 배치할 때 더해준 만큼(광맥 위 채굴기)을 도로 빼면 지면이 나온다.
         /// 포트 흐름은 지면에 눕는 표시이므로 이 값을 써야 공중에 뜨지 않는다.
         /// </summary>
-        float GroundYOf(Building b, BuildingView view)
+        float GroundYOf(BuildingModule b, BuildingView view)
         {
             if (view == null) view = FactoryBootstrap.Instance != null
                 ? FactoryBootstrap.Instance.GetView(b) : null;

@@ -17,17 +17,17 @@ namespace CoreDawn.Entities
     public class MonsterView : EntityView
     {
         private MonsterVisualController visual; // 연출 담당 — 없을 수 있다(자리표시 프리팹)
-        private MonsterBrain brain;
-        private Movement movement;
+        private MonsterBrainModule brain;
+        private MovementModule movement;
 
         // 심(MonsterSystem.Spawn)이 먼저 만든다 — 뷰는 MonsterSpawner가 붙여 준 것을 받는다
 
         /// <summary>심 이동 모듈 — 연출(애니 속도)·곡사 예측(타워)이 읽는다. 심이 안 붙었으면 null.</summary>
-        public Movement SimMovement => movement;
+        public MovementModule SimMovement => movement;
 
         /// <summary>어떤 종류인가 — 세이브가 id를 적고, 불러올 때 같은 종류로 다시 세운다. 데이터 없이 세워진(폴백) 몬스터는 null.</summary>
         public MonsterDataSO Data { get; private set; }
-        public MonsterBrain Brain => brain;
+        public MonsterBrainModule Brain => brain;
 
         // ── 옛 표면 (둥지·스포너·프로브·세이브가 쓴다) — 두뇌 위임
         public bool IsBoss => brain != null && brain.IsBoss;
@@ -49,8 +49,8 @@ namespace CoreDawn.Entities
         protected override void OnEntityAttached()
         {
             base.OnEntityAttached();
-            brain = Entity.Get<MonsterBrain>();
-            movement = Entity.Get<Movement>();
+            brain = Entity.Get<MonsterBrainModule>();
+            movement = Entity.Get<MovementModule>();
 
             if (movement != null) movement.PivotToBottom = MeasurePivotToBottom(transform);
             if (brain != null) brain.Alerted += OnAlerted;

@@ -38,7 +38,7 @@ namespace CoreDawn.Combat
         private CoreDawn.Sim.Effect[] currentWaveBuffs = System.Array.Empty<CoreDawn.Sim.Effect>();   // 웨이브 결정 시 한 번 변환
 
         // 파괴되지 않은 둥지 캐시
-        private List<MonsterNest> activeNests = new List<MonsterNest>();
+        private List<NestView> activeNests = new List<NestView>();
         private readonly List<Transform> nightSpawnPoints = new List<Transform>();
         private bool useExplicitNightSpawnPoints;
 
@@ -178,7 +178,7 @@ namespace CoreDawn.Combat
         private void FindActiveNests()
         {
             activeNests.Clear();
-            var allNests = UnityEngine.Object.FindObjectsByType<MonsterNest>(FindObjectsSortMode.None);
+            var allNests = UnityEngine.Object.FindObjectsByType<NestView>(FindObjectsSortMode.None);
             foreach (var nest in allNests)
             {
                 if (!nest.IsDestroyed)
@@ -241,12 +241,12 @@ namespace CoreDawn.Combat
 
         /// <summary>
         /// 둥지 방어 몬스터 스폰. <paramref name="spawnSlots"/>는 둥지가 판정한
-        /// "지금 스폰 가능한 자리들"(MonsterNest.GetDaySpawnableSlots) — 거리·가림 규칙은
+        /// "지금 스폰 가능한 자리들"(NestView.GetDaySpawnableSlots) — 거리·가림 규칙은
         /// 반경 값을 소유한 둥지 쪽에 있고, 자리마다 포인트별 몬스터 최대 HP가 실려 온다.
         /// null이면 모든 활성 포인트를 쓴다(레거시 호출).
         /// </summary>
-        public void SpawnNestDefenders(MonsterNest nest, PlayerView target, int amount,
-                                       List<MonsterNest.DefenderSpawnSlot> spawnSlots = null,
+        public void SpawnNestDefenders(NestView nest, PlayerView target, int amount,
+                                       List<NestView.DefenderSpawnSlot> spawnSlots = null,
                                        MonsterView escortBoss = null)
         {
             if (spawnSlots == null) spawnSlots = nest.GetAllActiveDefenderSlots();
@@ -254,7 +254,7 @@ namespace CoreDawn.Combat
 
             for (int i = 0; i < amount; i++)
             {
-                MonsterNest.DefenderSpawnSlot slot = spawnSlots[i % spawnSlots.Count];
+                NestView.DefenderSpawnSlot slot = spawnSlots[i % spawnSlots.Count];
                 Vector3 position = slot.position;
                 var monster = InstantiateMonster(nest.DefenderData, position, Quaternion.identity);
                 SnapToGround(monster.gameObject);

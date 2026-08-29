@@ -11,7 +11,7 @@ namespace CoreDawn.Data
         Radial,
     }
 
-    /// <summary>즉시 밀기 — Value = 거리(m). 방향 규칙과 실제 밀기는 심(Effects → Movement.AddKnockback)이 한다.</summary>
+    /// <summary>즉시 밀기 — Value = 거리(m). 방향 규칙과 실제 밀기는 심(Effects → MovementModule.AddKnockback)이 한다.</summary>
     [CreateAssetMenu(fileName = "Effect_Knockback", menuName = "Combat/Effect/Knockback")]
     public class KnockbackEffectSO : EffectSO
     {

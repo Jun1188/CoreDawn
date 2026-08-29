@@ -156,7 +156,7 @@ namespace CoreDawn.Tutorial
         /// 철거는 폴링으로 셀 수 없다 — 건물 수는 밤에 괴수가 부숴도 줄어든다.
         /// 그래서 유일하게 이벤트를 쓰되, <b>철거 모드였을 때만</b> 센다. 이러면 전투 파괴와 갈린다.
         /// </summary>
-        void OnBuildingRemoved(Building b)
+        void OnBuildingRemoved(BuildingModule b)
         {
             if (_placement == null) return;
             if (_placement.Mode != PlacementSystem.BuildMode.Demolishing) return;

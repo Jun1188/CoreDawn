@@ -9,6 +9,7 @@ using CoreDawn.Navigation;
 using CoreDawn.Sim;
 using CoreDawn.Data;
 using CoreDawn.UI;
+using CoreDawn.Sound;
 
 namespace CoreDawn.Entities
 {
@@ -32,7 +33,7 @@ namespace CoreDawn.Entities
         [SerializeField] private AudioClip destroySfx;
 
         // 이 뷰가 대변하는 팩토리 심 건물(모듈). PlacementBridge가 배치 시 연결한다.
-        private Building building;
+        private BuildingModule building;
 
         /// <summary>
         /// 심 건물 연결 — 엔티티(HP·편)도 이때 함께 붙는다.
@@ -43,7 +44,7 @@ namespace CoreDawn.Entities
         /// 않아 몬스터가 그대로 통과한다. 씬에 굳혀 둔 배치물(나무·코어)은 심이 훨씬 나중에
         /// 붙으므로(WorldPopulator가 잇는다) 증상이 특히 뚜렷하다.
         /// </summary>
-        public Building Building
+        public BuildingModule Building
         {
             get => building;
             set
@@ -79,7 +80,7 @@ namespace CoreDawn.Entities
 
         /// <summary>
         /// 점유 풋프린트의 월드 사각형(XZ 평면, y는 이 건물의 높이). 심이 없으면 false.
-        /// 기준은 모델이 아니라 차지한 칸이다 — 자세한 이유는 <see cref="Building.WorldRect"/>.
+        /// 기준은 모델이 아니라 차지한 칸이다 — 자세한 이유는 <see cref="BuildingModule.WorldRect"/>.
         /// </summary>
         public bool TryGetFootprintRect(out Vector3 min, out Vector3 max)
         {
@@ -208,7 +209,7 @@ namespace CoreDawn.Entities
 
         // 심 건물(모듈) → 건물 뷰 (구 BuildingDamageable.GetOrAttach).
         // PlacementBridge가 배치 시 모든 뷰 GO에 이 컴포넌트를 붙이고 매핑을 등록한다.
-        public static BuildingView GetOrAttach(Building sim)
+        public static BuildingView GetOrAttach(BuildingModule sim)
         {
             if (sim == null || sim.IsRemoved) return null;
 

@@ -50,7 +50,7 @@ namespace CoreDawn.Tests
 
         ItemDataSO _ore;
         BuildingDataSO _minerSO, _storageSO;
-        Building _miner, _storage;
+        BuildingModule _miner, _storage;
 
         void OnEnable()  => Application.logMessageReceived += OnLog;
         void OnDisable() => Application.logMessageReceived -= OnLog;
@@ -284,7 +284,7 @@ namespace CoreDawn.Tests
         /// 그 자리의 표면(지면, 광맥 위라면 광맥 슬래브 윗면) + PlacementSystem.SurfaceLift.
         /// 덕분에 채굴기를 광맥에 지으면 하네스로 지어도 광맥 윗면에 올라앉는다.
         /// </summary>
-        Building Place(BuildingDataSO so, Vector2Int cell)
+        BuildingModule Place(BuildingDataSO so, Vector2Int cell)
         {
             Vector2Int size = so.GetRotatedSize(0);
             Vector3 pos = Grid.GetFootprintCenter(cell, size);

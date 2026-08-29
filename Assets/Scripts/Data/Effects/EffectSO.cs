@@ -6,7 +6,7 @@ namespace CoreDawn.Data
 {
     /// <summary>
     /// 효과 정의 에셋 — 명중한 공격이 대상에게 "무슨 일을 일으키는가"의 단위. <b>데이터만 갖는다.</b>
-    /// 행동은 심(<see cref="Effects"/>)이 종류(<see cref="Kind"/>)로 분기한다 — 에셋(UnityEngine.Object)은 심에 들어갈 수 없다.
+    /// 행동은 심(<see cref="EffectsModule"/>)이 종류(<see cref="Kind"/>)로 분기한다 — 에셋(UnityEngine.Object)은 심에 들어갈 수 없다.
     /// 심이 읽는 정의는 <see cref="EffectSpecs.Of"/>가 에셋마다 한 번 변환한 <see cref="EffectSpec"/>이다.
     ///
     /// 무기(GunData)·탄약(AmmoModuleSO)·근접(MonsterDataSO.attackEffects)·오라(TowerDataSO)가 <see cref="EffectEntry"/>

@@ -42,7 +42,7 @@ namespace CoreDawn.UI
         Label hpText, hpMax, shieldText, shieldMax, repairText, repairMax, radarChipText;
         Label waveNext, waveNumber, waveIncoming, waveNests;
         RadarScope radar;
-        Building coreEntity;   // 내구도 원본은 심 엔티티(Owner.Health)다
+        BuildingModule coreEntity;   // 내구도 원본은 심 엔티티(Owner.Health)다
         WaveSpawnManager subscribedWaveSpawner;
 
         /// <summary>레이더 해금 단계. 설계상 게이트②(항법·제어 복구) 완료 시 켜진다.</summary>
@@ -243,7 +243,7 @@ namespace CoreDawn.UI
         // ─────────────────── 코어 정보 탭 (SCR-01c) ───────────────────
 
         /// <summary>심의 코어 건물 — 내구도는 그 엔티티(Owner.Health)가 원본이다.</summary>
-        static Building FindCoreEntity()
+        static BuildingModule FindCoreEntity()
         {
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null) return null;
@@ -326,7 +326,7 @@ namespace CoreDawn.UI
 
                 if (waveNests != null)
                 {
-                    var nests = FindObjectsByType<MonsterNest>(FindObjectsSortMode.None);
+                    var nests = FindObjectsByType<NestView>(FindObjectsSortMode.None);
                     int destroyed = 0;
                     foreach (var nest in nests) if (nest != null && nest.IsDestroyed) destroyed++;
                     waveNests.text = radarUnlocked ? $"{destroyed} / {nests.Length}" : Unknown;

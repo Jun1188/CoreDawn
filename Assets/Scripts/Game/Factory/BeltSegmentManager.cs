@@ -18,9 +18,9 @@ namespace CoreDawn.Factory
         /// 심은 월드를 모르므로 여기서 버리기만 하고, 드라이버(FactoryBootstrap)가
         /// 구독해 월드 드롭으로 되살린다.
         /// </summary>
-        public event System.Action<Building, ItemDataSO> ItemDiscarded;
+        public event System.Action<BuildingModule, ItemDataSO> ItemDiscarded;
 
-        readonly Dictionary<Building, BeltSegment> _map = new();
+        readonly Dictionary<BuildingModule, BeltSegment> _map = new();
         readonly List<BeltSegment> _segs = new();
 
         public IReadOnlyList<BeltSegment> Segments => _segs;
@@ -28,7 +28,7 @@ namespace CoreDawn.Factory
         public BeltSegmentManager(FactorySystem sim) => _sim = sim;
 
         /// <summary>이 벨트의 세그먼트를 보장(없으면 1칸 세그먼트 즉시 생성).</summary>
-        public BeltSegment EnsureSegment(Building belt)
+        public BeltSegment EnsureSegment(BuildingModule belt)
         {
             if (_map.TryGetValue(belt, out var s)) return s;
             var seg = new BeltSegment(_sim);
@@ -40,7 +40,7 @@ namespace CoreDawn.Factory
             return seg;
         }
 
-        public BeltSegment GetSegment(Building b) =>
+        public BeltSegment GetSegment(BuildingModule b) =>
             _map.TryGetValue(b, out var s) ? s : null;
 
         /// <summary>벨트-벨트 연결 시 병합. From=상류, To=하류.</summary>
@@ -83,7 +83,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>벨트 철거 시 세그먼트를 상류·하류로 정밀 분할. 제거 벨트 위 아이템은 폐기.</summary>
-        public void OnBuildingRemoved(Building b)
+        public void OnBuildingRemoved(BuildingModule b)
         {
             if (!_map.TryGetValue(b, out var seg)) return;
 

@@ -20,7 +20,7 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewTree", menuName = "Factory/Buildings/Tree")]
     public class TreeDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(Building building) => new TreeBehavior();
+        public override IBuildingBehavior CreateBehavior(BuildingModule building) => new TreeBehavior();
 
         /// <summary>지형물 — 누구의 적도 아니다. 플레이어도 몬스터도 베어낼 수 있다(isAttackable).</summary>
         public override Faction Faction => Faction.Neutral;
@@ -28,13 +28,4 @@ namespace CoreDawn.Data
 
     // ─── 행동 ──────────────────────────────────────────────────────
 
-    /// <summary>
-    /// 아무 일도 하지 않는 행동. 나무는 아이템을 주고받지 않으므로 심의 틱에 걸릴 일이 없다
-    /// (Dirty 큐에 들어가지 않으면 Tick 자체가 호출되지 않는다).
-    /// </summary>
-    public class TreeBehavior : IBuildingBehavior
-    {
-        public void Tick(float dt) { }
-        public void OnAfterPlaced() { }
-    }
 }

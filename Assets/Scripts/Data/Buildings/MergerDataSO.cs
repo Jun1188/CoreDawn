@@ -14,31 +14,10 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewMerger", menuName = "Factory/Buildings/Merger")]
     public class MergerDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(Building building)
+        public override IBuildingBehavior CreateBehavior(BuildingModule building)
             => new MergerBehavior(building);
     }
 
     // ─── 행동 ──────────────────────────────────────────────────────
 
-    public class MergerBehavior : IBuildingBehavior
-    {
-        readonly Building _b;
-        public MergerBehavior(Building b) => _b = b;
-        public void OnAfterPlaced() { }
-
-        public void Tick(float dt)
-        {
-            // 입력 버퍼 → 출력 버퍼 이동 (출력 여유만큼만)
-            foreach (var (item, count) in _b.Input.Snapshot())
-            {
-                int move = Mathf.Min(count, _b.Output.RoomFor(item));
-                if (move <= 0) continue;
-                _b.Output.TryAdd(item, move);
-                _b.Input.TryConsume(item, move);
-                _b.NotifyUpstream(); // 입력 버퍼에 자리 생김 → 막혀 있던 상류 깨움
-            }
-
-            _b.FlushOutputs();
-        }
-    }
 }

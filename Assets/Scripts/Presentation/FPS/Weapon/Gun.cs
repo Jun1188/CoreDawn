@@ -7,6 +7,7 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
 using CoreDawn.Data;
+using CoreDawn.Sound;
 
 namespace CoreDawn.FPS
 {
