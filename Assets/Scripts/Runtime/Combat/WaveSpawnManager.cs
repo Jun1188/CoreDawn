@@ -279,7 +279,13 @@ namespace CoreDawn.Combat
         public float NextSpawnDelay => Mathf.Max(0f, nextSpawnTime - Time.time);
 
         /// <summary>세이브 복원 전용 — 스폰 진행 상태를 되돌린다.</summary>
-        public void RestoreState(bool enabled, float spawnDelay)
+        /// <summary>
+        /// 세이브 복원 전용. <paramref name="savedTarget"/>가 0보다 크면 정량 웨이브의 진행(목표·지금까지 스폰한 수·완료 여부)을
+        /// 이어받는다 — 이걸 빠뜨리면 불러온 밤은 웨이브를 0부터 다시 세고, 되살린 몬스터는 명단 밖이라
+        /// 새로 스폰한 것만 잡아도 "전멸"로 판정돼 아침이 오며 되살린 몬스터를 통째로 지운다.
+        /// 옛 세이브(필드 없음 → -1)는 예전처럼 진행을 이어받지 않는다.
+        /// </summary>
+        public void RestoreState(bool enabled, float spawnDelay, int savedSpawned = -1, int savedTarget = -1, bool savedCompleted = false)
         {
             spawningEnabled = enabled;
             nextSpawnTime = Time.time + Mathf.Max(0f, spawnDelay);
@@ -287,6 +293,16 @@ namespace CoreDawn.Combat
             if (!enabled) return;
             DetermineCurrentWave();
             FindActiveNests();
+
+            if (!quantityBasedMode || savedTarget <= 0) return;
+            targetSpawnAmount = savedTarget;
+            spawnedThisWave = Mathf.Clamp(savedSpawned, 0, savedTarget);
+            quantityWaveCompleted = savedCompleted;
+            quantityWaveActive = !savedCompleted;
+            lastNotifiedDefeated = -1;
+            lastNotifiedSpawned = -1;
+            QuantityWaveStarted?.Invoke(targetSpawnAmount);
+            NotifyQuantityProgress();
         }
 
         /// <summary>
@@ -295,10 +311,12 @@ namespace CoreDawn.Combat
         /// 다시 스냅하면 경사면에서 조금씩 위치가 밀린다.
         /// </summary>
         /// <param name="data">종류. null이면 DB 기본 종류(종류를 적지 않은 구 세이브).</param>
-        public MonsterView RestoreMonster(Vector3 position, Quaternion rotation, MonsterDataSO data = null)
+        /// <param name="nightWave">이 밤의 웨이브 몬스터였는가(둥지 방어·보스가 아님). true면 정량 웨이브 명단에 넣어 생존 수에 포함한다.</param>
+        public MonsterView RestoreMonster(Vector3 position, Quaternion rotation, MonsterDataSO data = null, bool nightWave = false)
         {
             var monster = InstantiateMonster(data, position, rotation);
             monster.transform.SetPositionAndRotation(position, rotation);
+            if (nightWave && quantityBasedMode) nightWaveMonsters.Add(monster);
             return monster;
         }
 

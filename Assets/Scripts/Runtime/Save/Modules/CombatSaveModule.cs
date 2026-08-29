@@ -73,6 +73,11 @@ namespace CoreDawn.Save
 
             /// <summary>다음 스폰까지 남은 시간(초) — 절대 시각은 다음 실행에서 뜻이 없다.</summary>
             [JsonProperty("nextIn")] public float NextSpawnDelay;
+
+            /// <summary>정량 웨이브 진행 — 목표가 0 이하면 "진행 중인 정량 웨이브 없음"(낮, 또는 옛 세이브).</summary>
+            [JsonProperty("spawned")] public int SpawnedThisWave = -1;
+            [JsonProperty("target")] public int TargetSpawnAmount = -1;
+            [JsonProperty("completed")] public bool WaveCompleted;
         }
 
         // ── 저장 ──────────────────────────────────────────────────────
@@ -131,10 +136,14 @@ namespace CoreDawn.Save
                             .OrderBy(m => m.transform.position.x).ThenBy(m => m.transform.position.z))
                     dto.Monsters.Add(Describe(m));
 
+                bool waveInProgress = spawner.IsQuantityWaveActive || spawner.IsQuantityWaveCompleted;
                 dto.Wave = new WaveDto
                 {
                     SpawningEnabled = spawner.SpawningEnabled,
                     NextSpawnDelay = spawner.NextSpawnDelay,
+                    SpawnedThisWave = waveInProgress ? spawner.SpawnedThisWave : -1,
+                    TargetSpawnAmount = waveInProgress ? spawner.TargetSpawnAmount : -1,
+                    WaveCompleted = spawner.IsQuantityWaveCompleted,
                 };
             }
 
@@ -215,10 +224,14 @@ namespace CoreDawn.Save
                 if (saved == null) continue;
                 // 저장된 종류로 되살린다. id가 없거나(옛 세이브) 사라진 종류면 null → 스포너가 기본 종류로 세운다
                 var data = database != null && !string.IsNullOrEmpty(saved.DataId) ? database.FindById(saved.DataId) : null;
-                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation, data), saved);
+                // 둥지 방어·보스가 아니면 이 밤의 웨이브 몬스터 — 정량 웨이브 생존 수에 다시 포함시킨다
+                bool nightWave = !saved.IsBoss && !saved.IsNestDefender;
+                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation, data, nightWave), saved);
             }
 
-            if (dto.Wave != null) spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay);
+            if (dto.Wave != null)
+                spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay,
+                                     dto.Wave.SpawnedThisWave, dto.Wave.TargetSpawnAmount, dto.Wave.WaveCompleted);
         }
 
         static void Apply(MonsterView m, MonsterDto saved)

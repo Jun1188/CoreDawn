@@ -214,7 +214,7 @@ namespace CoreDawn.Factory
   - 검증 2026-08-29: 밤 강제 — 보스 8 대기, 웨이브 4마리 이동·건물 2채 피해, 플레이어 접근 시 3마리 추적→공격(HP 300→180), 뷰 12 동기·애니메이터 12, 오류 0 (커밋 3)
 - [x] 3c 뷰: `Monster → MonsterView`(심 위치·방향을 LateUpdate에서 그림) · 스폰은 `MonsterSpawner.Spawn` 한 관문(심 엔티티 먼저, 프리팹은 따라옴 — 웨이브·둥지 보스·복원) · 둥지/스포너/프로브/아웃라인/연출/넉백/타워 예측이 심 API(`Entity.Get<Movement>()`, `MonsterSystemHost.System.Monsters` + `EntityViewRegistry`) — 2026-08-29 (커밋 3)
 - [x] 3d 세이브: `CombatSaveModule.MonsterDto.DataId`(`"data"`, MonsterDataSO.Id) — 저장 시 `MonsterView.Data`, 복원 시 `MonsterDatabaseSO.FindById` → `RestoreMonster(pos, rot, data)`. 추가 필드라 스키마 버전 그대로(옛 세이브·모르는 id → 기본 종류). 검증 2026-08-29: 밤 제자리 왕복(Capture→Restore) — Basic 4 + Spitter(35/60) 종류·HP 복원, 보스 8 재생성·뷰 8, 오류 0 (커밋 4)
-  - 기존 결함(내 변경 아님, 기록만): 복원된 웨이브 몬스터는 `nightWaveMonsters`(정량 웨이브 카운트)에 안 들어가 밤이 일찍 끝날 수 있다(`EndNightEarly → OnDayStarted → DespawnAll`). 검증 중 이 경로로 몬스터가 사라져 한동안 리팩토링 버그로 오인함 — `DespawnAll`에 스택 로그를 넣어 확정
+  - 기존 결함 수정(사용자 지시): 복원된 웨이브 몬스터가 `nightWaveMonsters`(정량 웨이브 생존 수)에 안 들어가고 진행(스폰 수·목표)도 저장되지 않아, 불러온 밤이 0부터 다시 세다 새로 스폰한 것만 잡아도 "전멸"→아침→되살린 몬스터 일괄 소멸. `WaveDto`에 `spawned`/`target`/`completed` 추가(옛 세이브는 -1 → 예전 동작), `RestoreMonster(nightWave)`가 명단에 넣고 `RestoreState`가 진행을 이어받는다. 검증: 4/4 스폰·1 처치 상태 왕복 후 8초 — 밤 유지, 생존 3 = 명단 3
 - [x] 3e 정리: 뷰 쪽 `MovementComponent`·`SensorComponent`·`StateMachineComponent`·`State/*`·`CrowdSystem` 삭제 (커밋 2·3). `CombatComponent`는 타워·플레이어·몬스터 효과 적용기로 4단계까지 유지
 - [ ] 3f PR: `feature/monster-sim` → develop (푸시는 사용자 승인 뒤)
 
@@ -373,7 +373,7 @@ namespace CoreDawn.Sim
 - 사고 2: Unity가 새 파일을 안 집는 경우가 있다 — `AssetDatabase.Refresh()`+`RequestScriptCompilation()`로는 부족했고 `ImportAsset("Assets/Scripts", ImportRecursive|ForceUpdate)` 뒤에 돌아왔다. 컴파일 반영은 eval로 타입 존재(`Type.GetType`)를 확인해야 한다.
 - 사고 3: 세이브 왕복 검증에서 복원된 몬스터가 사라져 리팩토링 버그로 오인 — `DespawnAll`에 스택 로그를 넣어 보니 아침 전환(`EndNightEarly → OnDayStarted`)이었다. 시간 기반 사라짐은 먼저 주야 상태를 찍어 볼 것. 임시 진단 로그의 문자열에 `
 `을 쓰다 줄바꿈이 끼어 컴파일이 깨졌다 — `Environment.NewLine`으로.
-- 남은 빚(4단계로): 효과 시스템(EffectController)·CombatComponent가 뷰 → 공격 적용이 `AttackRequested` 이벤트 다리 · 플레이어·둥지는 아직 뷰가 엔티티 생성 · `MonsterSystemHost`·`SimHost.World` 정적 접근점(5단계 WorldRunner) · 복원된 웨이브 몬스터가 정량 웨이브 카운트에 안 들어가는 기존 결함(3d 참고).
+- 남은 빚(4단계로): 효과 시스템(EffectController)·CombatComponent가 뷰 → 공격 적용이 `AttackRequested` 이벤트 다리 · 플레이어·둥지는 아직 뷰가 엔티티 생성 · `MonsterSystemHost`·`SimHost.World` 정적 접근점(5단계 WorldRunner). (복원된 웨이브 몬스터 카운트 결함은 같은 브랜치에서 수정 — 3d 참고.)
 
 ## 8. 세션 재개 절차
 
