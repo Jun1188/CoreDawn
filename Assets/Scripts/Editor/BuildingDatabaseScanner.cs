@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Factory;
+using CoreDawn.Data;
 
 namespace CoreDawn.EditorTools
 {

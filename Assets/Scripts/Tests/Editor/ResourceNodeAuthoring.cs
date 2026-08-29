@@ -5,6 +5,7 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
+using CoreDawn.Data;
 
 namespace CoreDawn.Tests
 {

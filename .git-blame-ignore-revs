@@ -1,3 +1,4 @@
 # git blame --ignore-revs-file / git config blame.ignoreRevsFile .git-blame-ignore-revs
 # 2026-08-28 CoreDawn.* 네임스페이스 일괄 부여 (278파일 들여쓰기 변경)
 106ce75e079478ac85789fced99b3d198c6199cd
+ecf187d0645c04c2eecf63d2c5089f9d74acc09f  # 2026-08-29 folder layout (Sim/Data/Game/Presentation) - moves only

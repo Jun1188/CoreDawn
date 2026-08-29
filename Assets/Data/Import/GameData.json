@@ -2787,7 +2787,7 @@
       "outputSlots": 0,
       "bufferStackCap": 0,
       "requiredCoreTier": 0,
-      "maxHp": 1000,
+      "maxHp": 500,
       "menuOrder": 0,
       "threatSeedCost": 80,
       "hideFromBuildMenu": true,

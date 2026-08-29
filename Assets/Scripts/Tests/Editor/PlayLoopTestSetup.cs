@@ -7,6 +7,7 @@ using CoreDawn.DayTime;
 using CoreDawn.Factory;
 using CoreDawn.Navigation;
 using CoreDawn.Placement;
+using CoreDawn.Data;
 
 namespace CoreDawn.Tests
 {
