@@ -69,14 +69,23 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `MonsterSystem.Spawn(MonsterSpec, …)` (phase 3, 2026-08-29). `MonsterSpawner.Spawn(data, pos, rot, parent)` is the
   single gate (waves, nest bosses, save restore): sim entity first, prefab view attached after. `SimRunner`
   is the transitional static access point + runner (like `SimHost.World`).
-- Views (`EntityView`, `BuildingView`, `MonsterView`, …) hold `Entity` and relay its events; `MonsterView` draws the
-  sim position/facing in `LateUpdate`. The player and nests still create their own entity in `Awake` — until phase 4.
-  Effects (`EffectController`, `CombatComponent`) are still view-side: the sim decides *when* to hit
-  (`Attack.AttackRequested`), the view applies *what* (attack effects) — a bridge until phase 4.
+- Views (`EntityView`, `BuildingView`, `MonsterView`, `PlayerView`, `MonsterNest`, …) hold `Entity` and relay its events;
+  `MonsterView` draws the sim position/facing in `LateUpdate`, `PlayerView` pushes the physics-driven position back into
+  the sim (`PushesPositionToSim`). Creation owners (phase 4, 2026-08-29): buildings = `FactorySystem`, monsters =
+  `MonsterSystem`, the player = `PlayerSystem`, nests = `WorldPopulator`. No view creates its own entity any more
+  (`CreatesOwnEntity` remains only for legacy scenes).
+- Damage, effects and death end inside the sim. Effect *definitions* are `EffectSpec` (converted once per `EffectSO` by
+  `EffectSpecs`), a hit is an `Effect[]` (spec + value) applied to the target's `Effects` module; `EffectSystem` ticks
+  duration effects. Melee: the sim `Attack` module applies directly. Projectiles/auras: PhysX detects the hit, then
+  `EntityView.ApplyEffects(Effect[], Entity source, point, dir)` hands it to the sim — the only view entry point.
+  Incoming multipliers, shields, ally-ignore and nest invulnerability are all `IDamageInterceptor`s inside
+  `Health.Damage` (`Effects`, `Building`, `DamageGate`). `EffectSO` subclasses are data only (`Kind` + fields).
+- `SimRunner` (static, `Monsters` · `Effects` · `Players`) drives the sim every frame in that order — the transitional
+  access point until the phase-5 `WorldRunner` (fixed tick, scene lifecycle).
 - Entity identity is `EntityUUID` (a Guid; `Entity.Id`, `EntityUUID.New()`), minted by whoever creates the entity —
   no central counter, so client prediction, pasted structures and save restores keep their ids. The per-session
   integer handle for packets is the netcode library's, not ours. Not named `EntityId`: Unity 6 has `UnityEngine.EntityId`.
-  The sim attack module is `Attack` (not `Combat` — that is a namespace). Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
+  The sim attack module is `Attack` (not `Combat` — that is a namespace); the effects module is `Effects`. Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
 - **Rule:** sim code (`Runtime/Sim`, `Runtime/Factory` except the bridges) must not `using CoreDawn.Entities`.
   `python tools/check-sim-imports.py` enforces it until asmdefs do (phase 5). Death is decided by the sim:
   `Health.Die → EntityWorld.Died → FactorySystem.Remove → Removed → view destroyed`.

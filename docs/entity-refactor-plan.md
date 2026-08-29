@@ -302,7 +302,7 @@ namespace CoreDawn.Sim
 - 보스 인내심·둥지 방어 로직은 검증이 어렵다(밤 강제 + 보스 도발 시나리오를 eval로 재현). 이식은 **동작 변경 0**을 원칙으로, 변수명·주석까지 그대로 옮긴다.
 - 세이브 포맷이 바뀐다(몬스터 dataId). 베타 전이라 버전 상승으로 처리.
 
-### 4. 효과 · 공격 · 플레이어 · 둥지 — 진행 중 (`feature/combat-sim`, 2026-08-29 시작)
+### 4. 효과 · 공격 · 플레이어 · 둥지 — 완료 2026-08-29 (`feature/combat-sim`, 커밋 6개)
 
 목표: 피해·효과·사망이 **심 안에서 끝난다**. 뷰는 명중을 감지(PhysX)해 심에 넘기고, 심이 정한 결과(HP·넉백·상태)를 그린다.
 
@@ -334,7 +334,7 @@ namespace CoreDawn.Sim
 - [x] 4d 플레이어: `PlayerSystem`(Spawn/Despawn/Spawned·Despawned, 플레이어는 하나) · `Player → PlayerView`(CreatesOwnEntity=false, `PushesPositionToSim`로 뷰→심 위치 미러, OnDestroy가 Despawn) · `MonsterSystemHost → SimRunner`(`Monsters`·`Effects`·`Players`, 러너가 효과→몬스터 순으로 틱; `Players.Spawned`가 `Monsters.PlayerEntity`를 잇는다) · BattleManager가 `Players.Spawn(playerMaxHealth)` 뒤 `AttachEntity` · `ApplicationQuitting`을 EntityView로 — 2026-08-29. 검증: 심 플레이어 Faction.Player 300/300·Effects, 뷰=심·등록부·두뇌 참조 일치, 텔레포트 후 위치차 0.00, 피해 300→240, 오류 0
 - [x] 4e 둥지: `MonsterNest.CreatesOwnEntity=false`, WorldPopulator가 심 엔티티(편=데이터 Faction, Health=프리팹 시드 500 — 둥지 데이터 maxHp 1000은 아직 정본 아님, Effects)를 만들어 붙인다. 굳어 있는(씬에 구운) 둥지는 `ConnectPlaced`에서, 런타임 생성은 `PlaceNests`에서 — 같은 `AttachFreshEntity`. WorldPopulator를 안 거친 옛 씬 둥지만 Start에서 경고와 함께 스스로 세운다. `EntityView.SeedMaxHealth` — 2026-08-29. 검증: 둥지 4 전부 심 엔티티·Monster·Building 모듈·DamageGate·500/500, 보스 생존 중 피해 0, Monster 편 엔티티 12(보스 8+둥지 4, 중복 없음), 경고·오류 0
   - 사고: 편집 스크립트를 두 번 돌려 `SeedMaxHealth`·`CreatesOwnEntity`·Start 폴백이 중복됨 — "이미 적용됨" 판정이 접두 일치라 걸러지지 않았다(3단계 사고의 재발). 컴파일 폴링도 컴파일 시작 전에 끝나 "0 오류"를 믿었다 → `EditorUtility.scriptCompilationFailed`가 정본
-- [ ] 4f 문서·검사 스크립트 → PR
+- [x] 4f 문서(계획서·AGENTS "Sim vs view")·메모리 갱신, `check-sim-imports` 통과 — 2026-08-29. PR은 사용자 승인 뒤
 
 ### 5. asmdef · 고정 틱 · 세이브
 - [ ] asmdef 분리(Sim / Data / Presentation / App / Editor / Tests)로 불변식 강제
@@ -405,6 +405,14 @@ namespace CoreDawn.Sim
 `을 쓰다 줄바꿈이 끼어 컴파일이 깨졌다 — `Environment.NewLine`으로.
 - 정체성 카운터 → UUID(2026-08-29, 사용자 질문 "서버를 고려하면 uuid가 낫지 않나"에서): 카운터의 이점(8바이트·순서·결정론)은 넷코드의 세션 핸들과 서버 권위가 대신하고, 약점(발급자 하나 가정 — 클라 예측·붙여넣기·병합 시 재매김)은 실제 비용이라 바꿈. 아직 어떤 세이브도 번호를 적지 않아 지금이 가장 쌌다. `EntityWorld.NextId/RestoreNextId` 제거, `Create(id, …)` 오버로드 추가. 검증: 엔티티 188 전부 고유·조회 일치, 고정 id 생성·중복 예외, 오류 0.
 - 남은 빚(4단계로): 효과 시스템(EffectController)·CombatComponent가 뷰 → 공격 적용이 `AttackRequested` 이벤트 다리 · 플레이어·둥지는 아직 뷰가 엔티티 생성 · `MonsterSystemHost`·`SimHost.World` 정적 접근점(5단계 WorldRunner). (복원된 웨이브 몬스터 카운트 결함은 같은 브랜치에서 수정 — 3d 참고.)
+
+
+### 2026-08-29 — 4단계 효과·공격·플레이어·둥지를 심으로 (`feature/combat-sim`, 커밋 6개)
+- 커밋 1 설계 초안 → 2 심 효과 모델(EffectSpec/Effects/EffectSystem, SO 데이터화, 투사체·총·타워·웨이브 경로) → 3 공격을 심에서(Attack.Effects, CombatComponent 삭제, 타워 프리팹 8개 YAML 이전) → 4 플레이어(PlayerSystem·PlayerView·SimRunner) → 5 둥지(WorldPopulator가 생성 주체) → 6 문서. 각 커밋마다 밤 강제 플레이 검증, 마지막에 세이브 왕복(전투·플레이어) 회귀.
+- 이제 피해·효과·사망은 심 안에서 끝난다: 뷰의 진입점은 `EntityView.ApplyEffects(Effect[], Entity, point, dir)` 하나(투사체·오라가 PhysX로 감지해 넘김)이고, 근접은 심 `Attack`이 직접 건다. 받는 배율·보호막·무적·아군 무시는 전부 `Health.Damage`의 인터셉터(Effects·Building·DamageGate).
+- 생성 주체: 건물 = FactorySystem, 몬스터 = MonsterSystem, 플레이어 = PlayerSystem, 둥지 = WorldPopulator(월드 생성기가 심에 요청). 뷰 우선(`CreatesOwnEntity=true`)으로 남은 것은 없다 — `EntityView.Awake`의 생성 경로는 옛 씬 호환용.
+- 사고: 편집 스크립트 재실행으로 멤버 중복(접두 일치 함정 재발) · 컴파일 폴링이 컴파일 시작 전에 끝나 "0 오류"를 믿음 — `EditorUtility.scriptCompilationFailed`를 정본으로, 폴링은 `isCompiling`이 true→false를 본 뒤에만 끝낸다.
+- 남은 빚(5단계로): `SimRunner`·`SimHost.World` 정적 접근점 → WorldRunner(고정 틱, 씬 생명주기, World.Clear) · 둥지 규칙(무적·스폰 포인트)이 뷰 → 술어만 `DamageGate` · 둥지 HP 정본(프리팹 500 vs 데이터 1000) 정리 · 웨이브 버프가 세이브 복원 뒤 재적용되지 않음(기존) · 타워 표적 선택이 뷰(Update) · `HealthComponent` 시드는 옛 씬 호환용.
 
 ## 8. 세션 재개 절차
 
