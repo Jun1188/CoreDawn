@@ -336,6 +336,41 @@ namespace CoreDawn.Sim
   - 사고: 편집 스크립트를 두 번 돌려 `SeedMaxHealth`·`CreatesOwnEntity`·Start 폴백이 중복됨 — "이미 적용됨" 판정이 접두 일치라 걸러지지 않았다(3단계 사고의 재발). 컴파일 폴링도 컴파일 시작 전에 끝나 "0 오류"를 믿었다 → `EditorUtility.scriptCompilationFailed`가 정본
 - [x] 4f 문서(계획서·AGENTS "Sim vs view")·메모리 갱신, `check-sim-imports` 통과 — 2026-08-29. PR은 사용자 승인 뒤
 
+### 5a. 공장·타워·둥지를 심으로 — SO 모듈화 (설계 초안 2026-08-29, `feature/factory-sim`)
+
+목표: 공장(`FactorySystem`·`BuildingModule`·행동·벨트)이 **`Sim/`으로 들어가고**, 타워·둥지의 규칙이 심 모듈이 되며, 모듈 구성이 데이터에서 온다. 그러면 5b asmdef가 폴더 그대로 잘린다.
+
+**실측(2026-08-29)** — 심에 못 들어가는 이유는 전부 "SO(UnityEngine.Object) 직접 참조"다:
+- `BuildingModule.Data : BuildingDataSO`, `FactorySystem.Place(BuildingDataSO …)`, 세이브·배치·뷰가 `b.Data`로 크기·isDemolishable·프리팹을 읽는다.
+- 행동이 SO 종류별로 데이터를 읽는다: Assembler(`RecipeDataSO`·`ItemDataSO`), Miner(`ItemDataSO`), Tower(`TowerDataSO`·`AmmoModuleSO`), Core(`CoreDataSO`·`ItemDataSO`). `ItemContainer`·`BeltSegment`가 `ItemDataSO`를 들고, 세이브는 `SaveRefs.IdOf(so)`로 id를 적는다.
+- `so.CreateBehavior(b)`가 행동을 만든다(데이터 → 로직 방향의 의존). 5a 직전 정리로 행동 클래스는 이미 `Game/Factory/Behaviors/`로 분리됐다.
+- 타워: `TowerView`(411줄)가 표적·조준·탄약·발사를 `Update`에서 돌린다. 둥지: `NestView`(788줄)가 스폰 포인트·보스·복구일·무적 규칙을 든다.
+- `BaseProcessor`/`MachineProcessor`(MonoBehaviour 코루틴 제작기)는 사용처가 없다 — 옛 경로, 삭제 후보.
+- 격자가 셋: `Sim.GridGeometry`(공장), `Placement.GridSystem`(배치), `Navigation.GridManager`(길찾기, 자체 cellSize·origin) — 서로 검사만 하고 정본이 없다.
+
+**결정이 필요한 것 — 아이템·레시피를 심이 어떻게 아는가**
+- (A) 전부 Spec: `ItemSpec`·`RecipeSpec`·`BuildingSpec`(불변 스냅샷, 효과·몬스터와 같은 방식). 가장 깨끗하지만 인벤토리·UI 패널·세이브·에디터가 전부 SO ↔ Spec 매핑을 타야 해서 범위가 인벤토리 전체로 번진다.
+- (C, 권장) **정의 인터페이스**: 심이 `IItemDef { Id, MaxStack, … }`·`IRecipeDef`·`IBuildingDef`만 알고, SO가 그 인터페이스를 구현한다. 심 시그니처에는 `UnityEngine.Object`가 없고(asmdef Sim은 Data를 참조하지 않는다 — Data가 Sim을 참조해 구현), 테스트는 가짜 정의로 돈다. 뷰·UI는 필요할 때 `as ItemDataSO`로 아이콘을 꺼낸다. 효과·몬스터에서 Spec을 택한 이유(런타임 값의 불변 스냅샷·참조 동일성)는 정적 콘텐츠인 아이템·레시피엔 약하다. 나중에 모딩·NBT가 필요해지면 (A)로 갈 수 있다.
+- (B) 공장은 Game에 두고 등록부·모듈 조립·타워/둥지만 한다 — 가장 작지만 5b에서 Sim asmdef가 공장을 못 담는다.
+
+**설계(C 기준)**
+- `Sim/Definitions/`: `IItemDef`(Id·MaxStack·Category)·`IRecipeDef`(Inputs/Outputs (IItemDef, int)[]·Seconds)·`IBuildingDef`(Id·Size·Faction·MaxHp·Ports·IsDemolishable·IsAttackable·Kind·행동 파라미터 접근)·`IAmmoDef`. SO들이 구현. `EffectSpecs`처럼 변환기가 필요 없다 — SO 자체가 정의다.
+- `Sim/Factory/`: `FactorySystem`·`BuildingModule`(`Def : IBuildingDef`)·`BuildingGraph`·`BeltSegment*`·`ItemContainer`(Inventories에서 이동, `IItemDef`)·행동들(`IBuildingBehavior`, `Behaviors/`). 행동 생성은 **등록부** `BuildingBehaviors.Register<TDef>(def → behavior)` — SO의 `CreateBehavior`는 사라지고 Data는 로직을 모른다.
+- 모듈 조립의 데이터화: `IBuildingDef.Kind`/`MonsterSpec`이 "어떤 모듈이 붙는가"를 말하고, `FactorySystem.Place`·`MonsterSystem.Spawn`은 그 목록을 읽어 조립한다(하드코딩 제거). 새 모듈(재생·보호막)은 데이터만 바꾸면 붙는다.
+- `TowerBrainModule`(심): 표적 선택(`QueryClosest` + 최소 사거리 + 유지 여유)·조준 완료 판정·발사 시점·탄약 소비(`TowerBehavior` 흡수). 뷰에는 `FireRequested(target, round, dir)` 이벤트만 — 투사체 생성·포신 회전·연출은 `TowerView`가(뷰는 사라지고 `TowerVisualController`로 축소).
+- `NestModule`(심): 스폰 포인트·보스 연결·파괴/복구일·무적 규칙(`IDamageInterceptor`) — `DamageGateModule` 삭제. `NestView`는 프리팹 표시·스폰 포인트 위치 제공으로 축소. 방어자·보스 스폰은 `MonsterSystem`이 둥지 모듈의 요청으로.
+- 격자 정본 하나: `Sim.GridGeometry`를 `GridManager`·`PlacementSystem`이 참조(복사본·검사 제거).
+- `BaseProcessor`·`MachineProcessor` 삭제(사용처 없음 확인 뒤).
+- 옮기는 순서(각 커밋 플레이 가능): ① 정의 인터페이스 + SO 구현 + 행동 등록부(공장은 아직 Game) → ② `ItemContainer`·공장 코어를 `Sim/Factory/`로(브리지만 Game에) → ③ `TowerBrainModule` → ④ `NestModule`(+DamageGate 삭제) → ⑤ 격자 정본·`BaseProcessor` 삭제 → ⑥ 문서. 세이브 포맷은 그대로(id 문자열).
+- 리스크: `IInteractiveBehavior.Interact(PlayerController)`(UI를 여는 행동)는 심에 못 들어간다 → `Interact`를 뷰 쪽 `IInteractionPresenter` 등록부로 옮긴다. 팀원이 새 건물 SO에 `CreateBehavior`를 override했다면 등록부 방식으로 바꿔야 한다(PR 본문 안내).
+
+- [ ] 5a-1 정의 인터페이스·SO 구현·행동 등록부
+- [ ] 5a-2 공장 코어 → `Sim/Factory/`
+- [ ] 5a-3 `TowerBrainModule`
+- [ ] 5a-4 `NestModule`, `DamageGateModule` 삭제
+- [ ] 5a-5 격자 정본 하나, `BaseProcessor` 삭제
+- [ ] 5a-6 문서·PR
+
 ### 5. asmdef · 고정 틱 · 세이브
 - [ ] asmdef 분리(Sim / Data / Presentation / App / Editor / Tests)로 불변식 강제
 - [ ] 심 자기 시계(`World.Now`, 고정 20Hz — `FactorySim` 10Hz 틱과 같은 방식), 뷰 보간
