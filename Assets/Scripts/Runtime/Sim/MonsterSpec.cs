@@ -21,6 +21,8 @@ namespace CoreDawn.Sim
 
         public float AttackRange;
         public float AttackCooldown;
+        /// <summary>명중 효과 — 종류 데이터의 attackEffects를 심 효과로 변환한 것. 심 Attack이 직접 건다.</summary>
+        public Effect[] AttackEffects;
 
         // 보스 리쉬·인내심 — 보스로 배치될 때만 쓰인다
         public float MaxPatience;

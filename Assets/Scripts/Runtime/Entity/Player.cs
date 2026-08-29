@@ -24,12 +24,8 @@ namespace CoreDawn.Entities
         [Tooltip("스캔 주기(초). 매 프레임 훑지 않는다.")]
         [SerializeField] private float scanInterval = 0.2f;
 
-        // 근접 자동 반격은 제거됐다 — 눈에 보이는 공격 동작 없이 몬스터 HP가 깎여
-        // "보스가 자기 자신을 공격한다"로 보이는 혼란을 만들었다. 피해는 총기(Bullet)만 준다.
-        // CombatComponent 자체는 엔티티 계약(Entity.Combat) 유지용으로만 남긴다.
-        [SerializeField] private CombatComponent combat = new CombatComponent();
-
-        public override CombatComponent Combat => combat;
+        // 근접 자동 반격은 없다 — 눈에 보이는 공격 동작 없이 몬스터 HP가 깎여
+        // "보스가 자기 자신을 공격한다"로 보이는 혼란을 만들었다. 피해는 총기(Bullet)만 준다. 그래서 심 Attack 모듈도 없다.
 
         public float DetectionRange => detectionRange;
 
@@ -41,12 +37,6 @@ namespace CoreDawn.Entities
         private readonly HashSet<MonsterView> detected = new HashSet<MonsterView>();
         private readonly HashSet<MonsterView> seenThisScan = new HashSet<MonsterView>();
         private readonly List<MonsterView> removeBuffer = new List<MonsterView>();
-
-        protected override void Awake()
-        {
-            base.Awake();
-            combat.Initialize(this);
-        }
 
         // 보스 두뇌가 "누가 때렸는지 모를 때"(타워·환경 피해) 상대로 삼는 플레이어 — 심 엔티티가 붙는 순간 알린다
         protected override void OnEntityAttached()

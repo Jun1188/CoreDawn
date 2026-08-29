@@ -68,7 +68,7 @@ namespace CoreDawn.Combat
         {
             MaxHp = maxHp, MoveSpeed = moveSpeed, RotateSpeed = rotateSpeed, CrowdRadius = crowdRadius,
             KnockbackDamping = knockbackDamping, StickToGround = stickToGround,
-            AttackRange = attackRange, AttackCooldown = attackCooldown,
+            AttackRange = attackRange, AttackCooldown = attackCooldown, AttackEffects = EffectSpecs.ToSim(attackEffects),
             MaxPatience = maxPatience, PatienceRadius = patienceRadius, OutsidePatienceDrain = outsidePatienceDrain,
             RangedPokePatienceDrain = rangedPokePatienceDrain, PatienceRecoverRate = patienceRecoverRate,
             AbsoluteLeashMultiplier = absoluteLeashMultiplier, ReturnRegenPerSecond = returnRegenPerSecond, ReturnTimeout = returnTimeout,

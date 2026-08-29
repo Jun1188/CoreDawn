@@ -100,9 +100,6 @@ namespace CoreDawn.Entities
         /// <summary>심 효과 모듈 — 활성 지속 효과·배율. 심이 아직 안 붙었으면 null(뷰 우선 개체는 Awake에서 붙는다).</summary>
         public Effects Effects => Entity?.Get<Effects>();
 
-        // 하위 클래스가 보유한 컴포넌트만 노출 (없으면 null). 이동은 심 모듈(Movement)로 갔다 — MonsterView.SimMovement
-        public virtual CombatComponent Combat => null;
-
         /// <summary>죽었거나 심에서 빠졌는가. 심이 아직 안 붙은 뷰는 죽은 것이 아니다(IsValidTarget이 따로 거른다).</summary>
         public virtual bool IsDead =>
             Entity != null && (Entity.IsRemoved || (Entity.Health != null && Entity.Health.IsDead));
@@ -112,11 +109,8 @@ namespace CoreDawn.Entities
         public event Action<float, float> OnHealthChanged;
         public event Action OnDeath;
 
-        public event Action OnAttackAction
-        {
-            add { if (Combat != null) Combat.OnAttackAction += value; }
-            remove { if (Combat != null) Combat.OnAttackAction -= value; }
-        }
+        /// <summary>이 엔티티가 공격했다 — 심 Attack.Attacked의 릴레이(애니메이션·소리). 효과는 이미 심에서 처리됐다.</summary>
+        public event Action OnAttackAction;
 
         protected virtual void Awake()
         {
@@ -147,6 +141,8 @@ namespace CoreDawn.Entities
                 h.OnDeath += RelayDeath;
             }
 
+            var a = entity.Get<Attack>();
+            if (a != null) a.Attacked += RelayAttacked;   // 공격 연출 이벤트 — 심이 때렸다고 하면 뷰가 애니메이션
             OnEntityAttached();
             if (h != null) OnHealthChanged?.Invoke(h.CurrentHealth, h.MaxHealth);
         }
@@ -160,6 +156,8 @@ namespace CoreDawn.Entities
                 h.OnHealthChanged -= RelayHealthChanged;
                 h.OnDeath -= RelayDeath;
             }
+            var a = Entity.Get<Attack>();
+            if (a != null) a.Attacked -= RelayAttacked;
             EntityViewRegistry.Unregister(this, Entity);
             Entity = null;
         }
@@ -168,6 +166,7 @@ namespace CoreDawn.Entities
         protected virtual void OnEntityAttached() { }
 
         void RelayHealthChanged(float current, float max) => OnHealthChanged?.Invoke(current, max);
+        void RelayAttacked(SimEntity target) => OnAttackAction?.Invoke();
 
         // 순서: 심(EffectSystem이 효과 정리, 공장이 건물 제거)이 먼저 결정하고 → 사망 연출 → 외부 구독자
         void RelayDeath()
@@ -187,20 +186,9 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>
-        /// 공격 명중의 단일 진입점 — 효과 항목 목록을 이 엔티티에 적용한다.
-        /// 시전측 배율(공격 버프·포탑 배율)은 시전자가 보낼 때 이미 항목에 구워져(bake) 있다.
-        ///
-        /// virtual인 이유: "누가 때렸는가"로 갈리는 규칙은 여기서만 판단할 수 있다.
-        /// ReceiveDamage는 시전자를 모르므로(수치만 받는다) 플레이어 공격만 막는 것 같은
-        /// 규칙은 이쪽을 override해야 한다.
-        /// </summary>
-        public virtual void ApplyEffects(IReadOnlyList<EffectEntry> entries,
-                                         EntityView source, Vector3 hitPoint, Vector3 hitDirection = default)
-            => ApplyEffects(EffectSpecs.ToSim(entries), source != null ? source.Entity : null, hitPoint, hitDirection);
-
-        /// <summary>
-        /// 심 효과 목록 적용 — 투사체·오라처럼 발사 시점에 이미 변환·베이크된 목록이 명중했을 때.
+        /// 공격 명중의 단일 진입점 — 투사체·오라가 명중을 감지해(PhysX) 발사 시점에 이미 변환·베이크된 심 효과 목록을 넘긴다.
         /// 여기서부터는 심 안이다: 피해·넉백·지속 효과·사망이 Effects → Health/Movement에서 끝난다. 심이 없으면 무시.
+        /// 근접 공격은 여길 거치지 않는다 — 심 Attack이 심 안에서 직접 건다.
         /// </summary>
         public void ApplyEffects(IReadOnlyList<Effect> effects, SimEntity source, Vector3 hitPoint, Vector3 hitDirection = default)
             => Effects?.Apply(effects, source, hitPoint, hitDirection);

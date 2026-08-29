@@ -62,7 +62,7 @@ namespace CoreDawn.Sim
             e.Add(new Health(spec.MaxHp));
             e.Add(new Effects());   // 받는 배율·지속 효과 — Movement보다 먼저(속도 배율을 읽는다)
             e.Add(new Movement(spec, Nav));
-            e.Add(new Attack(spec.AttackRange, spec.AttackCooldown));
+            e.Add(new Attack(spec.AttackRange, spec.AttackCooldown, spec.AttackEffects));
             e.Add(new MonsterBrain(this, spec));
 
             _monsters.Add(e);
