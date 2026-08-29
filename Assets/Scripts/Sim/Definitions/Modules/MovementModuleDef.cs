@@ -1,9 +1,8 @@
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace CoreDawn.Sim
 {
-    /// <summary>이동 — 몬스터 값(기존 MonsterSpec). 런타임은 5a-2에서 이 정의로 만든다(내비게이션 주입 필요).</summary>
+    /// <summary>이동 — 몬스터 값. 내비게이션은 조립 뒤 시스템이 꽂는다(정의는 씬을 모른다).</summary>
     public sealed class MovementModuleDef : EntityModuleDef
     {
         [JsonProperty("moveSpeed")] public float MoveSpeed = 4f;
@@ -11,5 +10,7 @@ namespace CoreDawn.Sim
         [JsonProperty("crowdRadius")] public float CrowdRadius = 0.4f;
         [JsonProperty("knockbackDamping")] public float KnockbackDamping = 8f;
         [JsonProperty("stickToGround")] public bool StickToGround = true;
+
+        public override EntityModule Create(Entity entity) => new MovementModule(this);
     }
 }

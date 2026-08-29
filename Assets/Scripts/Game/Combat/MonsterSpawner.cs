@@ -16,9 +16,16 @@ namespace CoreDawn.Combat
         public static MonsterView Spawn(MonsterDataSO data, Vector3 position, Quaternion rotation, Transform parent)
         {
             if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
-            var spec = data != null ? data.ToSpec() : MonsterSpec.Default;
+            // 정의는 팩(json)에서 — SO는 프리팹·세이브 id 같은 표현 몫만 남았다(5a-3에서 뷰 카탈로그로)
+            var db = SimHost.Database;
+            var def = db != null && data != null ? db.Entity(db.LegacyId(data.Id)) : null;
+            if (def == null)
+            {
+                Debug.LogError($"[MonsterSpawner] 팩에 몬스터 정의가 없습니다: {(data != null ? data.Id : "(null)")} — 스폰 취소");
+                return null;
+            }
 
-            var entity = SimRunner.Monsters.Spawn(spec, position, rotation * Vector3.forward);
+            var entity = SimRunner.Monsters.Spawn(def, position, rotation * Vector3.forward);
 
             GameObject go = data != null && data.prefab != null
                 ? Object.Instantiate(data.prefab, position, rotation, parent)

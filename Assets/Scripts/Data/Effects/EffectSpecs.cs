@@ -13,11 +13,24 @@ namespace CoreDawn.Data
     {
         static readonly Dictionary<EffectSO, EffectSpec> cache = new Dictionary<EffectSO, EffectSpec>();
 
+        /// <summary>팩에 없어 SO에서 만든 횟수 — 0이어야 정상(검증용).</summary>
+        public static int FallbackCount { get; private set; }
+
         public static EffectSpec Of(EffectSO so)
         {
             if (so == null) return null;
             if (cache.TryGetValue(so, out var spec)) return spec;
 
+            // 정의의 정본은 팩(json)이다 — SO는 같은 id의 정의를 가리키는 손잡이일 뿐. 팩이 없을 때(에디터 도구)만 SO에서 만든다
+            var db = SimHost.Database;
+            var fromPack = db?.Effect(db.LegacyId(so.Id));
+            if (fromPack != null)
+            {
+                cache[so] = fromPack;
+                return fromPack;
+            }
+            if (db != null) UnityEngine.Debug.LogWarning($"[EffectSpecs] 팩에 효과 정의가 없어 SO에서 만듭니다: {so.Id}");
+            FallbackCount++;
             spec = so.BuildSpec();
             cache[so] = spec;   // affects를 잇기 전에 등록 — 버프끼리 서로 가리켜도(순환) 무한 재귀 없음
 
@@ -53,6 +66,6 @@ namespace CoreDawn.Data
 
         // 도메인 리로드를 끈 환경(Enter Play Mode Options)에서 플레이를 다시 들어가도 에셋 편집이 반영되게
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() => cache.Clear();
+        static void Reset() { cache.Clear(); FallbackCount = 0; }
     }
 }

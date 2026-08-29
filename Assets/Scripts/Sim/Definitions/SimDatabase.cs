@@ -44,6 +44,27 @@ namespace CoreDawn.Sim
 
         public static string IdOf(string pack, string singular, string key) => $"{pack}:{singular}/{key}";
 
+        static readonly Dictionary<string, string> LegacySections = new Dictionary<string, string>
+        {
+            ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
+            ["Wave"] = "wave", ["Gun"] = "gun", ["Tutorial"] = "tutorial",
+        };
+
+        /// <summary>
+        /// 옛 id("Item:IronPlate", SO·세이브가 아직 쓴다) → 이 팩의 v2 id("coredawn:item/iron_plate"). 규칙이 순수해서 표가 필요 없다.
+        /// 이미 v2 형식이면 그대로. SO가 퇴역하고 세이브 마이그레이션이 끝나면(5a-1c·5a-3) 사라진다.
+        /// </summary>
+        public string LegacyId(string oldId)
+        {
+            if (string.IsNullOrEmpty(oldId) || oldId.Contains("/")) return oldId;
+            int i = oldId.IndexOf(':');
+            if (i < 0 || !LegacySections.TryGetValue(oldId.Substring(0, i), out var section)) return oldId;
+            var name = Regex.Replace(oldId.Substring(i + 1), "^Recipe_", "");
+            name = Regex.Replace(name, "(?<=[a-z0-9])(?=[A-Z])", "_");
+            name = Regex.Replace(name, "(?<=[A-Z])(?=[A-Z][a-z])", "_");
+            return IdOf(Pack, section, name.ToLowerInvariant());
+        }
+
         /// <summary>json 문자열에서 로드. strict면 오류가 하나라도 있을 때 예외(개발 중 기본), 아니면 Errors에 모으고 계속.</summary>
         public static SimDatabase Load(string json, string pack, bool strict = true)
         {

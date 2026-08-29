@@ -54,16 +54,21 @@ namespace CoreDawn.Sim
         /// <summary>
         /// 몬스터를 세운다 — 엔티티 + Health + Movement + Attack + MonsterBrain. 뷰(프리팹)는 호출자가 따로 만들어 붙인다.
         /// </summary>
-        public Entity Spawn(in MonsterSpec spec, Vector3 position, Vector3 facing)
+        /// <summary>
+        /// 정의(json entities)대로 몬스터를 조립한다 — Health·Effects·Movement·Attack·MonsterBrain 순서는 정의가 정한다.
+        /// 씬에 매인 것(내비게이션)과 시스템 참조는 조립 뒤 여기서 꽂는다.
+        /// </summary>
+        public Entity Spawn(EntityDef def, Vector3 position, Vector3 facing)
         {
-            var e = World.Create(Faction.Monster, position);
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            var e = World.Create(def.Faction, position);
             if (facing.sqrMagnitude > 0.0001f) { facing.y = 0f; e.Facing = facing.normalized; }
 
-            e.Add(new HealthModule(spec.MaxHp));
-            e.Add(new EffectsModule());   // 받는 배율·지속 효과 — Movement보다 먼저(속도 배율을 읽는다)
-            e.Add(new MovementModule(spec, Nav));
-            e.Add(new AttackModule(spec.AttackRange, spec.AttackCooldown, spec.AttackEffects));
-            e.Add(new MonsterBrainModule(this, spec));
+            def.Assemble(e);
+            e.Get<MovementModule>()?.SetNavigation(Nav);
+            var brain = e.Get<MonsterBrainModule>();
+            if (brain == null) throw new InvalidOperationException($"{def.Id}: 몬스터 정의에 MonsterBrain 모듈이 없다");
+            brain.Bind(this);
 
             _monsters.Add(e);
             Spawned?.Invoke(e);

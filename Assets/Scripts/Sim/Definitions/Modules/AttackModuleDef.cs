@@ -14,5 +14,7 @@ namespace CoreDawn.Sim
         {
             foreach (var e in Effects) e.Resolve(db, errors, owner);
         }
+
+        public override EntityModule Create(Entity entity) => new AttackModule(Range, Cooldown, EffectUse.ToEffects(Effects));
     }
 }

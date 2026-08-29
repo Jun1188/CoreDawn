@@ -16,8 +16,8 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class MonsterBrainModule : EntityModule
     {
-        readonly MonsterSystem system;
-        readonly MonsterSpec spec;
+        MonsterSystem system;               // 조립 뒤 Bind — 정의는 시스템을 모른다
+        readonly MonsterBrainModuleDef def;
 
         MovementModule movement;
         AttackModule attack;
@@ -59,17 +59,16 @@ namespace CoreDawn.Sim
         // 값이 있으면 거리가 아니라 보스의 교전 지속 여부로 이탈을 판정한다.
         Entity escortBoss;
 
-        public MonsterBrainModule(MonsterSystem system, in MonsterSpec spec)
-        {
-            this.system = system ?? throw new ArgumentNullException(nameof(system));
-            this.spec = spec;
-        }
+        public MonsterBrainModule(MonsterBrainModuleDef def) => this.def = def ?? throw new ArgumentNullException(nameof(def));
+
+        /// <summary>시스템 연결 — MonsterSystem이 조립 직후 부른다. 틱·시계·플레이어 참조는 여기서 온다.</summary>
+        internal void Bind(MonsterSystem system) => this.system = system ?? throw new ArgumentNullException(nameof(system));
 
         protected internal override void OnAttach()
         {
             movement = Owner.Get<MovementModule>();
             attack = Owner.Get<AttackModule>();
-            patience = spec.MaxPatience;
+            patience = def.MaxPatience;
 
             Owner.Died += OnDied;
             // 어그로를 OnHealthChanged("HP가 max 미만")에 걸면 안 된다 — 복귀 중 체력 재생이 매 틱 그 조건을 만족시켜
@@ -95,12 +94,12 @@ namespace CoreDawn.Sim
         public Vector3 DefendOrigin => defendOrigin;
 
         /// <summary>남은 인내심 비율(0~1) — 체력바 아래 인내심 바가 읽는다.</summary>
-        public float PatienceRatio => spec.MaxPatience > 0f ? Mathf.Clamp01(patience / spec.MaxPatience) : 1f;
+        public float PatienceRatio => def.MaxPatience > 0f ? Mathf.Clamp01(patience / def.MaxPatience) : 1f;
 
         /// <summary>인내심이 다 닳아 자기 자리로 돌아가는 중인가. 이 동안에는 무슨 짓을 해도 다시 끌어당길 수 없다.</summary>
         public bool IsReturningHome => isReturningToNest;
 
-        bool ReturnTimedOut => spec.ReturnTimeout > 0f && Now - returnStartTime > spec.ReturnTimeout;
+        bool ReturnTimedOut => def.ReturnTimeout > 0f && Now - returnStartTime > def.ReturnTimeout;
 
         /// <summary>복귀 상태를 켜고 끄는 유일한 통로 — 넉백 면역이 여기에 딸려 다닌다(둘은 같은 규칙의 양면).</summary>
         bool IsReturning
@@ -114,7 +113,7 @@ namespace CoreDawn.Sim
         }
 
         float EffectivePatienceRadius =>
-            spec.PatienceRadius > 0f ? spec.PatienceRadius : (zone.HasValue ? zone.Value.ChaseRange : 25f);
+            def.PatienceRadius > 0f ? def.PatienceRadius : (zone.HasValue ? zone.Value.ChaseRange : 25f);
 
         float EffectiveLeashRange => zone.HasValue ? zone.Value.LeashRange : defendRadius;
 
@@ -137,7 +136,7 @@ namespace CoreDawn.Sim
             defendOrigin = Owner.Position;
             zone = engagementZone;
             defendRadius = zone.HasValue ? zone.Value.LeashRange : defendRadius;
-            patience = spec.MaxPatience;
+            patience = def.MaxPatience;
         }
 
         /// <summary>
@@ -171,7 +170,7 @@ namespace CoreDawn.Sim
             aggroOnPlayer = false;
             currentTarget = null;
             escortBoss = null;
-            patience = spec.MaxPatience;
+            patience = def.MaxPatience;
 
             // 즉시 풀피가 사라졌으므로, 각성하지 않았는데 체력이 깎여 있는 보스는 저장 시점에 둥지로 복귀하던 중이었다는 뜻이다.
             var hp = Owner.Health;
@@ -210,7 +209,7 @@ namespace CoreDawn.Sim
             if (!hasBeenAttacked)
             {
                 hasBeenAttacked = true;
-                patience = spec.MaxPatience;
+                patience = def.MaxPatience;
                 Debug.Log("[MonsterBrain] 보스 몬스터가 공격을 받아 깨어났습니다!");
             }
 
@@ -319,7 +318,7 @@ namespace CoreDawn.Sim
             float fromHome = Vector3.Distance(Owner.Position, defendOrigin);
 
             // 절대 상한 — 맵 밖까지 끌려나가는 것만 막는 안전장치다.
-            if (!IsValidTarget(currentTarget) || fromHome > EffectiveLeashRange * Mathf.Max(1f, spec.AbsoluteLeashMultiplier))
+            if (!IsValidTarget(currentTarget) || fromHome > EffectiveLeashRange * Mathf.Max(1f, def.AbsoluteLeashMultiplier))
             {
                 BeginReturnToNest();
                 return false;
@@ -331,9 +330,9 @@ namespace CoreDawn.Sim
             bool targetInside = Vector3.Distance(currentTarget.Position, defendOrigin) <= radius;
 
             if (bossInside && targetInside)
-                patience = Mathf.Min(spec.MaxPatience, patience + dt * spec.PatienceRecoverRate);
+                patience = Mathf.Min(def.MaxPatience, patience + dt * def.PatienceRecoverRate);
             else
-                patience -= dt * (bossInside ? spec.RangedPokePatienceDrain : spec.OutsidePatienceDrain);
+                patience -= dt * (bossInside ? def.RangedPokePatienceDrain : def.OutsidePatienceDrain);
 
             if (patience <= 0f)
             {
@@ -348,8 +347,8 @@ namespace CoreDawn.Sim
         void TickReturnRegen(float dt)
         {
             var hp = Owner.Health;
-            if (hp == null || spec.ReturnRegenPerSecond <= 0f || hp.CurrentHealth >= hp.MaxHealth) return;
-            hp.Heal(hp.MaxHealth * spec.ReturnRegenPerSecond * dt);
+            if (hp == null || def.ReturnRegenPerSecond <= 0f || hp.CurrentHealth >= hp.MaxHealth) return;
+            hp.Heal(hp.MaxHealth * def.ReturnRegenPerSecond * dt);
         }
 
         bool ShouldAbandonNestFight()
@@ -379,7 +378,7 @@ namespace CoreDawn.Sim
                 hasBeenAttacked = false;
                 IsReturning = true;
                 returnStartTime = Now;
-                patience = spec.MaxPatience;
+                patience = def.MaxPatience;
             }
 
             SetState(new ReturnToOriginState(defendOrigin, despawnOnArrival: !isBoss));
@@ -389,7 +388,7 @@ namespace CoreDawn.Sim
         internal void OnReturnedHome()
         {
             IsReturning = false;
-            patience = spec.MaxPatience;
+            patience = def.MaxPatience;
             if (Owner.IsAlive) Owner.Health?.ResetToFull();
         }
 

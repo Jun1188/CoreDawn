@@ -63,15 +63,5 @@ namespace CoreDawn.Data
         [Tooltip("복귀가 이 시간(초)을 넘기면 길이 막힌 것으로 보고 그 자리에서 복귀를 접는다. 0 이하면 제한 없음.")]
         public float returnTimeout = 20f;
 
-        /// <summary>심이 모듈을 조립할 때 읽는 숫자 묶음 — 에셋 참조(프리팹·효과)는 뷰 쪽에 남는다.</summary>
-        public MonsterSpec ToSpec() => new MonsterSpec
-        {
-            MaxHp = maxHp, MoveSpeed = moveSpeed, RotateSpeed = rotateSpeed, CrowdRadius = crowdRadius,
-            KnockbackDamping = knockbackDamping, StickToGround = stickToGround,
-            AttackRange = attackRange, AttackCooldown = attackCooldown, AttackEffects = EffectSpecs.ToSim(attackEffects),
-            MaxPatience = maxPatience, PatienceRadius = patienceRadius, OutsidePatienceDrain = outsidePatienceDrain,
-            RangedPokePatienceDrain = rangedPokePatienceDrain, PatienceRecoverRate = patienceRecoverRate,
-            AbsoluteLeashMultiplier = absoluteLeashMultiplier, ReturnRegenPerSecond = returnRegenPerSecond, ReturnTimeout = returnTimeout,
-        };
     }
 }
