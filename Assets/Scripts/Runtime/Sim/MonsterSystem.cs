@@ -147,7 +147,7 @@ namespace CoreDawn.Sim
                     if (dist < 0.0001f)
                     {
                         // 완전히 겹친 경우 — 번호 기반 고정 방향 (좌우 진동 방지)
-                        float angle = (a.Id.Value % 360) * Mathf.Deg2Rad;
+                        float angle = ((a.Id.GetHashCode() & 0x7fffffff) % 360) * Mathf.Deg2Rad;   // 엔티티마다 고정된 각 — 같은 자리에 겹친 둘이 매 틱 다른 방향으로 흔들리지 않게
                         dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
                     }
                     else dir = d / dist;

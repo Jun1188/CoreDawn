@@ -5,7 +5,7 @@ using UnityEngine;
 namespace CoreDawn.Sim
 {
     /// <summary>
-    /// 엔티티 등록부 — 번호 발급·조회·제거·반경 질의와 월드 단위 이벤트. 그 이상은 아니다.
+    /// 엔티티 등록부 — 정체성 발급·조회·제거·반경 질의와 월드 단위 이벤트. 그 이상은 아니다.
     ///
     /// 격자 기하·시계·시스템 목록은 여기 없다: 격자는 공장의 것(FactorySystem.Geometry)이고,
     /// 시계·시스템 묶음은 5단계의 심 루트(WorldRunner)가 가진다. 등록부에 그런 것을 얹으면
@@ -20,11 +20,7 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class EntityWorld
     {
-        readonly Dictionary<Id, Entity> _entities = new Dictionary<Id, Entity>();
-        ulong _next = 1;   // 0 = None
-
-        /// <summary>다음에 발급될 번호. 세이브 헤더가 저장하고 복원은 <see cref="RestoreNextId"/>로.</summary>
-        public ulong NextId => _next;
+        readonly Dictionary<EntityUUID, Entity> _entities = new Dictionary<EntityUUID, Entity>();
 
         public int Count => _entities.Count;
 
@@ -35,16 +31,24 @@ namespace CoreDawn.Sim
         public event Action<Entity> Died;
         public event Action<Entity> Removed;
 
-        public Entity Create(Faction faction, Vector3 position)
+        public Entity Create(Faction faction, Vector3 position) => Create(EntityUUID.New(), faction, position);
+
+        /// <summary>
+        /// 정해진 정체성으로 만든다 — 세이브 복원·서버가 보낸 스폰·클라이언트 예측 확정처럼 id가 먼저 있는 경우.
+        /// 같은 id가 이미 있으면 예외(같은 것을 두 번 되살리려는 것이므로 조용히 덮지 않는다).
+        /// </summary>
+        public Entity Create(EntityUUID id, Faction faction, Vector3 position)
         {
-            var e = new Entity(this, new Id(_next++), faction, position);
+            if (id.IsNone) throw new ArgumentException("EntityUUID.None으로는 만들 수 없다", nameof(id));
+            if (_entities.ContainsKey(id)) throw new InvalidOperationException($"entity {id} already exists");
+            var e = new Entity(this, id, faction, position);
             _entities.Add(e.Id, e);
             AddToBucket(BucketOf(position), e);
             Created?.Invoke(e);
             return e;
         }
 
-        public Entity Get(Id id) => _entities.TryGetValue(id, out var e) ? e : null;
+        public Entity Get(EntityUUID id) => _entities.TryGetValue(id, out var e) ? e : null;
 
         public bool Contains(Entity e) => e != null && !e.IsRemoved && e.World == this;
 
@@ -63,15 +67,6 @@ namespace CoreDawn.Sim
         {
             buffer.Clear();
             buffer.AddRange(_entities.Values);
-        }
-
-        /// <summary>
-        /// 세이브 복원 전용 — 번호 발급 지점을 저장 시점으로 되돌린다. 엔티티를 복원하기 전에 호출할 것.
-        /// 이미 발급된 번호보다 뒤로 물리지는 않는다(중복 발급 방지).
-        /// </summary>
-        public void RestoreNextId(ulong next)
-        {
-            if (next > _next) _next = next;
         }
 
         internal void NotifyDied(Entity e) => Died?.Invoke(e);
