@@ -378,7 +378,7 @@ namespace CoreDawn.Worlds
                 go.name = $"Nest_{spec.cell.x}_{spec.cell.y}";
                 Mark(go, spec.cell, nestData);
 
-                var nest = go.GetComponent<MonsterNest>();
+                var nest = go.GetComponent<NestView>();
                 if (nest != null)
                 {
                     // 둥지 엔티티는 심에 먼저 만든다(편·HP는 둥지 데이터, Effects) — 뷰는 받아서 그린다.
@@ -627,10 +627,10 @@ namespace CoreDawn.Worlds
         /// 프리팹 배선을 그대로 두면 맵이 점을 늘리거나 보스를 빼도 반영되지 않아,
         /// json과 실제 스폰 수가 어긋난다.
         /// </summary>
-        static void ApplySpawnPoints(World world, MonsterNest nest, in NestSpec spec)
+        static void ApplySpawnPoints(World world, NestView nest, in NestSpec spec)
         {
             if (spec.spawnPoints == null || spec.spawnPoints.Length == 0) return;
-            if (nest.spawnPoints == null) nest.spawnPoints = new List<MonsterNest.NestSpawnPoint>();
+            if (nest.spawnPoints == null) nest.spawnPoints = new List<NestView.NestSpawnPoint>();
 
             MonsterDataSO bossTemplate = null;
             foreach (var existing in nest.spawnPoints)
@@ -641,7 +641,7 @@ namespace CoreDawn.Worlds
                 var point = spec.spawnPoints[i];
                 Vector3 pos = world.CellToWorldCenter(spec.cell + point.offset);
 
-                MonsterNest.NestSpawnPoint slot;
+                NestView.NestSpawnPoint slot;
                 if (i < nest.spawnPoints.Count && nest.spawnPoints[i] != null && nest.spawnPoints[i].point != null)
                 {
                     slot = nest.spawnPoints[i];
@@ -654,7 +654,7 @@ namespace CoreDawn.Worlds
                     t.position = pos;
 
                     if (i < nest.spawnPoints.Count && nest.spawnPoints[i] != null) { slot = nest.spawnPoints[i]; slot.point = t; }
-                    else { slot = new MonsterNest.NestSpawnPoint { point = t }; nest.spawnPoints.Add(slot); }
+                    else { slot = new NestView.NestSpawnPoint { point = t }; nest.spawnPoints.Add(slot); }
                 }
 
                 slot.bossData = point.hasBoss ? bossTemplate : null;

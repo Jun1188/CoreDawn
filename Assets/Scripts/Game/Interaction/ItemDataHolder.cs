@@ -1,7 +1,7 @@
 using UnityEngine;
 using CoreDawn.Data;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Interaction
 {
     public class ItemDataHolder : MonoBehaviour
     {

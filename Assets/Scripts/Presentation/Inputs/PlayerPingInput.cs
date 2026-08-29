@@ -4,6 +4,7 @@ using CoreDawn.Entities;
 using CoreDawn.Inputs;
 using CoreDawn.Placement;
 using CoreDawn.Pings;
+using CoreDawn.UI;
 using Ping = CoreDawn.Pings.Ping;   // UnityEngine.Ping과 충돌
 
 namespace CoreDawn.Inputs

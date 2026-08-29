@@ -67,7 +67,7 @@ namespace CoreDawn.EditorTools
 
             // 등장 중에도 포신은 곧게 — Starved에서 곧장 재배치될 때 처짐이 남지 않도록.
             // 길이를 DeployLength로 맞춘다: 기본값(0.5)을 쓰면 이 곡선 하나 때문에 클립이
-            // 0.5초로 늘어나 BattleTower.DeployDuration(0.45)과 어긋난다.
+            // 0.5초로 늘어나 TowerView.DeployDuration(0.45)과 어긋난다.
             SetIdentityRotation(clip, PathDroop, DeployLength);
             return Save(clip);
         }

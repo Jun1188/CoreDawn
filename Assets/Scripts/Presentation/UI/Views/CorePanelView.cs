@@ -326,7 +326,7 @@ namespace CoreDawn.UI
 
                 if (waveNests != null)
                 {
-                    var nests = FindObjectsByType<MonsterNest>(FindObjectsSortMode.None);
+                    var nests = FindObjectsByType<NestView>(FindObjectsSortMode.None);
                     int destroyed = 0;
                     foreach (var nest in nests) if (nest != null && nest.IsDestroyed) destroyed++;
                     waveNests.text = radarUnlocked ? $"{destroyed} / {nests.Length}" : Unknown;

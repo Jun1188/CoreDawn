@@ -21,117 +21,11 @@ namespace CoreDawn.Data
 
     // ─── 기본 열거형 ────────────────────────────────────────────────
 
-    public enum Direction { North, East, South, West }
-
-    /// <summary>
-    /// 빌드 메뉴 분류 — BuildingDatabaseSO가 이 순서대로 그룹·정렬한다.
-    /// (예전 YAGNI로 제거했던 카테고리의 부활 — 이제 UI 정렬이라는 실소비자가 있다)
-    /// </summary>
-    public enum BuildingCategory
-    {
-        Production,   // 생산 — 채굴기, 조립기
-        Logistics,    // 물류 — 벨트, 분배기, 합류기
-        Storage,      // 저장 — 보관소
-        Defense,      // 방어 — 포탑 (밤 웨이브)
-    }
-
-    /// <summary>카테고리 표시명 — 빌드 메뉴·인스펙터가 공용.</summary>
-    public static class BuildingCategoryNames
-    {
-        public static string Korean(BuildingCategory c) => c switch
-        {
-            BuildingCategory.Production => "생산",
-            BuildingCategory.Logistics  => "물류",
-            BuildingCategory.Storage    => "저장",
-            BuildingCategory.Defense    => "방어",
-            _ => c.ToString(),
-        };
-    }
-
     // ─── 방향 헬퍼 ─────────────────────────────────────────────────
-
-    public static class Dir
-    {
-        static readonly Vector2Int[] _v = { new(0,1), new(1,0), new(0,-1), new(-1,0) };
-
-        public static Vector2Int ToVec(Direction d) => _v[(int)d];
-        public static Direction   Opposite(Direction d) => (Direction)(((int)d + 2) % 4);
-
-        // 시계 방향으로 steps만큼 회전 (건물 회전 지원용)
-        public static Direction RotateCW(Direction d, int steps = 1) =>
-            (Direction)(((int)d + steps % 4 + 4) % 4);
-
-        /// <summary>
-        /// 풋프린트 내 셀 좌표의 시계 방향 90° 회전.
-        /// 원점 기준 수학 회전 (x,y)→(y,−x)가 아니라, 회전 후에도 origin이
-        /// 왼쪽 아래를 유지하도록 재앵커링한다: (x,y) → (y, w−1−x).
-        /// w = 회전 전 풋프린트의 가로 크기.
-        /// </summary>
-        public static Vector2Int RotateCellCW(Vector2Int v, int footprintWidth)
-            => new(v.y, footprintWidth - 1 - v.x);
-    }
 
     // ─── 포트 정의 ──────────────────────────────────────────────────
 
-    /// <summary>
-    /// 건물의 입출력 연결점.
-    /// BuildingDataSO.ports[] 배열에 Inspector로 설정.
-    ///
-    /// 예 — Miner (1×1, 오른쪽 출력):
-    ///   ports[0]: IsInput=false, LocalOffset=(0,0), Direction=East
-    ///
-    /// 예 — Belt (1×1, 왼쪽 입력→오른쪽 출력):
-    ///   ports[0]: IsInput=true,  LocalOffset=(0,0), Direction=West
-    ///   ports[1]: IsInput=false, LocalOffset=(0,0), Direction=East
-    ///
-    /// 예 — Assembler 2×1 (왼쪽 두 입력, 오른쪽 출력):
-    ///   ports[0]: IsInput=true,  LocalOffset=(0,0), Direction=West
-    ///   ports[1]: IsInput=true,  LocalOffset=(0,1), Direction=West
-    ///   ports[2]: IsInput=false, LocalOffset=(1,0), Direction=East
-    /// </summary>
-    [Serializable]
-    public class PortDefinition
-    {
-        public Vector2Int LocalOffset;    // 건물 Origin 기준 상대 그리드 좌표
-        public Direction  Direction;      // 포트가 향하는 방향 (아이템 흐름 방향)
-        public bool       IsInput;        // true = 수신 포트,  false = 배출 포트
-
-        // 아이템 필터링은 포트가 아니라 수신자의 ItemContainer.AcceptFilter가 담당한다
-        // (예: 어셈블러 입력 = 현재 레시피의 재료만). 포트 필터를 두면 레시피와
-        // 이중 장부가 되어 어긋날 수 있어 제거했다.
-    }
-
     // ─── 행동 인터페이스 ────────────────────────────────────────────
-
-    public interface IBuildingBehavior
-    {
-        /// <summary>
-        /// FactorySim이 이 건물이 깨어 있는 틱에 호출.
-        /// (MarkDirty로 등록됐거나 ScheduleWake 예약 시각이 됐을 때)
-        /// </summary>
-        void Tick(float dt);
-
-        /// <summary>
-        /// BuildingGraph.OnPlaced() 완료 후 1회 호출.
-        /// 이 시점에서는 InputConnections / OutputConnections가 모두 확정되어 있다.
-        /// 자원 조회, 레시피 결정 등 연결 기반 초기화에 사용.
-        /// </summary>
-        void OnAfterPlaced();
-    }
-
-    /// <summary>
-    /// 플레이어 상호작용(E)이 있는 행동만 추가로 구현하는 opt-in 인터페이스.
-    /// 심 계약(IBuildingBehavior·Tick)과 분리된 뷰 이벤트 — 시나리오 테스트는 이것을 모른다.
-    /// 조준 시 BuildingEntity(IInteractable)이 여기로 위임한다.
-    /// 새 상호작용 건물 추가 = 행동 클래스에 이 인터페이스 구현 (기존 코드 무수정).
-    /// </summary>
-    public interface IInteractiveBehavior
-    {
-        /// <summary>조준 프롬프트. null/빈 문자열 = 지금은 상호작용 불가.</summary>
-        string InteractPrompt { get; }
-
-        void Interact(PlayerController player);
-    }
 
     // ─── ScriptableObjects ──────────────────────────────────────────
 

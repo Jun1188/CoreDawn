@@ -2,12 +2,13 @@ using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Factory;
 using CoreDawn.Managers;
+using CoreDawn.Sound;
 
 namespace CoreDawn.Entities
 {
     /// <summary>
     /// 타워의 <b>연출</b> 담당 — 조준 회전·반동·배럴 순환·사운드·상태별 애니메이션.
-    /// 전투 판정은 일절 하지 않는다. 무엇을 언제 쏠지는 <see cref="BattleTower"/>가 정하고,
+    /// 전투 판정은 일절 하지 않는다. 무엇을 언제 쏠지는 <see cref="TowerView"/>가 정하고,
     /// 여기는 "그렇게 보이도록" 만들 뿐이다.
     ///
     /// 리그 참조는 전부 선택이다 — 포탑이 없는 타워(감속 필드·울타리)는 yawPivot을 비워두면
@@ -71,7 +72,7 @@ namespace CoreDawn.Entities
 
         // ── 내부 상태 ───────────────────────────────────────────────
         private Animator animator;
-        private BattleTower tower;
+        private TowerView tower;
 
         private float yaw;
         private float pitch;
@@ -91,7 +92,7 @@ namespace CoreDawn.Entities
         private void Awake()
         {
             animator = GetComponent<Animator>();
-            tower = GetComponent<BattleTower>();
+            tower = GetComponent<TowerView>();
         }
 
         private void OnEnable()

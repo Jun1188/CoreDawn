@@ -7,6 +7,7 @@ using CoreDawn.Managers;
 using CoreDawn.Navigation;
 using CoreDawn.Worlds;
 using CoreDawn.Sim;
+using CoreDawn.Sound;
 
 namespace CoreDawn.Combat
 {

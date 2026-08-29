@@ -9,6 +9,7 @@ using CoreDawn.Navigation;
 using CoreDawn.Sim;
 using CoreDawn.Data;
 using CoreDawn.UI;
+using CoreDawn.Sound;
 
 namespace CoreDawn.Entities
 {

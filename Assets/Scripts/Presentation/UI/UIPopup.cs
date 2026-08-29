@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using CoreDawn.Inputs;
 
-namespace CoreDawn.Inputs
+namespace CoreDawn.UI
 {
     /// <summary>
     /// UI 팝업 공통 베이스 — 입력 파이프라인의 Popup 계층 리시버.

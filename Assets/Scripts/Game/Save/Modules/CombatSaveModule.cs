@@ -86,7 +86,7 @@ namespace CoreDawn.Save
         public object Capture()
         {
             var battle = BattleManager.Instance;
-            var nests = Object.FindObjectsByType<MonsterNest>(FindObjectsSortMode.None)
+            var nests = Object.FindObjectsByType<NestView>(FindObjectsSortMode.None)
                               .Where(n => n != null)
                               .OrderBy(n => SaveScenePath.Of(n))
                               .ToList();
@@ -177,8 +177,8 @@ namespace CoreDawn.Save
 
         static void RestoreNests(Dto dto)
         {
-            var byPath = new Dictionary<string, MonsterNest>();
-            foreach (var n in Object.FindObjectsByType<MonsterNest>(FindObjectsSortMode.None))
+            var byPath = new Dictionary<string, NestView>();
+            foreach (var n in Object.FindObjectsByType<NestView>(FindObjectsSortMode.None))
                 if (n != null) byPath[SaveScenePath.Of(n)] = n;
 
             foreach (var saved in dto.Nests)

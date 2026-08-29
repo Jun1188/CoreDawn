@@ -1330,10 +1330,10 @@ namespace CoreDawn.EditorTools
             var entity = root.GetComponent<EntityView>();
             if (entity == null)
             {
-                entity = isTower ? root.AddComponent<BattleTower>() : root.AddComponent<BuildingView>();
+                entity = isTower ? root.AddComponent<TowerView>() : root.AddComponent<BuildingView>();
                 changed = true;
             }
-            else if (isTower && entity is not BattleTower)
+            else if (isTower && entity is not TowerView)
             {
                 // 컴포넌트 교체는 참조·직렬화를 잃으므로 자동으로 하지 않는다 — 사람이 판단할 문제
                 Debug.LogWarning($"[GameDataImporter] '{so.name}': 포탑인데 루트가 {entity.GetType().Name} 입니다. " +

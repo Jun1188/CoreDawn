@@ -16,7 +16,7 @@ namespace CoreDawn.Entities
     //   타워   = 각도(조준·곡사) · 배율(damageMultiplier) · 소비 시점 · 펄스 주기
     //   전달   = ProjectileSystem — fireMode(Projectile/Hitscan/Aura)는 TowerDataSO(데이터)가 정한다
     //   연출   = TowerVisualController — 포탑 회전·반동·사운드. 판정은 모른다.
-    public class BattleTower : BuildingView
+    public class TowerView : BuildingView
     {
         [Header("Tower Combat")]
         [Tooltip("탄 정의가 없을 때(즉시 적용 폴백·구 씬 오라)의 명중 효과. 정상 경로는 탄약(AmmoModuleSO)이 정한다.")]

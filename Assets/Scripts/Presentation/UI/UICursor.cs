@@ -1,7 +1,7 @@
 using UnityEngine;
 using CoreDawn.Placement;
 
-namespace CoreDawn.Inputs
+namespace CoreDawn.UI
 {
     /// <summary>
     /// 창이 떠 있는 동안의 커서 소유권 — 참조 계수 한 곳으로 모은다.

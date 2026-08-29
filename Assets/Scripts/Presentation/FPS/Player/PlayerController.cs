@@ -13,6 +13,7 @@ using CoreDawn.UI;
 using CoreDawn.Worlds;
 using CoreDawn.Factory;
 using CoreDawn.Data;
+using CoreDawn.Sound;
 
 namespace CoreDawn.FPS
 {

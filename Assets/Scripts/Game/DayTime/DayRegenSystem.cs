@@ -5,7 +5,7 @@ using CoreDawn.Worlds;
 using CoreDawn.Factory;
 using CoreDawn.Sim;
 
-namespace CoreDawn.Managers
+namespace CoreDawn.DayTime
 {
     /// <summary>
     /// 낮 시간 회복 — 로직만, 배선 없음.

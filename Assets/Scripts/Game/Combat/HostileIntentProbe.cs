@@ -33,7 +33,7 @@ namespace CoreDawn.Combat
         public const float MissTolerance = 4f;
 
         // 몬스터·플레이어·총알 콜라이더는 시야를 가리는 "벽"이 아니다
-        // (MonsterNest.IsOnPlayerScreen이 쓰는 것과 같은 방식).
+        // (NestView.IsOnPlayerScreen이 쓰는 것과 같은 방식).
         private static int blockerMask;
         private static bool blockerMaskReady;
 

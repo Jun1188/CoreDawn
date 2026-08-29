@@ -1,4 +1,4 @@
-namespace CoreDawn.FPS
+namespace CoreDawn.Combat
 {
     public static class CombatEvents 
     {

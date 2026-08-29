@@ -6,7 +6,7 @@ using UnityEngine.Audio;
 using CoreDawn.Sound;
 using CoreDawn.UI;
 
-namespace CoreDawn.Managers
+namespace CoreDawn.Sound
 {
     public enum CommonSFX
     {
