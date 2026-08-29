@@ -216,7 +216,7 @@ namespace CoreDawn.Factory
 - [x] 3d 세이브: `CombatSaveModule.MonsterDto.DataId`(`"data"`, MonsterDataSO.Id) — 저장 시 `MonsterView.Data`, 복원 시 `MonsterDatabaseSO.FindById` → `RestoreMonster(pos, rot, data)`. 추가 필드라 스키마 버전 그대로(옛 세이브·모르는 id → 기본 종류). 검증 2026-08-29: 밤 제자리 왕복(Capture→Restore) — Basic 4 + Spitter(35/60) 종류·HP 복원, 보스 8 재생성·뷰 8, 오류 0 (커밋 4)
   - 기존 결함 수정(사용자 지시): 복원된 웨이브 몬스터가 `nightWaveMonsters`(정량 웨이브 생존 수)에 안 들어가고 진행(스폰 수·목표)도 저장되지 않아, 불러온 밤이 0부터 다시 세다 새로 스폰한 것만 잡아도 "전멸"→아침→되살린 몬스터 일괄 소멸. `WaveDto`에 `spawned`/`target`/`completed` 추가(옛 세이브는 -1 → 예전 동작), `RestoreMonster(nightWave)`가 명단에 넣고 `RestoreState`가 진행을 이어받는다. 검증: 4/4 스폰·1 처치 상태 왕복 후 8초 — 밤 유지, 생존 3 = 명단 3
 - [x] 3e 정리: 뷰 쪽 `MovementComponent`·`SensorComponent`·`StateMachineComponent`·`State/*`·`CrowdSystem` 삭제 (커밋 2·3). `CombatComponent`는 타워·플레이어·몬스터 효과 적용기로 4단계까지 유지
-- [ ] 3f PR: `feature/monster-sim` → develop (푸시는 사용자 승인 뒤)
+- [x] 3f PR #114 → develop `c97f21e0` (2026-08-29). 같은 PR에 `EntityKey → Id → EntityUUID`(값도 카운터 → Guid)·정량 웨이브 세이브 결함 수정 포함
 
 #### 3단계 설계 초안 (2026-08-29, 착수 전 검토용)
 
@@ -302,9 +302,38 @@ namespace CoreDawn.Sim
 - 보스 인내심·둥지 방어 로직은 검증이 어렵다(밤 강제 + 보스 도발 시나리오를 eval로 재현). 이식은 **동작 변경 0**을 원칙으로, 변수명·주석까지 그대로 옮긴다.
 - 세이브 포맷이 바뀐다(몬스터 dataId). 베타 전이라 버전 상승으로 처리.
 
-### 4. 플레이어 · 피해 경로
-- [ ] `PlayerSim`(Health · Effects · 위치 미러) + `PlayerController`(입력 · 이동 뷰) — 런타임에 `Player : Entity`를 붙이는 이중 구조 정리
-- [ ] 투사체 명중: 콜라이더 → 뷰 → `EntityId` → `World.ApplyEffects(id, …)`. 피해 · 효과 · 사망이 심 안에서 끝남
+### 4. 효과 · 공격 · 플레이어 · 둥지 — 진행 중 (`feature/combat-sim`, 2026-08-29 시작)
+
+목표: 피해·효과·사망이 **심 안에서 끝난다**. 뷰는 명중을 감지(PhysX)해 심에 넘기고, 심이 정한 결과(HP·넉백·상태)를 그린다.
+
+**설계 초안 (실측 2026-08-29)**
+- 지금: 효과는 `EffectSO`(에셋)의 `Apply(EntityView, ctx)`가 **뷰**를 상대로 실행되고, 활성 지속 효과는 뷰가 가진 `EffectController`가 `Time.deltaTime`으로 돈다. 받는 배율은 `EntityView.ReceiveDamage`가 곱한 뒤 심 `Health.Damage`로 넘긴다. 몬스터 공격은 심 `Attack.AttackRequested` → 뷰 `CombatComponent.TryAttack`(다리). 투사체·오라(`ProjectileSystem`)는 콜라이더 → `EntityView.ApplyEffects`. 플레이어·둥지는 뷰 `Awake`가 엔티티를 만든다.
+- 심 계약(`Runtime/Sim`, 순수 C#):
+  - `EffectKind { Damage, Heal, Knockback, DamageOverTime, MoveSpeed, AttackModifier, IncomingDamage }`
+  - `EffectSpec`(sealed class, 정의): `Id`·`Kind`·`Duration`(≤0 영구)·`Stacks`(bool, Refresh/Stack)·`TickInterval`·`RadialKnockback`·`Affects: EffectSpec[]`. **SO에서 한 번 변환**해 참조 동일성으로 "같은 효과"를 판정(Refresh·affects). 심은 SO·에셋을 모른다 — `MonsterSpec`과 같은 방식.
+  - `Effect`(readonly struct): `Spec` + `Value` — "무엇을 얼마나". 데이터 쪽 `CoreDawn.Combat.EffectEntry`(SO 참조 + value, 인스펙터·json)는 그대로 두고 브리지가 변환한다.
+  - `Effects : EntityModule, IDamageInterceptor` — 활성 지속 효과 목록·`MoveSpeedMultiplier`·`IncomingDamageMultiplier`(= `Intercept`가 곱한다: 받는 배율이 `Health.Damage` 안으로 들어가 출처와 무관하게 적용)·`Apply(effects, source, hitPoint, hitDirection)`·`BakeOutgoing`·`AttackMultiplierFor`·`Has`·`Tick(dt)`·`Clear`·`Changed`. 넉백은 `Owner.Get<Movement>().AddKnockback`, 피해·회복은 `Owner.Health`. **Health가 있는 엔티티는 전부 Effects를 갖는다**(FactorySystem.Place·MonsterSystem.Spawn·PlayerSystem·뷰 우선 Awake).
+  - `EffectSystem(EntityWorld)`: 매 틱 각 엔티티의 `Effects.Tick(dt)`; `World.Died`에 `Clear`(DoT가 시체를 때리지 않게).
+  - `Attack`: `Effects: Effect[]`를 갖고 `TryAttack(target, now)`가 **심에서 적용**(`target.Get<Effects>().Apply(Owner의 BakeOutgoing, Owner, target.Position, dir)`) — 몬스터 다리 제거. `AttackRequested`는 연출용 이벤트로 남는다. 투사체처럼 효과를 위임하는 공격은 `MarkPerformed(now)`로 쿨다운만 소비(타워).
+  - `MonsterSpec.AttackEffects`(Effect[]) — `MonsterDataSO.ToSpec()`이 채운다.
+  - `PlayerSystem`: 플레이어 엔티티(Faction.Player + Health + Effects)를 심이 만든다. `Spawn(spec, pos)`·`Entity`·`Respawn()`. `MonsterSystem.PlayerEntity`는 여기서 받는다.
+- 브리지(`Runtime/Combat`·`Entities`):
+  - `EffectSO`는 **데이터만**: `Kind` 추상 프로퍼티 + 서브클래스 필드(duration·stacking·tickInterval·mode·affects). `Apply/OnStart/OnTick/OnEnd`·`EffectContext`·`EffectController` 삭제. `EffectSpecs.Of(so)`(SO → EffectSpec 캐시)·`EffectSpecs.ToSim(EffectEntry[])`.
+  - `EntityView.Effects` = `Entity.Get<Effects>()`(심 모듈). `ApplyEffects(entries, sourceView, point, dir)`는 변환해 심에 넘긴다. `ReceiveDamage`는 얇은 호환(배율은 이제 심 안). `OnAttackAction`은 심 `Attack.AttackRequested` 릴레이(애니메이션).
+  - `ProjectileShot.Effects`는 심 `Effect[]`(발사 시점에 변환·베이크 확정), `Source`(뷰)는 물리 무시·플레이어 피격 연출용으로 유지하고 효과 출처는 `Source.Entity`. `ScaleDamage`/`AppendDamageKnockback`은 변환 전 데이터 항목에서 그대로.
+  - 웨이브 버프: 웨이브 결정 시 한 번 변환해 스폰된 심 엔티티에 `Apply`. 총(`Gun`)은 소유자 심 `Effects.BakeOutgoing`.
+  - 타워(`BattleTower`): 심 `Attack`(사거리·연사는 `FactorySystem.Place`가 `TowerDataSO`에서 넣는다)으로 쿨다운·즉시 적용 폴백; 투사체는 `MarkPerformed`. `CombatComponent` 삭제.
+  - 플레이어: `Player → PlayerView`(`CreatesOwnEntity=false`, BattleManager가 `PlayerSystem.Spawn` 뒤 `AttachEntity`). 물리 이동은 뷰(하이브리드 결정) — 위치는 뷰 → 심으로 미러. `MonsterSystemHost → SimRunner`(몬스터·효과·플레이어 시스템을 한 곳에서 구동; 5단계 WorldRunner의 전신).
+  - 둥지: `MonsterNest`도 `CreatesOwnEntity=false` — WorldPopulator가 심 엔티티를 먼저 만들고(Health = NestDataSO.maxHp, Effects) `Place(host)` 뒤 `AttachEntity`.
+- 커밋 순서(각 커밋 컴파일·플레이 가능): 1 문서 → 2 심 효과 모델(+SO 데이터화, 투사체·총·웨이브 경로 전환) → 3 공격을 심에서(타워·몬스터, CombatComponent 삭제) → 4 플레이어(PlayerSystem·PlayerView·SimRunner) → 5 둥지 → 6 문서·PR.
+- 리스크: 효과 SO의 `Apply` 서명을 지우면 팀원 브랜치의 새 효과 클래스가 깨진다(휴가 중 — PR 본문에 "새 효과는 Kind + 심 Effects 분기" 안내). 웨이브 버프 재적용(세이브 복원 후)은 기존에도 없던 것 — 범위 밖(기록만).
+
+- [x] 4a 설계 초안 (위) — 2026-08-29
+- [ ] 4b 심 효과 모델: `EffectKind/EffectSpec/Effect/Effects/EffectSystem` · `EffectSpecs` 브리지 · SO 데이터화 · `EffectController`/`EffectContext` 삭제 · 투사체·총·웨이브 버프 경로 전환 · Health 있는 엔티티마다 Effects
+- [ ] 4c 공격을 심에서: `Attack.Effects`·`TryAttack` 심 적용·`MarkPerformed` · `MonsterSpec.AttackEffects` · 몬스터 다리 제거 · 타워 → 심 Attack · `CombatComponent` 삭제 · `EntityView.OnAttackAction` 릴레이
+- [ ] 4d 플레이어: `PlayerSystem` · `Player → PlayerView`(CreatesOwnEntity=false, 위치 뷰→심) · `MonsterSystemHost → SimRunner` · BattleManager 부착 경로
+- [ ] 4e 둥지: 생성 주체를 심으로(WorldPopulator)
+- [ ] 4f 문서·검사 스크립트 → PR
 
 ### 5. asmdef · 고정 틱 · 세이브
 - [ ] asmdef 분리(Sim / Data / Presentation / App / Editor / Tests)로 불변식 강제
