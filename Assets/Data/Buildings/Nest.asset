@@ -32,6 +32,6 @@ MonoBehaviour:
   hideFromBuildMenu: 1
   menuOrder: 0
   buildCost: []
-  maxHp: 1000
+  maxHp: 500
   isDemolishable: 0
   isAttackable: 1

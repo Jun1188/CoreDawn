@@ -54,8 +54,6 @@ namespace CoreDawn.Entities
             }
         }
 
-        // 건물의 엔티티는 심(FactorySystem.Place)이 만든다 — 뷰는 받기만 한다
-        protected override bool CreatesOwnEntity => false;
 
         /// <summary>맵의 코어인가 — 설계도(CoreDataSO)가 정한다. 심이 없으면 false.</summary>
         public bool IsCore => building != null && building.IsCore;

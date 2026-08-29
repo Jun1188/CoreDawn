@@ -30,7 +30,7 @@ namespace CoreDawn.Combat
                  "낮은 기존대로 시간제. 끄면 레거시 시간제 밤으로 돌아간다.")]
         [SerializeField] private bool quantityBasedNightWaves = true;
 
-        [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 HealthComponent 기본값(100)을 쓴다.")]
+        [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 기본값(100)을 쓴다.")]
         [SerializeField] private float playerMaxHealth = 300f;
 
         [Tooltip("런타임 부착 Player의 몬스터 감지 범위. 기본값(10)이면 밤에 몬스터 전원이 플레이어에게 몰리므로 좁힌다. 0 이하면 기본값 유지.")]

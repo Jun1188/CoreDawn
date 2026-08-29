@@ -19,8 +19,6 @@ namespace CoreDawn.Entities
         private Movement movement;
 
         // 심(MonsterSystem.Spawn)이 먼저 만든다 — 뷰는 MonsterSpawner가 붙여 준 것을 받는다
-        protected override bool CreatesOwnEntity => false;
-        protected override Faction Faction => Faction.Monster;
 
         /// <summary>심 이동 모듈 — 연출(애니 속도)·곡사 예측(타워)이 읽는다. 심이 안 붙었으면 null.</summary>
         public Movement SimMovement => movement;

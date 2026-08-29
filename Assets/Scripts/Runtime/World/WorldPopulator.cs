@@ -176,7 +176,7 @@ namespace CoreDawn.Worlds
                     // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
                     // 굳어 있는(씬에 구운) 둥지는 PlaceNests를 안 타므로 생성 주체는 이 자리다.
                     var host = placed.GetComponent<EntityView>();
-                    if (host != null && host.Entity == null) AttachFreshEntity(host, placed.Data.Faction);
+                    if (host != null && host.Entity == null) AttachFreshEntity(host, placed.Data);
                     boot.Factory.Place(placed.Data, origin, 0, host: host != null ? host.Entity : null);
                 }
                 connected++;
@@ -347,13 +347,13 @@ namespace CoreDawn.Worlds
         // ── 둥지 ────────────────────────────────────────────────────
 
         /// <summary>
-        /// 데이터 없이 프리팹 시드로 사는 뷰(둥지)의 심 엔티티를 만들어 붙인다 — 생성 주체는 월드(populator)다.
-        /// HP는 프리팹의 HealthComponent 시드(구 뷰 우선 경로와 같은 값) — 둥지 데이터의 maxHp는 아직 정본이 아니다.
+        /// 뷰가 따로 있는 개체(둥지)의 심 엔티티를 데이터로 만들어 붙인다 — 생성 주체는 월드(populator)다.
+        /// 편·HP 정본은 건물 데이터(BuildingDataSO.Faction·maxHp) — 다른 건물과 같은 규칙.
         /// </summary>
-        static void AttachFreshEntity(EntityView view, Faction faction)
+        static void AttachFreshEntity(EntityView view, BuildingDataSO data)
         {
-            var entity = SimHost.World.Create(faction, view.transform.position);
-            entity.Add(new Health(Mathf.Max(1f, view.SeedMaxHealth)));
+            var entity = SimHost.World.Create(data.Faction, view.transform.position);
+            entity.Add(new Health(Mathf.Max(1f, data.maxHp)));
             entity.Add(new Effects());
             view.AttachEntity(entity);
         }
@@ -380,9 +380,10 @@ namespace CoreDawn.Worlds
                 var nest = go.GetComponent<MonsterNest>();
                 if (nest != null)
                 {
-                    // 둥지 엔티티는 심에 먼저 만든다(편=Monster, Health, Effects) — 뷰는 받아서 그린다. HP는 프리팹의 HealthComponent 시드(구 뷰 우선 경로와 같은 값) — 둥지 데이터의 maxHp는 아직 정본이 아니다.
+                    // 둥지 엔티티는 심에 먼저 만든다(편·HP는 둥지 데이터, Effects) — 뷰는 받아서 그린다.
                     // 건물 모듈은 뒤의 ConnectPlaced가 이 엔티티를 호스트로 얹는다(둥지 하나에 엔티티 하나).
-                    AttachFreshEntity(nest, nestData != null ? nestData.Faction : Faction.Monster);
+                    if (nestData != null) AttachFreshEntity(nest, nestData);
+                    else Debug.LogWarning("[WorldPopulator] 둥지 데이터(Building:Nest)가 없어 둥지 엔티티를 만들지 못했습니다 — MonsterNest가 폴백으로 세웁니다.", world);
 
                     nest.Configure(spec.warningRange, spec.triggerRange,
                                    spec.defenseSpawnAmount, spec.defenseSpawnCooldown,

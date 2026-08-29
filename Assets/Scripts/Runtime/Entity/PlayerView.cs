@@ -20,8 +20,6 @@ namespace CoreDawn.Entities
     public class PlayerView : EntityView
     {
         // 심(PlayerSystem.Spawn)이 먼저 만든다 — BattleManager가 붙여 준 것을 받는다
-        protected override bool CreatesOwnEntity => false;
-        protected override Faction Faction => Faction.Player;
         // 이동은 뷰가 굴린다 — 매 프레임 위치를 심으로 미러(몬스터는 반대 방향)
         protected override bool PushesPositionToSim => true;
 

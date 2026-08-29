@@ -262,10 +262,6 @@ namespace CoreDawn.Entities
         public bool IsDestroyed { get; private set; }
         private int destroyedDay = -1;
 
-        protected override Faction Faction => Faction.Monster;   // 둥지는 몬스터 편 — 타워가 노리고 플레이어가 부순다
-        // 엔티티는 심에 먼저 만들어진다(WorldPopulator가 생성 주체) — 뷰는 받아서 그린다
-        protected override bool CreatesOwnEntity => false;
-
         protected override void Awake()
         {
             base.Awake();
@@ -279,9 +275,9 @@ namespace CoreDawn.Entities
             // 생성 주체는 WorldPopulator다. 그 경로를 안 탄 둥지(옛 씬에 직접 놓인 것)만 여기서 스스로 세운다 — 보이게 경고
             if (Entity == null)
             {
-                Debug.LogWarning("[MonsterNest] 심 엔티티 없이 시작했습니다 — WorldPopulator를 거치지 않은 둥지. 프리팹 시드로 직접 세웁니다.", this);
-                var e = SimHost.World.Create(Faction.Monster, transform.position);
-                e.Add(new Health(Mathf.Max(1f, SeedMaxHealth)));
+                Debug.LogWarning("[MonsterNest] 심 엔티티 없이 시작했습니다 — WorldPopulator를 거치지 않은 둥지. 데이터 HP로 직접 세웁니다.", this);
+                var e = SimHost.World.Create(Faction.Monster, transform.position);   // 둥지는 몬스터 편 — 타워가 노리고 플레이어가 부순다
+                e.Add(new Health(Mathf.Max(1f, data != null ? data.maxHp : 500f)));
                 e.Add(new Effects());
                 AttachEntity(e);
             }

@@ -78,29 +78,16 @@ namespace CoreDawn.Entities
         [Tooltip("true면 사망 연출 후 Destroy로 완전 소멸, false면 SetActive(false)로 비활성화만 한다.")]
         [SerializeField] private bool destroyOnDeath = true;
 
-        [Tooltip("최대 체력 씨드 — 뷰가 심 엔티티를 만들 때 넘기는 초기값. 정본은 심 Health다. " +
-                 "건물은 이 값을 쓰지 않는다(BuildingDataSO.maxHp). 프리팹 직렬화 경로를 지키려고 이름·형을 그대로 뒀다.")]
-        [SerializeField] private HealthComponent health = new HealthComponent();
-
-        /// <summary>프리팹이 든 최대 HP 시드 — 심이 엔티티를 만들 때 데이터가 따로 없는 개체(둥지)의 HP 정본으로 읽는다.</summary>
-        public float SeedMaxHealth => health.MaxHealth;
-
-        /// <summary>심 정본. 뷰 우선 개체는 Awake에서, 건물은 브리지가 <see cref="AttachEntity"/>로 채운다. 그 전에는 null.</summary>
+        /// <summary>
+        /// 심 정본. 만드는 쪽(FactorySystem·MonsterSystem·PlayerSystem·WorldPopulator)이 <see cref="AttachEntity"/>로 채운다.
+        /// 그 전에는 null — 뷰는 스스로 엔티티를 만들지 않는다(HP 정본은 데이터 maxHp, 뷰 프리팹에 HP는 없다).
+        /// </summary>
         public SimEntity Entity { get; private set; }
 
         /// <summary>체력 — 심 Health 모듈로 곧장 간다. 심이 아직 안 붙었으면 null.</summary>
         public Health Health => Entity?.Health;
 
-        /// <summary>이 뷰가 만드는 심 엔티티의 편. 몬스터·둥지가 Monster로 덮어쓴다.</summary>
-        protected virtual Faction Faction => Faction.Player;
-
-        /// <summary>뷰가 Awake에서 심 엔티티를 스스로 만드는가. 건물(BuildingView)은 심이 먼저 만들므로 false.</summary>
-        protected virtual bool CreatesOwnEntity => true;
-
-        // 이 뷰가 만든 엔티티인가 — 만든 쪽이 지운다(OnDestroy). 심 우선 개체는 심(FactorySystem)이 지운다.
-        bool ownsEntity;
-
-        /// <summary>심 효과 모듈 — 활성 지속 효과·배율. 심이 아직 안 붙었으면 null(뷰 우선 개체는 Awake에서 붙는다).</summary>
+        /// <summary>심 효과 모듈 — 활성 지속 효과·배율. 심이 아직 안 붙었으면 null.</summary>
         public Effects Effects => Entity?.Get<Effects>();
 
         /// <summary>죽었거나 심에서 빠졌는가. 심이 아직 안 붙은 뷰는 죽은 것이 아니다(IsValidTarget이 따로 거른다).</summary>
@@ -115,19 +102,11 @@ namespace CoreDawn.Entities
         /// <summary>이 엔티티가 공격했다 — 심 Attack.Attacked의 릴레이(애니메이션·소리). 효과는 이미 심에서 처리됐다.</summary>
         public event Action OnAttackAction;
 
-        protected virtual void Awake()
-        {
-            if (!CreatesOwnEntity) return;
-
-            var e = SimHost.World.Create(Faction, transform.position);
-            e.Add(new Health(health.MaxHealth));
-            e.Add(new Effects());   // Health가 있는 엔티티는 전부 효과 모듈을 갖는다 — 받는 배율·지속 효과
-            ownsEntity = true;
-            AttachEntity(e);
-        }
+        // 뷰는 Awake에서 심을 건드리지 않는다 — 엔티티는 만드는 쪽이 붙여 준다. 하위가 base.Awake()를 부르는 계약만 남긴다.
+        protected virtual void Awake() { }
 
         /// <summary>
-        /// 심 엔티티 연결 — 뷰 우선 개체는 Awake가, 건물은 브리지(PlacementBridge)가 부른다.
+        /// 심 엔티티 연결 — 만드는 쪽(브리지·스포너·시스템·WorldPopulator)이 부른다.
         /// 심 Health의 이벤트를 뷰 이벤트로 이어 주고, 이미 구독한 쪽에 현재 체력을 한 번 알린다.
         /// </summary>
         public void AttachEntity(SimEntity entity)
@@ -182,8 +161,8 @@ namespace CoreDawn.Entities
 
         protected virtual void Update() { }   // 효과 틱은 심(EffectSystem)이 돌린다
 
-        /// <summary>뷰 → 심 위치 미러를 하는가. 기본은 뷰 우선 개체(자기가 만든 엔티티). 심이 만들었지만 물리는 뷰가 굴리는 플레이어가 켠다.</summary>
-        protected virtual bool PushesPositionToSim => ownsEntity;
+        /// <summary>뷰 → 심 위치 미러를 하는가. 기본 false(건물은 안 움직이고 몬스터는 심 → 뷰). 물리는 뷰가 굴리는 플레이어가 켠다.</summary>
+        protected virtual bool PushesPositionToSim => false;
 
         // 위치 동기 — 물리는 뷰가 굴리고 심은 결과를 받는다. 건물은 움직이지 않고, 몬스터는 반대 방향(심 → 뷰).
         protected virtual void LateUpdate()
@@ -256,12 +235,11 @@ namespace CoreDawn.Entities
         /// <summary>앱 종료 중인가 — 종료 시 파괴되는 뷰가 심을 건드리지 않게(정적 심이 먼저 사라질 수 있다). 하위 뷰(몬스터·플레이어)가 쓴다.</summary>
         protected static bool ApplicationQuitting => quitting;
 
+        // 엔티티의 제거는 만든 쪽의 몫(공장·몬스터 시스템·플레이어 시스템·둥지 뷰) — 여기서는 연결만 끊는다
         protected virtual void OnDestroy()
         {
             if (Entity == null) return;
-            var e = Entity;
             DetachEntity();
-            if (ownsEntity && !quitting && !e.IsRemoved) SimHost.World.Remove(e);
         }
     }
 }
