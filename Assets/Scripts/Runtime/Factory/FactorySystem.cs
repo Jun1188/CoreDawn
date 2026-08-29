@@ -161,7 +161,13 @@ namespace CoreDawn.Factory
             bool ownsEntity = host == null;
 
             var entity = host ?? World.Create(so.Faction, Geometry.CenterOf(origin, size));
-            if (ownsEntity) entity.Add(new Health(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
+            if (ownsEntity)
+            {
+                entity.Add(new Health(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
+                entity.Add(new Effects());                        // 받는 배율·지속 효과 — Building(보호막·아군 무시)보다 먼저 걸러진다
+                if (so is TowerDataSO tower)                      // 타워의 사거리·연사는 데이터 — 심 공격 모듈. 효과는 탄(전달 계층)이 정하므로 비워 둔다
+                    entity.Add(new Attack(tower.range * Geometry.CellSize, tower.fireRate > 0f ? 1f / tower.fireRate : 1f));
+            }
 
             var b = new Building(this, so, origin, rotSteps, portOverride, shape, ownsEntity);
             entity.Add(b);

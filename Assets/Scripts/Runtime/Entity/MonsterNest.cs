@@ -97,7 +97,7 @@ namespace CoreDawn.Entities
         // 둥지마다 OverlapSphere를 돌리지 않는다 — 플레이어는 하나뿐이라 참조를 캐시해 두고
         // 거리 계산(산술)만으로 감지한다. Monster가 "플레이어가 몬스터를 찾아 콜백"으로
         // 개체별 물리 쿼리를 없앤 것과 같은 방향의 최적화다.
-        private Player cachedPlayer;
+        private PlayerView cachedPlayer;
         private float nextPlayerSearch;   // 플레이어 사망·교체 대비 저빈도 재탐색 타이머
 
         /// <summary>
@@ -110,13 +110,13 @@ namespace CoreDawn.Entities
             engagementZone != null ? engagementZone.MaximumRange : daySpawnMaxRange)) + MaxSpawnPointOffset;
 
         /// <summary>유효한 플레이어 참조. 캐시가 죽으면 1초에 한 번만 다시 찾는다.</summary>
-        private Player FindPlayer()
+        private PlayerView FindPlayer()
         {
             if (cachedPlayer != null && cachedPlayer.IsValidTarget()) return cachedPlayer;
             if (Time.time < nextPlayerSearch) return null;
 
             nextPlayerSearch = Time.time + 1f;
-            cachedPlayer = FindFirstObjectByType<Player>();
+            cachedPlayer = FindFirstObjectByType<PlayerView>();
             return cachedPlayer != null && cachedPlayer.IsValidTarget() ? cachedPlayer : null;
         }
 
@@ -203,7 +203,7 @@ namespace CoreDawn.Entities
         /// 다음으로 가까운 안 보이는 포인트로 넘어간다(눈앞 팝인 방지). 전부 보이면
         /// 플레이어에게서 가장 먼 포인트를 쓴다 — 스폰 자체는 절대 멈추지 않는다.
         /// </summary>
-        private List<DefenderSpawnSlot> GetBossReinforcementSlots(MonsterView boss, Player player)
+        private List<DefenderSpawnSlot> GetBossReinforcementSlots(MonsterView boss, PlayerView player)
         {
             var result = new List<DefenderSpawnSlot>();
             if (spawnPoints == null || boss == null) return result;
@@ -263,6 +263,8 @@ namespace CoreDawn.Entities
         private int destroyedDay = -1;
 
         protected override Faction Faction => Faction.Monster;   // 둥지는 몬스터 편 — 타워가 노리고 플레이어가 부순다
+        // 엔티티는 심에 먼저 만들어진다(WorldPopulator가 생성 주체) — 뷰는 받아서 그린다
+        protected override bool CreatesOwnEntity => false;
 
         protected override void Awake()
         {
@@ -274,6 +276,15 @@ namespace CoreDawn.Entities
         protected override void Start()
         {
             base.Start();
+            // 생성 주체는 WorldPopulator다. 그 경로를 안 탄 둥지(옛 씬에 직접 놓인 것)만 여기서 스스로 세운다 — 보이게 경고
+            if (Entity == null)
+            {
+                Debug.LogWarning("[MonsterNest] 심 엔티티 없이 시작했습니다 — WorldPopulator를 거치지 않은 둥지. 프리팹 시드로 직접 세웁니다.", this);
+                var e = SimHost.World.Create(Faction.Monster, transform.position);
+                e.Add(new Health(Mathf.Max(1f, SeedMaxHealth)));
+                e.Add(new Effects());
+                AttachEntity(e);
+            }
 
             // 교전 구역은 Awake가 아니라 여기서 찾는다 — WorldPopulator는 Instantiate(→Awake 즉시
             // 실행) <b>뒤에</b> AddComponent<NestEngagementZone>()을 하므로, Awake에서 캐시하면
@@ -321,20 +332,14 @@ namespace CoreDawn.Entities
             }
         }
 
-        // TakeDamage가 아니라 수렴점(ReceiveDamage)을 막는다 — 총알·몬스터 공격 같은
-        // 효과 경로는 TakeDamage를 거치지 않고 ReceiveDamage로 직행하기 때문이다.
-        public override void ReceiveDamage(float amount, EntityView source)
+        // 무적 규칙(보스·스폰 포인트가 살아 있는 동안, 데이터가 공격을 거부할 때)은 심의 피해 인터셉터로 건다 —
+        // 피해가 뷰를 거치지 않고 심 안에서 끝나므로(투사체 → Effects → Health) 뷰의 ReceiveDamage override로는 지킬 수 없다.
+        // 규칙의 주인(스폰 포인트 상태)은 아직 뷰라 술어만 꽂는다 — 둥지가 심으로 가면(5단계) 문도 심 모듈이 된다.
+        protected override void OnEntityAttached()
         {
-            // 데이터가 공격을 거부하면 스폰 포인트와 무관하게 아무 피해도 받지 않는다 —
-            // 건물의 isAttackable과 같은 규칙이다(BuildingEntity.ApplyEffects).
-            if (data != null && !data.isAttackable) return;
-
-            if (IsInvulnerable())
-            {
-                // Debug.Log("[MonsterNest] 둥지가 무적 상태입니다! (보스 또는 스폰포인트가 살아있음)");
-                return;
-            }
-            base.ReceiveDamage(amount, source);
+            base.OnEntityAttached();
+            if (!Entity.Has<DamageGate>())
+                Entity.Add(new DamageGate()).Blocks = _ => (data != null && !data.isAttackable) || IsInvulnerable();
         }
 
         private bool IsInvulnerable()
@@ -369,7 +374,7 @@ namespace CoreDawn.Entities
             if (IsDestroyed) return;
 
             // 물리 쿼리 없는 감지 — 캐시한 플레이어와의 거리(산술)로만 판정한다.
-            Player player = FindPlayer();
+            PlayerView player = FindPlayer();
 
             // 보스가 교전 중이면 거리 규칙 전부(SensorRange·CanSpawnFor·daySpawnMaxRange)를
             // 우회한다. 대장이 맞고 있는데 "플레이어가 둥지에서 멀다"는 이유로 지원군을 안 보내는 건
@@ -485,7 +490,10 @@ namespace CoreDawn.Entities
 
         protected override void OnDestroy()
         {
+            var e = Entity;
             base.OnDestroy();
+            // 심이 만들었지만 뷰와 수명을 같이한다(씬 전환) — 종료 중엔 심을 건드리지 않는다
+            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimHost.World.Remove(e);
             if (TimeManager.Instance != null && TimeManager.Instance.Cycle != null)
             {
                 TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
@@ -662,7 +670,7 @@ namespace CoreDawn.Entities
         ///     거리와 무관하게 그 포인트만 멈춘다 — 눈앞 팝인 방지.
         ///     화면 밖(옆·뒤)이거나 벽·절벽에 가려져 있으면 계속 나온다.
         /// </summary>
-        public List<DefenderSpawnSlot> GetDaySpawnableSlots(Player player)
+        public List<DefenderSpawnSlot> GetDaySpawnableSlots(PlayerView player)
         {
             var result = new List<DefenderSpawnSlot>();
             if (player == null) return result;
@@ -701,7 +709,7 @@ namespace CoreDawn.Entities
         ///   ② 시야각 안이라면, 벽·절벽에 가려져 있지는 않은가(포인트 눈높이 → 플레이어 머리 레이캐스트)
         /// 몬스터·플레이어 콜라이더는 벽이 아니므로 마스크에서 뺀다.
         /// </summary>
-        private static bool IsOnPlayerScreen(Vector3 spawnPos, Player player, Camera eye)
+        private static bool IsOnPlayerScreen(Vector3 spawnPos, PlayerView player, Camera eye)
         {
             Vector3 probe = spawnPos + Vector3.up * 1.2f;   // 스폰될 몬스터의 몸통 높이
 

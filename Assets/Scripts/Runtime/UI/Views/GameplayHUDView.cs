@@ -379,7 +379,7 @@ namespace CoreDawn.UI
             if (player == null)
                 player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
             // PlayerController에는 호환용 Entity가 함께 있을 수 있으므로 실제 전투 Player를 명시한다.
-            playerEntity = player != null ? player.GetComponent<Player>() : null;
+            playerEntity = player != null ? player.GetComponent<PlayerView>() : null;
             if (playerEntity == null) return;
 
             playerEntity.OnHealthChanged += OnPlayerHp;

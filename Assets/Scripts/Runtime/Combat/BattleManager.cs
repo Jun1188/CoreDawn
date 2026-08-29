@@ -36,7 +36,7 @@ namespace CoreDawn.Combat
         [Tooltip("런타임 부착 Player의 몬스터 감지 범위. 기본값(10)이면 밤에 몬스터 전원이 플레이어에게 몰리므로 좁힌다. 0 이하면 기본값 유지.")]
         [SerializeField] private float playerDetectionRange = 5f;
 
-        private Player playerEntity; // 아침 부활 처리용 캐시
+        private PlayerView playerEntity; // 아침 부활 처리용 캐시
         private GameObject playerSceneRoot;
 
         public GridManager Grid => gridManager;
@@ -141,22 +141,25 @@ namespace CoreDawn.Combat
         }
 
         // ── 외부 시스템 통합 ──
-        // MainScene 등 기존 씬의 플레이어(PlayerController)에는 Player 엔티티가 없다.
-        // 씬 에셋을 수정하지 않고 런타임에 Player 컴포넌트를 자동 부착해 몬스터 감지/피격을 연결한다.
+        // 씬의 플레이어(PlayerController)에는 PlayerView가 없다. 씬 에셋을 수정하지 않고 런타임에 PlayerView를 부착하고,
+        // 플레이어 엔티티는 심(PlayerSystem)이 만들어 뷰에 붙인다 — HP·효과·몬스터 감지가 그 엔티티에 산다.
         private void EnsurePlayerEntity()
         {
             var controller = FindFirstObjectByType<PlayerController>();
             if (controller == null) return;
             playerSceneRoot = controller.transform.root.gameObject;
 
-            var player = controller.GetComponent<Player>();
+            var player = controller.GetComponent<PlayerView>();
             bool attachedNow = player == null;
-            if (attachedNow) player = controller.gameObject.AddComponent<Player>();
+            if (attachedNow) player = controller.gameObject.AddComponent<PlayerView>();
+
+            // 엔티티는 심이 만든다(이미 살아 있으면 그것을 돌려준다) — HP 정본은 여기 값, 인스펙터(HealthComponent)가 아니다
+            if (player.Entity == null)
+                player.AttachEntity(SimRunner.Players.Spawn(playerMaxHealth > 0f ? playerMaxHealth : 100f, controller.transform.position));
 
             // 사망 문구는 별도 GameplayHUD UIDocument에 남고, FPS 플레이어/카메라는 기존처럼 비활성화한다.
             player.SetDeathBehavior(destroy: false, delay: 2f);
-            // 런타임 부착이라 인스펙터로 HP/감지 범위를 못 만지므로 여기서 설정
-            if (playerMaxHealth > 0f) player.Health.SetMaxHealth(playerMaxHealth);
+            // 런타임 부착이라 인스펙터로 감지 범위를 못 만지므로 여기서 설정
             if (playerDetectionRange > 0f)
                 player.SetDetectionRange(playerDetectionRange);
 
@@ -164,7 +167,7 @@ namespace CoreDawn.Combat
             // 공격해 HP가 준다"는 혼란(버그 리포트)의 원인이었다. 플레이어 피해는 총기만 준다.
             playerEntity = player;
             if (attachedNow)
-                Debug.Log("[BattleManager] PlayerController에 Player 엔티티를 런타임 부착했습니다.");
+                Debug.Log("[BattleManager] PlayerController에 PlayerView를 런타임 부착했습니다 (엔티티는 심 PlayerSystem).");
         }
 
         private void OnEntityDied(Entity e)

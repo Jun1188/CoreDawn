@@ -18,14 +18,23 @@ namespace CoreDawn.Entities
     public class BattleTower : BuildingView
     {
         [Header("Tower Combat")]
-        [SerializeField] private CombatComponent combat = new CombatComponent();
+        [Tooltip("탄 정의가 없을 때(즉시 적용 폴백·구 씬 오라)의 명중 효과. 정상 경로는 탄약(AmmoModuleSO)이 정한다.")]
+        [SerializeField] private EffectEntry[] fallbackAttackEffects;
 
         [Tooltip("심 없이 씬에 직접 놓인 타워용 데이터 폴백 — 심 배치 타워는 Building.Data가 우선한다.")]
         [SerializeField] private TowerDataSO fallbackData;
 
         private int monsterMask;
 
-        public override CombatComponent Combat => combat;
+        // 심 공격 모듈 — 사거리·쿨다운의 정본. 심 배치 타워는 FactorySystem.Place가 TowerDataSO에서 넣는다.
+        private Attack attack => Entity?.Get<Attack>();
+        private static float Now => SimRunner.Monsters.Now;   // 심 시계 — 몬스터와 같은 시계로 쿨다운을 센다
+        private float AttackRange => attack != null ? attack.Range : 0f;
+        private bool CanAttackNow() => attack != null && attack.CanAttack(Now);
+        // 즉시 적용 폴백(탄 정의 없음) — 효과는 심 Attack.Effects(= fallbackAttackEffects)가 심 안에서 건다
+        private void TryAttackNow(EntityView t) { if (attack != null && t != null && t.Entity != null) attack.TryAttack(t.Entity, Now); }
+        // 투사체·오라 — 효과는 전달 계층이 명중 시 적용, 여긴 쿨다운만 소비(+연출 이벤트)
+        private void MarkAttackPerformed() => attack?.MarkPerformed(Now, target != null ? target.Entity : null);
 
         /// <summary>목표 스캔 주기(초) — 매 프레임 훑지 않는다(구 SensorComponent.scanInterval).</summary>
         private const float ScanInterval = 0.2f;
@@ -33,7 +42,6 @@ namespace CoreDawn.Entities
         protected override void Awake()
         {
             base.Awake();
-            combat.Initialize(this);
             monsterMask = LayerMask.GetMask("Monster");
             visual = GetComponent<TowerVisualController>();
         }
@@ -101,7 +109,13 @@ namespace CoreDawn.Entities
 
             supply = Building?.Behavior as TowerBehavior;
             float tile = TileSize();
-            combat.Configure(data.range * tile, data.fireRate > 0f ? 1f / data.fireRate : 1f);
+            float range = data.range * tile, cooldown = data.fireRate > 0f ? 1f / data.fireRate : 1f;
+            if (Entity != null)
+            {
+                var a = Entity.Get<Attack>() ?? Entity.Add(new Attack(range, cooldown));   // 호스트·폴백 경로엔 아직 없다
+                a.Configure(range, cooldown);
+                if (fallbackAttackEffects != null && fallbackAttackEffects.Length > 0) a.SetEffects(EffectSpecs.ToSim(fallbackAttackEffects));
+            }
             minRangeWorld = data.minRange * tile;
 
             previewRound = data.defaultAmmo != null ? data.defaultAmmo.GetModule<AmmoModuleSO>() : null;
@@ -128,9 +142,9 @@ namespace CoreDawn.Entities
             if (data == null)
             {
                 // 데이터가 아예 없는 구 씬 타워 — 근접 즉시 공격 폴백 (combat이 효과 정의)
-                if (!combat.CanAttack()) return;
-                EntityView t = ClosestMonster(combat.AttackRange, 0f);
-                if (t.IsValidTarget()) combat.TryAttack(t);
+                if (!CanAttackNow()) return;
+                EntityView t = ClosestMonster(AttackRange, 0f);
+                if (t.IsValidTarget()) TryAttackNow(t);
                 return;
             }
 
@@ -192,7 +206,7 @@ namespace CoreDawn.Entities
             // 조준이 끝나기 전에는 여기서 멈춘다. 탄 소비(NextRound)보다 반드시 앞이어야 한다 —
             // 뒤에 두면 포탑이 도는 동안 매 프레임 한 발씩 사라진다.
             if (!aligned) return;
-            if (!combat.CanAttack()) return;
+            if (!CanAttackNow()) return;
 
             // 쏘기 직전에 한 발 소비 — 효과·탄도는 소비한 탄약이 정의하고, 타워는 각도·배율만.
             if (!NextRound(data, out AmmoModuleSO round))
@@ -203,15 +217,15 @@ namespace CoreDawn.Entities
 
             if (round == null || (data.fireMode == FireMode.Projectile && round.bulletPrefab == null))
             {
-                combat.TryAttack(target); // 폴백: 즉시 적용 (탄 정의 없음 — 효과는 combat이 정의)
+                TryAttackNow(target); // 폴백: 즉시 적용 (탄 정의 없음 — 효과는 combat이 정의)
                 return;
             }
 
-            var effects = ProjectileSystem.ScaleDamage(round.attackEffects, data.damageMultiplier);
-            effects = Effects.BakeOutgoing(effects); // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
+            var effects = EffectSpecs.ToSim(ProjectileSystem.ScaleDamage(round.attackEffects, data.damageMultiplier));
+            if (Effects != null) effects = Effects.BakeOutgoing(effects); // 타워도 버프 대상 (아직 거는 곳은 없지만 규칙 통일)
 
             FireAt(target, data, round, effects);
-            combat.MarkAttackPerformed(); // 효과는 전달 계층이 적용, 여긴 쿨다운만 소비
+            MarkAttackPerformed(); // 효과는 전달 계층이 적용, 여긴 쿨다운만 소비
         }
 
         /// <summary>
@@ -228,7 +242,7 @@ namespace CoreDawn.Entities
                 // 목표를 놓쳤다 다시 잡으며 포탑이 대기 스캔과 조준 사이를 홱홱 오간다.
                 // 여유를 준 만큼은 "쫓아가다 놓치기 직전" 구간이 되어 조준이 이어진다.
                 float d = Vector3.Distance(transform.position, target.GetPosition());
-                if (d <= combat.AttackRange + TargetKeepMargin && d >= minRangeWorld) return; // 유지
+                if (d <= AttackRange + TargetKeepMargin && d >= minRangeWorld) return; // 유지
             }
 
             target = null;
@@ -237,7 +251,7 @@ namespace CoreDawn.Entities
             if (Time.time < nextScanTime) return;
             nextScanTime = Time.time + ScanInterval;
 
-            target = ClosestMonster(combat.AttackRange, minRangeWorld);
+            target = ClosestMonster(AttackRange, minRangeWorld);
             // 콜라이더는 목표를 잡을 때 한 번만 찾는다 — 조준은 매 프레임이라 여기서 캐시해야 한다
             targetCollider = target != null ? target.GetComponentInChildren<Collider>() : null;
         }
@@ -307,9 +321,9 @@ namespace CoreDawn.Entities
         private void TickAura(TowerDataSO data)
         {
             // 쿨다운 중에는 굳이 반경을 세지 않는다 — 펄스형이라 조준할 것도 없다
-            if (!combat.CanAttack()) { SetState(TowerState.Idle); return; }
+            if (!CanAttackNow()) { SetState(TowerState.Idle); return; }
 
-            if (ProjectileSystem.CountTargets(transform.position, combat.AttackRange, monsterMask) == 0)
+            if (ProjectileSystem.CountTargets(transform.position, AttackRange, monsterMask) == 0)
             {
                 SetState(TowerState.Idle);
                 return;
@@ -321,16 +335,16 @@ namespace CoreDawn.Entities
                 return;
             }
 
-            EffectEntry[] effects = round != null ? round.attackEffects : combat.AttackEffects; // 구 씬 오라 폴백
-            if (effects == null || effects.Length == 0) { SetState(TowerState.Idle); return; }
+            EffectEntry[] entries = round != null ? round.attackEffects : fallbackAttackEffects; // 구 씬 오라 폴백
+            if (entries == null || entries.Length == 0) { SetState(TowerState.Idle); return; }
 
-            effects = ProjectileSystem.ScaleDamage(effects, data.damageMultiplier);
-            effects = Effects.BakeOutgoing(effects);
+            var effects = EffectSpecs.ToSim(ProjectileSystem.ScaleDamage(entries, data.damageMultiplier));
+            if (Effects != null) effects = Effects.BakeOutgoing(effects);
 
             ProjectileSystem.Fire(transform.position, transform.forward,
-                new ProjectileShot(0f, 0f, combat.AttackRange, effects, monsterMask, this,
+                new ProjectileShot(0f, 0f, AttackRange, effects, monsterMask, this,
                                    mode: FireMode.Aura));
-            combat.MarkAttackPerformed();
+            MarkAttackPerformed();
 
             SetState(TowerState.Firing);
             if (visual != null) visual.OnShotFired();
@@ -339,7 +353,7 @@ namespace CoreDawn.Entities
         /// <summary>탄이 타워 모델 안에서 태어나지 않게 밀어내는 거리 — 진짜 총구가 있으면 필요 없다.</summary>
         private const float MuzzlePushout = 0.6f;
 
-        private void FireAt(EntityView target, TowerDataSO data, AmmoModuleSO round, EffectEntry[] effects)
+        private void FireAt(EntityView target, TowerDataSO data, AmmoModuleSO round, Effect[] effects)
         {
             Vector3 aimPoint = AimPointOf(target);
 
@@ -373,7 +387,7 @@ namespace CoreDawn.Entities
             // 포탄이 탄착점 코앞에서 만료돼 허공에서 터진다.
             float travel = Vector3.Distance(new Vector3(muzzle.x, 0f, muzzle.z),
                                             new Vector3(impact.x, 0f, impact.z));
-            float range = Mathf.Max(combat.AttackRange, travel) + 2f;
+            float range = Mathf.Max(AttackRange, travel) + 2f;
 
             var shot = new ProjectileShot(round.speed, round.lifetime, range,
                                           effects, monsterMask, this, round.gravity, round.explosionRadius,

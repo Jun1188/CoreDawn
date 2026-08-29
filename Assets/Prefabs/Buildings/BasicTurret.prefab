@@ -410,12 +410,9 @@ MonoBehaviour:
     maxHealth: 200
   isCore: 0
   destroySfx: {fileID: 0}
-  combat:
-    attackRange: 1.5
-    attackCooldown: 2
-    attackEffects:
-    - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
-      value: 10
+  fallbackAttackEffects:
+  - effect: {fileID: 11400000, guid: 8f538a439565c674f8bd81d1de7ca639, type: 2}
+    value: 10
   sensor:
     detectionRange: 10
     targetLayerName: Monster

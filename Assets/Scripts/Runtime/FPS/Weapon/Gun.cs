@@ -236,10 +236,11 @@ namespace CoreDawn.FPS
 
             // 명중 효과는 장전된 탄약이 정의하고(타워와 같은 원칙), 총은 배율만 곱는다(피해형 항목에만).
             // 공격 버프는 발사 시점에 항목별로 구워진다 — 탄이 날아가는 동안 버프가 끝나도 발사 때 배율 유지.
-            var effects = ProjectileSystem.ScaleDamage(round.attackEffects, gunData.damageMultiplier);
-            if (OwnerEntity != null) effects = OwnerEntity.Effects.BakeOutgoing(effects);
+            // 심으로 넘기는 최종 목록은 여기서 확정된다 — 데이터 항목(에셋+값) → 배율 → 심 효과 → 소유자 버프 베이크
+            var effects = EffectSpecs.ToSim(ProjectileSystem.ScaleDamage(round.attackEffects, gunData.damageMultiplier));
+            if (OwnerEntity != null && OwnerEntity.Effects != null) effects = OwnerEntity.Effects.BakeOutgoing(effects);
             // 피해 비례 넉백 — 배율이 구워진 최종 피해 기준. 펠릿마다 얹히므로 샷건은 맞은 수만큼 세게 민다.
-            effects = ProjectileSystem.AppendDamageKnockback(effects, knockbackEffect, knockbackPerDamage);
+            effects = ProjectileSystem.AppendDamageKnockback(effects, EffectSpecs.Of(knockbackEffect), knockbackPerDamage);
 
             var shot = new ProjectileShot(round.speed, round.lifetime, gunData.range,
                                           effects, gunData.enemyLayer, OwnerEntity,

@@ -1,5 +1,5 @@
 using UnityEngine;
-using CoreDawn.Entities;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Combat
 {
@@ -12,11 +12,8 @@ namespace CoreDawn.Combat
     }
 
     /// <summary>
-    /// 지속 효과의 베이스 — Apply가 즉시 실행 대신 대상의 EffectController에 등록한다.
-    ///
-    /// SO는 공유 에셋이므로 진행 상태(남은 시간 등)를 여기 두면 모든 대상이 상태를 공유해버린다.
-    /// 상태는 EffectController의 ActiveEffect 인스턴스가 갖고,
-    /// 컨트롤러가 시점마다 OnStart / OnTick / OnEnd를 호출해준다.
+    /// 지속 효과의 베이스 — 지속 시간·중첩 규칙·틱 간격. 진행(남은 시간·틱 타이머)은 심 <see cref="Effects"/>의
+    /// 활성 인스턴스가 갖는다: SO는 공유 에셋이라 상태를 두면 모든 대상이 공유해 버린다.
     /// </summary>
     public abstract class DurationEffectSO : EffectSO
     {
@@ -30,11 +27,7 @@ namespace CoreDawn.Combat
         /// <summary>틱 간격(초). 0 이하면 틱 없음 (시작/종료만 있는 상태 효과 — 감속 등).</summary>
         public virtual float TickInterval => 0f;
 
-        public sealed override void Apply(EntityView target, in EffectContext ctx)
-            => target.Effects.Add(this, ctx);
-
-        public virtual void OnStart(EntityView target, in EffectContext ctx) { }
-        public virtual void OnTick(EntityView target, in EffectContext ctx) { }
-        public virtual void OnEnd(EntityView target) { }
+        internal override EffectSpec BuildSpec()
+            => new EffectSpec(SpecId, Kind, duration, stacking == EffectStacking.Stack, TickInterval);
     }
 }

@@ -17,7 +17,7 @@ namespace CoreDawn.Combat
             if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
             var spec = data != null ? data.ToSpec() : MonsterSpec.Default;
 
-            var entity = MonsterSystemHost.System.Spawn(spec, position, rotation * Vector3.forward);
+            var entity = SimRunner.Monsters.Spawn(spec, position, rotation * Vector3.forward);
 
             GameObject go = data != null && data.prefab != null
                 ? Object.Instantiate(data.prefab, position, rotation, parent)
