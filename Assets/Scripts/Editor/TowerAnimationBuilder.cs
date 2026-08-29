@@ -4,6 +4,7 @@ using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Placement;
+using CoreDawn.Data;
 
 namespace CoreDawn.EditorTools
 {

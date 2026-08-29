@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using CoreDawn.DayTime;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
+using CoreDawn.Data;
 
 namespace CoreDawn.Tests
 {

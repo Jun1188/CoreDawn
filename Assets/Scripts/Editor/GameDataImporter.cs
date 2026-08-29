@@ -10,6 +10,7 @@ using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.Tutorial;
 using CoreDawn.Worlds;
+using CoreDawn.Data;
 
 namespace CoreDawn.EditorTools
 {
