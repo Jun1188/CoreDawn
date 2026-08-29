@@ -53,7 +53,6 @@ namespace CoreDawn.Data
             return Mathf.Max(0f, shieldPerItem);
         }
 
-        public override IBuildingBehavior CreateBehavior(BuildingModule building) => new CoreBehavior(building, this);
 
         protected override void OnValidate()
         {

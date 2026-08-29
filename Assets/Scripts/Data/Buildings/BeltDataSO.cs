@@ -27,8 +27,6 @@ namespace CoreDawn.Data
             _                => prefab,
         };
 
-        public override IBuildingBehavior CreateBehavior(BuildingModule building)
-            => new BeltBehavior(building);
 
         // ── 모양별 포트 계산 (모양 3 × 회전 4 = 12조합 캐시)
 

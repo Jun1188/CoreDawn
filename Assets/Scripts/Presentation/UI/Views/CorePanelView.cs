@@ -585,17 +585,17 @@ namespace CoreDawn.UI
 
         // ───────────────── SCR-01b 수리 확인창 ─────────────────
 
-        CoreTierDefinition CurrentTier
+        CoreTierDef CurrentTier
         {
             get
             {
-                var tiers = target?.Data?.tiers;
+                var tiers = target?.Def?.Tiers;
                 int i = target?.CurrentTierIndex ?? -1;
-                return tiers != null && i >= 0 && i < tiers.Length ? tiers[i] : null;
+                return tiers != null && i >= 0 && i < tiers.Count ? tiers[i] : null;
             }
         }
 
-        bool IsFinalTier => CurrentTier?.isFinal ?? false;
+        bool IsFinalTier => CurrentTier?.IsFinal ?? false;
 
         /// <summary>납품 버튼의 두 얼굴 — 아직 모자라면 납품, 다 모였으면 확인창.</summary>
         void OnPrimaryAction()
@@ -610,19 +610,19 @@ namespace CoreDawn.UI
             if (tier == null) return;
 
             confirmGate.text = $"GATE {(target.CurrentTierIndex + 1):00}";
-            confirmName.text = string.IsNullOrEmpty(tier.tierLabel)
-                ? $"{target.CurrentTierIndex + 1}단계" : tier.tierLabel;
+            confirmName.text = string.IsNullOrEmpty(tier.Name)
+                ? $"{target.CurrentTierIndex + 1}단계" : tier.Name;
 
-            confirmDesc.text = tier.description ?? "";
-            Show(confirmDesc, !string.IsNullOrEmpty(tier.description));
+            confirmDesc.text = tier.Description ?? "";
+            Show(confirmDesc, !string.IsNullOrEmpty(tier.Description));
 
             // 해금 목록 — 계통색은 마지막 단계만 crystal, 나머지는 copper (문서 목업과 동일)
-            string matClass = tier.isFinal ? "ui-mat--crystal" : "ui-mat--copper";
+            string matClass = tier.IsFinal ? "ui-mat--crystal" : "ui-mat--copper";
             confirmUnlocks.Clear();
             int n = 0;
-            if (tier.unlocks != null)
+            if (tier.Unlocks != null)
             {
-                foreach (var u in tier.unlocks)
+                foreach (var u in tier.Unlocks)
                 {
                     if (string.IsNullOrEmpty(u)) continue;
                     confirmUnlocks.Add(UnlockRow(matClass, u));
@@ -632,25 +632,25 @@ namespace CoreDawn.UI
 
             // 내구도 줄은 unlocks에 손으로 적지 않는다 — maxHpBonus에서 만들어 맨 아래에 붙인다.
             // 같은 수치를 데이터와 문구 두 곳에 적으면 반드시 어긋나고, 어긋난 쪽이 UI면 플레이어가 속는다.
-            if (tier.maxHpBonus > 0)
+            if (tier.MaxHpBonus > 0)
             {
-                confirmUnlocks.Add(UnlockRow(matClass, $"코어 내구도 +{tier.maxHpBonus:N0}"));
+                confirmUnlocks.Add(UnlockRow(matClass, $"코어 내구도 +{tier.MaxHpBonus:N0}"));
                 n++;
             }
             Show(confirmUnlocksLabel, n > 0);
             Show(confirmUnlocks, n > 0);
 
             // 경고는 되돌릴 수 없는 단계에만. 전부에 붙이면 정작 위험한 마지막에서 눈에 안 띈다
-            Show(confirmWarn, tier.isFinal);
-            if (tier.isFinal)
+            Show(confirmWarn, tier.IsFinal);
+            if (tier.IsFinal)
             {
                 confirmWarnTitle.text = "예열이 시작되면 멈출 수 없습니다";
                 confirmWarnBody.text  = "예열 동안 행성의 모든 무리가 코어로 몰려옵니다. 끝까지 지켜내면 이륙합니다.";
             }
 
-            confirmOk.text = tier.isFinal ? "예열 시작" : "수리 시작";
-            ToggleClass(confirmOk, "ui-btn--danger", tier.isFinal);
-            ToggleClass(confirmOk, "ui-btn--primary", !tier.isFinal);
+            confirmOk.text = tier.IsFinal ? "예열 시작" : "수리 시작";
+            ToggleClass(confirmOk, "ui-btn--danger", tier.IsFinal);
+            ToggleClass(confirmOk, "ui-btn--primary", !tier.IsFinal);
 
             Show(confirmScrim, true);
         }
@@ -812,17 +812,17 @@ namespace CoreDawn.UI
         {
             rail.Clear();
 
-            var tiers = target.Data != null ? target.Data.tiers : null;
-            if (tiers == null || tiers.Length == 0) { Show(rail, false); return; }
+            var tiers = target.Def?.Tiers;
+            if (tiers == null || tiers.Count == 0) { Show(rail, false); return; }
             Show(rail, true);
 
             int cur = target.CurrentTierIndex;
 
-            for (int i = 0; i < tiers.Length; i++)
+            for (int i = 0; i < tiers.Count; i++)
             {
                 var step = new VisualElement();
                 step.AddToClassList("ui-rail__step");
-                if (i == tiers.Length - 1) step.AddToClassList("ui-rail__step--last");
+                if (i == tiers.Count - 1) step.AddToClassList("ui-rail__step--last");
                 if (i < cur) step.AddToClassList("ui-rail__step--done");
                 else if (i == cur) step.AddToClassList("ui-rail__step--active");
 
@@ -835,7 +835,7 @@ namespace CoreDawn.UI
                 step.Add(dot);
 
                 var text = new VisualElement();
-                var label = new Label(string.IsNullOrEmpty(tiers[i].tierLabel) ? $"{i + 1}단계" : tiers[i].tierLabel);
+                var label = new Label(string.IsNullOrEmpty(tiers[i].Name) ? $"{i + 1}단계" : tiers[i].Name);
                 label.AddToClassList("ui-rail__label");
                 var sub = new Label(i < cur ? "완료" : i == cur ? "진행 중" : "잠김");
                 sub.AddToClassList("ui-rail__sub");
@@ -849,10 +849,10 @@ namespace CoreDawn.UI
 
         string CurrentTierLabel()
         {
-            var tiers = target.Data != null ? target.Data.tiers : null;
+            var tiers = target.Def?.Tiers;
             int i = target.CurrentTierIndex;
-            if (tiers == null || i < 0 || i >= tiers.Length) return "";
-            return string.IsNullOrEmpty(tiers[i].tierLabel) ? $"{i + 1}단계" : tiers[i].tierLabel;
+            if (tiers == null || i < 0 || i >= tiers.Count) return "";
+            return string.IsNullOrEmpty(tiers[i].Name) ? $"{i + 1}단계" : tiers[i].Name;
         }
 
         // ───────────────────── 플레이어 인벤토리 ─────────────────────

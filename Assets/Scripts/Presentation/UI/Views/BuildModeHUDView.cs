@@ -139,7 +139,7 @@ namespace CoreDawn.UI
             // 부족한 칩만 통째로 붉어진다. 숫자가 이미 말하므로 문장을 덧붙이지 않는다.
             cost.Clear();
             int chips = 0;
-            if (BuildCost.HasCost(so))
+            if (BuildCost.HasCost(so != null ? so.Def : null))
             {
                 foreach (var c in so.buildCost)
                 {
@@ -167,7 +167,7 @@ namespace CoreDawn.UI
         /// <summary>비용 표시가 달라지는 입력값을 한 정수로 접는다 — 매 프레임 칩을 다시 만들지 않기 위함.</summary>
         static int CostStamp(BuildingDataSO so)
         {
-            if (!BuildCost.HasCost(so)) return 0;
+            if (!BuildCost.HasCost(so != null ? so.Def : null)) return 0;
             int h = 17;
             foreach (var c in so.buildCost)
                 if (c.item != null) h = h * 31 + BuildCost.PlayerCountOf(c.item);
@@ -231,7 +231,7 @@ namespace CoreDawn.UI
             Show(leadIcon, false);
             Show(leadRing, true);
 
-            var so = target.Data;
+            var so = BuildingAssets.Of(target.Def);
             cardName.text = $"{DisplayNameOf(so)} 철거";
             ToggleClass(cardName, "ui-placecard__name--danger", true);
             cardSub.text = "누르고 있는 동안 진행";
@@ -240,7 +240,7 @@ namespace CoreDawn.UI
             // 환급 칩은 초록 — "돌려받는다"를 색으로 먼저 말한다. 전액 환급이라 비용과 같은 수치다.
             cost.Clear();
             int chips = 0;
-            if (BuildCost.HasCost(so))
+            if (BuildCost.HasCost(so != null ? so.Def : null))
             {
                 foreach (var c in so.buildCost)
                 {

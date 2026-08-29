@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Serialization;
+using CoreDawn.Sim;
 using CoreDawn.Factory;
 using CoreDawn.ResourceNodes;
 using CoreDawn.Data;
@@ -99,7 +100,7 @@ namespace CoreDawn.Tests
             var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
             if (sim == null) return false;
 
-            return node.Cells.Any(c => sim.Grid.GetAt(c) is { IsRemoved: false } b && b.Data is MinerDataSO);
+            return node.Cells.Any(c => sim.Grid.GetAt(c) is { IsRemoved: false } b && b.Def.Has<ExtractorModuleDef>());
         }
     }
 }

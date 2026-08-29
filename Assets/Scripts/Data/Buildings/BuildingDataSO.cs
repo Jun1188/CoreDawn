@@ -104,7 +104,22 @@ namespace CoreDawn.Data
         public bool isAttackable = false;
 
         /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
-        public abstract IBuildingBehavior CreateBehavior(BuildingModule building);
+        // 행동은 더 이상 SO가 만들지 않는다 — 정의의 모듈 조합으로 BuildingBehaviors(등록부)가 고른다.
+
+        EntityDef _def;
+        /// <summary>이 설계도의 팩 정의 — 심은 이것만 든다. SO는 프리팹·아이콘을 가진 표현 에셋(5a-3에서 뷰 카탈로그로).</summary>
+        public EntityDef Def
+        {
+            get
+            {
+                if (_def == null)
+                {
+                    var db = SimHost.Database;
+                    if (db != null) _def = db.Entity(db.LegacyId(Id));
+                }
+                return _def;
+            }
+        }
 
         /// <summary>
         /// 이 건물의 편 — 배치가 심 엔티티를 만들 때 넣는다. 플레이어가 짓는 것은 전부 Player,

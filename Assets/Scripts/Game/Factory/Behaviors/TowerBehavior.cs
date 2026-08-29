@@ -26,9 +26,9 @@ namespace CoreDawn.Factory
     public class TowerBehavior : IBuildingBehavior, IInteractiveBehavior
     {
         readonly BuildingModule _b;
-        readonly TowerDataSO _data;
+        readonly AmmoConsumerModuleDef _data;
 
-        public TowerBehavior(BuildingModule b, TowerDataSO data)
+        public TowerBehavior(BuildingModule b, AmmoConsumerModuleDef data)
         {
             _b = b;
             _data = data;
@@ -46,14 +46,14 @@ namespace CoreDawn.Factory
             GameScreens.OpenContainer(_b.Input);
         }
 
-        public TowerDataSO Data => _data;
+        public AmmoConsumerModuleDef Def => _data;
 
         bool Accepts(ItemDef item)
         {
             if (item == null) return false;
-            var filter = _data.ammoFilter;
-            if (filter == null || filter.Length == 0) return false;   // 비우면 아무것도 안 받는다
-            return Array.IndexOf(filter, item) >= 0;
+            var filter = _data.AmmoFilter;
+            if (filter == null || filter.Count == 0) return false;   // 비우면 아무것도 안 받는다
+            return filter.Contains(item);
         }
 
         /// <summary>장전된 탄약이 하나라도 있는가.</summary>

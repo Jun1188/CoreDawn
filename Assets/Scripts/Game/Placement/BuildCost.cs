@@ -3,6 +3,7 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
 using CoreDawn.Sim;
+using System.Collections.Generic;
 
 namespace CoreDawn.Placement
 {
@@ -22,7 +23,9 @@ namespace CoreDawn.Placement
             PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.MainContainer : null;
 
         /// <summary>비용이 정의돼 있는가. 비어 있으면 공짜 건물(코어 등).</summary>
-        public static bool HasCost(BuildingDataSO so) => so != null && so.buildCost != null && so.buildCost.Length > 0;
+        static List<ItemAmount> CostOf(EntityDef def) => def?.Get<BuildingModuleDef>()?.Cost;
+
+        public static bool HasCost(EntityDef def) { var cost = CostOf(def); return cost != null && cost.Count > 0; }
 
         public static int PlayerCountOf(ItemDef item)
         {
@@ -37,35 +40,35 @@ namespace CoreDawn.Placement
         /// 지금 지을 수 있는가. 인벤토리가 아직 없으면(테스트·부트스트랩 전) 통과시킨다 —
         /// 비용 때문에 시뮬레이션 테스트가 막히면 안 된다.
         /// </summary>
-        public static bool CanAfford(BuildingDataSO so)
+        public static bool CanAfford(EntityDef def)
         {
-            if (!HasCost(so)) return true;
+            if (!HasCost(def)) return true;
             if (PlayerInventoryHolder.Instance == null) return true;
 
-            foreach (var c in so.buildCost)
+            foreach (var c in CostOf(def))
             {
-                if (c.item == null) continue;
-                if (PlayerCountOf(c.item) < c.amount) return false;
+                if (c.Item == null) continue;
+                if (PlayerCountOf(c.Item) < c.Amount) return false;
             }
             return true;
         }
 
 
         /// <summary>부족한 첫 재료 — 건설 메뉴가 "무엇이 모자란지" 보여줄 때 쓴다.</summary>
-        public static bool TryGetMissing(BuildingDataSO so, out ItemDef item, out int shortBy)
+        public static bool TryGetMissing(EntityDef def, out ItemDef item, out int shortBy)
         {
             item = null;
             shortBy = 0;
-            if (!HasCost(so) || PlayerInventoryHolder.Instance == null) return false;
+            if (!HasCost(def) || PlayerInventoryHolder.Instance == null) return false;
 
-            foreach (var c in so.buildCost)
+            foreach (var c in CostOf(def))
             {
-                if (c.item == null) continue;
-                int have = PlayerCountOf(c.item);
-                if (have >= c.amount) continue;
+                if (c.Item == null) continue;
+                int have = PlayerCountOf(c.Item);
+                if (have >= c.Amount) continue;
 
-                item = c.item;
-                shortBy = c.amount - have;
+                item = c.Item;
+                shortBy = c.Amount - have;
                 return true;
             }
             return false;
@@ -75,16 +78,16 @@ namespace CoreDawn.Placement
         /// 비용을 차감한다. 전량 가능할 때만 차감하고, 아니면 아무것도 건드리지 않는다 —
         /// 반쯤 깎인 채로 배치가 실패하면 아이템만 사라진다.
         /// </summary>
-        public static bool TryCharge(BuildingDataSO so)
+        public static bool TryCharge(EntityDef def)
         {
-            if (!HasCost(so)) return true;
+            if (!HasCost(def)) return true;
             if (PlayerInventoryHolder.Instance == null) return true;
-            if (!CanAfford(so)) return false;
+            if (!CanAfford(def)) return false;
 
-            foreach (var c in so.buildCost)
+            foreach (var c in CostOf(def))
             {
-                if (c.item == null || c.amount <= 0) continue;
-                Consume(c.item, c.amount);
+                if (c.Item == null || c.Amount <= 0) continue;
+                Consume(c.Item, c.Amount);
             }
             return true;
         }
@@ -94,17 +97,17 @@ namespace CoreDawn.Placement
         /// 철거 시 전액 환급. 부분 환급은 배치 실험을 망설이게 만들어 공장 게임의 재미를 깎는다.
         /// 인벤토리에 자리가 없으면 바닥에 떨군다 — 환급이 조용히 증발하면 안 된다.
         /// </summary>
-        public static void Refund(BuildingDataSO so, Vector3 dropPosition)
+        public static void Refund(EntityDef def, Vector3 dropPosition)
         {
-            if (!HasCost(so)) return;
+            if (!HasCost(def)) return;
 
             var holder = PlayerInventoryHolder.Instance;
-            foreach (var c in so.buildCost)
+            foreach (var c in CostOf(def))
             {
-                if (c.item == null || c.amount <= 0) continue;
+                if (c.Item == null || c.Amount <= 0) continue;
 
-                if (holder != null && holder.AddItemToPlayer(c.item, c.amount)) continue;
-                PlacementBridge.DropAt(c.item, c.amount, dropPosition);
+                if (holder != null && holder.AddItemToPlayer(c.Item, c.Amount)) continue;
+                PlacementBridge.DropAt(c.Item, c.Amount, dropPosition);
             }
         }
 

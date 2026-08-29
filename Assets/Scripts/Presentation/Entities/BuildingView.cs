@@ -66,8 +66,10 @@ namespace CoreDawn.Entities
         // ── 심 데이터 위임 — 소비자가 Building 내부로 두 단계 들어가지 않게 하는 창구.
         //    심이 아직 없는 씬 직접 배치 건물(코어 등)에서도 안전하게 null/기본값을 돌려준다.
 
-        /// <summary>이 건물의 설계도(SO). 심이 없으면 null.</summary>
-        public BuildingDataSO Data => building?.Data;
+        /// <summary>이 건물의 정의(팩 json). 심이 없으면 null.</summary>
+        public EntityDef Def => building?.Def;
+        /// <summary>이 건물의 표현 에셋(프리팹·아이콘). 정의나 SO가 없으면 null — 5a-3에서 뷰 카탈로그로.</summary>
+        public BuildingDataSO Data => BuildingAssets.Of(building?.Def);
 
         /// <summary>점유 풋프린트의 왼쪽 아래 셀. 심이 없으면 기본값.</summary>
         public Vector2Int Origin => building != null ? building.Origin : default;
@@ -85,7 +87,7 @@ namespace CoreDawn.Entities
         public bool TryGetFootprintRect(out Vector3 min, out Vector3 max)
         {
             min = max = default;
-            if (!HasBuilding || Data == null) return false;
+            if (!HasBuilding) return false;
             building.WorldRect(transform.position.y, out min, out max);
             return true;
         }
@@ -95,7 +97,7 @@ namespace CoreDawn.Entities
 
         /// <summary>핑 이름은 설계도의 표시명 — 오브젝트 이름은 프리팹 이름(Clone)이라 사람이 읽을 것이 아니다.</summary>
         public override string PingLabel =>
-            Data != null && !string.IsNullOrEmpty(Data.displayName) ? Data.displayName : name;
+            building != null ? building.DisplayName : name;
 
         public void Interact(PlayerController player)
         {
@@ -131,7 +133,7 @@ namespace CoreDawn.Entities
             // 그때 점 하나만 칠하면 덮고 있던 칸의 가장자리가 막힌 채 남는다 — 칸 4m·세분 4면
             // 1×1 건물도 노드 4×4 를 덮는데 점 재칠은 3×3 밖에 닿지 않는다.
             // 자리를 비우는 순간이야말로 덮었던 자리를 전부 다시 칠해야 하는 순간이다.
-            if (building != null && building.Data != null)
+            if (building != null)
             {
                 building.WorldRect(transform.position.y, out Vector3 min, out Vector3 max);
                 grid.RefreshCostsIn(min, max);

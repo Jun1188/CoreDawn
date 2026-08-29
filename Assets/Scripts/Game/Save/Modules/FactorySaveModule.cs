@@ -6,6 +6,7 @@ using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Placement;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Save
 {
@@ -86,7 +87,7 @@ namespace CoreDawn.Save
                 var hp = b.Owner?.Health;   // HP 정본은 심 — 뷰 없는 건물(둥지·헤드리스)도 같은 경로
                 dto.Buildings.Add(new BuildingDto
                 {
-                    DataId = SaveRefs.IdOf(b.Data),
+                    DataId = SaveRefs.IdOf(b.Def),
                     Origin = b.Origin,
                     RotationSteps = b.RotationSteps,
                     Shape = b.Shape,
@@ -146,7 +147,7 @@ namespace CoreDawn.Save
             foreach (var existing in boot.Buildings.Where(b => b != null && !b.IsRemoved).ToList())
             {
                 if (wanted.TryGetValue(existing.Origin, out var want) &&
-                    want.DataId == SaveRefs.IdOf(existing.Data) &&
+                    SaveRefs.Building(want.DataId) == existing.Def &&   // 옛 id도 정의로 풀어 비교
                     want.RotationSteps == existing.RotationSteps)
                     continue;   // 그대로 재사용한다
 
@@ -166,8 +167,8 @@ namespace CoreDawn.Save
             {
                 if (want == null) continue;
 
-                var so = SaveRefs.Building(want.DataId);
-                if (so == null) continue;   // SaveRefs가 이미 경고를 남겼다
+                var def = SaveRefs.Building(want.DataId);
+                if (def == null) continue;   // SaveRefs가 이미 경고를 남겼다
 
                 if (!byOrigin.TryGetValue(want.Origin, out var b))
                 {
@@ -176,7 +177,7 @@ namespace CoreDawn.Save
                         Debug.LogWarning($"[Save] 씬에 PlacementSystem이 없어 '{want.DataId}' @ {want.Origin} 를 세우지 못했습니다.");
                         continue;
                     }
-                    if (!placement.TryPlaceAt(so, want.Origin, want.RotationSteps, out b, out string reason, want.Shape))
+                    if (!placement.TryPlaceAt(def, want.Origin, want.RotationSteps, out b, out string reason, want.Shape))
                     {
                         Debug.LogWarning($"[Save] '{want.DataId}' @ {want.Origin} 배치 실패: {reason}");
                         continue;

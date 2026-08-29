@@ -49,7 +49,7 @@ namespace CoreDawn.Tests
         FactorySystem Factory => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
         static GridSystem Grid => ResourceNodeRegistry.Grid;
 
-        ItemDataSO _ore;
+        ItemDef _ore;
         BuildingDataSO _minerSO, _storageSO;
         BuildingModule _miner, _storage;
 
@@ -110,7 +110,7 @@ namespace CoreDawn.Tests
             // 광맥이 있는 씬에서는 레지스트리가 소켓을 되찾아와야 한다 (실행 순서에 흔들리면 안 됨).
             Case("D1 광맥이 자원 소켓의 주인 (FactoryTest 오버라이드 복구)",
                  Factory.GetResourceAt != null &&
-                 Factory.GetResourceAt(nodeA.Origin) == (ItemDef)_ore &&
+                 Factory.GetResourceAt(nodeA.Origin) == _ore &&
                  Factory.GetResourceAt(FarEmptyCell()) == null,
                  $"광맥 위={Name(Factory.GetResourceAt?.Invoke(nodeA.Origin))}, " +
                  $"광맥 밖={Name(Factory.GetResourceAt?.Invoke(FarEmptyCell()))}");
@@ -128,7 +128,7 @@ namespace CoreDawn.Tests
 
             // 광맥 위 설치 — 실제 배치 경로(PlacementBridge)로 심 + 뷰를 함께 만든다
             Case("D4 광맥 위 채굴기는 설치 허용 판정",
-                 ResourceNodeRegistry.CanPlace(_minerSO, nodeA.Origin, Vector2Int.one),
+                 ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeA.Origin, Vector2Int.one),
                  "CanPlace(광맥 위) == true 여야 함");
 
             _miner   = Place(_minerSO,   nodeA.Origin);
@@ -148,13 +148,13 @@ namespace CoreDawn.Tests
             // 광맥 밖 설치 — 판정은 false, 그래도 강행하면 러너가 되돌린다(안전망)
             Vector2Int off = FarEmptyCell();
             Case("D7 광맥 밖 채굴기는 설치 차단 판정 + 사유",
-                 !ResourceNodeRegistry.CanPlace(_minerSO, off, Vector2Int.one, out string why) &&
+                 !ResourceNodeRegistry.CanPlace(_minerSO.Def, off, Vector2Int.one, out string why) &&
                  !string.IsNullOrEmpty(why),
                  $"사유: {why ?? "(없음)"}");
 
             Case("D8 2x2 광맥 위 멀티타일 판정",
-                 ResourceNodeRegistry.CanPlace(_minerSO, nodeB.Origin, new Vector2Int(2, 2)) &&
-                 !ResourceNodeRegistry.CanPlace(_minerSO, nodeB.Origin + Vector2Int.right, new Vector2Int(2, 2)),
+                 ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeB.Origin, new Vector2Int(2, 2)) &&
+                 !ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeB.Origin + Vector2Int.right, new Vector2Int(2, 2)),
                  "광맥 안 2x2=허용, 경계를 걸치면=차단");
 
             var stray = Place(_minerSO, off);          // 판정을 무시하고 강행한 경우
@@ -226,7 +226,7 @@ namespace CoreDawn.Tests
                  $"Day {dayBefore} → {TimeManager.Instance.DayNumber}, 건축={TimeManager.Instance.IsBuildingAllowed}");
 
             Case("M2 파괴된 자리에 다시 설치할 수 있다 (광맥은 그대로)",
-                 ResourceNodeRegistry.CanPlace(_minerSO, nodeA.Origin, Vector2Int.one),
+                 ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeA.Origin, Vector2Int.one),
                  "CanPlace(같은 광맥) == true 여야 함");
 
             _miner = Place(_minerSO, nodeA.Origin);
@@ -291,7 +291,7 @@ namespace CoreDawn.Tests
             Vector3 pos = Grid.GetFootprintCenter(cell, size);
             pos.y = SurfaceTopAt(pos) + PlacementSystem.SurfaceLift(so, cell);
 
-            return PlacementBridge.Place(so, cell, pos);
+            return PlacementBridge.Place(so.Def, cell, pos);
         }
 
         /// <summary>표면 y — Ground 레이어를 위에서 훑는다. 광맥 슬래브도 Ground라 광맥 위면 그 윗면이 나온다.</summary>

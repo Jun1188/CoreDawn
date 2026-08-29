@@ -155,28 +155,25 @@ namespace CoreDawn.Factory
         /// 이미 있는 엔티티에 건물을 붙일 때(둥지처럼 스스로 엔티티를 가진 개체가 칸만 차지하는 경우).
         /// null이면 새 엔티티를 만들고, 그 엔티티의 생사는 이 시스템이 책임진다(OwnsEntity).
         /// </param>
-        public BuildingModule Place(BuildingDataSO so, Vector2Int origin, int rotSteps = 0,
+        public BuildingModule Place(EntityDef def, Vector2Int origin, int rotSteps = 0,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, Entity host = null)
         {
-            var size = so.GetRotatedSize(rotSteps);
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            var size = BuildingPorts.RotatedSize(def, rotSteps);
             bool ownsEntity = host == null;
-
-            var entity = host ?? World.Create(so.Faction, Geometry.CenterOf(origin, size));
+            var entity = host ?? World.Create(def.Faction, Geometry.CenterOf(origin, size));
             if (ownsEntity)
             {
-                entity.Add(new HealthModule(Mathf.Max(1, so.maxHp)));   // HP 정본은 데이터(maxHp)다 — 프리팹 값이 아니다
-                entity.Add(new EffectsModule());                        // 받는 배율·지속 효과 — Building(보호막·아군 무시)보다 먼저 걸러진다
-                if (so is TowerDataSO tower)                      // 타워의 사거리·연사는 데이터 — 심 공격 모듈. 효과는 탄(전달 계층)이 정하므로 비워 둔다
-                    entity.Add(new AttackModule(tower.range * Geometry.CellSize, tower.fireRate > 0f ? 1f / tower.fireRate : 1f));
+                def.Assemble(entity);   // Health·Effects — 정의가 만든다. HP 정본은 정의(maxHp)지 프리팹 값이 아니다
+                // 타워의 사거리·연사는 정의 — 심 공격 모듈. 효과는 탄(전달 계층)이 정하므로 비워 둔다 (TowerBrain 런타임 모듈은 5a-2e)
+                if (def.Get<TowerBrainModuleDef>() is { } brain)
+                    entity.Add(new AttackModule(brain.Range * Geometry.CellSize, brain.FireRate > 0f ? 1f / brain.FireRate : 1f));
             }
-
-            var b = new BuildingModule(this, so, origin, rotSteps, portOverride, shape, ownsEntity);
+            var b = new BuildingModule(this, def, origin, rotSteps, portOverride, shape, ownsEntity);
             entity.Add(b);
-
             for (int x = 0; x < size.x; x++)
                 for (int y = 0; y < size.y; y++)
                     Grid.Add(origin + new Vector2Int(x, y), b);
-
             _buildings.Add(b);
             Graph.OnPlaced(b);
             MarkDirty(b);
@@ -198,7 +195,7 @@ namespace CoreDawn.Factory
 
             Graph.OnRemoved(b);
 
-            var size = b.Data.GetRotatedSize(b.RotationSteps);
+            var size = b.Size;
             for (int x = 0; x < size.x; x++)
                 for (int y = 0; y < size.y; y++)
                     Grid.Remove(b.Origin + new Vector2Int(x, y));

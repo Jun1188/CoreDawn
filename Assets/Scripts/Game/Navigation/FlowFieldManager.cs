@@ -160,7 +160,7 @@ namespace CoreDawn.Navigation
                 // Walkable=false 라 "뚫고는 가도 걸어서는 못 지나간다" — 목표에서도 빼고 공격
                 // 대상에서도 빼면 나무에 막힌 몬스터가 부수지도 돌아가지도 못하고 갇힌다.
                 if (building.Owner.Faction != Faction.Player) continue;
-                if (building.Data is BeltDataSO) continue;
+                if (building.IsConveyor) continue;
 
                 // 무엇부터 노릴지는 건물이 정한다 — 코어 0(최종 목표), 공격 타워는 낮게(먼저 부순다),
                 // 일반 건물은 높게(굳이 돌아가지 않는다). 시드가 작을수록 그 목표가 가깝게 계산된다.
@@ -168,9 +168,7 @@ namespace CoreDawn.Navigation
                 // 시드는 "월드 칸 = 10" 단위로 적혀 있는데 길찾기 격자는 월드 칸을 subdiv 등분한다.
                 // 그대로 쓰면 이동 비용만 subdiv배로 불어나 시드의 우회 허용 거리가 그만큼 줄어든다 —
                 // 80(8칸)이 4등분 격자에서는 2칸이 되어, 코어로 가던 몬스터가 두 칸 옆 건물로 새는 원인이었다.
-                int seedCost = building.IsCore ? 0
-                             : building.Data != null ? building.Data.threatSeedCost
-                             : fallbackGoalCost;
+                int seedCost = building.IsCore ? 0 : building.Building.ThreatSeedCost;
                 seedCost *= Mathf.Max(1, grid.Subdiv);
 
                 // 점유 풋프린트가 기준이다 — 심이 낸다(뷰·콜라이더에 묻지 않는다). 콜라이더는 메시마다 조각나 있어서

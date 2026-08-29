@@ -211,7 +211,7 @@ namespace CoreDawn.UI
             RebuildPlayerGrids();   // 설비를 못 찾아도 소지품은 그린다 — 빈 창이 뜨는 것보다 낫다
 
             if (target == null) return;
-            machineName.text = string.IsNullOrEmpty(target.Data.displayName) ? target.Data.name : target.Data.displayName;
+            machineName.text = target.Building.DisplayName;
             RebuildRecipes();
             RebuildSlots();
             RefreshDetailHead();

@@ -16,17 +16,17 @@ namespace CoreDawn.Factory
     public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
     {
         readonly BuildingModule _b;
-        readonly AssemblerDataSO _data;
+        readonly CrafterModuleDef _def;
         RecipeDef _recipe;           // 다음 조합이 따를 레시피 (UI에서 교체 가능)
         RecipeDef _craftingRecipe;   // 진행 중인 1회가 따르는 레시피 — 교체돼도 이 1회는 이것으로 끝난다
         float        _readyAt;          // 조합 완료 예정 시각
         bool         _crafting;
         float        _pausedRemaining;  // 중지 시점의 잔여 시간 — 진행률은 보존된다
 
-        public AssemblerBehavior(BuildingModule b, AssemblerDataSO data)
+        public AssemblerBehavior(BuildingModule b, CrafterModuleDef def)
         {
             _b = b;
-            _data = data;
+            _def = def;
             // 한 재료가 입력 슬롯 전부를 독점해 다른 재료가 못 들어오는 데드락 방지
             _b.Input.SingleStackPerType = true;
             // 입력 버퍼는 현재 레시피의 재료만 받는다 (포트 필터 AcceptedTypes 대체)
@@ -40,7 +40,7 @@ namespace CoreDawn.Factory
             _b.Input.Changed  += Wake;
             _b.Output.Changed += Wake;
 
-            SetRecipe(data.availableRecipes?.FirstOrDefault());
+            SetRecipe(def.Recipes.FirstOrDefault());
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace CoreDawn.Factory
         // ── 설비 UI(SCR-09)가 읽는 표면 ──────────────────────────
 
         public BuildingModule Building => _b;
-        public AssemblerDataSO Data => _data;
+        public CrafterModuleDef Def => _def;
         public RecipeDef CurrentRecipe => _recipe;
 
         /// <summary>사람이 세워둔 상태. 진행률과 버퍼는 보존된다 — "잠깐 자원을 아끼려고
@@ -113,7 +113,7 @@ namespace CoreDawn.Factory
             }
         }
 
-        public string InteractPrompt => $"{_data.displayName} 열기";
+        public string InteractPrompt => $"{_b.DisplayName} 열기";
 
         public void Interact(PlayerController player) => MachinePanelView.TryOpen(this);
 
@@ -141,7 +141,7 @@ namespace CoreDawn.Factory
 
         /// <summary>현재 해금된 레시피만 — 향후 레시피 선택 UI가 이걸로 목록을 채우면 게이팅이 자동 반영된다.</summary>
         public IEnumerable<RecipeDef> GetUnlockedRecipes() =>
-            _data.availableRecipes.Where(RecipeDatabaseSO.IsUnlocked).Select(r => (RecipeDef)r);
+            _def.Recipes.Where(r => RecipeDatabaseSO.IsUnlocked(r));
 
         bool IsIngredient(ItemDef item)
         {

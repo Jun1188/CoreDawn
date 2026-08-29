@@ -165,7 +165,7 @@ namespace CoreDawn.Factory
                 return;
             }
 
-            if (placement.TryPlaceAt(data, _coreOrigin, _coreRotationSteps, out _, out string reason))
+            if (placement.TryPlaceAt(data.Def, _coreOrigin, _coreRotationSteps, out _, out string reason))
                 Debug.Log($"[FactoryBootstrap] 코어 자동 설치 — {data.name} @ {_coreOrigin}");
             else
                 Debug.LogWarning($"[FactoryBootstrap] 코어 자동 설치 실패 @ {_coreOrigin}: {reason}", this);

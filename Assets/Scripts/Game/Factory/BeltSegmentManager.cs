@@ -33,8 +33,8 @@ namespace CoreDawn.Factory
         {
             if (_map.TryGetValue(belt, out var s)) return s;
             var seg = new BeltSegment(_sim);
-            if (belt.Data is BeltDataSO beltData)
-                seg.SpeedTilesPerSec = beltData.speedTilesPerSec;
+            if (belt.Def.Get<ConveyorModuleDef>() is { } conveyor)
+                seg.SpeedTilesPerSec = conveyor.SpeedTilesPerSec;
             seg.Belts.Add(belt);
             _map[belt] = seg;
             _segs.Add(seg);
@@ -47,8 +47,8 @@ namespace CoreDawn.Factory
         /// <summary>벨트-벨트 연결 시 병합. From=상류, To=하류.</summary>
         public void OnNewConnection(BuildingConnection c)
         {
-            if (c.From.Data is not BeltDataSO) return;
-            if (c.To.Data is not BeltDataSO) return;
+            if (!c.From.IsConveyor) return;
+            if (!c.To.IsConveyor) return;
 
             // 세그먼트는 1자 체인만 표현한다. 합류/분배는 전용 건물(비 Transport)이
             // 담당하기로 했으므로, 벨트가 여러 벨트와 이어지는 경우는 병합하지 않는다.
@@ -56,7 +56,7 @@ namespace CoreDawn.Factory
 
             // 같은 벨트 종류(동일 SO 에셋)끼리만 병합 — 티어가 다르면(고속 벨트 등)
             // 경계에서 세그먼트가 끊기고, 아이템은 버퍼 push로 넘어간다.
-            if (c.From.Data != c.To.Data) return;
+            if (c.From.Def != c.To.Def) return;
 
             var sf = EnsureSegment(c.From);   // 상류
             var st = EnsureSegment(c.To);     // 하류

@@ -268,7 +268,7 @@ namespace CoreDawn.UI
             // 메뉴에서 본 것과 배치 중에 보는 것이 어긋나지 않는다
             detCost.Clear();
             int chips = 0;
-            if (BuildCost.HasCost(so))
+            if (BuildCost.HasCost(so.Def))
             {
                 foreach (var c in so.buildCost)
                 {

@@ -16,8 +16,6 @@ namespace CoreDawn.Data
                  "\"얼마나 좋은 채굴기인가\"는 건물이, \"얼마나 캐기 어려운 광맥인가\"는 땅이 갖는다.")]
         public float speedMultiplier = 1f;
 
-        public override IBuildingBehavior CreateBehavior(BuildingModule building)
-            => new MinerBehavior(building, this);
     }
 
     // ─── 행동 ──────────────────────────────────────────────────────

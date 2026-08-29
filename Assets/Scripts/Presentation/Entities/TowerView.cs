@@ -82,7 +82,7 @@ namespace CoreDawn.Entities
 
         /// <summary>이 타워의 데이터 — 심 배치면 Sim.Data, 씬 배치면 인스펙터 폴백.
         /// BuildingEntity.Data(BuildingDataSO)를 타워 전용 타입으로 좁혀 가린다(의도된 가림).</summary>
-        private new TowerDataSO Data => Building?.Data as TowerDataSO ?? fallbackData;
+        private new TowerDataSO Data => BuildingAssets.Of(Building?.Def) as TowerDataSO ?? fallbackData;
 
         // 데이터의 minRange(타일)를 월드 미터로 환산해 둔 값 — 거리 비교가 전부 미터라서.
         private float minRangeWorld;
