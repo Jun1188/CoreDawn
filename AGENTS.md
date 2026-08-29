@@ -73,8 +73,8 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   sim position/facing in `LateUpdate`. The player and nests still create their own entity in `Awake` — until phase 4.
   Effects (`EffectController`, `CombatComponent`) are still view-side: the sim decides *when* to hit
   (`Attack.AttackRequested`), the view applies *what* (attack effects) — a bridge until phase 4.
-- Names that avoid clashes: `EntityKey` (Unity 6 has `UnityEngine.EntityId`), `Attack` (not `Combat` — that is a
-  namespace). Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
+- Names that avoid clashes: the entity number type is `Id` (`Entity.Id`; not `EntityId` — Unity 6 has `UnityEngine.EntityId`),
+  the sim attack module is `Attack` (not `Combat` — that is a namespace). Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
 - **Rule:** sim code (`Runtime/Sim`, `Runtime/Factory` except the bridges) must not `using CoreDawn.Entities`.
   `python tools/check-sim-imports.py` enforces it until asmdefs do (phase 5). Death is decided by the sim:
   `Health.Die → EntityWorld.Died → FactorySystem.Remove → Removed → view destroyed`.

@@ -15,7 +15,7 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class Entity
     {
-        public EntityKey Id { get; }
+        public Id Id { get; }
         public EntityWorld World { get; }
 
         /// <summary>편 — 적대 판정의 기준. 생성 후 바뀌는 일은 드물지만(포섭 등) 막지는 않는다.</summary>
@@ -62,7 +62,7 @@ namespace CoreDawn.Sim
         /// <summary>월드에서 빠지는 순간 1회. 모듈 OnDetach 뒤에 발화한다.</summary>
         public event Action<Entity> Removed;
 
-        internal Entity(EntityWorld world, EntityKey id, Faction faction, Vector3 position)
+        internal Entity(EntityWorld world, Id id, Faction faction, Vector3 position)
         {
             World = world;
             Id = id;

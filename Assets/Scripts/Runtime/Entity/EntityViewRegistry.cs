@@ -14,7 +14,7 @@ namespace CoreDawn.Entities
     /// </summary>
     public static class EntityViewRegistry
     {
-        static readonly Dictionary<EntityKey, EntityView> views = new Dictionary<EntityKey, EntityView>();
+        static readonly Dictionary<Id, EntityView> views = new Dictionary<Id, EntityView>();
 
         // 도메인 리로드를 끈 환경에서 static이 플레이를 넘어 살아남는 것 방지
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -36,7 +36,7 @@ namespace CoreDawn.Entities
         public static EntityView ViewOf(SimEntity entity)
             => entity != null && views.TryGetValue(entity.Id, out var v) && v != null ? v : null;
 
-        public static EntityView ViewOf(EntityKey id)
+        public static EntityView ViewOf(Id id)
             => views.TryGetValue(id, out var v) && v != null ? v : null;
 
         /// <summary>특정 뷰 타입으로. 타입이 다르면 null.</summary>

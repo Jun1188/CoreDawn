@@ -20,7 +20,7 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class EntityWorld
     {
-        readonly Dictionary<EntityKey, Entity> _entities = new Dictionary<EntityKey, Entity>();
+        readonly Dictionary<Id, Entity> _entities = new Dictionary<Id, Entity>();
         ulong _next = 1;   // 0 = None
 
         /// <summary>다음에 발급될 번호. 세이브 헤더가 저장하고 복원은 <see cref="RestoreNextId"/>로.</summary>
@@ -37,14 +37,14 @@ namespace CoreDawn.Sim
 
         public Entity Create(Faction faction, Vector3 position)
         {
-            var e = new Entity(this, new EntityKey(_next++), faction, position);
+            var e = new Entity(this, new Id(_next++), faction, position);
             _entities.Add(e.Id, e);
             AddToBucket(BucketOf(position), e);
             Created?.Invoke(e);
             return e;
         }
 
-        public Entity Get(EntityKey id) => _entities.TryGetValue(id, out var e) ? e : null;
+        public Entity Get(Id id) => _entities.TryGetValue(id, out var e) ? e : null;
 
         public bool Contains(Entity e) => e != null && !e.IsRemoved && e.World == this;
 
