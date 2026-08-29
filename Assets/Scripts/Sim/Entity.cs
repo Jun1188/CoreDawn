@@ -45,9 +45,10 @@ namespace CoreDawn.Sim
         /// <summary>월드에서 빠졌는가. 빠진 엔티티를 쥔 참조는 이 플래그로 걸러낸다(큐·캐시에 남은 것들).</summary>
         public bool IsRemoved { get; private set; }
 
-        readonly List<EntityModule> _modules = new List<EntityModule>();
+        readonly List<EntityModule> _modules = new List<EntityModule>();                       // 붙은 순서 — 순회·OnDetach 역순
+        readonly Dictionary<Type, EntityModule> _byType = new Dictionary<Type, EntityModule>();  // 종류당 하나 — 조회는 사전으로
 
-        /// <summary>붙은 순서 그대로 — 피해 인터셉터도 이 순서로 거친다.</summary>
+        /// <summary>붙은 순서 그대로. 인터페이스 조회(<see cref="Get{T}"/>)와 순회에 쓴다.</summary>
         public IReadOnlyList<EntityModule> Modules => _modules;
 
         /// <summary>체력 모듈. 없으면 null(때릴 수 없는 개체).</summary>
@@ -70,7 +71,9 @@ namespace CoreDawn.Sim
             _position = position;
         }
 
-        /// <summary>모듈 부착. 한 모듈은 한 엔티티에만 붙는다 — 두 번 붙이면 상태가 둘로 갈라진다.</summary>
+        /// <summary>
+        /// 모듈 부착. 한 모듈은 한 엔티티에만, 한 엔티티에는 종류당 하나만 붙는다 — 두 번 붙이면 상태가 둘로 갈라진다.
+        /// </summary>
         public T Add<T>(T module) where T : EntityModule
         {
             if (module == null) throw new ArgumentNullException(nameof(module));
@@ -78,19 +81,25 @@ namespace CoreDawn.Sim
                 throw new InvalidOperationException($"{module.GetType().Name} is already attached to {module.Owner.Id}");
             if (IsRemoved)
                 throw new InvalidOperationException($"entity {Id} is removed");
+            var type = module.GetType();
+            if (_byType.ContainsKey(type))
+                throw new InvalidOperationException($"entity {Id} already has a {type.Name} — 종류당 모듈 하나");
 
             _modules.Add(module);
+            _byType.Add(type, module);
             module.Owner = this;
             module.OnAttach();
             return module;
         }
 
         /// <summary>
-        /// 종류(또는 인터페이스)로 모듈 조회. 붙은 순서에서 처음 맞는 것. 없으면 null.
-        /// where T : class 인 이유 — 인터페이스(IDamageInterceptor 등)로도 찾기 위해서.
+        /// 종류로 모듈 조회 — 모듈 타입은 사전(O(1)), 인터페이스(IFootprint 등)는 붙은 순서로 처음 맞는 것. 없으면 null.
+        /// 정확한 타입으로만 찾는다(기반 타입 조회 없음) — "종류당 모듈 하나" 규칙과 짝이다.
         /// </summary>
         public T Get<T>() where T : class
         {
+            if (!ModuleKind<T>.IsInterface)
+                return _byType.TryGetValue(typeof(T), out var m) ? (T)(object)m : null;
             for (int i = 0; i < _modules.Count; i++)
                 if (_modules[i] is T t) return t;
             return null;
@@ -98,14 +107,8 @@ namespace CoreDawn.Sim
 
         public bool Has<T>() where T : class => Get<T>() != null;
 
-        /// <summary>받는 피해를 인터셉터 모듈에 순서대로 통과시킨다. 0 이하가 되면 그 자리에서 끝.</summary>
-        internal float InterceptDamage(float amount, Entity source)
-        {
-            for (int i = 0; i < _modules.Count && amount > 0f; i++)
-                if (_modules[i] is IDamageInterceptor interceptor)
-                    amount = interceptor.Intercept(amount, source);
-            return amount;
-        }
+        // T가 인터페이스인지 한 번만 계산 — 제네릭 정적 필드는 T마다 따로 초기화된다
+        static class ModuleKind<T> { public static readonly bool IsInterface = typeof(T).IsInterface; }
 
         internal void NotifyDied()
         {

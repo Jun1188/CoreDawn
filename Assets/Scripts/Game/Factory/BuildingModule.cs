@@ -102,6 +102,10 @@ namespace CoreDawn.Factory
         ///    출처를 모르는 피해(null)는 아군으로 본다 — 실제 공격자는 모두 자신을 넘기므로 출처 없음 = 누구의 공격도 아님.
         /// ② 행동이 인터셉터면(코어의 보호막) 남은 몫을 그쪽에 넘긴다.
         /// </summary>
+        // 받는 피해 체인 등록 — 아군 무시·행동 인터셉터(코어 보호막)는 Health의 체인에서 돈다
+        protected internal override void OnAttach() => Owner.Health?.AddInterceptor(this);
+        protected internal override void OnDetach() => Owner.Health?.RemoveInterceptor(this);
+
         public float Intercept(float amount, Entity source)
         {
             if (Data != null && !Data.isAttackable)

@@ -36,9 +36,9 @@
   모듈은 상태 + 자기 로컬 로직(`Health.TakeDamage`), 시스템은 엔티티를 가로지르는 로직과 틱 순서.
 - **심 호스트는 하나** — `WorldRunner`(MonoBehaviour)가 `World`(엔티티 + 시스템 + 시계)를 고정 틱으로 돌리고 뷰 등록부를 가진다.
   `FactoryBootstrap`은 시스템 등록 + 뷰 스포너로 줄어들고, `GameBootstrap`은 지금처럼 씬 경계 참조만 꽂는다.
-- **Id**: 엔티티 정체성은 **UUID**(`EntityUUID`, Guid v4, `EntityUUID.New()`) — 2026-08-29 사용자 결정(처음엔 64비트 카운터 `EntityId`+헤더 `NextEntityId`). 이유: "발급자 하나" 가정을 버린다 — 클라이언트 예측·구조물 붙여넣기·세이브 병합·서버 간 이동·모드 도구가 만든 엔티티도 번호 재매김 없이 그대로 가고, 세이브 안의 참조(소유자·표적)가 보존된다. 세션용 정수 핸들은 넷코드 라이브러리가 따로 준다. 플레이어(프로필) Guid와 타입 통일. 복원은 `EntityWorld.Create(id, faction, pos)`(중복 id는 예외). 세이브엔 "N" 32자 문자열로(5단계 SharpNBT 엔티티 레코드).
+- **Id**: 엔티티 정체성은 **UUID**(`EntityUUID`, Guid v4, `EntityUUID.New()`) — 2026-08-29 사용자 결정(처음엔 64비트 카운터 `EntityId`+헤더 `NextEntityId`). 이유: "발급자 하나" 가정을 버린다 — 클라이언트 예측·구조물 붙여넣기·세이브 병합·서버 간 이동·모드 도구가 만든 엔티티도 번호 재매김 없이 그대로 가고, 세이브 안의 참조(소유자·표적)가 보존된다. 세션용 정수 핸들은 넷코드 라이브러리가 따로 준다. 플레이어(프로필) Guid와 타입 통일. 복원은 `EntityWorld.Create(id, faction, pos)`(중복 id는 예외). 세이브엔 "N" 32자 문자열로(5단계 fNBT 엔티티 레코드).
 - **공간 질의는 심 쪽 균일 격자 해시**(셀 4~8m). Job · ComputeShader 불필요. 사격 판정(레이캐스트)과 LOS만 PhysX에 남는다.
-- **세이브는 JSON → SharpNBT**로 교체 예정 (5단계에서 심 스냅샷 직렬화와 함께).
+- **세이브는 JSON → fNBT**로 교체 예정 (5단계에서 심 스냅샷 직렬화와 함께).
 - **테스트는 `Assets/Scripts/Tests/`** (`Assets/Tests` 아님).
 
 ---
@@ -202,7 +202,7 @@ namespace CoreDawn.Factory
 
 **리스크**
 - 프리팹 인라인 `health.maxHealth`(몬스터·둥지·타워)는 직렬화 경로를 지켜야 값이 안 날아간다 → `HealthComponent` 타입·필드명은 **씨드 데이터 홀더**로 그대로 두고 런타임 로직만 뺀다.
-- 세이브 포맷은 바뀌지 않는다(HpMax/HpCurrent 그대로). `NextId`는 5단계 SharpNBT와 함께.
+- 세이브 포맷은 바뀌지 않는다(HpMax/HpCurrent 그대로). `NextId`는 5단계 fNBT와 함께.
 - 팀 프리즈 창(휴가) 안에 2·3번(개명·위임)을 끝내야 한다 — 이 둘이 파일 수가 가장 많다.
 
 ### 3. 몬스터 심/뷰 분리 (가장 큰 덩어리)
@@ -336,10 +336,59 @@ namespace CoreDawn.Sim
   - 사고: 편집 스크립트를 두 번 돌려 `SeedMaxHealth`·`CreatesOwnEntity`·Start 폴백이 중복됨 — "이미 적용됨" 판정이 접두 일치라 걸러지지 않았다(3단계 사고의 재발). 컴파일 폴링도 컴파일 시작 전에 끝나 "0 오류"를 믿었다 → `EditorUtility.scriptCompilationFailed`가 정본
 - [x] 4f 문서(계획서·AGENTS "Sim vs view")·메모리 갱신, `check-sim-imports` 통과 — 2026-08-29. PR은 사용자 승인 뒤
 
+### 5a. 데이터 정본을 json으로 · 모듈 조립 — 확정 설계 (2026-08-30, 팀 협의 반영)
+
+목표: **json이 정의의 정본**(`SimDatabase`), 심은 `UnityEngine.Object` 참조 0(결정론적 공장), SO는 뷰 카탈로그(아이콘·프리팹·SFX)로 줄고 나중에 리소스팩(건물·아이콘 — 몬스터는 내장 유지)이 된다. 엔티티는 json `modules[]`에서 조립한다.
+
+**원칙**
+- 정본 하나: `GameData.json`(→ `StreamingAssets/packs/<pack>/`). 심 정의 타입이 곧 json 스키마(`[JsonProperty]`), 변환 캐시(`EffectSpecs`·`ToSpec`) 없음. 임포터는 둘로: GameDataEditor는 json만 쓰고, 표현 임포터는 뷰 카탈로그 갱신·id 검증만.
+- id는 **위치에서 파생, 저장하지 않음**: `pack:section/name`, 소문자 snake(`coredawn:item/iron_plate`). 팩 폴더 = 네임스페이스. 옛 id(`Item:IronPlate`)는 `SaveMigrations` 변환표.
+- 정의(`*ModuleDef`: 불변·정의당 하나·공유)와 런타임 모듈(엔티티당 하나·상태)은 분리. `ModuleDef.Create(entity) → EntityModule`, 모듈은 `Def` 참조를 든다(마크의 Item/ItemStack).
+- json 모듈 ↔ 런타임 모듈은 **정의 하나 → 모듈 0 또는 1개**. 0개 = 데이터 전용 정의(다른 시스템이 `entityDef.Get<XDef>()`로 읽음). json에 없는 런타임 모듈은 두지 않는다(`Effects`도 명시; 과도기 `DamageGate`만 예외, `NestSpawner`와 함께 삭제).
+- **정체성 마커 없음**: 행동이 있으면 진짜 모듈(`Core`·`NestSpawner`·`ResourceDeposit`), 없으면 값(나무 = Neutral + Health + Loot, 배치 불가). 종류 판정은 `Get<CoreModule>() != null`.
+- 모듈 판별은 **명시 표** 컨버터(`"Health" → HealthModuleDef`): 리플렉션·타입명을 json에 쓰지 않는다.
+- `Building` 정의의 키는 **평행**(블록으로 묶지 않음): `size·placeable(기본 true)·isDemolishable·isAttackable·requiredCoreTier·threatSeedCost·menuOrder·cost[]`. 둥지·나무·코어만 `placeable: false`.
+- 효과 적용은 `{ effect, value, duration[, tickInterval] }` — 레벨 없음, 빠진 값은 정의 기본값, 같은 정의 재적용은 새 값으로 갱신. 반경은 전달(`AuraEmitter`·폭발)의 것.
+- 엔티티 모듈 조회는 사전(종류당 하나), 인터페이스(`IFootprint`)는 순회 폴백. 피해 인터셉터 체인은 `HealthModule`이 소유하고 모듈이 자기 등록한다.
+
+**스키마 v2 개요** — 최상위 `items · recipes · effects · entities · waves · tutorial`. `entities` 항목 = `{ displayName, faction, modules[] }`(id는 파생). 모듈 종류(초안, 팀 검토 대상):
+| 모듈 | 핵심 값 | 런타임 |
+|---|---|---|
+| `Health` | maxHp | `HealthModule` |
+| `Effects` | — | `EffectsModule` |
+| `Building` | size · placeable · isDemolishable · isAttackable · requiredCoreTier · threatSeedCost · menuOrder · cost[] | `BuildingModule`(풋프린트·격자·아군 무시) |
+| `Ports` | ports[] (x·y·dir·isInput) | I/O 컨테이너 연결 — `InventoryModule`의 input/output 역할과 짝 |
+| `Inventory` | slots{main·hotbar·input·output…} | `InventoryModule`(역할 키별 `ItemContainer`) — 플레이어·저장고·기계 공용 |
+| `Crafter` | manual(bool) · recipeFilter · speed | `CrafterModule` — 플레이어 수제작·조합기 공용(레시피·진행·입출력) |
+| `Conveyor` | speedTilesPerSec | 벨트 |
+| `Extractor` | interval · amount | 채굴기(광맥 `ResourceDeposit`을 격자로 직접 찾음) |
+| `Router` | mode(merge/split) | 병합기·분배기 |
+| `Core` | tiers[] · shield · hpBonus | `CoreModule`(티어·보호막 인터셉터) |
+| `NestSpawner` | spawnPoints · defender · boss · recoveryDays · engagement | `NestModule`(무적 인터셉터 — `DamageGate` 삭제) |
+| `ResourceDeposit` | resource · maxStock · regenInterval · manual{seconds, yield} | 광맥 엔티티(현재 MonoBehaviour `ResourceNode` → 심) |
+| `Loot` | drops[] | 사망 드롭(현재 `EntityView.dropItem`) |
+| `TowerBrain` | range · minRange · fireRate · turnSpeed · aimTolerance · preferHighArc | 표적·조준·발사 시점, 뷰엔 `FireRequested`만 |
+| `AmmoConsumer` | ammoFilter · damageMultiplier | 탄약 소비 |
+| `AuraEmitter` | radius · interval · effects[] | 감속장 등 |
+| `Blocker` / `Trigger` | — / effects[] · once | 울타리 / 지뢰 |
+| `Movement` · `Attack` · `MonsterBrain` | 몬스터 값(기존 `MonsterSpec`) | 기존 모듈 |
+
+**순서(각 단계 플레이 가능)**
+- [ ] 5a-0 모듈 사전 조회(종류당 하나) · 인터셉터 체인을 `HealthModule`로(자기 등록) · 인터페이스 순회 폴백
+- [ ] 5a-1 스키마 v2 + `SimDatabase` + 컨버터 표 + 파생 id + 효과 value/duration + **제네릭 모듈 편집기** + 마이그레이션 + `SaveMigrations` id 변환
+  - [x] 5a-1a 골격(2026-08-30): `Sim/Definitions/`에 `Def`·`EntityDef`·`ItemDef`(+Ammo·Weapon 모듈)·`RecipeDef`·`WaveDef`·`EffectSpec`(json)·`Effect`(value·duration·tickInterval)·엔티티 모듈 정의 22종·`SimSchema`(명시 표)·`ModuleDefConverter`·`SimDatabase`(파생 id, 키 규칙 검사, Resolve 패스, strict). `tools/migrate`: v1 `GameData.json` → `StreamingAssets/packs/coredawn/data.json`(entities 25·items 30·recipes 24·effects 7·waves 5, guns·tutorial는 원본 보관) + `tools/id-migration-v1-v2.json`(114개). 검증: 로드 오류 0, 참조 해석(벨트 cost·터렛 탄약·코어 티어·웨이브 몬스터·attack_up affects), `EntityDef.Assemble` 동작. 게임은 아직 SO로 돈다(플레이 회귀 통과)
+  - [x] 5a-1b-1 C# 내보내기(2026-08-30): `GameDataExporterV2`(python 마이그레이션의 C# 판, 구조 동일 검증 0 diff)가 GameData 에디터 **저장 시 자동 실행** — v1(편집 형식) → v2 `packs/coredawn/data.json`(게임·모드 형식) + id 변환표, 내보낸 결과를 `SimDatabase`로 즉시 검증(깨진 참조를 저장 시점에 잡음)
+  - [ ] 5a-1b-2 편집기 방향(사용자 결정 대기): A) 기존 편집기가 편집 UI로 남고 v2는 저장 시 생성(SO 퇴역 후 v2 직접 편집으로 전환) / B) 정의 타입에서 폼을 만드는 제네릭 v2 편집기를 지금 작성하고 옛 심 관련 탭 퇴역
+  - [ ] 5a-1c `SaveMigrations` id 변환표 적용
+- [ ] 5a-2 심 모듈화: 정의에서 조립(공장·몬스터·플레이어), 건물 행동 → 모듈, `InventoryModule`·`CrafterModule`(수제작·조합기 통합, `InventoryPanelView.CraftOnce` 제거)·`ResourceDeposit`(광맥 → 엔티티)·`Loot`·`CoreModule`·`TowerBrain`·`NestModule`, 공장을 `Sim/Factory/`로, `IInteractiveBehavior.Interact`는 뷰 등록부로
+  - [x] 5a-2a 런타임 팩 로드 + 효과·몬스터를 정의에서(2026-08-30): `PackLoader`(StreamingAssets, BeforeSceneLoad에 `SimHost.DatabaseLoader` 등록) · `SimHost.Database` · `SimDatabase.LegacyId`(옛 id → v2 id, 순수 규칙) · `MonsterSystem.Spawn(EntityDef)` = `def.Assemble` + 내비게이션·시스템 후주입(`MovementModule(def)`, `MonsterBrainModule(def).Bind`) · `MonsterSpawner`가 SO id로 정의를 찾음 · `EffectSpecs.Of`는 팩 정의 우선(SO 폴백 카운트 0 검증) · `MonsterSpec`·`ToSpec` 삭제, `EngagementZone` 분리. 검증: 몬스터 12 정의 조립, 웨이브 버프 = 팩 정의 참조, DoT·넉백·공격·세이브 왕복, 오류 0
+- [ ] 5a-3 뷰 카탈로그(id → 프리팹·아이콘) · SO 삭제 · 인벤토리·UI·배치·세이브가 `Def`+id로
+- [ ] 5a-4 리소스팩: `StreamingAssets/packs/`, 모델(glTFast)·텍스처(`LoadImage`)·팔레트·emission — 건물 → 아이콘 순. 몬스터(애니메이션)는 내장 유지
+
 ### 5. asmdef · 고정 틱 · 세이브
 - [ ] asmdef 분리(Sim / Data / Presentation / App / Editor / Tests)로 불변식 강제
 - [ ] 심 자기 시계(`World.Now`, 고정 20Hz — `FactorySim` 10Hz 틱과 같은 방식), 뷰 보간
-- [ ] 세이브 = 심 스냅샷, **SharpNBT** 도입. 베타 전이라 구 세이브 호환은 끊고 `SaveMigrations` 버전만 올림
+- [ ] 세이브 = 심 스냅샷, **fNBT** 도입. 베타 전이라 구 세이브 호환은 끊고 `SaveMigrations` 버전만 올림
 - [ ] 이후(범위 밖): 명령 송신 + 스냅샷 수신(멀티), 행동 등록부(모딩), SoA/Burst(최적화)
 
 총 3~5주. 단계 사이에 기능 작업을 끼워 넣을 수 있다.

@@ -67,17 +67,18 @@ namespace CoreDawn.Sim
         public event Action OnDestinationReached;
         public event Action OnPathBlocked;
 
-        public MovementModule(in MonsterSpec spec, INavigation navigation)
+        /// <summary>정의에서 만든다. 내비게이션은 시스템이 조립 뒤 <see cref="SetNavigation"/>으로 꽂는다(정의는 씬을 모른다).</summary>
+        public MovementModule(MovementModuleDef def, INavigation navigation = null)
         {
-            moveSpeed = spec.MoveSpeed;
-            rotateSpeed = spec.RotateSpeed;
-            crowdRadius = spec.CrowdRadius;
-            knockbackDamping = Mathf.Max(0.01f, spec.KnockbackDamping);
-            stickToGround = spec.StickToGround;
+            moveSpeed = def.MoveSpeed;
+            rotateSpeed = def.RotateSpeed;
+            crowdRadius = def.CrowdRadius;
+            knockbackDamping = Mathf.Max(0.01f, def.KnockbackDamping);
+            stickToGround = def.StickToGround;
             nav = navigation;
         }
 
-        internal void SetNavigation(INavigation navigation) => nav = navigation;
+        public void SetNavigation(INavigation navigation) => nav = navigation;
 
         // 지금 밟고 있는 칸의 지형 배율(강 0.5 등) — 효과와 달리 위치의 성질이라 칸을 벗어나는 즉시 원복된다.
         // 그래서 효과 시스템(시간 기반)에 얹지 않고 따로 곱한다. 감속탄과 강이 겹치면 자연스럽게 함께 곱해진다.

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace CoreDawn.Sim
 {
@@ -10,7 +11,7 @@ namespace CoreDawn.Sim
     /// 뷰는 이 모듈의 이벤트를 구독해 체력바·사망 연출을 그릴 뿐이다.
     ///
     /// 받는 피해의 단일 수렴점은 <see cref="Damage"/>다 — 보호막·무적·아군 공격 무시 같은 규칙은
-    /// 소유 엔티티의 <see cref="IDamageInterceptor"/> 모듈이 여기서 한 번에 걸러낸다.
+    /// <see cref="IDamageInterceptor"/> 모듈들이 여기 등록된 체인에서 한 번에 걸러낸다.
     /// </summary>
     public sealed class HealthModule : EntityModule
     {
@@ -41,11 +42,37 @@ namespace CoreDawn.Sim
         /// 시전측 배율(공격 버프)은 이미 항목에 구워져 있어야 하고, 받는 쪽 배율(방어 디버프)은 호출자가 곱해 넘긴다.
         /// </summary>
         /// <param name="source">때린 엔티티. 모르면 null.</param>
+        // ── 받는 피해 체인 ──────────────────────────────────────────
+        // 인터셉터(받는 배율·보호막·아군 무시·무적)는 체인이 쓰이는 여기가 소유한다. 모듈이 OnAttach에서 스스로 등록하고,
+        // Health가 나중에 붙는 경우는 OnAttach가 이미 붙은 모듈을 한 번 훑는다 — 부착 순서와 무관하게 정확히 한 번씩.
+        // 체인 순서 = 등록 순서(= 부착 순서).
+        readonly List<IDamageInterceptor> _interceptors = new List<IDamageInterceptor>();
+
+        public void AddInterceptor(IDamageInterceptor interceptor)
+        {
+            if (interceptor != null && !_interceptors.Contains(interceptor)) _interceptors.Add(interceptor);
+        }
+
+        public void RemoveInterceptor(IDamageInterceptor interceptor) => _interceptors.Remove(interceptor);
+
+        protected internal override void OnAttach()
+        {
+            foreach (var m in Owner.Modules)
+                if (m is IDamageInterceptor i) AddInterceptor(i);
+        }
+
+        float Intercept(float amount, Entity source)
+        {
+            for (int i = 0; i < _interceptors.Count && amount > 0f; i++)
+                amount = _interceptors[i].Intercept(amount, source);
+            return amount;
+        }
+
         public float Damage(float amount, Entity source)
         {
             if (IsDead || amount <= 0f) return 0f;
 
-            if (Owner != null) amount = Owner.InterceptDamage(amount, source);
+            amount = Intercept(amount, source);
             if (amount <= 0f) return 0f;
 
             float before = _current;

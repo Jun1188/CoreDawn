@@ -17,6 +17,22 @@ namespace CoreDawn.Sim
 
         public static EntityWorld World => _world ??= new EntityWorld();
 
+        static SimDatabase _database;
+
+        /// <summary>팩을 읽어 오는 함수 — 파일·플랫폼을 아는 쪽(PackLoader)이 꽂는다. 심은 경로를 모른다.</summary>
+        public static Func<SimDatabase> DatabaseLoader { get; set; }
+
+        /// <summary>정의의 정본. 처음 요청될 때 로더로 읽는다. 로더가 없으면(에디터 도구 등) null.</summary>
+        public static SimDatabase Database
+        {
+            get
+            {
+                if (_database == null && DatabaseLoader != null) _database = DatabaseLoader();
+                return _database;
+            }
+            set => _database = value;
+        }
+
         /// <summary>새 월드로 교체 — 새 게임 시작 등. 옛 월드의 엔티티는 Removed를 받는다.</summary>
         public static void Reset()
         {
@@ -25,6 +41,6 @@ namespace CoreDawn.Sim
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => _world = null;
+        static void ResetStatics() { _world = null; _database = null; }
     }
 }

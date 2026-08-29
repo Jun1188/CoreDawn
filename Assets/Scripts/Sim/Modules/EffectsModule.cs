@@ -25,6 +25,7 @@ namespace CoreDawn.Sim
         {
             public EffectSpec Spec;
             public float Value;
+            public float Interval;
             public Entity Source;
             public float Remaining;
             public float TickTimer;
@@ -80,7 +81,7 @@ namespace CoreDawn.Sim
                     ApplyKnockback(spec, effect.Value, source, hitPoint, hitDirection);
                     break;
                 default:
-                    Add(spec, effect.Value, source);   // 지속 효과 — 진행은 Tick이
+                    Add(effect, source);   // 지속 효과 — 진행은 Tick이
                     break;
             }
         }
@@ -104,28 +105,31 @@ namespace CoreDawn.Sim
             movement.AddKnockback(dir, distance);     // 정규화·수평 투영은 Movement가 한다
         }
 
-        void Add(EffectSpec spec, float value, Entity source)
+        void Add(in Effect effect, Entity source)
         {
+            var spec = effect.Spec;
             if (!spec.Stacks)
             {
                 foreach (var e in active)
                 {
                     if (!ReferenceEquals(e.Spec, spec)) continue;
-                    e.Remaining = spec.Lifetime;
-                    e.Value = value;        // 갱신한 쪽의 출처·크기로 교체 (같은 정의를 다른 값으로 재적용)
+                    e.Remaining = effect.Lifetime;   // 갱신한 쪽의 출처·크기·시간으로 교체 (같은 정의를 다른 값으로 재적용)
+                    e.Value = effect.Value;
+                    e.Interval = effect.Interval;
                     e.Source = source;
                     Recompute();
-                    return;                 // 시간만 연장 — 시작 통지 없음
+                    return;                          // 시작 통지 없음
                 }
             }
 
             active.Add(new Active
             {
                 Spec = spec,
-                Value = value,
+                Value = effect.Value,
+                Interval = effect.Interval,
                 Source = source,
-                Remaining = spec.Lifetime,
-                TickTimer = spec.TickInterval,   // 첫 틱은 한 간격 뒤 — 적용 순간의 즉발은 즉시 효과의 몫
+                Remaining = effect.Lifetime,
+                TickTimer = effect.Interval,   // 첫 틱은 한 간격 뒤 — 적용 순간의 즉발은 즉시 효과의 몫
             });
             Recompute();
             Changed?.Invoke();
@@ -180,7 +184,7 @@ namespace CoreDawn.Sim
                 var e = active[i];
                 e.Remaining -= dt;
 
-                float interval = e.Spec.TickInterval;
+                float interval = e.Interval;
                 if (interval > 0f)
                 {
                     // 엡실론 없이 0 비교하면 dt 누적 오차(1e-8대)로 만료 순간의 마지막 틱이
@@ -260,8 +264,11 @@ namespace CoreDawn.Sim
         /// <summary>받는 피해 배율(방어 디버프·웨이브 버프) — Health.Damage의 인터셉터 체인에서 곱한다.</summary>
         public float Intercept(float amount, Entity source) => amount * IncomingDamageMultiplier;
 
+        protected internal override void OnAttach() => Owner.Health?.AddInterceptor(this);   // Health가 뒤에 붙으면 Health가 훑어 등록한다
+
         protected internal override void OnDetach()
         {
+            Owner.Health?.RemoveInterceptor(this);
             active.Clear();
             Recompute();
         }
