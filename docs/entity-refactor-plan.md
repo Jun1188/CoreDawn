@@ -364,6 +364,24 @@ namespace CoreDawn.Sim
 
 ---
 
+
+## 5b. 폴더 정리 — 계층 배치 (2026-08-29, `feature/folder-layout`)
+
+최상위 = 계층(5단계 asmdef 경계), 계층 안 폴더 이름 = 네임스페이스 마지막 조각. `Data/**`는 전부 `CoreDawn.Data`.
+
+| 이전 `Runtime/…` | 지금 | 네임스페이스 |
+|---|---|---|
+| `Sim/` | `Sim/` | `CoreDawn.Sim` |
+| `Factory/SO/**`·`Combat/SO/**`·`Combat/Effects/**`·`Tutorial/SO/**`·`World/MapDataSO`·`FPS/Weapon/GunData` | `Data/{Items,Buildings,Recipes,Effects,Monsters,Waves,Maps,Tutorial,Weapons}/` | **`CoreDawn.Data`(신설)** |
+| `Factory/*`(+`SO/ItemDataHolder`) · `Combat/{BattleManager,Bullet,MonsterSpawner,NightSpawnPointProvider,NightWaveRewardManager,ProjectileSystem,SimRunner,WaveSpawnManager}` · `Entity/HostileIntentProbe` | `Game/Factory/` · `Game/Combat/` | 유지 (`HostileIntentProbe`만 Entities → Combat) |
+| `Navigation/` · `GridSystem/` · `World/{World,WorldPopulator,TileRules,PlacedMapObject}` · `DayTime/{DayCycle,TimeManager}` · `Save/**` · `Interactable/` · `Inventory/` · `Tutorial/{Manager,Observer,Progress,InputProbe}` · `Ping/{PingService,PingTargeting,Ping,IPingable}` · `Manager/` · `Sound/` · `Settings/` · `Resource/` | `Game/{Navigation,Placement,Worlds,DayTime,Save,Interaction,Inventories,Tutorial,Pings,Managers,Sound,Settings,ResourceNodes}/` | 유지 |
+| `Entity/{EntityView,BuildingView,MonsterView,PlayerView,MonsterNest,BattleTower,EntityViewRegistry,NestEngagementZone,TowerState,*VisualController}` | `Presentation/Entities/` | `CoreDawn.Entities` |
+| `Combat/{PooledEffect,MonsterAnimationSystem,MonsterOutlineProximity}` · `Ping/{EpoOutlines,PingOutlineView}` | `Presentation/Visuals/` | **`CoreDawn.Visuals`(신설)** |
+| `UI/**`(uxml·uss·PanelSettings 포함) · `Entity/{WorldHealthBar,HealthBarUI}` · `Tutorial/TutorialHUD` | `Presentation/UI/` | `CoreDawn.UI` |
+| `FPS/**` · `Input/` · `Ping/PlayerPingInput` · `DayTime/{DayNightLightingView,SkyboxTimeView,DayCycleDebugHUD}` | `Presentation/{FPS,Inputs,DayTime}/` | 유지 (`PlayerPingInput`만 Pings → Inputs) |
+
+GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 `UnityEngine.Ping`과 겹쳐 Pings 밖에서는 alias. 같은 PR에 둥지 HP 정본(데이터 500)·`HealthComponent`·뷰의 옛 엔티티 생성 경로 삭제.
+
 ## 6. 리스크 · 주의
 
 - **팀 충돌이 기술보다 큰 위험.** 대형 이동·이름 변경은 팀원이 없는 창에 짧은 브랜치로 하루 안에 머지. 팀원 복귀 후 첫 안내: "Test 폴더는 Runtime/Tests로 갔다, 리베이스하라".
@@ -413,6 +431,13 @@ namespace CoreDawn.Sim
 - 생성 주체: 건물 = FactorySystem, 몬스터 = MonsterSystem, 플레이어 = PlayerSystem, 둥지 = WorldPopulator(월드 생성기가 심에 요청). 뷰 우선(`CreatesOwnEntity=true`)으로 남은 것은 없다 — `EntityView.Awake`의 생성 경로는 옛 씬 호환용.
 - 사고: 편집 스크립트 재실행으로 멤버 중복(접두 일치 함정 재발) · 컴파일 폴링이 컴파일 시작 전에 끝나 "0 오류"를 믿음 — `EditorUtility.scriptCompilationFailed`를 정본으로, 폴링은 `isCompiling`이 true→false를 본 뒤에만 끝낸다.
 - 남은 빚(5단계로): `SimRunner`·`SimHost.World` 정적 접근점 → WorldRunner(고정 틱, 씬 생명주기, World.Clear) · 둥지 규칙(무적·스폰 포인트)이 뷰 → 술어만 `DamageGate` · 둥지 HP 정본(프리팹 500 vs 데이터 1000) 정리 · 웨이브 버프가 세이브 복원 뒤 재적용되지 않음(기존) · 타워 표적 선택이 뷰(Update) · `HealthComponent` 시드는 옛 씬 호환용.
+
+
+### 2026-08-29 — 폴더 정리 + 둥지 HP·HealthComponent 정리 (`feature/folder-layout`)
+- 사용자 질문(심이 SO 대신 Spec을 쓰는 이유·둥지 HP 500·폴더 분류)에서 출발. 4단계 PR #115 머지 뒤 별도 브랜치.
+- 계층 배치(§5b): Sim / Data / Game / Presentation. 새 네임스페이스는 `CoreDawn.Data`·`CoreDawn.Visuals` 둘, 나머지는 유지. 253파일 이동, using 135개 보정, 컴파일 오류는 `Ping` 모호성뿐.
+- 둥지 HP 정본을 데이터(500)로 통일하고, 이제 어떤 뷰도 엔티티를 만들지 않으므로 `HealthComponent`·`CreatesOwnEntity`·`EntityView.Awake` 생성 경로·`SeedMaxHealth` 삭제.
+- 검증: 컴파일 0 오류, 밤 강제 플레이(둥지·몬스터·플레이어 검증값 동일, UI 문서 렌더), 오류 0.
 
 ## 8. 세션 재개 절차
 

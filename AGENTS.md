@@ -19,32 +19,30 @@ This repo is worked on by multiple AI agents. Shared conventions live here.
   `Assets/Scripts/Tests/` (editor-only helpers in `Tests/Editor`). Test scenes: `Assets/Scenes/Test`.
 - Entity sim/view refactor in progress — plan and progress log: `docs/entity-refactor-plan.md`.
 
-## Namespaces (since 2026-08-28)
+## Folders and namespaces (layout since 2026-08-29, namespaces since 2026-08-28)
 
 Every script has a `CoreDawn.*` namespace decided by its folder (`LevelUp` is the old project
 name — never use it). New files go in the namespace of their folder:
 
-| Folder (`Assets/Scripts/…`) | Namespace |
-|---|---|
-| `Runtime/Entity` | `CoreDawn.Entities` |
-| `Runtime/Navigation` | `CoreDawn.Navigation` |
-| `Runtime/Combat` | `CoreDawn.Combat` |
-| `Runtime/DayTime` | `CoreDawn.DayTime` |
-| `Runtime/FPS` | `CoreDawn.FPS` |
-| `Runtime/Factory` | `CoreDawn.Factory` |
-| `Runtime/GridSystem` | `CoreDawn.Placement` |
-| `Runtime/Input` | `CoreDawn.Inputs` |
-| `Runtime/Interactable` | `CoreDawn.Interaction` |
-| `Runtime/Inventory` | `CoreDawn.Inventories` |
-| `Runtime/Manager` | `CoreDawn.Managers` |
-| `Runtime/Ping` | `CoreDawn.Pings` |
-| `Runtime/Resource` | `CoreDawn.ResourceNodes` |
-| `Runtime/Save` | `CoreDawn.Save` |
-| `Runtime/Settings` | `CoreDawn.Settings` |
-| `Runtime/Sound` | `CoreDawn.Sound` |
-| `Runtime/Tutorial` | `CoreDawn.Tutorial` |
-| `Runtime/UI` | `CoreDawn.UI` |
-| `Runtime/World` | `CoreDawn.Worlds` |
+Top-level folders are **layers** (the phase-5 asmdef boundaries); inside a layer, **folder name = last segment of the
+namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Presentation/`) is not part of the namespace.
+
+| Folder (`Assets/Scripts/…`) | Namespace | What lives there |
+|---|---|---|
+| `Sim` | `CoreDawn.Sim` | plain C# simulation — entities, modules, systems, grid geometry, navigation interface |
+| `Data/**` | `CoreDawn.Data` | every ScriptableObject definition + databases + `EffectEntry`/`EffectSpecs` (items, buildings, recipes, effects, monsters, waves, maps, tutorial, weapons) |
+| `Game/Factory` | `CoreDawn.Factory` | FactorySystem, Building, belts, processors, bootstrap/bridge |
+| `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles, HostileIntentProbe |
+| `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
+| `Game/Placement` | `CoreDawn.Placement` | build mode, placement, port overlay |
+| `Game/Worlds` | `CoreDawn.Worlds` | World, WorldPopulator, tile rules |
+| `Game/DayTime` · `Game/Save` · `Game/Interaction` · `Game/Inventories` · `Game/Tutorial` · `Game/Pings` · `Game/Managers` · `Game/Sound` · `Game/Settings` · `Game/ResourceNodes` | `CoreDawn.<FolderName>` | gameplay systems and managers |
+| `Presentation/Entities` | `CoreDawn.Entities` | views: EntityView, BuildingView, MonsterView, PlayerView, MonsterNest, BattleTower, registry, visual controllers |
+| `Presentation/Visuals` | `CoreDawn.Visuals` | VFX/animation/outline presentation (pooled effects, monster animation, outlines) |
+| `Presentation/UI` | `CoreDawn.UI` | UITK views, uxml/uss, health bars, HUDs |
+| `Presentation/FPS` · `Presentation/Inputs` · `Presentation/DayTime` | `CoreDawn.FPS` · `CoreDawn.Inputs` · `CoreDawn.DayTime` | player controller/weapons/camera, input, lighting/skybox views |
+| `Editor` | `CoreDawn.EditorTools` | editor tooling |
+| `Tests` | `CoreDawn.Tests` | tests |
 | `Editor` | `CoreDawn.EditorTools` |
 | `Tests` (incl. `Tests/Editor`) | `CoreDawn.Tests` |
 
