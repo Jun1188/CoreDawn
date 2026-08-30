@@ -112,22 +112,18 @@ namespace CoreDawn.UI
         protected override void QuickMove(ItemContainer src, int index)
         {
             if (storage == null) { base.QuickMove(src, index); return; }
-
             var stack = src.PeekAt(index);
-            if (stack == null || stack.item == null || stack.amount <= 0) return;
-
+            if (stack.IsEmpty) return;
             if (src == storage)
             {
-                MoveStack(stack, Main);
-                if (stack.amount > 0) MoveStack(stack, Hotbar);
+                stack = MoveStack(stack, Main);
+                if (!stack.IsEmpty) stack = MoveStack(stack, Hotbar);
             }
             else
             {
-                MoveStack(stack, storage);
+                stack = MoveStack(stack, storage);
             }
-
-            src.Touch();
-            if (stack.amount <= 0) src.TakeAt(index);
+            src.SetAt(index, stack);   // 남은 몫(없으면 빈 슬롯)
         }
 
         // ───────────────────── 정렬 · 자동 넣기 ─────────────────────

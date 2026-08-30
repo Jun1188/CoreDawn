@@ -79,6 +79,8 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
   is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
   never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
+  `ItemStack` is a value (`readonly struct`): `PeekAt` returns a copy, so a slot changes only through `SetAt`/`TakeAt`/`TryPutAt`
+  (which notify `Changed`); use `stack.With(n)` for a new amount and `IsEmpty` instead of null checks.
 - Save files: definitions are referenced by pack id only, containers are saved as a role-keyed dictionary (`containers{}`; the role names
   come from `InventoryModule.Roles`/`ByRole`, nowhere else). **No read-side fallbacks for old ids or old keys** — every format change
   bumps `SaveFile.CurrentSchemaVersion` and adds one step to `SaveMigrations` that rewrites the JSON, logs what it did, and fails the

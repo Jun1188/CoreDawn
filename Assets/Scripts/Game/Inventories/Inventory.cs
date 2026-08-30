@@ -46,8 +46,8 @@ namespace CoreDawn.Inventories
             if (SaveLoadContext.IsRestoring) return;
             for (int i = 0; i < slots.Length && i < container.SlotCount; i++)
             {
-                var s = slots[i]?.ToStack();   // SO 저작 → 정의 스택 (팩에 없는 아이템은 건너뛴다)
-                if (s == null) continue;
+                var s = slots[i] != null ? slots[i].ToStack() : ItemStack.Empty;   // SO 저작 → 정의 스택 (팩에 없는 아이템은 건너뛴다)
+                if (s.IsEmpty) continue;
                 // 상한 초과로 저작해 두면 TryPutAt이 통째로 거절한다 — 저작 실수로 상자가
                 // 텅 비어 열리는 것보다 들어가는 만큼이라도 넣는 편이 낫다
                 int fit = Mathf.Min(s.amount, container.CapFor(s.item));
@@ -81,11 +81,11 @@ namespace CoreDawn.Inventories
 
         // ── 위치(슬롯 인덱스) 연산 — UI 드래그·분할·교환용 위임 ──────
 
-        /// <summary>슬롯의 스택 (없거나 범위 밖이면 null). amount를 직접 수정했다면 Touch()를 호출할 것.</summary>
-        public ItemStack GetAt(int i) => InRange(i) ? Container.PeekAt(i) : null;
+        /// <summary>슬롯의 스택(없거나 범위 밖이면 빈 스택). 값이라 고쳐도 그릇은 바뀌지 않는다 — Container.SetAt을 쓸 것.</summary>
+        public ItemStack GetAt(int i) => InRange(i) ? Container.PeekAt(i) : ItemStack.Empty;
 
         /// <summary>슬롯의 스택을 통째로 꺼낸다 (픽업).</summary>
-        public ItemStack TakeAt(int i) => InRange(i) ? Container.TakeAt(i) : null;
+        public ItemStack TakeAt(int i) => InRange(i) ? Container.TakeAt(i) : ItemStack.Empty;
 
         /// <summary>빈 슬롯에 놓기. 규칙 위반이면 false.</summary>
         public bool TryPutAt(int i, ItemStack stack) => InRange(i) && Container.TryPutAt(i, stack);
@@ -93,7 +93,7 @@ namespace CoreDawn.Inventories
         /// <summary>슬롯 스택과 교환 (스왑). 규칙 위반이면 false.</summary>
         public bool TryExchangeAt(int i, ItemStack incoming, out ItemStack previous)
         {
-            previous = null;
+            previous = ItemStack.Empty;
             return InRange(i) && Container.TryExchangeAt(i, incoming, out previous);
         }
 

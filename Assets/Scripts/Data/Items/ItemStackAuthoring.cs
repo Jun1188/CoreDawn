@@ -14,11 +14,11 @@ namespace CoreDawn.Data
         public ItemDataSO item;
         public int amount = 1;
 
-        /// <summary>정의로 풀린 스택. 아이템이 비었거나 팩에 없으면 null.</summary>
+        /// <summary>정의로 풀린 스택. 아이템이 비었거나 팩에 없으면 빈 스택.</summary>
         public ItemStack ToStack()
         {
             var def = item != null ? item.Def : null;
-            return def != null && amount > 0 ? new ItemStack(def, amount) : null;
+            return def != null && amount > 0 ? new ItemStack(def, amount) : ItemStack.Empty;
         }
     }
 }

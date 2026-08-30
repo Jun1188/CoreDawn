@@ -83,8 +83,8 @@ namespace CoreDawn.Inventories
             {
                 foreach (var authored in startingItems)
                 {
-                    var stack = authored?.ToStack();   // SO 저작 → 정의 (팩에 없는 아이템은 건너뛴다)
-                    if (stack == null) continue;
+                    var stack = authored != null ? authored.ToStack() : ItemStack.Empty;   // SO 저작 → 정의 (팩에 없는 아이템은 건너뛴다)
+                    if (stack.IsEmpty) continue;
                     AddItemToPlayer(stack.item, stack.amount);
                 }
             }

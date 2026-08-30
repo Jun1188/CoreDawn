@@ -59,8 +59,8 @@ namespace CoreDawn.Sim
         {
             if (i < 0 || i >= _slots.Length || item == null) return 0;
             var s = _slots[i];
-            if (s != null && s.item != null && s.item != item) return 0;
-            return Mathf.Max(0, CapFor(item) - (s != null && s.item != null ? s.amount : 0));
+            if (!s.IsEmpty && s.item != item) return 0;
+            return Mathf.Max(0, CapFor(item) - (s.IsEmpty ? 0 : s.amount));
         }
 
         public bool HasAny
@@ -68,7 +68,7 @@ namespace CoreDawn.Sim
             get
             {
                 foreach (var s in _slots)
-                    if (s != null && s.item != null && s.amount > 0) return true;
+                    if (!s.IsEmpty) return true;
                 return false;
             }
         }
@@ -77,7 +77,7 @@ namespace CoreDawn.Sim
         {
             int total = 0;
             foreach (var s in _slots)
-                if (s != null && s.item == item) total += s.amount;
+                if (!s.IsEmpty && s.item == item) total += s.amount;
             return total;
         }
 
@@ -91,7 +91,7 @@ namespace CoreDawn.Sim
             bool hasStack = false;
             foreach (var s in _slots)
             {
-                if (s == null || s.item == null)
+                if (s.IsEmpty)
                     emptyRoom += cap;
                 else if (s.item == item)
                 {
@@ -128,14 +128,27 @@ namespace CoreDawn.Sim
         // ───────────────────────────────────────────────────────────
 
         /// <summary>슬롯의 스택을 그대로 반환 (없으면 null). 반환된 스택의 amount를 직접 수정했다면 Touch() 필수.</summary>
+        /// <summary>슬롯의 스택 — <b>복사본</b>이다(값). 고쳐도 그릇은 바뀌지 않는다: 바꾸려면 SetAt/TakeAt/TryPutAt.</summary>
         public ItemStack PeekAt(int i) => _slots[i];
+
+        /// <summary>
+        /// 슬롯을 통째로 바꾼다 — UI가 RoomAt/CapFor로 계산한 결과를 놓는 유일한 쓰기 경로(빈 스택 = 비우기). Touch를 빠뜨릴 수 없다.
+        /// 상한 초과는 계산이 틀린 것이므로 조용히 넣지 않는다(예전에 포탑 탄약함이 3배까지 찼던 경로).
+        /// </summary>
+        public void SetAt(int i, ItemStack stack)
+        {
+            if (!stack.IsEmpty && stack.amount > CapFor(stack.item))
+                throw new ArgumentOutOfRangeException(nameof(stack), $"슬롯 {i}에 {stack} — 상한 {CapFor(stack.item)} 초과");
+            _slots[i] = stack.IsEmpty ? ItemStack.Empty : stack;
+            Touch();
+        }
 
         /// <summary>슬롯의 스택을 통째로 꺼낸다 (드래그 픽업). 없으면 null.</summary>
         public ItemStack TakeAt(int i)
         {
             var s = _slots[i];
-            if (s == null) return null;
-            _slots[i] = null;
+            if (s.IsEmpty) return ItemStack.Empty;
+            _slots[i] = ItemStack.Empty;
             Touch();
             return s;
         }
@@ -150,8 +163,8 @@ namespace CoreDawn.Sim
         /// </summary>
         public bool TryPutAt(int i, ItemStack stack)
         {
-            if (stack == null || stack.item == null || stack.amount <= 0) return false;
-            if (_slots[i] != null && _slots[i].item != null) return false;
+            if (stack.IsEmpty) return false;
+            if (!_slots[i].IsEmpty) return false;
             if (!AllowsPlacement(stack.item, exceptSlot: i)) return false;
             if (stack.amount > CapFor(stack.item)) return false;
 
@@ -163,8 +176,8 @@ namespace CoreDawn.Sim
         /// <summary>슬롯의 스택과 교환한다 (드래그 스왑). 들어갈 스택이 규칙·상한 위반이면 false.</summary>
         public bool TryExchangeAt(int i, ItemStack incoming, out ItemStack previous)
         {
-            previous = null;
-            if (incoming == null || incoming.item == null) return false;
+            previous = ItemStack.Empty;
+            if (incoming.IsEmpty) return false;
             if (!AllowsPlacement(incoming.item, exceptSlot: i)) return false;
             if (incoming.amount > CapFor(incoming.item)) return false;
 
@@ -181,7 +194,7 @@ namespace CoreDawn.Sim
             if (!SingleStackPerType) return true;
 
             for (int j = 0; j < _slots.Length; j++)
-                if (j != exceptSlot && _slots[j] != null && _slots[j].item == item)
+                if (j != exceptSlot && !_slots[j].IsEmpty && _slots[j].item == item)
                     return false;
             return true;
         }
@@ -192,19 +205,19 @@ namespace CoreDawn.Sim
             if (item == null || n <= 0 || !HasRoomFor(item, n)) return false;
 
             int cap = CapFor(item);
-            foreach (var s in _slots)
+            for (int i = 0; i < _slots.Length && n > 0; i++)
             {
-                if (n == 0) break;
-                if (s == null || s.item != item) continue;
+                var s = _slots[i];
+                if (s.IsEmpty || s.item != item) continue;
                 // Max(0, ...) — 상한을 넘겨 찬 슬롯(UI 경로가 컨테이너 상한을 건너뛴 흔적)을 만나면
                 // 음수 add가 되어 남의 스택을 깎고 n을 되레 늘린다. RoomFor 쪽과 같은 방어.
                 int add = Mathf.Min(Mathf.Max(0, cap - s.amount), n);
-                s.amount += add;
+                _slots[i] = s.With(s.amount + add);
                 n -= add;
             }
             for (int i = 0; i < _slots.Length && n > 0; i++)
             {
-                if (_slots[i] != null && _slots[i].item != null) continue;
+                if (!_slots[i].IsEmpty) continue;
                 int add = Mathf.Min(cap, n);
                 _slots[i] = new ItemStack(item, add);
                 n -= add;
@@ -225,11 +238,10 @@ namespace CoreDawn.Sim
             for (int i = _slots.Length - 1; i >= 0 && n > 0; i--) // 뒤쪽 스택부터 소진
             {
                 var s = _slots[i];
-                if (s == null || s.item != item) continue;
+                if (s.IsEmpty || s.item != item) continue;
                 int take = Mathf.Min(s.amount, n);
-                s.amount -= take;
+                _slots[i] = s.With(s.amount - take);
                 n -= take;
-                if (s.amount == 0) _slots[i] = null;
             }
 
             Touch();   // TryAdd와 같은 이유 — 변경이 끝난 뒤에 알린다
@@ -247,7 +259,7 @@ namespace CoreDawn.Sim
         public void RestoreSlotsRaw(ItemStack[] slots)
         {
             for (int i = 0; i < _slots.Length; i++)
-                _slots[i] = slots != null && i < slots.Length ? slots[i] : null;
+                _slots[i] = slots != null && i < slots.Length ? slots[i] : ItemStack.Empty;
 
             Touch();
         }
@@ -257,7 +269,7 @@ namespace CoreDawn.Sim
         {
             var seen = new Dictionary<ItemDef, int>();
             foreach (var s in _slots)
-                if (s != null && s.item != null && s.amount > 0)
+                if (!s.IsEmpty)
                     seen[s.item] = seen.TryGetValue(s.item, out var c) ? c + s.amount : s.amount;
 
             var list = new List<(ItemDef, int)>(seen.Count);

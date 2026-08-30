@@ -148,7 +148,7 @@ namespace CoreDawn.UI
         protected VisualElement MakeSlot(ItemContainer container, int index, string keyLabel)
         {
             var stack = container.PeekAt(index);
-            bool empty = stack == null || stack.item == null || stack.amount <= 0;
+            bool empty = stack.IsEmpty;
 
             var slot = new VisualElement();
             slot.AddToClassList("ui-slot");
@@ -210,38 +210,36 @@ namespace CoreDawn.UI
 
         void LeftClick(ItemContainer container, int index)
         {
-            if (carried == null || carried.item == null)
+            if (carried.IsEmpty)
             {
                 var picked = container.TakeAt(index);
-                if (picked != null && picked.item != null) carried = picked;
+                if (!picked.IsEmpty) carried = picked;
                 return;
             }
-
             var target = container.PeekAt(index);
-            if (target == null || target.item == null)
+            if (target.IsEmpty)
             {
-                // 상한(포탑 탄약함처럼 좁은 버퍼)을 넘으면 통째로 거절하지 않고 들어갈 만큼만 —
-                // 클릭이 아무 반응 없이 씹히는 것보다 "20개만 들어갔다"가 읽힌다
+                // 빈 칸에 놓기 — 그릇 상한만큼만 들어가고 나머지는 손에 남는다
                 int fit = Mathf.Min(container.CapFor(carried.item), carried.amount);
                 if (fit >= carried.amount)
                 {
-                    if (container.TryPutAt(index, carried)) carried = null;
+                    if (container.TryPutAt(index, carried)) carried = ItemStack.Empty;
                 }
                 else if (fit > 0 && container.TryPutAt(index, new ItemStack(carried.item, fit)))
                 {
-                    carried.amount -= fit;
+                    carried = carried.With(carried.amount - fit);
                 }
             }
             else if (target.item == carried.item)
             {
+                // 같은 아이템 — 합치기(자리만큼)
                 int add = Mathf.Min(container.RoomAt(index, target.item), carried.amount);
-                target.amount += add;
-                carried.amount -= add;
-                container.Touch();
-                if (carried.amount <= 0) carried = null;
+                container.SetAt(index, target.With(target.amount + add));
+                carried = carried.With(carried.amount - add);
             }
             else
             {
+                // 다른 아이템 — 교환
                 if (container.TryExchangeAt(index, carried, out var prev)) carried = prev;
             }
         }
@@ -249,67 +247,56 @@ namespace CoreDawn.UI
         void RightClick(ItemContainer container, int index)
         {
             var target = container.PeekAt(index);
-
-            if (carried == null || carried.item == null)
+            if (carried.IsEmpty)
             {
-                if (target == null || target.item == null || target.amount <= 0) return;
-
+                // 빈손 우클릭 — 절반 집기
+                if (target.IsEmpty) return;
                 int take = target.amount - target.amount / 2;   // 절반 (홀수면 큰 쪽)
                 carried = new ItemStack(target.item, take);
-                target.amount -= take;
-                container.Touch();
-                if (target.amount <= 0) container.TakeAt(index);
+                container.SetAt(index, target.With(target.amount - take));
                 return;
             }
-
-            if (target == null || target.item == null)
+            // 들고 있을 때 우클릭 — 한 개 놓기
+            if (target.IsEmpty)
             {
-                if (container.TryPutAt(index, new ItemStack(carried.item, 1))) carried.amount--;
+                if (container.TryPutAt(index, new ItemStack(carried.item, 1))) carried = carried.With(carried.amount - 1);
             }
             else if (target.item == carried.item && container.RoomAt(index, target.item) > 0)
             {
-                target.amount++;
-                carried.amount--;
-                container.Touch();
+                container.SetAt(index, target.With(target.amount + 1));
+                carried = carried.With(carried.amount - 1);
             }
-
-            if (carried.amount <= 0) carried = null;
         }
 
         /// <summary>Shift+클릭 목적지 — 화면마다 다르다. 기본은 가방↔핫바.</summary>
         protected virtual void QuickMove(ItemContainer src, int index)
         {
             var stack = src.PeekAt(index);
-            if (stack == null || stack.item == null || stack.amount <= 0) return;
-
+            if (stack.IsEmpty) return;
             var dst = src == Main ? Hotbar : Main;
             if (dst == null) return;
-
-            MoveStack(stack, dst);
-
-            src.Touch();
-            if (stack.amount <= 0) src.TakeAt(index);
+            src.SetAt(index, MoveStack(stack, dst));   // 남은 몫(없으면 빈 슬롯)
         }
 
         /// <summary>기존 스택부터 채우고 남으면 빈 슬롯에 — uGUI 쪽과 같은 순서.</summary>
-        protected static void MoveStack(ItemStack src, ItemContainer dst)
+        /// <summary>src를 dst에 최대한 넣고(같은 스택부터, 그다음 빈 칸) 남은 몫을 돌려준다 — 값이므로 호출자가 남은 몫을 슬롯에 다시 놓는다.</summary>
+        protected static ItemStack MoveStack(ItemStack src, ItemContainer dst)
         {
-            for (int i = 0; i < dst.SlotCount && src.amount > 0; i++)
+            for (int i = 0; i < dst.SlotCount && !src.IsEmpty; i++)
             {
                 var t = dst.PeekAt(i);
-                if (t == null || t.item != src.item || dst.RoomAt(i, src.item) <= 0) continue;
+                if (t.IsEmpty || t.item != src.item || dst.RoomAt(i, src.item) <= 0) continue;
                 int add = Mathf.Min(dst.RoomAt(i, src.item), src.amount);
-                t.amount += add;
-                src.amount -= add;
-                dst.Touch();
+                dst.SetAt(i, t.With(t.amount + add));
+                src = src.With(src.amount - add);
             }
-            for (int i = 0; i < dst.SlotCount && src.amount > 0; i++)
+            for (int i = 0; i < dst.SlotCount && !src.IsEmpty; i++)
             {
-                var t = dst.PeekAt(i);
-                if (t != null && t.item != null) continue;
+                if (!dst.PeekAt(i).IsEmpty) continue;
                 int add = Mathf.Min(dst.CapFor(src.item), src.amount);
-                if (dst.TryPutAt(i, new ItemStack(src.item, add))) src.amount -= add;
+                if (dst.TryPutAt(i, new ItemStack(src.item, add))) src = src.With(src.amount - add);
             }
+            return src;
         }
 
         // ───────────────────── 캐리지 표시 ─────────────────────
@@ -339,18 +326,17 @@ namespace CoreDawn.UI
         void OnScrimPointerDown(PointerDownEvent e)
         {
             if (e.target != screenRoot) return;   // 패널 안쪽 클릭은 각자의 몫
-            if (carried == null || carried.item == null || carried.amount <= 0) return;
+            if (carried.IsEmpty) return;
 
             if (e.button == 0)
             {
                 DropToWorld(carried.item, carried.amount);
-                carried = null;
+                carried = ItemStack.Empty;
             }
             else if (e.button == 1)
             {
                 DropToWorld(carried.item, 1);
-                carried.amount--;
-                if (carried.amount <= 0) carried = null;
+                carried = carried.With(carried.amount - 1);
             }
             else return;
 
@@ -367,7 +353,7 @@ namespace CoreDawn.UI
         protected void RefreshCarry()
         {
             if (carry == null) return;
-            bool has = carried != null && carried.item != null && carried.amount > 0;
+            bool has = !carried.IsEmpty;
             carry.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
             if (!has) return;
 
@@ -378,13 +364,13 @@ namespace CoreDawn.UI
         /// <summary>들고 있던 스택을 가방으로 되돌린다. 가방이 가득이면 바닥에 떨어뜨린다.</summary>
         void ReturnCarried()
         {
-            if (carried == null || carried.item == null || carried.amount <= 0) { carried = null; return; }
+            if (carried.IsEmpty) { carried = ItemStack.Empty; return; }
 
             var holder = PlayerInventoryHolder.Instance;
             if (holder == null || !holder.AddItemToPlayer(carried.item, carried.amount))
                 DropToWorld(carried.item, carried.amount);
 
-            carried = null;
+            carried = ItemStack.Empty;
             RefreshCarry();
         }
 

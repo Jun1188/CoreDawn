@@ -594,7 +594,7 @@ namespace CoreDawn.UI
             for (int i = 0; i < hotbar.SlotCount; i++)
             {
                 var stack = hotbar.PeekAt(i);
-                bool empty = stack == null || stack.item == null || stack.amount <= 0;
+                bool empty = stack.IsEmpty;
 
                 var slot = new VisualElement { pickingMode = PickingMode.Ignore };
                 slot.AddToClassList("ui-slot");

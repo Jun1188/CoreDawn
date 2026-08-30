@@ -31,7 +31,7 @@ namespace CoreDawn.Save
             for (int i = 0; i < c.SlotCount; i++)
             {
                 var s = c.PeekAt(i);
-                if (s == null || s.item == null || s.amount <= 0) continue;
+                if (s.IsEmpty) continue;
                 dto.Slots.Add(new SaveStackDto
                 {
                     Index = i,
@@ -112,14 +112,14 @@ namespace CoreDawn.Save
         //  옛 세이브에 남은 키는 역직렬화에서 조용히 무시된다.)
 
         public static SaveStackDto From(ItemStack s) =>
-            s == null || s.item == null || s.amount <= 0
+            s.IsEmpty
                 ? null
                 : new SaveStackDto { Index = -1, ItemId = SaveRefs.IdOf(s.item), Amount = s.amount };
 
         public ItemStack ToStack()
         {
             var item = SaveRefs.Item(ItemId);
-            if (item == null || Amount <= 0) return null;
+            if (item == null || Amount <= 0) return ItemStack.Empty;
             return new ItemStack(item, Amount);
         }
     }

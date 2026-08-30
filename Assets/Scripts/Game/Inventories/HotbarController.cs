@@ -124,7 +124,7 @@ namespace CoreDawn.Inventories
             if (currentHotbarIndex < 0 || currentHotbarIndex >= holder.HotbarContainer.SlotCount) return;
 
             var slot = holder.HotbarContainer.PeekAt(currentHotbarIndex);
-            var so = slot != null ? ItemAssets.Of(slot.item) : null;
+            var so = !slot.IsEmpty ? ItemAssets.Of(slot.item) : null;
             if (so != null && so.TryGetModule<WeaponModuleSO>(out var weaponModule))
                 weaponManager.EquipWeapon(weaponModule.gun);
             else
@@ -140,14 +140,12 @@ namespace CoreDawn.Inventories
             if (container.SlotCount <= currentHotbarIndex) return;
 
             ItemStack slot = container.PeekAt(currentHotbarIndex);
-            if (slot == null || slot.item == null || slot.amount <= 0) return;
+            if (slot.IsEmpty) return;
 
             Vector3 spawnPos = player.transform.position + player.playerCamera.forward * 1.5f + Vector3.up * 0.5f;
             DroppedItem.Spawn(slot.item, 1, spawnPos, player.playerCamera.forward);
 
-            slot.amount--;
-            container.Touch();   // Changed → 위 구독이 장착을, HUD가 표시를 스스로 맞춘다
-            if (slot.amount <= 0) container.TakeAt(currentHotbarIndex);
+            container.SetAt(currentHotbarIndex, slot.With(slot.amount - 1));   // Changed → 위 구독이 장착을, HUD가 표시를 스스로 맞춘다
         }
     }
 }

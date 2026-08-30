@@ -355,7 +355,7 @@ namespace CoreDawn.Tutorial
             for (int i = 0; i < c.SlotCount; i++)
             {
                 var s = c.PeekAt(i);
-                if (s == null || s.item == null || s.amount <= 0) continue;
+                if (s.IsEmpty) continue;
                 if (s.item.Type == type) n += s.amount;
             }
             return n;
