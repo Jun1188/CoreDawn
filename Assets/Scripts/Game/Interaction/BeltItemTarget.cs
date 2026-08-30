@@ -88,8 +88,7 @@ namespace CoreDawn.Interaction
             if (holder == null) return;
 
             // 넣을 자리를 먼저 확인하고 꺼낸다 — 꺼낸 뒤 넣기에 실패하면 아이템이 증발한다.
-            // 검사 순서는 AddItemToPlayer와 같게 (핫바 → 가방).
-            if (!holder.HotbarContainer.HasRoomFor(item) && !holder.MainContainer.HasRoomFor(item))
+            if (!holder.MainContainer.HasRoomFor(item))
                 return;
 
             if (seg.TryTakeAt(at, out var taken))

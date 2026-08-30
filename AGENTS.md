@@ -74,7 +74,8 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   the sim (`PushesPositionToSim`). Creation owners (phase 4, 2026-08-29): buildings = `FactorySystem`, monsters =
   `MonsterSystem`, the player = `PlayerSystem`, nests = `WorldPopulator`. No view creates its own entity any more
   (`CreatesOwnEntity` remains only for legacy scenes).
-- The player is assembled from the pack definition `coredawn:entity/player` (Health·Effects·Inventory main/hotbar·Crafter manual;
+- The player is assembled from the pack definition `coredawn:entity/player` (Health·Effects·Inventory `main` 25 slots of which the
+  first `hotbar` 7 are the hotbar window — one container, Minecraft-style; adding fills from the front, consuming takes from the back·Crafter manual;
   v1 `player` block → exporter). `PlayerInventoryHolder` spawns that entity in Awake and exposes its `InventoryModule` containers;
   `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
   is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),

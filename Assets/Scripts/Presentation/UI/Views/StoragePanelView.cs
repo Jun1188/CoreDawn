@@ -108,7 +108,7 @@ namespace CoreDawn.UI
             RebuildPlayerGrids();
         }
 
-        /// <summary>Shift+클릭 — 보관소↔플레이어를 오간다. 플레이어 쪽은 가방부터, 넘치면 핫바.</summary>
+        /// <summary>Shift+클릭 — 보관소↔플레이어를 오간다. 플레이어 쪽은 앞 칸(핫바)부터.</summary>
         protected override void QuickMove(ItemContainer src, int index)
         {
             if (storage == null) { base.QuickMove(src, index); return; }
@@ -116,8 +116,7 @@ namespace CoreDawn.UI
             if (stack.IsEmpty) return;
             if (src == storage)
             {
-                stack = MoveStack(stack, Main);
-                if (!stack.IsEmpty) stack = MoveStack(stack, Hotbar);
+                stack = MoveStack(stack, Main);   // 앞 칸(핫바)부터 찬다
             }
             else
             {
@@ -148,7 +147,7 @@ namespace CoreDawn.UI
 
         }
 
-        /// <summary>보관소에 이미 있는 종류만 가방·핫바에서 올려 보낸다. 넘치는 만큼은 남긴다.</summary>
+        /// <summary>보관소에 이미 있는 종류만 소지품에서 올려 보낸다. 넘치는 만큼은 남긴다.</summary>
         void AutoStack()
         {
             if (storage == null) return;
@@ -156,7 +155,6 @@ namespace CoreDawn.UI
             foreach (var (item, _) in storage.Snapshot())
             {
                 PushKind(Main, item);
-                PushKind(Hotbar, item);
             }
 
         }

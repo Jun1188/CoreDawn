@@ -31,8 +31,9 @@ namespace CoreDawn.UI
         protected VisualElement screenRoot, grid, hotbarRow;
         protected UITooltip tooltip;
 
-        protected ItemContainer Main   => PlayerInventoryHolder.Instance?.MainContainer;
-        protected ItemContainer Hotbar => PlayerInventoryHolder.Instance?.HotbarContainer;
+        /// <summary>소지품 전체 — 앞 HotbarSize칸이 핫바 줄, 나머지가 가방 격자. 같은 그릇이다.</summary>
+        protected ItemContainer Main => PlayerInventoryHolder.Instance?.MainContainer;
+        protected int HotbarSize => PlayerInventoryHolder.Instance?.HotbarSize ?? 0;
 
         protected const int Columns = 9;   // 문서 SCR-04 — 소지품 9열
 
@@ -56,9 +57,8 @@ namespace CoreDawn.UI
             screenRoot = r.Q("screen-root");
             screenRoot?.RegisterCallback<PointerDownEvent>(OnScrimPointerDown);
 
-            var main = Main; var hot = Hotbar;
+            var main = Main;
             if (main != null) main.Changed += OnContainerChanged;
-            if (hot  != null) hot.Changed  += OnContainerChanged;
         }
 
         protected void UnbindCommon()
@@ -69,9 +69,8 @@ namespace CoreDawn.UI
             tooltip?.Dispose();
             tooltip = null;
 
-            var main = Main; var hot = Hotbar;
+            var main = Main;
             if (main != null) main.Changed -= OnContainerChanged;
-            if (hot  != null) hot.Changed  -= OnContainerChanged;
 
             ReturnCarried();   // 닫는 경로가 무엇이든 (ESC·I·E·씬 전환) 들고 있던 것을 잃지 않는다
         }
@@ -102,21 +101,21 @@ namespace CoreDawn.UI
             if (grid != null)
             {
                 grid.Clear();
-                if (Main != null) BuildRows(grid, Main, Columns);
+                if (Main != null) BuildRows(grid, Main, Columns, from: HotbarSize);   // 가방 = 핫바 뒤 칸들
             }
 
             if (hotbarRow != null)
             {
                 hotbarRow.Clear();
-                var hot = Hotbar;
+                var hot = Main; int hotbarSize = HotbarSize;
                 if (hot != null)
                 {
                     int active = HotbarController.Instance != null ? HotbarController.Instance.CurrentHotbarIndex : -1;
-                    for (int i = 0; i < hot.SlotCount; i++)
+                    for (int i = 0; i < hotbarSize; i++)   // 핫바 = 같은 그릇의 앞 칸들
                     {
                         var slot = MakeSlot(hot, i, keyLabel: (i + 1).ToString());
                         if (i == active) slot.AddToClassList("ui-slot--active");
-                        if (i == hot.SlotCount - 1) slot.AddToClassList("ui-slot--last");
+                        if (i == hotbarSize - 1) slot.AddToClassList("ui-slot--last");
                         hotbarRow.Add(slot);
                     }
                 }
@@ -128,19 +127,20 @@ namespace CoreDawn.UI
         /// flex-wrap에 맡기지 않는 이유는 분배기 격자와 같다 — 반올림 오차로 줄바꿈이
         /// 계산과 어긋나는 일이 구조적으로 없다.
         /// </summary>
-        protected void BuildRows(VisualElement parent, ItemContainer c, int columns)
+        /// <param name="from">이 인덱스부터 그린다 — 플레이어 소지품은 핫바 칸(앞)을 건너뛴다.</param>
+        protected void BuildRows(VisualElement parent, ItemContainer c, int columns, int from = 0)
         {
             VisualElement row = null;
-            for (int i = 0; i < c.SlotCount; i++)
+            for (int i = from; i < c.SlotCount; i++)
             {
-                if (i % columns == 0)
+                if ((i - from) % columns == 0)
                 {
                     row = new VisualElement();
                     row.AddToClassList("inv-grid__row");
                     parent.Add(row);
                 }
                 var slot = MakeSlot(c, i, keyLabel: null);
-                if (i % columns == columns - 1 || i == c.SlotCount - 1) slot.AddToClassList("ui-slot--last");
+                if ((i - from) % columns == columns - 1 || i == c.SlotCount - 1) slot.AddToClassList("ui-slot--last");
                 row.Add(slot);
             }
         }
@@ -273,16 +273,24 @@ namespace CoreDawn.UI
         {
             var stack = src.PeekAt(index);
             if (stack.IsEmpty) return;
-            var dst = src == Main ? Hotbar : Main;
-            if (dst == null) return;
-            src.SetAt(index, MoveStack(stack, dst));   // 남은 몫(없으면 빈 슬롯)
+            var main = Main;
+            if (src != main || main == null) return;
+            // 같은 그릇의 다른 구간으로 — 핫바 칸이면 가방 구간으로, 가방 칸이면 핫바 구간으로
+            int hot = HotbarSize;
+            bool fromHotbar = index < hot;
+            var rest = fromHotbar ? MoveStack(stack, main, hot, main.SlotCount) : MoveStack(stack, main, 0, hot);
+            src.SetAt(index, rest);   // 남은 몫(없으면 빈 슬롯)
         }
 
         /// <summary>기존 스택부터 채우고 남으면 빈 슬롯에 — uGUI 쪽과 같은 순서.</summary>
-        /// <summary>src를 dst에 최대한 넣고(같은 스택부터, 그다음 빈 칸) 남은 몫을 돌려준다 — 값이므로 호출자가 남은 몫을 슬롯에 다시 놓는다.</summary>
-        protected static ItemStack MoveStack(ItemStack src, ItemContainer dst)
+        /// <summary>
+        /// src를 dst의 [from, to) 구간에 최대한 넣고(같은 스택부터, 그다음 빈 칸) 남은 몫을 돌려준다 — 값이므로 호출자가 남은 몫을 슬롯에 다시 놓는다.
+        /// 구간을 안 주면 그릇 전체(앞 칸=핫바부터).
+        /// </summary>
+        protected static ItemStack MoveStack(ItemStack src, ItemContainer dst, int from = 0, int to = -1)
         {
-            for (int i = 0; i < dst.SlotCount && !src.IsEmpty; i++)
+            int end = to < 0 ? dst.SlotCount : Mathf.Min(to, dst.SlotCount);
+            for (int i = from; i < end && !src.IsEmpty; i++)
             {
                 var t = dst.PeekAt(i);
                 if (t.IsEmpty || t.item != src.item || dst.RoomAt(i, src.item) <= 0) continue;
@@ -290,7 +298,7 @@ namespace CoreDawn.UI
                 dst.SetAt(i, t.With(t.amount + add));
                 src = src.With(src.amount - add);
             }
-            for (int i = 0; i < dst.SlotCount && !src.IsEmpty; i++)
+            for (int i = from; i < end && !src.IsEmpty; i++)
             {
                 if (!dst.PeekAt(i).IsEmpty) continue;
                 int add = Mathf.Min(dst.CapFor(src.item), src.amount);

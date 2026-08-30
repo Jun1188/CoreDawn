@@ -176,9 +176,8 @@ namespace CoreDawn.UI
             if (stack.IsEmpty) return;
             if (src == b.Input || src == b.Output)
             {
-                // 설비 → 플레이어: 가방부터, 넘치면 핫바
-                stack = MoveStack(stack, Main);
-                if (!stack.IsEmpty) stack = MoveStack(stack, Hotbar);
+                // 설비 → 플레이어: 소지품 앞 칸(핫바)부터
+                stack = MoveStack(stack, Main);   // 앞 칸(핫바)부터 찬다
             }
             else
             {

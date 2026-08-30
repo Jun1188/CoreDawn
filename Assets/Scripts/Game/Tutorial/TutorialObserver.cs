@@ -335,7 +335,6 @@ namespace CoreDawn.Tutorial
 
             int n = 0;
             if (h.MainContainer != null) n += h.MainContainer.CountOf(item);
-            if (h.HotbarContainer != null) n += h.HotbarContainer.CountOf(item);
             return n;
         }
 
@@ -343,7 +342,7 @@ namespace CoreDawn.Tutorial
         {
             var h = PlayerInventoryHolder.Instance;
             if (h == null) return 0;
-            return CountOfTypeIn(h.MainContainer, type) + CountOfTypeIn(h.HotbarContainer, type);
+            return CountOfTypeIn(h.MainContainer, type);
         }
 
         /// <summary>Snapshot()은 호출마다 리스트를 만든다 — 0.2초마다 도는 경로라 칸을 직접 훑는다.</summary>

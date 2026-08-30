@@ -196,7 +196,7 @@ if 'player' in d:
     p = d['player']
     out['entities']['player'] = {'displayName': p.get('displayName', '플레이어'), 'faction': 'Player', 'modules': [
         {'type': 'Health', 'maxHp': p.get('maxHp', 300)}, {'type': 'Effects'},
-        {'type': 'Inventory', 'main': p.get('main', 18), 'hotbar': p.get('hotbar', 7)},
+        {'type': 'Inventory', 'main': p.get('main', 25), 'hotbar': p.get('hotbar', 7)},
         {'type': 'Crafter', 'manual': True, 'speed': 1.0, 'recipes': []}]}
 
 # waves

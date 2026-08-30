@@ -8,12 +8,12 @@ namespace CoreDawn.Sim
     ///
     /// 두 가지 구동 방식이 있고 정의(<see cref="CrafterModuleDef.Manual"/>)가 고른다:
     /// <list type="bullet">
-    /// <item><b>수제작</b>(manual): 플레이어가 누르고 있는 동안 <see cref="Hold"/>로 진행하고, 재료는 그릇들(가방·핫바)에서 순서대로 빼고
-    ///   결과는 그릇들에 순서대로 넣는다. 안 들어가는 몫은 <see cref="Overflow"/>로 소유자(바닥에 떨어뜨림)에게 넘긴다.</item>
+    /// <item><b>수제작</b>(manual): 플레이어가 누르고 있는 동안 <see cref="Hold"/>로 진행하고, 재료는 소지품에서 뒤 칸(가방)부터 빼고
+    ///   결과는 같은 그릇에 넣는다(앞 칸=핫바부터). 안 들어가는 몫은 <see cref="Overflow"/>로 소유자(바닥에 떨어뜨림)에게 넘긴다.</item>
     /// <item><b>자동</b>(assembler): 심 시계(now)로 <see cref="Step"/>을 밟는다 — 재료가 모이면 소비하고 완료 시각을 잡고, 완료되면
     ///   출력 그릇에 넣는다. 출력이 막히면 완료를 보류(stall)한다. 언제 깨울지는 반환값으로 소유자(공장)에게 돌려준다.</item>
     /// </list>
-    /// 그릇은 같은 엔티티의 <see cref="InventoryModule"/> — 수제작은 main·hotbar, 자동은 input·output.
+    /// 그릇은 같은 엔티티의 <see cref="InventoryModule"/> — 수제작은 main, 자동은 input·output.
     /// 레시피 목록이 비어 있으면 팩의 모든 레시피가 후보다(해금 판정은 게임의 몫).
     /// </summary>
     public sealed class CrafterModule : EntityModule
@@ -23,7 +23,7 @@ namespace CoreDawn.Sim
         public CrafterModule(CrafterModuleDef def) { Def = def ?? throw new ArgumentNullException(nameof(def)); }
 
         // ── 그릇 ────────────────────────────────────────────────────
-        // 같은 엔티티의 InventoryModule에서 읽는다. 수제작은 가방→핫바에서 빼고 핫바→가방에 넣는다(플레이어 습관 그대로),
+        // 같은 엔티티의 InventoryModule에서 읽는다. 수제작은 소지품(main) 하나 — 핫바는 그 앞 칸일 뿐이다,
         // 자동은 input에서 빼고 output에 넣는다. 한 번 찾으면 굳힌다 — 정의가 만든 모듈은 엔티티가 사는 동안 바뀌지 않는다.
         static readonly ItemContainer[] None = System.Array.Empty<ItemContainer>();
         ItemContainer[] _inputs, _outputs;
@@ -33,7 +33,7 @@ namespace CoreDawn.Sim
             if (_inputs != null) return;
             var inv = Owner?.Get<InventoryModule>();
             if (inv == null) return;
-            if (Def.Manual) { _inputs = NonNull(inv.Main, inv.Hotbar); _outputs = NonNull(inv.Hotbar, inv.Main); }
+            if (Def.Manual) { _inputs = NonNull(inv.Main); _outputs = NonNull(inv.Main); }   // 넣기는 앞(핫바)부터, 빼기는 뒤(가방)부터 — 그릇의 규칙
             else            { _inputs = NonNull(inv.Input);            _outputs = NonNull(inv.Output); }
         }
 
@@ -44,9 +44,9 @@ namespace CoreDawn.Sim
             return r;
         }
 
-        /// <summary>재료를 빼는 그릇들(앞에서부터). 수제작: 가방 → 핫바. 자동: input.</summary>
+        /// <summary>재료를 빼는 그릇들(앞에서부터). 수제작: main. 자동: input.</summary>
         public IReadOnlyList<ItemContainer> Inputs { get { Resolve(); return _inputs ?? None; } }
-        /// <summary>결과를 넣는 그릇들(앞에서부터). 수제작: 핫바 → 가방. 자동: output.</summary>
+        /// <summary>결과를 넣는 그릇들(앞에서부터). 수제작: main. 자동: output.</summary>
         public IReadOnlyList<ItemContainer> Outputs { get { Resolve(); return _outputs ?? None; } }
 
         // ── 레시피 ──────────────────────────────────────────────────

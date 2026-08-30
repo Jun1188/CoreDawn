@@ -356,13 +356,13 @@ namespace CoreDawn.FPS
             return false;
         }
 
-        // ── 인벤토리 실소비 (보관 순서: 메인 가방 먼저, 핫바 나중) ──────
+        // ── 인벤토리 실소비 (그릇이 뒤 칸=가방부터 빼므로 핫바는 마지막) ──────
 
         private static int CountInInventory(ItemDataSO item)
         {
             var h = PlayerInventoryHolder.Instance;
             if (h == null || item == null) return 0;
-            return h.MainContainer.CountOf(item) + h.HotbarContainer.CountOf(item);
+            return h.MainContainer.CountOf(item);
         }
 
         private static int ConsumeFromInventory(ItemDataSO item, int need)
@@ -370,9 +370,7 @@ namespace CoreDawn.FPS
             var h = PlayerInventoryHolder.Instance;
             if (h == null || item == null || need <= 0) return 0;
 
-            int got = ConsumeFrom(h.MainContainer, item, need);
-            got += ConsumeFrom(h.HotbarContainer, item, need - got);
-            return got;
+            return ConsumeFrom(h.MainContainer, item, need);
         }
 
         private static int ConsumeFrom(ItemContainer container, ItemDataSO item, int need)

@@ -248,7 +248,7 @@ namespace CoreDawn.EditorTools
                 entities[KeyOf((string)m["id"])] = o;
             }
 
-            // 플레이어 — v1의 player 블록(HP·가방·핫바). SO가 없는 유일한 엔티티: 심이 이 정의로 조립한다
+            // 플레이어 — v1의 player 블록(HP·소지품 칸 수·핫바 창). SO가 없는 유일한 엔티티: 심이 이 정의로 조립한다
             if (d["player"] is JObject playerJson)
             {
                 var o = new JObject { ["displayName"] = playerJson["displayName"] ?? "플레이어", ["faction"] = "Player" };
@@ -256,7 +256,7 @@ namespace CoreDawn.EditorTools
                 {
                     new JObject { ["type"] = "Health", ["maxHp"] = playerJson["maxHp"] ?? 300 },
                     new JObject { ["type"] = "Effects" },
-                    new JObject { ["type"] = "Inventory", ["main"] = playerJson["main"] ?? 18, ["hotbar"] = playerJson["hotbar"] ?? 7 },
+                    new JObject { ["type"] = "Inventory", ["main"] = playerJson["main"] ?? 25, ["hotbar"] = playerJson["hotbar"] ?? 7 },
                     new JObject { ["type"] = "Crafter", ["manual"] = true, ["speed"] = 1.0, ["recipes"] = new JArray() },
                 };
                 entities["player"] = o;

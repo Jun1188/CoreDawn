@@ -9,7 +9,7 @@ using CoreDawn.Sim;
 namespace CoreDawn.Inventories
 {
     /// <summary>
-    /// 플레이어 소지품의 씬 접점. 가방·핫바는 플레이어 <b>엔티티</b>의 <see cref="InventoryModule"/>(팩 정의
+    /// 플레이어 소지품의 씬 접점. 소지품(main, 앞 HotbarSize칸이 핫바)은 플레이어 <b>엔티티</b>의 <see cref="InventoryModule"/>(팩 정의
     /// <c>coredawn:entity/player</c>가 칸 수를 정한다)의 것이고, 이 컴포넌트는 그 그릇을 UI·총기·비용 지불에 내주는 창구다.
     ///
     /// 엔티티는 여기서 먼저 만든다(PlayerSystem.Spawn — 이미 있으면 그것): 뷰(PlayerView)는 BattleManager가 Start에서
@@ -32,8 +32,10 @@ namespace CoreDawn.Inventories
         /// <summary>플레이어 엔티티 — HP·효과·가방·제작이 여기 산다.</summary>
         public Entity Entity { get; private set; }
         public InventoryModule Inventory { get; private set; }
-        public ItemContainer HotbarContainer { get; private set; }
+        /// <summary>소지품 전체 — 앞 <see cref="HotbarSize"/>칸이 핫바. 넣기는 앞(핫바)부터, 빼기는 뒤(가방)부터.</summary>
         public ItemContainer MainContainer { get; private set; }
+        /// <summary>핫바로 보이는 앞 칸 수(장착 선택 범위).</summary>
+        public int HotbarSize { get; private set; }
 
         [Header("References")]
         public PlayerController playerController; // 플레이어 컨트롤러 참조
@@ -45,10 +47,10 @@ namespace CoreDawn.Inventories
 
             Entity = SpawnEntity();
             Inventory = Entity.Get<InventoryModule>();
-            HotbarContainer = Inventory?.Hotbar;
             MainContainer = Inventory?.Main;
-            if (HotbarContainer == null || MainContainer == null)
-                Debug.LogError("[PlayerInventoryHolder] 플레이어 정의에 Inventory(main·hotbar)가 없습니다 — 가방·핫바가 비어 있습니다.", this);
+            HotbarSize = Inventory?.HotbarSize ?? 0;
+            if (MainContainer == null)
+                Debug.LogError("[PlayerInventoryHolder] 플레이어 정의에 Inventory(main)가 없습니다 — 소지품이 비어 있습니다.", this);
 
             // 2. 인스펙터에 등록된 시작 아이템 주입
             SeedStartingItems();
@@ -65,7 +67,7 @@ namespace CoreDawn.Inventories
             Debug.LogWarning($"[PlayerInventoryHolder] 팩에 '{PlayerDefId}' 정의가 없어 인스펙터 칸 수로 폴백합니다.", this);
             var e = players.Spawn(100f, transform.position);
             if (e.Get<InventoryModule>() == null)
-                e.Add(new InventoryModule(new InventoryModuleDef { Hotbar = hotbarSize, Main = mainInventorySize }));
+                e.Add(new InventoryModule(new InventoryModuleDef { Main = hotbarSize + mainInventorySize, Hotbar = hotbarSize }));
             if (e.Get<CrafterModule>() == null)
                 e.Add(new CrafterModule(new CrafterModuleDef { Manual = true }));
             return e;
@@ -102,11 +104,9 @@ namespace CoreDawn.Inventories
         public bool AddItemToPlayer(ItemDef item, int amount, bool silent = false)
         {
             if (item == null || amount <= 0) return false;
-            if (HotbarContainer == null || MainContainer == null) return false;
-            // 1. 핫바 채우기 시도
-            // 2. 핫바 공간 부족 시 메인 가방 채우기 시도
-            if (!HotbarContainer.TryAdd(item, amount) && !MainContainer.TryAdd(item, amount))
-                return false;
+            if (MainContainer == null) return false;
+            // 앞 칸(핫바)부터 채워진다 — 그릇 하나의 규칙이라 경로마다 순서를 따로 정하지 않는다
+            if (!MainContainer.TryAdd(item, amount)) return false;
             if (!silent && !silentAdd && !SaveLoadContext.IsRestoring)
                 SoundManager.Instance?.PlayCommonSFX(CommonSFX.ItemPickup);
             return true;

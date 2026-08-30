@@ -179,7 +179,7 @@ namespace CoreDawn.UI
 
 
         int CountAll(ItemDataSO item) =>
-            (Main?.CountOf(item) ?? 0) + (Hotbar?.CountOf(item) ?? 0);
+            Main?.CountOf(item) ?? 0;
 
 
         /// <summary>결과가 가방·핫바에 안 들어갔다 — 소비는 이미 일어났으므로 바닥에 떨어뜨린다.</summary>

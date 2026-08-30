@@ -2933,8 +2933,8 @@
   "player": {
     "displayName": "플레이어",
     "maxHp": 300.0,
-    "hotbar": 7,
-    "main": 18
+    "main": 25,
+    "hotbar": 7
   },
   "waves": [
     {

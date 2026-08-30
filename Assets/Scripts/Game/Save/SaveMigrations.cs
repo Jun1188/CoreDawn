@@ -24,13 +24,12 @@ namespace CoreDawn.Save
         /// <summary>key = 이 단계가 적용되는 버전. 실행하면 key+1 버전이 된다.</summary>
         static readonly Dictionary<int, Action<SaveFile>> Steps = new()
         {
-            // v1 → v2 (2026-08-30, 5a-1c): 정의 id — 옛 SO id("Item:IronOre"·"Building:Belt"·"Recipe_IronPlate")를
-            //   팩 id("coredawn:item/iron_ore")로. SaveRefs는 팩 id만 안다.
-            //   몬스터(combat.monsters[].data)는 아직 SO(MonsterDatabaseSO)로 복원하므로 손대지 않는다 — 5a-3에서 함께 옮긴다.
-            { 1, MigrateIdsToPack },
-            // v2 → v3 (2026-08-30, 5a-2d): 그릇 — 건물 in/out, 플레이어 hotbar/main → 역할 키 사전 containers{}.
-            //   역할 이름표는 InventoryModule이 붙이므로 역할이 늘어도 세이브 형식·이 코드는 그대로다.
-            { 2, MigrateContainersToRoles },
+            // v1 → v2 (2026-08-30, 5a-1c·5a-2d): 팀의 다른 작업이 시작되기 전이라 중간 버전(v2·v3)을 두지 않고 한 단계로 합쳤다.
+            //   ① 정의 id — 옛 SO id("Item:IronOre"·"Building:Belt"·"Recipe:Recipe_IronPlate")를 팩 id("coredawn:item/iron_ore")로.
+            //      몬스터(combat.monsters[].data)는 아직 SO(MonsterDatabaseSO)로 복원하므로 손대지 않는다 — 5a-3에서 함께 옮긴다.
+            //   ② 그릇 — 건물 in/out, 플레이어 hotbar/main → 역할 키 사전 containers{}. 역할 이름표는 InventoryModule이 붙인다.
+            //   ③ 핫바 병합 — 플레이어 containers.hotbar + containers.main → main 하나(핫바 칸이 앞, 옛 가방 칸은 인덱스가 핫바 칸 수만큼 뒤로).
+            { 1, f => { MigrateIdsToPack(f); MigrateContainersToRoles(f); MergeHotbarIntoMain(f); } },
         };
 
         /// <summary>
@@ -70,7 +69,7 @@ namespace CoreDawn.Save
             return true;
         }
 
-        // ── v1 → v2: 정의 id ─────────────────────────────────────────
+        // ── ① 정의 id ────────────────────────────────────────────────
 
         // 세이브 안에서 정의 id가 사는 자리 — 모듈별 JSON 키. 여기 없는 자리는 변환되지 않으므로 새 id 자리를 만들면 여기도 적는다.
         //   factory.buildings[].id · .in/.out.slots[].item · .behavior.{recipe,craftingRecipe,target,passed[],filters[].items[]}
@@ -128,10 +127,10 @@ namespace CoreDawn.Save
             if (Module(f, "world") is JObject world)
                 foreach (var d in Arr(world["drops"])) Convert(d, "item");
 
-            Debug.Log($"[Save] v1 → v2: 정의 id {converted}개를 팩 id로 바꿨습니다.");
+            Debug.Log($"[Save] v1 → v2 ①: 정의 id {converted}개를 팩 id로 바꿨습니다.");
         }
 
-        // ── v2 → v3: 역할 키 그릇 ────────────────────────────────────
+        // ── ② 역할 키 그릇 ────────────────────────────────────────────
 
         static void MigrateContainersToRoles(SaveFile f)
         {
@@ -156,11 +155,39 @@ namespace CoreDawn.Save
                 }
             if (Module(f, "player") is JObject player)
             {
-                Move(player, "hotbar", InventoryModule.RoleHotbar);
+                Move(player, "hotbar", "hotbar");   // 임시 역할 — 바로 아래 ③이 main으로 합친다
                 Move(player, "main",   InventoryModule.RoleMain);
             }
 
-            Debug.Log($"[Save] v2 → v3: 그릇 {moved}개를 역할 키(containers)로 옮겼습니다.");
+            Debug.Log($"[Save] v1 → v2 ②: 그릇 {moved}개를 역할 키(containers)로 옮겼습니다.");
+        }
+
+        // ── ③ 핫바 병합 ───────────────────────────────────────────────
+
+        static void MergeHotbarIntoMain(SaveFile f)
+        {
+            if (Module(f, "player") is not JObject player || player["containers"] is not JObject bag) return;
+            var hot = bag["hotbar"] as JObject;
+            var main = bag["main"] as JObject;
+            bag.Remove("hotbar");
+            if (hot == null && main == null) return;
+
+            int hotSlots = (int?)hot?["slotCount"] ?? 0;
+            int mainSlots = (int?)main?["slotCount"] ?? 0;
+            var merged = new JObject { ["slotCount"] = hotSlots + mainSlots };
+            var slots = new JArray();
+            int hotItems = 0, mainItems = 0;
+            foreach (var s in Arr(hot?["slots"])) { slots.Add(s.DeepClone()); hotItems++; }   // 핫바 칸은 그대로 앞에
+            foreach (var s in Arr(main?["slots"]))                                             // 옛 가방 칸은 핫바 칸 수만큼 뒤로
+            {
+                var c = (JObject)s.DeepClone();
+                c["i"] = ((int?)c["i"] ?? 0) + hotSlots;
+                slots.Add(c); mainItems++;
+            }
+            merged["slots"] = slots;
+            bag[InventoryModule.RoleMain] = merged;
+
+            Debug.Log($"[Save] v1 → v2 ③: 핫바 {hotSlots}칸({hotItems}종) + 가방 {mainSlots}칸({mainItems}종) → main {hotSlots + mainSlots}칸으로 합쳤습니다.");
         }
 
         // ── 공통 ─────────────────────────────────────────────────────
