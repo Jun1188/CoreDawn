@@ -169,6 +169,11 @@ for b in d['buildings']:
         pass   # Inventory만
     else:
         raise SystemExit('unknown building kind ' + kind)
+    # 사망 드롭: 정의된 목록(둥지의 괴수핵) 또는 그릇 내용물(버퍼가 있는 건물은 기본으로 떨군다)
+    if b.get('drops') or b.get('inputSlots', 0) > 0 or b.get('outputSlots', 0) > 0:
+        loot = {'type': 'Loot'}
+        if b.get('drops'): loot['drops'] = amounts(b['drops'])
+        mods.append(loot)
     o['modules'] = mods
     view = {k: b[k] for k in ('model', 'modelGuid', 'modelCurveL', 'modelCurveLGuid', 'modelCurveR', 'modelCurveRGuid') if b.get(k)}
     if view:

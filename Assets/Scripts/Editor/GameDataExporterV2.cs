@@ -222,6 +222,13 @@ namespace CoreDawn.EditorTools
                     case "Tree": case "Storage": break;
                     default: throw new InvalidOperationException("unknown building kind " + kind);
                 }
+                // 사망 드롭: 정의된 목록(둥지의 괴수핵) 또는 그릇 내용물(버퍼가 있는 건물은 기본으로 떨군다)
+                if (Arr(b["drops"]).Count > 0 || inSlots > 0 || outSlots > 0)
+                {
+                    var loot = new JObject { ["type"] = "Loot" };
+                    if (Arr(b["drops"]).Count > 0) loot["drops"] = Amounts(b["drops"]);
+                    mods.Add(loot);
+                }
                 o["modules"] = mods;
                 var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid");
                 if (view.Count > 0) o["view"] = view;

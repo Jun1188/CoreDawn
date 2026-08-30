@@ -1124,6 +1124,9 @@
         {
           "type": "Extractor",
           "speedMultiplier": 1.0
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1187,6 +1190,9 @@
         {
           "type": "Extractor",
           "speedMultiplier": 2.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1256,6 +1262,9 @@
             "coredawn:recipe/copper_ingot",
             "coredawn:recipe/refined_crystal"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1331,6 +1340,9 @@
             "coredawn:recipe/copper_wire",
             "coredawn:recipe/energy_cell_ammo"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1423,6 +1435,9 @@
             "coredawn:recipe/shotgun",
             "coredawn:recipe/sniper"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1518,6 +1533,9 @@
             "coredawn:recipe/control_module",
             "coredawn:recipe/energy_rifle"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1583,6 +1601,9 @@
           "carryCapacity": 20,
           "droneRange": 60,
           "travelSpeed": 8
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1644,6 +1665,9 @@
         {
           "type": "Conveyor",
           "speedTilesPerSec": 1.0
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1713,6 +1737,9 @@
         {
           "type": "Conveyor",
           "speedTilesPerSec": 2.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1787,6 +1814,9 @@
         {
           "type": "Router",
           "mode": "split"
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1865,6 +1895,9 @@
         {
           "type": "Router",
           "mode": "merge"
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1962,6 +1995,9 @@
           "type": "Inventory",
           "input": 12,
           "output": 1
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -2175,6 +2211,9 @@
               "isFinal": true
             }
           ]
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -2329,6 +2368,9 @@
             "coredawn:item/crystal_ammo"
           ],
           "damageMultiplier": 1.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2403,6 +2445,9 @@
             "coredawn:item/crystal_ammo"
           ],
           "damageMultiplier": 2.2
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2476,6 +2521,9 @@
             "coredawn:item/grenade"
           ],
           "damageMultiplier": 3.5
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2549,6 +2597,9 @@
             "coredawn:item/energy_cell_ammo"
           ],
           "damageMultiplier": 2.8
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2614,6 +2665,9 @@
             "coredawn:item/energy_cell_ammo"
           ],
           "damageMultiplier": 0.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2642,6 +2696,15 @@
         },
         {
           "type": "NestSpawner"
+        },
+        {
+          "type": "Loot",
+          "drops": [
+            {
+              "item": "coredawn:item/beast_core",
+              "amount": 1
+            }
+          ]
         }
       ]
     },
