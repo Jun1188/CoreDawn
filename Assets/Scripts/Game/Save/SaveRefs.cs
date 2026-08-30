@@ -32,7 +32,7 @@ namespace CoreDawn.Save
             if (string.IsNullOrEmpty(id)) return null;
             var db = SimHost.Database;
             if (db == null) { WarnOnce("__pack", "팩 정의가 로드되지 않아 아이템을 복원할 수 없습니다."); return null; }
-            var def = db.Item(db.LegacyId(id));
+            var def = db.Item(id);
             if (def == null) WarnOnce(id, $"세이브의 아이템 id \"{id}\"가 팩에 없습니다 — 그 항목은 건너뜁니다.");
             return def;
         }
@@ -41,13 +41,13 @@ namespace CoreDawn.Save
 
         // ── 건물 ──────────────────────────────────────────────────────
 
-        /// <summary>건물 정의 — 세이브의 id는 v2 id다. 옛 세이브의 "Building:Belt"도 LegacyId로 읽는다.</summary>
+        /// <summary>건물 정의 — 세이브의 id는 팩 id다. 옛 id는 SaveMigrations(v1→v2)가 이미 바꿔 놓았다 — 여기서 받아 주지 않는다.</summary>
         public static EntityDef Building(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
             var db = SimHost.Database;
             if (db == null) { WarnOnce("__pack", "팩 정의(SimHost.Database)가 없습니다 — 건물 복원이 전부 실패합니다."); return null; }
-            var def = db.Entity(id) ?? db.Entity(db.LegacyId(id));
+            var def = db.Entity(id);
             if (def == null) WarnOnce(id, $"건물 '{id}' 정의를 찾지 못했습니다 — 이 건물은 복원되지 않습니다.");
             return def;
         }
@@ -61,7 +61,7 @@ namespace CoreDawn.Save
             if (string.IsNullOrEmpty(id)) return null;
             var db = SimHost.Database;
             if (db == null) { WarnOnce("__pack", "팩 정의가 로드되지 않아 레시피를 복원할 수 없습니다."); return null; }
-            var def = db.Recipe(db.LegacyId(id));
+            var def = db.Recipe(id);
             if (def == null) WarnOnce(id, $"세이브의 레시피 id \"{id}\"가 팩에 없습니다 — 그 항목은 건너뜁니다.");
             return def;
         }

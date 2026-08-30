@@ -49,8 +49,8 @@ namespace CoreDawn.Factory
         public BeltShape Shape { get; }
 
         // 런타임 상태 — 입력/출력 버퍼 분리 (슬롯 기반, 플레이어 인벤토리와 같은 모델)
-        public ItemContainer Input  { get; }
-        public ItemContainer Output { get; }
+        public ItemContainer Input  { get; private set; }
+        public ItemContainer Output { get; private set; }
 
         /// <summary>FactorySystem.Remove가 설정. 제거 후 큐/힙에 남은 참조를 걸러낸다.</summary>
         public bool IsRemoved { get; set; }
@@ -59,7 +59,7 @@ namespace CoreDawn.Factory
         public readonly List<BuildingConnection> InputConnections  = new();
         public readonly List<BuildingConnection> OutputConnections = new();
 
-        readonly IBuildingBehavior _behavior;
+        IBuildingBehavior _behavior;
 
         public BuildingModule(FactorySystem factory, EntityDef def, Vector2Int origin, int rotSteps,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, bool ownsEntity = true)
@@ -76,12 +76,7 @@ namespace CoreDawn.Factory
             Shape         = shape;
             OwnsEntity    = ownsEntity;
 
-            // 버퍼 크기는 정의의 Inventory 모듈 — 없으면 슬롯 1(ItemContainer의 최소)
-            var inventory = def.Get<InventoryModuleDef>();
-            Input  = new ItemContainer(inventory?.Input  ?? 0, inventory?.StackCap ?? 0);
-            Output = new ItemContainer(inventory?.Output ?? 0, inventory?.StackCap ?? 0);
-
-            _behavior = BuildingBehaviors.Create(this);
+            // 그릇(Input/Output)과 행동은 OnAttach에서 — 엔티티의 Inventory 모듈(정의가 만든다)이 있어야 한다
         }
 
         /// <summary>사람이 읽는 이름 — 정의의 displayName, 없으면 id.</summary>
@@ -122,7 +117,16 @@ namespace CoreDawn.Factory
         /// ② 행동이 인터셉터면(코어의 보호막) 남은 몫을 그쪽에 넘긴다.
         /// </summary>
         // 받는 피해 체인 등록 — 아군 무시·행동 인터셉터(코어 보호막)는 Health의 체인에서 돈다
-        protected internal override void OnAttach() => Owner.Health?.AddInterceptor(this);
+        protected internal override void OnAttach()
+        {
+            // 그릇은 엔티티의 Inventory 모듈(정의가 만든다). 없는 건물(나무·둥지·울타리)은 0칸 그릇 — 아무것도 받지 않는다
+            var inventory = Owner.Get<InventoryModule>();
+            Input  = inventory?.Input  ?? new ItemContainer(0);
+            Output = inventory?.Output ?? new ItemContainer(0);
+            // 행동은 그릇·정의가 갖춰진 뒤에 — 조립기는 생성자에서 입력 필터를 건다
+            _behavior = BuildingBehaviors.Create(this);
+            Owner.Health?.AddInterceptor(this);
+        }
         protected internal override void OnDetach() => Owner.Health?.RemoveInterceptor(this);
 
         public float Intercept(float amount, Entity source)

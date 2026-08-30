@@ -192,7 +192,7 @@ namespace CoreDawn.UI
         {
             var holder = PlayerInventoryHolder.Instance;
             if (holder == null) return -1;
-            return holder.MainContainer.CountOf(item) + holder.HotbarContainer.CountOf(item);
+            return holder.MainContainer.CountOf(item);
         }
     }
 }

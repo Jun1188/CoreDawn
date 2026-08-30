@@ -12,6 +12,8 @@ namespace CoreDawn.Sim
 
         [JsonIgnore] public List<RecipeDef> Recipes { get; } = new List<RecipeDef>();
 
+        public override EntityModule Create(Entity entity) => new CrafterModule(this);
+
         public override void Resolve(SimDatabase db, List<string> errors, string owner)
         {
             Recipes.Clear();

@@ -18,7 +18,7 @@ namespace CoreDawn.Factory
             var def = b.Def;
             if (def.Has<ConveyorModuleDef>()) return new BeltBehavior(b);
 
-            var crafter = def.Get<CrafterModuleDef>();
+            var crafter = b.Owner.Get<CrafterModule>();   // 정의의 Crafter가 만든 모듈 — 행동은 공장과 모듈 사이의 어댑터
             if (crafter != null) return new AssemblerBehavior(b, crafter);
 
             var extractor = def.Get<ExtractorModuleDef>();

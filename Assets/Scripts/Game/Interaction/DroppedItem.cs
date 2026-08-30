@@ -5,12 +5,27 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
 using CoreDawn.Sim;
+using UnityEngine.Serialization;
 
 namespace CoreDawn.Interaction
 {
     public class DroppedItem : Interactable
     {
-        public ItemDef item;
+        // 씬에 미리 놓는 더미(StartItem_* 마커·저작 드롭)는 SO로 적는다 — 정의(ItemDef)는 Unity가 직렬화하지 않는다.
+        // 옛 필드 이름 "item"을 그대로 읽어 기존 씬이 깨지지 않는다. 런타임 스폰은 Setup이 정의를 바로 넣는다.
+        [SerializeField, FormerlySerializedAs("item")] ItemDataSO authoredItem;
+        ItemDef runtimeItem;
+
+        /// <summary>이 더미의 아이템 정의. 씬 저작(SO)은 첫 조회에서 정의로 풀린다.</summary>
+        public ItemDef item
+        {
+            get
+            {
+                if (runtimeItem == null && authoredItem != null) runtimeItem = authoredItem.Def;
+                return runtimeItem;
+            }
+            private set => runtimeItem = value;
+        }
         public int amount;
 
         /// <summary>핑 이름 — "철판 ×3". 프롬프트("xN 줍기")는 동사가 붙어 있어 알림용 이름으로는 맞지 않는다.</summary>
@@ -138,6 +153,7 @@ namespace CoreDawn.Interaction
             if (!gameObject.activeSelf) return;
 
             item = null;
+            authoredItem = null;   // 저작 더미가 풀로 돌아오면 더는 그 아이템이 아니다
             amount = 0;
             promptMessage = null;
             // 이름은 되돌린다 — WorldPopulator가 시작 아이템에 "StartItem_*"를 붙이는데,

@@ -11,6 +11,7 @@ using CoreDawn.ResourceNodes;
 using CoreDawn.UI;
 using CoreDawn.Data;
 using CoreDawn.Sim;
+using CoreDawn.Combat;
 
 namespace CoreDawn.Tutorial
 {
@@ -81,15 +82,14 @@ namespace CoreDawn.Tutorial
             _probe = probe;
             if (_probe != null) _probe.Performed += OnPerformed;
 
-            InventoryPanelView.HandCrafted -= OnHandCrafted;
-            InventoryPanelView.HandCrafted += OnHandCrafted;
+            HookPlayerCrafter();
         }
 
         public void Detach()
         {
             if (_probe != null) _probe.Performed -= OnPerformed;
             _probe = null;
-            InventoryPanelView.HandCrafted -= OnHandCrafted;
+            UnhookPlayerCrafter();
             UnhookSim();
             UnhookMotion();
         }
@@ -135,16 +135,39 @@ namespace CoreDawn.Tutorial
         }
 
         /// <summary>손 제작 1회. 레시피가 여러 개를 내면 산출 개수만큼 센다.</summary>
-        void OnHandCrafted(RecipeDataSO r)
+        void OnHandCrafted(RecipeDef r)
         {
-            if (r == null || r.outputs == null) return;
-
-            foreach (var o in r.outputs)
+            if (r == null) return;
+            foreach (var o in r.Outputs)
             {
-                if (o.item == null || o.amount <= 0) continue;
-                _crafted.TryGetValue(o.item.type, out int had);
-                _crafted[o.item.type] = had + o.amount;
+                if (o.Item == null || o.Amount <= 0) continue;
+                _crafted.TryGetValue(o.Item.Type, out int had);
+                _crafted[o.Item.Type] = had + o.Amount;
             }
+        }
+
+        CrafterModule _playerCrafter;
+
+        /// <summary>플레이어 엔티티의 제작 모듈(수제작)을 듣는다 — 엔티티는 심이 만들므로 Spawned도 함께 본다. 조립기는 다른 모듈이라 섞이지 않는다.</summary>
+        void HookPlayerCrafter()
+        {
+            SimRunner.Players.Spawned -= OnPlayerSpawned;
+            SimRunner.Players.Spawned += OnPlayerSpawned;
+            if (SimRunner.Players.Entity != null) OnPlayerSpawned(SimRunner.Players.Entity);
+        }
+
+        void OnPlayerSpawned(Entity e)
+        {
+            if (_playerCrafter != null) _playerCrafter.Crafted -= OnHandCrafted;
+            _playerCrafter = e?.Get<CrafterModule>();
+            if (_playerCrafter != null) _playerCrafter.Crafted += OnHandCrafted;
+        }
+
+        void UnhookPlayerCrafter()
+        {
+            SimRunner.Players.Spawned -= OnPlayerSpawned;
+            if (_playerCrafter != null) _playerCrafter.Crafted -= OnHandCrafted;
+            _playerCrafter = null;
         }
 
         void UnhookSim()
@@ -312,7 +335,6 @@ namespace CoreDawn.Tutorial
 
             int n = 0;
             if (h.MainContainer != null) n += h.MainContainer.CountOf(item);
-            if (h.HotbarContainer != null) n += h.HotbarContainer.CountOf(item);
             return n;
         }
 
@@ -320,7 +342,7 @@ namespace CoreDawn.Tutorial
         {
             var h = PlayerInventoryHolder.Instance;
             if (h == null) return 0;
-            return CountOfTypeIn(h.MainContainer, type) + CountOfTypeIn(h.HotbarContainer, type);
+            return CountOfTypeIn(h.MainContainer, type);
         }
 
         /// <summary>Snapshot()은 호출마다 리스트를 만든다 — 0.2초마다 도는 경로라 칸을 직접 훑는다.</summary>
@@ -332,7 +354,7 @@ namespace CoreDawn.Tutorial
             for (int i = 0; i < c.SlotCount; i++)
             {
                 var s = c.PeekAt(i);
-                if (s == null || s.item == null || s.amount <= 0) continue;
+                if (s.IsEmpty) continue;
                 if (s.item.Type == type) n += s.amount;
             }
             return n;

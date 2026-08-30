@@ -43,8 +43,8 @@ namespace CoreDawn.Save
             [JsonProperty("origin")] public Vector2Int Origin;
             [JsonProperty("rot")] public int RotationSteps;
             [JsonProperty("shape")] public BeltShape Shape;
-            [JsonProperty("in")] public SaveContainerDto Input;
-            [JsonProperty("out")] public SaveContainerDto Output;
+            /// <summary>역할별 그릇(input·output…). 역할 이름은 InventoryModule이 붙인다 — v3부터(옛 in/out은 SaveMigrations가 옮긴다).</summary>
+            [JsonProperty("containers")] public Dictionary<string, SaveContainerDto> Containers = new();
 
             /// <summary>내구도 — 코어는 수리로 최대치가 올라가므로 SO 값이 아니라 인스턴스 값이다.</summary>
             [JsonProperty("hpMax")] public float HpMax;
@@ -91,8 +91,7 @@ namespace CoreDawn.Save
                     Origin = b.Origin,
                     RotationSteps = b.RotationSteps,
                     Shape = b.Shape,
-                    Input = SaveContainerDto.From(b.Input),
-                    Output = SaveContainerDto.From(b.Output),
+                    Containers = SaveContainers.Capture(b.Owner?.Get<InventoryModule>()),
                     HpMax = hp != null ? hp.MaxHealth : 0f,
                     HpCurrent = hp != null ? hp.CurrentHealth : 0f,
                     Behavior = b.Behavior is ISaveableBehavior s ? SaveJson.ToToken(s.CaptureState()) : null,
@@ -147,7 +146,7 @@ namespace CoreDawn.Save
             foreach (var existing in boot.Buildings.Where(b => b != null && !b.IsRemoved).ToList())
             {
                 if (wanted.TryGetValue(existing.Origin, out var want) &&
-                    SaveRefs.Building(want.DataId) == existing.Def &&   // 옛 id도 정의로 풀어 비교
+                    SaveRefs.Building(want.DataId) == existing.Def &&
                     want.RotationSteps == existing.RotationSteps)
                     continue;   // 그대로 재사용한다
 
@@ -184,8 +183,7 @@ namespace CoreDawn.Save
                     }
                 }
 
-                want.Input?.ApplyTo(b.Input);
-                want.Output?.ApplyTo(b.Output);
+                SaveContainers.Restore(want.Containers, b.Owner?.Get<InventoryModule>(), want.DataId);
 
                 // 행동 상태가 먼저 들어가야 한다 — 코어가 보호막을 최대치로 자르는 등
                 // 상태에 따라 달라지는 판단이 있고, 그 최대치는 티어(이미 복원됨)에서 나온다

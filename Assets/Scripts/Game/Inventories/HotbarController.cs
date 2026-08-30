@@ -5,6 +5,7 @@ using CoreDawn.Factory;
 using CoreDawn.Inputs;
 using CoreDawn.Interaction;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Inventories
 {
@@ -13,10 +14,8 @@ namespace CoreDawn.Inventories
     {
         public static HotbarController Instance { get; private set; }
 
-        // ★ HotbarContainer 참조로 변경
-        public int hotbarSlotCount => PlayerInventoryHolder.Instance != null && PlayerInventoryHolder.Instance.HotbarContainer != null 
-            ? PlayerInventoryHolder.Instance.HotbarContainer.SlotCount 
-            : 9;
+        // 핫바 = 소지품(MainContainer)의 앞 HotbarSize칸. 그릇은 하나다
+        public int hotbarSlotCount => PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarSize : 9;
 
         [SerializeField] private PlayerController player;
 
@@ -52,7 +51,7 @@ namespace CoreDawn.Inventories
             // 핫바 내용이 바뀌면(인벤 조작·제작·줍기·드롭 무엇이든) 장착을 스스로 맞춘다.
             // 바꾸는 쪽이 "장착도 갱신해 달라"고 부르던 호출들(구 RefreshAllGameUIs)이 전부 사라진다 —
             // 호출을 한 군데라도 빠뜨리면 손에 든 무기와 핫바가 어긋나던 문제도 함께 사라진다.
-            watched = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
+            watched = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.MainContainer : null;
             if (watched != null) watched.Changed += EquipFromActiveSlot;
 
             // 첫 장착은 한 프레임 미룬다. PlayerInventoryHolder는 Awake에 시작 핫바를 채우는데
@@ -73,7 +72,7 @@ namespace CoreDawn.Inventories
             if (e.Phase != InputActionPhase.Performed) return false;
 
             var holder = PlayerInventoryHolder.Instance;
-            int slotCount = holder != null && holder.HotbarContainer != null ? holder.HotbarContainer.SlotCount : 9;
+            int slotCount = holder != null ? holder.HotbarSize : 9;
 
             switch (e.Id)
             {
@@ -119,11 +118,11 @@ namespace CoreDawn.Inventories
         {
             var holder = PlayerInventoryHolder.Instance;
             var weaponManager = player != null ? player.weaponManager : null;
-            if (holder == null || holder.HotbarContainer == null || weaponManager == null) return;
-            if (currentHotbarIndex < 0 || currentHotbarIndex >= holder.HotbarContainer.SlotCount) return;
+            if (holder == null || holder.MainContainer == null || weaponManager == null) return;
+            if (currentHotbarIndex < 0 || currentHotbarIndex >= holder.HotbarSize) return;
 
-            var slot = holder.HotbarContainer.PeekAt(currentHotbarIndex);
-            var so = slot != null ? ItemAssets.Of(slot.item) : null;
+            var slot = holder.MainContainer.PeekAt(currentHotbarIndex);
+            var so = !slot.IsEmpty ? ItemAssets.Of(slot.item) : null;
             if (so != null && so.TryGetModule<WeaponModuleSO>(out var weaponModule))
                 weaponManager.EquipWeapon(weaponModule.gun);
             else
@@ -133,20 +132,18 @@ namespace CoreDawn.Inventories
         private void DropActiveItem()
         {
             var holder = PlayerInventoryHolder.Instance;
-            if (player == null || holder == null || holder.HotbarContainer == null) return;
+            if (player == null || holder == null || holder.MainContainer == null) return;
 
-            var container = holder.HotbarContainer;
-            if (container.SlotCount <= currentHotbarIndex) return;
+            var container = holder.MainContainer;
+            if (currentHotbarIndex < 0 || currentHotbarIndex >= holder.HotbarSize) return;   // 핫바 = 앞 HotbarSize칸
 
             ItemStack slot = container.PeekAt(currentHotbarIndex);
-            if (slot == null || slot.item == null || slot.amount <= 0) return;
+            if (slot.IsEmpty) return;
 
             Vector3 spawnPos = player.transform.position + player.playerCamera.forward * 1.5f + Vector3.up * 0.5f;
             DroppedItem.Spawn(slot.item, 1, spawnPos, player.playerCamera.forward);
 
-            slot.amount--;
-            container.Touch();   // Changed → 위 구독이 장착을, HUD가 표시를 스스로 맞춘다
-            if (slot.amount <= 0) container.TakeAt(currentHotbarIndex);
+            container.SetAt(currentHotbarIndex, slot.With(slot.amount - 1));   // Changed → 위 구독이 장착을, HUD가 표시를 스스로 맞춘다
         }
     }
 }

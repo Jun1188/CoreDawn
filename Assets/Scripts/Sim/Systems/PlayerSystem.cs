@@ -25,6 +25,20 @@ namespace CoreDawn.Sim
         }
 
         /// <summary>플레이어 엔티티를 만든다. 이미 살아 있으면 그것을 돌려준다(씬 재진입·중복 부착 안전).</summary>
+        /// <summary>정의(coredawn:entity/player)로 조립 — Health·Effects·Inventory·Crafter가 팩 json에서 온다. 이미 있으면 그것.</summary>
+        public Entity Spawn(EntityDef def, Vector3 position)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (Entity != null && !Entity.IsRemoved) return Entity;
+            var e = world.Create(def.Faction, position);
+            def.Assemble(e);
+            if (e.Health == null) e.Add(new HealthModule(100f));   // Health가 빠진 팩 — 죽지 않는 플레이어보다 기본값이 낫다
+            Entity = e;
+            Spawned?.Invoke(e);
+            return e;
+        }
+
+        /// <summary>팩 없는 씬의 폴백 — Health·Effects만. 가방·제작 모듈은 호출자가 붙인다.</summary>
         public Entity Spawn(float maxHp, Vector3 position)
         {
             if (Entity != null && !Entity.IsRemoved) return Entity;

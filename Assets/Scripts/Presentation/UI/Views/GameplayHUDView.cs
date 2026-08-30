@@ -142,7 +142,7 @@ namespace CoreDawn.UI
             Show(deathOverlay, false);
             BindPlayerIfNeeded();
 
-            hotbar = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
+            hotbar = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.MainContainer : null;   // 핫바 = 앞 HotbarSize칸
             if (hotbar != null) hotbar.Changed += RebuildHotbar;
             shownHotbarIndex = -1;
             RebuildHotbar();
@@ -591,16 +591,17 @@ namespace CoreDawn.UI
             hotbarRow.Clear();
             shownHotbarIndex = HotbarController.Instance != null ? HotbarController.Instance.CurrentHotbarIndex : -1;
 
-            for (int i = 0; i < hotbar.SlotCount; i++)
+            int hotbarSize = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarSize : 0;
+            for (int i = 0; i < hotbarSize; i++)
             {
                 var stack = hotbar.PeekAt(i);
-                bool empty = stack == null || stack.item == null || stack.amount <= 0;
+                bool empty = stack.IsEmpty;
 
                 var slot = new VisualElement { pickingMode = PickingMode.Ignore };
                 slot.AddToClassList("ui-slot");
                 if (empty) slot.AddToClassList("ui-slot--empty");
                 if (i == shownHotbarIndex) slot.AddToClassList("ui-slot--active");
-                if (i == hotbar.SlotCount - 1) slot.AddToClassList("ui-slot--last");
+                if (i == hotbarSize - 1) slot.AddToClassList("ui-slot--last");
 
                 var key = new Label((i + 1).ToString()) { pickingMode = PickingMode.Ignore };
                 key.AddToClassList("ui-slot__key");

@@ -67,7 +67,6 @@ namespace CoreDawn.UI
         int builtForTier = -1;
 
         // 구독 해제를 위해 붙잡아 두는 참조 — Bind 시점의 것과 같아야 한다
-        ItemContainer subCore, subHotbar, subBag;
 
         // ───────────────────────── 열기 ─────────────────────────
 
@@ -393,14 +392,14 @@ namespace CoreDawn.UI
 
         // ──────────────── 컨테이너 구독 (폴링 대체) ────────────────
 
+        ItemContainer subCore, subBag;   // 코어 입력 · 플레이어 소지품(핫바 포함, 그릇 하나)
+
         void Subscribe()
         {
             subCore = target != null ? target.Container : null;
-            subHotbar = Hotbar;
             subBag = Bag;
 
             if (subCore != null) subCore.Changed += OnContainerChanged;
-            if (subHotbar != null) subHotbar.Changed += OnContainerChanged;
             if (subBag != null) subBag.Changed += OnContainerChanged;
 
             // 요구가 다 채워지면 버튼이 "납품"에서 "수리 시작"으로 바뀐다 (SCR-01b)
@@ -417,9 +416,8 @@ namespace CoreDawn.UI
         void Unsubscribe()
         {
             if (subCore != null) subCore.Changed -= OnContainerChanged;
-            if (subHotbar != null) subHotbar.Changed -= OnContainerChanged;
             if (subBag != null) subBag.Changed -= OnContainerChanged;
-            subCore = subHotbar = subBag = null;
+            subCore = subBag = null;
 
             if (target != null) target.ReadyChanged -= OnContainerChanged;
             if (target != null) target.ShieldChanged -= OnShieldChanged;
@@ -857,8 +855,6 @@ namespace CoreDawn.UI
 
         // ───────────────────── 플레이어 인벤토리 ─────────────────────
 
-        static ItemContainer Hotbar =>
-            PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
 
         static ItemContainer Bag =>
             PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.MainContainer : null;
@@ -866,22 +862,15 @@ namespace CoreDawn.UI
         static int PlayerCountOf(ItemDataSO item)
         {
             int n = 0;
-            if (Hotbar != null) n += Hotbar.CountOf(item);
             if (Bag != null) n += Bag.CountOf(item);
             return n;
         }
 
-        /// <summary>가방부터 소진하고 모자라면 핫바에서 뺀다 — 핫바를 최대한 유지한다.</summary>
+        /// <summary>소지품에서 뺀다 — 그릇이 뒤 칸(가방)부터 빼므로 핫바(장착)는 마지막에 줄어든다.</summary>
         static bool PlayerConsume(ItemDataSO item, int n)
         {
-            if (n <= 0 || PlayerCountOf(item) < n) return false;
-
-            int fromBag = Bag != null ? Mathf.Min(n, Bag.CountOf(item)) : 0;
-            if (fromBag > 0) Bag.TryConsume(item, fromBag);
-
-            int rest = n - fromBag;
-            if (rest > 0 && Hotbar != null) Hotbar.TryConsume(item, rest);
-            return true;
+            if (n <= 0 || Bag == null || PlayerCountOf(item) < n) return false;
+            return Bag.TryConsume(item, n);
         }
 
         // ───────────────────────── 잡동사니 ─────────────────────────

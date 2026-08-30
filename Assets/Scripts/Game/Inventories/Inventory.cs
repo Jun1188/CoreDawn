@@ -7,30 +7,6 @@ using CoreDawn.Sim;
 
 namespace CoreDawn.Inventories
 {
-    [Serializable]
-    public class ItemStack
-    {
-        /// <summary>아이템 데이터를 모를 때만 쓰는 폴백 — 정상 경로에서는 항상 SO 값이 이긴다.</summary>
-        public const int DefaultMaxStack = 64;
-
-        public ItemDef item; // 팀원들이 만든 아이템 원본 데이터
-        public int amount;      // 현재 쌓인 개수
-
-        // 상한은 스택이 들고 있지 않다. 예전의 maxStackSize 필드는 같은 아이템인데도 어디서
-        // 생겼느냐로 값이 갈렸고(세이브가 그 값을 굳혀 데이터 조정이 기존 세이브에 닿지 못했다),
-        // 인스펙터에 저작한 값은 정작 아무도 읽지 않았다.
-        //
-        // "이 스택은 몇 개까지 쌓이나"는 스택만 봐서는 답이 없는 질문이다 — 같은 탄약도
-        // 가방에서는 100개, 포탑 탄약함에서는 20개다. 담는 그릇을 알아야 하므로
-        // ItemContainer.CapFor(item) / RoomAt(slot, item)에 물을 것.
-
-        public ItemStack(ItemDef item, int amount)
-        {
-            this.item = item;
-            this.amount = amount;
-        }
-    }
-
     /// <summary>
     /// 아이템 보관의 씬 접점 — 내부는 전부 ItemContainer(plain C#)에 위임한다.
     /// 플레이어 가방·상자는 자기 컨테이너를 만들고, 건물 보관함 화면은 Bind()로
@@ -44,7 +20,7 @@ namespace CoreDawn.Inventories
         public int slotCount = 36; // 마크 인벤토리 기본 칸수
 
         [Tooltip("시작 아이템 — 씬/프리팹에서 저작 (상자 초기 내용물 등). 슬롯 위치 그대로 컨테이너에 주입된다.\n런타임 상태는 Container가 소유하며 이 배열로 되돌아오지 않는다.")]
-        [SerializeField] private ItemStack[] slots;   // 구 공개 배열과 같은 이름 — 기존 씬 직렬화 데이터 유지
+        [SerializeField] private ItemStackAuthoring[] slots;   // SO 저작 — 심의 ItemStack(정의)은 직렬화되지 않는다   // 구 공개 배열과 같은 이름 — 기존 씬 직렬화 데이터 유지
 
         private ItemContainer container;
 
@@ -70,8 +46,8 @@ namespace CoreDawn.Inventories
             if (SaveLoadContext.IsRestoring) return;
             for (int i = 0; i < slots.Length && i < container.SlotCount; i++)
             {
-                var s = slots[i];
-                if (s == null || s.item == null || s.amount <= 0) continue;
+                var s = slots[i] != null ? slots[i].ToStack() : ItemStack.Empty;   // SO 저작 → 정의 스택 (팩에 없는 아이템은 건너뛴다)
+                if (s.IsEmpty) continue;
                 // 상한 초과로 저작해 두면 TryPutAt이 통째로 거절한다 — 저작 실수로 상자가
                 // 텅 비어 열리는 것보다 들어가는 만큼이라도 넣는 편이 낫다
                 int fit = Mathf.Min(s.amount, container.CapFor(s.item));
@@ -105,11 +81,11 @@ namespace CoreDawn.Inventories
 
         // ── 위치(슬롯 인덱스) 연산 — UI 드래그·분할·교환용 위임 ──────
 
-        /// <summary>슬롯의 스택 (없거나 범위 밖이면 null). amount를 직접 수정했다면 Touch()를 호출할 것.</summary>
-        public ItemStack GetAt(int i) => InRange(i) ? Container.PeekAt(i) : null;
+        /// <summary>슬롯의 스택(없거나 범위 밖이면 빈 스택). 값이라 고쳐도 그릇은 바뀌지 않는다 — Container.SetAt을 쓸 것.</summary>
+        public ItemStack GetAt(int i) => InRange(i) ? Container.PeekAt(i) : ItemStack.Empty;
 
         /// <summary>슬롯의 스택을 통째로 꺼낸다 (픽업).</summary>
-        public ItemStack TakeAt(int i) => InRange(i) ? Container.TakeAt(i) : null;
+        public ItemStack TakeAt(int i) => InRange(i) ? Container.TakeAt(i) : ItemStack.Empty;
 
         /// <summary>빈 슬롯에 놓기. 규칙 위반이면 false.</summary>
         public bool TryPutAt(int i, ItemStack stack) => InRange(i) && Container.TryPutAt(i, stack);
@@ -117,7 +93,7 @@ namespace CoreDawn.Inventories
         /// <summary>슬롯 스택과 교환 (스왑). 규칙 위반이면 false.</summary>
         public bool TryExchangeAt(int i, ItemStack incoming, out ItemStack previous)
         {
-            previous = null;
+            previous = ItemStack.Empty;
             return InRange(i) && Container.TryExchangeAt(i, incoming, out previous);
         }
 

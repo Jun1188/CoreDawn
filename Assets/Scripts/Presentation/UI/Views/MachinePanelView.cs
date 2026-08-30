@@ -172,22 +172,19 @@ namespace CoreDawn.UI
         {
             var b = target?.Building;
             if (b == null) { base.QuickMove(src, index); return; }
-
             var stack = src.PeekAt(index);
-            if (stack == null || stack.item == null || stack.amount <= 0) return;
-
+            if (stack.IsEmpty) return;
             if (src == b.Input || src == b.Output)
             {
-                MoveStack(stack, Main);
-                if (stack.amount > 0) MoveStack(stack, Hotbar);
+                // 설비 → 플레이어: 소지품 앞 칸(핫바)부터
+                stack = MoveStack(stack, Main);   // 앞 칸(핫바)부터 찬다
             }
             else
             {
-                MoveStack(stack, b.Input);
+                // 플레이어 → 설비 입력(재료만 — AcceptFilter가 거른다)
+                stack = MoveStack(stack, b.Input);
             }
-
-            src.Touch();
-            if (stack.amount <= 0) src.TakeAt(index);
+            src.SetAt(index, stack);   // 남은 몫(없으면 빈 슬롯)
         }
 
         void OnSearchChanged(ChangeEvent<string> e)

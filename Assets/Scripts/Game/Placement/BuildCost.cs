@@ -16,9 +16,6 @@ namespace CoreDawn.Placement
     /// </summary>
     public static class BuildCost
     {
-        static ItemContainer Hotbar =>
-            PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.HotbarContainer : null;
-
         static ItemContainer Bag =>
             PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.MainContainer : null;
 
@@ -31,7 +28,6 @@ namespace CoreDawn.Placement
         {
             if (item == null) return 0;
             int n = 0;
-            if (Hotbar != null) n += Hotbar.CountOf(item);
             if (Bag != null) n += Bag.CountOf(item);
             return n;
         }
@@ -111,14 +107,10 @@ namespace CoreDawn.Placement
             }
         }
 
-        /// <summary>가방부터 소진하고 모자라면 핫바에서 뺀다 — 핫바를 최대한 유지한다.</summary>
+        /// <summary>소지품에서 뺀다 — 그릇이 뒤 칸(가방)부터 빼므로 핫바(장착)는 마지막에 줄어든다.</summary>
         static void Consume(ItemDef item, int n)
         {
-            int fromBag = Bag != null ? Mathf.Min(n, Bag.CountOf(item)) : 0;
-            if (fromBag > 0) Bag.TryConsume(item, fromBag);
-
-            int rest = n - fromBag;
-            if (rest > 0 && Hotbar != null) Hotbar.TryConsume(item, rest);
+            if (Bag != null) Bag.TryConsume(item, n);
         }
     }
 }

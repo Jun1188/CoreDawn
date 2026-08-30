@@ -5,6 +5,7 @@ using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.FPS;
 using CoreDawn.Inventories;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Save
 {
@@ -33,8 +34,8 @@ namespace CoreDawn.Save
             [JsonProperty("hpMax")] public float HpMax;
             [JsonProperty("hpCur")] public float HpCurrent;
 
-            [JsonProperty("hotbar")] public SaveContainerDto Hotbar;
-            [JsonProperty("main")] public SaveContainerDto Main;
+            /// <summary>역할별 그릇(hotbar·main…). 역할 이름은 InventoryModule이 붙인다 — v3부터(옛 hotbar/main은 SaveMigrations가 옮긴다).</summary>
+            [JsonProperty("containers")] public Dictionary<string, SaveContainerDto> Containers = new();
             // craftIn·craftOut은 없다 — 제작 4+1 그릇이 사라졌다(53f6889).
             // UITK 인벤토리가 가방·핫바에서 직접 소모·지급하므로 재료를 맡아둘 그릇이 필요 없다.
             // 옛 세이브에 남아 있는 두 필드는 역직렬화에서 그냥 버려진다.
@@ -72,8 +73,7 @@ namespace CoreDawn.Save
             var holder = PlayerInventoryHolder.Instance;
             if (holder != null)
             {
-                dto.Hotbar = SaveContainerDto.From(holder.HotbarContainer);
-                dto.Main = SaveContainerDto.From(holder.MainContainer);
+                dto.Containers = SaveContainers.Capture(holder.Inventory);
             }
 
             var weapons = Object.FindFirstObjectByType<WeaponManager>();
@@ -103,8 +103,7 @@ namespace CoreDawn.Save
             var holder = PlayerInventoryHolder.Instance;
             if (holder != null)
             {
-                dto.Hotbar?.ApplyTo(holder.HotbarContainer);
-                dto.Main?.ApplyTo(holder.MainContainer);
+                SaveContainers.Restore(dto.Containers, holder.Inventory, "player");
             }
 
             var weapons = Object.FindFirstObjectByType<WeaponManager>();

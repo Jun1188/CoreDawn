@@ -6,6 +6,8 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
 using CoreDawn.Data;
+using CoreDawn.Combat;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -31,7 +33,9 @@ namespace CoreDawn.UI
         // ── 제작 상태 ──
         RecipeDataSO selected;
         bool holding;
-        float progress;          // 현재 1회분 경과 시간(초)
+        // 제작은 플레이어 엔티티의 CrafterModule(심)이 한다 — 이 화면은 누르는 동안 진행시키고 그려 줄 뿐
+        static CrafterModule Crafter => SimRunner.Players.Entity?.Get<CrafterModule>();
+        float progress => Crafter?.ManualProgress ?? 0f;   // 현재 1회분 경과 시간(초)
         string search = "";
 
         // ── 요소 참조 ──
@@ -104,7 +108,8 @@ namespace CoreDawn.UI
             RecipeRewardUnlockService.RecipeUnlocked += OnRecipeRewardUnlocked;
 
             holding = false;
-            progress = 0f;
+            Crafter?.Release();
+            if (Crafter != null) Crafter.Overflow += OnOverflow;
 
             RebuildRecipes();
             RebuildPlayerGrids();
@@ -125,6 +130,7 @@ namespace CoreDawn.UI
             RecipeRewardUnlockService.RecipeUnlocked -= OnRecipeRewardUnlocked;
 
             holding = false;
+            if (Crafter != null) Crafter.Overflow -= OnOverflow;
             UnbindCommon();
         }
 
@@ -159,66 +165,25 @@ namespace CoreDawn.UI
             if (!holding || selected == null || !CanCraftOnce(selected))
             {
                 // 떼면 그 자리에서 멈춘다 — 소비 전이므로 잃는 것이 없다
-                if (progress > 0f) { progress = 0f; RefreshProgress(); }
+                if (progress > 0f) { Crafter?.Release(); RefreshProgress(); }
                 return;
             }
 
-            progress += Time.deltaTime;
-            if (progress >= selected.craftTime)
-            {
-                CraftOnce(selected);
-                progress = 0f;   // 계속 누르고 있으면 다음 1회가 바로 시작된다
-            }
+            Crafter.Hold(selected.Def, Time.deltaTime);   // 완성되면 모듈이 재료를 빼고 결과를 넣는다 (넘치면 Overflow → 바닥)
             RefreshProgress();
         }
 
         /// <summary>재료가 가방+핫바에 전부 있는가 — 진행 중에도 매 프레임 이것으로 판단한다.</summary>
-        bool CanCraftOnce(RecipeDataSO r)
-        {
-            if (r == null || r.inputs == null || Main == null) return false;
-            foreach (var input in r.inputs)
-            {
-                if (input.item == null) continue;
-                if (CountAll(input.item) < input.amount) return false;
-            }
-            return true;
-        }
+        bool CanCraftOnce(RecipeDataSO r) => r != null && r.Def != null && Crafter != null && Crafter.HasIngredients(r.Def);
 
-        void CraftOnce(RecipeDataSO r)
-        {
-            foreach (var input in r.inputs)
-                if (input.item != null) ConsumeAll(input.item, input.amount);
 
-            var holder = PlayerInventoryHolder.Instance;
-            foreach (var output in r.outputs)
-            {
-                if (output.item == null || output.amount <= 0) continue;
-
-                // 가방이 가득이면 바닥에 떨어뜨린다 — 소비는 이미 일어났으므로 잃게 두면 안 된다
-                if (!holder.AddItemToPlayer(output.item, output.amount))
-                    DropToWorld(output.item, output.amount);
-            }
-
-            HandCrafted?.Invoke(r);
-        }
-
-        /// <summary>
-        /// 손으로 한 번 제작할 때마다. 자동 조립기(AssemblerBehavior)는 이 이벤트를 내지 않는다 —
-        /// "플레이어가 직접 만들었는가"를 묻는 관찰자(튜토리얼 등)만 쓰라고 둔 것이다.
-        /// 결과물이 가방에 안 들어가 바닥에 떨어졌더라도 제작 자체는 일어났으므로 발화한다.
-        /// </summary>
-        public static event System.Action<RecipeDataSO> HandCrafted;
 
         int CountAll(ItemDataSO item) =>
-            (Main?.CountOf(item) ?? 0) + (Hotbar?.CountOf(item) ?? 0);
+            Main?.CountOf(item) ?? 0;
 
-        /// <summary>가방부터 소비하고 모자란 만큼 핫바에서 — 핫바의 무기·탄약 배치를 지킨다.</summary>
-        void ConsumeAll(ItemDataSO item, int n)
-        {
-            int fromMain = Mathf.Min(n, Main.CountOf(item));
-            if (fromMain > 0) Main.TryConsume(item, fromMain);
-            if (n - fromMain > 0) Hotbar.TryConsume(item, n - fromMain);
-        }
+
+        /// <summary>결과가 가방·핫바에 안 들어갔다 — 소비는 이미 일어났으므로 바닥에 떨어뜨린다.</summary>
+        void OnOverflow(ItemDef item, int n) => DropToWorld(item, n);
 
         // ───────────────────── 레시피 목록 ─────────────────────
 
@@ -301,7 +266,7 @@ namespace CoreDawn.UI
             row.RegisterCallback<ClickEvent>(_ =>
             {
                 selected = captured;
-                progress = 0f;
+                Crafter?.Release();
                 RebuildRecipes();
             });
             return row;

@@ -29,7 +29,7 @@ namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Prese
 
 | Folder (`Assets/Scripts/…`) | Namespace | What lives there |
 |---|---|---|
-| `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces, `Modules/` = entity modules (`*Module`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
+| `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces, `Inventory/` = `ItemStack`/`ItemContainer` (item storage shared by player and buildings), `Modules/` = entity modules (`*Module`, incl. `InventoryModule`·`CrafterModule`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
 | `Data/**` | `CoreDawn.Data` | every ScriptableObject definition + databases + `EffectEntry`/`EffectSpecs` (items, buildings, recipes, effects, monsters, waves, maps, tutorial, weapons) |
 | `Game/Factory` | `CoreDawn.Factory` | FactorySystem, BuildingModule, belts, processors, bootstrap/bridge; `Behaviors/` = building behaviors (`*Behavior`, `IBuildingBehavior`) chosen from the definition's modules by the `BuildingBehaviors` registry (not by the SOs) |
 | `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
@@ -74,6 +74,18 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   the sim (`PushesPositionToSim`). Creation owners (phase 4, 2026-08-29): buildings = `FactorySystem`, monsters =
   `MonsterSystem`, the player = `PlayerSystem`, nests = `WorldPopulator`. No view creates its own entity any more
   (`CreatesOwnEntity` remains only for legacy scenes).
+- The player is assembled from the pack definition `coredawn:entity/player` (Health·Effects·Inventory `main` 25 slots of which the
+  first `hotbar` 7 are the hotbar window — one container, Minecraft-style; adding fills from the front, consuming takes from the back·Crafter manual;
+  v1 `player` block → exporter). `PlayerInventoryHolder` spawns that entity in Awake and exposes its `InventoryModule` containers;
+  `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
+  is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
+  never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
+  `ItemStack` is a value (`readonly struct`): `PeekAt` returns a copy, so a slot changes only through `SetAt`/`TakeAt`/`TryPutAt`
+  (which notify `Changed`); use `stack.With(n)` for a new amount and `IsEmpty` instead of null checks.
+- Save files: definitions are referenced by pack id only, containers are saved as a role-keyed dictionary (`containers{}`; the role names
+  come from `InventoryModule.Roles`/`ByRole`, nowhere else). **No read-side fallbacks for old ids or old keys** — every format change
+  bumps `SaveFile.CurrentSchemaVersion` and adds one step to `SaveMigrations` that rewrites the JSON, logs what it did, and fails the
+  load if it cannot. Silent "accept both" code is not allowed.
 - Damage, effects and death end inside the sim. Effect *definitions* are `EffectSpec` (converted once per `EffectSO` by
   `EffectSpecs`), a hit is an `Effect[]` (spec + value) applied to the target's `EffectsModule` module; `EffectSystem` ticks
   duration effects. Melee: the sim `AttackModule` module applies directly. Projectiles/auras: PhysX detects the hit, then
