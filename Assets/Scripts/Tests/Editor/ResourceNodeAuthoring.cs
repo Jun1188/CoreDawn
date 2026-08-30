@@ -38,7 +38,7 @@ namespace CoreDawn.Tests
         const float ObstacleDepth  = 0.6f;
         const float ObstacleHeight = 1.2f;
 
-        public static ResourceNode Create(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
+        public static ResourceDepositView Create(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
                                           float interval, int amount, int max, GridSystem grid)
         {
             var go = new GameObject(name);
@@ -47,15 +47,11 @@ namespace CoreDawn.Tests
             center.y = SampleGroundTop(center);      // 오브젝트 원점 = 지면 표면
             go.transform.position = center;
 
-            var node = go.AddComponent<ResourceNode>();
+            // 광맥은 한 칸짜리 심 엔티티 — 수치(재생·상한)는 팩의 광맥 정의가 갖는다. 뷰는 자원만 안다(size·interval·amount·max 인자는 호환용, 무시).
+            size = Vector2Int.one;
+            var node = go.AddComponent<ResourceDepositView>();
             var so = new SerializedObject(node);
             so.FindProperty("resource").objectReferenceValue = ore;
-            so.FindProperty("size").vector2IntValue          = size;
-            so.FindProperty("productionInterval").floatValue = interval;
-            so.FindProperty("amountPerCycle").intValue       = amount;
-            so.FindProperty("maxStock").intValue             = max;
-            so.FindProperty("initialStock").intValue         = 0;
-            so.FindProperty("snapToGrid").boolValue          = true;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // 채굴기 설치는 B키 빌드 메뉴로 통일한다 (배치 규칙은 ResourceNodeRegistry.CanPlace 담당).

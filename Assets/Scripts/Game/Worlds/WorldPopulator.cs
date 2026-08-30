@@ -55,6 +55,7 @@ namespace CoreDawn.Worlds
             if (baked != null)
             {
                 int connected = Connect(world, baked);
+                int lateNodes = PlaceMissingNodes(world, baked);   // 굳힌 씬에 광맥 뷰가 빠졌으면(맵만 바뀌고 씬 저장 전) 런타임이 세우되 소리 낸다
                 var bakedProvider = PlaceNightSpawns(world, baked, battleRoot);
                 Debug.Log($"[WorldPopulator] '{world.Map.Id}' 굳어 있는 배치물을 이었습니다 — {connected}개 · " +
                           $"밤 진입로 {(bakedProvider != null ? bakedProvider.SpawnPoints.Count : 0)}", world);
@@ -87,7 +88,7 @@ namespace CoreDawn.Worlds
         public static void BakeIntoScene(World world, Transform root)
         {
             if (world == null || world.Map == null) return;
-            PlaceNodes(world, root);
+            BakeNodes(world, root);   // 광맥 뷰만 — 심 엔티티는 플레이 때 Connect가 마커의 칸으로 세운다
             PlaceNests(world, root);
             PlaceTrees(world, root);
             PlaceCore(world, root);
@@ -147,12 +148,14 @@ namespace CoreDawn.Worlds
             // 씬에 굳은 광맥은 자기 OnEnable(씬 로드)에서 등록하는데, 그때는 PlacementSystem 에
             // 격자가 아직 주입되기 전이라 칸 크기 1로 좌표를 계산한다 — 채굴기가 "광맥 위가
             // 아니다"로 거부되던 원인이다. 격자가 잡힌 지금 다시 등록해 좌표를 맞춘다.
+            // 굳힌 광맥 뷰 — 마커의 칸으로 심에 세워 붙인다(칸 계산에 격자 수학을 쓰지 않는다: 마커가 정본)
             int nodes = 0;
-            foreach (var node in root.GetComponentsInChildren<ResourceNode>(true))
+            foreach (var view in root.GetComponentsInChildren<ResourceDepositView>(true))
             {
-                if (node == null) continue;
-                node.Refresh();
-                nodes++;
+                if (view == null || view.Entity != null) continue;
+                var mark = view.GetComponent<PlacedMapObject>();
+                if (mark == null) continue;   // 마커 없는 뷰는 자기 Start가 처리한다(테스트 씬)
+                if (view.TryAttachAt(mark.Cell)) nodes++;
             }
 
             int connected = 0, skipped = 0;
@@ -308,43 +311,80 @@ namespace CoreDawn.Worlds
         {
             var map = world.Map;
             if (map.nodes == null || map.nodes.Length == 0) return 0;
-
+            var boot = FactoryBootstrap.Instance;
+            if (boot == null || boot.Factory == null)
+            {
+                Debug.LogWarning("[WorldPopulator] 공장(FactoryBootstrap)이 없어 광맥을 세우지 못했습니다.", world);
+                return 0;
+            }
             if (world.ResourceNodePrefab == null)
             {
                 Debug.LogWarning("[WorldPopulator] 광맥 프리팹이 World에 배선되지 않아 광맥을 세우지 못했습니다.", world);
                 return 0;
             }
-
             int placed = 0;
             foreach (var spec in map.nodes)
             {
                 if (spec.item == null) continue;
-
-                // 오브젝트 위치가 풋프린트 <b>중앙</b>이다(ResourceNode의 규약) — 왼쪽 아래 칸에서
-                // 크기의 절반만큼 밀어야 칸에 맞는다. 1칸짜리는 그대로 칸 중앙이다.
-                // 위치는 Instantiate에 함께 넘긴다 — 생성 후에 옮기면 OnEnable의 레지스트리 등록이
-                // 프리팹 기본 위치의 셀에서 일어나, 모든 광맥이 같은 셀에 겹쳐 서로를 덮어쓴다.
-                int size = Mathf.Max(1, spec.size);
-                Vector3 corner = world.CellToWorld(spec.cell);
-                Vector3 center = corner + new Vector3(size, 0f, size) * (0.5f * world.CellSize);
-
-                var go = Spawn(world.ResourceNodePrefab, center, Quaternion.identity, root);
-                go.name = $"Node_{spec.item.name}_{spec.cell.x}_{spec.cell.y}";
-
-                // 모형도 풋프린트를 따라 커진다 — 프리팹 기본 스케일이 1×1 기준이므로 size 배.
-                // 데이터(점유 셀)만 2×2이고 모형이 1×1이면 어디까지가 광맥인지 눈으로 알 수 없다.
-                if (size > 1) go.transform.localScale *= size;
-                Mark(go, spec.cell, null);   // 광맥은 칸을 잡지 않는다 — 자체 레지스트리가 관리한다
-
-                var node = go.GetComponent<ResourceNode>();
-                if (node != null)
-                {
-                    node.Configure(spec.item, size, spec.extractInterval, spec.maxStock);
-                    node.Refresh();   // 크기가 바뀌었을 수 있다 — 점유 셀을 새 풋프린트로 재등록
-                }
-                placed++;
+                var view = SpawnNodeView(world, root, spec.item, spec.cell);
+                if (view != null && view.TryAttachAt(spec.cell)) placed++;
             }
             return placed;
+        }
+
+        /// <summary>
+        /// 굳힌 씬에 맵의 광맥 뷰가 없는 칸을 런타임이 세운다. 맵을 다시 임포트했는데 씬을 저장하지 않았을 때 생기는 상태라
+        /// 조용히 넘기지 않고 경고한다 — 게임은 돌게 하되, 고칠 것(맵 재임포트 + 씬 저장)을 말한다.
+        /// </summary>
+        static int PlaceMissingNodes(World world, Transform root)
+        {
+            var map = world.Map;
+            var boot = FactoryBootstrap.Instance;
+            if (map.nodes == null || map.nodes.Length == 0 || boot == null || boot.Factory == null || world.ResourceNodePrefab == null) return 0;
+            int placed = 0;
+            foreach (var spec in map.nodes)
+            {
+                if (spec.item == null || boot.Factory.DepositAt(spec.cell) != null) continue;
+                var view = SpawnNodeView(world, root, spec.item, spec.cell);
+                if (view != null && view.TryAttachAt(spec.cell)) placed++;
+            }
+            if (placed > 0)
+                Debug.LogWarning($"[WorldPopulator] 굳힌 씬에 없는 광맥 {placed}개를 런타임이 세웠습니다 — 맵을 다시 임포트하고 씬을 저장하세요.", world);
+            return placed;
+        }
+
+        /// <summary>에디터가 광맥 뷰를 씬에 굳힌다 — 심 엔티티는 플레이 때 Connect가 마커의 칸으로 세운다.</summary>
+        static int BakeNodes(World world, Transform root)
+        {
+            var map = world.Map;
+            if (map.nodes == null || map.nodes.Length == 0) return 0;
+            if (world.ResourceNodePrefab == null)
+            {
+                Debug.LogWarning("[WorldPopulator] 광맥 프리팹이 World에 배선되지 않아 광맥을 굳히지 못했습니다.", world);
+                return 0;
+            }
+            int placed = 0;
+            foreach (var spec in map.nodes)
+                if (spec.item != null && SpawnNodeView(world, root, spec.item, spec.cell) != null) placed++;
+            return placed;
+        }
+
+        /// <summary>광맥 한 칸의 뷰(프리팹)를 칸 중앙에 세우고 마커(칸)와 자원을 적는다. 심에는 아직 서지 않는다.</summary>
+        static ResourceDepositView SpawnNodeView(World world, Transform root, ItemDataSO item, Vector2Int cell)
+        {
+            // 오브젝트 위치는 칸 중앙. 위치는 Instantiate에 함께 넘긴다.
+            Vector3 center = world.CellToWorld(cell) + new Vector3(0.5f, 0f, 0.5f) * world.CellSize;
+            var go = Spawn(world.ResourceNodePrefab, center, Quaternion.identity, root);
+            go.name = $"Node_{item.name}_{cell.x}_{cell.y}";
+            Mark(go, cell, null);   // 광맥은 공장 칸을 잡지 않는다 — 마커는 칸의 정본이고, 공장의 광맥 색인이 따로 관리한다
+            var view = go.GetComponent<ResourceDepositView>();
+            if (view == null)
+            {
+                Debug.LogError($"[WorldPopulator] 광맥 프리팹에 ResourceDepositView가 없습니다 — ({cell}) 광맥을 세우지 못했습니다.", world);
+                return null;
+            }
+            view.Configure(item);
+            return view;
         }
 
         // ── 둥지 ────────────────────────────────────────────────────

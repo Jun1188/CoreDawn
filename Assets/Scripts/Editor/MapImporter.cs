@@ -51,11 +51,8 @@ namespace CoreDawn.EditorTools
 
         [Serializable] internal class NodeDto : GameDataImporter.JsonDtoBase
         {
-            public string item;          // GameData의 아이템 id
-            public int x, y;
-            public int size;
-            public float extractInterval;
-            public int maxStock;
+            public string item;          // GameData의 아이템 id — 수치(재생·상한·난이도)는 팩의 광맥 정의가 갖는다
+            public int x, y;             // 광맥은 한 칸짜리
         }
 
         [Serializable] internal class NestDto : GameDataImporter.JsonDtoBase
@@ -228,9 +225,6 @@ namespace CoreDawn.EditorTools
                 {
                     item = item,
                     cell = new Vector2Int(n.x, n.y),
-                    size = Mathf.Clamp(n.size <= 0 ? 1 : n.size, 1, 3),
-                    extractInterval = n.extractInterval,
-                    maxStock = n.maxStock,
                 });
             }
             return list.ToArray();

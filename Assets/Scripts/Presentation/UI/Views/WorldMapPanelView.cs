@@ -267,11 +267,7 @@ namespace CoreDawn.UI
             if (map.nodes != null)
                 foreach (var n in map.nodes)
                 {
-                    var c = NodeColor(n.item);
-                    int size = Mathf.Max(1, n.size);
-                    for (int dy = 0; dy < size; dy++)
-                        for (int dx = 0; dx < size; dx++)
-                            Put(n.cell.x + dx, n.cell.y + dy, c);
+                    Put(n.cell.x, n.cell.y, NodeColor(n.item));   // 광맥은 한 칸짜리
                 }
 
             if (map.nightSpawnPoints != null)

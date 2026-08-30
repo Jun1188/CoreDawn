@@ -72,7 +72,6 @@ namespace CoreDawn.Tests
 
             // 시나리오마다 새 심 — plain C#이라 싱글톤 정리·프레임 대기가 필요 없다
             _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
-            _sim.GetResourceAt = _ => _ore;
             _beltDef = null;   // 벨트 정의도 시나리오별로 새로
             _fails.Clear();
 
@@ -222,8 +221,7 @@ namespace CoreDawn.Tests
         /// <summary>마이너 2개(광석/주괴)→합류기→저장소: 두 소스가 모두 통과한다.</summary>
         void S9_MergerTwoSources()
         {
-            // 위치별 자원: (1,1)의 마이너만 주괴를 캔다
-            _sim.GetResourceAt = pos => pos == new Vector2Int(1, 1) ? _ingot : _ore;
+            EnsureDeposits(new Vector2Int(1, 1), Vector2Int.one, _ingot);   // (1,1)의 채굴기만 주괴를 캔다
 
             Place(Miner(), 0, 0);                          // 서쪽에서 광석
             Place(Miner(), 1, 1, rot: 1);                  // 북쪽에서 주괴 (출력 South)
@@ -243,8 +241,7 @@ namespace CoreDawn.Tests
         /// </summary>
         void S10_SplitterFilter()
         {
-            // 위치별 자원: (1,1)의 마이너만 주괴를 캔다 (S9와 동일한 혼합 라인 구성)
-            _sim.GetResourceAt = pos => pos == new Vector2Int(1, 1) ? _ingot : _ore;
+            EnsureDeposits(new Vector2Int(1, 1), Vector2Int.one, _ingot);   // (1,1)의 채굴기만 주괴를 캔다 (S9와 동일한 혼합 라인 구성)
 
             Place(Miner(), 0, 0);                          // 서쪽에서 광석
             Place(Miner(), 1, 1, rot: 1);                  // 북쪽에서 주괴 (출력 South)
@@ -434,7 +431,26 @@ namespace CoreDawn.Tests
         //     정의는 팩 json과 같은 타입(EntityDef·ItemDef·RecipeDef)을 코드로 조립한다.
 
         BuildingModule Place(EntityDef def, int x, int y, int rot = 0)
-            => _sim.Place(def, new Vector2Int(x, y), rot);
+        {
+            var origin = new Vector2Int(x, y);
+            // 채굴기는 광맥 위에서만 캔다 — 시나리오는 광맥을 깔아 준다(옛 GetResourceAt 훅의 후신)
+            if (def.Has<ExtractorModuleDef>()) EnsureDeposits(origin, BuildingPorts.RotatedSize(def, rot), _ore);
+            return _sim.Place(def, origin, rot);
+        }
+
+        /// <summary>덮는 칸마다 광맥이 없으면 놓는다. 이미 있는 칸(다른 자원 지정 등)은 그대로.</summary>
+        void EnsureDeposits(Vector2Int origin, Vector2Int size, ItemDef item)
+        {
+            for (int y = 0; y < size.y; y++)
+                for (int x = 0; x < size.x; x++)
+                {
+                    var cell = origin + new Vector2Int(x, y);
+                    if (_sim.DepositAt(cell) != null) continue;
+                    var def = new EntityDef { Id = $"test:entity/{item.DisplayName.ToLowerInvariant()}_deposit_{cell.x}_{cell.y}", DisplayName = item.DisplayName + " 광맥", Faction = Faction.Neutral };
+                    def.Modules.Add(new ResourceDepositModuleDef { Resource = item, ExtractInterval = 1f });
+                    _sim.PlaceDeposit(def, cell);
+                }
+        }
 
         BuildingModule PlaceBelt(int x, int y, int rot, BeltShape shape)
             => _sim.Place(Belt(), new Vector2Int(x, y), rot, BeltDataSO.BuildPorts(shape, rot));

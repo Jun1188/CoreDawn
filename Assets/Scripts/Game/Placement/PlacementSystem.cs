@@ -8,7 +8,6 @@ using CoreDawn.Inputs;
 using CoreDawn.Interaction;
 using CoreDawn.Managers;
 using CoreDawn.Navigation;
-using CoreDawn.ResourceNodes;
 using CoreDawn.UI;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
@@ -182,9 +181,6 @@ namespace CoreDawn.Placement
             grid = new GridSystem(cellSize, gridOrigin);
             if (portFlow != null) portFlow.Configure(cellSize, gridOrigin);
 
-            // 광맥은 이 격자로 자기 칸을 계산한다 — 캐시를 버리지 않으면 주입 전(칸 크기 1)에
-            // 계산해 둔 좌표를 그대로 들고 있어, 채굴기가 "광맥 위가 아니다"로 거부된다.
-            ResourceNodeRegistry.InvalidateGrid();
         }
 
         void Start()
@@ -344,7 +340,7 @@ namespace CoreDawn.Placement
             // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
             // 재료가 모자라면 프리뷰가 빨갛게 떠서 누르기 전에 알 수 있다
             lastCanPlace = heightOk && CanBuildTerrain(origin, size) && CanPlace(origin, size)
-                        && ResourceNodeRegistry.CanPlace(current.Def, origin, size)
+                        && FactoryBootstrap.Instance.Factory.CanPlace(current.Def, origin, size, out _)
                         && BuildCost.CanAfford(current.Def);
             lastOrigin   = origin;
             lastPos      = pos;
@@ -414,7 +410,7 @@ namespace CoreDawn.Placement
             }
             if (!CanBuildTerrain(origin, size)) { reason = "지을 수 없는 지형 (강·절벽 또는 맵 밖)"; return false; }
             if (!CanPlace(origin, size)) { reason = "이미 점유된 칸"; return false; }
-            if (!ResourceNodeRegistry.CanPlace(def, origin, size)) { reason = "광맥 조건 불충족"; return false; }
+            if (!FactoryBootstrap.Instance.Factory.CanPlace(def, origin, size, out string depositReason)) { reason = depositReason; return false; }
 
             Vector3 pos = grid.GetFootprintCenter(origin, size);
             var so = BuildingAssets.Of(def);   // 표현 에셋 — 들어올림·커브 메시는 아직 프리팹이 안다
@@ -629,7 +625,7 @@ namespace CoreDawn.Placement
         public static float SurfaceLift(BuildingDataSO so, Vector2Int origin)
         {
             if (so is not MinerDataSO)                     return 0f;
-            if (ResourceNodeRegistry.NodeAt(origin) == null) return 0f;
+            if (FactoryBootstrap.Instance == null || FactoryBootstrap.Instance.Factory.DepositAt(origin) == null) return 0f;
 
             return PivotLift(so);
         }

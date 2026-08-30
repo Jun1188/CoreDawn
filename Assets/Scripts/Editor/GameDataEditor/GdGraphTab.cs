@@ -99,6 +99,7 @@ namespace CoreDawn.EditorTools
         public bool hideFromMenu;   // 아이템 고르는 목록에서 숨김 (ItemDataSO.hideFromMenu)
         public int tier = 1;
         public float craftTime = 2f;
+        public float extractInterval = 3f;   // Ore 전용 — 1개 캐는 초. 광맥 엔티티는 이 값에서 자동으로 나온다
     }
 
     class GNode
@@ -194,6 +195,7 @@ namespace CoreDawn.EditorTools
                         lifetime = it.lifetime >= 0 ? it.lifetime : 3,
                         pierce = Mathf.Max(0, it.pierce),
                         gun = it.gun ?? "",
+                        extractInterval = it.extractInterval > 0 ? it.extractInterval : 3f,
                     },
                 };
                 itemNode["Item:" + name] = id;
@@ -272,6 +274,7 @@ namespace CoreDawn.EditorTools
                     it.lifetime = d.lifetime; it.pierce = d.pierce;
                 }
                 if (d.type == "Weapon" && !string.IsNullOrEmpty(d.gun)) it.gun = d.gun;
+                if (d.type == "Ore") it.extractInterval = Mathf.Max(0.1f, d.extractInterval);   // 다른 타입은 음수(생략)로 남는다
                 if (itemExtra.TryGetValue(d.name, out var ex)) it.unknownJson = ex;
                 items.Add(it);
             }
@@ -1550,6 +1553,25 @@ namespace CoreDawn.EditorTools
                 sideBody.Add(pick);
                 if (guns.Count == 0)
                     sideBody.Add(new Label("전투 탭에서 총을 먼저 만드세요") { style = { color = GdEnum.Faint, fontSize = 11 } });
+            }
+            if (d.type == "Ore")
+            {
+                // 광맥은 따로 만들지 않는다 — Ore 아이템마다 exporter가 광맥 엔티티를 낸다. 여기 값이 그 광맥의 채굴 시간.
+                var oreTtl = new Label("광맥 · 이 원광의 채굴 시간");
+                oreTtl.AddToClassList("gd-groupttl");
+                sideBody.Add(oreTtl);
+                var preview = new Label { style = { color = GdEnum.Faint, fontSize = 11, whiteSpace = WhiteSpace.Normal } };
+                void RenderPreview()
+                {
+                    var miners = (win.root.buildings ?? Array.Empty<GameDataImporter.BuildingDto>())
+                        .Where(b => b.kind == "Miner" && b.speedMultiplier > 0)
+                        .Select(b => $"{b.displayName ?? b.id} {d.extractInterval / b.speedMultiplier:0.##}초");
+                    preview.text = $"손 {d.extractInterval:0.##}초에 1개 · " + (miners.Any() ? string.Join(" · ", miners) : "채굴기 없음");
+                }
+                sideBody.Add(Num("extractInterval (1개 캐는 초 — 손은 그대로, 채굴기는 ÷ 배율)", d.extractInterval,
+                    v => { d.extractInterval = Mathf.Max(0.1f, v); RenderPreview(); Render(); }));
+                sideBody.Add(preview);
+                RenderPreview();
             }
         }
 

@@ -27,9 +27,6 @@ namespace CoreDawn.Tests
         {
             mainCamera = Camera.main;
 
-            // 테스트용: 모든 좌표에서 철광석 채굴
-            if (Factory != null)
-                Factory.GetResourceAt = _ => ironOreSO;
         }
 
         void Update()

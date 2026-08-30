@@ -118,6 +118,22 @@ namespace CoreDawn.EditorTools
                 o["modules"] = mods;
                 o["view"] = new JObject { ["icon"] = it["icon"], ["iconGuid"] = it["iconGuid"] };
                 items[KeyOf((string)it["id"])] = o;
+
+                // 광맥 — Ore 아이템마다 하나, entities/<item>_deposit. 맵은 칸과 자원만 적고 채굴 시간은 원광이 갖는다.
+                // 매장량 없음(바닥나지 않음), 부서지지 않으므로 Health 없음. 임포터가 Ore↔extractInterval 짝을 검사한다.
+                if ((string)it["type"] == "Ore")
+                {
+                    float interval = (float?)it["extractInterval"] ?? -1f;
+                    if (!(interval > 0f)) throw new InvalidOperationException($"Ore 아이템 '{it["id"]}'에 extractInterval(>0)이 없습니다");
+                    string key = KeyOf((string)it["id"]) + "_deposit";
+                    if (entities[key] != null) throw new InvalidOperationException($"entities/{key} id 충돌");
+                    entities[key] = new JObject
+                    {
+                        ["displayName"] = (string)it["displayName"] + " 광맥",
+                        ["faction"] = "Neutral",
+                        ["modules"] = new JArray { new JObject { ["type"] = "ResourceDeposit", ["resource"] = NewId((string)it["id"]), ["extractInterval"] = interval } },
+                    };
+                }
             }
 
             foreach (var r in Arr(d["recipes"]))
@@ -254,6 +270,7 @@ namespace CoreDawn.EditorTools
                 o["view"] = new JObject { ["prefab"] = m["prefab"], ["prefabGuid"] = m["prefabGuid"] };
                 entities[KeyOf((string)m["id"])] = o;
             }
+
 
             // 플레이어 — v1의 player 블록(HP·소지품 칸 수·핫바 창). SO가 없는 유일한 엔티티: 심이 이 정의로 조립한다
             if (d["player"] is JObject playerJson)

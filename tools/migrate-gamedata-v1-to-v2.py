@@ -76,6 +76,11 @@ for it in d['items']:
     o['modules'] = mods
     o['view'] = {'icon': it.get('icon'), 'iconGuid': it.get('iconGuid')}
     out['items'][key_of(it['id'])] = o
+    # 광맥 — Ore 아이템마다 entities/<item>_deposit (채굴 시간은 원광이 갖는다)
+    if it['type'] == 'Ore':
+        assert it.get('extractInterval', -1) > 0, f"Ore {it['id']}에 extractInterval 없음"
+        out['entities'][key_of(it['id']) + '_deposit'] = {'displayName': it.get('displayName', '') + ' 광맥', 'faction': 'Neutral',
+            'modules': [{'type': 'ResourceDeposit', 'resource': newid(it['id']), 'extractInterval': it['extractInterval']}]}
 
 # recipes
 for r in d['recipes']:
@@ -195,6 +200,7 @@ for m in d['monsters']:
     ]
     o['view'] = {'prefab': m.get('prefab'), 'prefabGuid': m.get('prefabGuid')}
     out['entities'][key_of(m['id'])] = o
+
 
 # player → entities/player (HP·가방·핫바) — SO 없는 유일한 엔티티
 if 'player' in d:

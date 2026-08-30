@@ -80,6 +80,18 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
   is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
   never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
+- Resource deposits are sim entities (`ResourceDepositModule`, one cell each, faction Neutral, **no Health**, no Building, **no stock** —
+  they never run out; only `extractInterval` — seconds per item, used as-is for hand mining and divided by the
+  extractor's `speedMultiplier` for miners — and a `TotalExtracted` counter):
+  `FactorySystem.Deposits` indexes them by cell, accrues production on the factory tick, and owns the placement rule
+  (`CanPlace`: an extractor must cover only deposit cells of one resource — no partial coverage). `MinerBehavior` mines the
+  covered deposits round-robin. The map stores only `item + cell` per deposit. Deposit definitions are **not authored**:
+  every v1 item of type `Ore` carries `extractInterval`, and the v2 exporter emits `entities/<item>_deposit` from it
+  (the importer rejects an Ore without it or a non-Ore with it). Edit the value in the GameData editor's item panel.
+  `ResourceDepositView` (Game/ResourceNodes) is the view + hand-mining interaction. The map importer bakes the views into the
+  scene (with a `PlacedMapObject` cell marker) so the map is visible without playing; at play `WorldPopulator.Connect` creates the
+  sim entity at the marker's cell and attaches it (missing views are placed at runtime with a warning). Death drops: `Loot` module
+  def + `LootSpawner` on `EntityWorld.Died`.
   `ItemStack` is a value (`readonly struct`): `PeekAt` returns a copy, so a slot changes only through `SetAt`/`TakeAt`/`TryPutAt`
   (which notify `Changed`); use `stack.With(n)` for a new amount and `IsEmpty` instead of null checks.
 - Save files: definitions are referenced by pack id only, containers are saved as a role-keyed dictionary (`containers{}`; the role names

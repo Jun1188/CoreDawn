@@ -1072,6 +1072,39 @@
     }
   },
   "entities": {
+    "iron_ore_deposit": {
+      "displayName": "철광석 광맥",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/iron_ore",
+          "extractInterval": 2.0
+        }
+      ]
+    },
+    "copper_ore_deposit": {
+      "displayName": "구리광석 광맥",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/copper_ore",
+          "extractInterval": 5.0
+        }
+      ]
+    },
+    "crystal_ore_deposit": {
+      "displayName": "크리스탈 광석 광맥",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/crystal_ore",
+          "extractInterval": 10.0
+        }
+      ]
+    },
     "miner": {
       "displayName": "채굴기",
       "description": "광맥 위에 놓아 자원을 캔다. 광맥이 어려울수록 느리다.",
@@ -1123,7 +1156,7 @@
         },
         {
           "type": "Extractor",
-          "speedMultiplier": 1.0
+          "speedMultiplier": 2.0
         },
         {
           "type": "Loot"
@@ -1189,7 +1222,7 @@
         },
         {
           "type": "Extractor",
-          "speedMultiplier": 2.0
+          "speedMultiplier": 10.0
         },
         {
           "type": "Loot"

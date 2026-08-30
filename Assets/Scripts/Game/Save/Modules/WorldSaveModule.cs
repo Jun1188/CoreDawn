@@ -5,7 +5,8 @@ using Newtonsoft.Json.Linq;
 using UnityEngine;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
-using CoreDawn.ResourceNodes;
+using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Save
 {
@@ -41,9 +42,7 @@ namespace CoreDawn.Save
             /// <summary>광맥은 움직이지 않으므로 점유 칸이 곧 신원이다.</summary>
             [JsonProperty("cell")] public Vector2Int Origin;
 
-            [JsonProperty("stock")] public int CurrentStock;
-            [JsonProperty("nextAt")] public float NextProduceAt;
-            [JsonProperty("extracted")] public int TotalExtracted;
+            [JsonProperty("extracted")] public int TotalExtracted;   // 매장량은 없다 — 누적 채굴량(튜토리얼)만
         }
 
         public class ChestDto
@@ -72,18 +71,16 @@ namespace CoreDawn.Save
                 });
             }
 
-            foreach (var n in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None)
-                                    .Where(n => n != null)
-                                    .OrderBy(n => n.Origin.x).ThenBy(n => n.Origin.y))
-            {
-                dto.Nodes.Add(new NodeDto
+            var boot = FactoryBootstrap.Instance;
+            if (boot != null && boot.Factory != null)
+                foreach (var n in boot.Factory.Deposits.OrderBy(d => d.Cell.x).ThenBy(d => d.Cell.y))
                 {
-                    Origin = n.Origin,
-                    CurrentStock = n.CurrentStock,
-                    NextProduceAt = n.NextProduceAt,
-                    TotalExtracted = n.TotalExtracted,
-                });
-            }
+                    dto.Nodes.Add(new NodeDto
+                    {
+                        Origin = n.Cell,
+                        TotalExtracted = n.TotalExtracted,
+                    });
+                }
 
             foreach (var inv in Object.FindObjectsByType<Inventory>(FindObjectsSortMode.None)
                                       .Where(i => i != null)
@@ -134,18 +131,17 @@ namespace CoreDawn.Save
 
         static void RestoreNodes(Dto dto)
         {
-            var byCell = new Dictionary<Vector2Int, ResourceNode>();
-            foreach (var n in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None))
-                if (n != null) byCell[n.Origin] = n;
-
+            var boot = FactoryBootstrap.Instance;
+            if (boot == null || boot.Factory == null) return;
             foreach (var saved in dto.Nodes)
             {
-                if (!byCell.TryGetValue(saved.Origin, out var node))
+                var deposit = boot.Factory.DepositAt(saved.Origin);
+                if (deposit == null)
                 {
-                    Debug.LogWarning($"[Save] 광맥 {saved.Origin} 이 씬에 없어 재고를 복원하지 못했습니다.");
+                    Debug.LogWarning($"[Save] 광맥 {saved.Origin} 이 맵에 없어 재고를 복원하지 못했습니다.");
                     continue;
                 }
-                node.RestoreState(saved.CurrentStock, saved.NextProduceAt, saved.TotalExtracted);
+                deposit.RestoreState(saved.TotalExtracted);
             }
         }
 
