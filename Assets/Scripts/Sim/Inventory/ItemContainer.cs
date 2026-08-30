@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Factory;
-using CoreDawn.Data;
-using CoreDawn.Sim;
 
-namespace CoreDawn.Inventories
+namespace CoreDawn.Sim
 {
     /// <summary>
-    /// 슬롯 기반 아이템 컨테이너 — 건물 입력/출력 버퍼용 plain C# 클래스.
+    /// 슬롯 기반 아이템 컨테이너 — 건물 버퍼·플레이어 가방 공용 plain C# 클래스(심). InventoryModule이 역할별로 든다.
     ///
     /// 플레이어 Inventory(팀원 작성)와 같은 데이터 모델(ItemStack, SO 참조 비교)을
     /// 사용하므로 건물↔플레이어 간 아이템 이동에 변환이 필요 없다.

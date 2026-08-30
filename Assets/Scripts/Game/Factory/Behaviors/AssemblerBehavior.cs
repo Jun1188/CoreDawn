@@ -1,37 +1,40 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
-using CoreDawn.Combat;
 using CoreDawn.FPS;
 using CoreDawn.Save;
 using CoreDawn.UI;
-using CoreDawn.Factory;
 using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
+    /// <summary>
+    /// 조립기·제련로 — 공장과 <see cref="CrafterModule"/>(심의 제작 로직) 사이의 어댑터.
+    ///
+    /// 제작 자체(재료 소비·완료 시각·출력 보류·레시피 교체)는 모듈이 하고, 이 행동은 공장에 속한 일만 한다:
+    /// 입력 버퍼의 정책(현재 레시피의 재료만·종류당 1스택), 틱에서 모듈을 한 걸음 밟고 완료 시각에 깨우기 예약,
+    /// 재료를 소비했으면 상류(벨트)를 깨우고, 결과물을 하류로 밀어내기(Flush), 그리고 해금(게임 규칙) 검사.
+    ///
+    /// stall 정책은 모듈의 것이다: 결과물 자리가 없으면 시작하지 않고, 완료 시점에 자리가 없으면 보류한다(유실 없음).
+    /// 하류가 소비하면 NotifyUpstream으로 깨어나 재개한다.
+    /// </summary>
     public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
     {
         readonly BuildingModule _b;
-        readonly CrafterModuleDef _def;
-        RecipeDef _recipe;           // 다음 조합이 따를 레시피 (UI에서 교체 가능)
-        RecipeDef _craftingRecipe;   // 진행 중인 1회가 따르는 레시피 — 교체돼도 이 1회는 이것으로 끝난다
-        float        _readyAt;          // 조합 완료 예정 시각
-        bool         _crafting;
-        float        _pausedRemaining;  // 중지 시점의 잔여 시간 — 진행률은 보존된다
+        readonly CrafterModule _crafter;
 
-        public AssemblerBehavior(BuildingModule b, CrafterModuleDef def)
+        public AssemblerBehavior(BuildingModule b, CrafterModule crafter)
         {
             _b = b;
-            _def = def;
+            _crafter = crafter;
+            _crafter.Bind(new[] { b.Input }, new[] { b.Output });
             // 한 재료가 입력 슬롯 전부를 독점해 다른 재료가 못 들어오는 데드락 방지
             _b.Input.SingleStackPerType = true;
             // 입력 버퍼는 현재 레시피의 재료만 받는다 (포트 필터 AcceptedTypes 대체)
-            _b.Input.AcceptFilter = IsIngredient;
-
+            _b.Input.AcceptFilter = _crafter.IsIngredient;
             // 플레이어가 설비 창(SCR-09)에서 손으로 넣고 빼는 경로는 벨트를 거치지 않아
             // 아무도 깨워 주지 않는다. 설비가 자고 있는 이유는 둘인데 둘 다 손으로 풀 수 있다:
             //   재료 부족 — 손으로 재료를 넣어도 다음 벨트 입고 때까지 그대로 서 있다
@@ -39,8 +42,9 @@ namespace CoreDawn.Factory
             // (보관소·코어가 같은 이유로 이미 쓰고 있는 방식)
             _b.Input.Changed  += Wake;
             _b.Output.Changed += Wake;
-
-            SetRecipe(def.Recipes.FirstOrDefault());
+            // 완성품을 출력에 넣는 즉시 하류로 밀어낸다 — 그래야 같은 틱에 다음 1회가 시작될 자리가 난다
+            _crafter.Delivered += _b.FlushOutputs;
+            SetRecipe(_crafter.Recipes.FirstOrDefault());
         }
 
         /// <summary>
@@ -53,76 +57,36 @@ namespace CoreDawn.Factory
         void Wake() => _b.Factory.MarkDirty(_b);
 
         // ── 설비 UI(SCR-09)가 읽는 표면 ──────────────────────────
-
         public BuildingModule Building => _b;
-        public CrafterModuleDef Def => _def;
-        public RecipeDef CurrentRecipe => _recipe;
+        public CrafterModule Crafter => _crafter;
+        public CrafterModuleDef Def => _crafter.Def;
+        public RecipeDef CurrentRecipe => _crafter.Recipe;
 
-        /// <summary>사람이 세워둔 상태. 진행률과 버퍼는 보존된다 — "잠깐 자원을 아끼려고
-        /// 세워둔다"가 안전한 조작이어야 한다 (재료가 귀한 라인에서 실제로 쓰는 기능).</summary>
-        public bool Paused { get; private set; }
+        public bool Paused => _crafter.Paused;
 
         public void SetPaused(bool paused)
         {
-            if (Paused == paused) return;
-            Paused = paused;
-
-            if (paused)
-            {
-                if (_crafting) _pausedRemaining = Mathf.Max(0f, _readyAt - _b.Factory.Now);
-            }
-            else
-            {
-                if (_crafting)
-                {
-                    _readyAt = _b.Factory.Now + _pausedRemaining;
-                    _b.Factory.ScheduleWake(_b, _pausedRemaining);
-                }
-                _b.Factory.MarkDirty(_b);
-            }
+            if (_crafter.Paused == paused) return;
+            var sim = _b.Factory;
+            _crafter.SetPaused(paused, sim.Now);
+            if (paused) return;
+            if (_crafter.Crafting) sim.ScheduleWake(_b, _crafter.RemainingTime(sim.Now));
+            sim.MarkDirty(_b);
         }
 
-        /// <summary>현재 1회분 진행률 0~1. 중지 중에도 멈춘 값을 그대로 보여준다.</summary>
-        public float Progress
-        {
-            get
-            {
-                if (!_crafting || _craftingRecipe == null || _craftingRecipe.Seconds <= 0f) return 0f;
-                float remaining = Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Factory.Now);
-                return Mathf.Clamp01(1f - remaining / _craftingRecipe.Seconds);
-            }
-        }
-
-        public float RemainingTime =>
-            !_crafting ? 0f : Paused ? _pausedRemaining : Mathf.Max(0f, _readyAt - _b.Factory.Now);
-
-        /// <summary>막힘의 원인은 셋뿐 — 가동 중 · 재료 대기 · 출력 막힘. 넷째는 사람이 세운 것.</summary>
-        public MachineState State
-        {
-            get
-            {
-                if (Paused) return MachineState.Stopped;
-                if (_recipe == null) return MachineState.Stopped;
-                if (_crafting)
-                    return _b.Factory.Now < _readyAt || CanStoreOutputs(_craftingRecipe)
-                        ? MachineState.Running
-                        : MachineState.OutputBlocked;
-                if (!HasIngredients()) return MachineState.WaitingInput;
-                if (!CanStoreOutputs(_recipe)) return MachineState.OutputBlocked;
-                return MachineState.Running;
-            }
-        }
+        public float Progress => _crafter.Progress(_b.Factory.Now);
+        public float RemainingTime => _crafter.RemainingTime(_b.Factory.Now);
+        public MachineState State => _crafter.State(_b.Factory.Now);
 
         public string InteractPrompt => $"{_b.DisplayName} 열기";
-
         public void Interact(PlayerController player) => MachinePanelView.TryOpen(this);
 
         public void SetRecipe(RecipeDef r)
         {
-            if (r != null && r.Inputs != null && r.Inputs.Count > _b.Input.SlotCount)
+            if (r != null && r.Inputs != null && r.Inputs.Count > _crafter.InputSlotCount)
             {
                 Debug.LogWarning($"[Assembler] 레시피 '{r.DisplayName}'의 재료 종류({r.Inputs.Count})가 " +
-                                 $"입력 슬롯({_b.Input.SlotCount})보다 많아 거부됨");
+                                 $"입력 슬롯({_crafter.InputSlotCount})보다 많아 거부됨");
                 return;
             }
             if (r != null && !RecipeDatabaseSO.IsUnlocked(r))
@@ -130,114 +94,29 @@ namespace CoreDawn.Factory
                 Debug.LogWarning($"[Assembler] 레시피 '{r.DisplayName}'는 아직 해금되지 않음 (요구 Tier {r.Tier})");
                 return;
             }
-            if (r == _recipe) return;
-
-            // 진행 중인 1회는 취소하지 않는다 — 이미 소비된 재료는 옛 레시피(_craftingRecipe)의
-            // 완성품이 되어 출구로 나간다. 건물의 물건은 건물의 출구로만 나간다 (가방 순간이동 없음).
-            // 새 레시피에 안 쓰는 입력 잔여물은 Tick의 EvictForeignInputs가 출구로 밀어낸다.
-            _recipe = r;
-            _b.Factory.MarkDirty(_b);
+            if (r == _crafter.Recipe) return;
+            // 진행 중인 1회는 취소하지 않는다 — 이미 소비된 재료는 옛 레시피의 완성품이 되어 출구로 나간다.
+            // 건물의 물건은 건물의 출구로만 나간다 (가방 순간이동 없음). 새 레시피에 안 쓰는 입력 잔여물은 틱이 출구로 밀어낸다.
+            if (_crafter.SetRecipe(r)) _b.Factory.MarkDirty(_b);
         }
 
-        /// <summary>현재 해금된 레시피만 — 향후 레시피 선택 UI가 이걸로 목록을 채우면 게이팅이 자동 반영된다.</summary>
+        /// <summary>현재 해금된 레시피만 — 레시피 선택 UI가 이걸로 목록을 채우므로 게이팅이 자동 반영된다.</summary>
         public IEnumerable<RecipeDef> GetUnlockedRecipes() =>
-            _def.Recipes.Where(r => RecipeDatabaseSO.IsUnlocked(r));
-
-        bool IsIngredient(ItemDef item)
-        {
-            if (_recipe?.Inputs == null) return false;
-            foreach (var i in _recipe.Inputs)
-                if (i.Item == item) return true;
-            return false;
-        }
+            _crafter.Recipes.Where(r => RecipeDatabaseSO.IsUnlocked(r));
 
         public void OnAfterPlaced() { }
 
         public void Tick(float dt)
         {
-            if (_recipe == null || Paused) return;   // 중지 — 진행률·버퍼 보존, 재개 시 MarkDirty로 깨어난다
             var sim = _b.Factory;
-
-            // 1. 출력 배출 시도 — 완료 판정보다 먼저 버퍼를 비워야 stall이 풀린다
-            _b.FlushOutputs();
-
-            // 2. 조합 완료 판정 — 교체됐어도 진행 중인 1회는 시작 당시 레시피로 끝낸다
-            if (_crafting)
-            {
-                if (sim.Now < _readyAt) return;  // 이른 기상 (재료 도착 등) → 완료 시각에 다시 깨어남
-                if (!CanStoreOutputs(_craftingRecipe)) return;  // 출력 버퍼 막힘 → 완료 보류 (stall)
-
-                foreach (var o in _craftingRecipe.Outputs)
-                    _b.Output.TryAdd(o.Item, o.Amount);
-                _crafting = false;
-                _b.FlushOutputs();
-            }
-
-            // 3. 레시피 교체로 쓸모없어진 입력 잔여물을 출구로 — 완성품이 자리를 먼저 쓰고,
-            //    남는 자리만큼 매 틱 재시도. 남겨두면 종류당 1스택 슬롯을 차지해
-            //    새 재료가 못 들어온다 (구 TODO의 시나리오)
-            EvictForeignInputs();
-
-            // 4. 다음 조합 시작 — 재료가 모였고 결과물 들어갈 자리가 있을 때만
-            if (!HasIngredients() || !CanStoreOutputs(_recipe)) return;
-            ConsumeIngredients();
-            _b.NotifyUpstream();   // 입력 버퍼에 자리 생김 → 막혀 있던 상류 깨움
-            _crafting = true;
-            _craftingRecipe = _recipe;
-            _readyAt  = sim.Now + _recipe.Seconds;
-            sim.ScheduleWake(_b, _recipe.Seconds);
-        }
-
-        /// <summary>
-        /// 새 레시피의 재료가 아닌 입력 잔여물을 출력 버퍼로 옮긴다 — 건물의 물건은
-        /// 건물의 출구로만 나간다. 출력에 자리가 없으면 입력 칸에 그대로 남아
-        /// 화면(IN 칸)에 보이고, 하류가 소비해 자리가 나면 다음 틱에 마저 나간다.
-        /// </summary>
-        void EvictForeignInputs()
-        {
-            if (_recipe == null) return;
-
-            foreach (var (item, n) in _b.Input.Snapshot())
-            {
-                if (IsIngredient(item)) continue;
-
-                int move = Mathf.Min(n, _b.Output.RoomFor(item));
-                if (move <= 0) continue;
-
-                _b.Input.TryConsume(item, move);
-                _b.Output.TryAdd(item, move);
-                _b.NotifyUpstream();   // 입력에 자리 생김
-            }
-        }
-
-        bool HasIngredients()
-        {
-            foreach (var i in _recipe.Inputs)
-                if (_b.Input.CountOf(i.Item) < i.Amount) return false;
-            return true;
-        }
-
-        /// <summary>
-        /// 레시피 출력 전량이 출력 버퍼에 들어갈 수 있는가.
-        /// 주의: 출력이 여러 종류면 슬롯을 서로 나눠 써야 하므로 근사 검사 —
-        /// 현재 레시피는 전부 단일 출력이라 정확하다.
-        /// </summary>
-        bool CanStoreOutputs(RecipeDef r)
-        {
-            foreach (var o in r.Outputs)
-                if (!_b.Output.HasRoomFor(o.Item, o.Amount))
-                    return false;
-            return true;
-        }
-
-        void ConsumeIngredients()
-        {
-            foreach (var i in _recipe.Inputs)
-                _b.Input.TryConsume(i.Item, i.Amount);
+            _b.FlushOutputs();                                   // 밀려 있던 출력부터
+            float wakeIn = _crafter.Step(sim.Now, out bool inputsFreed);
+            if (inputsFreed) _b.NotifyUpstream();               // 입력 버퍼에 자리 생김 → 막혀 있던 상류 깨움
+            if (wakeIn > 0f) sim.ScheduleWake(_b, wakeIn);      // 완료 시각에 다시 깨어난다
         }
 
         // ── 세이브 ────────────────────────────────────────────────────
-
+        // 키는 옛 저장 파일과 같다 — 모듈로 옮겼어도 세이브 형식은 그대로.
         public class SaveState
         {
             [JsonProperty("recipe")] public string RecipeId;
@@ -248,37 +127,40 @@ namespace CoreDawn.Factory
             [JsonProperty("paused")] public bool Paused;
         }
 
-        public object CaptureState() => new SaveState
+        public object CaptureState()
         {
-            RecipeId = SaveRefs.IdOf(_recipe),
-            CraftingRecipeId = SaveRefs.IdOf(_craftingRecipe),
-            ReadyAt = _readyAt,
-            Crafting = _crafting,
-            PausedRemaining = _pausedRemaining,
-            Paused = Paused,
-        };
+            var s = _crafter.Capture();
+            return new SaveState
+            {
+                RecipeId = SaveRefs.IdOf(s.Recipe),
+                CraftingRecipeId = SaveRefs.IdOf(s.CraftingRecipe),
+                ReadyAt = s.ReadyAt,
+                Crafting = s.Crafting,
+                PausedRemaining = s.PausedRemaining,
+                Paused = s.Paused,
+            };
+        }
 
         public void RestoreState(JToken state)
         {
             var s = SaveJson.FromToken<SaveState>(state);
             if (s == null) return;
-
             // SetRecipe를 거치지 않는다 — 그쪽은 티어 해금을 검사해서 거절할 수 있는데,
             // 저장된 레시피는 저장 당시 이미 유효했던 것이고 티어도 함께 복원된다.
-            _recipe = SaveRefs.Recipe(s.RecipeId);
-            _craftingRecipe = SaveRefs.Recipe(s.CraftingRecipeId);
-            _readyAt = s.ReadyAt;
-            _crafting = s.Crafting && _craftingRecipe != null;
-            _pausedRemaining = s.PausedRemaining;
-            Paused = s.Paused;
-
-            // 입력 필터는 현재 레시피를 따라간다 — 생성자에서 건 것이 옛 레시피 기준일 수 있다
-            _b.Input.AcceptFilter = IsIngredient;
-
-            if (_crafting && !Paused)
-                _b.Factory.ScheduleWake(_b, Mathf.Max(0f, _readyAt - _b.Factory.Now));
+            _crafter.Restore(new CrafterModule.Snapshot
+            {
+                Recipe = SaveRefs.Recipe(s.RecipeId),
+                CraftingRecipe = SaveRefs.Recipe(s.CraftingRecipeId),
+                ReadyAt = s.ReadyAt,
+                Crafting = s.Crafting,
+                PausedRemaining = s.PausedRemaining,
+                Paused = s.Paused,
+            });
+            var sim = _b.Factory;
+            if (_crafter.Crafting && !_crafter.Paused)
+                sim.ScheduleWake(_b, Mathf.Max(0f, _crafter.ReadyAt - sim.Now));
             else
-                _b.Factory.MarkDirty(_b);
+                sim.MarkDirty(_b);
         }
     }
 }

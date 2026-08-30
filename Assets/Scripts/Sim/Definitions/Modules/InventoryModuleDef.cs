@@ -12,5 +12,7 @@ namespace CoreDawn.Sim
         [JsonProperty("hotbar")] public int Hotbar;
         /// <summary>슬롯당 상한. 0 = 아이템의 maxStack 그대로.</summary>
         [JsonProperty("stackCap")] public int StackCap;
+
+        public override EntityModule Create(Entity entity) => new InventoryModule(this);
     }
 }

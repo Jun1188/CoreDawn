@@ -2813,6 +2813,30 @@
         "prefab": "BossMonster",
         "prefabGuid": "67999408593709d4c995a60d2c03fac2"
       }
+    },
+    "player": {
+      "displayName": "플레이어",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Health",
+          "maxHp": 300.0
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Inventory",
+          "main": 18,
+          "hotbar": 7
+        },
+        {
+          "type": "Crafter",
+          "manual": true,
+          "speed": 1.0,
+          "recipes": []
+        }
+      ]
     }
   },
   "waves": {

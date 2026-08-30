@@ -8,6 +8,7 @@ using CoreDawn.Navigation;
 using CoreDawn.Worlds;
 using CoreDawn.Sim;
 using CoreDawn.Sound;
+using CoreDawn.Inventories;
 
 namespace CoreDawn.Combat
 {
@@ -31,7 +32,7 @@ namespace CoreDawn.Combat
                  "낮은 기존대로 시간제. 끄면 레거시 시간제 밤으로 돌아간다.")]
         [SerializeField] private bool quantityBasedNightWaves = true;
 
-        [Tooltip("런타임 부착되는 Player 엔티티의 최대 체력. 0 이하면 기본값(100)을 쓴다.")]
+        [Tooltip("팩 정의(coredawn:entity/player)가 없는 씬의 폴백 최대 체력. 정본은 팩 json의 Health.maxHp.")]
         [SerializeField] private float playerMaxHealth = 300f;
 
         [Tooltip("런타임 부착 Player의 몬스터 감지 범위. 기본값(10)이면 밤에 몬스터 전원이 플레이어에게 몰리므로 좁힌다. 0 이하면 기본값 유지.")]
@@ -144,6 +145,14 @@ namespace CoreDawn.Combat
         // ── 외부 시스템 통합 ──
         // 씬의 플레이어(PlayerController)에는 PlayerView가 없다. 씬 에셋을 수정하지 않고 런타임에 PlayerView를 부착하고,
         // 플레이어 엔티티는 심(PlayerSystem)이 만들어 뷰에 붙인다 — HP·효과·몬스터 감지가 그 엔티티에 산다.
+        /// <summary>플레이어 엔티티 — 정의(coredawn:entity/player)로 조립. 보통은 PlayerInventoryHolder가 Awake에서 먼저 만들어 둔 것을 돌려받는다.</summary>
+        private CoreDawn.Sim.Entity SpawnPlayerEntity(Vector3 position)
+        {
+            var def = CoreDawn.Sim.SimHost.Database?.Entity(PlayerInventoryHolder.PlayerDefId);
+            return def != null ? SimRunner.Players.Spawn(def, position)
+                               : SimRunner.Players.Spawn(playerMaxHealth > 0f ? playerMaxHealth : 100f, position);   // 팩 없는 씬 폴백
+        }
+
         private void EnsurePlayerEntity()
         {
             var controller = FindFirstObjectByType<PlayerController>();
@@ -156,7 +165,7 @@ namespace CoreDawn.Combat
 
             // 엔티티는 심이 만든다(이미 살아 있으면 그것을 돌려준다) — HP 정본은 여기 값, 인스펙터(HealthComponent)가 아니다
             if (player.Entity == null)
-                player.AttachEntity(SimRunner.Players.Spawn(playerMaxHealth > 0f ? playerMaxHealth : 100f, controller.transform.position));
+                player.AttachEntity(SpawnPlayerEntity(controller.transform.position));
 
             // 사망 문구는 별도 GameplayHUD UIDocument에 남고, FPS 플레이어/카메라는 기존처럼 비활성화한다.
             player.SetDeathBehavior(destroy: false, delay: 2f);

@@ -78,6 +78,16 @@ namespace CoreDawn.EditorTools
             public MonsterDto[]  monsters;
             public WaveDto[]     waves;
             public TutorialStepDto[] tutorial;
+            public PlayerDto         player;    // 팩의 entities/player — SO 없음, 심이 정의로 조립한다
+        }
+
+        /// <summary>플레이어 — HP·가방·핫바 칸 수. v2 exporter가 Health·Effects·Inventory·Crafter(manual) 모듈로 낸다.</summary>
+        [Serializable] internal class PlayerDto : JsonDtoBase
+        {
+            public string displayName;
+            public float  maxHp = 300f;
+            public int    hotbar = 7;
+            public int    main = 18;
         }
 
         /// <summary>

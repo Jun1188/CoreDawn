@@ -2930,6 +2930,12 @@
       "returnTimeout": 40.0
     }
   ],
+  "player": {
+    "displayName": "플레이어",
+    "maxHp": 300.0,
+    "hotbar": 7,
+    "main": 18
+  },
   "waves": [
     {
       "id": "Wave:Day1",

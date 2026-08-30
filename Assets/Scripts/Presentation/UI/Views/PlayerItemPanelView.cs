@@ -6,6 +6,7 @@ using CoreDawn.Inputs;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 using InputEvent = CoreDawn.Inputs.InputEvent;
 
 namespace CoreDawn.UI
