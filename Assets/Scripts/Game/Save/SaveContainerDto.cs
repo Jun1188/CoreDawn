@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Sim;
+using UnityEngine;
 
 namespace CoreDawn.Save
 {
@@ -66,6 +67,36 @@ namespace CoreDawn.Save
     }
 
     /// <summary>슬롯 하나에 놓인 스택. 인덱스를 들고 있어 배치가 보존된다.</summary>
+    /// <summary>
+    /// 역할별 그릇 묶음 ↔ <see cref="InventoryModule"/>. 역할 이름표(input·output·main·hotbar…)는 InventoryModule.Roles/ByRole이 붙인다 —
+    /// 여기엔 역할 목록이 없으므로 역할이 늘어도 세이브 코드는 그대로다. 저장된 역할이 지금 정의에 없으면 조용히 버리지 않고 경고한다.
+    /// </summary>
+    public static class SaveContainers
+    {
+        public static Dictionary<string, SaveContainerDto> Capture(InventoryModule inventory)
+        {
+            var saved = new Dictionary<string, SaveContainerDto>();
+            if (inventory != null)
+                foreach (var (role, container) in inventory.Roles) saved[role] = SaveContainerDto.From(container);
+            return saved;
+        }
+
+        public static void Restore(Dictionary<string, SaveContainerDto> saved, InventoryModule inventory, string owner)
+        {
+            if (saved == null) return;
+            foreach (var (role, dto) in saved)
+            {
+                var container = inventory?.ByRole(role);
+                if (container == null)
+                {
+                    Debug.LogWarning($"[Save] '{owner}'에 그릇 '{role}'이 없어 저장된 내용물을 되돌리지 못했습니다 — 정의(Inventory)가 바뀐 대상입니다.");
+                    continue;
+                }
+                dto?.ApplyTo(container);
+            }
+        }
+    }
+
     public class SaveStackDto
     {
         [JsonProperty("i")]

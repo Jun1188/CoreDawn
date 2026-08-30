@@ -30,7 +30,6 @@ namespace CoreDawn.Factory
         {
             _b = b;
             _crafter = crafter;
-            _crafter.Bind(new[] { b.Input }, new[] { b.Output });
             // 한 재료가 입력 슬롯 전부를 독점해 다른 재료가 못 들어오는 데드락 방지
             _b.Input.SingleStackPerType = true;
             // 입력 버퍼는 현재 레시피의 재료만 받는다 (포트 필터 AcceptedTypes 대체)

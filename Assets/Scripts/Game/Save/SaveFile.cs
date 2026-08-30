@@ -14,7 +14,8 @@ namespace CoreDawn.Save
     public class SaveFile
     {
         /// <summary>현재 스키마 버전. 구조를 바꿀 때마다 올리고 <see cref="SaveMigrations"/>에 단계를 추가한다.</summary>
-        public const int CurrentSchemaVersion = 1;
+        // v1 최초 · v2 정의 id(팩 id) · v3 역할 키 그릇(containers) — 단계는 SaveMigrations.Steps
+        public const int CurrentSchemaVersion = 3;
 
         [JsonProperty("schemaVersion")]
         public int SchemaVersion = CurrentSchemaVersion;

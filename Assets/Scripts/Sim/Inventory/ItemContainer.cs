@@ -33,7 +33,8 @@ namespace CoreDawn.Sim
 
         public ItemContainer(int slotCount, int stackCap = 0)
         {
-            _slots    = new ItemStack[Mathf.Max(1, slotCount)];
+            // 0칸은 진짜 0칸이다 — 역할이 없는 건물의 그릇은 아무것도 받지 않아야 한다(옛 Max(1)은 아무도 세지 않는 유령 칸을 만들었다)
+            _slots    = new ItemStack[Mathf.Max(0, slotCount)];
             _stackCap = stackCap;
         }
 

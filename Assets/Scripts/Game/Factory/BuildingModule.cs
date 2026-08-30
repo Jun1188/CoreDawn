@@ -119,7 +119,7 @@ namespace CoreDawn.Factory
         // 받는 피해 체인 등록 — 아군 무시·행동 인터셉터(코어 보호막)는 Health의 체인에서 돈다
         protected internal override void OnAttach()
         {
-            // 그릇은 엔티티의 Inventory 모듈(정의가 만든다). 없는 건물(나무·둥지·울타리)은 빈 1칸 그릇 — 포트가 없어 아무도 넣지 않는다
+            // 그릇은 엔티티의 Inventory 모듈(정의가 만든다). 없는 건물(나무·둥지·울타리)은 0칸 그릇 — 아무것도 받지 않는다
             var inventory = Owner.Get<InventoryModule>();
             Input  = inventory?.Input  ?? new ItemContainer(0);
             Output = inventory?.Output ?? new ItemContainer(0);

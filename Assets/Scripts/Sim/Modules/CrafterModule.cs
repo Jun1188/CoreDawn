@@ -13,8 +13,8 @@ namespace CoreDawn.Sim
     /// <item><b>자동</b>(assembler): 심 시계(now)로 <see cref="Step"/>을 밟는다 — 재료가 모이면 소비하고 완료 시각을 잡고, 완료되면
     ///   출력 그릇에 넣는다. 출력이 막히면 완료를 보류(stall)한다. 언제 깨울지는 반환값으로 소유자(공장)에게 돌려준다.</item>
     /// </list>
-    /// 그릇은 소유자가 <see cref="Bind"/>로 붙인다 — 붙이지 않으면 같은 엔티티의 <see cref="InventoryModule"/>에서
-    /// 수제작은 main·hotbar, 자동은 input·output을 찾는다. 레시피 목록이 비어 있으면 팩의 모든 레시피가 후보다(해금 판정은 게임의 몫).
+    /// 그릇은 같은 엔티티의 <see cref="InventoryModule"/> — 수제작은 main·hotbar, 자동은 input·output.
+    /// 레시피 목록이 비어 있으면 팩의 모든 레시피가 후보다(해금 판정은 게임의 몫).
     /// </summary>
     public sealed class CrafterModule : EntityModule
     {
@@ -23,31 +23,31 @@ namespace CoreDawn.Sim
         public CrafterModule(CrafterModuleDef def) { Def = def ?? throw new ArgumentNullException(nameof(def)); }
 
         // ── 그릇 ────────────────────────────────────────────────────
-        readonly List<ItemContainer> _inputs = new List<ItemContainer>();
-        readonly List<ItemContainer> _outputs = new List<ItemContainer>();
-        bool _bound;
+        // 같은 엔티티의 InventoryModule에서 읽는다. 수제작은 가방→핫바에서 빼고 핫바→가방에 넣는다(플레이어 습관 그대로),
+        // 자동은 input에서 빼고 output에 넣는다. 한 번 찾으면 굳힌다 — 정의가 만든 모듈은 엔티티가 사는 동안 바뀌지 않는다.
+        static readonly ItemContainer[] None = System.Array.Empty<ItemContainer>();
+        ItemContainer[] _inputs, _outputs;
 
-        /// <summary>재료를 빼는 그릇들(앞에서부터). 수제작: 가방 → 핫바.</summary>
-        public IReadOnlyList<ItemContainer> Inputs { get { EnsureBound(); return _inputs; } }
-        /// <summary>결과를 넣는 그릇들(앞에서부터). 수제작: 핫바 → 가방.</summary>
-        public IReadOnlyList<ItemContainer> Outputs { get { EnsureBound(); return _outputs; } }
-
-        public void Bind(IEnumerable<ItemContainer> inputs, IEnumerable<ItemContainer> outputs)
+        void Resolve()
         {
-            _inputs.Clear(); _outputs.Clear();
-            if (inputs != null) foreach (var c in inputs) if (c != null) _inputs.Add(c);
-            if (outputs != null) foreach (var c in outputs) if (c != null) _outputs.Add(c);
-            _bound = true;
-        }
-
-        void EnsureBound()
-        {
-            if (_bound) return;
+            if (_inputs != null) return;
             var inv = Owner?.Get<InventoryModule>();
-            if (inv == null) return;   // 아직 그릇이 없다 — 다음 조회에서 다시 찾는다
-            if (Def.Manual) Bind(new[] { inv.Main, inv.Hotbar }, new[] { inv.Hotbar, inv.Main });
-            else            Bind(new[] { inv.Input }, new[] { inv.Output });
+            if (inv == null) return;
+            if (Def.Manual) { _inputs = NonNull(inv.Main, inv.Hotbar); _outputs = NonNull(inv.Hotbar, inv.Main); }
+            else            { _inputs = NonNull(inv.Input);            _outputs = NonNull(inv.Output); }
         }
+
+        static ItemContainer[] NonNull(params ItemContainer[] cs)
+        {
+            int n = 0; foreach (var c in cs) if (c != null) n++;
+            var r = new ItemContainer[n]; n = 0; foreach (var c in cs) if (c != null) r[n++] = c;
+            return r;
+        }
+
+        /// <summary>재료를 빼는 그릇들(앞에서부터). 수제작: 가방 → 핫바. 자동: input.</summary>
+        public IReadOnlyList<ItemContainer> Inputs { get { Resolve(); return _inputs ?? None; } }
+        /// <summary>결과를 넣는 그릇들(앞에서부터). 수제작: 핫바 → 가방. 자동: output.</summary>
+        public IReadOnlyList<ItemContainer> Outputs { get { Resolve(); return _outputs ?? None; } }
 
         // ── 레시피 ──────────────────────────────────────────────────
         static List<RecipeDef> _allRecipes; static SimDatabase _allRecipesOf;
