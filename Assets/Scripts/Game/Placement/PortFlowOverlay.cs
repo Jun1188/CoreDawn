@@ -240,7 +240,7 @@ namespace CoreDawn.Placement
                 ? FactoryBootstrap.Instance.GetView(b) : null;
             if (view == null) return _gridOrigin.y;
 
-            return view.transform.position.y - PlacementSystem.SurfaceLift(b.Data, b.Origin);
+            return view.transform.position.y - PlacementSystem.SurfaceLift(BuildingAssets.Of(b.Def), b.Origin);
         }
 
         static float Sq(float v) => v * v;

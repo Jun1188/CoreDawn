@@ -31,7 +31,7 @@ namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Prese
 |---|---|---|
 | `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces, `Modules/` = entity modules (`*Module`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
 | `Data/**` | `CoreDawn.Data` | every ScriptableObject definition + databases + `EffectEntry`/`EffectSpecs` (items, buildings, recipes, effects, monsters, waves, maps, tutorial, weapons) |
-| `Game/Factory` | `CoreDawn.Factory` | FactorySystem, BuildingModule, belts, processors, bootstrap/bridge; `Behaviors/` = building behaviors (`*Behavior`, `IBuildingBehavior`) split out of the data SOs |
+| `Game/Factory` | `CoreDawn.Factory` | FactorySystem, BuildingModule, belts, processors, bootstrap/bridge; `Behaviors/` = building behaviors (`*Behavior`, `IBuildingBehavior`) chosen from the definition's modules by the `BuildingBehaviors` registry (not by the SOs) |
 | `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
 | `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
 | `Game/Placement` | `CoreDawn.Placement` | build mode, placement, port overlay |
@@ -60,8 +60,10 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 
 - `Assets/Scripts/Runtime/Sim` (`CoreDawn.Sim`) is the authoritative simulation: `Entity`
   (id · faction · position · modules), `HealthModule`, `EntityWorld`. Plain C#, no `UnityEngine.Object`.
-- A building is an `Entity` with a `BuildingModule` module (`CoreDawn.Factory`). `FactorySystem.Place`
-  creates the entity, its `HealthModule` (from `BuildingDataSO.maxHp`) and the module; views only follow.
+- A building is an `Entity` with a `BuildingModule` module (`CoreDawn.Factory`). `FactorySystem.Place(EntityDef)`
+  creates the entity from the pack definition (`def.Assemble` → `HealthModule`/`EffectsModule` from json) and the module; views only follow.
+  Sim/game code holds definitions (`EntityDef`/`ItemDef`/`RecipeDef` from `SimHost.Database`); the SOs are view assets reached
+  through `BuildingAssets.Of(def)` / `ItemAssets.Of(def)` / `RecipeAssets.Of(def)` (prefab, icon) until the 5a-3 view catalog replaces them.
   HP, faction, "is this the core", footprint and damage rules (`IDamageInterceptor`) live in the sim.
 - A monster is an `Entity` with `HealthModule` · `MovementModule` · `AttackModule` · `MonsterBrainModule` modules, built by
   `MonsterSystem.Spawn(MonsterSpec, …)` (phase 3, 2026-08-29). `MonsterSpawner.Spawn(data, pos, rot, parent)` is the

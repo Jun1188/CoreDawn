@@ -9,8 +9,6 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewStorage", menuName = "Factory/Buildings/Storage")]
     public class StorageDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(BuildingModule building)
-            => new StorageBehavior(building);
     }
 
     // ─── 행동 ──────────────────────────────────────────────────────

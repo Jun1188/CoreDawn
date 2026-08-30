@@ -23,7 +23,6 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewNest", menuName = "Factory/Buildings/Nest")]
     public class NestDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(BuildingModule building) => new NestBehavior();
 
         /// <summary>둥지는 몬스터 편. 보통은 MonsterNest 뷰의 엔티티에 얹히므로(Place host) 이 값은 뷰 없는 배치에서만 쓰인다.</summary>
         public override Faction Faction => Faction.Monster;

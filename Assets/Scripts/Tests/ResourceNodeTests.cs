@@ -7,6 +7,7 @@ using CoreDawn.Navigation;
 using CoreDawn.ResourceNodes;
 using CoreDawn.Sim;
 using CoreDawn.Data;
+using CoreDawn.Managers;
 
 namespace CoreDawn.Tests
 {
@@ -33,15 +34,16 @@ namespace CoreDawn.Tests
         static readonly List<GameObject> _createdGOs = new();
 
         static FactorySystem _sim;
-        static ItemDataSO _ore, _coal;
+        static ItemDef _ore, _coal;
 
         /// <summary>전체 스위트 실행. 반환값 = 전부 통과했는가. report에 사람이 읽는 결과표.</summary>
         public static bool RunAll(out string report)
         {
             _results.Clear();
 
-            _ore  = MakeItem("TestOre",  ItemType.Ore);
-            _coal = MakeItem("TestCoal", ItemType.Ore);
+            // 광맥 컴포넌트(ResourceNode.resource)는 아직 SO를 들고 그 SO가 팩 정의로 풀려야 하므로 실제 팩 아이템을 쓴다
+            _ore  = PackItem("coredawn:item/iron_ore");
+            _coal = PackItem("coredawn:item/copper_ore");
 
             Run("1. 주기마다 amountPerCycle씩 생산",   S1_Production);
             Run("2. maxStock에서 생산 정지·인출 후 재개", S2_StockCap);
@@ -314,21 +316,21 @@ namespace CoreDawn.Tests
 
         static void Produce(float now) => ResourceNodeRegistry.TickProduction(now);
 
-        static int Stored(BuildingModule store, ItemDataSO item)
+        static int Stored(BuildingModule store, ItemDef item)
             => store.Input.CountOf(item) + store.Output.CountOf(item);
 
         /// <summary>광맥 하나를 만들어 지정 셀에 정확히 얹는다 (셀 중앙 = 풋프린트 중앙).</summary>
-        static ResourceNode Node(ItemDataSO item, Vector2Int cell, Vector2Int size = default,
+        static ResourceNode Node(ItemDef item, Vector2Int cell, Vector2Int size = default,
                                  float interval = 1f, int amount = 1, int max = 20, int stock = 0)
         {
             if (size == default) size = Vector2Int.one;
 
-            var go = new GameObject($"ResourceNode_{item.displayName}_{cell.x}_{cell.y}")
+            var go = new GameObject($"ResourceNode_{item.DisplayName}_{cell.x}_{cell.y}")
             { hideFlags = HideFlags.HideAndDontSave };
             _createdGOs.Add(go);
 
             var node = go.AddComponent<ResourceNode>();
-            Set(node, "resource", item);
+            Set(node, "resource", ItemAssets.Of(item));   // 광맥 컴포넌트는 아직 SO를 든다(5a-2d에서 ResourceDeposit 엔티티로)
             Set(node, "size", size);
             Set(node, "productionInterval", interval);
             Set(node, "amountPerCycle", amount);
@@ -369,46 +371,38 @@ namespace CoreDawn.Tests
             ResourceNodeRegistry.EnforceMinerPlacement = true;
         }
 
-        // ─── SO 생성 (FactoryScenarioTests와 같은 방식) ──────────────
-
-        static BuildingDataSO Miner(float ptime = 0.2f, int outBuf = 5)
+        // ─── 정의 생성 (FactoryScenarioTests와 같은 방식 — 팩 json과 같은 타입을 코드로 조립) ──
+        static ItemDef PackItem(string id)
         {
-            var so = MakeBuilding<MinerDataSO>("TestMiner",
-                new[] { Port(false, Direction.East) }, stackCap: outBuf);
+            if (SimHost.Database == null) SimHost.DatabaseLoader = () => PackLoader.Load();   // 에디터 러너에는 BeforeSceneLoad 등록이 없다
+            var item = SimHost.Database?.Item(id);
+            if (item == null) throw new Exception($"팩 아이템 '{id}'를 찾지 못했습니다 — StreamingAssets/packs/coredawn/data.json 확인");
+            return item;
+        }
+
+        static EntityDef Miner(float ptime = 0.2f, int outBuf = 5)
             // 채굴 시간 = 광맥 기준 ÷ 배율 → ptime초를 원하면 배율은 1/ptime
-            so.speedMultiplier = 1f / Mathf.Max(0.01f, ptime);
-            return so;
-        }
+            => MakeBuilding("TestMiner", new[] { Port(false, Direction.East) }, stackCap: outBuf,
+                            extra: new ExtractorModuleDef { SpeedMultiplier = 1f / Mathf.Max(0.01f, ptime) });
 
-        static BuildingDataSO Storage() =>
-            MakeBuilding<StorageDataSO>("TestStorage",
-                new[] { Port(true, Direction.West) }, stackCap: 50);
+        static EntityDef Storage() =>
+            MakeBuilding("TestStorage", new[] { Port(true, Direction.West) }, stackCap: 50);
 
-        static PortDefinition Port(bool isInput, Direction dir) =>
-            new() { IsInput = isInput, Direction = dir, LocalOffset = Vector2Int.zero };
+        static PortDef Port(bool isInput, Direction dir) =>
+            new() { IsInput = isInput, Dir = dir.ToString(), X = 0, Y = 0 };
 
-        static T MakeBuilding<T>(string name, PortDefinition[] ports, int stackCap = 10)
-            where T : BuildingDataSO
+        static EntityDef MakeBuilding(string name, PortDef[] ports, int stackCap = 10, params EntityModuleDef[] extra)
         {
-            var so = ScriptableObject.CreateInstance<T>();
-            so.name           = name;
-            so.displayName    = name;
-            so.size           = Vector2Int.one;
-            so.ports          = ports;
-            so.inputSlots     = 1;
-            so.outputSlots    = 1;
-            so.bufferStackCap = stackCap;
-            _createdSOs.Add(so);
-            return so;
-        }
-
-        static ItemDataSO MakeItem(string name, ItemType type)
-        {
-            var so = ScriptableObject.CreateInstance<ItemDataSO>();
-            so.displayName = name;
-            so.type = type;
-            _createdSOs.Add(so);
-            return so;
+            var def = new EntityDef { Id = "test:entity/" + name.ToLowerInvariant(), DisplayName = name, Faction = Faction.Player };
+            def.Modules.Add(new BuildingModuleDef { Size = new Vec2i(1, 1) });
+            def.Modules.Add(new HealthModuleDef { MaxHp = 100f });
+            def.Modules.Add(new EffectsModuleDef());
+            var portsDef = new PortsModuleDef();
+            portsDef.Ports.AddRange(ports);
+            def.Modules.Add(portsDef);
+            def.Modules.Add(new InventoryModuleDef { Input = 1, Output = 1, StackCap = stackCap });
+            def.Modules.AddRange(extra);
+            return def;
         }
     }
 }

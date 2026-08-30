@@ -181,9 +181,17 @@ namespace CoreDawn.EditorTools
                     {
                         var tiers = new JArray();
                         foreach (var t in Arr(b["tiers"]))
-                            tiers.Add(new JObject { ["name"] = t["name"], ["description"] = t["description"], ["requirements"] = Amounts(t["requirements"]),
-                                                    ["unlocks"] = t["unlocks"]?.DeepClone() ?? new JArray(), ["maxHpBonus"] = t["maxHpBonus"] ?? 0, ["isFinal"] = t["isFinal"] ?? false });
-                        mods.Add(new JObject { ["type"] = "Core", ["tiers"] = tiers });
+                            {
+                                var tier = new JObject { ["name"] = t["name"], ["description"] = t["description"], ["requirements"] = Amounts(t["requirements"]),
+                                                    ["unlocks"] = t["unlocks"]?.DeepClone() ?? new JArray(), ["maxHpBonus"] = t["maxHpBonus"] ?? 0, ["isFinal"] = t["isFinal"] ?? false };
+                                if (t["maxShieldBonus"] != null) tier["maxShieldBonus"] = t["maxShieldBonus"];
+                                tiers.Add(tier);
+                            }
+                        var coreMod = new JObject { ["type"] = "Core", ["tiers"] = tiers };
+                        // 보호막 값은 v1에 아직 없다(옛 에셋 값이 정의의 기본값) — v1에 적히면 그대로 실린다
+                        foreach (var k in new[] { "burnSurplusIntoShield", "shieldPerItem", "shieldValueByType", "baseMaxShield" })
+                            if (b[k] != null) coreMod[k] = b[k].DeepClone();
+                        mods.Add(coreMod);
                         break;
                     }
                     case "Nest": mods.Add(new JObject { ["type"] = "NestSpawner" }); break;

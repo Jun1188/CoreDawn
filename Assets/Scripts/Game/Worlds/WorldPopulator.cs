@@ -160,7 +160,9 @@ namespace CoreDawn.Worlds
             {
                 if (placed == null || placed.Data == null) continue;   // 광맥은 자체 레지스트리가 맡는다
 
-                var size = placed.Data.size;
+                var def = placed.Data.Def;
+                if (def == null) { Debug.LogWarning($"[WorldPopulator] '{placed.Data.Id}'의 팩 정의가 없어 잇지 못했습니다.", placed); continue; }
+                var size = BuildingPorts.RotatedSize(def, 0);
                 var origin = placed.Cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
 
                 bool free = true;
@@ -170,15 +172,15 @@ namespace CoreDawn.Worlds
                 if (!free) { skipped++; continue; }
 
                 var view = placed.GetComponent<BuildingView>();
-                if (view != null) PlacementBridge.PlaceExisting(placed.Data, origin, 0, view);
+                if (view != null) PlacementBridge.PlaceExisting(def, origin, 0, view);
                 else
                 {
                     // 둥지처럼 뷰가 따로 있는 개체(MonsterNest)는 심 엔티티를 여기서 만들어 붙이고 그 위에 건물을 얹는다 —
                     // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
                     // 굳어 있는(씬에 구운) 둥지는 PlaceNests를 안 타므로 생성 주체는 이 자리다.
                     var host = placed.GetComponent<EntityView>();
-                    if (host != null && host.Entity == null) AttachFreshEntity(host, placed.Data);
-                    boot.Factory.Place(placed.Data, origin, 0, host: host != null ? host.Entity : null);
+                    if (host != null && host.Entity == null) AttachFreshEntity(host, def);
+                    boot.Factory.Place(def, origin, 0, host: host != null ? host.Entity : null);
                 }
                 connected++;
             }
@@ -198,7 +200,7 @@ namespace CoreDawn.Worlds
 
         /// <summary>런타임에 갓 세운 나무를 심에 잇는다(굳어 있지 않은 씬 경로).</summary>
         static void ConnectTree(BuildingView view, TreeDataSO data, Vector2Int cell)
-            => PlacementBridge.PlaceExisting(data, cell, 0, view);
+            => PlacementBridge.PlaceExisting(data.Def, cell, 0, view);
 
         // ── 시작 드롭 아이템 ───────────────────────────────────────
 
@@ -349,13 +351,12 @@ namespace CoreDawn.Worlds
 
         /// <summary>
         /// 뷰가 따로 있는 개체(둥지)의 심 엔티티를 데이터로 만들어 붙인다 — 생성 주체는 월드(populator)다.
-        /// 편·HP 정본은 건물 데이터(BuildingDataSO.Faction·maxHp) — 다른 건물과 같은 규칙.
+        /// 편·HP 정본은 팩 정의(EntityDef.Faction·Health 모듈) — 다른 건물과 같은 규칙.
         /// </summary>
-        static void AttachFreshEntity(EntityView view, BuildingDataSO data)
+        static void AttachFreshEntity(EntityView view, EntityDef def)
         {
-            var entity = SimHost.World.Create(data.Faction, view.transform.position);
-            entity.Add(new HealthModule(Mathf.Max(1f, data.maxHp)));
-            entity.Add(new EffectsModule());
+            var entity = SimHost.World.Create(def.Faction, view.transform.position);
+            def.Assemble(entity);   // Health·Effects — 정의가 만든다 (둥지 HP 500은 팩 정의의 값)
             view.AttachEntity(entity);
         }
 
@@ -383,7 +384,7 @@ namespace CoreDawn.Worlds
                 {
                     // 둥지 엔티티는 심에 먼저 만든다(편·HP는 둥지 데이터, Effects) — 뷰는 받아서 그린다.
                     // 건물 모듈은 뒤의 ConnectPlaced가 이 엔티티를 호스트로 얹는다(둥지 하나에 엔티티 하나).
-                    if (nestData != null) AttachFreshEntity(nest, nestData);
+                    if (nestData != null && nestData.Def != null) AttachFreshEntity(nest, nestData.Def);
                     else Debug.LogWarning("[WorldPopulator] 둥지 데이터(Building:Nest)가 없어 둥지 엔티티를 만들지 못했습니다 — MonsterNest가 폴백으로 세웁니다.", world);
 
                     nest.Configure(spec.warningRange, spec.triggerRange,
@@ -485,7 +486,7 @@ namespace CoreDawn.Worlds
             // 둥지처럼 스스로 심 엔티티를 가진 개체(MonsterNest)는 그 엔티티에 건물을 얹는다 —
             // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
             var hostView = owner != null ? owner.GetComponent<EntityView>() : null;
-            boot.Factory.Place(data, origin, 0, host: hostView != null ? hostView.Entity : null);
+            boot.Factory.Place(data.Def, origin, 0, host: hostView != null ? hostView.Entity : null);
             return true;
         }
 

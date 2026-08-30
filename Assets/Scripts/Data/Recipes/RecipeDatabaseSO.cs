@@ -1,6 +1,7 @@
 using UnityEngine;
 using CoreDawn.Managers;
 using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Data
 {
@@ -27,5 +28,10 @@ namespace CoreDawn.Data
         public static bool IsUnlocked(RecipeDataSO r) =>
             r != null && ((GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.tier)) ||
                           RecipeRewardUnlockService.IsUnlocked(r));
+
+        /// <summary>정의판 — 티어 게이트는 정의의 Tier, 보상 해금은 아직 SO 키(5a-3에서 id 키로).</summary>
+        public static bool IsUnlocked(RecipeDef r) =>
+            r != null && ((GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.Tier)) ||
+                          RecipeRewardUnlockService.IsUnlocked(RecipeAssets.Of(r)));
     }
 }

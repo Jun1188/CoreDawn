@@ -20,11 +20,11 @@ namespace CoreDawn.Factory
     public class MinerBehavior : IBuildingBehavior, ISaveableBehavior
     {
         readonly BuildingModule    _b;
-        readonly MinerDataSO _data;
+        readonly ExtractorModuleDef _data;
         ItemDef _target;
         float      _readyAt = -1f;   // 채굴 완료 예정 시각 (-1 = 예약 없음 = 정지 상태)
 
-        public MinerBehavior(BuildingModule b, MinerDataSO data) { _b = b; _data = data; }
+        public MinerBehavior(BuildingModule b, ExtractorModuleDef data) { _b = b; _data = data; }
 
         // 외부(ResourceGrid 등)에서 OnAfterPlaced 이후 주입
         public void SetTarget(ItemDef item)
@@ -69,7 +69,7 @@ namespace CoreDawn.Factory
             {
                 // 광맥 난이도 ÷ 채굴기 배율 — 같은 채굴기라도 크리스탈 광맥에서는 느리다
                 float baseInterval = sim.GetExtractIntervalAt?.Invoke(_b.Origin) ?? 1f;
-                float interval = baseInterval / Mathf.Max(0.01f, _data.speedMultiplier);
+                float interval = baseInterval / Mathf.Max(0.01f, _data.SpeedMultiplier);
 
                 _readyAt = sim.Now + interval;
                 sim.ScheduleWake(_b, interval);

@@ -61,8 +61,8 @@ namespace CoreDawn.Tests
 
             sb.AppendLine("--------------------------------------------------");
             sb.AppendLine("[ 건물 정보 ]");
-            sb.AppendLine($"- 이름 : {building.Data.displayName}");
-            sb.AppendLine($"- 종류 : {building.Data.GetType().Name}");
+            sb.AppendLine($"- 이름 : {building.DisplayName}");
+            sb.AppendLine($"- 정의 : {building.Def.Id}");
             sb.AppendLine($"- 위치 : {building.Origin}");
             sb.AppendLine($"- 회전 : {building.RotationSteps}단계 ({building.RotationSteps * 90}도)");
             sb.AppendLine();

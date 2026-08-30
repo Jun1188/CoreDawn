@@ -26,7 +26,7 @@ namespace CoreDawn.Tests
         readonly List<ScriptableObject> _createdSOs = new();
 
         FactorySystem _sim;
-        ItemDataSO _ore, _ingot;
+        ItemDef _ore, _ingot;
 
         // ─── 실행 루프 ──────────────────────────────────────────────
 
@@ -73,7 +73,7 @@ namespace CoreDawn.Tests
             // 시나리오마다 새 심 — plain C#이라 싱글톤 정리·프레임 대기가 필요 없다
             _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
             _sim.GetResourceAt = _ => _ore;
-            _beltSO = null;   // 벨트 SO도 시나리오별로 새로
+            _beltDef = null;   // 벨트 정의도 시나리오별로 새로
             _fails.Clear();
 
             try { scenario(); }
@@ -385,7 +385,7 @@ namespace CoreDawn.Tests
         /// </summary>
         void S15_MultiOutputRoundRobin()
         {
-            var hub = MakeBuilding<StorageDataSO>("TestHub",
+            var hub = MakeBuilding("TestHub",
                 new[] { Port(true, Direction.West), Port(false, Direction.North),
                         Port(false, Direction.East), Port(false, Direction.South) }, stackCap: 50);
 
@@ -418,7 +418,7 @@ namespace CoreDawn.Tests
                 _sim.Advance(0.1f);
         }
 
-        static int StoredCount(BuildingModule store, ItemDataSO item)
+        static int StoredCount(BuildingModule store, ItemDef item)
             => store.Input.CountOf(item) + store.Output.CountOf(item);
 
         /// <summary>막힌 체인 검증용: 마이너 출력 + 벨트 입력 버퍼 + 벨트 위 아이템 총합.</summary>
@@ -430,95 +430,84 @@ namespace CoreDawn.Tests
             return total;
         }
 
-        // ─── 배치/SO 생성 헬퍼 (심 직접 호출 — 뷰/GameObject 불필요) ──
+        // ─── 배치/정의 생성 헬퍼 (심 직접 호출 — SO·뷰·GameObject 불필요) ──
+        //     정의는 팩 json과 같은 타입(EntityDef·ItemDef·RecipeDef)을 코드로 조립한다.
 
-        BuildingModule Place(BuildingDataSO so, int x, int y, int rot = 0)
-            => _sim.Place(so, new Vector2Int(x, y), rot);
+        BuildingModule Place(EntityDef def, int x, int y, int rot = 0)
+            => _sim.Place(def, new Vector2Int(x, y), rot);
 
         BuildingModule PlaceBelt(int x, int y, int rot, BeltShape shape)
             => _sim.Place(Belt(), new Vector2Int(x, y), rot, BeltDataSO.BuildPorts(shape, rot));
 
-        BuildingDataSO Miner(float ptime = 0.2f, int outBuf = 5)
-        {
+        EntityDef Miner(float ptime = 0.2f, int outBuf = 5)
             // stackCap = outBuf → 출력 버퍼가 정확히 outBuf개에서 가득 참 (stall 시나리오용)
-            var so = MakeBuilding<MinerDataSO>("TestMiner",
-                new[] { Port(false, Direction.East) }, stackCap: outBuf);
             // 채굴 시간 = 광맥 기준(훅 없으면 1초) ÷ 배율 → ptime초를 원하면 배율은 1/ptime
-            so.speedMultiplier = 1f / Mathf.Max(0.01f, ptime);
-            return so;
-        }
+            => MakeBuilding("TestMiner", new[] { Port(false, Direction.East) }, stackCap: outBuf,
+                            extra: new ExtractorModuleDef { SpeedMultiplier = 1f / Mathf.Max(0.01f, ptime) });
 
-        // 벨트는 시나리오 안에서 단일 SO를 공유 — 병합 가드가 "같은 에셋"만 병합하므로
-        BeltDataSO _beltSO;
-        BuildingDataSO Belt() =>
-            _beltSO != null ? _beltSO : _beltSO =
-                MakeBuilding<BeltDataSO>("TestBelt",
-                    new[] { Port(true, Direction.West), Port(false, Direction.East) }, stackCap: 10);
+        // 벨트는 시나리오 안에서 단일 정의를 공유 — 병합 가드가 "같은 정의"만 병합하므로
+        EntityDef _beltDef;
+        EntityDef Belt() =>
+            _beltDef != null ? _beltDef : _beltDef =
+                MakeBuilding("TestBelt", new[] { Port(true, Direction.West), Port(false, Direction.East) }, stackCap: 10,
+                             extra: new ConveyorModuleDef());
 
         /// <param name="slots">담을 아이템 종류 수만큼 필요 (종류당 1슬롯). 기본 1종.</param>
-        BuildingDataSO Storage(int slots = 1) =>
-            MakeBuilding<StorageDataSO>("TestStorage",
-                new[] { Port(true, Direction.West) }, stackCap: 50, slots: slots);
+        EntityDef Storage(int slots = 1) =>
+            MakeBuilding("TestStorage", new[] { Port(true, Direction.West) }, stackCap: 50, slots: slots);
 
         /// <summary>입력 한 면만 있는 받이 — 다출구 분배를 셀 때 각 방향에 하나씩 둔다.</summary>
-        BuildingDataSO Sink(Direction inputDir) =>
-            MakeBuilding<StorageDataSO>($"TestSink_{inputDir}",
-                new[] { Port(true, inputDir) }, stackCap: 50);
+        EntityDef Sink(Direction inputDir) =>
+            MakeBuilding($"TestSink_{inputDir}", new[] { Port(true, inputDir) }, stackCap: 50);
 
-        BuildingDataSO Splitter() =>
-            MakeBuilding<SplitterDataSO>("TestSplitter",
+        EntityDef Splitter() =>
+            MakeBuilding("TestSplitter",
                 new[] { Port(true, Direction.West), Port(false, Direction.East),
-                        Port(false, Direction.North), Port(false, Direction.South) }, stackCap: 1);
+                        Port(false, Direction.North), Port(false, Direction.South) }, stackCap: 1,
+                extra: new RouterModuleDef { Mode = "split" });
 
-        BuildingDataSO Merger() =>
-            MakeBuilding<MergerDataSO>("TestMerger",
+        EntityDef Merger() =>
+            MakeBuilding("TestMerger",
                 new[] { Port(true, Direction.West), Port(true, Direction.North),
-                        Port(true, Direction.South), Port(false, Direction.East) }, stackCap: 1);
+                        Port(true, Direction.South), Port(false, Direction.East) }, stackCap: 1,
+                extra: new RouterModuleDef { Mode = "merge" });
 
-        BuildingDataSO Assembler(RecipeDataSO recipe)
+        EntityDef Assembler(RecipeDef recipe)
         {
-            var so = MakeBuilding<AssemblerDataSO>("TestAssembler",
-                new[] { Port(true, Direction.West), Port(false, Direction.East) }, stackCap: 10);
-            so.availableRecipes = new[] { recipe };
-            return so;
+            var crafter = new CrafterModuleDef();
+            crafter.Recipes.Add(recipe);
+            return MakeBuilding("TestAssembler",
+                new[] { Port(true, Direction.West), Port(false, Direction.East) }, stackCap: 10, extra: crafter);
         }
 
-        static PortDefinition Port(bool isInput, Direction dir) =>
-            new() { IsInput = isInput, Direction = dir, LocalOffset = Vector2Int.zero };
+        static PortDef Port(bool isInput, Direction dir) =>
+            new() { IsInput = isInput, Dir = dir.ToString(), X = 0, Y = 0 };
 
-        T MakeBuilding<T>(string name, PortDefinition[] ports, int stackCap = 10, int slots = 1)
-            where T : BuildingDataSO
+        EntityDef MakeBuilding(string name, PortDef[] ports, int stackCap = 10, int slots = 1, params EntityModuleDef[] extra)
         {
-            var so = ScriptableObject.CreateInstance<T>();
-            so.name           = name;
-            so.size           = Vector2Int.one;
-            so.ports          = ports;
-            so.inputSlots     = slots;
-            so.outputSlots    = slots;      // 여러 종류를 담는 시나리오는 slots를 늘릴 것 (종류당 1슬롯)
-            so.bufferStackCap = stackCap;   // 슬롯당 stackCap = "최대 n개" 의미
-            _createdSOs.Add(so);
-            return so;
+            var def = new EntityDef { Id = "test:entity/" + name.ToLowerInvariant(), DisplayName = name, Faction = Faction.Player };
+            def.Modules.Add(new BuildingModuleDef { Size = new Vec2i(1, 1) });
+            def.Modules.Add(new HealthModuleDef { MaxHp = 100f });
+            def.Modules.Add(new EffectsModuleDef());
+            var portsDef = new PortsModuleDef();
+            portsDef.Ports.AddRange(ports);
+            def.Modules.Add(portsDef);
+            // 여러 종류를 담는 시나리오는 slots를 늘릴 것 (종류당 1슬롯). 슬롯당 stackCap = "최대 n개" 의미
+            def.Modules.Add(new InventoryModuleDef { Input = slots, Output = slots, StackCap = stackCap });
+            def.Modules.AddRange(extra);
+            return def;
         }
 
-        ItemDataSO MakeItem(string name, ItemType type)
-        {
-            var so = ScriptableObject.CreateInstance<ItemDataSO>();
-            so.displayName = name;
-            so.type = type;
-            _createdSOs.Add(so);
-            return so;
-        }
+        static ItemDef MakeItem(string name, ItemType type)
+            => new() { Id = "test:item/" + name.ToLowerInvariant(), DisplayName = name, Type = type, MaxStack = 64 };
 
-        RecipeDataSO MakeRecipe(ItemDataSO input, int inAmount, ItemDataSO output, int outAmount, float craftTime)
-        {
-            var so = ScriptableObject.CreateInstance<RecipeDataSO>();
-            so.name      = "TestRecipe";
-            so.inputs    = new[] { new RecipeDataSO.Slot { item = input,  amount = inAmount } };
-            so.outputs   = new[] { new RecipeDataSO.Slot { item = output, amount = outAmount } };
-            so.craftTime = craftTime;
-            _createdSOs.Add(so);
-            return so;
-        }
+        static RecipeDef MakeRecipe(ItemDef input, int inAmount, ItemDef output, int outAmount, float craftTime)
+            => new()
+            {
+                Id = "test:recipe/" + output.DisplayName.ToLowerInvariant(), DisplayName = "TestRecipe", Tier = 0, Seconds = craftTime,
+                Inputs  = { new ItemAmount(input,  inAmount) },
+                Outputs = { new ItemAmount(output, outAmount) },
+            };
 
         // ─── 결과 표시 ─────────────────────────────────────────────
 

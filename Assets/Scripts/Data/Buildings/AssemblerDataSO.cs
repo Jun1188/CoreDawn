@@ -18,8 +18,6 @@ namespace CoreDawn.Data
         [Header("레시피")]
         public RecipeDataSO[] availableRecipes;
 
-        public override IBuildingBehavior CreateBehavior(BuildingModule building)
-            => new AssemblerBehavior(building, this);
 
         protected override void OnValidate()
         {

@@ -30,9 +30,9 @@ namespace CoreDawn.Factory
     public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior, IDamageInterceptor
     {
         readonly BuildingModule _b;
-        readonly CoreDataSO _so;
+        readonly CoreModuleDef _so;
 
-        public CoreBehavior(BuildingModule b, CoreDataSO so)
+        public CoreBehavior(BuildingModule b, CoreModuleDef so)
         {
             _b = b;
             _so = so;
@@ -45,19 +45,19 @@ namespace CoreDawn.Factory
         public ItemContainer Container => _b.Input;
 
         /// <summary>수리 단계 목록을 읽기 위한 UI용 접근자.</summary>
-        public CoreDataSO Data => _so;
+        public CoreModuleDef Def => _so;
 
         /// <summary>현재 진행 중인 단계 인덱스. tiers.Length와 같으면 전 단계 완료.</summary>
         public int CurrentTierIndex => TierIndex;
 
         /// <summary>전체 수리 단계 수.</summary>
-        public int TierCount => _so.tiers != null ? _so.tiers.Length : 0;
+        public int TierCount => _so.Tiers.Count;
 
         int TierIndex => GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
 
-        public bool HasNextTier => _so.tiers != null && TierIndex < _so.tiers.Length;
+        public bool HasNextTier => TierIndex < _so.Tiers.Count;
 
-        CoreTierDefinition CurrentTier => HasNextTier ? _so.tiers[TierIndex] : null;
+        CoreTierDef CurrentTier => HasNextTier ? _so.Tiers[TierIndex] : null;
 
         public string InteractPrompt => HasNextTier ? "코어에 자원 납품" : "코어 (최고 티어 달성)";
 
@@ -72,9 +72,9 @@ namespace CoreDawn.Factory
         public IReadOnlyList<(ItemDef item, int required, int current)> GetProgress()
         {
             var list = new List<(ItemDef, int, int)>();
-            var reqs = CurrentTier?.requirements;
+            var reqs = CurrentTier?.Requirements;
             if (reqs == null) return list;
-            foreach (var r in reqs) list.Add((r.item, r.amount, _b.Input.CountOf(r.item)));
+            foreach (var r in reqs) list.Add((r.Item, r.Amount, _b.Input.CountOf(r.Item)));
             return list;
         }
 
@@ -100,11 +100,11 @@ namespace CoreDawn.Factory
             // 못 들어오게 막은 채로 "미충족" 판정이 나 한 틱씩 계속 헛돈다.
             BurnSurplus();
 
-            var reqs = CurrentTier?.requirements;
+            var reqs = CurrentTier?.Requirements;
             if (reqs == null) { SetReady(false); return; }
 
             foreach (var r in reqs)
-                if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return; } // 아직 미충족
+                if (_b.Input.CountOf(r.Item) < r.Amount) { SetReady(false); return; } // 아직 미충족
 
             SetReady(true);
 
@@ -121,11 +121,11 @@ namespace CoreDawn.Factory
         public bool TryStartRepair()
         {
             var tier = CurrentTier;          // 진행하면 CurrentTier가 다음 단계를 가리키므로 먼저 잡는다
-            var reqs = tier?.requirements;
+            var reqs = tier?.Requirements;
             if (reqs == null) return false;
 
             foreach (var r in reqs)
-                if (_b.Input.CountOf(r.item) < r.amount) { SetReady(false); return false; }
+                if (_b.Input.CountOf(r.Item) < r.Amount) { SetReady(false); return false; }
 
             // 진행을 기록할 곳이 없으면 시작하지 않는다. 여기서 그냥 밀고 나가면 부품만
             // 먹고 단계는 그대로라 매 틱 같은 일이 반복된다 — 헤드리스 심/테스트 씬처럼
@@ -133,10 +133,10 @@ namespace CoreDawn.Factory
             var gm = GameManager.Instance;
             if (gm == null) { SetReady(false); return false; }
 
-            foreach (var r in reqs) _b.Input.TryConsume(r.item, r.amount);
+            foreach (var r in reqs) _b.Input.TryConsume(r.Item, r.Amount);
 
             gm.AdvanceTier(TierIndex + 1);
-            ApplyMaxHpBonus(tier.maxHpBonus);
+            ApplyMaxHpBonus(tier.MaxHpBonus);
             SetReady(false);
             RefreshAcceptFilter();
 
@@ -165,11 +165,11 @@ namespace CoreDawn.Factory
         {
             get
             {
-                float max = _so.baseMaxShield;
-                var tiers = _so.tiers;
+                float max = _so.BaseMaxShield;
+                var tiers = _so.Tiers;
                 if (tiers != null)
-                    for (int i = 0; i < TierIndex && i < tiers.Length; i++)
-                        max += tiers[i].maxShieldBonus;
+                    for (int i = 0; i < TierIndex && i < tiers.Count; i++)
+                        max += tiers[i].MaxShieldBonus;
                 return Mathf.Max(0f, max);
             }
         }
@@ -201,8 +201,8 @@ namespace CoreDawn.Factory
         /// <summary>이 아이템이 지금 단계의 요구 목록에 있는가. 없으면 소각 대상이다.</summary>
         bool IsRequired(ItemDef item)
         {
-            var reqs = CurrentTier?.requirements;
-            return reqs != null && System.Array.Exists(reqs, r => r != null && (ItemDef)r.item == item);
+            var reqs = CurrentTier?.Requirements;
+            return reqs != null && reqs.Exists(r => r != null && r.Item == item);
         }
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace CoreDawn.Factory
         /// </summary>
         int BurnSurplus()
         {
-            if (!_so.burnSurplusIntoShield || !_b.Input.HasAny) return 0;
+            if (!_so.BurnSurplusIntoShield || !_b.Input.HasAny) return 0;
 
             float max = MaxShield;
             int burned = 0;
@@ -247,7 +247,7 @@ namespace CoreDawn.Factory
         /// 이미 난 상처를 없던 일로 만드는 게 아니다 — 밤에 깎인 체력이 공짜로 돌아오면
         /// 방어를 못해도 코어가 버티게 된다.
         /// </summary>
-        void ApplyMaxHpBonus(int bonus)
+        void ApplyMaxHpBonus(float bonus)
         {
             if (bonus <= 0) return;
 
@@ -282,7 +282,7 @@ namespace CoreDawn.Factory
         void RefreshAcceptFilter()
         {
             _b.Input.AcceptFilter = item =>
-                item != null && (_so.burnSurplusIntoShield || IsRequired(item));
+                item != null && (_so.BurnSurplusIntoShield || IsRequired(item));
         }
 
         // ── 세이브 ────────────────────────────────────────────────────

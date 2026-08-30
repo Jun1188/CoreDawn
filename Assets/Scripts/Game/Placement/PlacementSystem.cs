@@ -13,6 +13,7 @@ using CoreDawn.UI;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
 using CoreDawn.Sound;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Placement
 {
@@ -343,8 +344,8 @@ namespace CoreDawn.Placement
             // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
             // 재료가 모자라면 프리뷰가 빨갛게 떠서 누르기 전에 알 수 있다
             lastCanPlace = heightOk && CanBuildTerrain(origin, size) && CanPlace(origin, size)
-                        && ResourceNodeRegistry.CanPlace(current, origin, size)
-                        && BuildCost.CanAfford(current);
+                        && ResourceNodeRegistry.CanPlace(current.Def, origin, size)
+                        && BuildCost.CanAfford(current.Def);
             lastOrigin   = origin;
             lastPos      = pos;
             SetPreviewColor(lastCanPlace);
@@ -369,7 +370,7 @@ namespace CoreDawn.Placement
         {
             // 재료를 먼저 깎는다. 실패하면 배치도 하지 않는다 —
             // 프리뷰 판정과 실제 클릭 사이에 인벤토리가 바뀌었을 수 있다.
-            if (!BuildCost.TryCharge(current))
+            if (!BuildCost.TryCharge(current.Def))
             {
                 Debug.Log($"[Placement] 재료가 부족해 '{current.name}' 을 지을 수 없습니다.");
                 // 왜 아무 일도 안 일어났는지 소리로 알린다 — 로그는 플레이어가 못 본다
@@ -378,10 +379,10 @@ namespace CoreDawn.Placement
             }
 
             if (current is BeltDataSO belt)
-                PlacementBridge.Place(current, origin, pos, rotation,
+                PlacementBridge.Place(current.Def, origin, pos, rotation,
                     BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape), beltShape);
             else
-                PlacementBridge.Place(current, origin, pos, rotation);
+                PlacementBridge.Place(current.Def, origin, pos, rotation);
 
             // 벨트 한 칸까지 포함해 무엇을 짓든 같은 설치음이 난다 — 공장을 짓는 리듬이 손에 붙는다
             if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Construct);
@@ -396,15 +397,15 @@ namespace CoreDawn.Placement
         /// </summary>
         /// <param name="shape">벨트 모양. 벨트가 아닌 건물에서는 무시된다.</param>
         /// <returns>배치 성공 여부. 실패 사유는 reason으로 돌려준다.</returns>
-        public bool TryPlaceAt(BuildingDataSO so, Vector2Int origin, int rotSteps,
+        public bool TryPlaceAt(EntityDef def, Vector2Int origin, int rotSteps,
             out BuildingModule placed, out string reason, BeltShape shape = BeltShape.Straight)
         {
             placed = null;
             reason = null;
 
-            if (so == null) { reason = "BuildingDataSO가 null"; return false; }
+            if (def == null) { reason = "건물 정의가 null (팩에 없는 건물)"; return false; }
 
-            Vector2Int size = so.GetRotatedSize(rotSteps);
+            Vector2Int size = BuildingPorts.RotatedSize(def, rotSteps);
 
             if (!TryGetFootprintHeight(origin, size, out float groundY))
             {
@@ -413,16 +414,17 @@ namespace CoreDawn.Placement
             }
             if (!CanBuildTerrain(origin, size)) { reason = "지을 수 없는 지형 (강·절벽 또는 맵 밖)"; return false; }
             if (!CanPlace(origin, size)) { reason = "이미 점유된 칸"; return false; }
-            if (!ResourceNodeRegistry.CanPlace(so, origin, size)) { reason = "광맥 조건 불충족"; return false; }
+            if (!ResourceNodeRegistry.CanPlace(def, origin, size)) { reason = "광맥 조건 불충족"; return false; }
 
             Vector3 pos = grid.GetFootprintCenter(origin, size);
+            var so = BuildingAssets.Of(def);   // 표현 에셋 — 들어올림·커브 메시는 아직 프리팹이 안다
             pos.y = groundY + SurfaceLift(so, origin);
 
             // 조준 배치(Place)와 같은 규칙 — 벨트는 모양에 맞는 포트·커브 메시로 세운다
-            placed = so is BeltDataSO belt
-                ? PlacementBridge.Place(so, origin, pos, rotSteps,
-                    BeltDataSO.BuildPorts(shape, rotSteps), belt.PrefabFor(shape), shape)
-                : PlacementBridge.Place(so, origin, pos, rotSteps);
+            placed = def.Has<ConveyorModuleDef>()
+                ? PlacementBridge.Place(def, origin, pos, rotSteps,
+                    BeltDataSO.BuildPorts(shape, rotSteps), (so as BeltDataSO)?.PrefabFor(shape), shape)
+                : PlacementBridge.Place(def, origin, pos, rotSteps);
             return placed != null;
         }
 
@@ -470,7 +472,7 @@ namespace CoreDawn.Placement
         }
 
         /// <summary>철거를 허용하는 건물인가 — 데이터가 없는 건물은 허용한다(테스트용 심 배치).</summary>
-        static bool IsDemolishable(BuildingModule b) => b != null && (b.Data == null || b.Data.isDemolishable);
+        static bool IsDemolishable(BuildingModule b) => b != null && b.Building.IsDemolishable;
 
         /// <summary>특정 건물을 철거한다. 점유 칸 모두 해제 + 인스턴스 파괴. 코어·둥지는 거부한다.</summary>
         public void Demolish(BuildingModule b)
@@ -488,10 +490,10 @@ namespace CoreDawn.Placement
             // 환급 위치는 뷰가 파괴되기 전에 잡아둔다 — Remove가 GameObject를 없앤다
             var view = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.GetView(b) : null;
             Vector3 dropAt = view != null ? view.transform.position : Vector3.zero;
-            var data = b.Data;
+            var def = b.Def;
 
             PlacementBridge.Remove(b);
-            BuildCost.Refund(data, dropAt);   // 전액 환급
+            BuildCost.Refund(def, dropAt);    // 전액 환급
 
             // 자진 철거는 전투 파괴와 다른 소리여야 한다 — 파괴는 사고, 철거는 의도다.
             // 뷰가 이미 사라졌으므로 아까 잡아둔 좌표에서 낸다.

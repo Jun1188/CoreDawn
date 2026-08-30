@@ -3,6 +3,7 @@ using CoreDawn.Entities;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -15,21 +16,22 @@ namespace CoreDawn.Factory
         /// <param name="portOverride">인스턴스별 포트 형상 (벨트 커브 등). null이면 SO 포트 사용.</param>
         /// <param name="prefabOverride">인스턴스별 프리팹 (벨트 커브 메시 등). null이면 SO 프리팹 사용.</param>
         /// <param name="shape">벨트 모양. 세이브가 그대로 되살릴 수 있도록 심에도 기록된다.</param>
-        public static BuildingModule Place(BuildingDataSO so, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
+        public static BuildingModule Place(EntityDef def, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
             PortDefinition[] portOverride = null, GameObject prefabOverride = null,
             BeltShape shape = BeltShape.Straight)
         {
             var boot = FactoryBootstrap.Instance;
-            var b = boot.Factory.Place(so, origin, rotSteps, portOverride, shape);
+            var b = boot.Factory.Place(def, origin, rotSteps, portOverride, shape);
 
             // 뷰 생성 — 벨트 커브는 메시의 뚫린 변을 포트에 맞추는 보정이 붙는다.
             // 프리뷰(PlacementSystem.PreviewYaw)와 반드시 같은 값이어야 한다: 여기만 고치면
             // 미리보기와 실제로 세워진 것이 다른 방향을 보게 된다.
-            var prefab = prefabOverride != null ? prefabOverride : so.prefab;
-            float yaw = so is BeltDataSO ? BeltDataSO.MeshYaw(shape, rotSteps) : rotSteps * 90f;
+            var so = BuildingAssets.Of(def);   // 표현 에셋(프리팹) — 5a-3에서 뷰 카탈로그로
+            var prefab = prefabOverride != null ? prefabOverride : so != null ? so.prefab : null;
+            float yaw = def.Has<ConveyorModuleDef>() ? BeltDataSO.MeshYaw(shape, rotSteps) : rotSteps * 90f;
             GameObject go = prefab != null
                 ? Object.Instantiate(prefab, pos, Quaternion.Euler(0, yaw, 0))
-                : new GameObject(so.name);   // 프리팹 누락 시 빈 오브젝트
+                : new GameObject(def.Id);    // 프리팹 누락 시 빈 오브젝트
 
             // 프리팹에 미리 붙어 있으면(타워의 canAttack 설정 등) 그대로 쓰고, 없으면 부착
             var view = go.GetComponent<BuildingView>();
@@ -44,11 +46,11 @@ namespace CoreDawn.Factory
         /// 씬에 이미 있는 뷰(코어 같은 싱글턴)를 심에 연결한다 — 새 프리팹을 Instantiate하지 않는다.
         /// 배치 자체(Grid/Graph 등록)는 Place와 동일하게 FactorySystem이 담당한다.
         /// </summary>
-        public static BuildingModule PlaceExisting(BuildingDataSO so, Vector2Int origin, int rotSteps,
+        public static BuildingModule PlaceExisting(EntityDef def, Vector2Int origin, int rotSteps,
             BuildingView existingView, PortDefinition[] portOverride = null)
         {
             var boot = FactoryBootstrap.Instance;
-            var b = boot.Factory.Place(so, origin, rotSteps, portOverride);
+            var b = boot.Factory.Place(def, origin, rotSteps, portOverride);
 
             existingView.Building = b;
             boot.RegisterView(b, existingView);

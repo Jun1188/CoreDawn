@@ -22,8 +22,6 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewSplitter", menuName = "Factory/Buildings/Splitter")]
     public class SplitterDataSO : BuildingDataSO
     {
-        public override IBuildingBehavior CreateBehavior(BuildingModule building)
-            => new SplitterBehavior(building);
     }
 
     // ─── 행동 ──────────────────────────────────────────────────────

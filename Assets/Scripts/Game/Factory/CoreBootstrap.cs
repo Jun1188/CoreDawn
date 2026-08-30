@@ -36,7 +36,7 @@ namespace CoreDawn.Factory
             }
 
             var view = GetComponent<BuildingView>();
-            PlacementBridge.PlaceExisting(coreData, gridOrigin, rotationSteps, view);
+            PlacementBridge.PlaceExisting(coreData.Def, gridOrigin, rotationSteps, view);
         }
     }
 }

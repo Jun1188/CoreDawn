@@ -7,6 +7,7 @@ using CoreDawn.Managers;
 using CoreDawn.Placement;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Navigation
 {
@@ -199,7 +200,7 @@ namespace CoreDawn.Navigation
 
             if (!passBuildings) return TileRules.Blocked;
 
-            int hp = building.Data != null ? building.Data.maxHp : 100;
+            int hp = Mathf.RoundToInt(building.Def.Get<HealthModuleDef>()?.MaxHp ?? 100f);
             return cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
         }
 
@@ -285,7 +286,7 @@ namespace CoreDawn.Navigation
                         continue;
                     }
 
-                    int hp = building.Data != null ? building.Data.maxHp : 100;
+                    int hp = Mathf.RoundToInt(building.Def.Get<HealthModuleDef>()?.MaxHp ?? 100f);
                     costs.EnterCost[i] = cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
                     costs.Walkable[i] = false;      // 뚫고는 가도 걸어서는 못 지나간다
                 }

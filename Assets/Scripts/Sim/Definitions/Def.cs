@@ -37,6 +37,10 @@ namespace CoreDawn.Sim
 
         [JsonIgnore] public ItemDef Item { get; private set; }
 
+        public ItemAmount() { }
+        /// <summary>코드에서 만든(이미 해석된) 수량 — 테스트·런타임 조립용. json 로드는 기본 생성자 + Resolve.</summary>
+        public ItemAmount(ItemDef item, int amount) { Item = item; ItemId = item?.Id; Amount = amount; }
+
         public void Resolve(SimDatabase db, List<string> errors, string owner) => Item = db.ResolveItem(ItemId, errors, owner);
         public override string ToString() => $"{ItemId} x{Amount}";
     }

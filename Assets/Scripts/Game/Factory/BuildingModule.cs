@@ -2,29 +2,34 @@ using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Inventories;
 using CoreDawn.Sim;
-using CoreDawn.Data;
+using CoreDawn.Data;   // PortDefinition·BeltShape·Direction — 5a-2f에서 공장과 함께 Sim으로 옮긴다
 
 namespace CoreDawn.Factory
 {
     /// <summary>
     /// 배치된 건물 — 심 엔티티에 붙는 모듈(plain C#, MonoBehaviour 아님).
-    /// BuildingDataSO = 설계도 (공유됨), Building = 실물 (각자 독립적 상태).
+    /// EntityDef(팩 정의, 불변·공유) = 설계도, BuildingModule = 실물 (각자 독립적 상태).
     ///
-    /// 이 모듈이 건물 데이터의 원본(source of truth)이다 — Data/Origin/회전/버퍼/연결/행동/IsRemoved.
+    /// 이 모듈이 건물 데이터의 원본(source of truth)이다 — Def/Origin/회전/버퍼/연결/행동/IsRemoved.
     /// HP·편·번호는 모듈이 아니라 <see cref="Owner"/>(심 엔티티)의 것이다: 둥지는 건물이면서 스포너이고
     /// 코어는 건물이면서 목표라, "건물"을 상속으로 만들면 곧 다이아몬드가 되므로 조합으로 붙인다.
     /// 씬 표현은 BuildingView(MonoBehaviour)가 껍데기로 맡고, 이 건물이 제거되면 FactorySystem.Removed를 타고 껍데기도 함께 정리된다.
     /// (순수 C#인 이유: 씬·프레임 없이 돌리는 헤드리스 시뮬레이션·테스트가 가능해야 한다)
     ///
     /// 연결 목록(InputConnections/OutputConnections)은 BuildingGraph가 채우고,
-    /// 행동(IBuildingBehavior)은 SO의 CreateBehavior()가 결정한다.
+    /// 행동(IBuildingBehavior)은 정의의 모듈 조합으로 <see cref="BuildingBehaviors"/>가 고른다.
+    /// 정의에서 무엇을 읽을지는 정의 타입이 말한다 — 크기·철거·비용은 <see cref="Building"/>, 포트는 Ports, 버퍼는 Inventory.
     /// </summary>
     public class BuildingModule : EntityModule, IDamageInterceptor, IFootprint
     {
         public readonly FactorySystem Factory;
 
         // 불변 데이터 (생성 이후 변경 안 됨)
-        public BuildingDataSO Data { get; }
+
+        /// <summary>이 건물의 정의(팩 json). 다른 모듈 정의는 Def.Get&lt;XModuleDef&gt;()로 읽는다.</summary>
+        public EntityDef Def { get; }
+        /// <summary>건물 값 — 크기·배치 가능·철거·아군 공격·위협 시드·메뉴 순서·비용. 정의의 Building 모듈.</summary>
+        public BuildingModuleDef Building { get; }
         public Vector2Int Origin { get; }
         public int RotationSteps { get; }
 
@@ -32,7 +37,7 @@ namespace CoreDawn.Factory
         /// false면 남의 엔티티(둥지 등)에 얹힌 것이라 건물 모듈만 떨어진다.</summary>
         public bool OwnsEntity { get; }
 
-        // 인스턴스별 포트 형상 (벨트 커브 등). null이면 SO의 회전 포트 사용.
+        // 인스턴스별 포트 형상 (벨트 커브 등). null이면 정의의 회전 포트 사용.
         public PortDefinition[] PortOverride { get; }
 
         /// <summary>
@@ -56,26 +61,40 @@ namespace CoreDawn.Factory
 
         readonly IBuildingBehavior _behavior;
 
-        public BuildingModule(FactorySystem factory, BuildingDataSO data, Vector2Int origin, int rotSteps,
+        public BuildingModule(FactorySystem factory, EntityDef def, Vector2Int origin, int rotSteps,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, bool ownsEntity = true)
         {
+            if (def == null) throw new System.ArgumentNullException(nameof(def));
+            Building = def.Get<BuildingModuleDef>()
+                ?? throw new System.ArgumentException($"'{def.Id}'에 Building 모듈 정의가 없습니다 — 건물이 아닙니다.", nameof(def));
+
             Factory       = factory;
-            Data          = data;
+            Def           = def;
             Origin        = origin;
             RotationSteps = rotSteps;
             PortOverride  = portOverride;
             Shape         = shape;
             OwnsEntity    = ownsEntity;
-            Input         = new ItemContainer(data.inputSlots,  data.bufferStackCap);
-            Output        = new ItemContainer(data.outputSlots, data.bufferStackCap);
-            _behavior     = data.CreateBehavior(this);
+
+            // 버퍼 크기는 정의의 Inventory 모듈 — 없으면 슬롯 1(ItemContainer의 최소)
+            var inventory = def.Get<InventoryModuleDef>();
+            Input  = new ItemContainer(inventory?.Input  ?? 0, inventory?.StackCap ?? 0);
+            Output = new ItemContainer(inventory?.Output ?? 0, inventory?.StackCap ?? 0);
+
+            _behavior = BuildingBehaviors.Create(this);
         }
 
-        /// <summary>맵의 코어인가 — 밤 웨이브의 최종 목표, 파괴 = 게임오버. 설계도가 정한다(뷰의 플래그가 아니다).</summary>
-        public bool IsCore => Data is CoreDataSO;
+        /// <summary>사람이 읽는 이름 — 정의의 displayName, 없으면 id.</summary>
+        public string DisplayName => string.IsNullOrEmpty(Def.DisplayName) ? Def.Id : Def.DisplayName;
+
+        /// <summary>맵의 코어인가 — 밤 웨이브의 최종 목표, 파괴 = 게임오버. 정의(Core 모듈)가 정한다(뷰의 플래그가 아니다).</summary>
+        public bool IsCore => Def.Has<CoreModuleDef>();
+
+        /// <summary>벨트인가 — 세그먼트 병합·길찾기·튜토리얼이 묻는다. 정의(Conveyor 모듈)가 정한다.</summary>
+        public bool IsConveyor => Def.Has<ConveyorModuleDef>();
 
         /// <summary>회전이 반영된 점유 크기(칸).</summary>
-        public Vector2Int Size => Data.GetRotatedSize(RotationSteps);
+        public Vector2Int Size => BuildingPorts.RotatedSize(Building, RotationSteps);
 
         /// <summary>
         /// 점유 풋프린트의 월드 사각형(XZ 평면). y는 호출자가 안다(뷰 높이 등).
@@ -96,7 +115,7 @@ namespace CoreDawn.Factory
 
         /// <summary>
         /// 받는 피해 규칙 — 체력이 깎이기 전에 심에서 거른다(구 BuildingView.ApplyEffects/ReceiveDamage override).
-        /// ① <b>아군의 공격</b>이 통하지 않는 건물(Data.isAttackable=false)은 적이 아닌 출처의 피해를 흘린다.
+        /// ① <b>아군의 공격</b>이 통하지 않는 건물(Building.IsAttackable=false)은 적이 아닌 출처의 피해를 흘린다.
         ///    몬스터의 공격은 이 값과 무관하다 — 밤 웨이브가 무엇을 노리는지는 목표 선정(threatSeedCost)이 정하고,
         ///    정한 목표는 실제로 부술 수 있어야 한다.
         ///    출처를 모르는 피해(null)는 아군으로 본다 — 실제 공격자는 모두 자신을 넘기므로 출처 없음 = 누구의 공격도 아님.
@@ -108,7 +127,7 @@ namespace CoreDawn.Factory
 
         public float Intercept(float amount, Entity source)
         {
-            if (Data != null && !Data.isAttackable)
+            if (!Building.IsAttackable)
             {
                 bool hostile = source != null && Owner != null && source.Faction.IsHostileTo(Owner.Faction);
                 if (!hostile) return 0f;
@@ -117,7 +136,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>회전/모양이 적용된 실제 포트 목록. BuildingGraph가 이걸 사용한다.</summary>
-        public PortDefinition[] GetEffectivePorts() => PortOverride ?? Data.GetRotatedPorts(RotationSteps);
+        public PortDefinition[] GetEffectivePorts() => PortOverride ?? BuildingPorts.Rotated(Def, RotationSteps);
 
         /// <summary>
         /// 이 건물이 지정한 월드 칸에서 지정 방향을 향하는 포트를 갖고 있는가.
@@ -129,7 +148,6 @@ namespace CoreDawn.Factory
         {
             var ports = GetEffectivePorts();
             if (ports == null) return false;
-
             foreach (var p in ports)
             {
                 if (p == null || p.Direction != dir) continue;
@@ -146,7 +164,7 @@ namespace CoreDawn.Factory
         /// <summary>FactorySystem이 이 건물이 깨어 있는 틱에 호출.</summary>
         public void Tick(float dt) => _behavior?.Tick(dt);
 
-        /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용).</summary>
+        /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용). 행동 없는 건물(나무·둥지·울타리)은 null.</summary>
         public IBuildingBehavior Behavior => _behavior;
 
         // 출력 라운드로빈 커서 — 다음에 먼저 밀어볼 출력 연결 인덱스.
@@ -170,7 +188,6 @@ namespace CoreDawn.Factory
             {
                 var c = conns[(_nextOut + i) % n];
                 if (!c.To.Input.TryAdd(item)) continue;   // 가득 찬 출구 — 다음 출구로
-
                 Factory.MarkDirty(c.To);
                 _nextOut = (_nextOut + i + 1) % n;        // 다음 아이템은 그 다음 출구부터
                 return true;

@@ -62,8 +62,6 @@ namespace CoreDawn.Data
                  "벨트 보급 타워(심 배치)에서는 쓰이지 않는다 — 그쪽은 실제 소비한 탄이 정의한다.")]
         public ItemDataSO defaultAmmo;
 
-        public override IBuildingBehavior CreateBehavior(BuildingModule building)
-            => new TowerBehavior(building, this);
 
         /// <summary>발사하지 않는 건물인가 — 오라(감속 필드)는 쏘는 대신 펄스한다.</summary>
         public bool IsPassive => fireMode == FireMode.Aura;

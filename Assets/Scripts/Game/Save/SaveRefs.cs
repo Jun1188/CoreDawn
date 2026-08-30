@@ -15,14 +15,12 @@ namespace CoreDawn.Save
     /// </summary>
     public static class SaveRefs
     {
-        static Dictionary<string, BuildingDataSO> _buildings;
         static readonly HashSet<string> _warned = new();
 
         /// <summary>데이터베이스 에셋이 다시 로드된 경우(에디터 재생 등) 캐시를 버린다.</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void ClearCache()
         {
-            _buildings = null;
             _warned.Clear();
         }
 
@@ -43,23 +41,18 @@ namespace CoreDawn.Save
 
         // ── 건물 ──────────────────────────────────────────────────────
 
-        public static BuildingDataSO Building(string id)
+        /// <summary>건물 정의 — 세이브의 id는 v2 id다. 옛 세이브의 "Building:Belt"도 LegacyId로 읽는다.</summary>
+        public static EntityDef Building(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-
-            if (_buildings == null)
-            {
-                _buildings = new Dictionary<string, BuildingDataSO>();
-                var db = BuildingDatabaseSO.LoadDefault();
-                if (db?.buildings != null)
-                    foreach (var b in db.buildings) Index(_buildings, b);
-                else WarnOnce("__buildingdb", "Resources/BuildingDatabase.asset 을 찾지 못했습니다 — 건물 복원이 전부 실패합니다.");
-            }
-
-            return Lookup(_buildings, id, "건물");
+            var db = SimHost.Database;
+            if (db == null) { WarnOnce("__pack", "팩 정의(SimHost.Database)가 없습니다 — 건물 복원이 전부 실패합니다."); return null; }
+            var def = db.Entity(id) ?? db.Entity(db.LegacyId(id));
+            if (def == null) WarnOnce(id, $"건물 '{id}' 정의를 찾지 못했습니다 — 이 건물은 복원되지 않습니다.");
+            return def;
         }
 
-        public static string IdOf(BuildingDataSO building) => building != null ? building.Id : null;
+        public static string IdOf(EntityDef building) => building != null ? building.Id : null;
 
         // ── 레시피 ────────────────────────────────────────────────────
 

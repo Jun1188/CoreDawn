@@ -159,16 +159,16 @@ namespace CoreDawn.ResourceNodes
         // ── 배치 규칙 (PlacementSystem / 배치 UI가 호출할 표면)
 
         /// <summary>이 건물을 이 자리에 지어도 되는가. 채굴기가 아닌 건물은 항상 true.</summary>
-        public static bool CanPlace(BuildingDataSO so, Vector2Int origin, Vector2Int size)
-            => CanPlace(so, origin, size, out _);
+        public static bool CanPlace(EntityDef def, Vector2Int origin, Vector2Int size)
+            => CanPlace(def, origin, size, out _);
 
         /// <param name="reason">막힌 이유(한국어). 통과하면 null.</param>
-        public static bool CanPlace(BuildingDataSO so, Vector2Int origin, Vector2Int size, out string reason)
+        public static bool CanPlace(EntityDef def, Vector2Int origin, Vector2Int size, out string reason)
         {
             reason = null;
 
             // 채굴기 — 반드시 광맥 위여야 한다 (그리고 한 광맥 안에 들어와야 한다)
-            if (so is MinerDataSO) return CanPlaceMiner(origin, size, out _, out reason);
+            if (def != null && def.Has<ExtractorModuleDef>()) return CanPlaceMiner(origin, size, out _, out reason);
 
             // 그 외 건물 — 광맥을 덮으면 안 된다.
             // 광맥은 채굴기 자리다. 저장고·벨트 따위로 덮어버리면 그 광맥을 영영 못 쓰게 된다.
@@ -306,10 +306,10 @@ namespace CoreDawn.ResourceNodes
                 if (boot == null || boot.Factory == null) continue;
 
                 var b = boot.Factory.Grid.GetAt(cell);
-                if (b == null || b.IsRemoved || b.Data is not MinerDataSO) continue;
+                if (b == null || b.IsRemoved || !b.Def.Has<ExtractorModuleDef>()) continue;
                 if (ResourceAt(b.Origin) != null) continue;   // 그 사이 광맥이 생겼으면 통과
 
-                Debug.LogWarning($"[ResourceNode] '{b.Data.displayName}'는 광맥 위에만 설치할 수 있습니다 " +
+                Debug.LogWarning($"[ResourceNode] '{b.DisplayName}'는 광맥 위에만 설치할 수 있습니다 " +
                                  $"(셀 {cell}). 설치를 취소했습니다.");
                 PlacementBridge.Remove(b);
             }

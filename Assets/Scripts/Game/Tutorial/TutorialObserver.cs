@@ -275,7 +275,7 @@ namespace CoreDawn.Tutorial
             {
                 if (b == null) continue;
                 n++;
-                if (b.Data is BeltDataSO) belts++;
+                if (b.IsConveyor) belts++;
             }
 
             // 기준만 잡고 넘어간다
