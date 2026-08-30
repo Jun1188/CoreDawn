@@ -100,20 +100,10 @@ namespace CoreDawn.Data
     [Serializable]
     public struct ResourceNodeSpec
     {
-        [Tooltip("캘 수 있는 아이템 — GameData.json의 광석 3종 중 하나.")]
+        [Tooltip("이 칸에 묻힌 자원. 광맥은 한 칸짜리다 — 넓은 광맥은 칸을 여럿 놓는다. 재생·상한·난이도 수치는 팩의 광맥 정의(ResourceDeposit)가 갖는다.")]
         public ItemDataSO item;
-
-        [Tooltip("풋프린트의 왼쪽 아래 칸.")]
+        [Tooltip("광맥 칸.")]
         public Vector2Int cell;
-
-        [Tooltip("정사각 풋프린트 한 변(1~3). 크기가 곧 등급이다.")]
-        public int size;
-
-        [Tooltip("배율 1 기준 1개당 초. 실제 채굴 시간 = 이 값 ÷ 채굴기 speedMultiplier.")]
-        public float extractInterval;
-
-        [Tooltip("이 광맥이 쌓아둘 수 있는 최대 재고.")]
-        public int maxStock;
     }
 
     /// <summary>몬스터 둥지 하나 — 낮의 습격 조건과 방어 몬스터가 나오는 자리를 정의한다.</summary>

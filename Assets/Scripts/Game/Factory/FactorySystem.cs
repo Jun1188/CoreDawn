@@ -78,22 +78,94 @@ namespace CoreDawn.Factory
         /// </summary>
         public void RestoreClock(float now) => Now = now;
 
-        /// <summary>마이너가 채굴 대상을 결정하는 서비스 포인트 (ResourceGrid 등에서 주입).</summary>
-        public Func<Vector2Int, ItemDef> GetResourceAt;
+        // ── 광맥 — 공장 격자를 차지하지 않는 별도 색인(채굴기가 그 위에 올라간다). 한 칸짜리, 매장량 없음.
+        readonly Dictionary<Vector2Int, ResourceDepositModule> _deposits = new();
+        readonly List<ResourceDepositModule> _depositList = new();
+
+        public IReadOnlyList<ResourceDepositModule> Deposits => _depositList;
+        public ResourceDepositModule DepositAt(Vector2Int cell) => _deposits.TryGetValue(cell, out var d) ? d : null;
+        public ItemDef ResourceAt(Vector2Int cell) => DepositAt(cell)?.Resource;
+
+        /// <summary>광맥 엔티티를 칸에 둔다(1칸). 이미 광맥이 있는 칸이면 예외 — 맵 데이터 오류를 조용히 덮지 않는다.</summary>
+        public Entity PlaceDeposit(EntityDef def, Vector2Int cell)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (_deposits.ContainsKey(cell)) throw new InvalidOperationException($"칸 {cell}에 이미 광맥이 있습니다.");
+            var entity = World.Create(def.Faction, Geometry.CenterOf(cell, Vector2Int.one));
+            def.Assemble(entity);
+            var deposit = entity.Get<ResourceDepositModule>()
+                ?? throw new ArgumentException($"'{def.Id}'에 ResourceDeposit 모듈 정의가 없습니다 — 광맥이 아닙니다.", nameof(def));
+            deposit.Cell = cell;
+            _deposits[cell] = deposit;
+            _depositList.Add(deposit);
+            return entity;
+        }
+
+        public void RemoveDeposit(Vector2Int cell)
+        {
+            if (!_deposits.TryGetValue(cell, out var deposit)) return;
+            _deposits.Remove(cell);
+            _depositList.Remove(deposit);
+            if (deposit.Owner != null && !deposit.Owner.IsRemoved) World.Remove(deposit.Owner);
+        }
+
+        /// <summary>건물이 덮는 칸들의 광맥(왼쪽 아래부터).</summary>
+        public List<ResourceDepositModule> DepositsUnder(Vector2Int origin, Vector2Int size)
+        {
+            var list = new List<ResourceDepositModule>();
+            for (int y = 0; y < Mathf.Max(1, size.y); y++)
+                for (int x = 0; x < Mathf.Max(1, size.x); x++)
+                {
+                    var d = DepositAt(origin + new Vector2Int(x, y));
+                    if (d != null) list.Add(d);
+                }
+            return list;
+        }
 
         /// <summary>
-        /// 마이너가 채굴 1회분을 실제로 꺼내가는 서비스 포인트 (셀, 요청 개수) → 실제로 꺼낸 개수.
-        /// 0이면 광맥 재고가 비었다는 뜻 — 마이너는 생산하지 않고 다음 주기에 재시도한다.
-        /// 주입하지 않으면(null) 재고 개념 없이 무한 채굴 — 기존 동작 그대로.
+        /// 광맥 배치 규칙. 채굴기(Extractor)는 덮는 칸 <b>전부</b>가 같은 자원의 광맥이어야 하고(부분 덮기 금지),
+        /// 그 외 건물은 광맥을 덮을 수 없다 — 광맥은 채굴기 자리라, 저장고·벨트로 덮어버리면 그 광맥을 영영 못 쓴다.
         /// </summary>
-        public Func<Vector2Int, int, int> TryExtractResourceAt;
+        public bool CanPlace(EntityDef def, Vector2Int origin, Vector2Int size, out string reason)
+        {
+            reason = null;
+            if (def != null && def.Has<ExtractorModuleDef>()) return CanPlaceMiner(origin, size, out _, out reason);
+            int w = Mathf.Max(1, size.x), h = Mathf.Max(1, size.y);
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
+                {
+                    var cell = origin + new Vector2Int(x, y);
+                    if (DepositAt(cell) == null) continue;
+                    reason = $"광맥 위에는 채굴기만 지을 수 있습니다 (셀 {cell}).";
+                    return false;
+                }
+            return true;
+        }
 
-        /// <summary>
-        /// 이 칸의 광맥에서 1개를 캐는 데 걸리는 기준 시간(초) — 배율 1인 채굴기 기준.
-        /// 실제 시간 = 이 값 ÷ MinerDataSO.speedMultiplier.
-        /// 주입하지 않으면(null) 1초 — 광맥마다 난이도가 없던 기존 동작.
-        /// </summary>
-        public Func<Vector2Int, float> GetExtractIntervalAt;
+        public bool CanPlaceMiner(Vector2Int origin, Vector2Int size, out ItemDef resource, out string reason)
+        {
+            resource = null;
+            reason = null;
+            int w = Mathf.Max(1, size.x), h = Mathf.Max(1, size.y);
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
+                {
+                    var cell = origin + new Vector2Int(x, y);
+                    var item = ResourceAt(cell);
+                    if (item == null)
+                    {
+                        reason = $"광맥 위가 아닙니다 (셀 {cell}) — 채굴기가 덮는 칸은 전부 광맥이어야 합니다.";
+                        return false;
+                    }
+                    if (resource == null) resource = item;
+                    else if (resource != item)
+                    {
+                        reason = $"서로 다른 광맥({resource.DisplayName} / {item.DisplayName})에 걸쳐 있습니다.";
+                        return false;
+                    }
+                }
+            return true;
+        }
 
         readonly Queue<BuildingModule>   _queue = new();
         readonly HashSet<BuildingModule> _inQ   = new(); // 중복 등록 방지 O(1)

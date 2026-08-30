@@ -316,6 +316,7 @@
       "displayName": "철광석",
       "description": "구조재의 원광. Ring 1 광맥에서 채굴.",
       "type": "Ore",
+      "extractInterval": 2.0,
       "line": "Iron",
       "maxStack": 50,
       "icon": "IronOre",
@@ -402,6 +403,7 @@
       "displayName": "구리광석",
       "description": "전자 계통의 원광. Ring 1 외곽~Ring 2.",
       "type": "Ore",
+      "extractInterval": 5.0,
       "line": "Copper",
       "maxStack": 50,
       "icon": "CopperOre",
@@ -450,6 +452,7 @@
       "displayName": "크리스탈 광석",
       "description": "동력 계통의 원광. Ring 2~3 위험 지역.",
       "type": "Ore",
+      "extractInterval": 10.0,
       "line": "Crystal",
       "maxStack": 50,
       "icon": "CrystalOre",
@@ -1423,7 +1426,7 @@
           "amount": 4
         }
       ],
-      "speedMultiplier": 1.0,
+      "speedMultiplier": 2.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 0.0,
       "range": 0.0,
@@ -1478,7 +1481,7 @@
           "amount": 4
         }
       ],
-      "speedMultiplier": 2.0,
+      "speedMultiplier": 10.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 0.0,
       "range": 0.0,
@@ -2773,6 +2776,12 @@
     {
       "id": "Building:Nest",
       "kind": "Nest",
+      "drops": [
+        {
+          "item": "Item:BeastCore",
+          "amount": 1
+        }
+      ],
       "displayName": "괴수 둥지",
       "description": "맵이 세우는 괴수의 둥지. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형·전투·스폰은 World의 둥지 프리픥(MonsterNest)이 담당한다.",
       "category": "Defense",

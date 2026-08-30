@@ -26,9 +26,7 @@ namespace CoreDawn.EditorTools
     class GMapNode
     {
         public string item = "Item:IronOre";
-        public int x, y, size = 1;
-        public float extractInterval = 1;
-        public int maxStock = 20;
+        public int x, y;   // 광맥은 한 칸짜리 — 수치는 팩의 광맥 정의가 갖는다
         [JsonIgnore] public MapImporter.NodeDto src;
     }
 
@@ -171,9 +169,7 @@ namespace CoreDawn.EditorTools
                         nodes = (m.nodes ?? Array.Empty<MapImporter.NodeDto>()).Select(n => new GMapNode
                         {
                             item = string.IsNullOrEmpty(n.item) ? "Item:IronOre" : n.item,
-                            x = n.x, y = n.y, size = n.size > 0 ? n.size : 1,
-                            extractInterval = n.extractInterval > 0 ? n.extractInterval : 1,
-                            maxStock = n.maxStock > 0 ? n.maxStock : 20,
+                            x = n.x, y = n.y,
                             src = n,
                         }).ToList(),
                         nests = (m.nests ?? Array.Empty<MapImporter.NestDto>()).Select(n => new GNest
@@ -255,8 +251,7 @@ namespace CoreDawn.EditorTools
             o.nodes = g.nodes.Select(n =>
             {
                 var d = n.src ?? (n.src = new MapImporter.NodeDto());
-                d.item = n.item; d.x = n.x; d.y = n.y; d.size = n.size;
-                d.extractInterval = n.extractInterval; d.maxStock = n.maxStock;
+                d.item = n.item; d.x = n.x; d.y = n.y;
                 return d;
             }).ToArray();
             o.nests = g.nests.Select(n =>
@@ -316,8 +311,7 @@ namespace CoreDawn.EditorTools
                     tiles = DecodeTiles(m.tiles, w, h),
                     nodes = (m.nodes ?? Array.Empty<MapImporter.NodeDto>()).Select(n => new GMapNode
                     {
-                        item = n.item, x = n.x, y = n.y, size = n.size,
-                        extractInterval = n.extractInterval, maxStock = n.maxStock, src = n,
+                        item = n.item, x = n.x, y = n.y, src = n,
                     }).ToList(),
                     nests = (m.nests ?? Array.Empty<MapImporter.NestDto>()).Select(n => new GNest
                     {
@@ -861,18 +855,6 @@ namespace CoreDawn.EditorTools
             });
             propsBox.Add(Field2("종류", kindD));
 
-            var sizeChoices = new List<string> { "1×1", "2×2", "3×3" };
-            var sizeD = new DropdownField(sizeChoices, Mathf.Clamp(n.size - 1, 0, 2));
-            sizeD.RegisterValueChangedCallback(e =>
-            {
-                n.size = sizeChoices.IndexOf(e.newValue) + 1;
-                PushHist(); RenderAll();
-            });
-            propsBox.Add(Field2("크기", sizeD));
-
-            propsBox.Add(Field2("채굴 간격", NumF(n.extractInterval, v => n.extractInterval = Mathf.Max(0.1f, v),
-                "배율 1 기준 1개당 초. 값이 클수록 캐기 어려운 광맥")));
-            propsBox.Add(Field2("최대 재고", IntF(n.maxStock, v => n.maxStock = Mathf.Max(1, v))));
             propsBox.Add(Field2("위치", XyRow(m, () => (n.x, n.y), (x, y) => { n.x = x; n.y = y; })));
 
             var del = new Button(() => { m.nodes.Remove(n); sel = null; PushHist(); RenderAll(); })
@@ -1167,12 +1149,12 @@ namespace CoreDawn.EditorTools
             {
                 var n = m.nodes[i];
                 var tag = $"자원 #{i + 1}";
-                if (!InB(m, n.x, n.y) || !InB(m, n.x + n.size - 1, n.y + n.size - 1))
+                if (!InB(m, n.x, n.y) || !InB(m, n.x, n.y))
                 { outp.Add($"{tag} 이(가) 맵 밖에 있습니다"); continue; }
                 if (seen[Idx(m, n.x, n.y)] == 0) outp.Add($"{tag} 이(가) 절벽에 갇혔습니다 — 캘 수 없습니다");
                 string onBad = null;
-                for (int y = n.y; y < n.y + n.size; y++)
-                    for (int x = n.x; x < n.x + n.size; x++)
+                for (int y = n.y; y < n.y + 1; y++)
+                    for (int x = n.x; x < n.x + 1; x++)
                     {
                         var t = TileAt(x, y);
                         if (t != null && !t.build && onBad == null) onBad = t.ko;
@@ -1410,9 +1392,9 @@ namespace CoreDawn.EditorTools
                 {
                     var n = m.nodes[i];
                     var kind = NodeKinds.FirstOrDefault(q => q.item == n.item);
-                    FillRect(n.x, n.y, n.size, n.size, kind.item != null ? kind.color : NodeKinds[0].color);
+                    FillRect(n.x, n.y, 1, 1, kind.item != null ? kind.color : NodeKinds[0].color);
                     if (sel != null && sel.Value.type == "node" && sel.Value.i == i)
-                        StrokeRect(n.x, n.y, n.size, n.size, Color.white, 2);
+                        StrokeRect(n.x, n.y, 1, 1, Color.white, 2);
                 }
 
             // 둥지 본체 + 스폰 지점
@@ -1701,7 +1683,7 @@ namespace CoreDawn.EditorTools
                 for (int i = m.nodes.Count - 1; i >= 0; i--)
                 {
                     var n = m.nodes[i];
-                    if (cx >= n.x && cx < n.x + n.size && cy >= n.y && cy < n.y + n.size) return ("node", i);
+                    if (cx >= n.x && cx < n.x + 1 && cy >= n.y && cy < n.y + 1) return ("node", i);
                 }
             return null;
         }
@@ -1789,7 +1771,7 @@ namespace CoreDawn.EditorTools
             };
             foreach (var n in m.nodes)
             {
-                float half = Mathf.Max(1, n.size) * 0.5f;
+                float half = 0.5f;
                 circles.Add((new Vector2(n.x + half, n.y + half), treeObjectClear + half));
             }
             foreach (var n in m.nests)

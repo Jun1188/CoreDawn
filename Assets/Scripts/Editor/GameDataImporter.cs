@@ -81,6 +81,7 @@ namespace CoreDawn.EditorTools
             public PlayerDto         player;    // 팩의 entities/player — SO 없음, 심이 정의로 조립한다
         }
 
+
         /// <summary>플레이어 — HP·소지품 칸 수(main, 핫바 포함)·핫바 창 크기. v2 exporter가 Health·Effects·Inventory·Crafter(manual) 모듈로 낸다.</summary>
         [Serializable] internal class PlayerDto : JsonDtoBase
         {
@@ -178,6 +179,9 @@ namespace CoreDawn.EditorTools
             public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
             public float  damage;        // Ammo 전용 구 숏컷 — attackEffects가 없을 때만 {Damage, damage}로 변환
             public string gun;           // Weapon 전용 — 연결할 GunData id (예: "Gun:Rifle")
+            // Ore 전용 — 이 원광 1개를 캐는 초. 손 채굴은 그대로, 채굴기는 ÷ speedMultiplier.
+            // v2 exporter가 Ore 아이템마다 광맥 엔티티(entities/<item>_deposit)를 여기서 만든다 — 광맥은 따로 적지 않는다.
+            public float  extractInterval = -1f;   // 음수 = 생략. Ore는 필수(>0), 다른 타입에 있으면 오류
 
             // Ammo 탄도 — 탄의 물리 성질(발사기가 아니라 탄약 소유). 0이 정당한 값(직선·무폭발)이라 음수가 생략(유지) 신호다
             public float  speed = -1f, gravity = -1f, explosionRadius = -1f, lifetime = -1f;
@@ -641,6 +645,11 @@ namespace CoreDawn.EditorTools
                 errors++;
                 return;
             }
+            // 광맥은 Ore 아이템에서 자동으로 나온다(v2 exporter) — 채굴 시간은 Ore에만, Ore에는 반드시
+            if (hasType && type == ItemType.Ore && !(dto.extractInterval > 0f))
+            { Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': Ore 아이템에는 extractInterval(1개 캐는 초, >0)이 필요합니다"); errors++; return; }
+            if (dto.extractInterval >= 0f && (!hasType || type != ItemType.Ore))
+            { Debug.LogError($"[GameDataImporter] {file} items '{dto.id}': extractInterval은 Ore 아이템 전용입니다 (type '{dto.type}')"); errors++; return; }
 
             // 아이템은 전부 평평한 ItemDataSO — 탄약·무기 같은 역할은 모듈(서브에셋)로 조합한다.
             // 그래서 구 방식의 "타입 승격을 위한 같은 id 재생성"이 필요 없다.

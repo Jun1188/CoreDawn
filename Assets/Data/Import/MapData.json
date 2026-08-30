@@ -137,114 +137,232 @@
         {
           "item": "Item:CopperOre",
           "x": 101,
-          "y": 43,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 30
+          "y": 43
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 102,
+          "y": 43
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 101,
+          "y": 44
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 102,
+          "y": 44
         },
         {
           "item": "Item:CopperOre",
           "x": 41,
-          "y": 102,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 102
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 42,
+          "y": 102
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 41,
+          "y": 103
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 42,
+          "y": 103
         },
         {
           "item": "Item:CrystalOre",
           "x": 102,
-          "y": 31,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 30
+          "y": 31
+        },
+        {
+          "item": "Item:CrystalOre",
+          "x": 103,
+          "y": 31
+        },
+        {
+          "item": "Item:CrystalOre",
+          "x": 102,
+          "y": 32
+        },
+        {
+          "item": "Item:CrystalOre",
+          "x": 103,
+          "y": 32
         },
         {
           "item": "Item:CrystalOre",
           "x": 32,
-          "y": 22,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 30
+          "y": 22
+        },
+        {
+          "item": "Item:CrystalOre",
+          "x": 33,
+          "y": 22
+        },
+        {
+          "item": "Item:CrystalOre",
+          "x": 32,
+          "y": 23
+        },
+        {
+          "item": "Item:CrystalOre",
+          "x": 33,
+          "y": 23
         },
         {
           "item": "Item:CopperOre",
           "x": 33,
-          "y": 62,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 62
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 34,
+          "y": 62
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 33,
+          "y": 63
+        },
+        {
+          "item": "Item:CopperOre",
+          "x": 34,
+          "y": 63
         },
         {
           "item": "Item:CopperOre",
           "x": 62,
-          "y": 90,
-          "size": 1,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 90
         },
         {
           "item": "Item:CopperOre",
           "x": 76,
-          "y": 43,
-          "size": 1,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 43
         },
         {
           "item": "Item:CrystalOre",
           "x": 36,
-          "y": 44,
-          "size": 1,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 44
         },
         {
           "item": "Item:IronOre",
           "x": 47,
-          "y": 103,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 30
+          "y": 103
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 48,
+          "y": 103
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 47,
+          "y": 104
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 48,
+          "y": 104
         },
         {
           "item": "Item:IronOre",
           "x": 44,
-          "y": 26,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 30
+          "y": 26
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 45,
+          "y": 26
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 44,
+          "y": 27
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 45,
+          "y": 27
         },
         {
           "item": "Item:IronOre",
           "x": 73,
-          "y": 59,
-          "size": 1,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 59
         },
         {
           "item": "Item:CrystalOre",
           "x": 87,
-          "y": 18,
-          "size": 1,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 18
         },
         {
           "item": "Item:IronOre",
           "x": 92,
-          "y": 89,
-          "size": 3,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 89
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 93,
+          "y": 89
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 94,
+          "y": 89
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 92,
+          "y": 90
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 93,
+          "y": 90
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 94,
+          "y": 90
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 92,
+          "y": 91
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 93,
+          "y": 91
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 94,
+          "y": 91
         },
         {
           "item": "Item:IronOre",
           "x": 42,
-          "y": 91,
-          "size": 2,
-          "extractInterval": 1.0,
-          "maxStock": 20
+          "y": 91
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 43,
+          "y": 91
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 42,
+          "y": 92
+        },
+        {
+          "item": "Item:IronOre",
+          "x": 43,
+          "y": 92
         }
       ],
       "nests": [

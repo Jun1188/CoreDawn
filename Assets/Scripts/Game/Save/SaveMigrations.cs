@@ -29,7 +29,8 @@ namespace CoreDawn.Save
             //      몬스터(combat.monsters[].data)는 아직 SO(MonsterDatabaseSO)로 복원하므로 손대지 않는다 — 5a-3에서 함께 옮긴다.
             //   ② 그릇 — 건물 in/out, 플레이어 hotbar/main → 역할 키 사전 containers{}. 역할 이름표는 InventoryModule이 붙인다.
             //   ③ 핫바 병합 — 플레이어 containers.hotbar + containers.main → main 하나(핫바 칸이 앞, 옛 가방 칸은 인덱스가 핫바 칸 수만큼 뒤로).
-            { 1, f => { MigrateIdsToPack(f); MigrateContainersToRoles(f); MergeHotbarIntoMain(f); } },
+            //   ④ 광맥 매장량 삭제 — world.nodes[]의 stock·nextAt을 뗀다(누적 채굴량만 남긴다).
+            { 1, f => { MigrateIdsToPack(f); MigrateContainersToRoles(f); MergeHotbarIntoMain(f); DropDepositStock(f); } },
         };
 
         /// <summary>
@@ -188,6 +189,21 @@ namespace CoreDawn.Save
             bag[InventoryModule.RoleMain] = merged;
 
             Debug.Log($"[Save] v1 → v2 ③: 핫바 {hotSlots}칸({hotItems}종) + 가방 {mainSlots}칸({mainItems}종) → main {hotSlots + mainSlots}칸으로 합쳤습니다.");
+        }
+
+        // ── ④ 광맥 매장량 삭제 ───────────────────────────────────────
+
+        static void DropDepositStock(SaveFile f)
+        {
+            int dropped = 0;
+            if (Module(f, "world") is JObject world)
+                foreach (var n in Arr(world["nodes"]))
+                {
+                    if (n is not JObject o) continue;
+                    if (o.Remove("stock")) dropped++;
+                    if (o.Remove("nextAt")) dropped++;
+                }
+            Debug.Log($"[Save] v1 → v2 ④: 광맥 매장량 키 {dropped}개를 뗐습니다(광맥은 바닥나지 않는다).");
         }
 
         // ── 공통 ─────────────────────────────────────────────────────

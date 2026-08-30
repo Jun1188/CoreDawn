@@ -30,9 +30,9 @@ namespace CoreDawn.Tests
     public class ResourceNodeSceneTest : MonoBehaviour
     {
         [Tooltip("1x1 광맥 — 생산/채굴/파괴 시나리오의 주 무대. 세팅 스크립트가 연결한다.")]
-        [SerializeField] private ResourceNode nodeA;
+        [SerializeField] private ResourceDepositView nodeA;
         [Tooltip("2x2 광맥 — 멀티타일 배치 판정용.")]
-        [SerializeField] private ResourceNode nodeB;
+        [SerializeField] private ResourceDepositView nodeB;
 
         // CLI 러너가 폴링하는 결과 (도메인 리로드 후 플레이 세션 안에서만 살아 있으면 된다)
         public static bool   Finished { get; private set; }
@@ -47,7 +47,8 @@ namespace CoreDawn.Tests
         string _firstSceneError;
 
         FactorySystem Factory => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
-        static GridSystem Grid => ResourceNodeRegistry.Grid;
+        static GridSystem _grid;
+        static GridSystem Grid => _grid ??= (FindFirstObjectByType<PlacementSystem>() is { } p ? new GridSystem(p.CellSize, p.GridOrigin) : new GridSystem(1f, Vector3.zero));
 
         ItemDef _ore;
         BuildingDataSO _minerSO, _storageSO;
@@ -106,62 +107,57 @@ namespace CoreDawn.Tests
         {
             Section("── 1일차 낮 ──");
 
-            // 이 씬에는 FactoryTest가 있어 Start에서 GetResourceAt을 "전 좌표 철광석"으로 덮어쓴다.
-            // 광맥이 있는 씬에서는 레지스트리가 소켓을 되찾아와야 한다 (실행 순서에 흔들리면 안 됨).
-            Case("D1 광맥이 자원 소켓의 주인 (FactoryTest 오버라이드 복구)",
-                 Factory.GetResourceAt != null &&
-                 Factory.GetResourceAt(nodeA.Origin) == _ore &&
-                 Factory.GetResourceAt(FarEmptyCell()) == null,
-                 $"광맥 위={Name(Factory.GetResourceAt?.Invoke(nodeA.Origin))}, " +
-                 $"광맥 밖={Name(Factory.GetResourceAt?.Invoke(FarEmptyCell()))}");
+            Case("D1 공장이 칸의 자원을 안다 (광맥 색인)",
+                 Factory.ResourceAt(nodeA.Cell) == _ore &&
+                 Factory.ResourceAt(FarEmptyCell()) == null,
+                 $"광맥 위={Name(Factory.ResourceAt(nodeA.Cell))}, 광맥 밖={Name(Factory.ResourceAt(FarEmptyCell()))}");
 
-            Case("D2 광맥이 레지스트리에 등록됨",
-                 ResourceNodeRegistry.NodeAt(nodeA.Origin) == nodeA &&
-                 ResourceNodeRegistry.NodeAt(nodeB.Origin) == nodeB,
-                 $"등록된 광맥 {ResourceNodeRegistry.Nodes.Count}개");
+            Case("D2 광맥 뷰가 심의 광맥 엔티티를 들고 있고 공장에 색인됨",
+                 nodeA.Deposit != null && nodeB.Deposit != null &&
+                 Factory.DepositAt(nodeA.Cell) == nodeA.Deposit && Factory.DepositAt(nodeB.Cell) == nodeB.Deposit,
+                 $"공장의 광맥 {Factory.Deposits.Count}개");
 
-            int before = nodeA.CurrentStock;
-            yield return new WaitForSeconds(1.5f);
-            Case("D3 낮 동안 재고가 쌓인다",
-                 nodeA.CurrentStock > before || nodeA.IsFull,
-                 $"재고 {before} → {nodeA.CurrentStock} (상한 {nodeA.MaxStock})");
+            Case("D3 광맥은 바닥나지 않는다 (매장량 없음)",
+                 nodeA.Deposit != null && nodeA.Deposit.Extract(1) == 1 && nodeA.Deposit.Extract(1) == 1,
+                 $"누적 채굴 {nodeA.TotalExtracted}");
 
             // 광맥 위 설치 — 실제 배치 경로(PlacementBridge)로 심 + 뷰를 함께 만든다
             Case("D4 광맥 위 채굴기는 설치 허용 판정",
-                 ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeA.Origin, Vector2Int.one),
+                 Factory.CanPlace(_minerSO.Def, nodeA.Cell, Vector2Int.one, out _),
                  "CanPlace(광맥 위) == true 여야 함");
 
-            _miner   = Place(_minerSO,   nodeA.Origin);
-            _storage = Place(_storageSO, nodeA.Origin + Vector2Int.right);
+            _miner   = Place(_minerSO,   nodeA.Cell);
+            _storage = Place(_storageSO, nodeA.Cell + Vector2Int.right);
 
-            int stockBeforeMining = nodeA.CurrentStock;
+            int extractedBeforeMining = nodeA.TotalExtracted;
             yield return new WaitForSeconds(4f);
 
             Case("D5 채굴기가 광맥 재고를 꺼내 아이템을 만든다",
                  Stored() >= 1,
-                 $"저장고 {Stored()}개 (광맥 재고 {stockBeforeMining} → {nodeA.CurrentStock})");
+                 $"저장고 {Stored()}개 (누적 채굴 {extractedBeforeMining} → {nodeA.TotalExtracted})");
 
-            Case("D6 채굴량이 광맥에서 실제로 빠져나간다",
-                 nodeA.CurrentStock < nodeA.MaxStock || Stored() >= 1,
-                 $"재고 {nodeA.CurrentStock}/{nodeA.MaxStock}, 산출 {Stored()}개");
+            Case("D6 캔 만큼 광맥의 누적 채굴량이 오른다",
+                 nodeA.TotalExtracted > extractedBeforeMining,
+                 $"누적 {extractedBeforeMining} → {nodeA.TotalExtracted}, 산출 {Stored()}개");
 
             // 광맥 밖 설치 — 판정은 false, 그래도 강행하면 러너가 되돌린다(안전망)
             Vector2Int off = FarEmptyCell();
             Case("D7 광맥 밖 채굴기는 설치 차단 판정 + 사유",
-                 !ResourceNodeRegistry.CanPlace(_minerSO.Def, off, Vector2Int.one, out string why) &&
+                 !Factory.CanPlace(_minerSO.Def, off, Vector2Int.one, out string why) &&
                  !string.IsNullOrEmpty(why),
                  $"사유: {why ?? "(없음)"}");
 
-            Case("D8 2x2 광맥 위 멀티타일 판정",
-                 ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeB.Origin, new Vector2Int(2, 2)) &&
-                 !ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeB.Origin + Vector2Int.right, new Vector2Int(2, 2)),
-                 "광맥 안 2x2=허용, 경계를 걸치면=차단");
+            Case("D8 멀티타일 채굴기는 덮는 칸 전부가 광맥이어야 한다 (부분 덮기 금지)",
+                 Factory.CanPlace(_minerSO.Def, nodeB.Cell, Vector2Int.one, out _) &&
+                 !Factory.CanPlace(_minerSO.Def, nodeB.Cell, new Vector2Int(2, 2), out _),
+                 "1x1=허용, 광맥 한 칸 위 2x2=차단");
 
-            var stray = Place(_minerSO, off);          // 판정을 무시하고 강행한 경우
-            yield return null; yield return null;      // 러너의 LateUpdate 한 바퀴
-            Case("D9 광맥 밖에 강행 설치되면 자동 철거(안전망)",
-                 stray == null || stray.IsRemoved || Factory.Grid.GetAt(off) == null,
-                 $"셀 {off}의 건물: {(Factory.Grid.GetAt(off) == null ? "없음" : "남아 있음")}");
+            var stray = Place(_minerSO, off);          // 판정을 무시하고 강행한 경우(심 직접 배치)
+            yield return null; yield return null;
+            Case("D9 광맥 밖에 강행 설치된 채굴기는 캘 광맥이 없어 아무것도 하지 않는다",
+                 stray != null && stray.Behavior is MinerBehavior sm && sm.Deposits.Count == 0 && sm.Target == null,
+                 $"덮는 광맥 {(stray?.Behavior as MinerBehavior)?.Deposits.Count ?? -1}개");
+            if (stray != null) PlacementBridge.Remove(stray);
 
             Case("D10 낮에는 건축이 허용된다",
                  TimeManager.Instance.IsBuildingAllowed && TimeManager.Instance.Phase == DayPhase.Day,
@@ -186,15 +182,15 @@ namespace CoreDawn.Tests
                  $"저장고 {before} → {Stored()}개");
 
             // 전투 파괴 경로 — 몬스터 피격과 같은 흐름(Entity.Die → HandleDeath → PlacementBridge.Remove)
-            int stockAtDeath = nodeA.CurrentStock;
+            int extractedAtDeath = nodeA.TotalExtracted;
             var view = FactoryBootstrap.Instance.GetView(_miner);
             var viewGO = view != null ? view.gameObject : null;
             if (view != null) view.Die();
             yield return null; yield return null;
 
             Case("N3 밤에 채굴기가 파괴되면 심에서도 제거된다",
-                 _miner.IsRemoved && Factory.Grid.GetAt(nodeA.Origin) == null,
-                 $"IsRemoved={_miner.IsRemoved}, 셀 점유={(Factory.Grid.GetAt(nodeA.Origin) != null)}");
+                 _miner.IsRemoved && Factory.Grid.GetAt(nodeA.Cell) == null,
+                 $"IsRemoved={_miner.IsRemoved}, 셀 점유={(Factory.Grid.GetAt(nodeA.Cell) != null)}");
 
             // 작업3의 생명주기 계약 ①: 심이 제거되면 씬 껍데기도 사라진다 (FactorySystem.Removed → Bootstrap)
             Case("N3b 심이 제거되면 씬 껍데기와 매핑도 사라진다",
@@ -202,15 +198,15 @@ namespace CoreDawn.Tests
                  $"뷰 GameObject={(viewGO == null ? "파괴됨" : "남아 있음")}, " +
                  $"매핑={(FactoryBootstrap.Instance.GetView(_miner) == null ? "해제됨" : "남아 있음")}");
 
-            Case("N4 채굴기가 부서져도 광맥과 재고는 남는다",
-                 ResourceNodeRegistry.NodeAt(nodeA.Origin) == nodeA && nodeA.CurrentStock >= stockAtDeath,
-                 $"광맥 등록={ResourceNodeRegistry.NodeAt(nodeA.Origin) != null}, 재고 {stockAtDeath} → {nodeA.CurrentStock}");
+            Case("N4 채굴기가 부서져도 광맥은 남는다",
+                 Factory.DepositAt(nodeA.Cell) == nodeA.Deposit && nodeA.TotalExtracted >= extractedAtDeath,
+                 $"광맥 색인={Factory.DepositAt(nodeA.Cell) != null}, 누적 {extractedAtDeath} → {nodeA.TotalExtracted}");
 
-            // 캐가는 사람이 없으면 상한에서 멈춰야 한다
-            yield return new WaitForSeconds(3f);
-            Case("N5 채굴기가 없으면 재고가 상한에서 멈춘다",
-                 nodeA.CurrentStock == nodeA.MaxStock,
-                 $"재고 {nodeA.CurrentStock}/{nodeA.MaxStock}");
+            int extractedIdle = nodeA.TotalExtracted;
+            yield return new WaitForSeconds(2f);
+            Case("N5 채굴기가 없으면 아무것도 캐지 않는다",
+                 nodeA.TotalExtracted == extractedIdle,
+                 $"누적 {extractedIdle} → {nodeA.TotalExtracted}");
         }
 
         // ─── 2일차 낮 ───────────────────────────────────────────────
@@ -226,10 +222,10 @@ namespace CoreDawn.Tests
                  $"Day {dayBefore} → {TimeManager.Instance.DayNumber}, 건축={TimeManager.Instance.IsBuildingAllowed}");
 
             Case("M2 파괴된 자리에 다시 설치할 수 있다 (광맥은 그대로)",
-                 ResourceNodeRegistry.CanPlace(_minerSO.Def, nodeA.Origin, Vector2Int.one),
+                 Factory.CanPlace(_minerSO.Def, nodeA.Cell, Vector2Int.one, out _),
                  "CanPlace(같은 광맥) == true 여야 함");
 
-            _miner = Place(_minerSO, nodeA.Origin);
+            _miner = Place(_minerSO, nodeA.Cell);
             int before = Stored();
             yield return new WaitForSeconds(4f);
 
@@ -239,7 +235,7 @@ namespace CoreDawn.Tests
 
             // 작업3의 생명주기 계약 ②: 껍데기만 사라져도 심이 그리드에 유령으로 남지 않는다.
             // (전투·철거를 거치지 않고 GameObject가 직접 파괴되는 경로)
-            var orphanCell = nodeB.Origin;
+            var orphanCell = nodeB.Cell;
             var orphan = Place(_minerSO, orphanCell);
             yield return null;
             var orphanView = FactoryBootstrap.Instance.GetView(orphan);
@@ -311,9 +307,9 @@ namespace CoreDawn.Tests
         }
 
         /// <summary>광맥에서 충분히 떨어진 빈 칸 — 광맥 밖 판정용.</summary>
-        Vector2Int FarEmptyCell() => nodeA.Origin + new Vector2Int(40, 40);
+        Vector2Int FarEmptyCell() => nodeA.Cell + new Vector2Int(40, 40);
 
-        static string Name(ItemDataSO item) => item != null ? item.displayName : "null";
+        static string Name(ItemDef item) => item != null ? item.DisplayName : "null";
 
         void Section(string title) => _lines.Add(title);
 

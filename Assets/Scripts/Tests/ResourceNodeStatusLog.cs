@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using CoreDawn.Sim;
 using CoreDawn.Factory;
-using CoreDawn.ResourceNodes;
 using CoreDawn.Data;
 
 namespace CoreDawn.Tests
@@ -21,7 +20,7 @@ namespace CoreDawn.Tests
     ///   · 멈춰 있으면 그 사유를 한 번만 알린다 (정상 정지인지 고장인지 구분되게)
     ///
     /// "재고가 5/5로 고정"은 멈춘 게 아니라 생산이 채굴보다 빠른 정상 상태다.
-    /// 그래서 진행 판정은 재고가 아니라 누적 채굴량(ResourceNode.TotalExtracted)으로 한다.
+    /// 진행 판정은 누적 채굴량(ResourceDepositModule.TotalExtracted)으로 한다.
     /// </summary>
     public class ResourceNodeStatusLog : MonoBehaviour
     {
@@ -67,18 +66,18 @@ namespace CoreDawn.Tests
             }
         }
 
-        static int TotalExtracted() => ResourceNodeRegistry.Nodes.Sum(n => n != null ? n.TotalExtracted : 0);
+        static FactorySystem Sim => FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
+        static int TotalExtracted() => Sim != null ? Sim.Deposits.Sum(d => d.TotalExtracted) : 0;
 
         /// <summary>광맥별 재고 + 그 위 채굴기 유무를 한 줄로.</summary>
         static string StatusLine()
         {
             var sb = new StringBuilder();
 
-            foreach (var n in ResourceNodeRegistry.Nodes)
+            if (Sim != null) foreach (var n in Sim.Deposits)
             {
-                if (n == null) continue;
                 if (sb.Length > 0) sb.Append(" · ");
-                sb.Append($"{n.name} {n.CurrentStock}/{n.MaxStock}{(n.IsFull ? "(상한)" : "")}");
+                sb.Append($"{n.Resource?.Id}@{n.Cell} 누적 {n.TotalExtracted}");
                 sb.Append(MinerOn(n) ? " 채굴기O" : " 채굴기X");
             }
 
@@ -87,20 +86,19 @@ namespace CoreDawn.Tests
 
         static string StallReason()
         {
-            bool anyMiner = ResourceNodeRegistry.Nodes.Any(n => n != null && MinerOn(n));
+            bool anyMiner = Sim != null && Sim.Deposits.Any(MinerOn);
 
             return anyMiner
-                ? "채굴기는 서 있습니다 → 출력이 막혔거나(저장고 가득) 광맥 재고가 0입니다."
+                ? "채굴기는 서 있습니다 → 출력이 막혔습니다(저장고 가득)."
                 : "광맥 위에 채굴기가 없습니다 → B키 빌드 메뉴에서 채굴기를 광맥 위에 지으면 시작됩니다.";
         }
 
         /// <summary>광맥 풋프린트 안에 건물이 서 있는가 (심이 없으면 판단 불가 → false).</summary>
-        static bool MinerOn(ResourceNode node)
+        static bool MinerOn(ResourceDepositModule node)
         {
-            var sim = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
+            var sim = Sim;
             if (sim == null) return false;
-
-            return node.Cells.Any(c => sim.Grid.GetAt(c) is { IsRemoved: false } b && b.Def.Has<ExtractorModuleDef>());
+            return sim.Grid.GetAt(node.Cell) is { IsRemoved: false } b && b.Def.Has<ExtractorModuleDef>();
         }
     }
 }

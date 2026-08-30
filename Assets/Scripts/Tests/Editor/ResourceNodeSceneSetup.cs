@@ -92,7 +92,7 @@ namespace CoreDawn.Tests
         }
 
         /// <summary>광맥 하나 — 저작은 ResourceNodeAuthoring이 담당한다 (PlayLoopTest와 공유).</summary>
-        static ResourceNode CreateNode(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
+        static ResourceDepositView CreateNode(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
                                        float interval, int amount, int max, GridSystem grid)
             => ResourceNodeAuthoring.Create(name, ore, cell, size, interval, amount, max, grid);
 

@@ -1072,6 +1072,39 @@
     }
   },
   "entities": {
+    "iron_ore_deposit": {
+      "displayName": "철광석 광맥",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/iron_ore",
+          "extractInterval": 2.0
+        }
+      ]
+    },
+    "copper_ore_deposit": {
+      "displayName": "구리광석 광맥",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/copper_ore",
+          "extractInterval": 5.0
+        }
+      ]
+    },
+    "crystal_ore_deposit": {
+      "displayName": "크리스탈 광석 광맥",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/crystal_ore",
+          "extractInterval": 10.0
+        }
+      ]
+    },
     "miner": {
       "displayName": "채굴기",
       "description": "광맥 위에 놓아 자원을 캔다. 광맥이 어려울수록 느리다.",
@@ -1123,7 +1156,10 @@
         },
         {
           "type": "Extractor",
-          "speedMultiplier": 1.0
+          "speedMultiplier": 2.0
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1186,7 +1222,10 @@
         },
         {
           "type": "Extractor",
-          "speedMultiplier": 2.0
+          "speedMultiplier": 10.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1256,6 +1295,9 @@
             "coredawn:recipe/copper_ingot",
             "coredawn:recipe/refined_crystal"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1331,6 +1373,9 @@
             "coredawn:recipe/copper_wire",
             "coredawn:recipe/energy_cell_ammo"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1423,6 +1468,9 @@
             "coredawn:recipe/shotgun",
             "coredawn:recipe/sniper"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1518,6 +1566,9 @@
             "coredawn:recipe/control_module",
             "coredawn:recipe/energy_rifle"
           ]
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1583,6 +1634,9 @@
           "carryCapacity": 20,
           "droneRange": 60,
           "travelSpeed": 8
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1644,6 +1698,9 @@
         {
           "type": "Conveyor",
           "speedTilesPerSec": 1.0
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1713,6 +1770,9 @@
         {
           "type": "Conveyor",
           "speedTilesPerSec": 2.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -1787,6 +1847,9 @@
         {
           "type": "Router",
           "mode": "split"
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1865,6 +1928,9 @@
         {
           "type": "Router",
           "mode": "merge"
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -1962,6 +2028,9 @@
           "type": "Inventory",
           "input": 12,
           "output": 1
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -2175,6 +2244,9 @@
               "isFinal": true
             }
           ]
+        },
+        {
+          "type": "Loot"
         }
       ],
       "view": {
@@ -2329,6 +2401,9 @@
             "coredawn:item/crystal_ammo"
           ],
           "damageMultiplier": 1.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2403,6 +2478,9 @@
             "coredawn:item/crystal_ammo"
           ],
           "damageMultiplier": 2.2
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2476,6 +2554,9 @@
             "coredawn:item/grenade"
           ],
           "damageMultiplier": 3.5
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2549,6 +2630,9 @@
             "coredawn:item/energy_cell_ammo"
           ],
           "damageMultiplier": 2.8
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2614,6 +2698,9 @@
             "coredawn:item/energy_cell_ammo"
           ],
           "damageMultiplier": 0.0
+        },
+        {
+          "type": "Loot"
         }
       ]
     },
@@ -2642,6 +2729,15 @@
         },
         {
           "type": "NestSpawner"
+        },
+        {
+          "type": "Loot",
+          "drops": [
+            {
+              "item": "coredawn:item/beast_core",
+              "amount": 1
+            }
+          ]
         }
       ]
     },

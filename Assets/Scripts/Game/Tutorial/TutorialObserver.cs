@@ -7,7 +7,6 @@ using CoreDawn.Inputs;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
 using CoreDawn.Placement;
-using CoreDawn.ResourceNodes;
 using CoreDawn.UI;
 using CoreDawn.Data;
 using CoreDawn.Sim;
@@ -319,9 +318,9 @@ namespace CoreDawn.Tutorial
         void PollMining()
         {
             int total = 0;
-            var nodes = ResourceNodeRegistry.Nodes;
-            for (int i = 0; i < nodes.Count; i++)
-                if (nodes[i] != null) total += nodes[i].TotalExtracted;
+            var boot = FactoryBootstrap.Instance;
+            if (boot != null && boot.Factory != null)
+                foreach (var d in boot.Factory.Deposits) total += d.TotalExtracted;
 
             if (total > MinedTotal) MinedTotal = total;
         }

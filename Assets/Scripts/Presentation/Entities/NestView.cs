@@ -37,9 +37,6 @@ namespace CoreDawn.Entities
         }
 
         [Header("Nest Settings")]
-        [Tooltip("둥지 파괴 시 드롭되는 아이템. 비워두면 기본적으로 괴수핵(Item:BeastCore) 드롭.")]
-        public ItemDataSO dropItem;
-
         [Tooltip("둥지에서 몬스터가 생성될 위치들 및 연동 보스")]
         public System.Collections.Generic.List<NestSpawnPoint> spawnPoints;
 
@@ -509,20 +506,7 @@ namespace CoreDawn.Entities
                 destroyedDay = TimeManager.Instance.DayNumber;
             }
 
-            // 아이템 드롭 처리
-            ItemDataSO drop = dropItem;
-            if (drop == null)
-            {
-                var db = ItemDatabaseSO.LoadDefault();
-                if (db != null) drop = db.FindById("Item:BeastCore");
-            }
-
-            if (drop != null)
-            {
-                // 위로 약간 던지는 방향
-                Vector3 throwDir = (Vector3.up + UnityEngine.Random.insideUnitSphere * 0.2f).normalized;
-                DroppedItem.Spawn(drop, 1, transform.position + Vector3.up * 1f, throwDir);
-            }
+            // 드롭(괴수핵)은 정의의 Loot 모듈 — 심의 Died를 듣는 LootSpawner가 뿌린다. 뷰는 모른다.
 
             // 외형 끄기
             foreach (var go in destructibleVisuals)
