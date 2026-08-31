@@ -141,7 +141,7 @@ namespace CoreDawn.UI
         }
 
         void OnTierUnlocked(int _) => RebuildRecipes();
-        void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
+        void OnRecipeRewardUnlocked(RecipeDef _) => RebuildRecipes();
 
         void OnSearchChanged(ChangeEvent<string> e)
         {
@@ -193,7 +193,7 @@ namespace CoreDawn.UI
             var db = SimHost.Database;
             if (db == null) return new List<RecipeDef>();
 
-            return SortRecipes(db.Recipes.Values.Where(RecipeDatabaseSO.IsUnlocked));
+            return SortRecipes(db.Recipes.Values.Where(RecipeUnlocks.IsUnlocked));
         }
 
         /// <summary>목록 순서는 아이템 목록과 같은 기준 — 대표 산출물의 티어 → 계통 → 용도 → 이름.</summary>

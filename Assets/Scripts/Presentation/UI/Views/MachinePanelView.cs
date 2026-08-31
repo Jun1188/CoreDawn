@@ -207,7 +207,7 @@ namespace CoreDawn.UI
             RebuildRecipes();
         }
 
-        void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
+        void OnRecipeRewardUnlocked(RecipeDef _) => RebuildRecipes();
         void OnTierUnlocked(int _) => RebuildRecipes();
 
         void TogglePaused()
@@ -236,7 +236,7 @@ namespace CoreDawn.UI
                                  $"입력 슬롯({crafter.InputSlotCount})보다 많아 거부됨");
                 return;
             }
-            if (r != null && !RecipeDatabaseSO.IsUnlocked(r))
+            if (r != null && !RecipeUnlocks.IsUnlocked(r))
             {
                 Debug.LogWarning($"[Machine] 레시피 '{r.DisplayName}'는 아직 해금되지 않음 (요구 Tier {r.Tier})");
                 return;
@@ -248,7 +248,7 @@ namespace CoreDawn.UI
 
         /// <summary>현재 해금된 레시피만 — 해금 게이팅은 게임(UI)의 일이라 심 모듈에 없다.</summary>
         IEnumerable<RecipeDef> UnlockedRecipes() =>
-            crafter.Recipes.Where(r => RecipeDatabaseSO.IsUnlocked(r));
+            crafter.Recipes.Where(r => RecipeUnlocks.IsUnlocked(r));
 
         void RebuildAll()
         {

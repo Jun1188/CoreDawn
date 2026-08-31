@@ -1,7 +1,4 @@
 using UnityEngine;
-using CoreDawn.Managers;
-using CoreDawn.Factory;
-using CoreDawn.Sim;
 
 namespace CoreDawn.Data
 {
@@ -24,14 +21,6 @@ namespace CoreDawn.Data
         public static RecipeDatabaseSO LoadDefault()
             => Resources.Load<RecipeDatabaseSO>("RecipeDatabase");
 
-        /// <summary>이 레시피가 현재 코어 티어에서 해금됐는가. GameManager 없는 씬은 전부 해금 취급 (건설 메뉴와 같은 규칙).</summary>
-        public static bool IsUnlocked(RecipeDataSO r) =>
-            r != null && ((GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.tier)) ||
-                          RecipeRewardUnlockService.IsUnlocked(r));
-
-        /// <summary>정의판 — 티어 게이트는 정의의 Tier, 보상 해금은 아직 SO 키(5a-3에서 id 키로).</summary>
-        public static bool IsUnlocked(RecipeDef r) =>
-            r != null && ((GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(r.Tier)) ||
-                          RecipeRewardUnlockService.IsUnlocked(RecipeAssets.Of(r)));
+        // 해금 판정은 CoreDawn.Factory.RecipeUnlocks로 옮겨졌다 (5a-3c) — 이 클래스는 에디터 스캐너의 등록부로만 남는다(3e에서 퇴역).
     }
 }
