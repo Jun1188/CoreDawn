@@ -432,6 +432,7 @@ namespace CoreDawn.Worlds
                                    spec.bossRecoveryDays, spec.nestRecoveryDays);
                     nest.SetData(nestData);
                     ApplySpawnPoints(world, nest, spec);
+                    nest.SyncModule();   // 자리·보스 유무·복구일을 심 Nest 모듈에 — 상태(파괴·복구·무적)는 심의 것
                 }
 
                 if (SpawnOverride == null) ClaimNestCells(nestData, spec.cell, go);

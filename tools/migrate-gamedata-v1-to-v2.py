@@ -153,7 +153,7 @@ for b in d['buildings']:
                           'unlocks': t.get('unlocks', []), 'maxHpBonus': t.get('maxHpBonus', 0), 'isFinal': t.get('isFinal', False)})
         mods.append({'type': 'Core', 'tiers': tiers})
     elif kind == 'Nest':
-        mods.append({'type': 'NestSpawner'})
+        mods.append({'type': 'Nest'})
     elif kind == 'Tower':
         fm = b.get('fireMode')
         assert fm, f"{b['id']}: 타워는 fireMode가 필요합니다"

@@ -86,6 +86,12 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   switch, melee = unlimited) ticked by `PlayerSystem.Tick`. `Gun` (view) forwards input (`TryFire/StartReload/TrySwitchAmmo`) and turns
   the approved `WeaponShot` into `ProjectileSystem.Fire` calls with spread/pellets; `WeaponManager.Equip/Unequip` tell the module which
   gun is held. Saves store `player.weapons[{gun, round, loaded}]` keyed by gun id.
+- Nests are sim-owned state (5a-2e-3, 2026-08-31): `NestModule` (pack module `Nest{bossRecoveryDays, nestRecoveryDays}`) holds the
+  spawn points' destroyed/day state, the nest's destroyed/day state, the invulnerability rule as an `IDamageInterceptor`
+  (any live spawn point → no damage; `DamageGateModule` is gone) and detects boss death via the entity `Died` event.
+  `NestView` keeps only the point transforms, boss prefab spawning (answers `BossNeeded`, then `BindBoss`), visuals, the
+  day/night bridge (`OnDayStarted/OnNightStarted`) and the day-defender spawn timing (player distance + screen-occlusion
+  raycast). `NestView.SyncModule` pushes points/recovery days into the module; `CombatSaveModule` reads point state from it.
 - Towers are not a module: a tower is `Building + (AmmoConsumer | FixedAmmo) + (Turret | AuraEmitter | Trigger)` (5a-2e-1, 2026-08-31).
   Emitters never know effects — they ask the entity's `IAmmoSource` ("can I fire, what is this shot": `HasAmmo`, `TryPeek`, `TryTake`,
   `Bake`). `AmmoConsumerModule` = magazine (input-container filter, one round per shot, damage-like × `damageMultiplier` → owner

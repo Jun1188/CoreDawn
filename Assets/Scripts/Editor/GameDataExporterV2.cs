@@ -211,7 +211,7 @@ namespace CoreDawn.EditorTools
                         mods.Add(coreMod);
                         break;
                     }
-                    case "Nest": mods.Add(new JObject { ["type"] = "NestSpawner" }); break;
+                    case "Nest": mods.Add(new JObject { ["type"] = "Nest" }); break;   // 복구 일수는 정의 기본값(2·3) — 맵이 둥지마다 덮을 수 있다
                     case "Tower":
                     {
                         // 전달 방식(fireMode)이 모듈을 고른다 — 건물 이름으로 갈라 두면 새 타워마다 exporter를 고쳐야 한다

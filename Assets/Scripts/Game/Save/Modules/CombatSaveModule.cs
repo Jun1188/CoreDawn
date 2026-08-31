@@ -111,12 +111,13 @@ namespace CoreDawn.Save
                 {
                     var sp = nest.Points[i];
                     var boss = sp.linkedBoss;
+                    var state = nest.PointState(i);   // 파괴 여부·날짜의 정본은 심(NestModule)
 
                     nd.Points.Add(new PointDto
                     {
                         Index = i,
-                        IsDestroyed = sp.isDestroyed,
-                        DestroyedDay = sp.destroyedDay,
+                        IsDestroyed = state != null && state.IsDestroyed,
+                        DestroyedDay = state != null ? state.DestroyedDay : -1,
                         Boss = boss != null && !boss.IsDead ? Describe(boss) : null,
                     });
                 }

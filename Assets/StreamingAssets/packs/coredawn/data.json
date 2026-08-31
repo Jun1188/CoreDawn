@@ -2742,7 +2742,7 @@
           "type": "Effects"
         },
         {
-          "type": "NestSpawner"
+          "type": "Nest"
         },
         {
           "type": "Loot",
