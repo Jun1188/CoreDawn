@@ -274,7 +274,7 @@ namespace CoreDawn.Entities
         private Vector3 AimPointOf(EntityView t)
             => targetCollider != null ? targetCollider.bounds.center : t.GetPosition();
 
-        /// <summary>목표의 수평 이동 속도 — 곡사 탄착 예측이 쓴다. 움직이지 않는 대상은 0.</summary>
+        /// <summary>목표의 수평 이동 속도 — 탄착 예측(직사·곡사 모두)이 쓴다. 움직이지 않는 대상은 0.</summary>
         private static Vector3 VelocityOf(EntityView t)
         {
             var movement = t != null ? t.Entity?.Get<MovementModule>() : null;
@@ -290,10 +290,15 @@ namespace CoreDawn.Entities
         /// </summary>
         private Vector3 AimDirection(Vector3 origin, Vector3 aimPoint, Vector3 targetVelocity, TowerDataSO data)
         {
-            // 중력이 0인 탄(대부분의 타워)은 예측도 탄도해도 건너뛴다 — 그냥 겨누면 맞는다
-            if (data.fireMode == FireMode.Projectile && previewRound != null && previewRound.gravity > 0f)
-                return ProjectileSystem.BallisticLead(origin, aimPoint, targetVelocity, previewRound.speed,
-                                                      previewRound.gravity, data.preferHighArc, out _);
+            if (data.fireMode == FireMode.Projectile && previewRound != null)
+            {
+                // 곡사탄은 발사각까지 풀고(반복), 직사탄은 만나는 점만 푼다(이차식 한 번). 즉시 판정(Hitscan)은 리드가 없다
+                if (previewRound.gravity > 0f)
+                    return ProjectileSystem.BallisticLead(origin, aimPoint, targetVelocity, previewRound.speed,
+                                                          previewRound.gravity, data.preferHighArc, out _);
+                if (previewRound.speed > 0f)
+                    return ProjectileSystem.LinearLead(origin, aimPoint, targetVelocity, previewRound.speed, out _);
+            }
 
             Vector3 dir = aimPoint - origin;
             return dir.sqrMagnitude < 0.0001f ? transform.forward : dir.normalized;
@@ -365,9 +370,8 @@ namespace CoreDawn.Entities
             Vector3 muzzle = hasMuzzle ? muzzleTf.position
                                        : transform.position + Vector3.up * data.muzzleHeight;
 
-            // 발사기의 일은 각도다 — 중력탄(유탄)은 포탄이 떨어질 자리(탄착점)로 탄도해를 풀고,
-            // 직선탄은 그냥 겨눈다. 중력이 0인 탄은 예측 자체를 건너뛴다 — 탄속이 빨라 리드가
-            // 필요 없는 데다, 모든 직사 타워가 매 발 반복해 풀 만큼 싼 계산이 아니다.
+            // 발사기의 일은 각도다 — 중력탄(유탄)은 포탄이 떨어질 자리(탄착점)로 탄도해를 풀고(반복),
+            // 직선탄은 탄과 목표가 만나는 점을 이차식 한 번으로 푼다. 즉시 판정(Hitscan)만 그냥 겨눈다.
             Vector3 dir;
             Vector3 impact = aimPoint;
             if (data.fireMode == FireMode.Projectile && round.gravity > 0f)
@@ -375,6 +379,10 @@ namespace CoreDawn.Entities
                 dir = ProjectileSystem.BallisticLead(muzzle, aimPoint, VelocityOf(target),
                                                      round.speed, round.gravity, data.preferHighArc,
                                                      out impact);
+            }
+            else if (data.fireMode == FireMode.Projectile && round.speed > 0f)
+            {
+                dir = ProjectileSystem.LinearLead(muzzle, aimPoint, VelocityOf(target), round.speed, out impact);
             }
             else
             {
