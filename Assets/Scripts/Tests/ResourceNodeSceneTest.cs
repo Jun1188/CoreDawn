@@ -155,8 +155,8 @@ namespace CoreDawn.Tests
             var stray = Place(_minerSO, off);          // 판정을 무시하고 강행한 경우(심 직접 배치)
             yield return null; yield return null;
             Case("D9 광맥 밖에 강행 설치된 채굴기는 캘 광맥이 없어 아무것도 하지 않는다",
-                 stray != null && stray.Behavior is MinerBehavior sm && sm.Deposits.Count == 0 && sm.Target == null,
-                 $"덮는 광맥 {(stray?.Behavior as MinerBehavior)?.Deposits.Count ?? -1}개");
+                 stray != null && stray.Owner.Get<ExtractorModule>() is { } sm && sm.Deposits.Count == 0 && sm.Target == null,
+                 $"덮는 광맥 {stray?.Owner.Get<ExtractorModule>()?.Deposits.Count ?? -1}개");
             if (stray != null) PlacementBridge.Remove(stray);
 
             Case("D10 낮에는 건축이 허용된다",

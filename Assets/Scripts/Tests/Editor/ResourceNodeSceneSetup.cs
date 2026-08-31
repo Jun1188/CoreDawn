@@ -7,6 +7,7 @@ using CoreDawn.Factory;
 using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tests
 {

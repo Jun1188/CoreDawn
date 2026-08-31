@@ -4,6 +4,7 @@ using CoreDawn.Interaction;
 using CoreDawn.Placement;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {

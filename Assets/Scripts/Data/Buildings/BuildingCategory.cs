@@ -17,9 +17,9 @@ namespace CoreDawn.Data
     /// </summary>
     public enum BuildingCategory
     {
-        Production,   // 생산 — 채굴기, 조립기
-        Logistics,    // 물류 — 벨트, 분배기, 합류기
-        Storage,      // 저장 — 보관소
-        Defense,      // 방어 — 포탑 (밤 웨이브)
+        // 값을 못 박는다 — SO 에셋이 정수로 직렬화한다. Storage(2)는 물류로 합쳐 삭제(2026-09-01, 사용자 지시)
+        Production = 0,   // 생산 — 채굴기, 조립기
+        Logistics  = 1,   // 물류 — 벨트, 분배기, 합류기, 보관소
+        Defense    = 3,   // 방어 — 포탑 (밤 웨이브)
     }
 }

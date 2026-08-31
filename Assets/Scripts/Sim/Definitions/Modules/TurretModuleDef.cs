@@ -15,7 +15,7 @@ namespace CoreDawn.Sim
         [JsonProperty("aimTolerance")] public float AimTolerance = 5f; // 도 — 이 안에 들어와야 쏜다(좌우만)
         [JsonProperty("preferHighArc")] public bool PreferHighArc;    // 중력탄을 고각으로 — 박격포는 장애물을 넘겨 쏜다
         [JsonProperty("muzzleHeight")] public float MuzzleHeight = 1f; // m — 심의 총구 높이(엔티티 위치 기준)
-        [JsonProperty("aimHeight")] public float AimHeight = 0.6f;    // m — 표적 위치(발)에서 겨누는 높이
+        [JsonProperty("aimHeight")] public float AimHeight = 0f;    // m — 표적 엔티티 위치(=콜라이더 중심)에서의 오프셋. 0이 몸통 중앙; 올리면 작은 몹은 머리 위를 겨눈다(2026-09-01 수정)치(발)에서 겨누는 높이
         [JsonProperty("hitscan")] public bool Hitscan;                // 즉시 판정(레이저·저격) — 리드·탄도 없음
 
         public override EntityModule Create(Entity entity) => new TurretModule(this);

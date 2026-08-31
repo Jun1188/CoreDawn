@@ -135,6 +135,31 @@ namespace CoreDawn.Combat
         // GC 방지용 재사용 버퍼 (메인 스레드 전용, SensorComponent와 같은 패턴)
         private static readonly RaycastHit[] hitBuffer = new RaycastHit[32];
 
+        // ── 차폐 판정 제공 — 심(TurretModule)이 SimHost.HasLineOfSight로 묻는다. 지형·벽·건물·둥지가 가리면 false, 쏘는 쪽·표적 자신은 제외 ──
+        private static int losMask = -1;
+        private static readonly RaycastHit[] losBuffer = new RaycastHit[16];
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void RegisterLineOfSight() => SimHost.LineOfSight = HasLineOfSight;
+
+        private static bool HasLineOfSight(CoreDawn.Sim.Entity shooter, CoreDawn.Sim.Entity target, Vector3 from, Vector3 to)
+        {
+            if (losMask < 0) losMask = LayerMask.GetMask("Default", "Obstacle", "Ground", "Entity", "Nest");
+            Vector3 d = to - from; float len = d.magnitude;
+            if (len < 0.001f) return true;
+            int n = Physics.RaycastNonAlloc(from, d / len, losBuffer, len, losMask, QueryTriggerInteraction.Ignore);
+            var shooterView = shooter != null ? EntityViewRegistry.ViewOf(shooter) : null;
+            var targetView = target != null ? EntityViewRegistry.ViewOf(target) : null;
+            for (int i = 0; i < n; i++)
+            {
+                var t = losBuffer[i].collider.transform;
+                if (shooterView != null && t.IsChildOf(shooterView.transform)) continue;
+                if (targetView != null && t.IsChildOf(targetView.transform)) continue;
+                return false;
+            }
+            return true;
+        }
+
         private static int sweepLayers;
 
         /// <summary>

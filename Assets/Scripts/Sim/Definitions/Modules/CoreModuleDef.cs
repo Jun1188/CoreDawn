@@ -8,6 +8,8 @@ namespace CoreDawn.Sim
     {
         [JsonProperty("tiers")] public List<CoreTierDef> Tiers = new List<CoreTierDef>();
 
+        public override EntityModule Create(Entity entity) => new CoreModule(this);
+
         // ── 보호막 — 요구에 없는 자원을 소각해 채운다 (구 CoreDataSO의 값. 기본값 = 옛 에셋 값)
         /// <summary>끄면 예전 동작 — 요구 아이템만 통과하고 나머지는 입구에서 거절된다.</summary>
         [JsonProperty("burnSurplusIntoShield")] public bool BurnSurplusIntoShield = true;

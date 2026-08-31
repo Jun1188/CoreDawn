@@ -29,7 +29,8 @@ namespace CoreDawn.UI
     {
         static MachinePanelView cached;
 
-        AssemblerBehavior target;
+        BuildingModule target;    // 설비 건물 — 그릇·공장 접근
+        CrafterModule crafter;    // 제작 상태의 정본(심 모듈)
         string search = "";
 
         VisualElement recipes, detail, inSlots, outSlots, ioArrow, machineBar, machineFill, statusBadge;
@@ -41,12 +42,18 @@ namespace CoreDawn.UI
         MachineState shownState = (MachineState)(-1);
         bool shownPaused;
 
+        // ── 심 시계 값 — 행동이 감싸 주던 것을 패널이 직접 읽는다 ──
+        float Now => target.Factory.Now;
+        float Progress => crafter.Progress(Now);
+        float Remaining => crafter.RemainingTime(Now);
+        MachineState State => crafter.State(Now);
+
         // ───────────────────────── 열기 ─────────────────────────
 
         /// <summary>씬에 이 패널이 있으면 열고 true. 없으면 false — 설비 상호작용이 조용히 무시된다.</summary>
-        public static bool TryOpen(AssemblerBehavior machine)
+        public static bool TryOpen(BuildingModule machine)
         {
-            if (machine == null) return false;
+            if (machine == null || machine.Owner?.Get<CrafterModule>() == null) return false;
 
             if (cached == null)
                 cached = FindFirstObjectByType<MachinePanelView>(FindObjectsInactive.Include);
@@ -58,15 +65,21 @@ namespace CoreDawn.UI
                 return true;
             }
 
-            cached.target = machine;      // OnEnable → Bind 전에 넣어야 한다
+            cached.SetTarget(machine);    // OnEnable → Bind 전에 넣어야 한다
             cached.gameObject.SetActive(true);
             return true;
         }
 
-        void Retarget(AssemblerBehavior machine)
+        void SetTarget(BuildingModule machine)
+        {
+            target = machine;
+            crafter = machine?.Owner?.Get<CrafterModule>();
+        }
+
+        void Retarget(BuildingModule machine)
         {
             UnhookContainers();
-            target = machine;
+            SetTarget(machine);
             HookContainers();
             search = "";
             if (searchField != null) searchField.SetValueWithoutNotify("");
@@ -138,13 +151,14 @@ namespace CoreDawn.UI
 
             UnhookContainers();
             target = null;
+            crafter = null;
 
             UnbindCommon();   // 툴팁 정리 + 들고 있던 스택 회수
         }
 
         void HookContainers()
         {
-            var b = target?.Building;
+            var b = target;
             if (b == null) return;
             b.Input.Changed  += RebuildSlots;
             b.Output.Changed += RebuildSlots;
@@ -152,7 +166,7 @@ namespace CoreDawn.UI
 
         void UnhookContainers()
         {
-            var b = target?.Building;
+            var b = target;
             if (b == null) return;
             b.Input.Changed  -= RebuildSlots;
             b.Output.Changed -= RebuildSlots;
@@ -170,7 +184,7 @@ namespace CoreDawn.UI
         /// </summary>
         protected override void QuickMove(ItemContainer src, int index)
         {
-            var b = target?.Building;
+            var b = target;
             if (b == null) { base.QuickMove(src, index); return; }
             var stack = src.PeekAt(index);
             if (stack.IsEmpty) return;
@@ -198,17 +212,50 @@ namespace CoreDawn.UI
 
         void TogglePaused()
         {
-            if (target == null) return;
-            target.SetPaused(!target.Paused);
+            if (crafter == null) return;
+            SetPaused(!crafter.Paused);
             RefreshRunning(force: true);
         }
+
+        /// <summary>시작/중지 — 옛 AssemblerBehavior.SetPaused. 재개하면 완료 시각에 깨움을 다시 건다(멈춘 동안 예약이 없다).</summary>
+        void SetPaused(bool paused)
+        {
+            var sim = target.Factory;
+            crafter.SetPaused(paused, sim.Now);
+            if (paused) return;
+            if (crafter.Crafting) sim.ScheduleWake(target, crafter.RemainingTime(sim.Now));
+            sim.MarkDirty(target);
+        }
+
+        /// <summary>레시피 교체 — 옛 AssemblerBehavior.SetRecipe: 슬롯·해금 검사는 게임 규칙이라 패널에, 교체 자체는 심 모듈에.</summary>
+        void SetRecipe(RecipeDef r)
+        {
+            if (r != null && r.Inputs != null && r.Inputs.Count > crafter.InputSlotCount)
+            {
+                Debug.LogWarning($"[Machine] 레시피 '{r.DisplayName}'의 재료 종류({r.Inputs.Count})가 " +
+                                 $"입력 슬롯({crafter.InputSlotCount})보다 많아 거부됨");
+                return;
+            }
+            if (r != null && !RecipeDatabaseSO.IsUnlocked(r))
+            {
+                Debug.LogWarning($"[Machine] 레시피 '{r.DisplayName}'는 아직 해금되지 않음 (요구 Tier {r.Tier})");
+                return;
+            }
+            if (r == crafter.Recipe) return;
+            // 진행 중인 1회는 취소된다(재료는 완료 순간에만 소비되므로 잃는 것이 없다). 안 쓰는 입력 잔여물은 틱이 출구로 밀어낸다.
+            if (crafter.SetRecipe(r)) target.Factory.MarkDirty(target);
+        }
+
+        /// <summary>현재 해금된 레시피만 — 해금 게이팅은 게임(UI)의 일이라 심 모듈에 없다.</summary>
+        IEnumerable<RecipeDef> UnlockedRecipes() =>
+            crafter.Recipes.Where(r => RecipeDatabaseSO.IsUnlocked(r));
 
         void RebuildAll()
         {
             RebuildPlayerGrids();   // 설비를 못 찾아도 소지품은 그린다 — 빈 창이 뜨는 것보다 낫다
 
-            if (target == null) return;
-            machineName.text = target.Building.DisplayName;
+            if (target == null || crafter == null) return;
+            machineName.text = target.DisplayName;
             RebuildRecipes();
             RebuildSlots();
             RefreshDetailHead();
@@ -219,7 +266,7 @@ namespace CoreDawn.UI
 
         void Update()
         {
-            if (target == null) return;
+            if (crafter == null) return;
             RefreshRunning(force: false);
         }
 
@@ -227,11 +274,11 @@ namespace CoreDawn.UI
 
         void RebuildRecipes()
         {
-            if (recipes == null || target == null) return;
+            if (recipes == null || crafter == null) return;
             recipes.Clear();
             tooltip?.Hide();   // 호버 중이던 행이 교체되면 Leave가 안 온다
 
-            var list = target.GetUnlockedRecipes()
+            var list = UnlockedRecipes()
                 .OrderBy(r => UIItemOrder.TierOf(PrimaryOutput(r)))
                 .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).line : int.MaxValue)
                 .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).type : int.MaxValue)
@@ -259,7 +306,7 @@ namespace CoreDawn.UI
             var row = new VisualElement();
             row.AddToClassList("ui-row");
             row.AddToClassList("ui-row--compact");
-            if ((RecipeDef)r == target.CurrentRecipe) row.AddToClassList("ui-row--selected");
+            if ((RecipeDef)r == crafter.Recipe) row.AddToClassList("ui-row--selected");
 
             var ic = new VisualElement();
             ic.AddToClassList("ui-slot__icon");
@@ -280,8 +327,7 @@ namespace CoreDawn.UI
             var captured = r;
             row.RegisterCallback<ClickEvent>(_ =>
             {
-                // 진행 중이던 조합은 심이 취소하고 재료를 되돌린다 (AssemblerBehavior.SetRecipe)
-                target.SetRecipe(captured);
+                SetRecipe(captured);
                 RebuildAll();
             });
             return row;
@@ -294,7 +340,7 @@ namespace CoreDawn.UI
 
         void RefreshDetailHead()
         {
-            var recipe = target.CurrentRecipe;
+            var recipe = crafter.Recipe;
             bool has = recipe != null;
             detail.style.visibility = has ? Visibility.Visible : Visibility.Hidden;
             if (!has) return;
@@ -316,7 +362,7 @@ namespace CoreDawn.UI
 
         void RebuildSlots()
         {
-            var b = target?.Building;
+            var b = target;
             if (b == null || inSlots == null) return;
 
             // 입력: 세로로 쌓다가 넷이면 2×2. 입력이 하나면 남는 폭을 진행바가 쓴다
@@ -348,25 +394,25 @@ namespace CoreDawn.UI
 
         void RefreshRunning(bool force)
         {
-            if (target == null || target.CurrentRecipe == null) return;
+            if (crafter == null || crafter.Recipe == null) return;
 
             // 진행바·잔여는 매 프레임, 상태 배지·버튼은 바뀔 때만
-            SetBarFill(machineFill, target.Progress);
-            machinePct.text = $"{Mathf.RoundToInt(target.Progress * 100f)}%";
+            SetBarFill(machineFill, Progress);
+            machinePct.text = $"{Mathf.RoundToInt(Progress * 100f)}%";
 
-            var state = target.State;
+            var state = State;
             machineEta.text = state switch
             {
-                MachineState.Running => $"{target.RemainingTime:0.0}s",
+                MachineState.Running => $"{Remaining:0.0}s",
                 MachineState.Stopped => "멈춤",
                 _                    => "대기",
             };
 
-            if (!force && state == shownState && target.Paused == shownPaused) return;
+            if (!force && state == shownState && crafter.Paused == shownPaused) return;
             shownState = state;
-            shownPaused = target.Paused;
+            shownPaused = crafter.Paused;
 
-            ToggleClass(machineBar, "ui-machine--paused", target.Paused);
+            ToggleClass(machineBar, "ui-machine--paused", crafter.Paused);
 
             foreach (var cls in new[] { "ui-status--run", "ui-status--wait", "ui-status--block", "ui-status--stop" })
                 statusBadge.RemoveFromClassList(cls);
@@ -383,13 +429,13 @@ namespace CoreDawn.UI
             // 참고문 — 가동 중엔 소비량, 중지 중엔 보존 안내. 나머지는 상태 배지가 이미 말한다
             statusNote.text = state switch
             {
-                MachineState.Running => ConsumptionText(target.CurrentRecipe),
+                MachineState.Running => ConsumptionText(crafter.Recipe),
                 MachineState.Stopped => "진행은 그대로 보존된다",
                 _                    => "",
             };
 
-            btnToggle.text = target.Paused ? "▶ 시작" : "■ 중지";
-            ToggleClass(btnToggle, "ui-btn--primary", target.Paused);
+            btnToggle.text = crafter.Paused ? "▶ 시작" : "■ 중지";
+            ToggleClass(btnToggle, "ui-btn--primary", crafter.Paused);
         }
 
         static string ConsumptionText(RecipeDataSO r)

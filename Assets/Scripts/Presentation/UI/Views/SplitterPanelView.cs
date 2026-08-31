@@ -24,7 +24,8 @@ namespace CoreDawn.UI
     {
         static SplitterPanelView cached;
 
-        SplitterBehavior target;
+        BuildingModule target;   // 분배기 건물 — 포트 배치 조회
+        RouterModule router;     // 필터 규칙의 정본(심 모듈)
         Direction selected;
         bool hasSelection;
         string search = "";
@@ -40,9 +41,9 @@ namespace CoreDawn.UI
         // ───────────────────────── 열기 ─────────────────────────
 
         /// <summary>씬에 이 패널이 있으면 열고 true. 없으면 false — 호출부가 기존 uGUI로 넘어간다.</summary>
-        public static bool TryOpen(SplitterBehavior splitter)
+        public static bool TryOpen(BuildingModule splitter)
         {
-            if (splitter == null) return false;
+            if (splitter == null || splitter.Owner?.Get<RouterModule>() == null) return false;
 
             if (cached == null)
                 cached = FindFirstObjectByType<SplitterPanelView>(FindObjectsInactive.Include);
@@ -54,14 +55,20 @@ namespace CoreDawn.UI
                 return true;
             }
 
-            cached.target = splitter;      // OnEnable → Bind 전에 넣어야 한다
+            cached.SetTarget(splitter);    // OnEnable → Bind 전에 넣어야 한다
             cached.gameObject.SetActive(true);
             return true;
         }
 
-        void Retarget(SplitterBehavior splitter)
+        void SetTarget(BuildingModule splitter)
         {
             target = splitter;
+            router = splitter?.Owner?.Get<RouterModule>();
+        }
+
+        void Retarget(BuildingModule splitter)
+        {
+            SetTarget(splitter);
             hasSelection = false;
             search = "";
             if (searchField != null) searchField.SetValueWithoutNotify("");
@@ -110,6 +117,7 @@ namespace CoreDawn.UI
             tooltip = null;
 
             target = null;
+            router = null;
         }
 
         void OnSearchChanged(ChangeEvent<string> e)
@@ -134,7 +142,7 @@ namespace CoreDawn.UI
             foreach (var s in slots) s.RemoveFromHierarchy();
             slots.Clear();
 
-            var ports = target?.Building?.GetEffectivePorts();
+            var ports = target?.GetEffectivePorts();
             if (ports == null) return;
 
             // 출구가 하나도 선택돼 있지 않으면 첫 출력 포트를 고른다
@@ -162,7 +170,7 @@ namespace CoreDawn.UI
 
         void AddOutletSlot(Direction dir)
         {
-            var state = target.StateOf(dir);
+            var state = router.StateOf(dir);
             bool blocked = state == OutletState.Blocked;
 
             var line = MakeFlowLine(dir, longLine: false, on: !blocked, UIFlowColors.Out);
@@ -221,7 +229,7 @@ namespace CoreDawn.UI
             // AllowedAt은 HashSet이라 순서가 없다 — 목록과 같은 기준으로 정렬해야
             // 왼쪽 점과 오른쪽 목록이 같은 물건을 같은 자리에서 말한다
             var colors = new List<Color>();
-            foreach (var item in UIItemOrder.Sorted(target.AllowedAt(dir).Select(d => (ItemDataSO)d)))
+            foreach (var item in UIItemOrder.Sorted(router.AllowedAt(dir).Select(d => (ItemDataSO)d)))
                 colors.Add(UIFlowColors.Of(item.line));
 
             var (cols, size, gap) = FitGrid(colors.Count);
@@ -398,7 +406,7 @@ namespace CoreDawn.UI
                 return;
             }
 
-            var state = target.StateOf(selected);
+            var state = router.StateOf(selected);
 
             // 이미 그 상태인 버튼은 누를 이유가 없다 — 눌러도 아무 일이 안 일어나는 버튼은
             // "먹히지 않는다"는 인상을 준다
@@ -453,11 +461,11 @@ namespace CoreDawn.UI
         /// 그래서 목록이 비었을 때 토글을 전부 꺼서 보여주면 화면이 거짓말을 한다 —
         /// 켜진 것이 곧 지나가는 것이어야 한다.
         /// </summary>
-        bool AllowedNow(ItemDataSO item) => target.StateOf(selected) switch
+        bool AllowedNow(ItemDataSO item) => router.StateOf(selected) switch
         {
             OutletState.Blocked => false,
             OutletState.All     => true,
-            _                   => target.IsAllowedAt(selected, item),
+            _                   => router.IsAllowedAt(selected, item),
         };
 
         VisualElement MakeRow(ItemDataSO item, string name)
@@ -507,14 +515,14 @@ namespace CoreDawn.UI
         /// </summary>
         void Toggle(ItemDataSO item)
         {
-            var state = target.StateOf(selected);
+            var state = router.StateOf(selected);
 
             if (state == OutletState.Blocked)
             {
                 // 막힌 출구에서 하나를 켜면 그것만 지나가는 출구가 된다.
                 // 켤 수 없게 막아 두면 "전체 허용"으로 되돌리는 길밖에 없어 막다른 골목이 된다.
-                target.SetBlocked(selected, false);
-                target.AddFilter(selected, item);
+                router.SetBlocked(selected, false);
+                router.AddFilter(selected, item);
                 RebuildAll();
                 return;
             }
@@ -522,20 +530,20 @@ namespace CoreDawn.UI
             if (state == OutletState.All)
             {
                 var others = AllItems().Where(x => x != item).ToList();
-                if (others.Count == 0) target.SetBlocked(selected, true);   // 아이템이 이것뿐이면 곧 차단이다
-                else foreach (var o in others) target.AddFilter(selected, o);
+                if (others.Count == 0) router.SetBlocked(selected, true);   // 아이템이 이것뿐이면 곧 차단이다
+                else foreach (var o in others) router.AddFilter(selected, o);
             }
-            else if (target.IsAllowedAt(selected, item))
+            else if (router.IsAllowedAt(selected, item))
             {
-                target.RemoveFilter(selected, item);
+                router.RemoveFilter(selected, item);
                 // 마지막 하나까지 끄면 아무것도 안 지나간다 = 차단. 빈 목록으로 두면 "전부 허용"으로 뒤집힌다
-                if (target.AllowedAt(selected).Count == 0) target.SetBlocked(selected, true);
+                if (router.AllowedAt(selected).Count == 0) router.SetBlocked(selected, true);
             }
             else
             {
-                target.AddFilter(selected, item);
-                if (target.AllowedAt(selected).Count >= AllItems().Count())
-                    target.ClearFilter(selected);       // 전부 켜졌다 → 빈 목록(=전부 허용)으로 되돌린다
+                router.AddFilter(selected, item);
+                if (router.AllowedAt(selected).Count >= AllItems().Count())
+                    router.ClearFilter(selected);       // 전부 켜졌다 → 빈 목록(=전부 허용)으로 되돌린다
             }
 
             RebuildAll();
@@ -550,11 +558,11 @@ namespace CoreDawn.UI
 
         string MetaOf(ItemDataSO item)
         {
-            if (!target.HasPassed(item)) return "";
+            if (!router.HasPassed(item)) return "";
 
             // 다른 출구에도 걸려 있으면 그것부터 알린다 — 한 아이템이 여러 출구로 나뉠 수 있다
             int others = 0;
-            foreach (var d in target.DirectionsOf(item))
+            foreach (var d in router.DirectionsOf(item))
                 if (d != selected) others++;
 
             return others > 0 ? $"지나가는 중 · 다른 출구 {others}" : "지나가는 중";
@@ -566,15 +574,15 @@ namespace CoreDawn.UI
         void AllowAll()
         {
             if (!hasSelection) return;
-            target.SetBlocked(selected, false);
-            target.ClearFilter(selected);
+            router.SetBlocked(selected, false);
+            router.ClearFilter(selected);
             RebuildAll();
         }
 
         void BlockAll()
         {
             if (!hasSelection) return;
-            target.SetBlocked(selected, true);   // 허용 목록도 함께 비워진다 (심 계약)
+            router.SetBlocked(selected, true);   // 허용 목록도 함께 비워진다 (심 계약)
             RebuildAll();
         }
 

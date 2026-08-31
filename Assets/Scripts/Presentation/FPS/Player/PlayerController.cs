@@ -14,6 +14,7 @@ using CoreDawn.Worlds;
 using CoreDawn.Factory;
 using CoreDawn.Data;
 using CoreDawn.Sound;
+using CoreDawn.Sim;
 
 namespace CoreDawn.FPS
 {

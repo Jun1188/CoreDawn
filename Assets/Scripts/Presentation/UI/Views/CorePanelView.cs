@@ -26,7 +26,7 @@ namespace CoreDawn.UI
     {
         static CorePanelView cached;
 
-        CoreBehavior target;
+        CoreModule target;
 
         // 정적 요소 (UXML)
         VisualElement rail, rows, gateFill, actionsChips, complete, table, gate, actions;
@@ -72,11 +72,11 @@ namespace CoreDawn.UI
 
         /// <summary>
         /// 씬에 이 패널이 있으면 열고 true. 없으면 false —
-        /// 호출부(CoreBehavior)가 기존 uGUI 경로로 넘어갈 수 있게 한다.
+        /// 호출부가 기존 uGUI 경로로 넘어갈 수 있게 한다.
         /// </summary>
         /// <summary>
         /// 이 씬이 UITK 코어 패널을 갖고 있는가 — 즉 수리 확인창을 띄울 수 있는가.
-        /// CoreBehavior가 자동 진행을 멈출지 판단할 때 쓴다 (SCR-01b).
+        /// 코어(CoreSystem 배선)가 자동 진행을 멈출지 판단할 때 쓴다 (SCR-01b).
         /// 비활성 오브젝트까지 찾고 결과를 캐시하므로 매 틱 불려도 된다.
         /// </summary>
         public static bool ExistsInScene()
@@ -86,7 +86,7 @@ namespace CoreDawn.UI
             return cached != null;
         }
 
-        public static bool TryOpen(CoreBehavior core)
+        public static bool TryOpen(CoreModule core)
         {
             if (core == null) return false;
             if (!ExistsInScene()) return false;
@@ -106,7 +106,7 @@ namespace CoreDawn.UI
         }
 
         /// <summary>열려 있는 패널을 다른 코어로 다시 묶는다. 구독을 갈아끼우고 행을 새로 만든다.</summary>
-        void Retarget(CoreBehavior core)
+        void Retarget(CoreModule core)
         {
             Unsubscribe();
             target = core;

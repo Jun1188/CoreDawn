@@ -177,7 +177,7 @@ for b in d['buildings']:
             mods.append({'type': 'Turret', 'range': Or('range', 8.0), 'minRange': Or('minRange', 0.0), 'fireRate': Or('fireRate', 1.0),
                          'turnSpeed': Or('turnSpeed', 180.0), 'aimTolerance': Or('aimTolerance', 3.0),
                          'preferHighArc': b.get('preferHighArc', False), 'muzzleHeight': Or('muzzleHeight', 1.2),
-                         'aimHeight': Or('aimHeight', 0.6), 'hitscan': fm == 'Hitscan'})
+                         'aimHeight': Or('aimHeight', 0.0), 'hitscan': fm == 'Hitscan'})
             mods.append(source())
         else:
             raise SystemExit(f"{b['id']}: 알 수 없는 fireMode {fm}")

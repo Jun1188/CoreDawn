@@ -36,20 +36,4 @@ namespace CoreDawn.Save
         /// <summary>저장된 상태를 되돌린다. 이 모듈 키가 세이브에 없으면 아예 호출되지 않는다.</summary>
         void Restore(JToken data);
     }
-
-    /// <summary>
-    /// 상태를 가진 건물 행동이 함께 구현하는 인터페이스.
-    ///
-    /// 새 건물을 추가하는 사람은 자기 <see cref="IBuildingBehavior"/> 구현체에 이것만 덧붙이면
-    /// 세이브 시스템 쪽은 손대지 않아도 된다. 상태가 없는 행동(벨트·저장소·병합기·타워)은
-    /// 구현하지 않으면 그만이다.
-    /// </summary>
-    public interface ISaveableBehavior
-    {
-        /// <summary>행동 고유 상태를 직렬화 가능한 객체로.</summary>
-        object CaptureState();
-
-        /// <summary>저장된 행동 상태를 되돌린다.</summary>
-        void RestoreState(JToken state);
-    }
 }

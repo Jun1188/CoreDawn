@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,7 +22,7 @@ namespace CoreDawn.Sim
     /// 그 연료의 효과를(연료를 바꾸면 오라가 바뀐다), 고정 탄(<see cref="FixedAmmoModule"/>)이면 자기 정의의 효과를. 반경이 비어 있으면 태우지 않는다.
     /// 적용은 심에서 직접(<see cref="EntityWorld.QueryRadius"/> → <see cref="EffectsModule.Apply"/>) — PhysX를 쓰지 않는다.
     /// </summary>
-    public sealed class AuraEmitterModule : EntityModule
+    public sealed class AuraEmitterModule : EntityModule, ISteppable, ISaveableModule
     {
         public AuraEmitterModuleDef Def { get; }
 
@@ -62,6 +64,20 @@ namespace CoreDawn.Sim
         }
 
         /// <summary>한 틱 — 쿨다운이 돌았고 반경에 적이 있으면 펄스. now는 공장 시계.</summary>
+        // ── 공통 틱(ISteppable): 굶으면 예약 없음, 아니면 다음 펄스 시각(최소 한 틱) ──
+        float ISteppable.Step(float now, float dt)
+        {
+            Step(now);
+            if (Starved) return 0f;
+            float wait = ReadyAt > now ? ReadyAt - now : ScanInterval;
+            return Mathf.Max(dt, wait);
+        }
+
+        // ── 세이브(ISaveableModule) ──
+        public sealed class SaveState { [JsonProperty("readyAt")] public float ReadyAt; }
+        public object CaptureState() => new SaveState { ReadyAt = ReadyAt };
+        public void RestoreState(JToken state) { var s = state?.ToObject<SaveState>(); if (s != null) RestoreState(s.ReadyAt); }
+
         public void Step(float now)
         {
             if (now < ReadyAt) return;

@@ -29,9 +29,9 @@ namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Prese
 
 | Folder (`Assets/Scripts/…`) | Namespace | What lives there |
 |---|---|---|
-| `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces, `Inventory/` = `ItemStack`/`ItemContainer` (item storage shared by player and buildings), `Modules/` = entity modules (`*Module`, incl. `InventoryModule`·`CrafterModule`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
+| `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces (incl. `ISteppable`·`ISaveableModule`), `Inventory/` = `ItemStack`/`ItemContainer` (item storage shared by player and buildings), `Factory/` = the factory sim (5a-2f: `FactorySystem`·`BuildingModule`·`BuildingGraph`·`BuildingPorts`·`BeltSystem`·`BeltSegment` + `Direction`/`Dir`/`PortDefinition`/`BeltShape`), `Modules/` = entity modules (`*Module`, incl. `InventoryModule`·`CrafterModule`·`RouterModule`·`ExtractorModule`·`CoreModule`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
 | `Data/**` | `CoreDawn.Data` | every ScriptableObject definition + databases + `EffectEntry`/`EffectSpecs` (items, buildings, recipes, effects, monsters, waves, maps, tutorial, weapons) |
-| `Game/Factory` | `CoreDawn.Factory` | FactorySystem, BuildingModule, belts, processors, bootstrap/bridge; `Behaviors/` = building behaviors (`*Behavior`, `IBuildingBehavior`) chosen from the definition's modules by the `BuildingBehaviors` registry (not by the SOs) |
+| `Game/Factory` | `CoreDawn.Factory` | Unity-facing factory bridges only (since 5a-2f, 2026-09-01): `FactoryBootstrap` (driver + `WireGameRules`), `PlacementBridge`, `CoreBootstrap`, `BeltItemView`, `CoreSystem` (core tier/UI wiring), `RecipeRewardUnlockService`. The factory sim itself lives in `Sim/Factory`. The behavior layer (`*Behavior`, `IBuildingBehavior`, `BuildingBehaviors`) is gone — building tick is decided by what the entity *has* |
 | `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
 | `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
 | `Game/Placement` | `CoreDawn.Placement` | build mode, placement, port overlay |
@@ -60,8 +60,16 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 
 - `Assets/Scripts/Runtime/Sim` (`CoreDawn.Sim`) is the authoritative simulation: `Entity`
   (id · faction · position · modules), `HealthModule`, `EntityWorld`. Plain C#, no `UnityEngine.Object`.
-- A building is an `Entity` with a `BuildingModule` module (`CoreDawn.Factory`). `FactorySystem.Place(EntityDef)`
+- A building is an `Entity` with a `BuildingModule` module (`CoreDawn.Sim`, `Sim/Factory` since 5a-2f). `FactorySystem.Place(EntityDef)`
   creates the entity from the pack definition (`def.Assemble` → `HealthModule`/`EffectsModule` from json) and the module; views only follow.
+  Building tick (5a-2f, 2026-09-01) is decided by what the entity **has** — no behavior objects: conveyors run per segment
+  (`BeltSystem.Tick`), everything else runs `BuildingModule.TickModules` (flush pending outputs → step every `ISteppable`
+  module → flush again if outputs grew → `NotifyUpstream` if inputs shrank → schedule the wake the modules asked for; container
+  `Changed` wakes hand-fed buildings). Routing state (per-outlet filters/blocks + round-robin cursor) is `RouterModule`
+  (mergers and splitters are the same module); pumping itself is the building's (`PumpRouted`/`PumpPassThrough`). Modules with
+  save state implement `ISaveableModule`, saved under `buildings[].modules{}` keyed by module type name (save schema v3
+  migrates old `behavior` blobs). Game rules the sim must not know (core tier delegates via `CoreSystem.Wire`, recipe unlock
+  vetting) are wired on the `FactorySystem.Placed` event by `FactoryBootstrap.WireGameRules`.
   Sim/game code holds definitions (`EntityDef`/`ItemDef`/`RecipeDef` from `SimHost.Database`); the SOs are view assets reached
   through `BuildingAssets.Of(def)` / `ItemAssets.Of(def)` / `RecipeAssets.Of(def)` (prefab, icon) until the 5a-3 view catalog replaces them.
   HP, faction, "is this the core", footprint and damage rules (`IDamageInterceptor`) live in the sim.
@@ -77,8 +85,9 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 - The player is assembled from the pack definition `coredawn:entity/player` (Health·Effects·Inventory `main` 25 slots of which the
   first `hotbar` 7 are the hotbar window — one container, Minecraft-style; adding fills from the front, consuming takes from the back·Crafter manual;
   v1 `player` block → exporter). `PlayerInventoryHolder` spawns that entity in Awake and exposes its `InventoryModule` containers;
-  `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
-  is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
+  `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule`, which steps
+  itself on the common building tick (`ISteppable`); recipe unlock checks are game/UI (MachinePanelView,
+  `FactoryBootstrap.WireGameRules`), never the sim. Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
   never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
 - Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,
   pellets, range in meters, ammo filter, damage multiplier + the view's feel values), and the player entity carries a `WeaponModule`
@@ -122,8 +131,8 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `BakeOutgoing`); `FixedAmmoModule` = the building's own inline ammo (unlimited, nothing consumed; mines, fuel-less auras — never a
   reference to an item). `TurretModule` (targeting, turning, alignment, lead via `Sim/Ballistics`, cooldown → `FireRequested(TurretShot)`),
   `AuraEmitterModule` (periodic pulse on every hostile in radius, applied in the sim, no PhysX), `TriggerModule` (mine: detonates once and
-  kills itself). `TurretBehavior`/`AuraBehavior`/`TriggerBehavior` are the factory adapters (cell size, wake scheduling, save,
-  `NotifyUpstream`). `TowerView` only draws: on `FireRequested` it re-aims from the rig muzzle at the sim's impact point and calls
+  kills itself). All three implement `ISteppable` and run on the common building tick — the old `*Behavior` factory adapters
+  are gone (5a-2f). `TowerView` only draws: on `FireRequested` it re-aims from the rig muzzle at the sim's impact point and calls
   `ProjectileSystem.Fire`; `TowerState` derives from `TurretPhase`. Which modules a v1 tower gets is decided by its `fireMode`
   (Projectile/Hitscan → Turret, Aura → AuraEmitter, Trigger → Trigger, None → Blocker) and by `ammoFilter` (→ AmmoConsumer) vs
   `attackEffects` (→ FixedAmmo) — never by the building's name. `Building.walkable` (mine) makes pathfinding treat the cell as ground
@@ -133,8 +142,9 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   they never run out; only `extractInterval` — seconds per item, used as-is for hand mining and divided by the
   extractor's `speedMultiplier` for miners — and a `TotalExtracted` counter):
   `FactorySystem.Deposits` indexes them by cell, accrues production on the factory tick, and owns the placement rule
-  (`CanPlace`: an extractor must cover only deposit cells of one resource — no partial coverage). `MinerBehavior` mines the
-  covered deposits round-robin. The map stores only `item + cell` per deposit. Deposit definitions are **not authored**:
+  (`CanPlace`: an extractor must cover only deposit cells of one resource — no partial coverage). `ExtractorModule` mines the
+  covered deposits round-robin (the factory hands them over on placement via `SetDeposits` — the module never sees the grid).
+  The map stores only `item + cell` per deposit. Deposit definitions are **not authored**:
   every v1 item of type `Ore` carries `extractInterval`, and the v2 exporter emits `entities/<item>_deposit` from it
   (the importer rejects an Ore without it or a non-Ore with it). Edit the value in the GameData editor's item panel.
   `ResourceDepositView` (Game/ResourceNodes) is the view + hand-mining interaction. The map importer bakes the views into the
@@ -159,7 +169,8 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   no central counter, so client prediction, pasted structures and save restores keep their ids. The per-session
   integer handle for packets is the netcode library's, not ours. Not named `EntityId`: Unity 6 has `UnityEngine.EntityId`.
   The sim attack module is `AttackModule` (not `Combat` — that is a namespace); the effects module is `EffectsModule`. Sim ↔ factory contact points are interfaces in `Runtime/Sim` (`IFootprint`, `INavigation`).
-- **Rule:** sim code (`Runtime/Sim`, `Runtime/Factory` except the bridges) must not `using CoreDawn.Entities`.
+- **Rule:** sim code (`Assets/Scripts/Sim/**` — since 5a-2f this includes the factory sim in `Sim/Factory`) must not import
+  any non-`CoreDawn.Sim` project namespace; the `Game/Factory` bridges may know views but not `CoreDawn.Entities`.
   `python tools/check-sim-imports.py` enforces it until asmdefs do (phase 5). Death is decided by the sim:
   `Health.Die → EntityWorld.Died → FactorySystem.Remove → Removed → view destroyed`.
 - Commit messages in this repo already tend to note the main edited directory

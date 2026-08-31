@@ -15,7 +15,7 @@ namespace CoreDawn.Managers
     {
         public static GameManager Instance { get; private set; }
 
-        // ── 코어 진행도(티어) — CoreBehavior가 요구량 충족 시 AdvanceTier를 호출한다.
+        // ── 코어 진행도(티어) — 코어(CoreModule, CoreSystem 배선)가 요구량 충족 시 AdvanceTier를 호출한다.
         public int UnlockedTier { get; private set; } = 0;
         public event Action<int> TierUnlocked;
 

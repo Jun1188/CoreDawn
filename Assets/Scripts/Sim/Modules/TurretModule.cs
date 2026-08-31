@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using UnityEngine;
 
@@ -41,7 +43,7 @@ namespace CoreDawn.Sim
     }
 
     /// <summary>
-    /// 포탑 — 조준 사격의 두뇌(심 모듈). 표적 선택(최근접·최소 사거리·유지 여유), 선회(turnSpeed), 정렬 판정(aimTolerance),
+    /// 포탑 — 조준 사격의 두뇌(심 모듈). 표적 선택(최근접·최소 사거리·유지 여유·차폐 없음 — 차폐는 SimHost.LineOfSight로 뷰에 묻는다), 선회(turnSpeed), 정렬 판정(aimTolerance),
     /// 리드·탄도해(<see cref="Ballistics"/>), 쿨다운(fireRate), 탄 꺼내기(<see cref="IAmmoSource"/>)까지 여기서 끝나고,
     /// 뷰에는 <see cref="FireRequested"/> 하나만 나간다 — 뷰는 탄 프리팹을 만들어 그 방향으로 날린다.
     ///
@@ -49,7 +51,7 @@ namespace CoreDawn.Sim
     /// 시계는 공장 틱(Step의 now) — 몬스터 시계와 별개지만 쿨다운은 상대 시간이라 문제 없다.
     /// 사거리·반경은 m — 플레이어 총(GunData.range)과 같은 단위. 칸 단위가 아니다.
     /// </summary>
-    public sealed class TurretModule : EntityModule
+    public sealed class TurretModule : EntityModule, ISteppable, ISaveableModule
     {
         public TurretModuleDef Def { get; }
 
@@ -88,10 +90,13 @@ namespace CoreDawn.Sim
         public TurretModule(TurretModuleDef def)
         {
             Def = def ?? throw new ArgumentNullException(nameof(def));
-            _hostile = IsHostile;
+            _hostile = IsCandidate;
         }
 
         bool IsHostile(Entity e) => e.Faction.IsHostileTo(Owner.Faction);
+        /// <summary>적이고 총구에서 조준점까지 가려지지 않은 것만 표적. 고각 포탑(preferHighArc)은 벽을 넘겨 쏘므로 차폐를 보지 않는다.</summary>
+        bool IsCandidate(Entity e) => IsHostile(e) && Visible(e);
+        bool Visible(Entity e) => Def.PreferHighArc || SimHost.HasLineOfSight(Owner, e, Muzzle, AimPointOf(e));
 
         /// <summary>심의 총구 — 엔티티 위치 + muzzleHeight. 뷰의 진짜 총구는 연출 출발점일 뿐, 각은 여기서 푼다.</summary>
         public Vector3 Muzzle => Owner.Position + Vector3.up * Def.MuzzleHeight;
@@ -178,7 +183,7 @@ namespace CoreDawn.Sim
             if (Target != null && Target.IsAlive)
             {
                 float d = Vector3.Distance(Target.Position, Owner.Position);
-                if (d <= Range + TargetKeepMargin && d >= MinRange) return;   // 유지
+                if (d <= Range + TargetKeepMargin && d >= MinRange && Visible(Target)) return;   // 유지 — 가려지면 놓고 다시 찾는다
             }
             Target = null;
             if (now < _nextScan) return;
@@ -189,5 +194,26 @@ namespace CoreDawn.Sim
 
         /// <summary>세이브 복원 — 쿨다운·방위. 표적은 저장하지 않는다(다음 탐색이 싸다).</summary>
         public void RestoreState(float readyAt, float yaw) { ReadyAt = readyAt; Yaw = yaw; }
+
+        // ── 공통 틱(ISteppable): 굶으면 예약 없음(탄이 오면 그릇 변화가 깨운다), 표적이 있으면 매 틱, 없으면 탐색 주기 ──
+        float ISteppable.Step(float now, float dt)
+        {
+            Step(now, dt);
+            if (Phase == TurretPhase.Starved) return 0f;
+            return Target != null ? dt : ScanInterval;
+        }
+
+        // ── 세이브(ISaveableModule) — 키는 옛 행동 저장과 같다 ──
+        public sealed class SaveState
+        {
+            [JsonProperty("readyAt")] public float ReadyAt;
+            [JsonProperty("yaw")] public float Yaw;
+        }
+        public object CaptureState() => new SaveState { ReadyAt = ReadyAt, Yaw = Yaw };
+        public void RestoreState(JToken state)
+        {
+            var s = state?.ToObject<SaveState>();
+            if (s != null) RestoreState(s.ReadyAt, s.Yaw);
+        }
     }
 }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CoreDawn.Sim
 {
@@ -16,7 +18,7 @@ namespace CoreDawn.Sim
     /// 그릇은 같은 엔티티의 <see cref="InventoryModule"/> — 수제작은 main, 자동은 input·output.
     /// 레시피 목록이 비어 있으면 팩의 모든 레시피가 후보다(해금 판정은 게임의 몫).
     /// </summary>
-    public sealed class CrafterModule : EntityModule
+    public sealed class CrafterModule : EntityModule, ISteppable, ISaveableModule
     {
         public CrafterModuleDef Def { get; }
 
@@ -185,10 +187,11 @@ namespace CoreDawn.Sim
             return false;
         }
 
-        /// <summary>레시피 교체. 슬롯이 모자라면 false. 진행 중인 1회는 취소하지 않는다 — 옛 레시피의 완성품이 되어 출구로 나간다.</summary>
+        /// <summary>레시피 교체. 슬롯이 모자라면 false. 진행 중인 1회는 취소한다 — 재료는 완료 순간에만 소비하므로 잃는 것이 없다.</summary>
         public bool SetRecipe(RecipeDef r)
         {
             if (r != null && r.Inputs != null && r.Inputs.Count > InputSlotCount) return false;
+            if (r != Recipe) { Crafting = false; ReadyAt = -1f; }
             Recipe = r;
             return true;
         }
@@ -224,7 +227,7 @@ namespace CoreDawn.Sim
         }
 
         /// <summary>
-        /// 자동 제작 한 걸음(공장 틱). 완료된 1회를 출력에 넣고, 잔여물을 밀어내고, 재료가 모였으면 다음 1회를 시작한다.
+        /// 자동 제작 한 걸음(공장 틱). 완료 시각이 됐으면 재료를 소비하고 출력에 넣고, 잔여물을 밀어내고, 재료가 있으면 다음 1회의 타이머를 시작한다.
         /// </summary>
         /// <param name="now">심 시계.</param>
         /// <param name="inputsFreed">입력 그릇에 자리가 생겼다 — 소유자가 막혀 있던 상류를 깨운다.</param>
@@ -233,20 +236,26 @@ namespace CoreDawn.Sim
         {
             inputsFreed = false;
             if (Recipe == null || Paused) return 0f;   // 중지 — 진행률·버퍼 보존
+            // 규칙(손 제작과 같다): 재료가 있는 동안 타이머가 돌고, 완료 순간에 소비·산출한다.
+            // 중간에 재료를 빼면 타이머는 초기화된다 — 소비된 것이 없으니 잃는 것도 없다. (2026-09-01 사용자 지시로 "소비 → 타이머"에서 되돌림)
             if (Crafting)
             {
-                if (now < ReadyAt) return 0f;                      // 이른 기상 (재료 도착 등) → 완료 시각에 다시 깨어남
-                if (!CanStoreOutputs(CraftingRecipe)) return 0f;   // 출력 막힘 → 완료 보류 (stall)
-                foreach (var o in CraftingRecipe.Outputs) Deliver(o.Item, o.Amount);   // 자리를 확인했으므로 남지 않는다
-                Crafting = false;
-                var done = CraftingRecipe;
-                Delivered?.Invoke();
-                Crafted?.Invoke(done);
+                if (!HasIngredients(CraftingRecipe)) { Crafting = false; ReadyAt = -1f; }   // 재료가 빠졌다 → 초기화
+                else
+                {
+                    if (now < ReadyAt) return 0f;                      // 이른 기상 (재료 도착 등) → 완료 시각에 다시 깨어남
+                    if (!CanStoreOutputs(CraftingRecipe)) return 0f;   // 출력 막힘 → 완료 보류 (stall), 재료는 그대로
+                    foreach (var i in CraftingRecipe.Inputs) Consume(i.Item, i.Amount);   // 완료 순간에 소비
+                    inputsFreed = true;
+                    foreach (var o in CraftingRecipe.Outputs) Deliver(o.Item, o.Amount);  // 자리를 확인했으므로 남지 않는다
+                    Crafting = false;
+                    var done = CraftingRecipe;
+                    Delivered?.Invoke();
+                    Crafted?.Invoke(done);
+                }
             }
             if (EvictForeignInputs()) inputsFreed = true;
             if (!HasIngredients(Recipe) || !CanStoreOutputs(Recipe)) return 0f;
-            foreach (var i in Recipe.Inputs) Consume(i.Item, i.Amount);
-            inputsFreed = true;
             Crafting = true;
             CraftingRecipe = Recipe;
             float seconds = SecondsOf(Recipe);
@@ -276,6 +285,15 @@ namespace CoreDawn.Sim
             return moved;
         }
 
+        // ── 공통 틱(ISteppable): 시작했으면 완료까지, 진행 중 이른 기상이면 남은 시간(힙 중복 예약은 싸다).
+        // 재료·출력 대기(0)는 그릇 변화(Changed·벨트 입고)가 깨운다. 입력이 줄면 소유자가 그릇 변화로 보고 상류를 깨운다.
+        float ISteppable.Step(float now, float dt)
+        {
+            float wakeIn = Step(now, out _);
+            if (wakeIn > 0f) return wakeIn;
+            return Crafting && !Paused && ReadyAt > now ? ReadyAt - now : 0f;
+        }
+
         // ── 세이브 (게임의 세이브 모듈이 id로 바꿔 싣는다) ──────────
         public struct Snapshot
         {
@@ -299,6 +317,49 @@ namespace CoreDawn.Sim
             Crafting = s.Crafting && s.CraftingRecipe != null;
             _pausedRemaining = s.PausedRemaining;
             Paused = s.Paused;
+        }
+
+        // ── 세이브(ISaveableModule) — 키는 옛 AssemblerBehavior 저장과 같다. 레시피는 id로.
+        public sealed class SaveState
+        {
+            [JsonProperty("recipe")] public string RecipeId;
+            [JsonProperty("craftingRecipe")] public string CraftingRecipeId;
+            [JsonProperty("readyAt")] public float ReadyAt;
+            [JsonProperty("crafting")] public bool Crafting;
+            [JsonProperty("pausedRemaining")] public float PausedRemaining;
+            [JsonProperty("paused")] public bool Paused;
+        }
+
+        public object CaptureState()
+        {
+            var s = Capture();
+            return new SaveState
+            {
+                RecipeId = s.Recipe?.Id, CraftingRecipeId = s.CraftingRecipe?.Id,
+                ReadyAt = s.ReadyAt, Crafting = s.Crafting,
+                PausedRemaining = s.PausedRemaining, Paused = s.Paused,
+            };
+        }
+
+        /// <summary>기상 예약은 여기서 하지 않는다 — 복원자가 MarkDirty를 걸면 공통 틱(ISteppable)이 남은 시간으로 다시 예약한다.</summary>
+        public void RestoreState(JToken state)
+        {
+            var s = state?.ToObject<SaveState>();
+            if (s == null) return;
+            Restore(new Snapshot
+            {
+                Recipe = FindRecipe(s.RecipeId), CraftingRecipe = FindRecipe(s.CraftingRecipeId),
+                ReadyAt = s.ReadyAt, Crafting = s.Crafting,
+                PausedRemaining = s.PausedRemaining, Paused = s.Paused,
+            });
+        }
+
+        static RecipeDef FindRecipe(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            var def = SimHost.Database?.Recipe(id);
+            if (def == null) UnityEngine.Debug.LogWarning($"[Crafter] 세이브의 레시피 id \"{id}\"가 팩에 없습니다 — 그 항목은 건너뜁니다.");
+            return def;
         }
     }
 }
