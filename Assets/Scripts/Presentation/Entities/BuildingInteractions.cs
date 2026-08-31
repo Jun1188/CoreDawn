@@ -12,7 +12,6 @@ namespace CoreDawn.Entities
     /// 행동(IBuildingBehavior)도 더 이상 UI를 열지 않는다. 심 쪽 <see cref="BuildingBehaviors"/>와 같은 꼴:
     /// 새 상호작용 건물 = 여기 한 줄. 조합에 안 맞으면 상호작용 없음(프롬프트 null).
     ///
-    /// 과도기: 코어 패널이 아직 행동 객체를 받는다 — Core 모듈이 생기면 그쪽을 넘긴다.
     /// </summary>
     public static class BuildingInteractions
     {
@@ -36,8 +35,8 @@ namespace CoreDawn.Entities
                 open = _ => { if (!SplitterPanelView.TryOpen(b)) Debug.LogWarning("[Interact] 필터 화면(UITK)을 열지 못했습니다 — GameUI 씬이 탑재되지 않았습니다."); };
                 return true;
             }
-            // 코어 — 납품·티어
-            if (b.Behavior is CoreBehavior core)
+            // 코어 — 납품·티어 (패널이 심 모듈 Core를 직접 읽는다)
+            if (owner.Get<CoreModule>() is { } core)
             {
                 prompt = core.HasNextTier ? "코어에 자원 납품" : "코어 (최고 티어 달성)";
                 open = _ => GameScreens.OpenCore(core);

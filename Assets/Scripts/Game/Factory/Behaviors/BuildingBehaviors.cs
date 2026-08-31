@@ -18,9 +18,6 @@ namespace CoreDawn.Factory
             var def = b.Def;
             if (def.Has<ConveyorModuleDef>()) return new BeltBehavior(b);
 
-            var core = def.Get<CoreModuleDef>();
-            if (core != null) return new CoreBehavior(b, core);
-
             // 그 밖은 행동 없음 — 걷는 모듈(ISteppable: 제작기·포탑·오라·지뢰…)과 통과 보관소(그릇+포트)는
             // BuildingModule의 공통 틱이 돌리고, 나무·둥지·울타리는 칸을 차지할 뿐이다.
             return null;

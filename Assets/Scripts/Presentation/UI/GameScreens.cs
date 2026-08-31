@@ -33,7 +33,7 @@ namespace CoreDawn.UI
         }
 
         /// <summary>코어 수리/납품 화면.</summary>
-        public static void OpenCore(CoreBehavior core)
+        public static void OpenCore(CoreModule core)
         {
             if (core == null) return;
             if (CorePanelView.TryOpen(core)) return;

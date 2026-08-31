@@ -1,75 +1,67 @@
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
-using CoreDawn.Combat;
-using CoreDawn.FPS;
-using CoreDawn.Inventories;
-using CoreDawn.Managers;
-using CoreDawn.Save;
-using CoreDawn.UI;
-using CoreDawn.Sim;
-using CoreDawn.Factory;
-using CoreDawn.Data;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     /// <summary>
-    /// 입력 버퍼(=플레이어 납품 + 벨트 자동 투입 공용 창구)로 자원을 받는다.
-    /// 요구량이 전부 채워지면 소비하고 GameManager.AdvanceTier로 다음 티어를 해금한다.
+    /// 코어 — 입력 그릇(플레이어 납품 + 벨트 자동 투입 공용 창구)으로 자원을 받는다(구 CoreBehavior).
+    /// 요구량이 전부 채워지면 소비하고 다음 티어를 연다.
     ///
     /// 요구에 없는 것이 들어오면 거절하지 않고 소각해 <b>보호막</b>으로 바꾼다 —
     /// 잘못 흘려보낸 자원이 벨트 위에 영원히 처박히는 대신 방어력이 되어 돌아온다.
     /// 단계가 오른 뒤 쓸모가 없어진 잔여물도 같은 경로로 사라진다.
     ///
-    /// 투입 경로는 둘인데 반응 경로는 하나로 통일한다:
-    ///   - 벨트가 TryAdd로 채우면 Building.TryPushOutput이 이미 Sim.MarkDirty를 호출 → 다음 틱에 Tick.
-    ///   - 플레이어가 인벤토리 UI로 직접 넣으면(TryPutAt/TryExchangeAt) 벨트 경로를 거치지 않으므로,
-    ///     ItemContainer.Changed 이벤트를 구독해 그 자리에서 Sim.MarkDirty를 걸어 같은 결과를 만든다.
+    /// 5a 결정("모듈 = 상태+로컬 로직, 시스템 = 횡단 로직")에 따라 이 모듈은 보호막·준비 상태와
+    /// 소각·흡수 규칙만 갖는다. 진행도(티어)는 게임의 것이라 읽기·쓰기 모두 소유자(CoreSystem.Wire)가
+    /// 대리자로 꽂는다 — 심은 GameManager도, 확인창(UI)도 모른다.
     /// </summary>
-    public class CoreBehavior : IBuildingBehavior, ISaveableBehavior, IDamageInterceptor
+    public sealed class CoreModule : EntityModule, ISteppable, ISaveableModule, IDamageInterceptor
     {
-        readonly BuildingModule _b;
-        readonly CoreModuleDef _so;
+        public CoreModuleDef Def { get; }
+        public CoreModule(CoreModuleDef def) { Def = def ?? throw new ArgumentNullException(nameof(def)); }
 
-        public CoreBehavior(BuildingModule b, CoreModuleDef so)
-        {
-            _b = b;
-            _so = so;
-            _b.Input.SingleStackPerType = true; // 한 아이템이 슬롯 전부를 독점 못하게 (Assembler와 동일 이유)
-            _b.Input.Changed += () => _b.Factory.MarkDirty(_b); // 수동 투입도 Tick 재평가 트리거
-            RefreshAcceptFilter();
-        }
+        // 입력 그릇 — 같은 엔티티의 InventoryModule. 한 번 찾으면 굳힌다(Crafter와 같은 규칙).
+        ItemContainer _input;
+        ItemContainer Input => _input ??= Owner?.Get<InventoryModule>()?.Input;
 
         /// <summary>플레이어 상호작용/UI가 바인딩할 컨테이너 — 벨트도 여기로 들어온다.</summary>
-        public ItemContainer Container => _b.Input;
+        public ItemContainer Container => Input;
 
-        /// <summary>수리 단계 목록을 읽기 위한 UI용 접근자.</summary>
-        public CoreModuleDef Def => _so;
+        // ── 게임 배선 (CoreSystem.Wire가 꽂는다) ──────────────────────
 
-        /// <summary>현재 진행 중인 단계 인덱스. tiers.Length와 같으면 전 단계 완료.</summary>
+        /// <summary>진행도(티어) 읽기 — 게임(GameManager)이 원본이다. 없으면 0단계.</summary>
+        public Func<int> TierIndexProvider;
+        /// <summary>진행도 쓰기 — 다음 티어를 기록한다. 없거나 false면(헤드리스) 수리를 시작하지 않는다.</summary>
+        public Func<int, bool> TierAdvancer;
+        /// <summary>요구가 채워졌을 때 즉시 진행해도 되는가 — 확인창(UI)이 있는 씬은 사람의 결정을 기다린다.</summary>
+        public Func<bool> AutoRepairAllowed;
+        /// <summary>입력 그릇에 자리가 생겼다(소각·납품 소비) — 소유자가 막혀 있던 상류(벨트)를 깨운다.</summary>
+        public event Action InputsFreed;
+
+        int TierIndex => TierIndexProvider?.Invoke() ?? 0;
+
+        /// <summary>현재 진행 중인 단계 인덱스. TierCount와 같으면 전 단계 완료.</summary>
         public int CurrentTierIndex => TierIndex;
 
         /// <summary>전체 수리 단계 수.</summary>
-        public int TierCount => _so.Tiers.Count;
+        public int TierCount => Def.Tiers.Count;
 
-        int TierIndex => GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
+        public bool HasNextTier => TierIndex < Def.Tiers.Count;
 
-        public bool HasNextTier => TierIndex < _so.Tiers.Count;
-
-        CoreTierDef CurrentTier => HasNextTier ? _so.Tiers[TierIndex] : null;
+        CoreTierDef CurrentTier => HasNextTier ? Def.Tiers[TierIndex] : null;
 
         /// <summary>현재 티어 요구 아이템별 (아이템, 필요량, 현재량) — 진행률 UI용.</summary>
         public IReadOnlyList<(ItemDef item, int required, int current)> GetProgress()
         {
             var list = new List<(ItemDef, int, int)>();
             var reqs = CurrentTier?.Requirements;
-            if (reqs == null) return list;
-            foreach (var r in reqs) list.Add((r.Item, r.Amount, _b.Input.CountOf(r.Item)));
+            if (reqs == null || Input == null) return list;
+            foreach (var r in reqs) list.Add((r.Item, r.Amount, Input.CountOf(r.Item)));
             return list;
         }
-
-        public void OnAfterPlaced() => RefreshAcceptFilter(); // 배치 시점에 이미 진행된 티어 반영(재시작 등)
 
         // ── 수리 확인 (SCR-01b)
         //
@@ -82,9 +74,10 @@ namespace CoreDawn.Factory
         public bool IsReadyToRepair => _ready;
 
         /// <summary>준비 상태가 바뀔 때만 발화. UI가 매 프레임 폴링하지 않게 한다.</summary>
-        public event System.Action ReadyChanged;
+        public event Action ReadyChanged;
 
-        public void Tick(float dt)
+        // ── 공통 틱(ISteppable): 소각 → 요구 충족 판정. 예약할 시각은 없다(0) — 그릇 변화가 깨운다.
+        float ISteppable.Step(float now, float dt)
         {
             // 요구 밖 자원부터 태운다 — 그래야 그것들이 잡고 있던 슬롯이 풀린 상태에서
             // 이번 단계의 충족 여부를 본다. 순서가 뒤집히면 쓰레기 한 칸이 요구 부품을
@@ -92,17 +85,18 @@ namespace CoreDawn.Factory
             BurnSurplus();
 
             var reqs = CurrentTier?.Requirements;
-            if (reqs == null) { SetReady(false); return; }
+            if (reqs == null || Input == null) { SetReady(false); return 0f; }
 
             foreach (var r in reqs)
-                if (_b.Input.CountOf(r.Item) < r.Amount) { SetReady(false); return; } // 아직 미충족
+                if (Input.CountOf(r.Item) < r.Amount) { SetReady(false); return 0f; } // 아직 미충족
 
             SetReady(true);
 
             // 확인창을 띄울 UI가 없는 씬에서는 예전처럼 즉시 진행한다.
-            // 그러지 않으면 UITK 패널이 아직 안 들어간 씬에서 코어 진행이 영영 멈춘다 —
-            // Interact가 이미 쓰고 있는 "씬 내용이 경로를 결정한다" 방침과 같다.
-            if (!CorePanelView.ExistsInScene()) TryStartRepair();
+            // 그러지 않으면 확인창이 아직 안 들어간 씬에서 코어 진행이 영영 멈춘다 —
+            // "씬 내용이 경로를 결정한다" 방침. 배선이 없으면(헤드리스) 자동 진행 쪽이다.
+            if (AutoRepairAllowed == null || AutoRepairAllowed()) TryStartRepair();
+            return 0f;
         }
 
         /// <summary>
@@ -113,20 +107,18 @@ namespace CoreDawn.Factory
         {
             var tier = CurrentTier;          // 진행하면 CurrentTier가 다음 단계를 가리키므로 먼저 잡는다
             var reqs = tier?.Requirements;
-            if (reqs == null) return false;
+            if (reqs == null || Input == null) return false;
 
             foreach (var r in reqs)
-                if (_b.Input.CountOf(r.Item) < r.Amount) { SetReady(false); return false; }
+                if (Input.CountOf(r.Item) < r.Amount) { SetReady(false); return false; }
 
             // 진행을 기록할 곳이 없으면 시작하지 않는다. 여기서 그냥 밀고 나가면 부품만
             // 먹고 단계는 그대로라 매 틱 같은 일이 반복된다 — 헤드리스 심/테스트 씬처럼
             // GameManager가 없는 환경이 실제로 있다.
-            var gm = GameManager.Instance;
-            if (gm == null) { SetReady(false); return false; }
+            if (TierAdvancer == null || !TierAdvancer(TierIndex + 1)) { SetReady(false); return false; }
 
-            foreach (var r in reqs) _b.Input.TryConsume(r.Item, r.Amount);
+            foreach (var r in reqs) Input.TryConsume(r.Item, r.Amount);
 
-            gm.AdvanceTier(TierIndex + 1);
             ApplyMaxHpBonus(tier.MaxHpBonus);
             SetReady(false);
             RefreshAcceptFilter();
@@ -136,7 +128,7 @@ namespace CoreDawn.Factory
             // 들어올 슬롯을 옛 단계의 재고가 한 틱 동안 막는다.
             BurnSurplus();
 
-            _b.NotifyUpstream(); // 자리 비었으니 막혀있던 상류(벨트) 재개
+            InputsFreed?.Invoke(); // 자리 비었으니 막혀있던 상류(벨트) 재개
             return true;
         }
 
@@ -144,7 +136,6 @@ namespace CoreDawn.Factory
         //
         // 값의 원본은 여기다. 내구도(HealthComponent)는 씬 껍데기가 갖고 있지만 보호막은
         // 자원 흐름에서 생기는 값이라 자원과 같은 곳 — 심(sim) — 에 둔다.
-        // 씬의 BuildingEntity.TakeDamage가 피해를 넘기기 전에 AbsorbDamage로 들른다.
 
         float _shield;
 
@@ -156,8 +147,8 @@ namespace CoreDawn.Factory
         {
             get
             {
-                float max = _so.BaseMaxShield;
-                var tiers = _so.Tiers;
+                float max = Def.BaseMaxShield;
+                var tiers = Def.Tiers;
                 if (tiers != null)
                     for (int i = 0; i < TierIndex && i < tiers.Count; i++)
                         max += tiers[i].MaxShieldBonus;
@@ -166,7 +157,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>보호막 값이 바뀔 때만 발화 — (현재, 최대). UI가 폴링하지 않게 한다.</summary>
-        public event System.Action<float, float> ShieldChanged;
+        public event Action<float, float> ShieldChanged;
 
         /// <summary>
         /// 피해를 보호막이 먼저 흡수하고 <b>남은 몫</b>을 돌려준다. 0이면 내구도는 무사하다.
@@ -184,8 +175,8 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>
-        /// 받는 피해 인터셉터 — 보호막이 내구도보다 먼저 맞는다. Building 모듈이 Health.Damage 안에서 부른다
-        /// (구 BuildingEntity.ReceiveDamage override). 수렴점이 심이라 몬스터 공격·총알·DoT 전부 보호막을 거친다.
+        /// 받는 피해 인터셉터 — 보호막이 내구도보다 먼저 맞는다. BuildingModule의 피해 체인이
+        /// 아군 무시 규칙 다음에 부른다. 수렴점이 심이라 몬스터 공격·총알·DoT 전부 보호막을 거친다.
         /// </summary>
         public float Intercept(float amount, Entity source) => AbsorbDamage(amount);
 
@@ -197,7 +188,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>
-        /// 입력 버퍼에서 요구 목록에 없는 것을 전부 태워 보호막으로 바꾼다. 태운 개수를 돌려준다.
+        /// 입력 그릇에서 요구 목록에 없는 것을 전부 태워 보호막으로 바꾼다. 태운 개수를 돌려준다.
         ///
         /// 보호막 최대치를 넘는 분은 그대로 소멸한다. 안 태우고 남겨두면 그 물건이 슬롯을
         /// 영구히 점거해 다음 단계 부품이 못 들어오는 교착이 되고, 코어가 아무것도 거절하지
@@ -208,24 +199,24 @@ namespace CoreDawn.Factory
         /// </summary>
         int BurnSurplus()
         {
-            if (!_so.BurnSurplusIntoShield || !_b.Input.HasAny) return 0;
+            if (!Def.BurnSurplusIntoShield || Input == null || !Input.HasAny) return 0;
 
             float max = MaxShield;
             int burned = 0;
 
-            foreach (var (item, n) in _b.Input.Snapshot()) // 사본이라 순회 중 소비해도 안전
+            foreach (var (item, n) in Input.Snapshot()) // 사본이라 순회 중 소비해도 안전
             {
                 if (item == null || n <= 0 || IsRequired(item)) continue;
-                if (!_b.Input.TryConsume(item, n)) continue;
+                if (!Input.TryConsume(item, n)) continue;
 
-                _shield = Mathf.Clamp(_shield + _so.ShieldValueOf(item) * n, 0f, max);
+                _shield = Mathf.Clamp(_shield + Def.ShieldValueOf(item) * n, 0f, max);
                 burned += n;
             }
 
             if (burned > 0)
             {
                 ShieldChanged?.Invoke(_shield, max);
-                _b.NotifyUpstream(); // 자리가 비었다 — 막혀 있던 벨트 재개
+                InputsFreed?.Invoke(); // 자리가 비었다 — 막혀 있던 벨트 재개
             }
             return burned;
         }
@@ -243,7 +234,7 @@ namespace CoreDawn.Factory
             if (bonus <= 0) return;
 
             // 체력의 원본은 심 엔티티(Owner.Health)다 — 뷰를 거치지 않으니 헤드리스 테스트에서도 같은 값이다.
-            var hp = _b.Owner?.Health;
+            var hp = Owner?.Health;
             if (hp == null) return;
 
             hp.SetMaxHealth(hp.MaxHealth + bonus, refill: false);
@@ -267,21 +258,22 @@ namespace CoreDawn.Factory
         /// 대신 보호막 상한이 방어력 무한 증가를 막는다. 초과분 소멸은 라인을 잘못 깐 대가다.
         ///
         /// 필터가 매번 현재 단계를 다시 읽으므로 단계가 올라도 다시 걸 필요는 없다. 그래도
-        /// 배치·진화 시점에 한 번씩 부르는 것은 남겨 둔다 — 입구 규칙의 유일한 설치 지점이라는
+        /// 배선·진화 시점에 한 번씩 부르는 것은 남겨 둔다 — 입구 규칙의 유일한 설치 지점이라는
         /// 사실이 호출부에서 보이는 편이 낫다.
         /// </summary>
-        void RefreshAcceptFilter()
+        public void RefreshAcceptFilter()
         {
-            _b.Input.AcceptFilter = item =>
-                item != null && (_so.BurnSurplusIntoShield || IsRequired(item));
+            if (Input == null) return;
+            Input.AcceptFilter = item =>
+                item != null && (Def.BurnSurplusIntoShield || IsRequired(item));
         }
 
-        // ── 세이브 ────────────────────────────────────────────────────
+        // ── 세이브(ISaveableModule) — 키는 옛 CoreBehavior 저장과 같다 ──
         //
-        // 티어는 GameManager가 갖고 있고(progress 모듈), 최대 보호막은 티어에서 계산되며,
+        // 티어는 게임(progress 모듈)이 갖고 있고, 최대 보호막은 티어에서 계산되며,
         // 납품 재고는 입력 컨테이너에 들어 있다. 그래서 여기서 따로 챙길 것은 두 개뿐이다.
 
-        public class SaveState
+        public sealed class SaveState
         {
             [JsonProperty("shield")] public float Shield;
             [JsonProperty("ready")] public bool Ready;
@@ -291,7 +283,7 @@ namespace CoreDawn.Factory
 
         public void RestoreState(JToken state)
         {
-            var s = SaveJson.FromToken<SaveState>(state);
+            var s = state?.ToObject<SaveState>();
             if (s == null) return;
 
             _shield = Mathf.Clamp(s.Shield, 0f, MaxShield);

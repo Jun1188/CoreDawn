@@ -61,7 +61,8 @@ namespace CoreDawn.Factory
         public readonly List<BuildingConnection> OutputConnections = new();
 
         IBuildingBehavior _behavior;
-        RouterModule _router;   // 분배기·합류기의 규칙 모듈 — OnAttach에서 굳힌다
+        RouterModule _router;             // 분배기·합류기의 규칙 모듈 — OnAttach에서 굳힌다
+        IDamageInterceptor _moduleShield; // 코어 보호막 — 행동이 사라진 뒤엔 모듈(CoreModule)이 받는다
 
         public BuildingModule(FactorySystem factory, EntityDef def, Vector2Int origin, int rotSteps,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, bool ownsEntity = true)
@@ -127,6 +128,9 @@ namespace CoreDawn.Factory
             Output = inventory?.Output ?? new ItemContainer(0);
             // 행동은 그릇·정의가 갖춰진 뒤에 — 조립기는 생성자에서 입력 필터를 건다
             _behavior = BuildingBehaviors.Create(this);
+            // 코어: 진행 규칙(티어·해금·확인창)은 게임(CoreSystem.Wire)이 대리자로 꽂고, 보호막·준비는 모듈이 갖는다
+            var core = Owner.Get<CoreModule>();
+            if (core != null) { CoreSystem.Wire(this, core); _moduleShield = core; }
             // 라우터(분배기·합류기): 규칙은 모듈이, 흘리기는 이 건물(PumpRouted)이. 필터가 바뀌면 다시 판단한다
             _router = Owner.Get<RouterModule>();
             if (_router != null) _router.Changed += WakeSelf;
@@ -154,7 +158,8 @@ namespace CoreDawn.Factory
                 bool hostile = source != null && Owner != null && source.Faction.IsHostileTo(Owner.Faction);
                 if (!hostile) return 0f;
             }
-            return _behavior is IDamageInterceptor i ? i.Intercept(amount, source) : amount;
+            if (_behavior is IDamageInterceptor i) return i.Intercept(amount, source);
+            return _moduleShield != null ? _moduleShield.Intercept(amount, source) : amount;
         }
 
         /// <summary>회전/모양이 적용된 실제 포트 목록. BuildingGraph가 이걸 사용한다.</summary>

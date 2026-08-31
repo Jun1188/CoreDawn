@@ -19,7 +19,7 @@ namespace CoreDawn.Data
     /// 그 결과(GameManager.UnlockedTier 증가)로 상위 레시피/건물이 해금된다.
     ///
     /// 디펜스 코어(BuildingEntity.isCore)와 같은 오브젝트에 합체돼 배치된다 —
-    /// 낮에는 이 SO의 행동(CoreBehavior)으로 자원을 납품받고, 밤에는 몬스터의 공격 대상이 된다.
+    /// 낮에는 심 모듈(CoreModule)로 자원을 납품받고, 밤에는 몬스터의 공격 대상이 된다.
     /// 씬에 미리 배치된 싱글턴이므로 빌드 메뉴에는 노출하지 않는다(hideFromBuildMenu = true 권장).
     /// </summary>
     [CreateAssetMenu(fileName = "NewCore", menuName = "Factory/Buildings/Core")]
