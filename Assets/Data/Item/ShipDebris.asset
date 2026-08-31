@@ -20,4 +20,5 @@ MonoBehaviour:
   type: 8
   line: 0
   maxStack: 50
+  hideFromMenu: 0
   modules: []

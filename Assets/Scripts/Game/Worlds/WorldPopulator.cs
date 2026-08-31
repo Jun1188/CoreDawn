@@ -428,10 +428,10 @@ namespace CoreDawn.Worlds
                     else Debug.LogWarning("[WorldPopulator] 둥지 데이터(Building:Nest)가 없어 둥지 엔티티를 만들지 못했습니다 — MonsterNest가 폴백으로 세웁니다.", world);
 
                     nest.Configure(spec.warningRange, spec.triggerRange,
-                                   spec.defenseSpawnAmount, spec.defenseSpawnCooldown,
-                                   spec.bossRecoveryDays, spec.nestRecoveryDays);
+                                   spec.defenseSpawnAmount, spec.defenseSpawnCooldown);
                     nest.SetData(nestData);
                     ApplySpawnPoints(world, nest, spec);
+                    nest.SyncModule();   // 자리·보스 유무를 심 Nest 모듈에 — 상태(파괴·무적)는 심의 것
                 }
 
                 if (SpawnOverride == null) ClaimNestCells(nestData, spec.cell, go);

@@ -45,6 +45,24 @@ namespace CoreDawn.Combat
             }
         }
 
+        static WaveSystem waves;
+
+        /// <summary>밤 웨이브 시스템 — 팩 wave 규칙이 있을 때만(없으면 null: 밤 웨이브 없는 씬).</summary>
+        public static WaveSystem Waves
+        {
+            get
+            {
+                if (waves == null)
+                {
+                    var rule = SimHost.Database?.Wave;
+                    if (rule == null) return null;
+                    waves = new WaveSystem(SimHost.World, Monsters, rule);
+                }
+                EnsureRunner();
+                return waves;
+            }
+        }
+
         /// <summary>플레이어 시스템 — 플레이어 엔티티의 생성 주체. 몬스터 두뇌가 보는 PlayerEntity를 여기서 이어 준다.</summary>
         public static PlayerSystem Players
         {
@@ -92,6 +110,7 @@ namespace CoreDawn.Combat
             SimRunner.Effects.Tick(dt);   // 효과가 먼저 — 이번 틱의 속도 배율이 이번 틱의 이동에 쓰이게
             SimRunner.Monsters.Tick(dt);
             SimRunner.Players.Tick(dt);   // 플레이어 시계 — 무기 재장전·연사 간격
+            SimRunner.Waves?.Tick(dt);    // 밤 웨이브 — 버스트·진입로 무리·종료 판정
         }
     }
 }

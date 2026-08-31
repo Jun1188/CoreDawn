@@ -32,6 +32,7 @@ namespace CoreDawn.Sim
         /// <summary>정의대로 모듈을 조립한다 — 정의 순서대로, 정의 1 → 모듈 0/1.</summary>
         public void Assemble(Entity entity)
         {
+            entity.Def = this;
             foreach (var m in Modules)
             {
                 var module = m.Create(entity);

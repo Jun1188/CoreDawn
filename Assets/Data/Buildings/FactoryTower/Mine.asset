@@ -35,7 +35,7 @@ MonoBehaviour:
   maxHp: 10
   isDemolishable: 1
   isAttackable: 0
-  fireMode: 0
+  fireMode: 4
   damageMultiplier: 6
   range: 2
   minRange: 0
@@ -44,6 +44,5 @@ MonoBehaviour:
   preferHighArc: 0
   turnSpeed: 180
   aimTolerance: 3
-  ammoFilter:
-  - {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
+  ammoFilter: []
   defaultAmmo: {fileID: 0}

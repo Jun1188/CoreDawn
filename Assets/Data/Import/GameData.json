@@ -302,9 +302,11 @@
       "type": "Salvage",
       "line": "None",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "ShipDebris",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -316,12 +318,13 @@
       "displayName": "철광석",
       "description": "구조재의 원광. Ring 1 광맥에서 채굴.",
       "type": "Ore",
-      "extractInterval": 2.0,
       "line": "Iron",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "IronOre",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": 2.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -335,9 +338,11 @@
       "type": "Ingot",
       "line": "Iron",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "IronIngot",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -351,9 +356,11 @@
       "type": "Part",
       "line": "Iron",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "IronPlate",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -367,9 +374,11 @@
       "type": "Part",
       "line": "Iron",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "IronGear",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -383,6 +392,7 @@
       "type": "Ammo",
       "line": "Iron",
       "maxStack": 100,
+      "hideFromMenu": false,
       "icon": "BasicAmmo",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
@@ -392,6 +402,7 @@
         }
       ],
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": 70.0,
       "gravity": 0.0,
       "explosionRadius": 0.0,
@@ -403,12 +414,13 @@
       "displayName": "구리광석",
       "description": "전자 계통의 원광. Ring 1 외곽~Ring 2.",
       "type": "Ore",
-      "extractInterval": 5.0,
       "line": "Copper",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "CopperOre",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": 5.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -422,9 +434,11 @@
       "type": "Ingot",
       "line": "Copper",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "CopperIngot",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -438,9 +452,11 @@
       "type": "Part",
       "line": "Copper",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "CopperWire",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -452,12 +468,13 @@
       "displayName": "크리스탈 광석",
       "description": "동력 계통의 원광. Ring 2~3 위험 지역.",
       "type": "Ore",
-      "extractInterval": 10.0,
       "line": "Crystal",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "CrystalOre",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": 10.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -471,9 +488,11 @@
       "type": "Ingot",
       "line": "Crystal",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "RefinedCrystal",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -487,9 +506,11 @@
       "type": "RepairPart",
       "line": "Iron",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "HullPanel",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -503,9 +524,11 @@
       "type": "Part",
       "line": "Copper",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "CircuitBoard",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -519,6 +542,7 @@
       "type": "Ammo",
       "line": "Iron",
       "maxStack": 100,
+      "hideFromMenu": false,
       "icon": "Grenade",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
@@ -532,6 +556,7 @@
         }
       ],
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": 25.0,
       "gravity": 9.8,
       "explosionRadius": 3.0,
@@ -545,6 +570,7 @@
       "type": "Ammo",
       "line": "Iron",
       "maxStack": 100,
+      "hideFromMenu": false,
       "icon": "DenseAmmo",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
@@ -554,6 +580,7 @@
         }
       ],
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": 100.0,
       "gravity": 0.0,
       "explosionRadius": 0.0,
@@ -567,9 +594,11 @@
       "type": "Part",
       "line": "Crystal",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "EnergyCell",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -583,6 +612,7 @@
       "type": "Ammo",
       "line": "Crystal",
       "maxStack": 100,
+      "hideFromMenu": false,
       "icon": "EnergyCellAmmo",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
@@ -596,6 +626,7 @@
         }
       ],
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": 60.0,
       "gravity": 0.0,
       "explosionRadius": 0.0,
@@ -609,9 +640,11 @@
       "type": "RepairPart",
       "line": "Copper",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "NavControlUnit",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -625,9 +658,11 @@
       "type": "Salvage",
       "line": "Beast",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "BeastCore",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -641,9 +676,11 @@
       "type": "Part",
       "line": "Copper",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "ControlModule",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -657,9 +694,11 @@
       "type": "RepairPart",
       "line": "Crystal",
       "maxStack": 50,
+      "hideFromMenu": false,
       "icon": "PowerModule",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -673,6 +712,7 @@
       "type": "Ammo",
       "line": "Crystal",
       "maxStack": 100,
+      "hideFromMenu": false,
       "icon": "CrystalAmmo",
       "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
       "attackEffects": [
@@ -686,6 +726,7 @@
         }
       ],
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": 90.0,
       "gravity": 0.0,
       "explosionRadius": 0.0,
@@ -699,10 +740,12 @@
       "type": "Weapon",
       "line": "Iron",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "Pistol",
       "iconGuid": "edf27d1135600e245ac99153f1177507",
       "damage": 0.0,
       "gun": "Gun:Pistol",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -716,10 +759,12 @@
       "type": "Weapon",
       "line": "Iron",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "Rifle",
       "iconGuid": "5c2946d85ab19a04baf2b6e3f6354a44",
       "damage": 0.0,
       "gun": "Gun:Rifle",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -733,10 +778,12 @@
       "type": "Weapon",
       "line": "Iron",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "Shotgun",
       "iconGuid": "38f317d4c2c337f4baced47e4de101ac",
       "damage": 0.0,
       "gun": "Gun:Shotgun",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -750,10 +797,12 @@
       "type": "Weapon",
       "line": "Copper",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "Sniper",
       "iconGuid": "722185e6f4af1ae4fa819f76322195a1",
       "damage": 0.0,
       "gun": "Gun:Sniper",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -767,10 +816,12 @@
       "type": "Weapon",
       "line": "Iron",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "GrenadeLauncher",
       "iconGuid": "9773aecee1ac0ff439cd79ecdab562f4",
       "damage": 0.0,
       "gun": "Gun:GrenadeLauncher",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -784,10 +835,12 @@
       "type": "Weapon",
       "line": "Crystal",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "EnergyRifle",
       "iconGuid": "2a9cd9ba278812a4db106de4718601d6",
       "damage": 0.0,
       "gun": "Gun:EnergyRifle",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -815,6 +868,7 @@
         }
       ],
       "damage": 0.0,
+      "extractInterval": -1.0,
       "speed": 6.0,
       "gravity": 0.0,
       "explosionRadius": 2.2,
@@ -828,10 +882,12 @@
       "type": "Weapon",
       "line": "Iron",
       "maxStack": 1,
+      "hideFromMenu": false,
       "icon": "PlasmaCutter",
       "iconGuid": "ffdbf5143bcd651499a9f3a01ec2336c",
       "damage": 0.0,
       "gun": "Gun:PlasmaCutter",
+      "extractInterval": -1.0,
       "speed": -1.0,
       "gravity": -1.0,
       "explosionRadius": -1.0,
@@ -1416,6 +1472,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1467,6 +1524,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1528,6 +1586,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1590,6 +1649,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1660,6 +1720,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1753,6 +1814,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:HullPanel",
@@ -1823,6 +1885,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -1883,6 +1946,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -1944,6 +2008,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2013,6 +2078,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2082,6 +2148,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2175,6 +2242,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2292,6 +2360,7 @@
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
@@ -2407,7 +2476,6 @@
     {
       "id": "Building:Fence",
       "kind": "Tower",
-      "fireMode": "None",
       "displayName": "울타리",
       "description": "몬스터의 진로를 막아 동선을 유도한다. 공격하지 않는다.",
       "category": "Defense",
@@ -2428,6 +2496,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2440,6 +2509,7 @@
       "range": 0.0,
       "fireRate": 0.0,
       "minRange": -1.0,
+      "fireMode": "None",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": 0.0,
@@ -2449,12 +2519,6 @@
     {
       "id": "Building:Mine",
       "kind": "Tower",
-      "walkable": true,
-      "fireMode": "Trigger",
-      "attackEffects": [
-        { "effect": "Effect:Damage", "value": 420.0 },
-        { "effect": "Effect:KnockbackRadial", "value": 2.0 }
-      ],
       "displayName": "지뢰",
       "description": "밟으면 터진다. 건설 비용의 유탄이 그대로 폭약이며 한 번 쓰면 사라진다.",
       "category": "Defense",
@@ -2475,6 +2539,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": true,
       "buildCost": [
         {
           "item": "Item:Grenade",
@@ -2483,18 +2548,30 @@
       ],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
+      "damageMultiplier": 0.0,
       "range": 2.0,
       "fireRate": 1.0,
       "minRange": -1.0,
+      "fireMode": "Trigger",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "ammoFilter": [],
+      "attackEffects": [
+        {
+          "effect": "Effect:Damage",
+          "value": 420.0
+        },
+        {
+          "effect": "Effect:KnockbackRadial",
+          "value": 2.0
+        }
+      ]
     },
     {
       "id": "Building:BasicTurret",
       "kind": "Tower",
-      "fireMode": "Projectile",
       "displayName": "기본 포탑",
       "description": "기본 탄약을 소비해 사격한다. 벨트로 보급할 수 있다.",
       "category": "Defense",
@@ -2522,6 +2599,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2538,6 +2616,7 @@
       "range": 36.0,
       "fireRate": 2.0,
       "minRange": -1.0,
+      "fireMode": "Projectile",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": 360.0,
@@ -2551,7 +2630,6 @@
     {
       "id": "Building:HeavyTurret",
       "kind": "Tower",
-      "fireMode": "Projectile",
       "displayName": "중기관 포탑",
       "description": "고밀도 탄약을 쓰는 연사 포탑.",
       "category": "Defense",
@@ -2579,6 +2657,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2599,6 +2678,7 @@
       "range": 44.0,
       "fireRate": 4.0,
       "minRange": -1.0,
+      "fireMode": "Projectile",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": 120.0,
@@ -2611,7 +2691,6 @@
     {
       "id": "Building:MortarTower",
       "kind": "Tower",
-      "fireMode": "Projectile",
       "displayName": "박격포 타워",
       "description": "유탄을 곡사로 날려 범위 피해를 준다. 근접한 적은 때리지 못한다.",
       "category": "Defense",
@@ -2639,6 +2718,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:IronPlate",
@@ -2659,6 +2739,7 @@
       "range": 72.0,
       "fireRate": 0.5,
       "minRange": -1.0,
+      "fireMode": "Projectile",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": 60.0,
@@ -2670,7 +2751,6 @@
     {
       "id": "Building:LaserTower",
       "kind": "Tower",
-      "fireMode": "Hitscan",
       "displayName": "레이저 타워",
       "description": "에너지 셀 탄을 소비해 관통 사격한다.",
       "category": "Defense",
@@ -2698,6 +2778,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -2718,6 +2799,7 @@
       "range": 56.0,
       "fireRate": 3.0,
       "minRange": -1.0,
+      "fireMode": "Hitscan",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": 200.0,
@@ -2729,7 +2811,6 @@
     {
       "id": "Building:SlowFieldTower",
       "kind": "Tower",
-      "fireMode": "Aura",
       "displayName": "감속 필드 타워",
       "description": "범위 안의 몬스터를 느리게 만든다. 5초마다 에너지 셀 1개를 태운다.",
       "category": "Defense",
@@ -2757,6 +2838,7 @@
       "hideFromBuildMenu": false,
       "isDemolishable": true,
       "isAttackable": false,
+      "walkable": false,
       "buildCost": [
         {
           "item": "Item:ControlModule",
@@ -2773,6 +2855,7 @@
       "range": 28.0,
       "fireRate": 0.2,
       "minRange": -1.0,
+      "fireMode": "Aura",
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": 0.0,
@@ -2784,12 +2867,6 @@
     {
       "id": "Building:Nest",
       "kind": "Nest",
-      "drops": [
-        {
-          "item": "Item:BeastCore",
-          "amount": 1
-        }
-      ],
       "displayName": "괴수 둥지",
       "description": "맵이 세우는 괴수의 둥지. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형·전투·스폰은 World의 둥지 프리픥(MonsterNest)이 담당한다.",
       "category": "Defense",
@@ -2810,6 +2887,7 @@
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": true,
+      "walkable": false,
       "buildCost": [],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
@@ -2820,7 +2898,13 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "drops": [
+        {
+          "item": "Item:BeastCore",
+          "amount": 1
+        }
+      ]
     },
     {
       "id": "Building:Tree",
@@ -2845,6 +2929,7 @@
       "hideFromBuildMenu": true,
       "isDemolishable": false,
       "isAttackable": true,
+      "walkable": false,
       "buildCost": [],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
@@ -2866,7 +2951,7 @@
       "prefab": "Monster",
       "prefabGuid": "a0ab261b89819e4489aaf424fc926d00",
       "maxHp": 30.0,
-      "moveSpeed": 4.0,
+      "moveSpeed": 6.0,
       "rotateSpeed": 720.0,
       "crowdRadius": 0.4,
       "knockbackDamping": 8.0,
@@ -2895,7 +2980,7 @@
       "prefab": "Monster_Spitter",
       "prefabGuid": "ee2565cc74fdb074ca483cccf4a3be55",
       "maxHp": 60.0,
-      "moveSpeed": 4.0,
+      "moveSpeed": 6.0,
       "rotateSpeed": 720.0,
       "crowdRadius": 0.4,
       "knockbackDamping": 10.0,
@@ -2947,99 +3032,68 @@
       "returnTimeout": 40.0
     }
   ],
-  "player": {
-    "displayName": "플레이어",
-    "maxHp": 300.0,
-    "main": 25,
-    "hotbar": 7
-  },
-  "waves": [
-    {
-      "id": "Wave:Day1",
-      "displayName": "Day 1 Wave",
-      "description": "First wave",
-      "day": 1,
-      "requiredCoreTier": 0,
-      "baseAmount": 4,
-      "maxAliveAmount": 4,
-      "spawnInterval": 2.0,
+  "wave": {
+    "basePoints": 100.0,
+    "dayPoints": 50.0,
+    "gatePoints": 100.0,
+    "stimulusAmplitude": 3.0,
+    "stimulusExponent": 6.0,
+    "stimulusLinear": 0.1,
+    "stimulusBuffs": [
+      {
+        "effect": "Effect:AttackUp",
+        "baseValue": 1.0,
+        "perStimulus": 0.1,
+        "min": 0.1,
+        "max": 10.0
+      },
+      {
+        "effect": "Effect:DamageTaken",
+        "baseValue": 1.0,
+        "perStimulus": -0.1,
+        "min": 0.25,
+        "max": 1.0
+      }
+    ],
+    "nestsPerNightMin": 1,
+    "nestsPerNightMax": 3,
+    "targetNightLength": 100.0,
+    "burstsPerNight": 5,
+    "burstSpread": 2.0,
+    "roster": [
+      {
+        "monster": "Monster:Basic",
+        "cost": 10.0,
+        "weight": 70.0,
+        "minDay": 1,
+        "minGate": 0
+      },
+      {
+        "monster": "Monster:Spitter",
+        "cost": 20.0,
+        "weight": 25.0,
+        "minDay": 3,
+        "minGate": 0
+      },
+      {
+        "monster": "Monster:Boss",
+        "cost": 60.0,
+        "weight": 5.0,
+        "minDay": 4,
+        "minGate": 1
+      }
+    ],
+    "trickle": {
       "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 1.5
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day2",
-      "displayName": "Day 2 Wave",
-      "description": "Second wave",
-      "day": 2,
-      "requiredCoreTier": 0,
-      "baseAmount": 10,
-      "maxAliveAmount": 6,
-      "spawnInterval": 2.0,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 1.5
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day3",
-      "displayName": "Day 3 Wave",
-      "description": "Third wave",
-      "day": 3,
-      "requiredCoreTier": 1,
-      "baseAmount": 20,
-      "maxAliveAmount": 10,
-      "spawnInterval": 1.5,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 1.5
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day4",
-      "displayName": "Day 4 Wave",
-      "description": "Fourth wave",
-      "day": 4,
-      "requiredCoreTier": 1,
-      "baseAmount": 20,
-      "maxAliveAmount": 15,
-      "spawnInterval": 1.0,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 0.75
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day5",
-      "displayName": "Day 5 Wave",
-      "description": "Fifth wave",
-      "day": 5,
-      "requiredCoreTier": 2,
-      "baseAmount": 40,
-      "maxAliveAmount": 15,
-      "spawnInterval": 0.5,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 0.75
-        }
-      ]
+      "group": 3,
+      "interval": 10.0,
+      "untilKilledFraction": 0.9
     }
-  ],
+  },
+  "dayCycle": {
+    "dayDuration": 300.0,
+    "nightDuration": 10.0
+  },
   "tutorial": [
     {
       "id": "Tutorial:Move1",
@@ -3385,5 +3439,11 @@
         }
       ]
     }
-  ]
+  ],
+  "player": {
+    "displayName": "플레이어",
+    "maxHp": 300.0,
+    "main": 25,
+    "hotbar": 7
+  }
 }

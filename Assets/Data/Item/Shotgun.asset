@@ -32,5 +32,6 @@ MonoBehaviour:
   type: 5
   line: 1
   maxStack: 1
+  hideFromMenu: 0
   modules:
   - {fileID: -7910068946572418878}

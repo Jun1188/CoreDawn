@@ -20,6 +20,7 @@ MonoBehaviour:
   type: 4
   line: 3
   maxStack: 100
+  hideFromMenu: 0
   modules:
   - {fileID: 8529454691081697983}
 --- !u!114 &8529454691081697983

@@ -2742,7 +2742,7 @@
           "type": "Effects"
         },
         {
-          "type": "NestSpawner"
+          "type": "Nest"
         },
         {
           "type": "Loot",
@@ -2794,7 +2794,7 @@
         },
         {
           "type": "Movement",
-          "moveSpeed": 4.0,
+          "moveSpeed": 6.0,
           "rotateSpeed": 720.0,
           "crowdRadius": 0.4,
           "knockbackDamping": 8.0,
@@ -2842,7 +2842,7 @@
         },
         {
           "type": "Movement",
-          "moveSpeed": 4.0,
+          "moveSpeed": 6.0,
           "rotateSpeed": 720.0,
           "crowdRadius": 0.4,
           "knockbackDamping": 10.0,
@@ -2948,88 +2948,6 @@
         },
         {
           "type": "Weapon"
-        }
-      ]
-    }
-  },
-  "waves": {
-    "day1": {
-      "displayName": "Day 1 Wave",
-      "description": "First wave",
-      "day": 1,
-      "requiredCoreTier": 0,
-      "baseAmount": 4,
-      "maxAliveAmount": 4,
-      "spawnInterval": 2.0,
-      "monster": "coredawn:entity/basic",
-      "buffs": [
-        {
-          "effect": "coredawn:effect/damage_taken",
-          "value": 1.5
-        }
-      ]
-    },
-    "day2": {
-      "displayName": "Day 2 Wave",
-      "description": "Second wave",
-      "day": 2,
-      "requiredCoreTier": 0,
-      "baseAmount": 10,
-      "maxAliveAmount": 6,
-      "spawnInterval": 2.0,
-      "monster": "coredawn:entity/basic",
-      "buffs": [
-        {
-          "effect": "coredawn:effect/damage_taken",
-          "value": 1.5
-        }
-      ]
-    },
-    "day3": {
-      "displayName": "Day 3 Wave",
-      "description": "Third wave",
-      "day": 3,
-      "requiredCoreTier": 1,
-      "baseAmount": 20,
-      "maxAliveAmount": 10,
-      "spawnInterval": 1.5,
-      "monster": "coredawn:entity/basic",
-      "buffs": [
-        {
-          "effect": "coredawn:effect/damage_taken",
-          "value": 1.5
-        }
-      ]
-    },
-    "day4": {
-      "displayName": "Day 4 Wave",
-      "description": "Fourth wave",
-      "day": 4,
-      "requiredCoreTier": 1,
-      "baseAmount": 20,
-      "maxAliveAmount": 15,
-      "spawnInterval": 1.0,
-      "monster": "coredawn:entity/basic",
-      "buffs": [
-        {
-          "effect": "coredawn:effect/damage_taken",
-          "value": 0.75
-        }
-      ]
-    },
-    "day5": {
-      "displayName": "Day 5 Wave",
-      "description": "Fifth wave",
-      "day": 5,
-      "requiredCoreTier": 2,
-      "baseAmount": 40,
-      "maxAliveAmount": 15,
-      "spawnInterval": 0.5,
-      "monster": "coredawn:entity/basic",
-      "buffs": [
-        {
-          "effect": "coredawn:effect/damage_taken",
-          "value": 0.75
         }
       ]
     }
@@ -3584,5 +3502,67 @@
         }
       ]
     }
+  },
+  "wave": {
+    "basePoints": 100.0,
+    "dayPoints": 50.0,
+    "gatePoints": 100.0,
+    "stimulusAmplitude": 3.0,
+    "stimulusExponent": 6.0,
+    "stimulusLinear": 0.1,
+    "stimulusBuffs": [
+      {
+        "effect": "coredawn:effect/attack_up",
+        "base": 1.0,
+        "perStimulus": 0.1,
+        "min": 0.1,
+        "max": 10.0
+      },
+      {
+        "effect": "coredawn:effect/damage_taken",
+        "base": 1.0,
+        "perStimulus": -0.1,
+        "min": 0.25,
+        "max": 1.0
+      }
+    ],
+    "nestsPerNightMin": 1,
+    "nestsPerNightMax": 3,
+    "targetNightLength": 100.0,
+    "burstsPerNight": 5,
+    "burstSpread": 2.0,
+    "roster": [
+      {
+        "monster": "coredawn:entity/basic",
+        "cost": 10.0,
+        "weight": 70.0,
+        "minDay": 1,
+        "minGate": 0
+      },
+      {
+        "monster": "coredawn:entity/spitter",
+        "cost": 20.0,
+        "weight": 25.0,
+        "minDay": 3,
+        "minGate": 0
+      },
+      {
+        "monster": "coredawn:entity/boss",
+        "cost": 60.0,
+        "weight": 5.0,
+        "minDay": 4,
+        "minGate": 1
+      }
+    ],
+    "trickle": {
+      "monster": "coredawn:entity/basic",
+      "group": 3,
+      "interval": 10.0,
+      "untilKilledFraction": 0.9
+    }
+  },
+  "dayCycle": {
+    "dayDuration": 300.0,
+    "nightDuration": 10.0
   }
 }

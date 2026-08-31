@@ -43,7 +43,7 @@ MonoBehaviour:
   isAttackable: 0
   fireMode: 1
   damageMultiplier: 2.8
-  range: 14
+  range: 56
   minRange: 0
   fireRate: 3
   muzzleHeight: 2.212

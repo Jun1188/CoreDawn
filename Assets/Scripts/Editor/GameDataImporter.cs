@@ -76,7 +76,8 @@ namespace CoreDawn.EditorTools
             public RecipeDto[]   recipes;
             public BuildingDto[] buildings;
             public MonsterDto[]  monsters;
-            public WaveDto[]     waves;
+            public WaveRuleDto   wave;      // 밤 웨이브 규칙(점수식) — SO 없음, 팩 wave 블록
+            public DayCycleDto   dayCycle;  // 주야 시계(낮·밤 길이) — 팩 dayCycle 블록
             public TutorialStepDto[] tutorial;
             public PlayerDto         player;    // 팩의 entities/player — SO 없음, 심이 정의로 조립한다
         }
@@ -276,19 +277,24 @@ namespace CoreDawn.EditorTools
                           patienceRecoverRate, absoluteLeashMultiplier, returnRegenPerSecond, returnTimeout;
         }
 
-        [Serializable] internal class WaveDto : JsonDtoBase
+        /// <summary>주야 시계 — 낮 길이·밤(달이 뜨고 지는) 길이. TimeManager가 팩에서 읽는다.</summary>
+        [Serializable] internal class DayCycleDto : JsonDtoBase { public float dayDuration = 360f, nightDuration = 10f; }
+
+        /// <summary>밤 웨이브 규칙 — 점수식·명단·자극 버프·진입로 무리. 일차별 표(옛 웨이브 SO)는 없다. SO를 만들지 않고 v2 exporter가 wave 블록으로 낸다.</summary>
+        [Serializable] internal class WaveRuleDto : JsonDtoBase
         {
-            public string id;
-            public string displayName;
-            public string description;
-            public int day;
-            public int requiredCoreTier;
-            public int baseAmount;
-            public int maxAliveAmount;
-            public float spawnInterval;
-            public string monster;       // 몬스터 종류 id (MonsterDataSO). 생략 시 DB 기본 종류 — 편집기가 경고한다
-            public EffectEntryDto[] buffs;   // 스폰 시 거는 영구 효과 — 그날의 강약(주는·받는 피해 배율)
+            public float basePoints, dayPoints = 40f, gatePoints = 80f;     // score = (base + day×dayPoints + gate×gatePoints) × 총량(살아 있는 몫 + 강화분)
+            public float stimulusAmplitude = 2f, stimulusExponent = 4f, stimulusLinear = 0.1f;   // 강화분 h(r) = A·r^p + b·r, r = 파괴/전체
+            public StimulusBuffDto[] stimulusBuffs;
+            public int   nestsPerNightMin = 1, nestsPerNightMax;             // max 0 = 전부
+            public float targetNightLength = 60f; public int burstsPerNight = 4;   // 간격 = 길이 ÷ 수
+            public float burstSpread = 2f;
+            public RosterDto[] roster;
+            public TrickleDto trickle;
         }
+        [Serializable] internal class StimulusBuffDto : JsonDtoBase { public string effect; public float baseValue = 1f, perStimulus, min = 0.05f, max = 10f; }
+        [Serializable] internal class RosterDto : JsonDtoBase { public string monster; public float cost = 10f, weight = 1f; public int minDay = 1, minGate; }
+        [Serializable] internal class TrickleDto : JsonDtoBase { public string monster; public int group = 3; public float interval = 20f, untilKilledFraction = 0.9f; }
 
         /// <summary>
         /// kind → 만들 서브클래스. BuildingDataSO가 추상이라 임포터가 무엇을 CreateInstance할지
@@ -404,11 +410,6 @@ namespace CoreDawn.EditorTools
                         ImportMonster(file, dto, byId, ref created, ref updated, ref errors);
                     }
 
-            // 4패스: 웨이브
-            foreach (var (file, root) in roots)
-                if (root?.waves != null)
-                    foreach (var dto in root.waves)
-                        ImportWave(file, dto, byId, ref created, ref updated, ref errors);
 
             // 5패스: 튜토리얼 (조건이 아이템을 참조할 수 있어 아이템 뒤)
             bool anyTutorial = false;
@@ -767,39 +768,6 @@ namespace CoreDawn.EditorTools
         }
 
         // ── 웨이브 ────────────────────────────────────────────────
-
-        static void ImportWave(string file, WaveDto dto, Dictionary<string, GameDataSO> byId,
-            ref int created, ref int updated, ref int errors)
-        {
-            if (!ValidateKey(file, "waves", dto?.id, dto?.displayName, ref errors)) return;
-
-            var existing = Find<WaveDataSO>(byId, dto.id, file, ref errors);
-            if (existing == null && byId.ContainsKey(dto.id)) return;
-
-            bool isNew = existing == null;
-            var wave = existing != null ? existing
-                : (WaveDataSO)CreateAsset(typeof(WaveDataSO), dto.id, "Assets/Data/Wave", byId);
-
-            wave.displayName      = dto.displayName;
-            wave.description      = dto.description ?? "";
-            wave.day              = dto.day;
-            wave.requiredCoreTier = dto.requiredCoreTier;
-            wave.baseAmount       = dto.baseAmount;
-            wave.maxAliveAmount   = dto.maxAliveAmount;
-            wave.spawnInterval    = dto.spawnInterval;
-            // 종류 — 비우면 DB 기본(편집기 경고). 모르는 id는 에러: 조용히 기본으로 가면 밤 공세가 엉뚱한 몬스터로 바뀐 것을 아무도 모른다
-            wave.monster = null;
-            if (!string.IsNullOrEmpty(dto.monster))
-            {
-                if (byId.TryGetValue(dto.monster, out var mso) && mso is MonsterDataSO monster) wave.monster = monster;
-                else { Debug.LogError($"[GameDataImporter] {file} waves '{dto.id}': 몬스터 id '{dto.monster}' 를 찾을 수 없습니다"); errors++; }
-            }
-            if (TryResolveEffectEntries(file, "waves", dto.id, dto.buffs, byId, out var buffs, ref errors))
-                wave.buffs = buffs ?? Array.Empty<EffectEntry>();
-
-            EditorUtility.SetDirty(wave);
-            if (isNew) created++; else updated++;
-        }
 
         // ── 몬스터 ────────────────────────────────────────────────
 

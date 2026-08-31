@@ -21,6 +21,9 @@ namespace CoreDawn.Sim
         /// <summary>편 — 적대 판정의 기준. 생성 후 바뀌는 일은 드물지만(포섭 등) 막지는 않는다.</summary>
         public Faction Faction { get; set; }
 
+        /// <summary>이 엔티티를 조립한 정의(EntityDef.Assemble). 코드로 조립한 엔티티는 null. 뷰 카탈로그(프리팹)·세이브가 읽는다.</summary>
+        public EntityDef Def { get; internal set; }
+
         Vector3 _position;
 
         /// <summary>

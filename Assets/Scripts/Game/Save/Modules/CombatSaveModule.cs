@@ -37,7 +37,6 @@ namespace CoreDawn.Save
         {
             [JsonProperty("path")] public string ScenePath;
             [JsonProperty("destroyed")] public bool IsDestroyed;
-            [JsonProperty("destroyedDay")] public int DestroyedDay;
             [JsonProperty("warned")] public bool HasWarned;
             [JsonProperty("hpMax")] public float HpMax;
             [JsonProperty("hpCur")] public float HpCurrent;
@@ -48,7 +47,6 @@ namespace CoreDawn.Save
         {
             [JsonProperty("i")] public int Index;
             [JsonProperty("destroyed")] public bool IsDestroyed;
-            [JsonProperty("destroyedDay")] public int DestroyedDay;
 
             /// <summary>null이면 저장 당시 이 자리에 살아있는 보스가 없었다는 뜻.</summary>
             [JsonProperty("boss")] public MonsterDto Boss;
@@ -66,19 +64,34 @@ namespace CoreDawn.Save
             [JsonProperty("awake")] public bool HasBeenAttacked;
             [JsonProperty("defender")] public bool IsNestDefender;
             [JsonProperty("defendOrigin")] public Vector3 DefendOrigin;
+            /// <summary>이 밤의 웨이브 몬스터인가 — "burst"(점수) | "trickle"(진입로 무리) | null(둥지 방어자·보스).</summary>
+            [JsonProperty("wave")] public string WaveKind;
         }
 
+        /// <summary>밤 웨이브 심 상태(WaveSystem.State) — 점수·남은 점수·버스트·출구·난수. 몬스터 명단은 monsters의 wave 표시로 되살린다.</summary>
         public class WaveDto
         {
-            [JsonProperty("enabled")] public bool SpawningEnabled;
+            [JsonProperty("active")] public bool Active;
+            [JsonProperty("day")] public int Day;
+            [JsonProperty("gate")] public int Gate;
+            [JsonProperty("now")] public float Now;
+            [JsonProperty("score")] public float Score;
+            [JsonProperty("remaining")] public float Remaining;
+            [JsonProperty("bursts")] public int Bursts;
+            [JsonProperty("burstsDone")] public int BurstsDone;
+            [JsonProperty("nextBurstAt")] public float NextBurstAt;
+            [JsonProperty("nextTrickleAt")] public float NextTrickleAt;
+            [JsonProperty("spawned")] public int Spawned;
+            [JsonProperty("killed")] public int Killed;
+            [JsonProperty("rng")] public uint Rng;
+            [JsonProperty("exits")] public List<ExitDto> Exits = new();
+            [JsonProperty("entrances")] public List<Vector3> Entrances = new();
+        }
 
-            /// <summary>다음 스폰까지 남은 시간(초) — 절대 시각은 다음 실행에서 뜻이 없다.</summary>
-            [JsonProperty("nextIn")] public float NextSpawnDelay;
-
-            /// <summary>정량 웨이브 진행 — 목표가 0 이하면 "진행 중인 정량 웨이브 없음"(낮, 또는 옛 세이브).</summary>
-            [JsonProperty("spawned")] public int SpawnedThisWave = -1;
-            [JsonProperty("target")] public int TargetSpawnAmount = -1;
-            [JsonProperty("completed")] public bool WaveCompleted;
+        public class ExitDto
+        {
+            [JsonProperty("nest")] public string Nest;
+            [JsonProperty("point")] public int Point;
         }
 
         // ── 저장 ──────────────────────────────────────────────────────
@@ -101,7 +114,6 @@ namespace CoreDawn.Save
                 {
                     ScenePath = SaveScenePath.Of(nest),
                     IsDestroyed = nest.IsDestroyed,
-                    DestroyedDay = nest.DestroyedDay,
                     HasWarned = nest.HasWarned,
                     HpMax = nest.Health.MaxHealth,
                     HpCurrent = nest.Health.CurrentHealth,
@@ -111,12 +123,12 @@ namespace CoreDawn.Save
                 {
                     var sp = nest.Points[i];
                     var boss = sp.linkedBoss;
+                    var state = nest.PointState(i);   // 파괴 여부·날짜의 정본은 심(NestModule)
 
                     nd.Points.Add(new PointDto
                     {
                         Index = i,
-                        IsDestroyed = sp.isDestroyed,
-                        DestroyedDay = sp.destroyedDay,
+                        IsDestroyed = state != null && state.IsDestroyed,
                         Boss = boss != null && !boss.IsDead ? Describe(boss) : null,
                     });
                 }
@@ -132,20 +144,29 @@ namespace CoreDawn.Save
                 var bosses = new HashSet<MonsterView>(
                     nests.SelectMany(n => n.Points).Select(p => p.linkedBoss).Where(b => b != null));
 
+                var waves = battle.Waves;
                 foreach (var m in spawner.Monsters
                             .Where(m => m != null && !m.IsDead && !bosses.Contains(m))
                             .OrderBy(m => m.transform.position.x).ThenBy(m => m.transform.position.z))
-                    dto.Monsters.Add(Describe(m));
-
-                bool waveInProgress = spawner.IsQuantityWaveActive || spawner.IsQuantityWaveCompleted;
-                dto.Wave = new WaveDto
                 {
-                    SpawningEnabled = spawner.SpawningEnabled,
-                    NextSpawnDelay = spawner.NextSpawnDelay,
-                    SpawnedThisWave = waveInProgress ? spawner.SpawnedThisWave : -1,
-                    TargetSpawnAmount = waveInProgress ? spawner.TargetSpawnAmount : -1,
-                    WaveCompleted = spawner.IsQuantityWaveCompleted,
-                };
+                    var d = Describe(m);
+                    if (waves != null && m.Entity != null)
+                        d.WaveKind = waves.BurstMonsters.Contains(m.Entity) ? "burst" : waves.TrickleMonsters.Contains(m.Entity) ? "trickle" : null;
+                    dto.Monsters.Add(d);
+                }
+
+                if (waves != null)
+                {
+                    var s = waves.Capture();
+                    dto.Wave = new WaveDto
+                    {
+                        Active = s.Active, Day = s.Day, Gate = s.Gate, Now = s.Now, Score = s.Score, Remaining = s.Remaining,
+                        Bursts = s.Bursts, BurstsDone = s.BurstsDone, NextBurstAt = s.NextBurstAt, NextTrickleAt = s.NextTrickleAt,
+                        Spawned = s.Spawned, Killed = s.Killed, Rng = s.Rng,
+                        Exits = s.Selected.Select(x => new ExitDto { Nest = x.nest, Point = x.point }).ToList(),
+                        Entrances = s.Entrances,
+                    };
+                }
             }
 
             return dto;
@@ -191,7 +212,7 @@ namespace CoreDawn.Save
                     continue;
                 }
 
-                nest.RestoreSaveState(saved.IsDestroyed, saved.DestroyedDay, saved.HasWarned);
+                nest.RestoreSaveState(saved.IsDestroyed, saved.HasWarned);
                 if (saved.HpMax > 0f)
                     nest.Health.RestoreState(saved.HpMax, saved.HpCurrent, saved.IsDestroyed);
 
@@ -199,7 +220,7 @@ namespace CoreDawn.Save
                 {
                     if (p == null) continue;
 
-                    nest.RestoreSpawnPoint(p.Index, p.IsDestroyed, p.DestroyedDay);
+                    nest.RestoreSpawnPoint(p.Index, p.IsDestroyed);
 
                     if (p.Boss == null) { nest.ClearBoss(p.Index); continue; }
 
@@ -215,24 +236,41 @@ namespace CoreDawn.Save
             if (battle == null) return;
 
             var spawner = battle.Spawner;
+            var waves = battle.Waves;
 
-            // 씬을 새로 열었다면 목록은 비어 있지만, 제자리 왕복 검증에서는 채워져 있다
+            // 씬을 새로 열었다면 목록은 비어 있지만, 제자리 왕복 검증에서는 채워져 있다 — 심의 웨이브 몬스터도 함께
+            waves?.EndNight();
             spawner.DespawnAll();
+
+            // 웨이브 상태를 먼저 — 몬스터를 되살리며 명단에 다시 넣는다
+            if (waves != null && dto.Wave != null)
+            {
+                var w = dto.Wave;
+                var s = new CoreDawn.Sim.WaveSystem.State
+                {
+                    Active = w.Active, Day = w.Day, Gate = w.Gate, Now = w.Now, Score = w.Score, Remaining = w.Remaining,
+                    Bursts = w.Bursts, BurstsDone = w.BurstsDone, NextBurstAt = w.NextBurstAt, NextTrickleAt = w.NextTrickleAt,
+                    Spawned = w.Spawned, Killed = w.Killed, Rng = w.Rng,
+                    Selected = w.Exits.Select(x => (x.Nest, x.Point)).ToList(), Entrances = w.Entrances,
+                };
+                var nestsById = new Dictionary<string, CoreDawn.Sim.Entity>();
+                foreach (var n in Object.FindObjectsByType<NestView>(FindObjectsSortMode.None))
+                    if (n != null && n.Entity != null) nestsById[n.Entity.Id.ToString()] = n.Entity;
+                waves.Restore(s, id => nestsById.TryGetValue(id, out var e) ? e : null);
+            }
 
             var database = MonsterDatabaseSO.LoadDefault();
             foreach (var saved in dto.Monsters)
             {
                 if (saved == null) continue;
-                // 저장된 종류로 되살린다. id가 없거나(옛 세이브) 사라진 종류면 null → 스포너가 기본 종류로 세운다
+                // 저장된 종류로 되살린다. id가 없거나 사라진 종류면 null → 스포너가 기본 종류로 세운다
                 var data = database != null && !string.IsNullOrEmpty(saved.DataId) ? database.FindById(saved.DataId) : null;
-                // 둥지 방어·보스가 아니면 이 밤의 웨이브 몬스터 — 정량 웨이브 생존 수에 다시 포함시킨다
-                bool nightWave = !saved.IsBoss && !saved.IsNestDefender;
-                Apply(spawner.RestoreMonster(saved.Position, saved.Rotation, data, nightWave), saved);
+                var view = spawner.RestoreMonster(saved.Position, saved.Rotation, data);
+                Apply(view, saved);
+                if (waves != null && view != null && view.Entity != null && !string.IsNullOrEmpty(saved.WaveKind))
+                    waves.Register(view.Entity, saved.WaveKind == "trickle" ? CoreDawn.Sim.WaveSpawnKind.Trickle : CoreDawn.Sim.WaveSpawnKind.Burst);
             }
-
-            if (dto.Wave != null)
-                spawner.RestoreState(dto.Wave.SpawningEnabled, dto.Wave.NextSpawnDelay,
-                                     dto.Wave.SpawnedThisWave, dto.Wave.TargetSpawnAmount, dto.Wave.WaveCompleted);
+            if (waves != null && dto.Wave != null) waves.FinishRestore(dto.Wave.Spawned, dto.Wave.Killed);
         }
 
         static void Apply(MonsterView m, MonsterDto saved)

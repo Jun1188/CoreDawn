@@ -17,9 +17,7 @@ namespace CoreDawn.DayTime
     {
         public static TimeManager Instance { get; private set; }
 
-        [Header("Time Settings (초 단위)")]
-        [SerializeField] float dayDuration = 60f;   // 낮 유지 시간
-        [SerializeField] float nightDuration = 40f; // 밤 유지 시간
+        // 낮·밤(달이 뜨고 지는 시간) 길이는 팩 dayCycle 블록(DayCycleDef)이 정본 — 인스펙터 값 없음
 
         /// <summary>낮/밤 주기 심 코어. 이벤트 구독/시간 조회는 이쪽으로.</summary>
         public DayCycle Cycle { get; private set; }
@@ -39,8 +37,8 @@ namespace CoreDawn.DayTime
         bool quantityNightCleared;
 
         /// <summary>
-        /// 현재 물량제 밤의 남은 적 수와 전체 물량을 반환한다.
-        /// 낮이거나 시간제 밤이면 false다.
+        /// 현재 밤 웨이브의 살아 있는 점수 몬스터 수와 지금까지 나온 수를 반환한다.
+        /// 낮이거나 웨이브가 없으면 false다.
         /// </summary>
         public bool TryGetNightWaveStatus(out int remaining, out int total)
         {
@@ -48,13 +46,12 @@ namespace CoreDawn.DayTime
             total = 0;
 
             var battle = BattleManager.Instance;
-            if (Cycle == null || Cycle.Phase != DayPhase.Night ||
-                battle == null || !battle.UsesQuantityBasedNightWaves)
+            var waves = battle != null ? battle.Waves : null;
+            if (Cycle == null || Cycle.Phase != DayPhase.Night || waves == null || !waves.Active)
                 return false;
 
-            var spawner = battle.Spawner;
-            total = spawner.TargetSpawnAmount;
-            remaining = spawner.RemainingThisWave;
+            total = waves.SpawnedCount;     // 지금까지 점수로 나온 수 (더 나올 것은 점수로만 남아 있다)
+            remaining = waves.ScoreAlive;   // 그중 살아 있는 수
             return true;
         }
 
@@ -80,7 +77,9 @@ namespace CoreDawn.DayTime
             transform.SetParent(null);
             DontDestroyOnLoad(gameObject);
 
-            Cycle = new DayCycle(dayDuration, nightDuration);
+            var clock = CoreDawn.Sim.SimHost.Database?.DayCycle
+                ?? throw new System.InvalidOperationException("[TimeManager] 팩에 dayCycle 블록이 없습니다 — 낮·밤 길이는 GameData 웨이브 탭의 '주야 시계'에서 정합니다.");
+            Cycle = new DayCycle(clock.DayDuration, clock.NightDuration);
             Cycle.DayStarted   += OnDayStarted;
             Cycle.NightStarted += OnNightStarted;
         }

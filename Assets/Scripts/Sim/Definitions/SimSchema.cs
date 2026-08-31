@@ -27,7 +27,7 @@ namespace CoreDawn.Sim
             ["Extractor"] = typeof(ExtractorModuleDef),
             ["Router"] = typeof(RouterModuleDef),
             ["Core"] = typeof(CoreModuleDef),
-            ["NestSpawner"] = typeof(NestSpawnerModuleDef),
+            ["Nest"] = typeof(NestModuleDef),
             ["ResourceDeposit"] = typeof(ResourceDepositModuleDef),
             ["Loot"] = typeof(LootModuleDef),
             ["Turret"] = typeof(TurretModuleDef),

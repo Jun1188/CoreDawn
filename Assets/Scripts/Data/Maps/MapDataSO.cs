@@ -143,13 +143,8 @@ namespace CoreDawn.Data
         [Tooltip("낮에만 이 규칙을 적용할지. 밤에는 웨이브가 주도하므로 보통 true.")]
         public bool engageDayOnly;
 
-        // ── 복구 ────────────────────────────────────────────────────
 
-        [Tooltip("보스를 잡은 뒤 다시 나올 때까지의 일수.")]
-        public int bossRecoveryDays;
 
-        [Tooltip("둥지를 부순 뒤 다시 설 때까지의 일수.")]
-        public int nestRecoveryDays;
     }
 
     [Serializable]

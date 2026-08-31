@@ -107,10 +107,5 @@
   "Tutorial:Night": "coredawn:tutorial/night",
   "Tutorial:Ports": "coredawn:tutorial/ports",
   "Tutorial:Salvage": "coredawn:tutorial/salvage",
-  "Tutorial:Survive": "coredawn:tutorial/survive",
-  "Wave:Day1": "coredawn:wave/day1",
-  "Wave:Day2": "coredawn:wave/day2",
-  "Wave:Day3": "coredawn:wave/day3",
-  "Wave:Day4": "coredawn:wave/day4",
-  "Wave:Day5": "coredawn:wave/day5"
+  "Tutorial:Survive": "coredawn:tutorial/survive"
 }
