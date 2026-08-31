@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using CoreDawn.Inventories;
 using CoreDawn.Sim;
-using CoreDawn.Data;   // PortDefinition·BeltShape·Direction — 5a-2f에서 공장과 함께 Sim으로 옮긴다
+using CoreDawn.Data;   // RecipeDatabaseSO(레시피 해금 판정) — 5a-3에서 게임 쪽으로 정리
 
 namespace CoreDawn.Factory
 {

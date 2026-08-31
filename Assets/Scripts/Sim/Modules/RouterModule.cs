@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using CoreDawn.Data;   // Direction — 5a-2f에서 공장과 함께 Sim으로 옮긴다
 
 namespace CoreDawn.Sim
 {

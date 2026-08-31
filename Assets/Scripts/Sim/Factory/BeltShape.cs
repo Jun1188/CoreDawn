@@ -1,7 +1,4 @@
-using UnityEngine;
-using CoreDawn.Factory;
-
-namespace CoreDawn.Data
+namespace CoreDawn.Sim
 {
     /// <summary>
     /// 벨트의 모양 — 배치 시점에 결정되는 인스턴스 상태 (SO가 아님).
