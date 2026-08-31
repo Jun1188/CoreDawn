@@ -36,6 +36,10 @@ namespace CoreDawn.Save
             //   건물의 behavior 덩어리를 modules{키: 상태}로 옮긴다 — 키는 모듈 타입 이름(…Module 제외, 예: "Turret").
             //   내부 키(readyAt·yaw·recipe·filters…)는 그대로다.
             { 2, f => { MigrateBehaviorToModules(f); DropRuntimeWaveExits(f); } },
+
+            // v3 → v4 (2026-09-01, 5a-3d): 몬스터 종류 id를 옛 SO id("Monster:Spitter") → 팩 id로.
+            //   v1→v2 때 "몬스터는 아직 SO로 복원하므로 손대지 않는다 — 5a-3에서 함께"로 예약했던 항목.
+            { 3, MigrateMonsterIdsToPack },
         };
 
         /// <summary>
@@ -267,6 +271,27 @@ namespace CoreDawn.Save
             if (def.Has<TurretModuleDef>()) return "Turret";
             if (def.Has<AuraEmitterModuleDef>()) return "AuraEmitter";
             return null;   // 무상태 행동(벨트·보관소 등)이었던 것 — 옮길 곳이 없다
+        }
+
+        // ── 몬스터 id → 팩 id (v3 → v4) ─────────────────────────────
+        static void MigrateMonsterIdsToPack(SaveFile f)
+        {
+            var db = SimHost.Database ?? throw new InvalidOperationException("팩 정의(SimHost.Database)가 없어 몬스터 id를 변환할 수 없습니다.");
+            int converted = 0;
+            void Convert(JToken parent)
+            {
+                if (parent is not JObject o || o["data"]?.Type != JTokenType.String) return;
+                string old = (string)o["data"], now = db.LegacyId(old);
+                if (now != old) { o["data"] = now; converted++; }
+            }
+            if (Module(f, "combat") is JObject combat)
+            {
+                foreach (var m in Arr(combat["monsters"])) Convert(m);
+                foreach (var n in Arr(combat["nests"]))
+                    foreach (var p in Arr(n["points"]))
+                        if (p is JObject po) Convert(po["boss"]);
+            }
+            Debug.Log($"[Save] v3 → v4: 몬스터 id {converted}개를 팩 id로 바꿨습니다.");
         }
 
         // ── 공통 ──────────────────────────────────────────

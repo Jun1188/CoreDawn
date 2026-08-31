@@ -343,7 +343,7 @@ namespace CoreDawn.Entities
 
         private void SpawnBossAtPoint(int index, NestSpawnPoint spawnPoint)
         {
-            var boss = MonsterSpawner.Spawn(spawnPoint.bossData, spawnPoint.point.position, spawnPoint.point.rotation, transform);
+            var boss = MonsterSpawner.Spawn(spawnPoint.bossData != null ? spawnPoint.bossData.Def : null, spawnPoint.point.position, spawnPoint.point.rotation, transform);
             SnapBossToGround(boss.gameObject);
             spawnPoint.linkedBoss = boss;
             boss.SetAsBoss(engagementZone);
@@ -462,10 +462,10 @@ namespace CoreDawn.Entities
         {
             if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return null;
             var sp = spawnPoints[index];
-            if (sp.bossData == null || sp.bossData.prefab == null) return null;
+            if (sp.bossData == null || sp.bossData.Def == null) return null;
 
             if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
-            var restored = MonsterSpawner.Spawn(sp.bossData, position, rotation, transform);
+            var restored = MonsterSpawner.Spawn(sp.bossData.Def, position, rotation, transform);
             sp.linkedBoss = restored;
             sp.linkedBoss?.SetAsBoss(engagementZone);
             Module?.BindBoss(index, restored?.Entity);

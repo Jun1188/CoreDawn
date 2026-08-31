@@ -18,6 +18,17 @@ namespace CoreDawn.Data
     [CreateAssetMenu(fileName = "NewMonster", menuName = "Combat/Monster Data")]
     public class MonsterDataSO : GameDataSO
     {
+        EntityDef _def;
+        /// <summary>이 에셋이 가리키는 심 정의(같은 id). 팩이 없으면 null — 저작 경계(씬 필드)의 다리, 3e에서 SO와 함께 퇴역.</summary>
+        public EntityDef Def
+        {
+            get
+            {
+                if (_def == null) { var db = SimHost.Database; if (db != null) _def = db.Entity(db.LegacyId(Id)); }
+                return _def;
+            }
+        }
+
         [Header("뷰")]
         [Tooltip("씬 표현 프리팹(MonsterView 컴포넌트가 붙은 것). 에셋 참조라 json에는 prefabGuid로 적힌다. 비우면 코드 조립 폴백(캡슐).")]
         public GameObject prefab;
