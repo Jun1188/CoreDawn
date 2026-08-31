@@ -445,6 +445,49 @@ namespace CoreDawn.Combat
             return (flat / d + Vector3.up * tan).normalized;
         }
 
+        /// <summary>
+        /// 직사탄(중력 0)의 리드 — 등속 직선탄은 반복이 필요 없다. 탄이 목표를 만나는 시각 t는
+        /// |p + v·t| = s·t  (p = 목표 오프셋, v = 목표 속도, s = 탄속)  →  (v·v − s²)t² + 2(p·v)t + p·p = 0
+        /// 의 가장 이른 양의 근이다. 근이 없으면(목표가 탄보다 빠르거나 멀어지는데 못 따라잡음) 현재 위치를 겨눈다.
+        /// 곡사탄은 <see cref="BallisticLead"/> — 발사각이 비행시간을 바꾸므로 닫힌 해 대신 반복으로 푼다.
+        /// </summary>
+        /// <param name="impact">탄이 목표를 만나는 지점 — 발사기가 사거리 여유를 잡는 데 쓴다.</param>
+        public static Vector3 LinearLead(Vector3 origin, Vector3 target, Vector3 targetVelocity, float speed, out Vector3 impact)
+        {
+            impact = target;
+            Vector3 p = target - origin;
+            if (speed <= 0f || targetVelocity.sqrMagnitude < 0.0001f)
+                return p.sqrMagnitude > 0.0001f ? p.normalized : Vector3.forward;
+
+            float a = Vector3.Dot(targetVelocity, targetVelocity) - speed * speed;
+            float b = 2f * Vector3.Dot(p, targetVelocity);
+            float c = Vector3.Dot(p, p);
+            float t = -1f;
+            if (Mathf.Abs(a) < 0.0001f)
+            {
+                // 탄속 == 목표 속도 — 일차식. b > 0이면 멀어지는 목표라 못 따라잡는다
+                if (b < -0.0001f) t = -c / b;
+            }
+            else
+            {
+                float disc = b * b - 4f * a * c;
+                if (disc >= 0f)
+                {
+                    float sq = Mathf.Sqrt(disc);
+                    float t1 = (-b - sq) / (2f * a), t2 = (-b + sq) / (2f * a);
+                    // 양의 근 중 가장 이른 것 (a < 0이 보통이라 t1 > t2 — 순서를 믿지 말고 둘 다 본다)
+                    float lo = Mathf.Min(t1, t2), hi = Mathf.Max(t1, t2);
+                    t = lo > 0f ? lo : (hi > 0f ? hi : -1f);
+                }
+            }
+            if (t <= 0f)
+                return p.sqrMagnitude > 0.0001f ? p.normalized : Vector3.forward;
+
+            impact = target + targetVelocity * t;
+            Vector3 dir = impact - origin;
+            return dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.forward;
+        }
+
         /// <summary>탄착점을 다시 푸는 횟수 — 1회면 대개 수십 cm 안으로 수렴한다.</summary>
         private const int LeadRefineSteps = 2;
 
