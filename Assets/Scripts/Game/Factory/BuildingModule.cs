@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using CoreDawn.Inventories;
 using CoreDawn.Sim;
@@ -125,6 +126,16 @@ namespace CoreDawn.Factory
             Output = inventory?.Output ?? new ItemContainer(0);
             // 행동은 그릇·정의가 갖춰진 뒤에 — 조립기는 생성자에서 입력 필터를 건다
             _behavior = BuildingBehaviors.Create(this);
+            // 제작 설비(조립기·제련로 — 행동이 사라진 건물): 옛 AssemblerBehavior 생성자가 걸던 그릇 정책의 공통화
+            var crafter = Owner.Get<CrafterModule>();
+            if (_behavior == null && crafter != null)
+            {
+                Input.SingleStackPerType = true;            // 한 재료가 입력 슬롯 전부를 독점하는 데드락 방지
+                Input.AcceptFilter = crafter.IsIngredient;  // 입력 버퍼는 현재 레시피의 재료만
+                crafter.Delivered += FlushOutputs;          // 완성품을 넣는 즉시 밀어야 같은 틱에 다음 1회가 시작될 자리가 난다
+                var first = crafter.Recipes.FirstOrDefault();
+                if (crafter.Recipe == null && first != null && RecipeDatabaseSO.IsUnlocked(first)) crafter.SetRecipe(first);
+            }
             // 행동 없이 모듈이 스스로 걷는 건물(포탑·오라·지뢰…): 그릇이 바뀌면 다음 틱에 다시 판단한다.
             // 손으로 넣고 빼는 경로는 벨트를 안 거쳐 아무도 깨워 주지 않는다(옛 행동들이 하나씩 달던 구독의 공통화)
             if (_behavior == null && !IsConveyor) { Input.Changed += WakeSelf; Output.Changed += WakeSelf; }
@@ -187,13 +198,31 @@ namespace CoreDawn.Factory
             FlushOutputs();
             int inBefore = Input.Total, outBefore = Output.Total;
             float wake = 0f;
+            bool stepped = false;
             var modules = Owner.Modules;
             for (int i = 0; i < modules.Count; i++)
-                if (modules[i] is ISteppable s) wake = Mathf.Max(wake, s.Step(Factory.Now, dt));
+                if (modules[i] is ISteppable s) { stepped = true; wake = Mathf.Max(wake, s.Step(Factory.Now, dt)); }
             if (IsRemoved) return;                       // 지뢰처럼 걷다가 스스로 죽은 건물
+            if (!stepped) PumpPassThrough();             // 걷는 모듈이 없으면 통과 보관소다
             if (Output.Total > outBefore) FlushOutputs();
             if (Input.Total < inBefore) NotifyUpstream();
             if (wake > 0f) Factory.ScheduleWake(this, wake);
+        }
+
+        /// <summary>
+        /// 통과 보관소(걷는 모듈 없이 그릇·포트만 있는 건물 — 보관소·드론 포트)의 펌핑(구 StorageBehavior).
+        /// 보관함이 곧 입력 버퍼라 출력 버퍼를 거치지 않고 하류로 곧장 민다 — 옮겨 놓고 밀기에 실패하면
+        /// 그 물건이 플레이어가 못 여는 버퍼에 갇힌다. 못 민 만큼은 보관함에 그대로 남는다
+        /// (저장소는 라인을 막는 마개가 아니라 완충 장치다). 포트 없는 건물(나무·둥지·울타리·탄약함)은 밀 곳이 없어 그냥 지나간다.
+        /// </summary>
+        void PumpPassThrough()
+        {
+            foreach (var (item, count) in Input.Snapshot())
+            {
+                int moved = 0;
+                while (moved < count && TryPushOutput(item)) moved++;
+                if (moved > 0) Input.TryConsume(item, moved);   // 상류 깨움은 공통 틱이 그릇 변화로 한다
+            }
         }
 
         /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용). 행동 없는 건물(나무·둥지·울타리)은 null.</summary>

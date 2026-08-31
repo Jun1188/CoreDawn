@@ -18,9 +18,6 @@ namespace CoreDawn.Factory
             var def = b.Def;
             if (def.Has<ConveyorModuleDef>()) return new BeltBehavior(b);
 
-            var crafter = b.Owner.Get<CrafterModule>();   // 정의의 Crafter가 만든 모듈 — 행동은 공장과 모듈 사이의 어댑터
-            if (crafter != null) return new AssemblerBehavior(b, crafter);
-
             var extractor = def.Get<ExtractorModuleDef>();
             if (extractor != null) return new MinerBehavior(b, extractor);
 
@@ -30,12 +27,8 @@ namespace CoreDawn.Factory
             var core = def.Get<CoreModuleDef>();
             if (core != null) return new CoreBehavior(b, core);
 
-            // 스스로 걷는 모듈(ISteppable: 포탑·오라·지뢰…)이 있으면 행동 없음 — BuildingModule의 공통 틱이 돌린다
-            foreach (var m in b.Owner.Modules) if (m is ISteppable) return null;
-
-            // 버퍼와 포트만 있는 건물 = 통과 보관소(보관소·드론 포트)
-            if (def.Has<InventoryModuleDef>() && def.Has<PortsModuleDef>()) return new StorageBehavior(b);
-
+            // 그 밖은 행동 없음 — 걷는 모듈(ISteppable: 제작기·포탑·오라·지뢰…)과 통과 보관소(그릇+포트)는
+            // BuildingModule의 공통 틱이 돌리고, 나무·둥지·울타리는 칸을 차지할 뿐이다.
             return null;
         }
     }

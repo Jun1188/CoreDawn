@@ -12,7 +12,7 @@ namespace CoreDawn.Entities
     /// 행동(IBuildingBehavior)도 더 이상 UI를 열지 않는다. 심 쪽 <see cref="BuildingBehaviors"/>와 같은 꼴:
     /// 새 상호작용 건물 = 여기 한 줄. 조합에 안 맞으면 상호작용 없음(프롬프트 null).
     ///
-    /// 과도기: 설비·필터·코어 패널이 아직 행동 객체를 받는다 — 2f-③에서 행동이 모듈(Crafter·Router·Core)로 흡수되면 그쪽을 넘긴다.
+    /// 과도기: 필터·코어 패널이 아직 행동 객체를 받는다 — Router·Core 모듈이 생기면 그쪽을 넘긴다.
     /// </summary>
     public static class BuildingInteractions
     {
@@ -22,11 +22,11 @@ namespace CoreDawn.Entities
             if (b == null || b.Def == null || b.Owner == null) return false;
             var def = b.Def; var owner = b.Owner;
 
-            // 제작 설비 — 레시피·진행·버퍼 화면
-            if (owner.Get<CrafterModule>() != null && b.Behavior is AssemblerBehavior asm)
+            // 제작 설비 — 레시피·진행·버퍼 화면 (패널이 심 모듈 Crafter를 직접 읽는다)
+            if (owner.Get<CrafterModule>() != null)
             {
                 prompt = $"{b.DisplayName} 열기";
-                open = _ => { if (!MachinePanelView.TryOpen(asm)) Debug.LogWarning("[Interact] 설비 화면(UITK)을 열지 못했습니다 — GameUI 씬이 탑재되지 않았습니다."); };
+                open = _ => { if (!MachinePanelView.TryOpen(b)) Debug.LogWarning("[Interact] 설비 화면(UITK)을 열지 못했습니다 — GameUI 씬이 탑재되지 않았습니다."); };
                 return true;
             }
             // 분배기 — 출구별 필터. 합류기는 설정할 것이 없다

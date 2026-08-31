@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CoreDawn.Sim
 {
@@ -16,7 +18,7 @@ namespace CoreDawn.Sim
     /// 그릇은 같은 엔티티의 <see cref="InventoryModule"/> — 수제작은 main, 자동은 input·output.
     /// 레시피 목록이 비어 있으면 팩의 모든 레시피가 후보다(해금 판정은 게임의 몫).
     /// </summary>
-    public sealed class CrafterModule : EntityModule
+    public sealed class CrafterModule : EntityModule, ISteppable, ISaveableModule
     {
         public CrafterModuleDef Def { get; }
 
@@ -283,6 +285,15 @@ namespace CoreDawn.Sim
             return moved;
         }
 
+        // ── 공통 틱(ISteppable): 시작했으면 완료까지, 진행 중 이른 기상이면 남은 시간(힙 중복 예약은 싸다).
+        // 재료·출력 대기(0)는 그릇 변화(Changed·벨트 입고)가 깨운다. 입력이 줄면 소유자가 그릇 변화로 보고 상류를 깨운다.
+        float ISteppable.Step(float now, float dt)
+        {
+            float wakeIn = Step(now, out _);
+            if (wakeIn > 0f) return wakeIn;
+            return Crafting && !Paused && ReadyAt > now ? ReadyAt - now : 0f;
+        }
+
         // ── 세이브 (게임의 세이브 모듈이 id로 바꿔 싣는다) ──────────
         public struct Snapshot
         {
@@ -306,6 +317,49 @@ namespace CoreDawn.Sim
             Crafting = s.Crafting && s.CraftingRecipe != null;
             _pausedRemaining = s.PausedRemaining;
             Paused = s.Paused;
+        }
+
+        // ── 세이브(ISaveableModule) — 키는 옛 AssemblerBehavior 저장과 같다. 레시피는 id로.
+        public sealed class SaveState
+        {
+            [JsonProperty("recipe")] public string RecipeId;
+            [JsonProperty("craftingRecipe")] public string CraftingRecipeId;
+            [JsonProperty("readyAt")] public float ReadyAt;
+            [JsonProperty("crafting")] public bool Crafting;
+            [JsonProperty("pausedRemaining")] public float PausedRemaining;
+            [JsonProperty("paused")] public bool Paused;
+        }
+
+        public object CaptureState()
+        {
+            var s = Capture();
+            return new SaveState
+            {
+                RecipeId = s.Recipe?.Id, CraftingRecipeId = s.CraftingRecipe?.Id,
+                ReadyAt = s.ReadyAt, Crafting = s.Crafting,
+                PausedRemaining = s.PausedRemaining, Paused = s.Paused,
+            };
+        }
+
+        /// <summary>기상 예약은 여기서 하지 않는다 — 복원자가 MarkDirty를 걸면 공통 틱(ISteppable)이 남은 시간으로 다시 예약한다.</summary>
+        public void RestoreState(JToken state)
+        {
+            var s = state?.ToObject<SaveState>();
+            if (s == null) return;
+            Restore(new Snapshot
+            {
+                Recipe = FindRecipe(s.RecipeId), CraftingRecipe = FindRecipe(s.CraftingRecipeId),
+                ReadyAt = s.ReadyAt, Crafting = s.Crafting,
+                PausedRemaining = s.PausedRemaining, Paused = s.Paused,
+            });
+        }
+
+        static RecipeDef FindRecipe(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            var def = SimHost.Database?.Recipe(id);
+            if (def == null) UnityEngine.Debug.LogWarning($"[Crafter] 세이브의 레시피 id \"{id}\"가 팩에 없습니다 — 그 항목은 건너뜁니다.");
+            return def;
         }
     }
 }
