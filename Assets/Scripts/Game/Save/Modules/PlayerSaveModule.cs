@@ -44,11 +44,18 @@ namespace CoreDawn.Save
             // carried(마우스에 들린 스택)는 없다 — uGUI InventoryManager와 함께 제거(2026-08-28).
             // UITK 패널은 닫힐 때 들고 있던 것을 되돌려 놓으므로(ReturnCarried) 저장할 것이 없다. 옛 세이브의 필드는 버려진다.
 
-            /// <summary>무기별 장전 탄수 — WeaponManager.weapons 배열 순서.</summary>
-            [JsonProperty("ammo")] public List<int> Ammo = new();
+            /// <summary>총별 탄창 — 심(WeaponModule)의 것. 총·탄은 팩 id. 옛 "ammo"(인스펙터 배열 순서의 탄수)는 v1→v2 단계가 뗀다.</summary>
+            [JsonProperty("weapons")] public List<WeaponDto> Weapons = new();
         }
 
-        // ── 저장 ──────────────────────────────────────────────────────
+        public class WeaponDto
+        {
+            [JsonProperty("gun")] public string Gun;
+            [JsonProperty("round")] public string Round;
+            [JsonProperty("loaded")] public int Loaded;
+        }
+
+        // ── 저장 ──────────────────────────────────────────
 
         public object Capture()
         {
@@ -76,8 +83,10 @@ namespace CoreDawn.Save
                 dto.Containers = SaveContainers.Capture(holder.Inventory);
             }
 
-            var weapons = Object.FindFirstObjectByType<WeaponManager>();
-            if (weapons != null) dto.Ammo.AddRange(weapons.CaptureAmmo());
+            var weapon = holder != null ? holder.Entity?.Get<WeaponModule>() : null;
+            if (weapon != null)
+                foreach (var m in weapon.Magazines)
+                    dto.Weapons.Add(new WeaponDto { Gun = m.Gun.Id, Round = SaveRefs.IdOf(m.Round), Loaded = m.Loaded });
 
             return dto;
         }
@@ -106,8 +115,14 @@ namespace CoreDawn.Save
                 SaveContainers.Restore(dto.Containers, holder.Inventory, "player");
             }
 
-            var weapons = Object.FindFirstObjectByType<WeaponManager>();
-            if (weapons != null) weapons.RestoreAmmo(dto.Ammo);
+            var weapon = holder != null ? holder.Entity?.Get<WeaponModule>() : null;
+            if (weapon != null && dto.Weapons != null)
+                foreach (var w in dto.Weapons)
+                {
+                    var gun = SimHost.Database?.Gun(w.Gun);
+                    if (gun == null) { Debug.LogWarning($"[Save] 모르는 총 '{w.Gun}' — 탄창을 버립니다"); continue; }
+                    weapon.RestoreMagazine(gun, SaveRefs.Item(w.Round), w.Loaded);
+                }
 
             // 소지품이 제자리를 찾은 뒤에 선택 칸을 되돌려야 그 칸의 무기가 올바로 장착된다
             if (HotbarController.Instance != null) HotbarController.Instance.RestoreSelection(dto.HotbarIndex);

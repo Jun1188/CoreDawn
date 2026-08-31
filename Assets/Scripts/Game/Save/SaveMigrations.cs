@@ -30,7 +30,7 @@ namespace CoreDawn.Save
             //   ② 그릇 — 건물 in/out, 플레이어 hotbar/main → 역할 키 사전 containers{}. 역할 이름표는 InventoryModule이 붙인다.
             //   ③ 핫바 병합 — 플레이어 containers.hotbar + containers.main → main 하나(핫바 칸이 앞, 옛 가방 칸은 인덱스가 핫바 칸 수만큼 뒤로).
             //   ④ 광맥 매장량 삭제 — world.nodes[]의 stock·nextAt을 뗀다(누적 채굴량만 남긴다).
-            { 1, f => { MigrateIdsToPack(f); MigrateContainersToRoles(f); MergeHotbarIntoMain(f); DropDepositStock(f); } },
+            { 1, f => { MigrateIdsToPack(f); MigrateContainersToRoles(f); MergeHotbarIntoMain(f); DropDepositStock(f); DropLegacyWeaponAmmo(f); } },
         };
 
         /// <summary>
@@ -206,7 +206,15 @@ namespace CoreDawn.Save
             Debug.Log($"[Save] v1 → v2 ④: 광맥 매장량 키 {dropped}개를 뗐습니다(광맥은 바닥나지 않는다).");
         }
 
-        // ── 공통 ─────────────────────────────────────────────────────
+        // ── ⑤ 무기 탄창 — 인스펙터 배열 순서의 탄수 목록 삭제 ──────────────
+
+        static void DropLegacyWeaponAmmo(SaveFile f)
+        {
+            if (Module(f, "player") is JObject player && player.Remove("ammo"))
+                Debug.Log("[Save] v1 → v2 ⑤: 옛 무기 탄수(ammo — WeaponManager 배열 순서)를 뗐습니다. 탄창은 총 id로 다시 저장됩니다(weapons) — 옛 값은 순서 기반이라 옮길 수 없다.");
+        }
+
+        // ── 공통 ──────────────────────────────────────────
 
         static JToken Module(SaveFile f, string id) => f.Modules != null && f.Modules.TryGetValue(id, out var m) ? m : null;
 

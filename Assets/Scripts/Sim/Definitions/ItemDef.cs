@@ -44,9 +44,13 @@ namespace CoreDawn.Sim
         }
     }
 
-    /// <summary>무기 아이템 — 어떤 총(guns 섹션)인가.</summary>
-    public sealed class WeaponModuleDef : ItemModuleDef
+    /// <summary>무기 아이템 — 어떤 총(guns 섹션)인가. (엔티티의 Weapon 모듈 — 무기 소지자 — 과 json 키는 같고 표가 다르다)</summary>
+    public sealed class WeaponItemModuleDef : ItemModuleDef
     {
         [JsonProperty("gun")] public string GunId;
+
+        [JsonIgnore] public GunDef Gun { get; private set; }
+
+        public override void Resolve(SimDatabase db, List<string> errors, string owner) => Gun = db.ResolveGun(GunId, errors, owner);
     }
 }

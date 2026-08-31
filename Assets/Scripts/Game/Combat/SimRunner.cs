@@ -83,7 +83,7 @@ namespace CoreDawn.Combat
         }
     }
 
-    /// <summary>매 프레임 심을 한 틱 돌리는 러너 — 효과(배율) → 몬스터(이동·공격) 순.</summary>
+    /// <summary>매 프레임 심을 한 틱 돌리는 러너 — 효과(배율) → 몬스터(이동·공격) → 플레이어(무기) 순.</summary>
     public class SimRunnerBehaviour : MonoBehaviour
     {
         void Update()
@@ -91,6 +91,7 @@ namespace CoreDawn.Combat
             float dt = Time.deltaTime;
             SimRunner.Effects.Tick(dt);   // 효과가 먼저 — 이번 틱의 속도 배율이 이번 틱의 이동에 쓰이게
             SimRunner.Monsters.Tick(dt);
+            SimRunner.Players.Tick(dt);   // 플레이어 시계 — 무기 재장전·연사 간격
         }
     }
 }

@@ -2945,6 +2945,9 @@
           "manual": true,
           "speed": 1.0,
           "recipes": []
+        },
+        {
+          "type": "Weapon"
         }
       ]
     }

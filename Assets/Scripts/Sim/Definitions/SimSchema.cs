@@ -40,12 +40,13 @@ namespace CoreDawn.Sim
             ["Movement"] = typeof(MovementModuleDef),
             ["Attack"] = typeof(AttackModuleDef),
             ["MonsterBrain"] = typeof(MonsterBrainModuleDef),
+            ["Weapon"] = typeof(WeaponModuleDef),
         };
 
         public static readonly IReadOnlyDictionary<string, Type> ItemModules = new Dictionary<string, Type>
         {
             ["Ammo"] = typeof(AmmoModuleDef),
-            ["Weapon"] = typeof(WeaponModuleDef),
+            ["Weapon"] = typeof(WeaponItemModuleDef),
         };
 
         /// <summary>정의 타입 → "type" 문자열 (쓰기용 역표).</summary>
