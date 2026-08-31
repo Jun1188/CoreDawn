@@ -7,5 +7,7 @@ namespace CoreDawn.Sim
     public sealed class ExtractorModuleDef : EntityModuleDef
     {
         [JsonProperty("speedMultiplier")] public float SpeedMultiplier = 1f;
+
+        public override EntityModule Create(Entity entity) => new ExtractorModule(this);
     }
 }

@@ -126,7 +126,7 @@ namespace CoreDawn.Tests
             var miner = _sim.Place(Miner(ptime: 0.2f), new Vector2Int(5, 5));   // 광맥 밖 — 규칙을 거치지 않는 심 직접 배치
             var store = _sim.Place(Storage(), new Vector2Int(6, 5));
             RunSim(5f);
-            Expect(((MinerBehavior)miner.Behavior).Deposits.Count == 0 && ((MinerBehavior)miner.Behavior).Target == null, "덮는 광맥이 없어야 함");
+            Expect(miner.Owner.Get<ExtractorModule>().Deposits.Count == 0 && miner.Owner.Get<ExtractorModule>().Target == null, "덮는 광맥이 없어야 함");
             Expect(Stored(store, _ore) == 0,
                    $"광맥 밖 채굴기는 생산이 없어야 함 (실제 {Stored(store, _ore)}개)");
         }
@@ -141,7 +141,7 @@ namespace CoreDawn.Tests
             };
             var miner = _sim.Place(BigMiner(ptime: 0.25f), new Vector2Int(0, 0));   // 2×2, 출력 East (2,0)
             var store = _sim.Place(Storage(), new Vector2Int(2, 0));
-            Expect(((MinerBehavior)miner.Behavior).Deposits.Count == 4, $"덮는 광맥 4개를 잡아야 함 (실제 {((MinerBehavior)miner.Behavior).Deposits.Count})");
+            Expect(miner.Owner.Get<ExtractorModule>().Deposits.Count == 4, $"덮는 광맥 4개를 잡아야 함 (실제 {miner.Owner.Get<ExtractorModule>().Deposits.Count})");
             RunSim(2.1f);   // 0.25초에 1개 — 기상이 0.1초 틱에 정렬되므로 6~8개
             int total = Stored(store, _ore);
             Expect(total >= 6 && total <= 8, $"2.1초 ÷ 0.25초 ≈ 6~8개 (실제 {total}개)");

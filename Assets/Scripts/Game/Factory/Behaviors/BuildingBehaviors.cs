@@ -18,9 +18,6 @@ namespace CoreDawn.Factory
             var def = b.Def;
             if (def.Has<ConveyorModuleDef>()) return new BeltBehavior(b);
 
-            var extractor = def.Get<ExtractorModuleDef>();
-            if (extractor != null) return new MinerBehavior(b, extractor);
-
             var core = def.Get<CoreModuleDef>();
             if (core != null) return new CoreBehavior(b, core);
 

@@ -181,7 +181,12 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>BuildingGraph.OnPlaced() 완료 후 호출 — 연결이 확정된 뒤 초기화.</summary>
-        public void OnAfterConnected() => _behavior?.OnAfterPlaced();
+        public void OnAfterConnected()
+        {
+            // 채굴기: 덮는 칸들의 광맥을 모듈에 넘긴다 — 모듈은 그리드를 모른다
+            Owner.Get<ExtractorModule>()?.SetDeposits(Factory.DepositsUnder(Origin, Size));
+            _behavior?.OnAfterPlaced();
+        }
 
         /// <summary>FactorySystem이 이 건물이 깨어 있는 틱에 호출. 행동이 있으면 행동이(과도기), 없으면 모듈 공통 틱.</summary>
         public void Tick(float dt)
