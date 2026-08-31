@@ -2301,6 +2301,7 @@
           },
           "category": "Defense",
           "isAttackable": false,
+          "walkable": true,
           "requiredCoreTier": 2,
           "threatSeedCost": 100,
           "menuOrder": 2,
@@ -2322,14 +2323,20 @@
           "type": "Trigger",
           "radius": 2.0,
           "once": true,
-          "effects": []
+          "cooldown": 1.0
         },
         {
-          "type": "AmmoConsumer",
-          "ammoFilter": [
-            "coredawn:item/grenade"
-          ],
-          "damageMultiplier": 6.0
+          "type": "FixedAmmo",
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 420.0
+            },
+            {
+              "effect": "coredawn:effect/knockback_radial",
+              "value": 2.0
+            }
+          ]
         }
       ]
     },
@@ -2384,14 +2391,16 @@
           "stackCap": 100
         },
         {
-          "type": "TowerBrain",
-          "range": 9.0,
-          "minRange": -1.0,
+          "type": "Turret",
+          "range": 36.0,
+          "minRange": 0.0,
           "fireRate": 2.0,
           "turnSpeed": 360.0,
           "aimTolerance": 3.0,
           "preferHighArc": false,
-          "muzzleHeight": -1.0
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.6,
+          "hitscan": false
         },
         {
           "type": "AmmoConsumer",
@@ -2462,14 +2471,16 @@
           "stackCap": 100
         },
         {
-          "type": "TowerBrain",
-          "range": 11.0,
-          "minRange": -1.0,
+          "type": "Turret",
+          "range": 44.0,
+          "minRange": 0.0,
           "fireRate": 4.0,
           "turnSpeed": 120.0,
           "aimTolerance": 3.0,
           "preferHighArc": false,
-          "muzzleHeight": -1.0
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.6,
+          "hitscan": false
         },
         {
           "type": "AmmoConsumer",
@@ -2539,14 +2550,16 @@
           "stackCap": 100
         },
         {
-          "type": "TowerBrain",
-          "range": 18.0,
-          "minRange": -1.0,
+          "type": "Turret",
+          "range": 72.0,
+          "minRange": 0.0,
           "fireRate": 0.5,
           "turnSpeed": 60.0,
           "aimTolerance": 3.0,
           "preferHighArc": false,
-          "muzzleHeight": -1.0
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.6,
+          "hitscan": false
         },
         {
           "type": "AmmoConsumer",
@@ -2615,14 +2628,16 @@
           "stackCap": 100
         },
         {
-          "type": "TowerBrain",
-          "range": 14.0,
-          "minRange": -1.0,
+          "type": "Turret",
+          "range": 56.0,
+          "minRange": 0.0,
           "fireRate": 3.0,
           "turnSpeed": 200.0,
           "aimTolerance": 3.0,
           "preferHighArc": false,
-          "muzzleHeight": -1.0
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.6,
+          "hitscan": true
         },
         {
           "type": "AmmoConsumer",
@@ -2688,9 +2703,8 @@
         },
         {
           "type": "AuraEmitter",
-          "radius": 7.0,
-          "interval": 4.9999999254941949,
-          "effects": []
+          "radius": 28.0,
+          "interval": 4.9999999254941949
         },
         {
           "type": "AmmoConsumer",

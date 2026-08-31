@@ -57,10 +57,13 @@ namespace CoreDawn.EditorTools
         public int menuOrder;   // 같은 티어 안 표시 순서 (공정 단계)
         public int threatSeedCost = 80;   // 몬스터 위협도 시드 (월드 칸=10)
         public bool isDemolishable = true, isAttackable;   // 공격 가능은 기본 꺼짐 — 둥지·지형물만 켠다
+        public bool walkable;                              // 밟고 지나갈 수 있음(지뢰) — 길찾기가 땅으로 본다
         public float speedMultiplier = 1, speedTilesPerSec = 2;
         public List<string> availableRecipes = new();
         public float damageMultiplier = 1, range = 8, fireRate = 1;
+        public string fireMode = "Projectile";   // Tower — 전달 방식이 심 모듈을 고른다: Projectile·Hitscan → Turret, Aura → AuraEmitter, Trigger → 지뢰, None → Blocker
         public List<string> ammoFilter = new();
+        public List<GEff> attackEffects = new();   // Tower — 탄창(ammoFilter) 없이 자기 효과로 쏘는 건물(지뢰·연료 없는 오라)
         public List<GTier> tiers = new();
         public float droneRange = 40, carryCapacity = 20, travelSpeed = 8;
         [JsonIgnore] public GameDataImporter.BuildingDto src;
@@ -89,13 +92,16 @@ namespace CoreDawn.EditorTools
             new("Storage",   "보관소",       "Storage"),
             new("DronePort", "드론 스테이션", "Logistics",  "droneRange", "carryCapacity", "travelSpeed"),
             new("Core",      "코어",         "Production", "tiers"),
-            new("Tower",     "방어 타워",    "Defense",    "damageMultiplier", "range", "fireRate", "ammoFilter"),
+            new("Tower",     "방어 타워",    "Defense",    "fireMode", "damageMultiplier", "range", "fireRate", "ammoFilter", "attackEffects"),
             new("Nest",      "몬스터 둥지",   "Defense"),
             new("Tree",      "나무",         "Production"),
         };
         static readonly (string v, string ko)[] Categories =
         { ("Production", "생산"), ("Logistics", "물류"), ("Storage", "저장"), ("Defense", "방어") };
         static readonly string[] Dirs = { "North", "East", "South", "West" };
+        static readonly (string v, string ko)[] FireModes =
+        { ("Projectile", "투사체 — 조준 사격(Turret)"), ("Hitscan", "즉시 판정 — 레이저(Turret, 리드 없음)"), ("Aura", "펄스 — 반경 전원(AuraEmitter)"),
+          ("Trigger", "접촉 기폭 — 지뢰(Trigger, 한 번)"), ("None", "발사 없음 — 울타리(Blocker)") };
         static readonly Dictionary<string, Vector2Int> DVec = new()
         {
             ["North"] = new(0, 1), ["East"] = new(1, 0), ["South"] = new(0, -1), ["West"] = new(-1, 0),
@@ -184,14 +190,16 @@ namespace CoreDawn.EditorTools
                     maxHp = o.maxHp, requiredCoreTier = o.requiredCoreTier, hideFromBuildMenu = o.hideFromBuildMenu,
                     menuOrder = o.menuOrder,
                     threatSeedCost = o.threatSeedCost >= 0 ? o.threatSeedCost : 80,
-                    isDemolishable = o.isDemolishable, isAttackable = o.isAttackable,
+                    isDemolishable = o.isDemolishable, isAttackable = o.isAttackable, walkable = o.walkable,
                     speedMultiplier = o.speedMultiplier > 0 ? o.speedMultiplier : 1,
                     speedTilesPerSec = o.speedTilesPerSec > 0 ? o.speedTilesPerSec : 2,
                     availableRecipes = (o.availableRecipes ?? Array.Empty<string>()).ToList(),
                     damageMultiplier = o.damageMultiplier >= 0 ? o.damageMultiplier : 1,
+                    fireMode = string.IsNullOrEmpty(o.fireMode) ? "Projectile" : o.fireMode,
                     range = o.range >= 0 ? o.range : 8,
                     fireRate = o.fireRate >= 0 ? o.fireRate : 1,
                     ammoFilter = (o.ammoFilter ?? Array.Empty<string>()).ToList(),
+                    attackEffects = (o.attackEffects ?? Array.Empty<GameDataImporter.EffectEntryDto>()).Select(e => new GEff { effect = e.effect, value = e.value }).ToList(),
                     droneRange = ExtraF(o, "droneRange", 40),
                     carryCapacity = ExtraF(o, "carryCapacity", 20),
                     travelSpeed = ExtraF(o, "travelSpeed", 8),
@@ -230,7 +238,7 @@ namespace CoreDawn.EditorTools
             o.maxHp = b.maxHp; o.requiredCoreTier = b.requiredCoreTier; o.hideFromBuildMenu = b.hideFromBuildMenu;
             o.menuOrder = b.menuOrder;
             o.threatSeedCost = b.threatSeedCost;
-            o.isDemolishable = b.isDemolishable; o.isAttackable = b.isAttackable;
+            o.isDemolishable = b.isDemolishable; o.isAttackable = b.isAttackable; o.walkable = b.walkable;
 
             // 종류별 전용 필드 — 원본 exportJson 과 같은 규칙. 다른 kind 의 잔존값은
             // 임포터가 무시하므로 src 에 남아 있어도 해가 없다.
@@ -263,7 +271,8 @@ namespace CoreDawn.EditorTools
                 }).ToArray();
             if (b.kind == "Tower")
             {
-                o.damageMultiplier = b.damageMultiplier; o.range = b.range; o.fireRate = b.fireRate;
+                o.damageMultiplier = b.damageMultiplier; o.range = b.range; o.fireRate = b.fireRate; o.fireMode = b.fireMode;
+                o.attackEffects = b.attackEffects.Count > 0 ? b.attackEffects.Select(e => new GameDataImporter.EffectEntryDto { effect = e.effect, value = e.value }).ToArray() : null;
                 o.ammoFilter = b.ammoFilter.ToArray();
             }
             return o;
@@ -612,6 +621,11 @@ namespace CoreDawn.EditorTools
             atkT.RegisterValueChangedCallback(e => { b.isAttackable = e.newValue; PushHist(); RenderWarn(); });
             propsBox.Add(Field2("Attackable", atkT));
 
+            var walkT = new Toggle { value = b.walkable,
+                tooltip = "몬스터가 밟고 지나갈 수 있는가 — 길찾기가 이 칸을 땅으로 본다(지뢰). 배치 격자는 그대로 차지한다" };
+            walkT.RegisterValueChangedCallback(e => { b.walkable = e.newValue; PushHist(); RenderWarn(); });
+            propsBox.Add(Field2("Walkable", walkT));
+
             // ── kind 별 추가 필드 (NUM_FIELDS 대응) ──
             foreach (var f in k.extra)
             {
@@ -647,13 +661,25 @@ namespace CoreDawn.EditorTools
                         propsBox.Add(Field2("Speed (타일/초)", NumField(b.travelSpeed,
                             v => { b.travelSpeed = Mathf.Max(0.5f, v); RenderWarn(); })));
                         break;
+                    case "fireMode":
+                    {
+                        var choices = FireModes.Select(m => $"{m.v} — {m.ko}").ToList();
+                        int idx = Array.FindIndex(FireModes, m => m.v == b.fireMode);
+                        if (idx < 0) { choices.Add($"{b.fireMode} — 알 수 없음"); idx = choices.Count - 1; }
+                        propsBox.Add(Drop("Fire Mode — 전달 방식 (심 모듈을 고른다)", choices, idx, i =>
+                        {
+                            if (i < FireModes.Length) b.fireMode = FireModes[i].v;
+                            RenderWarn();
+                        }));
+                        break;
+                    }
                     case "damageMultiplier":
                         propsBox.Add(Field2("Damage ×", NumField(b.damageMultiplier,
                             v => { b.damageMultiplier = Mathf.Max(0, v); RenderWarn(); },
                             "실제 피해 = 탄약의 기본 피해 × 이 배수. 0 = 공격하지 않음")));
                         break;
                     case "range":
-                        propsBox.Add(Field2("Range (타일)", NumField(b.range,
+                        propsBox.Add(Field2("Range (m) — 플레이어 총과 같은 단위", NumField(b.range,
                             v => { b.range = Mathf.Max(0, v); RenderWarn(); })));
                         break;
                     case "fireRate":
@@ -661,6 +687,7 @@ namespace CoreDawn.EditorTools
                             v => { b.fireRate = Mathf.Max(0.1f, v); RenderWarn(); })));
                         break;
                     case "ammoFilter": propsBox.Add(AmmoSection(b)); break;
+                    case "attackEffects": if (b.fireMode != "None") propsBox.Add(EffectsSection(b)); break;
                     case "availableRecipes": propsBox.Add(RecipeSection(b)); break;
                     case "tiers": propsBox.Add(TierSection(b)); break;
                 }
@@ -841,6 +868,47 @@ namespace CoreDawn.EditorTools
                 { ToggleListValue(b.ammoFilter, i.id, on); })); rows++; }
             if (rows == 0)
                 listEl.Add(new Label("탄약이 없습니다") { style = { fontSize = 11.5f, color = GdEnum.Faint } });
+            return box;
+        }
+
+        // 탄창 없이 자기 효과로 쏘는 건물(지뢰·연료 없는 오라)의 명중 효과 — Ammo Filter가 비어 있을 때 팩의 FixedAmmo가 된다
+        VisualElement EffectsSection(GBuilding b)
+        {
+            var box = new VisualElement { style = { marginTop = 12 } };
+            box.Add(GroupTitle("Attack Effects · 탄창 없이 쏘는 건물의 명중 효과 (Ammo Filter가 비어 있을 때)"));
+            var effectIds = (win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>())
+                .Select(e => e.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
+            var holder = new VisualElement();
+            box.Add(holder);
+            void Rebuild()
+            {
+                holder.Clear();
+                if (b.attackEffects.Count == 0)
+                    holder.Add(new Label(b.ammoFilter.Count > 0 ? "탄창으로 쏜다 — 효과는 탄약이 정한다" : "효과 없음 — 무엇으로 쏘는지 적으세요") { style = { color = GdEnum.Faint, fontSize = 11 } });
+                for (int i = 0; i < b.attackEffects.Count; i++)
+                {
+                    var eff = b.attackEffects[i];
+                    var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+                    var choices = new List<string>(effectIds);
+                    if (!string.IsNullOrEmpty(eff.effect) && !choices.Contains(eff.effect)) choices.Add(eff.effect + " (없음)");
+                    var pick = new DropdownField(choices, Mathf.Max(0, choices.IndexOf(eff.effect ?? ""))) { style = { flexGrow = 1 } };
+                    if (!string.IsNullOrEmpty(eff.effect) && choices.Contains(eff.effect)) pick.SetValueWithoutNotify(eff.effect);
+                    pick.RegisterValueChangedCallback(ev => { eff.effect = ev.newValue.Replace(" (없음)", ""); PushHist(); RenderWarn(); });
+                    row.Add(pick);
+                    var val = new FloatField { value = eff.value, style = { width = 64 } };
+                    val.RegisterValueChangedCallback(ev => { eff.value = ev.newValue; PushHist(); RenderWarn(); });
+                    row.Add(val);
+                    int idx = i;
+                    row.Add(new Button(() => { b.attackEffects.RemoveAt(idx); PushHist(); Rebuild(); RenderWarn(); }) { text = "✕" });
+                    holder.Add(row);
+                }
+                holder.Add(new Button(() =>
+                {
+                    b.attackEffects.Add(new GEff { effect = effectIds.FirstOrDefault() ?? "Effect:Damage", value = 10 });
+                    PushHist(); Rebuild(); RenderWarn();
+                }) { text = "+ 효과" });
+            }
+            Rebuild();
             return box;
         }
 
@@ -1261,11 +1329,16 @@ namespace CoreDawn.EditorTools
             }
             if (b.kind == "Tower")
             {
-                bool atk = b.damageMultiplier > 0;
+                bool atk = b.fireMode != "None";
                 if (!(b.range >= 0)) outp.Add("Range 는 0 이상이어야 합니다");
                 if (!(b.fireRate > 0)) outp.Add("Fire Rate 는 0보다 커야 합니다");
-                if (atk && b.ammoFilter.Count == 0)
-                    outp.Add("공격 타워인데 받을 수 있는 탄약이 없습니다 — Ammo Filter 를 지정하세요 (피해 = 탄약 피해 × 배수)");
+                if (atk && b.ammoFilter.Count == 0 && b.attackEffects.Count == 0)
+                    outp.Add("무엇으로 쏘는지 없습니다 — Ammo Filter(탄창, 피해 = 탄약 피해 × 배수) 또는 Attack Effects(자기 효과)를 적으세요");
+                if (b.ammoFilter.Count > 0 && b.attackEffects.Count > 0)
+                    outp.Add("Ammo Filter와 Attack Effects가 둘 다 있습니다 — 탄창이 있으면 효과는 탄약이 정하므로 Attack Effects는 무시됩니다");
+                foreach (var e in b.attackEffects)
+                    if (string.IsNullOrEmpty(e.effect) || !(win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>()).Any(x => x.id == e.effect))
+                        outp.Add($"Attack Effects — 효과 id \"{e.effect}\" 을 찾을 수 없습니다");
                 // 건설 비용에 그 탄약이 들어 있으면 "설치할 때 장전되는 일회용"으로 본다 (지뢰)
                 bool oneShot = b.ammoFilter.Count > 0 && b.ammoFilter.All(a => b.buildCost.Any(c => c.item == a));
                 if (b.ammoFilter.Count > 0 && !oneShot && nIn == 0)

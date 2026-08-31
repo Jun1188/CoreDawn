@@ -236,10 +236,7 @@ namespace CoreDawn.Factory
             var entity = host ?? World.Create(def.Faction, Geometry.CenterOf(origin, size));
             if (ownsEntity)
             {
-                def.Assemble(entity);   // Health·Effects — 정의가 만든다. HP 정본은 정의(maxHp)지 프리팹 값이 아니다
-                // 타워의 사거리·연사는 정의 — 심 공격 모듈. 효과는 탄(전달 계층)이 정하므로 비워 둔다 (TowerBrain 런타임 모듈은 5a-2e)
-                if (def.Get<TowerBrainModuleDef>() is { } brain)
-                    entity.Add(new AttackModule(brain.Range * Geometry.CellSize, brain.FireRate > 0f ? 1f / brain.FireRate : 1f));
+                def.Assemble(entity);   // Health·Effects·포탑·오라·탄약 소비… — 정의가 만든다. HP 정본은 정의(maxHp)지 프리팹 값이 아니다
             }
             var b = new BuildingModule(this, def, origin, rotSteps, portOverride, shape, ownsEntity);
             entity.Add(b);

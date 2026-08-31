@@ -3,16 +3,13 @@ using Newtonsoft.Json;
 
 namespace CoreDawn.Sim
 {
-    /// <summary>오라 — 반경 안의 적에게 주기적으로 효과. 반경은 효과가 아니라 전달의 것이라 여기 있다.</summary>
+    /// <summary>오라 — 반경 안의 적에게 주기적으로 효과. 반경·주기는 전달의 것이라 여기, 효과는 탄의 출처(AmmoConsumer 또는 FixedAmmo)가 정한다.</summary>
     public sealed class AuraEmitterModuleDef : EntityModuleDef
     {
-        [JsonProperty("radius")] public float Radius = 5f;      // 칸
+        [JsonProperty("radius")] public float Radius = 5f;      // m
         [JsonProperty("interval")] public float Interval = 1f;
-        [JsonProperty("effects")] public List<EffectUse> Effects = new List<EffectUse>();
 
-        public override void Resolve(SimDatabase db, List<string> errors, string owner)
-        {
-            foreach (var e in Effects) e.Resolve(db, errors, owner);
-        }
+
+        public override EntityModule Create(Entity entity) => new AuraEmitterModule(this);
     }
 }

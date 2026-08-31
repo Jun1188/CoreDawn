@@ -29,7 +29,7 @@ namespace CoreDawn.Data
         [Tooltip("탄약 효과 중 피해형(Damage·DoT) 항목에 곱하는 배율 — 감속 같은 부가 효과는 그대로.")]
         public float damageMultiplier = 1f;
 
-        [Tooltip("사거리(타일).")]
+        [Tooltip("사거리(m) — 플레이어 총과 같은 단위. 정본은 팩(Turret.range/AuraEmitter.radius/Trigger.radius).")]
         public float range = 8f;
 
         [Tooltip("최소 사거리 — 이보다 가까운 적은 조준하지 못한다(박격포의 사각). 0 = 제한 없음.")]

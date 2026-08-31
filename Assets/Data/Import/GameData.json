@@ -2407,6 +2407,7 @@
     {
       "id": "Building:Fence",
       "kind": "Tower",
+      "fireMode": "None",
       "displayName": "울타리",
       "description": "몬스터의 진로를 막아 동선을 유도한다. 공격하지 않는다.",
       "category": "Defense",
@@ -2448,6 +2449,12 @@
     {
       "id": "Building:Mine",
       "kind": "Tower",
+      "walkable": true,
+      "fireMode": "Trigger",
+      "attackEffects": [
+        { "effect": "Effect:Damage", "value": 420.0 },
+        { "effect": "Effect:KnockbackRadial", "value": 2.0 }
+      ],
       "displayName": "지뢰",
       "description": "밟으면 터진다. 건설 비용의 유탄이 그대로 폭약이며 한 번 쓰면 사라진다.",
       "category": "Defense",
@@ -2476,21 +2483,18 @@
       ],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
-      "damageMultiplier": 6.0,
       "range": 2.0,
       "fireRate": 1.0,
       "minRange": -1.0,
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0,
-      "ammoFilter": [
-        "Item:Grenade"
-      ]
+      "aimTolerance": -1.0
     },
     {
       "id": "Building:BasicTurret",
       "kind": "Tower",
+      "fireMode": "Projectile",
       "displayName": "기본 포탑",
       "description": "기본 탄약을 소비해 사격한다. 벨트로 보급할 수 있다.",
       "category": "Defense",
@@ -2531,7 +2535,7 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 1.0,
-      "range": 9.0,
+      "range": 36.0,
       "fireRate": 2.0,
       "minRange": -1.0,
       "muzzleHeight": -1.0,
@@ -2547,6 +2551,7 @@
     {
       "id": "Building:HeavyTurret",
       "kind": "Tower",
+      "fireMode": "Projectile",
       "displayName": "중기관 포탑",
       "description": "고밀도 탄약을 쓰는 연사 포탑.",
       "category": "Defense",
@@ -2591,7 +2596,7 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 2.2,
-      "range": 11.0,
+      "range": 44.0,
       "fireRate": 4.0,
       "minRange": -1.0,
       "muzzleHeight": -1.0,
@@ -2606,6 +2611,7 @@
     {
       "id": "Building:MortarTower",
       "kind": "Tower",
+      "fireMode": "Projectile",
       "displayName": "박격포 타워",
       "description": "유탄을 곡사로 날려 범위 피해를 준다. 근접한 적은 때리지 못한다.",
       "category": "Defense",
@@ -2650,7 +2656,7 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 3.5,
-      "range": 18.0,
+      "range": 72.0,
       "fireRate": 0.5,
       "minRange": -1.0,
       "muzzleHeight": -1.0,
@@ -2664,6 +2670,7 @@
     {
       "id": "Building:LaserTower",
       "kind": "Tower",
+      "fireMode": "Hitscan",
       "displayName": "레이저 타워",
       "description": "에너지 셀 탄을 소비해 관통 사격한다.",
       "category": "Defense",
@@ -2708,7 +2715,7 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 2.8,
-      "range": 14.0,
+      "range": 56.0,
       "fireRate": 3.0,
       "minRange": -1.0,
       "muzzleHeight": -1.0,
@@ -2722,6 +2729,7 @@
     {
       "id": "Building:SlowFieldTower",
       "kind": "Tower",
+      "fireMode": "Aura",
       "displayName": "감속 필드 타워",
       "description": "범위 안의 몬스터를 느리게 만든다. 5초마다 에너지 셀 1개를 태운다.",
       "category": "Defense",
@@ -2762,7 +2770,7 @@
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 0.0,
       "damageMultiplier": 0.0,
-      "range": 7.0,
+      "range": 28.0,
       "fireRate": 0.2,
       "minRange": -1.0,
       "muzzleHeight": -1.0,

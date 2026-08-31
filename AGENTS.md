@@ -80,6 +80,19 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
   is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
   never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
+- Towers are not a module: a tower is `Building + (AmmoConsumer | FixedAmmo) + (Turret | AuraEmitter | Trigger)` (5a-2e-1, 2026-08-31).
+  Emitters never know effects — they ask the entity's `IAmmoSource` ("can I fire, what is this shot": `HasAmmo`, `TryPeek`, `TryTake`,
+  `Bake`). `AmmoConsumerModule` = magazine (input-container filter, one round per shot, damage-like × `damageMultiplier` → owner
+  `BakeOutgoing`); `FixedAmmoModule` = the building's own inline ammo (unlimited, nothing consumed; mines, fuel-less auras — never a
+  reference to an item). `TurretModule` (targeting, turning, alignment, lead via `Sim/Ballistics`, cooldown → `FireRequested(TurretShot)`),
+  `AuraEmitterModule` (periodic pulse on every hostile in radius, applied in the sim, no PhysX), `TriggerModule` (mine: detonates once and
+  kills itself). `TurretBehavior`/`AuraBehavior`/`TriggerBehavior` are the factory adapters (cell size, wake scheduling, save,
+  `NotifyUpstream`). `TowerView` only draws: on `FireRequested` it re-aims from the rig muzzle at the sim's impact point and calls
+  `ProjectileSystem.Fire`; `TowerState` derives from `TurretPhase`. Which modules a v1 tower gets is decided by its `fireMode`
+  (Projectile/Hitscan → Turret, Aura → AuraEmitter, Trigger → Trigger, None → Blocker) and by `ammoFilter` (→ AmmoConsumer) vs
+  `attackEffects` (→ FixedAmmo) — never by the building's name. `Building.walkable` (mine) makes pathfinding treat the cell as ground
+  while the placement grid stays occupied. Ranges and radii (`Turret.range/minRange`, `AuraEmitter.radius`, `Trigger.radius`) are in
+  **meters**, the same unit as the player gun — not grid cells.
 - Resource deposits are sim entities (`ResourceDepositModule`, one cell each, faction Neutral, **no Health**, no Building, **no stock** —
   they never run out; only `extractInterval` — seconds per item, used as-is for hand mining and divided by the
   extractor's `speedMultiplier` for miners — and a `TotalExtracted` counter):

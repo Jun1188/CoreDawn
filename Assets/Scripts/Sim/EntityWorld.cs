@@ -178,6 +178,60 @@ namespace CoreDawn.Sim
                 }
             return closest;
         }
+
+        /// <summary>조건으로 거르는 반경 질의 — "내 편의 적"처럼 편 하나로 표현되지 않는 조건용. 버퍼를 비우고 채운다.</summary>
+        public void QueryRadius(Vector3 center, float radius, Func<Entity, bool> filter, List<Entity> results, Entity exclude = null)
+        {
+            results.Clear();
+            if (radius <= 0f) return;
+
+            float sq = radius * radius;
+            int minX = Mathf.FloorToInt((center.x - radius) / BucketSize), maxX = Mathf.FloorToInt((center.x + radius) / BucketSize);
+            int minZ = Mathf.FloorToInt((center.z - radius) / BucketSize), maxZ = Mathf.FloorToInt((center.z + radius) / BucketSize);
+
+            for (int x = minX; x <= maxX; x++)
+                for (int z = minZ; z <= maxZ; z++)
+                {
+                    if (!_buckets.TryGetValue(BucketKey(x, z), out var list)) continue;
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var e = list[i];
+                        if (e == exclude || !e.IsAlive) continue;
+                        if (filter != null && !filter(e)) continue;
+                        if ((e.Position - center).sqrMagnitude > sq) continue;
+                        results.Add(e);
+                    }
+                }
+        }
+
+        /// <summary>조건으로 거르는 최근접 질의(<see cref="QueryClosest(Vector3, float, Faction?, float, Entity)"/>의 조건판).</summary>
+        public Entity QueryClosest(Vector3 center, float radius, Func<Entity, bool> filter, float minRange = 0f, Entity exclude = null)
+        {
+            if (radius <= 0f) return null;
+
+            Entity closest = null;
+            float best = radius * radius;
+            float minSq = minRange * minRange;
+            int minX = Mathf.FloorToInt((center.x - radius) / BucketSize), maxX = Mathf.FloorToInt((center.x + radius) / BucketSize);
+            int minZ = Mathf.FloorToInt((center.z - radius) / BucketSize), maxZ = Mathf.FloorToInt((center.z + radius) / BucketSize);
+
+            for (int x = minX; x <= maxX; x++)
+                for (int z = minZ; z <= maxZ; z++)
+                {
+                    if (!_buckets.TryGetValue(BucketKey(x, z), out var list)) continue;
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var e = list[i];
+                        if (e == exclude || !e.IsAlive) continue;
+                        if (filter != null && !filter(e)) continue;
+                        float d = (e.Position - center).sqrMagnitude;
+                        if (d < minSq || d > best) continue;
+                        best = d;
+                        closest = e;
+                    }
+                }
+            return closest;
+        }
     }
 
 }

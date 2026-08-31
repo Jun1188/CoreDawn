@@ -196,7 +196,7 @@ namespace CoreDawn.Navigation
             if (cost >= TileRules.Blocked) return TileRules.Blocked;
 
             var building = BuildingAt(node);
-            if (building == null) return cost;
+            if (building == null || building.Building.Walkable) return cost;   // 밟고 지나가는 건물(지뢰)은 땅이다
 
             if (!passBuildings) return TileRules.Blocked;
 
@@ -279,7 +279,7 @@ namespace CoreDawn.Navigation
                     }
 
                     var building = sim != null ? BuildingAt(node) : null;
-                    if (building == null)
+                    if (building == null || building.Building.Walkable)
                     {
                         costs.EnterCost[i] = cost;
                         costs.Walkable[i] = true;   // 건물이 없으니 걸어서 지나갈 수 있다
