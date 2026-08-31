@@ -129,7 +129,7 @@ namespace CoreDawn.Tutorial
             if (id == InputActionId.CycleShape
                 && _placement != null
                 && _placement.Mode == PlacementSystem.BuildMode.Placing
-                && _placement.CurrentBuilding is BeltDataSO)
+                && _placement.CurrentBuilding is { } cb && cb.Has<ConveyorModuleDef>())
                 BeltShapeCycles++;
         }
 
@@ -327,7 +327,7 @@ namespace CoreDawn.Tutorial
 
         // ──────────────────── 인벤토리 조회 ────────────────────
 
-        public static int CountOfItem(ItemDataSO item)
+        public static int CountOfItem(ItemDef item)
         {
             var h = PlayerInventoryHolder.Instance;
             if (h == null) return 0;

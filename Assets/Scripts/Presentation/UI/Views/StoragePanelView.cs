@@ -139,11 +139,11 @@ namespace CoreDawn.UI
             var entries = storage.Snapshot();
             if (entries.Count == 0) return;
 
-            var order = UIItemOrder.Sorted(entries.Select(e => (ItemDataSO)e.item)).ToList();
+            var order = UIItemOrder.Sorted(entries.Select(e => e.item)).ToList();
 
             for (int i = 0; i < storage.SlotCount; i++) storage.TakeAt(i);
             foreach (var item in order)
-                storage.TryAdd(item, entries.First(e => e.item == (ItemDef)item).n);
+                storage.TryAdd(item, entries.First(e => e.item == item).n);
 
         }
 
@@ -159,7 +159,7 @@ namespace CoreDawn.UI
 
         }
 
-        void PushKind(ItemContainer src, ItemDataSO item)
+        void PushKind(ItemContainer src, ItemDef item)
         {
             if (src == null) return;
             int n = Mathf.Min(src.CountOf(item), storage.RoomFor(item));

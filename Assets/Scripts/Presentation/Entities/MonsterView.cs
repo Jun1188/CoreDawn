@@ -25,8 +25,6 @@ namespace CoreDawn.Entities
         /// <summary>심 이동 모듈 — 연출(애니 속도)·곡사 예측(타워)이 읽는다. 심이 안 붙었으면 null.</summary>
         public MovementModule SimMovement => movement;
 
-        /// <summary>어떤 종류인가 — 세이브가 id를 적고, 불러올 때 같은 종류로 다시 세운다. 데이터 없이 세워진(폴백) 몬스터는 null.</summary>
-        public MonsterDataSO Data { get; private set; }
         public MonsterBrainModule Brain => brain;
 
         // ── 옛 표면 (둥지·스포너·프로브·세이브가 쓴다) — 두뇌 위임
@@ -42,9 +40,6 @@ namespace CoreDawn.Entities
             base.Awake();
             visual = GetComponent<MonsterVisualController>();
         }
-
-        /// <summary>종류 데이터를 기억한다(세이브가 id를 적는다) — 스포너가 AttachEntity 직후 부른다. 공격 효과는 심 Attack이 스펙에서 받았다.</summary>
-        public void Configure(MonsterDataSO data) => Data = data;
 
         protected override void OnEntityAttached()
         {

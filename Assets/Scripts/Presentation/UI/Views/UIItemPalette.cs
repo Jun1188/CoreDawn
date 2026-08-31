@@ -23,16 +23,16 @@ namespace CoreDawn.UI
             _ => null,
         };
 
-        public static string SuffixOf(ItemDataSO item) => item != null ? SuffixOf(item.line) : null;
+        public static string SuffixOf(ItemDef item) => item != null ? SuffixOf(item.Line) : null;
 
         /// <summary>"ui-chip--iron" 등. 계통 미지정이면 null.</summary>
-        public static string ChipClass(ItemDataSO item) => Prefix("ui-chip--", SuffixOf(item));
+        public static string ChipClass(ItemDef item) => Prefix("ui-chip--", SuffixOf(item));
 
         /// <summary>"ui-bar--iron" 등. 계통 미지정이면 null (기본 채움색 유지).</summary>
-        public static string BarClass(ItemDataSO item) => Prefix("ui-bar--", SuffixOf(item));
+        public static string BarClass(ItemDef item) => Prefix("ui-bar--", SuffixOf(item));
 
         /// <summary>"ui-mat--iron" 등. 계통 미지정이면 null.</summary>
-        public static string MatClass(ItemDataSO item) => Prefix("ui-mat--", SuffixOf(item));
+        public static string MatClass(ItemDef item) => Prefix("ui-mat--", SuffixOf(item));
 
         static string Prefix(string prefix, string suffix) => suffix == null ? null : prefix + suffix;
     }

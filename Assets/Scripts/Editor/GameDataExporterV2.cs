@@ -116,7 +116,9 @@ namespace CoreDawn.EditorTools
                                            ["lifetime"] = it["lifetime"], ["pierce"] = it["pierce"], ["effects"] = Uses(it["attackEffects"]) });
                 if (!string.IsNullOrEmpty((string)it["gun"])) mods.Add(new JObject { ["type"] = "Weapon", ["gun"] = NewId((string)it["gun"]) });
                 o["modules"] = mods;
-                o["view"] = new JObject { ["icon"] = it["icon"], ["iconGuid"] = it["iconGuid"] };
+                var itemView = View(it, "icon", "iconGuid", "bullet", "bulletGuid",
+                                    "muzzleFlash", "muzzleFlashGuid", "hitEffect", "hitEffectGuid");
+                if (itemView.Count > 0) o["view"] = itemView;
                 items[KeyOf((string)it["id"])] = o;
 
                 // 광맥 — Ore 아이템마다 하나, entities/<item>_deposit. 맵은 칸과 자원만 적고 채굴 시간은 원광이 갖는다.
@@ -266,7 +268,9 @@ namespace CoreDawn.EditorTools
                     mods.Add(loot);
                 }
                 o["modules"] = mods;
-                var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid");
+                var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid",
+                                "icon", "iconGuid", "prefab", "prefabGuid",
+                                "prefabCurveL", "prefabCurveLGuid", "prefabCurveR", "prefabCurveRGuid");
                 if (view.Count > 0) o["view"] = view;
                 entities[KeyOf((string)b["id"])] = o;
             }

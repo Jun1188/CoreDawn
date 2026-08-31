@@ -102,7 +102,7 @@ namespace CoreDawn.Interaction
             promptMessage = $"{item.DisplayName ?? item.Id} x{amount} 줍기";
 
             // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
-            if (visual != null) visual.sprite = ItemAssets.Of(itemData)?.icon;
+            if (visual != null) visual.sprite = ViewCatalogSO.IconOf(itemData);
         }
 
         /// <summary>

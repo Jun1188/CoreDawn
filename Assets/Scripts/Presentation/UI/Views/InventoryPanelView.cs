@@ -31,7 +31,7 @@ namespace CoreDawn.UI
         static InventoryPanelView cached;
 
         // ── 제작 상태 ──
-        RecipeDataSO selected;
+        RecipeDef selected;
         bool holding;
         // 제작은 플레이어 엔티티의 CrafterModule(심)이 한다 — 이 화면은 누르는 동안 진행시키고 그려 줄 뿐
         static CrafterModule Crafter => SimRunner.Players.Entity?.Get<CrafterModule>();
@@ -141,7 +141,7 @@ namespace CoreDawn.UI
         }
 
         void OnTierUnlocked(int _) => RebuildRecipes();
-        void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
+        void OnRecipeRewardUnlocked(RecipeDef _) => RebuildRecipes();
 
         void OnSearchChanged(ChangeEvent<string> e)
         {
@@ -169,16 +169,16 @@ namespace CoreDawn.UI
                 return;
             }
 
-            Crafter.Hold(selected.Def, Time.deltaTime);   // 완성되면 모듈이 재료를 빼고 결과를 넣는다 (넘치면 Overflow → 바닥)
+            Crafter.Hold(selected, Time.deltaTime);   // 완성되면 모듈이 재료를 빼고 결과를 넣는다 (넘치면 Overflow → 바닥)
             RefreshProgress();
         }
 
         /// <summary>재료가 가방+핫바에 전부 있는가 — 진행 중에도 매 프레임 이것으로 판단한다.</summary>
-        bool CanCraftOnce(RecipeDataSO r) => r != null && r.Def != null && Crafter != null && Crafter.HasIngredients(r.Def);
+        bool CanCraftOnce(RecipeDef r) => r != null && Crafter != null && Crafter.HasIngredients(r);
 
 
 
-        int CountAll(ItemDataSO item) =>
+        int CountAll(ItemDef item) =>
             Main?.CountOf(item) ?? 0;
 
 
@@ -188,24 +188,24 @@ namespace CoreDawn.UI
         // ───────────────────── 레시피 목록 ─────────────────────
 
         /// <summary>해금된 레시피 전부 — 해금되면 전부 수동 제작이 가능하므로 "잠김" 줄이 없다.</summary>
-        List<RecipeDataSO> UnlockedRecipes()
+        List<RecipeDef> UnlockedRecipes()
         {
-            var db = RecipeDatabaseSO.LoadDefault();
-            if (db == null || db.recipes == null) return new List<RecipeDataSO>();
+            var db = SimHost.Database;
+            if (db == null) return new List<RecipeDef>();
 
-            return SortRecipes(db.recipes.Where(RecipeDatabaseSO.IsUnlocked));
+            return SortRecipes(db.Recipes.Values.Where(RecipeUnlocks.IsUnlocked));
         }
 
         /// <summary>목록 순서는 아이템 목록과 같은 기준 — 대표 산출물의 티어 → 계통 → 용도 → 이름.</summary>
-        static List<RecipeDataSO> SortRecipes(IEnumerable<RecipeDataSO> list) =>
+        static List<RecipeDef> SortRecipes(IEnumerable<RecipeDef> list) =>
             list.OrderBy(r => UIItemOrder.TierOf(PrimaryOutput(r)))
-                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).line : int.MaxValue)
-                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).type : int.MaxValue)
+                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).Line : int.MaxValue)
+                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).Type : int.MaxValue)
                 .ThenBy(r => DisplayNameOf(PrimaryOutput(r)), System.StringComparer.Ordinal)
                 .ToList();
 
-        static ItemDataSO PrimaryOutput(RecipeDataSO r) =>
-            r != null && r.outputs != null && r.outputs.Length > 0 ? r.outputs[0].item : null;
+        static ItemDef PrimaryOutput(RecipeDef r) =>
+            r != null && r.Outputs != null && r.Outputs.Count > 0 ? r.Outputs[0].Item : null;
 
         void RebuildRecipes()
         {
@@ -237,7 +237,7 @@ namespace CoreDawn.UI
             RefreshDetail();
         }
 
-        VisualElement MakeRecipeRow(RecipeDataSO r, string name)
+        VisualElement MakeRecipeRow(RecipeDef r, string name)
         {
             var row = new VisualElement();
             row.AddToClassList("ui-row");
@@ -256,7 +256,7 @@ namespace CoreDawn.UI
             row.Add(nm);
 
             // 회당 시간 — 목록에서 레시피끼리 비교하는 용도 (문서: 시간이 나오는 세 자리 중 첫째)
-            var meta = new Label($"{r.craftTime:0.0}s");
+            var meta = new Label($"{r.Seconds:0.0}s");
             meta.AddToClassList("ui-row__meta");
             row.Add(meta);
 
@@ -283,13 +283,13 @@ namespace CoreDawn.UI
             if (!has) return;
 
             var item = PrimaryOutput(selected);
-            int per = selected.outputs != null && selected.outputs.Length > 0 ? selected.outputs[0].amount : 1;
+            int per = selected.Outputs != null && selected.Outputs.Count > 0 ? selected.Outputs[0].Amount : 1;
 
             UIItemIcon.Apply(yieldIcon, item);
             yieldName.text = DisplayNameOf(item);
-            if (item != null) yieldName.style.color = UIFlowColors.Of(item.line);
+            if (item != null) yieldName.style.color = UIFlowColors.Of(item.Line);
             yieldPer.text  = $"회당 {per}개 산출";
-            yieldTime.text = $"◷ {selected.craftTime:0.0}s";   // 시간 둘째 자리 — 상세 배지
+            yieldTime.text = $"◷ {selected.Seconds:0.0}s";   // 시간 둘째 자리 — 상세 배지
 
             RebuildMats();
             RefreshProgress();
@@ -298,21 +298,21 @@ namespace CoreDawn.UI
         void RebuildMats()
         {
             mats.Clear();
-            if (selected?.inputs == null) return;
+            if (selected?.Inputs == null) return;
 
-            foreach (var input in selected.inputs)
+            foreach (var input in selected.Inputs)
             {
-                if (input.item == null) continue;
+                if (input.Item == null) continue;
 
-                int have = CountAll(input.item);
+                int have = CountAll(input.Item);
 
                 var row = new VisualElement();
                 row.AddToClassList("ui-mat");
                 // 계통색 띠는 부족해도 그대로 — 어느 라인의 재료인지는 여전히 유효한 정보다
-                var lineClass = UIItemPalette.MatClass(input.item);
+                var lineClass = UIItemPalette.MatClass(input.Item);
                 if (lineClass != null) row.AddToClassList(lineClass);
 
-                var nm = new Label(DisplayNameOf(input.item));
+                var nm = new Label(DisplayNameOf(input.Item));
                 nm.AddToClassList("ui-mat__name");
                 row.Add(nm);
 
@@ -320,10 +320,10 @@ namespace CoreDawn.UI
                 // 부족하면 보유 수만 붉어진다 (문서: 부족한 재료는 보유 수를 붉게)
                 var have_ = new Label(have.ToString());
                 have_.AddToClassList("ui-mat__n");
-                if (have < input.amount) have_.AddToClassList("ui-mat__n--short");
+                if (have < input.Amount) have_.AddToClassList("ui-mat__n--short");
                 row.Add(have_);
 
-                var need = new Label($"/ {input.amount}");
+                var need = new Label($"/ {input.Amount}");
                 need.AddToClassList("inv-mat__dim");
                 row.Add(need);
 
@@ -337,14 +337,14 @@ namespace CoreDawn.UI
             if (selected == null) return;
 
             bool crafting = holding && progress > 0f;
-            float t = Mathf.Clamp01(selected.craftTime > 0f ? progress / selected.craftTime : 1f);
+            float t = Mathf.Clamp01(selected.Seconds > 0f ? progress / selected.Seconds : 1f);
 
             SetBarFill(craftBtnFill, t);   // 버튼 안이 차오르면 한 개 완성
 
             // 진행 중에는 현재 1회분의 잔여, 아니면 회당 시간
             craftBtnTime.text = crafting
-                ? $"{Mathf.Max(0f, selected.craftTime - progress):0.0}s"
-                : $"{selected.craftTime:0.0}s";
+                ? $"{Mathf.Max(0f, selected.Seconds - progress):0.0}s"
+                : $"{selected.Seconds:0.0}s";
 
             bool can = CanCraftOnce(selected);
             btnCraft.SetEnabled(can);
@@ -358,12 +358,12 @@ namespace CoreDawn.UI
             string first = null;
             int count = 0;
 
-            if (selected?.inputs != null)
-                foreach (var input in selected.inputs)
+            if (selected?.Inputs != null)
+                foreach (var input in selected.Inputs)
                 {
-                    if (input.item == null || CountAll(input.item) >= input.amount) continue;
+                    if (input.Item == null || CountAll(input.Item) >= input.Amount) continue;
                     count++;
-                    first ??= DisplayNameOf(input.item);
+                    first ??= DisplayNameOf(input.Item);
                 }
 
             return count switch

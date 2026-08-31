@@ -1,14 +1,12 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using CoreDawn.Factory;
 using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
     /// <summary>
-    /// 아이템·레시피 툴팁 — 포인터를 따라다니는 ui-tooltip 상자 (문서 §03 TTP).
+    /// 아이템·레시피 툴팁 — 포인터를 따라다니는 ui-tooltip 상자 (문서 §03 TTP). 내용은 정의(Def)에서 읽는다.
     ///
     /// 패널 루트마다 하나씩 만들어 쓴다 (UIDocument가 갈라져 있어 전역 하나로는 안 된다).
     /// 대상 요소에 Attach*로 걸면 Enter/Move/Leave를 알아서 처리한다 — 슬롯·행은
@@ -55,7 +53,7 @@ namespace CoreDawn.UI
 
         // ───────────────────── 대상에 걸기 ─────────────────────
 
-        public void AttachItem(VisualElement target, ItemDataSO item)
+        public void AttachItem(VisualElement target, ItemDef item)
         {
             if (item == null) return;
             target.RegisterCallback<PointerEnterEvent>(e => ShowItem(item, e.position));
@@ -63,7 +61,7 @@ namespace CoreDawn.UI
             target.RegisterCallback<PointerLeaveEvent>(_ => Hide());
         }
 
-        public void AttachRecipe(VisualElement target, RecipeDataSO recipe)
+        public void AttachRecipe(VisualElement target, RecipeDef recipe)
         {
             if (recipe == null) return;
             target.RegisterCallback<PointerEnterEvent>(e => ShowRecipe(recipe, e.position));
@@ -73,13 +71,13 @@ namespace CoreDawn.UI
 
         // ───────────────────── 내용 ─────────────────────
 
-        void ShowItem(ItemDataSO item, Vector2 pos)
+        void ShowItem(ItemDef item, Vector2 pos)
         {
             name.text = NameOf(item);
-            name.style.color = item.line != ItemLine.None ? UIFlowColors.Of(item.line) : StyleKeyword.Null;
-            type.text = $"{item.type.ToString().ToUpperInvariant()} · {LineName(item.line)}";
+            name.style.color = item.Line != ItemLine.None ? UIFlowColors.Of(item.Line) : StyleKeyword.Null;
+            type.text = $"{item.Type.ToString().ToUpperInvariant()} · {LineName(item.Line)}";
 
-            SetDesc(item.description);
+            SetDesc(item.Description);
 
             stats.Clear();
             int have = PlayerCount(item);
@@ -89,30 +87,30 @@ namespace CoreDawn.UI
             ShowAt(pos);
         }
 
-        void ShowRecipe(RecipeDataSO recipe, Vector2 pos)
+        void ShowRecipe(RecipeDef recipe, Vector2 pos)
         {
-            var output = recipe.outputs != null && recipe.outputs.Length > 0 ? recipe.outputs[0].item : null;
-            int per = recipe.outputs != null && recipe.outputs.Length > 0 ? recipe.outputs[0].amount : 1;
+            var output = recipe.Outputs != null && recipe.Outputs.Count > 0 ? recipe.Outputs[0].Item : null;
+            int per = recipe.Outputs != null && recipe.Outputs.Count > 0 ? recipe.Outputs[0].Amount : 1;
 
             name.text = NameOf(output);
-            name.style.color = output != null && output.line != ItemLine.None
-                ? UIFlowColors.Of(output.line) : StyleKeyword.Null;
+            name.style.color = output != null && output.Line != ItemLine.None
+                ? UIFlowColors.Of(output.Line) : StyleKeyword.Null;
 
-            float perMinute = recipe.craftTime > 0f ? 60f / recipe.craftTime * per : 0f;
+            float perMinute = recipe.Seconds > 0f ? 60f / recipe.Seconds * per : 0f;
             type.text = $"RECIPE · 회당 {per}개 · {Mathf.RoundToInt(perMinute)}개 / 분";
 
-            SetDesc(!string.IsNullOrEmpty(recipe.description) ? recipe.description
-                  : output != null ? output.description : "");
+            SetDesc(!string.IsNullOrEmpty(recipe.Description) ? recipe.Description
+                  : output != null ? output.Description : "");
 
             // 재료마다 필요량과 보유를 한 줄씩 — 만들 수 있는지 여기서 바로 읽힌다
             stats.Clear();
-            AddStat("제작 시간", $"{recipe.craftTime:0.0}s");
-            if (recipe.inputs != null)
-                foreach (var i in recipe.inputs)
+            AddStat("제작 시간", $"{recipe.Seconds:0.0}s");
+            if (recipe.Inputs != null)
+                foreach (var i in recipe.Inputs)
                 {
-                    if (i.item == null) continue;
-                    int have = PlayerCount(i.item);
-                    AddStat($"{NameOf(i.item)} ×{i.amount}", have >= 0 ? $"보유 {have}" : "");
+                    if (i.Item == null) continue;
+                    int have = PlayerCount(i.Item);
+                    AddStat($"{NameOf(i.Item)} ×{i.Amount}", have >= 0 ? $"보유 {have}" : "");
                 }
             ShowStats(true);
 
@@ -175,8 +173,8 @@ namespace CoreDawn.UI
 
         // ───────────────────── 잡동사니 ─────────────────────
 
-        static string NameOf(ItemDataSO item) =>
-            item == null ? "" : string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+        static string NameOf(ItemDef item) =>
+            item == null ? "" : string.IsNullOrEmpty(item.DisplayName) ? item.Id : item.DisplayName;
 
         static string LineName(ItemLine line) => line switch
         {
@@ -188,7 +186,7 @@ namespace CoreDawn.UI
         };
 
         /// <summary>플레이어 가방+핫바 보유량. 플레이어가 없는 씬은 -1 — 줄 자체를 뺀다.</summary>
-        static int PlayerCount(ItemDataSO item)
+        static int PlayerCount(ItemDef item)
         {
             var holder = PlayerInventoryHolder.Instance;
             if (holder == null) return -1;

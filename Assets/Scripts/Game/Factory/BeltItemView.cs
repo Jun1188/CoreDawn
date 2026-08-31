@@ -36,9 +36,9 @@ namespace CoreDawn.Factory
             public readonly BeltSegment Seg;
             public readonly int Index;          // 세그먼트 안 인덱스 (0 = 출구 쪽)
             public readonly Vector3 World;      // 외삽까지 반영된 실제 표시 좌표
-            public readonly ItemDataSO Item;
+            public readonly ItemDef Item;
 
-            public Drawn(BeltSegment seg, int index, Vector3 world, ItemDataSO item)
+            public Drawn(BeltSegment seg, int index, Vector3 world, ItemDef item)
             { Seg = seg; Index = index; World = world; Item = item; }
         }
 
@@ -170,12 +170,13 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>
-        /// 아이템 → 비주얼 적용. ★ FBX(메시) 전환 시 이 메서드만 수정:
-        /// ItemDataSO에 메시 필드를 추가하고, 슬롯을 MeshFilter/MeshRenderer로 바꾸면 된다.
+        /// 아이템 → 비주얼 적용. 아이콘은 뷰 카탈로그에서. ★ FBX(메시) 전환(5a-4) 시 이 메서드만 수정:
+        /// 팩 view 블록에 메시 참조를 추가하고, 슬롯을 MeshFilter/MeshRenderer로 바꾸면 된다.
         /// </summary>
-        private static void ApplyVisual(SpriteRenderer slot, ItemDataSO item)
+        private static void ApplyVisual(SpriteRenderer slot, ItemDef item)
         {
-            if (slot.sprite != item.icon) slot.sprite = item.icon;
+            var icon = ViewCatalogSO.IconOf(item);
+            if (slot.sprite != icon) slot.sprite = icon;
         }
     }
 }

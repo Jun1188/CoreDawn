@@ -86,7 +86,13 @@
       ],
       "view": {
         "icon": "BasicAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "bullet": "Bullet",
+        "bulletGuid": "d0ab4e1deef0b934c91bb2c4888b232f",
+        "muzzleFlash": "BaseAmmoMuzzle",
+        "muzzleFlashGuid": "1d58b0b48b0be754a946ef13a5b47064",
+        "hitEffect": "BaseAmmoExplosion",
+        "hitEffectGuid": "701fe55687f0a6143a595adb30249cfb"
       }
     },
     "copper_ore": {
@@ -201,7 +207,13 @@
       ],
       "view": {
         "icon": "Grenade",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "bullet": "GrenadeBullet",
+        "bulletGuid": "6fb28be86ecaf034ab6b3bde5d9a3ad2",
+        "muzzleFlash": "GrenadeMuzzle",
+        "muzzleFlashGuid": "c970c55aaa68fda439fa7efa01c4545d",
+        "hitEffect": "GrenadeExplosion",
+        "hitEffectGuid": "9a6234d093d15ac4c8b4b52e4c6be97f"
       }
     },
     "dense_ammo": {
@@ -228,7 +240,13 @@
       ],
       "view": {
         "icon": "DenseAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "bullet": "Bullet",
+        "bulletGuid": "d0ab4e1deef0b934c91bb2c4888b232f",
+        "muzzleFlash": "DenseAmmoMuzzle",
+        "muzzleFlashGuid": "56a6f8a898bebd64d96faf8434833bfd",
+        "hitEffect": "DenseAmmoExplosion",
+        "hitEffectGuid": "17175243210cbdb4b97f12fa99811418"
       }
     },
     "energy_cell": {
@@ -271,7 +289,13 @@
       ],
       "view": {
         "icon": "EnergyCellAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "bullet": "CrystalAmmoBullet",
+        "bulletGuid": "60dbfc80def39a042abb9eb0be9b1459",
+        "muzzleFlash": "EnergeCellAmmoMuzzle",
+        "muzzleFlashGuid": "6716924e2ed157843b9d9295af57bf0e",
+        "hitEffect": "EnergeCellAmmoExplosion",
+        "hitEffectGuid": "383ff3797b825254293298bbf11b2858"
       }
     },
     "nav_control_unit": {
@@ -350,7 +374,13 @@
       ],
       "view": {
         "icon": "CrystalAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "bullet": "CrystalAmmoBullet",
+        "bulletGuid": "60dbfc80def39a042abb9eb0be9b1459",
+        "muzzleFlash": "CrystalAmmoMuzzle",
+        "muzzleFlashGuid": "d7d7f5edf939ae74a9c85c9655849dff",
+        "hitEffect": "CrystalAmmoExplosion",
+        "hitEffectGuid": "06c01719d67a8284b891e3011c7b3a71"
       }
     },
     "pistol": {
@@ -483,8 +513,12 @@
         }
       ],
       "view": {
-        "icon": "",
-        "iconGuid": ""
+        "bullet": "MeleeStrike",
+        "bulletGuid": "ce9e3d6125abed14ebdebe370e018f5e",
+        "muzzleFlash": "SlashWideBlue",
+        "muzzleFlashGuid": "2896d3662d923f546bc6a803fae0eebd",
+        "hitEffect": "SwordImpactBlue",
+        "hitEffectGuid": "d7456e1f6e5242540b63b9042a2e3915"
       }
     },
     "plasma_cutter": {
@@ -1164,7 +1198,9 @@
       ],
       "view": {
         "model": "Miner.fbx",
-        "modelGuid": "38bc4162e9cc06c449ab7fa8686b5fcb"
+        "modelGuid": "38bc4162e9cc06c449ab7fa8686b5fcb",
+        "prefab": "Miner",
+        "prefabGuid": "687143ae40f3c5041a38fa275fc61709"
       }
     },
     "miner_mk2": {
@@ -1227,7 +1263,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "MinerMk2",
+        "prefabGuid": "9f10b408811a648468f9bc495fad6181"
+      }
     },
     "smelter": {
       "displayName": "제련로",
@@ -1302,7 +1342,9 @@
       ],
       "view": {
         "model": "Smelter.fbx",
-        "modelGuid": "ea46188c8bdb2b347a989f03493e6ccc"
+        "modelGuid": "ea46188c8bdb2b347a989f03493e6ccc",
+        "prefab": "Smelter",
+        "prefabGuid": "98954c35404031d44b6cf0b5bb769d42"
       }
     },
     "constructor": {
@@ -1380,7 +1422,9 @@
       ],
       "view": {
         "model": "Constructor.fbx",
-        "modelGuid": "28cee9ec78d36094388f7fddb8b70132"
+        "modelGuid": "28cee9ec78d36094388f7fddb8b70132",
+        "prefab": "Constructor",
+        "prefabGuid": "f5a783afd8b2d6a48b02259b1cc25bcd"
       }
     },
     "assembler": {
@@ -1472,7 +1516,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "Assembler",
+        "prefabGuid": "f21554090b8662041865fae8ac84acf4"
+      }
     },
     "manufacturer": {
       "displayName": "제조기",
@@ -1570,7 +1618,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "Manufacturer",
+        "prefabGuid": "8e72872f52f7d26458e07e2f3105188e"
+      }
     },
     "drone_port": {
       "displayName": "드론 스테이션",
@@ -1709,7 +1761,13 @@
         "modelCurveL": "Conveyor_L.fbx",
         "modelCurveLGuid": "e4dd130d39a2f394ca180cbeada7fba2",
         "modelCurveR": "Conveyor_R.fbx",
-        "modelCurveRGuid": "441ae0e8dfa059c4cbf87444217d14f3"
+        "modelCurveRGuid": "441ae0e8dfa059c4cbf87444217d14f3",
+        "prefab": "Belt",
+        "prefabGuid": "0bf1db28421cbd541a35566362273cfa",
+        "prefabCurveL": "BeltLCurve",
+        "prefabCurveLGuid": "7a9640f62bc6f404fa1b9ade84cf47f8",
+        "prefabCurveR": "BeltRCurve",
+        "prefabCurveRGuid": "6514f9f08f82db64e8d5ca4c2c8a0dfb"
       }
     },
     "belt_mk2": {
@@ -1774,7 +1832,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "BeltMk2",
+        "prefabGuid": "a28ebf27af00fde46833092b742b5913"
+      }
     },
     "splitter": {
       "displayName": "분배기",
@@ -1854,7 +1916,9 @@
       ],
       "view": {
         "model": "Splitter.fbx",
-        "modelGuid": "00858b560d59d074180a59958b7d9e2d"
+        "modelGuid": "00858b560d59d074180a59958b7d9e2d",
+        "prefab": "Splitter",
+        "prefabGuid": "ec8176281d9d0a540b8a96c88a550a42"
       }
     },
     "merger": {
@@ -1935,7 +1999,9 @@
       ],
       "view": {
         "model": "Merger.fbx",
-        "modelGuid": "f9d1fa3ef5596374ca29e18fd2cdfd74"
+        "modelGuid": "f9d1fa3ef5596374ca29e18fd2cdfd74",
+        "prefab": "Merger",
+        "prefabGuid": "326f8420de63f324fbe1a0df87f16c51"
       }
     },
     "storage": {
@@ -2035,7 +2101,9 @@
       ],
       "view": {
         "model": "Storage.prefab",
-        "modelGuid": "935e9bd1c205c7044b36b398d51ffa2e"
+        "modelGuid": "935e9bd1c205c7044b36b398d51ffa2e",
+        "prefab": "Storage",
+        "prefabGuid": "935e9bd1c205c7044b36b398d51ffa2e"
       }
     },
     "core": {
@@ -2251,7 +2319,9 @@
       ],
       "view": {
         "model": "SpaceShip.fbx",
-        "modelGuid": "8e653362f0109004983636cf44f424dc"
+        "modelGuid": "8e653362f0109004983636cf44f424dc",
+        "prefab": "Core",
+        "prefabGuid": "87ccd477b828f0c458048e4c6e68d8c2"
       }
     },
     "fence": {
@@ -2286,7 +2356,11 @@
         {
           "type": "Blocker"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "Fence",
+        "prefabGuid": "e6214c0413d00174abf3040eab2d1aa1"
+      }
     },
     "mine": {
       "displayName": "지뢰",
@@ -2338,7 +2412,11 @@
             }
           ]
         }
-      ]
+      ],
+      "view": {
+        "prefab": "Mine",
+        "prefabGuid": "10e8294c883dee04fa2a3882bef2b8e4"
+      }
     },
     "basic_turret": {
       "displayName": "기본 포탑",
@@ -2414,7 +2492,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "BasicTurret",
+        "prefabGuid": "f50c1af3e0d06944fabe0d34dc16aac3"
+      }
     },
     "heavy_turret": {
       "displayName": "중기관 포탑",
@@ -2493,7 +2575,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "HeavyTurret",
+        "prefabGuid": "63049ff461071ed4596438f0ebbc617b"
+      }
     },
     "mortar_tower": {
       "displayName": "박격포 타워",
@@ -2571,7 +2657,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "MortarTower",
+        "prefabGuid": "8d23edf3e85cd3144859023827622c98"
+      }
     },
     "laser_tower": {
       "displayName": "레이저 타워",
@@ -2649,7 +2739,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "LaserTower",
+        "prefabGuid": "c4018ffa10eb81a4bb750acf98ed7d5f"
+      }
     },
     "slow_field_tower": {
       "displayName": "감속 필드 타워",
@@ -2704,7 +2798,7 @@
         {
           "type": "AuraEmitter",
           "radius": 28.0,
-          "interval": 5.0
+          "interval": 4.9999999254941949
         },
         {
           "type": "AmmoConsumer",
@@ -2716,7 +2810,11 @@
         {
           "type": "Loot"
         }
-      ]
+      ],
+      "view": {
+        "prefab": "SlowFieldTower",
+        "prefabGuid": "7d3b3cf4e96f16b468227f6f7b341b38"
+      }
     },
     "nest": {
       "displayName": "괴수 둥지",

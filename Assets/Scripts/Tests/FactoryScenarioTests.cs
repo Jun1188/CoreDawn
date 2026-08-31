@@ -475,7 +475,7 @@ namespace CoreDawn.Tests
         }
 
         BuildingModule PlaceBelt(int x, int y, int rot, BeltShape shape)
-            => _sim.Place(Belt(), new Vector2Int(x, y), rot, BeltDataSO.BuildPorts(shape, rot));
+            => _sim.Place(Belt(), new Vector2Int(x, y), rot, BeltGeometry.BuildPorts(shape, rot));
 
         EntityDef Miner(float ptime = 0.2f, int outBuf = 5)
             // stackCap = outBuf → 출력 버퍼가 정확히 outBuf개에서 가득 참 (stall 시나리오용)

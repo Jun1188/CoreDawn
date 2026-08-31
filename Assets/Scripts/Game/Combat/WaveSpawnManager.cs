@@ -60,8 +60,7 @@ namespace CoreDawn.Combat
         // 심이 세운 웨이브 몬스터 — 프리팹만 붙인다. 위치·종류·버프는 이미 심의 것
         private void OnSimSpawned(Entity entity, WaveSpawnKind kind)
         {
-            var data = MonsterAssets.OfEntity(entity);   // 엔티티가 조립된 정의(Entity.Def) → 뷰 에셋(프리팹). 5a-3 카탈로그 전까지 SO
-            var view = MonsterSpawner.AttachView(entity, data, parent);
+            var view = MonsterSpawner.AttachView(entity, parent);   // 프리팹은 뷰 카탈로그(Entity.Def)
             if (view == null) return;
             SnapToGround(view.gameObject, pushToSim: true);
             monsters.Add(view);
@@ -88,7 +87,7 @@ namespace CoreDawn.Combat
             for (int i = 0; i < amount; i++)
             {
                 NestView.DefenderSpawnSlot slot = spawnSlots[i % spawnSlots.Count];
-                var monster = InstantiateMonster(nest.DefenderData, slot.position, Quaternion.identity);
+                var monster = InstantiateMonster(nest.DefenderData != null ? nest.DefenderData.Def : null, slot.position, Quaternion.identity);
                 SnapToGround(monster.gameObject, pushToSim: true);
 
                 var zone = nest.GetComponent<NestEngagementZone>();
@@ -103,9 +102,9 @@ namespace CoreDawn.Combat
         }
 
         /// <summary>세이브 복원 전용 — 저장된 자리에 몬스터를 되살린다(지형 스냅 없음: 저장 좌표가 이미 지형 위다).</summary>
-        public MonsterView RestoreMonster(Vector3 position, Quaternion rotation, MonsterDataSO data = null)
+        public MonsterView RestoreMonster(Vector3 position, Quaternion rotation, EntityDef def)
         {
-            var monster = InstantiateMonster(data, position, rotation);
+            var monster = InstantiateMonster(def, position, rotation);
             monster.transform.SetPositionAndRotation(position, rotation);
             return monster;
         }
@@ -124,10 +123,10 @@ namespace CoreDawn.Combat
             }
         }
 
-        /// <summary>종류 데이터로 몬스터(심 + 뷰)를 세운다 — 둥지 방어자·세이브 복원이 지나는 관문.</summary>
-        private MonsterView InstantiateMonster(MonsterDataSO data, Vector3 position, Quaternion rotation)
+        /// <summary>종류 정의로 몬스터(심 + 뷰)를 세운다 — 둥지 방어자·세이브 복원이 지나는 관문.</summary>
+        private MonsterView InstantiateMonster(EntityDef def, Vector3 position, Quaternion rotation)
         {
-            var monster = MonsterSpawner.Spawn(data, position, rotation, parent);
+            var monster = MonsterSpawner.Spawn(def, position, rotation, parent);
             monsters.Add(monster);
             return monster;
         }

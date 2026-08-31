@@ -35,7 +35,7 @@ namespace CoreDawn.UI
 
         // 다시 만들어야 하는지 판정하는 키 — 이게 그대로면 매 프레임 손대지 않는다
         PlacementSystem.BuildMode _shownMode = PlacementSystem.BuildMode.None;
-        BuildingDataSO _shownSo;
+        EntityDef _shownSo;
         BuildingModule _shownTarget;
         int _shownCostStamp;
 
@@ -129,9 +129,10 @@ namespace CoreDawn.UI
 
             Show(leadIcon, true);
             Show(leadRing, false);
-            leadIconImg.style.backgroundImage = so.icon != null ? new StyleBackground(so.icon) : default;
+            var sprite = ViewCatalogSO.IconOf(so);
+            leadIconImg.style.backgroundImage = sprite != null ? new StyleBackground(sprite) : default;
 
-            cardName.text = DisplayNameOf(so);
+            cardName.text = NameOf(so);
             ToggleClass(cardName, "ui-placecard__name--danger", false);
             Show(cardSub, false);
 
@@ -140,14 +141,14 @@ namespace CoreDawn.UI
             // 부족한 칩만 통째로 붉어진다. 숫자가 이미 말하므로 문장을 덧붙이지 않는다.
             cost.Clear();
             int chips = 0;
-            if (BuildCost.HasCost(so != null ? so.Def : null))
+            if (BuildCost.HasCost(so))
             {
-                foreach (var c in so.buildCost)
+                foreach (var c in so.Get<BuildingModuleDef>().Cost)
                 {
-                    if (c.item == null || c.amount <= 0) continue;
-                    int have = BuildCost.PlayerCountOf(c.item);
-                    cost.Add(Chip(c.item, $"{have}/{c.amount}", have < c.amount ? "ui-chip--short"
-                                                                                : UIItemPalette.ChipClass(c.item)));
+                    if (c.Item == null || c.Amount <= 0) continue;
+                    int have = BuildCost.PlayerCountOf(c.Item);
+                    cost.Add(Chip(c.Item, $"{have}/{c.Amount}", have < c.Amount ? "ui-chip--short"
+                                                                                : UIItemPalette.ChipClass(c.Item)));
                     chips++;
                 }
             }
@@ -159,19 +160,19 @@ namespace CoreDawn.UI
 
             keys.Clear();
             keys.Add(KeyHint("R", "회전"));
-            if (so is BeltDataSO) keys.Add(KeyHint("T", "모양"));
+            if (so.Has<ConveyorModuleDef>()) keys.Add(KeyHint("T", "모양"));
             keys.Add(KeyHint("LMB", "배치"));
             keys.Add(KeyHint("RMB", "취소"));
             MarkLast(keys, "ui-key--last");
         }
 
         /// <summary>비용 표시가 달라지는 입력값을 한 정수로 접는다 — 매 프레임 칩을 다시 만들지 않기 위함.</summary>
-        static int CostStamp(BuildingDataSO so)
+        static int CostStamp(EntityDef so)
         {
-            if (!BuildCost.HasCost(so != null ? so.Def : null)) return 0;
+            if (!BuildCost.HasCost(so)) return 0;
             int h = 17;
-            foreach (var c in so.buildCost)
-                if (c.item != null) h = h * 31 + BuildCost.PlayerCountOf(c.item);
+            foreach (var c in so.Get<BuildingModuleDef>().Cost)
+                if (c.Item != null) h = h * 31 + BuildCost.PlayerCountOf(c.Item);
             return h;
         }
 
@@ -232,8 +233,8 @@ namespace CoreDawn.UI
             Show(leadIcon, false);
             Show(leadRing, true);
 
-            var so = BuildingAssets.Of(target.Def);
-            cardName.text = $"{DisplayNameOf(so)} 철거";
+            var def = target.Def;
+            cardName.text = $"{target.DisplayName} 철거";
             ToggleClass(cardName, "ui-placecard__name--danger", true);
             cardSub.text = "누르고 있는 동안 진행";
             Show(cardSub, true);
@@ -241,12 +242,12 @@ namespace CoreDawn.UI
             // 환급 칩은 초록 — "돌려받는다"를 색으로 먼저 말한다. 전액 환급이라 비용과 같은 수치다.
             cost.Clear();
             int chips = 0;
-            if (BuildCost.HasCost(so != null ? so.Def : null))
+            if (BuildCost.HasCost(def))
             {
-                foreach (var c in so.buildCost)
+                foreach (var c in def.Get<BuildingModuleDef>().Cost)
                 {
-                    if (c.item == null || c.amount <= 0) continue;
-                    cost.Add(Chip(c.item, c.amount.ToString(), "ui-chip--done"));
+                    if (c.Item == null || c.Amount <= 0) continue;
+                    cost.Add(Chip(c.Item, c.Amount.ToString(), "ui-chip--done"));
                     chips++;
                 }
             }
@@ -265,13 +266,13 @@ namespace CoreDawn.UI
 
         // ───────────────────────── 조각 ─────────────────────────
 
-        static VisualElement Chip(ItemDataSO item, string amountText, string modifier)
+        static VisualElement Chip(ItemDef item, string amountText, string modifier)
         {
             var chip = new VisualElement { pickingMode = PickingMode.Ignore };
             chip.AddToClassList("ui-chip");
             if (modifier != null) chip.AddToClassList(modifier);
 
-            chip.Add(new Label(DisplayNameOf(item)));
+            chip.Add(new Label(NameOf(item)));
 
             var n = new Label(amountText);
             n.AddToClassList("ui-chip__n");
@@ -299,8 +300,8 @@ namespace CoreDawn.UI
                 ToggleClass(container[i], lastClass, i == n - 1);
         }
 
-        static string DisplayNameOf(GameDataSO so) =>
-            so == null ? "" : string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName;
+        static string NameOf(Def def) =>
+            def == null ? "" : string.IsNullOrEmpty(def.DisplayName) ? def.Id : def.DisplayName;
 
         static void Show(VisualElement e, bool on)
         {

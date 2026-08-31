@@ -29,6 +29,5 @@ namespace CoreDawn.Data
             }
         }
         public static implicit operator RecipeDef(RecipeDataSO so) => so != null ? so.Def : null;
-        public static implicit operator RecipeDataSO(RecipeDef def) => RecipeAssets.Of(def);
     }
 }

@@ -54,7 +54,7 @@ namespace CoreDawn.Save
 
         public class MonsterDto
         {
-            /// <summary>종류(MonsterDataSO.Id, 예 "Monster:Spitter"). 없거나 모르는 id면 데이터베이스의 기본 종류로 세운다 — 옛 세이브 호환.</summary>
+            /// <summary>종류 — 팩 id(예 "coredawn:entity/spitter", v4부터). 팩에 없는 id는 경고 후 건너뛴다(변환은 SaveMigrations가 한다).</summary>
             [JsonProperty("data")] public string DataId;
             [JsonProperty("pos")] public Vector3 Position;
             [JsonProperty("rot")] public Quaternion Rotation;
@@ -192,7 +192,7 @@ namespace CoreDawn.Save
 
         static MonsterDto Describe(MonsterView m) => new()
         {
-            DataId = m.Data != null ? m.Data.Id : null,
+            DataId = m.Entity?.Def != null ? m.Entity.Def.Id : null,
             Position = m.transform.position,
             Rotation = m.transform.rotation,
             HpMax = m.Health.MaxHealth,
@@ -283,13 +283,18 @@ namespace CoreDawn.Save
                 });
             }
 
-            var database = MonsterDatabaseSO.LoadDefault();
+            var db = CoreDawn.Sim.SimHost.Database;
             foreach (var saved in dto.Monsters)
             {
                 if (saved == null) continue;
-                // 저장된 종류로 되살린다. id가 없거나 사라진 종류면 null → 스포너가 기본 종류로 세운다
-                var data = database != null && !string.IsNullOrEmpty(saved.DataId) ? database.FindById(saved.DataId) : null;
-                var view = spawner.RestoreMonster(saved.Position, saved.Rotation, data);
+                // 저장된 종류(팩 id)로 되살린다 — 없는 id는 조용히 다른 종류로 바꾸지 않고 소리 내고 건너뛴다
+                var def = db != null && !string.IsNullOrEmpty(saved.DataId) ? db.Entity(saved.DataId) : null;
+                if (def == null)
+                {
+                    Debug.LogWarning($"[Save] 몬스터 정의 '{saved.DataId}'가 팩에 없습니다 — 그 몬스터는 복원되지 않습니다.");
+                    continue;
+                }
+                var view = spawner.RestoreMonster(saved.Position, saved.Rotation, def);
                 Apply(view, saved);
                 if (waves != null && view != null && view.Entity != null && !string.IsNullOrEmpty(saved.WaveKind))
                     waves.Register(view.Entity, saved.WaveKind == "trickle" ? CoreDawn.Sim.WaveSpawnKind.Trickle : CoreDawn.Sim.WaveSpawnKind.Burst);

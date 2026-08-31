@@ -207,7 +207,7 @@ namespace CoreDawn.UI
             RebuildRecipes();
         }
 
-        void OnRecipeRewardUnlocked(RecipeDataSO _) => RebuildRecipes();
+        void OnRecipeRewardUnlocked(RecipeDef _) => RebuildRecipes();
         void OnTierUnlocked(int _) => RebuildRecipes();
 
         void TogglePaused()
@@ -236,7 +236,7 @@ namespace CoreDawn.UI
                                  $"입력 슬롯({crafter.InputSlotCount})보다 많아 거부됨");
                 return;
             }
-            if (r != null && !RecipeDatabaseSO.IsUnlocked(r))
+            if (r != null && !RecipeUnlocks.IsUnlocked(r))
             {
                 Debug.LogWarning($"[Machine] 레시피 '{r.DisplayName}'는 아직 해금되지 않음 (요구 Tier {r.Tier})");
                 return;
@@ -248,7 +248,7 @@ namespace CoreDawn.UI
 
         /// <summary>현재 해금된 레시피만 — 해금 게이팅은 게임(UI)의 일이라 심 모듈에 없다.</summary>
         IEnumerable<RecipeDef> UnlockedRecipes() =>
-            crafter.Recipes.Where(r => RecipeDatabaseSO.IsUnlocked(r));
+            crafter.Recipes.Where(r => RecipeUnlocks.IsUnlocked(r));
 
         void RebuildAll()
         {
@@ -280,8 +280,8 @@ namespace CoreDawn.UI
 
             var list = UnlockedRecipes()
                 .OrderBy(r => UIItemOrder.TierOf(PrimaryOutput(r)))
-                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).line : int.MaxValue)
-                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).type : int.MaxValue)
+                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).Line : int.MaxValue)
+                .ThenBy(r => PrimaryOutput(r) != null ? (int)PrimaryOutput(r).Type : int.MaxValue)
                 .ThenBy(r => DisplayNameOf(PrimaryOutput(r)), System.StringComparer.Ordinal)
                 .ToList();
 
@@ -301,12 +301,12 @@ namespace CoreDawn.UI
                 recipesEmpty.text = search.Length > 0 ? "검색 결과가 없습니다" : "돌릴 수 있는 레시피가 없습니다";
         }
 
-        VisualElement MakeRecipeRow(RecipeDataSO r, string name)
+        VisualElement MakeRecipeRow(RecipeDef r, string name)
         {
             var row = new VisualElement();
             row.AddToClassList("ui-row");
             row.AddToClassList("ui-row--compact");
-            if ((RecipeDef)r == crafter.Recipe) row.AddToClassList("ui-row--selected");
+            if (r == crafter.Recipe) row.AddToClassList("ui-row--selected");
 
             var ic = new VisualElement();
             ic.AddToClassList("ui-slot__icon");
@@ -318,7 +318,7 @@ namespace CoreDawn.UI
             nm.AddToClassList("ui-row__name");
             row.Add(nm);
 
-            var meta = new Label($"{r.craftTime:0.0}s");
+            var meta = new Label($"{r.Seconds:0.0}s");
             meta.AddToClassList("ui-row__meta");
             row.Add(meta);
 
@@ -333,8 +333,8 @@ namespace CoreDawn.UI
             return row;
         }
 
-        static ItemDataSO PrimaryOutput(RecipeDataSO r) =>
-            r != null && r.outputs != null && r.outputs.Length > 0 ? r.outputs[0].item : null;
+        static ItemDef PrimaryOutput(RecipeDef r) =>
+            r != null && r.Outputs != null && r.Outputs.Count > 0 ? r.Outputs[0].Item : null;
 
         // ───────────────────── 상세 — 산출 머리글 ─────────────────────
 
@@ -350,7 +350,7 @@ namespace CoreDawn.UI
 
             UIItemIcon.Apply(yieldIcon, item);
             yieldName.text = DisplayNameOf(item);
-            if (item != null) yieldName.style.color = UIFlowColors.Of(item.line);
+            if (item != null) yieldName.style.color = UIFlowColors.Of(item.Line);
 
             // N개/분 — 벨트 처리량과 비교해 라인을 몇 개 물릴지 계산하는 값이라 항상 띄운다
             float perMinute = recipe.Seconds > 0f ? 60f / recipe.Seconds * per : 0f;
@@ -438,18 +438,18 @@ namespace CoreDawn.UI
             ToggleClass(btnToggle, "ui-btn--primary", crafter.Paused);
         }
 
-        static string ConsumptionText(RecipeDataSO r)
+        static string ConsumptionText(RecipeDef r)
         {
-            if (r?.inputs == null || r.inputs.Length == 0) return "";
-            return string.Join(" · ", r.inputs
-                .Where(i => i.item != null)
-                .Select(i => $"{DisplayNameOf(i.item)} {i.amount}")) + " 소비";
+            if (r?.Inputs == null || r.Inputs.Count == 0) return "";
+            return string.Join(" · ", r.Inputs
+                .Where(i => i.Item != null)
+                .Select(i => $"{DisplayNameOf(i.Item)} {i.Amount}")) + " 소비";
         }
 
         // ───────────────────── 잡동사니 ─────────────────────
 
-        static string DisplayNameOf(ItemDataSO item) =>
-            item == null ? "" : string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+        static string DisplayNameOf(ItemDef item) =>
+            item == null ? "" : string.IsNullOrEmpty(item.DisplayName) ? item.Id : item.DisplayName;
 
         static void Show(VisualElement e, bool on)
         {

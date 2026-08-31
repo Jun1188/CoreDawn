@@ -13,8 +13,8 @@ namespace CoreDawn.Factory
     /// </summary>
     public static class PlacementBridge
     {
-        /// <param name="portOverride">인스턴스별 포트 형상 (벨트 커브 등). null이면 SO 포트 사용.</param>
-        /// <param name="prefabOverride">인스턴스별 프리팹 (벨트 커브 메시 등). null이면 SO 프리팹 사용.</param>
+        /// <param name="portOverride">인스턴스별 포트 형상 (벨트 커브 등). null이면 정의의 포트 사용.</param>
+        /// <param name="prefabOverride">인스턴스별 프리팹 (벨트 커브 메시 등). null이면 카탈로그 프리팹 사용.</param>
         /// <param name="shape">벨트 모양. 세이브가 그대로 되살릴 수 있도록 심에도 기록된다.</param>
         public static BuildingModule Place(EntityDef def, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
             PortDefinition[] portOverride = null, GameObject prefabOverride = null,
@@ -26,9 +26,8 @@ namespace CoreDawn.Factory
             // 뷰 생성 — 벨트 커브는 메시의 뚫린 변을 포트에 맞추는 보정이 붙는다.
             // 프리뷰(PlacementSystem.PreviewYaw)와 반드시 같은 값이어야 한다: 여기만 고치면
             // 미리보기와 실제로 세워진 것이 다른 방향을 보게 된다.
-            var so = BuildingAssets.Of(def);   // 표현 에셋(프리팹) — 5a-3에서 뷰 카탈로그로
-            var prefab = prefabOverride != null ? prefabOverride : so != null ? so.prefab : null;
-            float yaw = def.Has<ConveyorModuleDef>() ? BeltDataSO.MeshYaw(shape, rotSteps) : rotSteps * 90f;
+            var prefab = prefabOverride != null ? prefabOverride : ViewCatalogSO.PrefabOf(def);
+            float yaw = def.Has<ConveyorModuleDef>() ? BeltGeometry.MeshYaw(shape, rotSteps) : rotSteps * 90f;
             GameObject go = prefab != null
                 ? Object.Instantiate(prefab, pos, Quaternion.Euler(0, yaw, 0))
                 : new GameObject(def.Id);    // 프리팹 누락 시 빈 오브젝트
@@ -85,7 +84,7 @@ namespace CoreDawn.Factory
         }
 
         /// <summary>파괴 지점 주변으로 흩뿌리는 드롭 (벨트 폐기 통지도 이 헬퍼 사용).</summary>
-        public static void DropAt(ItemDataSO item, int amount, Vector3 position)
+        public static void DropAt(ItemDef item, int amount, Vector3 position)
         {
             var scatter = Random.insideUnitCircle * 0.4f;
             var dir = new Vector3(scatter.x, 0.6f, scatter.y).normalized;   // 위로 톡 튀며 흩어짐

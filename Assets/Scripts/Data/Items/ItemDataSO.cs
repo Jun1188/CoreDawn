@@ -44,9 +44,9 @@ namespace CoreDawn.Data
             }
         }
 
-        // 암시 변환: 인벤토리·공장은 ItemDef를, UI·저작은 아직 SO를 든다. SO 퇴역(5a-3) 때 함께 사라진다.
+        // 암시 변환(SO → Def 한 방향): 저작 경계(인스펙터 필드)가 심 타입으로 넘어오는 다리. SO 퇴역(5a-3e) 때 사라진다.
+        // Def → SO 방향은 5a-3b에서 제거 — 런타임이 SO를 되찾는 길을 닫아야 SO 읽기가 사라진다.
         public static implicit operator ItemDef(ItemDataSO so) => so != null ? so.Def : null;
-        public static implicit operator ItemDataSO(ItemDef def) => ItemAssets.Of(def);
 
         public T GetModule<T>() where T : ItemModuleSO
         {

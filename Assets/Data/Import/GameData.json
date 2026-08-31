@@ -407,7 +407,13 @@
       "gravity": 0.0,
       "explosionRadius": 0.0,
       "lifetime": 3.0,
-      "pierce": 0
+      "pierce": 0,
+      "bullet": "Bullet",
+      "bulletGuid": "d0ab4e1deef0b934c91bb2c4888b232f",
+      "muzzleFlash": "BaseAmmoMuzzle",
+      "muzzleFlashGuid": "1d58b0b48b0be754a946ef13a5b47064",
+      "hitEffect": "BaseAmmoExplosion",
+      "hitEffectGuid": "701fe55687f0a6143a595adb30249cfb"
     },
     {
       "id": "Item:CopperOre",
@@ -561,7 +567,13 @@
       "gravity": 9.8,
       "explosionRadius": 3.0,
       "lifetime": 6.0,
-      "pierce": 0
+      "pierce": 0,
+      "bullet": "GrenadeBullet",
+      "bulletGuid": "6fb28be86ecaf034ab6b3bde5d9a3ad2",
+      "muzzleFlash": "GrenadeMuzzle",
+      "muzzleFlashGuid": "c970c55aaa68fda439fa7efa01c4545d",
+      "hitEffect": "GrenadeExplosion",
+      "hitEffectGuid": "9a6234d093d15ac4c8b4b52e4c6be97f"
     },
     {
       "id": "Item:DenseAmmo",
@@ -585,7 +597,13 @@
       "gravity": 0.0,
       "explosionRadius": 0.0,
       "lifetime": 3.0,
-      "pierce": 0
+      "pierce": 0,
+      "bullet": "Bullet",
+      "bulletGuid": "d0ab4e1deef0b934c91bb2c4888b232f",
+      "muzzleFlash": "DenseAmmoMuzzle",
+      "muzzleFlashGuid": "56a6f8a898bebd64d96faf8434833bfd",
+      "hitEffect": "DenseAmmoExplosion",
+      "hitEffectGuid": "17175243210cbdb4b97f12fa99811418"
     },
     {
       "id": "Item:EnergyCell",
@@ -631,7 +649,13 @@
       "gravity": 0.0,
       "explosionRadius": 0.0,
       "lifetime": 3.0,
-      "pierce": 4
+      "pierce": 4,
+      "bullet": "CrystalAmmoBullet",
+      "bulletGuid": "60dbfc80def39a042abb9eb0be9b1459",
+      "muzzleFlash": "EnergeCellAmmoMuzzle",
+      "muzzleFlashGuid": "6716924e2ed157843b9d9295af57bf0e",
+      "hitEffect": "EnergeCellAmmoExplosion",
+      "hitEffectGuid": "383ff3797b825254293298bbf11b2858"
     },
     {
       "id": "Item:NavControlUnit",
@@ -731,7 +755,13 @@
       "gravity": 0.0,
       "explosionRadius": 0.0,
       "lifetime": 3.0,
-      "pierce": 0
+      "pierce": 0,
+      "bullet": "CrystalAmmoBullet",
+      "bulletGuid": "60dbfc80def39a042abb9eb0be9b1459",
+      "muzzleFlash": "CrystalAmmoMuzzle",
+      "muzzleFlashGuid": "d7d7f5edf939ae74a9c85c9655849dff",
+      "hitEffect": "CrystalAmmoExplosion",
+      "hitEffectGuid": "06c01719d67a8284b891e3011c7b3a71"
     },
     {
       "id": "Item:Pistol",
@@ -873,7 +903,13 @@
       "gravity": 0.0,
       "explosionRadius": 2.2,
       "lifetime": 0.4,
-      "pierce": 0
+      "pierce": 0,
+      "bullet": "MeleeStrike",
+      "bulletGuid": "ce9e3d6125abed14ebdebe370e018f5e",
+      "muzzleFlash": "SlashWideBlue",
+      "muzzleFlashGuid": "2896d3662d923f546bc6a803fae0eebd",
+      "hitEffect": "SwordImpactBlue",
+      "hitEffectGuid": "d7456e1f6e5242540b63b9042a2e3915"
     },
     {
       "id": "Item:PlasmaCutter",
@@ -1492,7 +1528,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Miner",
+      "prefabGuid": "687143ae40f3c5041a38fa275fc61709"
     },
     {
       "id": "Building:MinerMk2",
@@ -1548,7 +1586,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "MinerMk2",
+      "prefabGuid": "9f10b408811a648468f9bc495fad6181"
     },
     {
       "id": "Building:Smelter",
@@ -1611,7 +1651,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Smelter",
+      "prefabGuid": "98954c35404031d44b6cf0b5bb769d42"
     },
     {
       "id": "Building:Constructor",
@@ -1676,7 +1718,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Constructor",
+      "prefabGuid": "f5a783afd8b2d6a48b02259b1cc25bcd"
     },
     {
       "id": "Building:Assembler",
@@ -1758,7 +1802,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Assembler",
+      "prefabGuid": "f21554090b8662041865fae8ac84acf4"
     },
     {
       "id": "Building:Manufacturer",
@@ -1847,7 +1893,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Manufacturer",
+      "prefabGuid": "8e72872f52f7d26458e07e2f3105188e"
     },
     {
       "id": "Building:DronePort",
@@ -1970,7 +2018,13 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Belt",
+      "prefabGuid": "0bf1db28421cbd541a35566362273cfa",
+      "prefabCurveL": "BeltLCurve",
+      "prefabCurveLGuid": "7a9640f62bc6f404fa1b9ade84cf47f8",
+      "prefabCurveR": "BeltRCurve",
+      "prefabCurveRGuid": "6514f9f08f82db64e8d5ca4c2c8a0dfb"
     },
     {
       "id": "Building:BeltMk2",
@@ -2028,7 +2082,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "BeltMk2",
+      "prefabGuid": "a28ebf27af00fde46833092b742b5913"
     },
     {
       "id": "Building:Splitter",
@@ -2098,7 +2154,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Splitter",
+      "prefabGuid": "ec8176281d9d0a540b8a96c88a550a42"
     },
     {
       "id": "Building:Merger",
@@ -2168,7 +2226,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Merger",
+      "prefabGuid": "326f8420de63f324fbe1a0df87f16c51"
     },
     {
       "id": "Building:Storage",
@@ -2262,7 +2322,9 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "prefab": "Storage",
+      "prefabGuid": "935e9bd1c205c7044b36b398d51ffa2e"
     },
     {
       "id": "Building:Core",
@@ -2471,7 +2533,9 @@
           "maxHpBonus": 1000,
           "isFinal": true
         }
-      ]
+      ],
+      "prefab": "Core",
+      "prefabGuid": "87ccd477b828f0c458048e4c6e68d8c2"
     },
     {
       "id": "Building:Fence",
@@ -2514,7 +2578,9 @@
       "preferHighArc": false,
       "turnSpeed": 0.0,
       "aimTolerance": 3.0,
-      "ammoFilter": []
+      "ammoFilter": [],
+      "prefab": "Fence",
+      "prefabGuid": "e6214c0413d00174abf3040eab2d1aa1"
     },
     {
       "id": "Building:Mine",
@@ -2567,7 +2633,9 @@
           "effect": "Effect:KnockbackRadial",
           "value": 2.0
         }
-      ]
+      ],
+      "prefab": "Mine",
+      "prefabGuid": "10e8294c883dee04fa2a3882bef2b8e4"
     },
     {
       "id": "Building:BasicTurret",
@@ -2625,7 +2693,9 @@
         "Item:BasicAmmo",
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
-      ]
+      ],
+      "prefab": "BasicTurret",
+      "prefabGuid": "f50c1af3e0d06944fabe0d34dc16aac3"
     },
     {
       "id": "Building:HeavyTurret",
@@ -2686,7 +2756,9 @@
       "ammoFilter": [
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
-      ]
+      ],
+      "prefab": "HeavyTurret",
+      "prefabGuid": "63049ff461071ed4596438f0ebbc617b"
     },
     {
       "id": "Building:MortarTower",
@@ -2746,7 +2818,9 @@
       "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:Grenade"
-      ]
+      ],
+      "prefab": "MortarTower",
+      "prefabGuid": "8d23edf3e85cd3144859023827622c98"
     },
     {
       "id": "Building:LaserTower",
@@ -2806,7 +2880,9 @@
       "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
-      ]
+      ],
+      "prefab": "LaserTower",
+      "prefabGuid": "c4018ffa10eb81a4bb750acf98ed7d5f"
     },
     {
       "id": "Building:SlowFieldTower",
@@ -2862,7 +2938,9 @@
       "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
-      ]
+      ],
+      "prefab": "SlowFieldTower",
+      "prefabGuid": "7d3b3cf4e96f16b468227f6f7b341b38"
     },
     {
       "id": "Building:Nest",

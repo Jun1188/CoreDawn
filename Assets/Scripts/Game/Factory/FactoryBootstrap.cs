@@ -155,7 +155,7 @@ namespace CoreDawn.Factory
             if (core != null) CoreSystem.Wire(b, core);
 
             var crafter = b.Owner.Get<CrafterModule>();
-            if (crafter != null && crafter.Recipe != null && !RecipeDatabaseSO.IsUnlocked(crafter.Recipe))
+            if (crafter != null && crafter.Recipe != null && !RecipeUnlocks.IsUnlocked(crafter.Recipe))
                 crafter.SetRecipe(null);
         }
 

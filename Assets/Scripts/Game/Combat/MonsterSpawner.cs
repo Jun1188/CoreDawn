@@ -12,33 +12,29 @@ namespace CoreDawn.Combat
     /// </summary>
     public static class MonsterSpawner
     {
-        /// <param name="data">종류. null이면 MonsterDatabase의 기본 종류(구 세이브·종류 없는 웨이브).</param>
-        public static MonsterView Spawn(MonsterDataSO data, Vector3 position, Quaternion rotation, Transform parent)
+        /// <param name="def">종류(팩 정의). null이면 소리 내고 스폰하지 않는다 — 기본 종류 폴백 없음.</param>
+        public static MonsterView Spawn(EntityDef def, Vector3 position, Quaternion rotation, Transform parent)
         {
-            if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
-            // 정의는 팩(json)에서 — SO는 프리팹·세이브 id 같은 표현 몫만 남았다(5a-3에서 뷰 카탈로그로)
-            var db = SimHost.Database;
-            var def = db != null && data != null ? db.Entity(db.LegacyId(data.Id)) : null;
             if (def == null)
             {
-                Debug.LogError($"[MonsterSpawner] 팩에 몬스터 정의가 없습니다: {(data != null ? data.Id : "(null)")} — 스폰 취소");
+                Debug.LogError("[MonsterSpawner] 몬스터 정의가 null — 스폰 취소");
                 return null;
             }
 
             var entity = SimRunner.Monsters.Spawn(def, position, rotation * Vector3.forward);
-            return AttachView(entity, data, parent);
+            return AttachView(entity, parent);
         }
 
-        /// <summary>이미 심이 세운 몬스터 엔티티에 프리팹 뷰를 붙인다 — 밤 웨이브(WaveSystem)가 심에서 먼저 세우는 경우.</summary>
-        public static MonsterView AttachView(Entity entity, MonsterDataSO data, Transform parent)
+        /// <summary>이미 심이 세운 몬스터 엔티티에 프리팹 뷰(카탈로그)를 붙인다 — 밤 웨이브(WaveSystem)가 심에서 먼저 세우는 경우.</summary>
+        public static MonsterView AttachView(Entity entity, Transform parent)
         {
             if (entity == null) return null;
-            if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
             Vector3 position = entity.Position;
             Quaternion rotation = entity.Facing.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(entity.Facing) : Quaternion.identity;
 
-            GameObject go = data != null && data.prefab != null
-                ? Object.Instantiate(data.prefab, position, rotation, parent)
+            var prefab = ViewCatalogSO.PrefabOf(entity.Def);
+            GameObject go = prefab != null
+                ? Object.Instantiate(prefab, position, rotation, parent)
                 : CreateFallback(position, parent);
             go.SetActive(true);
 
@@ -55,7 +51,6 @@ namespace CoreDawn.Combat
             var view = go.GetComponent<MonsterView>();
             if (view == null) view = go.AddComponent<MonsterView>();
             view.AttachEntity(entity);
-            view.Configure(data);
             return view;
         }
 

@@ -42,7 +42,7 @@ namespace CoreDawn.Sim
         /// 벨트 모양 (직선/커브L/커브R) — 배치 시 결정되는 인스턴스 상태. 벨트가 아닌 건물에는 의미가 없다.
         ///
         /// 포트는 PortOverride로도 알 수 있지만 커브 메시 프리팹은 모양으로만 고를 수 있어서
-        /// (BeltDataSO.PrefabFor), 세이브가 이 값을 그대로 되살릴 수 있게 여기 남겨둔다.
+        /// (뷰 카탈로그 BeltPrefabOf), 세이브가 이 값을 그대로 되살릴 수 있게 여기 남겨둔다.
         /// </summary>
         public BeltShape Shape { get; }
 
