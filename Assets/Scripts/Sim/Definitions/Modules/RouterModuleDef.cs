@@ -7,5 +7,7 @@ namespace CoreDawn.Sim
     public sealed class RouterModuleDef : EntityModuleDef
     {
         [JsonProperty("mode")] public string Mode = "split";
+
+        public override EntityModule Create(Entity entity) => new RouterModule(this);
     }
 }

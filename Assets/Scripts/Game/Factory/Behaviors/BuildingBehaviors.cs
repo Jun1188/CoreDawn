@@ -21,9 +21,6 @@ namespace CoreDawn.Factory
             var extractor = def.Get<ExtractorModuleDef>();
             if (extractor != null) return new MinerBehavior(b, extractor);
 
-            var router = def.Get<RouterModuleDef>();
-            if (router != null) return router.Mode == "merge" ? new MergerBehavior(b) : new SplitterBehavior(b);
-
             var core = def.Get<CoreModuleDef>();
             if (core != null) return new CoreBehavior(b, core);
 

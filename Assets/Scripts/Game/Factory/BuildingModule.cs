@@ -61,6 +61,7 @@ namespace CoreDawn.Factory
         public readonly List<BuildingConnection> OutputConnections = new();
 
         IBuildingBehavior _behavior;
+        RouterModule _router;   // 분배기·합류기의 규칙 모듈 — OnAttach에서 굳힌다
 
         public BuildingModule(FactorySystem factory, EntityDef def, Vector2Int origin, int rotSteps,
             PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight, bool ownsEntity = true)
@@ -126,6 +127,9 @@ namespace CoreDawn.Factory
             Output = inventory?.Output ?? new ItemContainer(0);
             // 행동은 그릇·정의가 갖춰진 뒤에 — 조립기는 생성자에서 입력 필터를 건다
             _behavior = BuildingBehaviors.Create(this);
+            // 라우터(분배기·합류기): 규칙은 모듈이, 흘리기는 이 건물(PumpRouted)이. 필터가 바뀌면 다시 판단한다
+            _router = Owner.Get<RouterModule>();
+            if (_router != null) _router.Changed += WakeSelf;
             // 제작 설비(조립기·제련로 — 행동이 사라진 건물): 옛 AssemblerBehavior 생성자가 걸던 그릇 정책의 공통화
             var crafter = Owner.Get<CrafterModule>();
             if (_behavior == null && crafter != null)
@@ -203,7 +207,8 @@ namespace CoreDawn.Factory
             for (int i = 0; i < modules.Count; i++)
                 if (modules[i] is ISteppable s) { stepped = true; wake = Mathf.Max(wake, s.Step(Factory.Now, dt)); }
             if (IsRemoved) return;                       // 지뢰처럼 걷다가 스스로 죽은 건물
-            if (!stepped) PumpPassThrough();             // 걷는 모듈이 없으면 통과 보관소다
+            if (!stepped && _router != null) PumpRouted();   // 분배기·합류기 — 출구 규칙으로 흘린다
+            else if (!stepped) PumpPassThrough();            // 걷는 모듈이 없으면 통과 보관소다
             if (Output.Total > outBefore) FlushOutputs();
             if (Input.Total < inBefore) NotifyUpstream();
             if (wake > 0f) Factory.ScheduleWake(this, wake);
@@ -223,6 +228,54 @@ namespace CoreDawn.Factory
                 while (moved < count && TryPushOutput(item)) moved++;
                 if (moved > 0) Input.TryConsume(item, moved);   // 상류 깨움은 공통 틱이 그릇 변화로 한다
             }
+        }
+
+        /// <summary>
+        /// 라우터 펌핑(구 SplitterBehavior.Tick·MergerBehavior.Tick) — 입력 버퍼의 아이템을 출구 규칙에 따라
+        /// 연결에 분배한다(출력 버퍼 없음). 전부 막혔으면 그대로 남는다(stall) — 하류가 소비하면 깨어난다.
+        /// </summary>
+        void PumpRouted()
+        {
+            foreach (var (item, count) in Input.Snapshot())
+            {
+                int moved = 0;
+                while (moved < count && TryPushRouted(item)) moved++;
+                if (moved > 0) Input.TryConsume(item, moved);   // 상류 깨움은 공통 틱이 그릇 변화로 한다
+            }
+        }
+
+        /// <summary>
+        /// 아이템 1개 배출 시도.
+        ///
+        /// 갈 수 있는 출구를 고르는 규칙만 다르고, 고른 뒤 라운드로빈으로 흘리는 것은 같다:
+        ///   지정된 아이템 → 지정된 방향들 중에서
+        ///   지정 없는 아이템 → 허용 목록이 없는 출구들 중에서 (전용 출구는 남의 것이므로 통과 금지)
+        /// 어느 쪽이든 막은 출구는 후보에서 빠지고, 가득 찬 출구는 건너뛴다.
+        ///
+        /// 연결 수는 포트 수(≤4)라 상수 순회다.
+        /// </summary>
+        bool TryPushRouted(ItemDef item)
+        {
+            var conns = OutputConnections;
+            if (conns.Count == 0) return false;
+
+            bool assigned = _router.HasAssignedDirs(item);
+
+            for (int i = 0; i < conns.Count; i++)
+            {
+                var c = conns[(_router.Cursor + i) % conns.Count];
+                var dir = c.FromPort.Direction;
+
+                if (_router.IsBlocked(dir)) continue;                       // 막은 출구 — 다음 출구로 넘긴다
+                if (assigned ? !_router.IsAllowedAt(dir, item) : _router.HasFilter(dir)) continue;
+                if (!c.To.Input.TryAdd(item)) continue;                     // 가득 찬 출구는 건너뜀
+
+                Factory.MarkDirty(c.To);
+                _router.MarkPassed(item);                                   // "지나가는 중" 표시의 근거
+                _router.Cursor = (_router.Cursor + i + 1) % conns.Count;
+                return true;
+            }
+            return false;   // 갈 곳이 없다 → 대기(stall). 하류가 소비하면 NotifyUpstream으로 깨어난다
         }
 
         /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용). 행동 없는 건물(나무·둥지·울타리)은 null.</summary>

@@ -272,7 +272,7 @@ namespace CoreDawn.Tests
             var storeA = Place(Storage(), 3, 0);           // 동쪽 출구 (무필터)
             var storeB = Place(Storage(), 2, 1, rot: 3);   // 북쪽 출구 (주괴 전용)
 
-            ((SplitterBehavior)splitter.Behavior).AddFilter(Direction.North, _ingot);
+            splitter.Owner.Get<RouterModule>().AddFilter(Direction.North, _ingot);
 
             RunSim(8f);
             int aOre = StoredCount(storeA, _ore),  aIngot = StoredCount(storeA, _ingot);
@@ -295,7 +295,7 @@ namespace CoreDawn.Tests
             var storeA = Place(Storage(), 2, 0);                    // 동쪽 출구 (무필터)
             var storeB = Place(Storage(slots: 2), 1, 1, rot: 3);    // 북쪽 출구 — 두 종류를 담으므로 2슬롯
 
-            var behavior = (SplitterBehavior)splitter.Behavior;
+            var behavior = splitter.Owner.Get<RouterModule>();
             behavior.AddFilter(Direction.North, _ore);
             behavior.AddFilter(Direction.North, _ingot);
 
@@ -328,7 +328,7 @@ namespace CoreDawn.Tests
             var storeA = Place(Storage(), 2, 0);                 // 동쪽
             var storeB = Place(Storage(), 1, 1, rot: 3);         // 북쪽
 
-            var behavior = (SplitterBehavior)splitter.Behavior;
+            var behavior = splitter.Owner.Get<RouterModule>();
             behavior.AddFilter(Direction.North, _ore);
             behavior.AddFilter(Direction.East, _ore);
 
@@ -355,7 +355,7 @@ namespace CoreDawn.Tests
             var storeA = Place(Storage(), 2, 0);                 // 동쪽
             var storeB = Place(Storage(), 1, 1, rot: 3);         // 북쪽 — 막을 대상
 
-            var behavior = (SplitterBehavior)splitter.Behavior;
+            var behavior = splitter.Owner.Get<RouterModule>();
             behavior.AddFilter(Direction.North, _ore);           // 지정해 둔 뒤
             behavior.SetBlocked(Direction.North, true);          // 막으면 지정도 사라져야 한다
 
