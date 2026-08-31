@@ -27,7 +27,7 @@ namespace CoreDawn.Factory
     ///   - 플레이어가 인벤토리 UI로 직접 넣으면(TryPutAt/TryExchangeAt) 벨트 경로를 거치지 않으므로,
     ///     ItemContainer.Changed 이벤트를 구독해 그 자리에서 Sim.MarkDirty를 걸어 같은 결과를 만든다.
     /// </summary>
-    public class CoreBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior, IDamageInterceptor
+    public class CoreBehavior : IBuildingBehavior, ISaveableBehavior, IDamageInterceptor
     {
         readonly BuildingModule _b;
         readonly CoreModuleDef _so;
@@ -58,15 +58,6 @@ namespace CoreDawn.Factory
         public bool HasNextTier => TierIndex < _so.Tiers.Count;
 
         CoreTierDef CurrentTier => HasNextTier ? _so.Tiers[TierIndex] : null;
-
-        public string InteractPrompt => HasNextTier ? "코어에 자원 납품" : "코어 (최고 티어 달성)";
-
-        public void Interact(PlayerController player)
-        {
-            // 씬에 UITK 코어 패널이 있으면 그쪽을 연다. 없으면 기존 uGUI 화면으로 —
-            // "UITK 먼저, uGUI 폴백" 정책은 GameScreens가 소유한다 — 여기 있던 원조 패턴의 일반화.
-            GameScreens.OpenCore(this);
-        }
 
         /// <summary>현재 티어 요구 아이템별 (아이템, 필요량, 현재량) — 진행률 UI용.</summary>
         public IReadOnlyList<(ItemDef item, int required, int current)> GetProgress()

@@ -14,7 +14,7 @@ namespace CoreDawn.Factory
     /// 탄이 들어오면 그릇의 Changed가 깨운다), 한 발 소비 뒤 상류 깨우기, 세이브(쿨다운·방위), 탄약함 열기.
     /// 판단은 전부 모듈에 있다 — 여기엔 공장 배관만.
     /// </summary>
-    public class TurretBehavior : IBuildingBehavior, ISaveableBehavior, IInteractiveBehavior
+    public class TurretBehavior : IBuildingBehavior, ISaveableBehavior
     {
         readonly BuildingModule _b;
         readonly TurretModule _turret;
@@ -31,14 +31,6 @@ namespace CoreDawn.Factory
         }
 
         public TurretModule Turret => _turret;
-
-        public string InteractPrompt => _b.Input.SlotCount > 0 ? "탄약함 열기" : null;
-
-        public void Interact(PlayerController player)
-        {
-            // 보관함 = 입력 버퍼. 벨트가 넣는 곳과 같아서 화면에 보이는 것이 곧 저장소의 전부다.
-            GameScreens.OpenContainer(_b.Input);
-        }
 
         public void OnAfterPlaced() { }
 

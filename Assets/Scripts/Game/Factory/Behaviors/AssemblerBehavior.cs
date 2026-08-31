@@ -21,7 +21,7 @@ namespace CoreDawn.Factory
     /// stall 정책은 모듈의 것이다: 결과물 자리가 없으면 시작하지 않고, 완료 시점에 자리가 없으면 보류한다(유실 없음).
     /// 하류가 소비하면 NotifyUpstream으로 깨어나 재개한다.
     /// </summary>
-    public class AssemblerBehavior : IBuildingBehavior, IInteractiveBehavior, ISaveableBehavior
+    public class AssemblerBehavior : IBuildingBehavior, ISaveableBehavior
     {
         readonly BuildingModule _b;
         readonly CrafterModule _crafter;
@@ -76,9 +76,6 @@ namespace CoreDawn.Factory
         public float Progress => _crafter.Progress(_b.Factory.Now);
         public float RemainingTime => _crafter.RemainingTime(_b.Factory.Now);
         public MachineState State => _crafter.State(_b.Factory.Now);
-
-        public string InteractPrompt => $"{_b.DisplayName} 열기";
-        public void Interact(PlayerController player) => MachinePanelView.TryOpen(this);
 
         public void SetRecipe(RecipeDef r)
         {

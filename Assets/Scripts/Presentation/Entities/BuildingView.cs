@@ -92,8 +92,8 @@ namespace CoreDawn.Entities
             return true;
         }
 
-        // ── 플레이어 상호작용(E) — 행동이 IInteractiveBehavior를 구현한 건물만 반응 (opt-in)
-        public string Prompt => building?.Behavior is IInteractiveBehavior i ? i.InteractPrompt : null;
+        // ── 플레이어 상호작용(E) — 정의의 모듈 조합으로 등록부(BuildingInteractions)가 고른다. 심·행동은 UI를 모른다
+        public string Prompt => BuildingInteractions.TryGet(building, out var prompt, out _) ? prompt : null;
 
         /// <summary>핑 이름은 설계도의 표시명 — 오브젝트 이름은 프리팹 이름(Clone)이라 사람이 읽을 것이 아니다.</summary>
         public override string PingLabel =>
@@ -101,7 +101,7 @@ namespace CoreDawn.Entities
 
         public void Interact(PlayerController player)
         {
-            if (building?.Behavior is IInteractiveBehavior i) i.Interact(player);
+            if (BuildingInteractions.TryGet(building, out _, out var open)) open(player);
         }
 
         // (구 뷰 레지스트리 BuildingView.All은 퇴역 — 정본 목록은 FactorySystem.Buildings)

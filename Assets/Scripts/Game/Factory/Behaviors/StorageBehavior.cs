@@ -17,7 +17,7 @@ namespace CoreDawn.Factory
     ///
     /// 하류가 받는 만큼은 계속 흘려보낸다 — 저장소는 라인을 막는 마개가 아니라 완충 장치다.
     /// </summary>
-    public class StorageBehavior : IBuildingBehavior, IInteractiveBehavior
+    public class StorageBehavior : IBuildingBehavior
     {
         readonly BuildingModule _b;
 
@@ -36,14 +36,6 @@ namespace CoreDawn.Factory
         void Wake() => _b.Factory.MarkDirty(_b);
 
         public void OnAfterPlaced() { }
-
-        public string InteractPrompt => "보관함 열기";
-
-        public void Interact(PlayerController player)
-        {
-            // 보관함 = 입력 버퍼. 벨트가 넣는 곳과 같아서 화면에 보이는 것이 곧 저장소의 전부다.
-            GameScreens.OpenContainer(_b.Input);
-        }
 
         public void Tick(float dt)
         {

@@ -13,7 +13,7 @@ namespace CoreDawn.Factory
     /// 틱마다 Step, 깨우기 예약(다음 펄스 시각 또는 탐색 주기; 연료가 없으면 그릇의 Changed가 깨운다),
     /// 연료 소비 뒤 상류 깨우기, 세이브(쿨다운), 연료함 열기.
     /// </summary>
-    public class AuraBehavior : IBuildingBehavior, ISaveableBehavior, IInteractiveBehavior
+    public class AuraBehavior : IBuildingBehavior, ISaveableBehavior
     {
         readonly BuildingModule _b;
         readonly AuraEmitterModule _aura;
@@ -29,10 +29,6 @@ namespace CoreDawn.Factory
         }
 
         public AuraEmitterModule Aura => _aura;
-
-        public string InteractPrompt => _b.Input.SlotCount > 0 ? "연료함 열기" : null;
-
-        public void Interact(PlayerController player) => GameScreens.OpenContainer(_b.Input);
 
         public void OnAfterPlaced() { }
 
