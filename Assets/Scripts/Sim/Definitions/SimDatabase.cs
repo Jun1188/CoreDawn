@@ -9,7 +9,7 @@ namespace CoreDawn.Sim
     /// 정의의 정본 — 팩 json(data.json)에서 한 번 읽어 불변으로 든다. 심은 여기서만 정의를 얻는다(에셋·UnityEngine.Object 없음).
     ///
     /// id는 저장하지 않고 위치에서 파생한다: <c>팩:섹션/키</c>(소문자 snake, 예 <c>coredawn:item/iron_plate</c>).
-    /// 섹션 = items · recipes · effects · entities · waves(+ guns · tutorial은 아직 원본 JObject로 보관 — 심이 안 쓴다).
+    /// 섹션 = items · recipes · effects · entities · waves · guns(+ tutorial은 아직 원본 JObject로 보관 — 심이 안 쓴다).
     /// 로드 뒤 Resolve 패스가 id 문자열을 정의 참조로 잇고, 모르는 id·잘못된 키는 오류로 모은다(strict면 예외).
     /// </summary>
     public sealed class SimDatabase
@@ -17,7 +17,7 @@ namespace CoreDawn.Sim
         static readonly Regex KeyRule = new Regex("^[a-z0-9_]+$");
         static readonly (string section, string singular)[] Sections =
         {
-            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("waves", "wave"),
+            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("waves", "wave"), ("guns", "gun"),
         };
 
         public string Pack { get; }
@@ -27,6 +27,7 @@ namespace CoreDawn.Sim
         readonly Dictionary<string, EffectSpec> effects = new Dictionary<string, EffectSpec>();
         readonly Dictionary<string, EntityDef> entities = new Dictionary<string, EntityDef>();
         readonly Dictionary<string, WaveDef> waves = new Dictionary<string, WaveDef>();
+        readonly Dictionary<string, GunDef> guns = new Dictionary<string, GunDef>();
         readonly List<string> errors = new List<string>();
 
         public IReadOnlyDictionary<string, ItemDef> Items => items;
@@ -34,8 +35,9 @@ namespace CoreDawn.Sim
         public IReadOnlyDictionary<string, EffectSpec> Effects => effects;
         public IReadOnlyDictionary<string, EntityDef> Entities => entities;
         public IReadOnlyDictionary<string, WaveDef> Waves => waves;
+        public IReadOnlyDictionary<string, GunDef> Guns => guns;
 
-        /// <summary>심이 아직 안 읽는 섹션(guns·tutorial) — 표현·FPS·튜토리얼이 가져간다.</summary>
+        /// <summary>심이 아직 안 읽는 섹션(tutorial) — 튜토리얼이 가져간다.</summary>
         public JObject Raw { get; private set; }
 
         public IReadOnlyList<string> Errors => errors;
@@ -80,8 +82,10 @@ namespace CoreDawn.Sim
             db.LoadSection(root, "effects", "effect", db.effects, serializer);
             db.LoadSection(root, "entities", "entity", db.entities, serializer);
             db.LoadSection(root, "waves", "wave", db.waves, serializer);
+            db.LoadSection(root, "guns", "gun", db.guns, serializer);
             db.Raw = root;
 
+            foreach (var d in db.guns.Values) d.Resolve(db, db.errors);     // 총 → 탄 아이템. 아이템의 Weapon 모듈은 총을 가리키므로 총이 먼저
             foreach (var d in db.items.Values) d.Resolve(db, db.errors);
             foreach (var d in db.recipes.Values) d.Resolve(db, db.errors);
             foreach (var d in db.effects.Values) d.Resolve(db, db.errors);
@@ -122,6 +126,7 @@ namespace CoreDawn.Sim
         public RecipeDef ResolveRecipe(string id, List<string> errs, string owner) => Resolve(recipes, id, errs, owner, "recipe");
         public EffectSpec ResolveEffect(string id, List<string> errs, string owner) => Resolve(effects, id, errs, owner, "effect");
         public EntityDef ResolveEntity(string id, List<string> errs, string owner) => Resolve(entities, id, errs, owner, "entity");
+        public GunDef ResolveGun(string id, List<string> errs, string owner) => Resolve(guns, id, errs, owner, "gun");
 
         static T Resolve<T>(Dictionary<string, T> dict, string id, List<string> errs, string owner, string what) where T : Def
         {
@@ -136,5 +141,6 @@ namespace CoreDawn.Sim
         public EffectSpec Effect(string id) => effects.TryGetValue(id, out var d) ? d : null;
         public EntityDef Entity(string id) => entities.TryGetValue(id, out var d) ? d : null;
         public WaveDef Wave(string id) => waves.TryGetValue(id, out var d) ? d : null;
+        public GunDef Gun(string id) => guns.TryGetValue(id, out var d) ? d : null;
     }
 }

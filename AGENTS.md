@@ -80,6 +80,12 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule` — `AssemblerBehavior`
   is the factory adapter (wake scheduling, flush, unlock check). Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
   never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
+- Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,
+  pellets, range in meters, ammo filter, damage multiplier + the view's feel values), and the player entity carries a `WeaponModule`
+  (per-gun `Magazine`, equipped gun, fire cooldown, reload timer that really consumes rounds from the inventory, auto-reload, ammo
+  switch, melee = unlimited) ticked by `PlayerSystem.Tick`. `Gun` (view) forwards input (`TryFire/StartReload/TrySwitchAmmo`) and turns
+  the approved `WeaponShot` into `ProjectileSystem.Fire` calls with spread/pellets; `WeaponManager.Equip/Unequip` tell the module which
+  gun is held. Saves store `player.weapons[{gun, round, loaded}]` keyed by gun id.
 - Towers are not a module: a tower is `Building + (AmmoConsumer | FixedAmmo) + (Turret | AuraEmitter | Trigger)` (5a-2e-1, 2026-08-31).
   Emitters never know effects — they ask the entity's `IAmmoSource` ("can I fire, what is this shot": `HasAmmo`, `TryPeek`, `TryTake`,
   `Bake`). `AmmoConsumerModule` = magazine (input-container filter, one round per shot, damage-like × `damageMultiplier` → owner

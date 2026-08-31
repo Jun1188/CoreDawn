@@ -302,6 +302,7 @@ namespace CoreDawn.EditorTools
                     new JObject { ["type"] = "Effects" },
                     new JObject { ["type"] = "Inventory", ["main"] = playerJson["main"] ?? 25, ["hotbar"] = playerJson["hotbar"] ?? 7 },
                     new JObject { ["type"] = "Crafter", ["manual"] = true, ["speed"] = 1.0, ["recipes"] = new JArray() },
+                    new JObject { ["type"] = "Weapon" },   // 무기 소지자 — 총별 탄창·재장전·연사는 심이 판정
                 };
                 entities["player"] = o;
             }

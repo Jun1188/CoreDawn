@@ -1,5 +1,8 @@
 using UnityEngine;
+using CoreDawn.Combat;
 using CoreDawn.Data;
+using CoreDawn.Inventories;
+using CoreDawn.Sim;
 
 namespace CoreDawn.FPS
 {
@@ -31,32 +34,9 @@ namespace CoreDawn.FPS
         /// <summary>정조준 중인가 — 조준 상태의 원본. 연출(ADS·킥백)은 이 값을 받아 반응한다.</summary>
         public bool IsAiming { get; private set; }
 
-        // ── 세이브 표면 ───────────────────────────────────────────────
-        //
-        // weapons 배열을 밖으로 열지 않고 여기서 훑는다 — 이 클래스의 접근 규칙(공개 API만)을
-        // 세이브 때문에 깨면, 무기 스택 구성이 바뀔 때마다 세이브 모듈까지 따라 고쳐야 한다.
-        // 순서는 인스펙터에 꽂힌 배열 순서다: 무기를 중간에 끼워 넣으면 옛 세이브의 탄수가
-        // 한 칸씩 밀린다 — 탄수뿐이라 치명적이지 않지만, 무기 목록을 손볼 때 알고 있을 것.
-
-        /// <summary>세이브 저장 전용 — 무기별 장전 탄수를 배열 순서대로 읽는다.</summary>
-        public int[] CaptureAmmo()
-        {
-            if (weapons == null) return System.Array.Empty<int>();
-
-            var result = new int[weapons.Length];
-            for (int i = 0; i < weapons.Length; i++)
-                result[i] = weapons[i] != null ? weapons[i].CurrentAmmo : 0;
-            return result;
-        }
-
-        /// <summary>세이브 복원 전용 — <see cref="CaptureAmmo"/>가 남긴 순서대로 장전 탄수를 되돌린다.</summary>
-        public void RestoreAmmo(System.Collections.Generic.IReadOnlyList<int> ammo)
-        {
-            if (weapons == null || ammo == null) return;
-
-            for (int i = 0; i < weapons.Length && i < ammo.Count; i++)
-                if (weapons[i] != null) weapons[i].RestoreAmmo(ammo[i]);
-        }
+        /// <summary>소지자(플레이어 엔티티)의 무기 모듈 — 든 총·탄창·재장전의 정본. 세이브는 심 상태를 저장한다(PlayerSaveModule).</summary>
+        static WeaponModule Weapon => PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.Entity?.Get<WeaponModule>() : null;
+        static float Now => SimRunner.Players.Now;
 
         private void Start()
         {
@@ -87,6 +67,7 @@ namespace CoreDawn.FPS
                 if (currentIndex == i) return; // 이미 들고 있는 무기
 
                 SwapTo(i);
+                Weapon?.Equip(weapons[i].Def, Now);   // 심에 든 총을 알린다 — 하던 재장전은 취소된다
                 return;
             }
 
@@ -97,6 +78,7 @@ namespace CoreDawn.FPS
         {
             if (CurrentWeapon != null) CurrentWeapon.gameObject.SetActive(false);
             currentIndex = -1;
+            Weapon?.Equip(null, Now);
             SetAiming(false);
         }
 

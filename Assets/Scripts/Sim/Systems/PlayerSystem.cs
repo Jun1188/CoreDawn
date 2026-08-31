@@ -6,7 +6,7 @@ namespace CoreDawn.Sim
     /// <summary>
     /// 플레이어 시스템 — 플레이어 엔티티(편=Player, Health, Effects)의 생성 주체. 뷰(PlayerView)는 받아서 그리고,
     /// 물리 이동은 뷰가 굴려 위치를 심으로 미러한다(서버 권위 하이브리드 결정). 플레이어는 하나다.
-    /// 근접 공격 모듈은 없다 — 플레이어 피해는 총기(투사체 → Effects)만 준다.
+    /// 근접 공격 모듈은 없다 — 플레이어 피해는 총기(WeaponModule이 승인, 뷰가 투사체 → Effects)만 준다.
     /// </summary>
     public sealed class PlayerSystem : IDisposable
     {
@@ -14,6 +14,9 @@ namespace CoreDawn.Sim
 
         /// <summary>살아 있는 플레이어 엔티티. 아직 없거나 제거됐으면 null.</summary>
         public Entity Entity { get; private set; }
+
+        /// <summary>플레이어 심 시계(초) — 무기의 연사 간격·재장전이 이 시계로 돈다. 러너가 매 프레임 Tick으로 올린다.</summary>
+        public float Now { get; private set; }
 
         public event Action<Entity> Spawned;
         public event Action<Entity> Despawned;
@@ -49,6 +52,15 @@ namespace CoreDawn.Sim
             Entity = e;
             Spawned?.Invoke(e);
             return e;
+        }
+
+        /// <summary>한 틱 — 시계를 올리고 플레이어 모듈(무기: 재장전 완료·자동 재장전)을 돌린다.</summary>
+        public void Tick(float dt)
+        {
+            Now += dt;
+            var e = Entity;
+            if (e == null || e.IsRemoved) return;
+            e.Get<WeaponModule>()?.Tick(Now);
         }
 
         /// <summary>월드에서 제거 — 뷰가 사라질 때(씬 전환). 죽음(부활 가능)과는 다르다.</summary>
