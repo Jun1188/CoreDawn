@@ -94,7 +94,7 @@ namespace CoreDawn.Factory
                 return;
             }
             if (r == _crafter.Recipe) return;
-            // 진행 중인 1회는 취소하지 않는다 — 이미 소비된 재료는 옛 레시피의 완성품이 되어 출구로 나간다.
+            // 진행 중인 1회는 취소된다(재료는 완료 순간에만 소비되므로 잃는 것이 없다).
             // 건물의 물건은 건물의 출구로만 나간다 (가방 순간이동 없음). 새 레시피에 안 쓰는 입력 잔여물은 틱이 출구로 밀어낸다.
             if (_crafter.SetRecipe(r)) _b.Factory.MarkDirty(_b);
         }

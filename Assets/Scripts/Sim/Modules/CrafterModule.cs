@@ -185,10 +185,11 @@ namespace CoreDawn.Sim
             return false;
         }
 
-        /// <summary>레시피 교체. 슬롯이 모자라면 false. 진행 중인 1회는 취소하지 않는다 — 옛 레시피의 완성품이 되어 출구로 나간다.</summary>
+        /// <summary>레시피 교체. 슬롯이 모자라면 false. 진행 중인 1회는 취소한다 — 재료는 완료 순간에만 소비하므로 잃는 것이 없다.</summary>
         public bool SetRecipe(RecipeDef r)
         {
             if (r != null && r.Inputs != null && r.Inputs.Count > InputSlotCount) return false;
+            if (r != Recipe) { Crafting = false; ReadyAt = -1f; }
             Recipe = r;
             return true;
         }
@@ -224,7 +225,7 @@ namespace CoreDawn.Sim
         }
 
         /// <summary>
-        /// 자동 제작 한 걸음(공장 틱). 완료된 1회를 출력에 넣고, 잔여물을 밀어내고, 재료가 모였으면 다음 1회를 시작한다.
+        /// 자동 제작 한 걸음(공장 틱). 완료 시각이 됐으면 재료를 소비하고 출력에 넣고, 잔여물을 밀어내고, 재료가 있으면 다음 1회의 타이머를 시작한다.
         /// </summary>
         /// <param name="now">심 시계.</param>
         /// <param name="inputsFreed">입력 그릇에 자리가 생겼다 — 소유자가 막혀 있던 상류를 깨운다.</param>
@@ -233,20 +234,26 @@ namespace CoreDawn.Sim
         {
             inputsFreed = false;
             if (Recipe == null || Paused) return 0f;   // 중지 — 진행률·버퍼 보존
+            // 규칙(손 제작과 같다): 재료가 있는 동안 타이머가 돌고, 완료 순간에 소비·산출한다.
+            // 중간에 재료를 빼면 타이머는 초기화된다 — 소비된 것이 없으니 잃는 것도 없다. (2026-09-01 사용자 지시로 "소비 → 타이머"에서 되돌림)
             if (Crafting)
             {
-                if (now < ReadyAt) return 0f;                      // 이른 기상 (재료 도착 등) → 완료 시각에 다시 깨어남
-                if (!CanStoreOutputs(CraftingRecipe)) return 0f;   // 출력 막힘 → 완료 보류 (stall)
-                foreach (var o in CraftingRecipe.Outputs) Deliver(o.Item, o.Amount);   // 자리를 확인했으므로 남지 않는다
-                Crafting = false;
-                var done = CraftingRecipe;
-                Delivered?.Invoke();
-                Crafted?.Invoke(done);
+                if (!HasIngredients(CraftingRecipe)) { Crafting = false; ReadyAt = -1f; }   // 재료가 빠졌다 → 초기화
+                else
+                {
+                    if (now < ReadyAt) return 0f;                      // 이른 기상 (재료 도착 등) → 완료 시각에 다시 깨어남
+                    if (!CanStoreOutputs(CraftingRecipe)) return 0f;   // 출력 막힘 → 완료 보류 (stall), 재료는 그대로
+                    foreach (var i in CraftingRecipe.Inputs) Consume(i.Item, i.Amount);   // 완료 순간에 소비
+                    inputsFreed = true;
+                    foreach (var o in CraftingRecipe.Outputs) Deliver(o.Item, o.Amount);  // 자리를 확인했으므로 남지 않는다
+                    Crafting = false;
+                    var done = CraftingRecipe;
+                    Delivered?.Invoke();
+                    Crafted?.Invoke(done);
+                }
             }
             if (EvictForeignInputs()) inputsFreed = true;
             if (!HasIngredients(Recipe) || !CanStoreOutputs(Recipe)) return 0f;
-            foreach (var i in Recipe.Inputs) Consume(i.Item, i.Amount);
-            inputsFreed = true;
             Crafting = true;
             CraftingRecipe = Recipe;
             float seconds = SecondsOf(Recipe);

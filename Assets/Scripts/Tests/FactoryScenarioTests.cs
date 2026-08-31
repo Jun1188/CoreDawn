@@ -54,6 +54,7 @@ namespace CoreDawn.Tests
             Run("13. 막은 출구 건너뛰기",           S13_SplitterBlockedOutlet);
             Run("14. 벨트 없는 직결 체인",          S14_DirectChain);
             Run("15. 다출구 라운드로빈",            S15_MultiOutputRoundRobin);
+            Run("16. 조립기 — 타이머 뒤에 소비, 재료를 빼면 초기화", S16_AssemblerTimerThenConsume);
 
             foreach (var so in _createdSOs) DestroyImmediate(so);
             _createdSOs.Clear();
@@ -166,6 +167,27 @@ namespace CoreDawn.Tests
         }
 
         /// <summary>마이너→벨트→어셈블러(2광석=1주괴)→벨트→저장소.</summary>
+        void S16_AssemblerTimerThenConsume()
+        {
+            var recipe = MakeRecipe(_ore, 2, _ingot, 1, craftTime: 1f);
+            var asm = Place(Assembler(recipe), 0, 0);
+            var crafter = asm.Owner.Get<CrafterModule>();
+            asm.Input.TryAdd(_ore); asm.Input.TryAdd(_ore);
+            RunSim(0.3f);
+            Expect(crafter.Crafting && asm.Input.CountOf(_ore) == 2,
+                $"타이머가 도는 동안 재료는 그대로 (crafting {crafter.Crafting}, 광석 {asm.Input.CountOf(_ore)})");
+            asm.Input.TryConsume(_ore, 1);   // 중간에 하나 빼감
+            RunSim(0.3f);
+            Expect(!crafter.Crafting && asm.Input.CountOf(_ore) == 1 && asm.Output.CountOf(_ingot) == 0,
+                $"재료가 빠지면 타이머 초기화·산출 없음 (crafting {crafter.Crafting}, 광석 {asm.Input.CountOf(_ore)}, 주괴 {asm.Output.CountOf(_ingot)})");
+            asm.Input.TryAdd(_ore);          // 다시 채움 → 타이머 처음부터
+            RunSim(0.6f);
+            Expect(crafter.Crafting && asm.Output.CountOf(_ingot) == 0, $"초기화 뒤 1초 전에는 아직 (crafting {crafter.Crafting}, 주괴 {asm.Output.CountOf(_ingot)})");
+            RunSim(0.6f);
+            Expect(asm.Output.CountOf(_ingot) == 1 && asm.Input.CountOf(_ore) == 0,
+                $"완료 순간에 소비·산출 (주괴 {asm.Output.CountOf(_ingot)}, 광석 {asm.Input.CountOf(_ore)})");
+        }
+
         void S6_AssemblerChain()
         {
             var recipe = MakeRecipe(_ore, 2, _ingot, 1, craftTime: 0.3f);
