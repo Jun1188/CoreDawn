@@ -166,6 +166,7 @@ namespace CoreDawn.EditorTools
                 if ((bool?)b["hideFromBuildMenu"] == true) building["placeable"] = false;
                 if ((bool?)b["isDemolishable"] == false) building["isDemolishable"] = false;
                 if ((bool?)b["isAttackable"] == false) building["isAttackable"] = false;
+                if ((bool?)b["walkable"] == true) building["walkable"] = true;
                 foreach (var k in new[] { "requiredCoreTier", "threatSeedCost", "menuOrder" })
                     if (((int?)b[k] ?? 0) != 0) building[k] = b[k];
                 if (Arr(b["buildCost"]).Count > 0) building["cost"] = Amounts(b["buildCost"]);
@@ -212,26 +213,45 @@ namespace CoreDawn.EditorTools
                     }
                     case "Nest": mods.Add(new JObject { ["type"] = "NestSpawner" }); break;
                     case "Tower":
-                        if (name == "Fence") mods.Add(new JObject { ["type"] = "Blocker" });
-                        else if (name == "Mine")
+                    {
+                        // 전달 방식(fireMode)이 모듈을 고른다 — 건물 이름으로 갈라 두면 새 타워마다 exporter를 고쳐야 한다
+                        string fm = (string)b["fireMode"];
+                        if (string.IsNullOrEmpty(fm)) throw new InvalidOperationException($"'{b["id"]}': 타워는 fireMode(Projectile|Hitscan|Aura|Trigger|None)가 필요합니다");
+                        // 탄의 출처 — 받는 탄이 있으면 탄창(AmmoConsumer), 없으면 자기 효과(FixedAmmo). 둘 다 없으면 무엇으로 쏘는지 모른다
+                        JObject Source()
                         {
-                            mods.Add(new JObject { ["type"] = "Trigger", ["radius"] = b["range"] ?? 2.0, ["once"] = true, ["effects"] = new JArray() });
-                            mods.Add(Ammo());
+                            if (Arr(b["ammoFilter"]).Count > 0) return Ammo();
+                            if (Arr(b["attackEffects"]).Count == 0) throw new InvalidOperationException($"'{b["id"]}': ammoFilter도 attackEffects도 없습니다 — 무엇으로 쏘는지 적으세요");
+                            return new JObject { ["type"] = "FixedAmmo", ["effects"] = Uses(b["attackEffects"]) };
                         }
-                        else if (name == "SlowFieldTower")
+                        switch (fm)
                         {
-                            float fr = (float?)b["fireRate"] ?? 0f;
-                            mods.Add(new JObject { ["type"] = "AuraEmitter", ["radius"] = b["range"] ?? 5.0, ["interval"] = fr > 0f ? 1.0 / fr : 1.0, ["effects"] = new JArray() });
-                            mods.Add(Ammo());
-                        }
-                        else
-                        {
-                            mods.Add(new JObject { ["type"] = "TowerBrain", ["range"] = b["range"] ?? 8.0, ["minRange"] = b["minRange"] ?? 0.0, ["fireRate"] = b["fireRate"] ?? 1.0,
-                                                   ["turnSpeed"] = b["turnSpeed"] ?? 180.0, ["aimTolerance"] = b["aimTolerance"] ?? 5.0,
-                                                   ["preferHighArc"] = b["preferHighArc"] ?? false, ["muzzleHeight"] = b["muzzleHeight"] ?? 1.0 });
-                            mods.Add(Ammo());
+                            case "None": mods.Add(new JObject { ["type"] = "Blocker" }); break;
+                            case "Trigger":
+                                mods.Add(new JObject { ["type"] = "Trigger", ["radius"] = b["range"] ?? 2.0, ["once"] = true, ["cooldown"] = 1.0 });
+                                mods.Add(Source());
+                                break;
+                            case "Aura":
+                            {
+                                float fr = (float?)b["fireRate"] ?? 0f;
+                                mods.Add(new JObject { ["type"] = "AuraEmitter", ["radius"] = b["range"] ?? 5.0, ["interval"] = fr > 0f ? 1.0 / fr : 1.0 });
+                                mods.Add(Source());
+                                break;
+                            }
+                            case "Projectile":
+                            case "Hitscan":
+                                // v1의 음수는 "생략(SO 기본값)" 신호다 — 팩에는 SO가 없으므로 그 기본값(TowerDataSO)을 그대로 적는다
+                                double Or(string key, double dflt) { var v = (double?)b[key]; return v.HasValue && v.Value >= 0 ? v.Value : dflt; }
+                                mods.Add(new JObject { ["type"] = "Turret", ["range"] = Or("range", 8.0), ["minRange"] = Or("minRange", 0.0), ["fireRate"] = Or("fireRate", 1.0),
+                                                       ["turnSpeed"] = Or("turnSpeed", 180.0), ["aimTolerance"] = Or("aimTolerance", 3.0),
+                                                       ["preferHighArc"] = b["preferHighArc"] ?? false, ["muzzleHeight"] = Or("muzzleHeight", 1.2),
+                                                       ["aimHeight"] = Or("aimHeight", 0.6), ["hitscan"] = fm == "Hitscan" });
+                                mods.Add(Source());
+                                break;
+                            default: throw new InvalidOperationException($"'{b["id"]}': 알 수 없는 fireMode '{fm}'");
                         }
                         break;
+                    }
                     case "DronePort":
                         mods.Add(new JObject { ["type"] = "DronePort", ["carryCapacity"] = b["carryCapacity"] ?? 10, ["droneRange"] = b["droneRange"] ?? 20.0, ["travelSpeed"] = b["travelSpeed"] ?? 5.0 });
                         break;

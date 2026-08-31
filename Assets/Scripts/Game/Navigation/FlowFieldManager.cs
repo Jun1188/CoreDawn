@@ -220,7 +220,7 @@ namespace CoreDawn.Navigation
             for (int i = 0; i <= maxSteps; i++)
             {
                 var building = grid.BuildingAt(cell);
-                if (IsAlive(building) && building.DistanceTo(from) <= range)
+                if (IsAlive(building) && !building.Building.Walkable && building.DistanceTo(from) <= range)   // 밟고 지나가는 건물은 길을 막지 않는다
                     return building;
 
                 // 사슬의 끝 = 목표 칸에 닿았거나 길이 없다. 목표가 심 밖 건물(씬에 직접 놓인 코어 등)이면

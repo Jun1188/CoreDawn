@@ -63,7 +63,7 @@ namespace CoreDawn.Navigation
                 foreach (var node in path)
                 {
                     var blocker = boot.Factory.Grid.GetAt(node.gridCoord);
-                    if (blocker != null && !blocker.IsRemoved) { onDone(blocker); return; }
+                    if (blocker != null && !blocker.IsRemoved && !blocker.Building.Walkable) { onDone(blocker); return; }
                 }
                 onDone(null);
             });

@@ -223,6 +223,7 @@ namespace CoreDawn.EditorTools
             // JsonUtility는 없는 필드를 0으로 밀지 않고 생성자 초기값을 남긴다
             // (minRange = -1f 와 같은 규약). bool? 는 JsonUtility가 아예 읽지 못한다.
             public bool isDemolishable = true, isAttackable = false;
+            public bool walkable;                 // 밟고 지나갈 수 있는 건물(지뢰) — 길찾기가 땅으로 본다
             public SlotDto[] buildCost;
 
             // 종류별 전용 필드 — 해당 kind가 아니면 무시된다
@@ -239,7 +240,8 @@ namespace CoreDawn.EditorTools
             public float    turnSpeed = -1f;                     // Tower — 포탑 선회 속도(도/초). 0 정당(포탑 없음), 음수 = 생략(유지)
             public float    aimTolerance = -1f;                  // Tower — 조준 완료 허용 오차(도). 0 정당, 음수 = 생략(유지)
             public string   defaultAmmo;                         // Tower — 무공급(씬 배치) 폴백 탄 아이템 id. 생략 시 유지
-            public string[] ammoFilter;                          // Tower
+            public string[] ammoFilter;                          // Tower — 탄창으로 쏘는 건물의 받는 탄
+            public EffectEntryDto[] attackEffects;               // Tower — 탄창 없이 자기 효과로 쏘는 건물(지뢰·연료 없는 오라)의 명중 효과 → 팩 FixedAmmo
             public TierDto[] tiers;                              // Core
         }
 

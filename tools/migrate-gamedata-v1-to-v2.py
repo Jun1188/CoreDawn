@@ -119,6 +119,8 @@ for b in d['buildings']:
         building['isDemolishable'] = False
     if not b.get('isAttackable', True):
         building['isAttackable'] = False
+    if b.get('walkable'):
+        building['walkable'] = True
     for k in ('requiredCoreTier', 'threatSeedCost', 'menuOrder'):
         if b.get(k):
             building[k] = b[k]
@@ -153,19 +155,32 @@ for b in d['buildings']:
     elif kind == 'Nest':
         mods.append({'type': 'NestSpawner'})
     elif kind == 'Tower':
-        if name == 'Fence':
+        fm = b.get('fireMode')
+        assert fm, f"{b['id']}: 타워는 fireMode가 필요합니다"
+        def source():   # 받는 탄이 있으면 탄창, 없으면 자기 효과(고정 탄)
+            if b.get('ammoFilter'):
+                return {'type': 'AmmoConsumer', 'ammoFilter': [newid(a) for a in b['ammoFilter']], 'damageMultiplier': b.get('damageMultiplier', 1.0)}
+            assert b.get('attackEffects'), f"{b['id']}: ammoFilter도 attackEffects도 없음"
+            return {'type': 'FixedAmmo', 'effects': uses(b['attackEffects'])}
+        if fm == 'None':
             mods.append({'type': 'Blocker'})
-        elif name == 'Mine':
-            mods.append({'type': 'Trigger', 'radius': b.get('range', 2.0), 'once': True, 'effects': []})
-            mods.append({'type': 'AmmoConsumer', 'ammoFilter': [newid(a) for a in b.get('ammoFilter', [])], 'damageMultiplier': b.get('damageMultiplier', 1.0)})
-        elif name == 'SlowFieldTower':
-            mods.append({'type': 'AuraEmitter', 'radius': b.get('range', 5.0), 'interval': 1.0 / b['fireRate'] if b.get('fireRate') else 1.0, 'effects': []})
-            mods.append({'type': 'AmmoConsumer', 'ammoFilter': [newid(a) for a in b.get('ammoFilter', [])], 'damageMultiplier': b.get('damageMultiplier', 1.0)})
+        elif fm == 'Trigger':
+            mods.append({'type': 'Trigger', 'radius': b.get('range', 2.0), 'once': True, 'cooldown': 1.0})
+            mods.append(source())
+        elif fm == 'Aura':
+            mods.append({'type': 'AuraEmitter', 'radius': b.get('range', 5.0), 'interval': 1.0 / b['fireRate'] if b.get('fireRate') else 1.0})
+            mods.append(source())
+        elif fm in ('Projectile', 'Hitscan'):
+            def Or(key, dflt):   # v1의 음수 = 생략(SO 기본값)
+                v = b.get(key)
+                return v if v is not None and v >= 0 else dflt
+            mods.append({'type': 'Turret', 'range': Or('range', 8.0), 'minRange': Or('minRange', 0.0), 'fireRate': Or('fireRate', 1.0),
+                         'turnSpeed': Or('turnSpeed', 180.0), 'aimTolerance': Or('aimTolerance', 3.0),
+                         'preferHighArc': b.get('preferHighArc', False), 'muzzleHeight': Or('muzzleHeight', 1.2),
+                         'aimHeight': Or('aimHeight', 0.6), 'hitscan': fm == 'Hitscan'})
+            mods.append(source())
         else:
-            mods.append({'type': 'TowerBrain', 'range': b.get('range', 8.0), 'minRange': b.get('minRange', 0.0), 'fireRate': b.get('fireRate', 1.0),
-                         'turnSpeed': b.get('turnSpeed', 180.0), 'aimTolerance': b.get('aimTolerance', 5.0),
-                         'preferHighArc': b.get('preferHighArc', False), 'muzzleHeight': b.get('muzzleHeight', 1.0)})
-            mods.append({'type': 'AmmoConsumer', 'ammoFilter': [newid(a) for a in b.get('ammoFilter', [])], 'damageMultiplier': b.get('damageMultiplier', 1.0)})
+            raise SystemExit(f"{b['id']}: 알 수 없는 fireMode {fm}")
     elif kind == 'DronePort':
         mods.append({'type': 'DronePort', 'carryCapacity': b.get('carryCapacity', 10), 'droneRange': b.get('droneRange', 20.0), 'travelSpeed': b.get('travelSpeed', 5.0)})
     elif kind == 'Tree':
