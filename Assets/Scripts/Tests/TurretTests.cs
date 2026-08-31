@@ -32,7 +32,7 @@ namespace CoreDawn.Tests
             _energyCell = PackItem("coredawn:item/energy_cell_ammo");  // 직사 · 피해 30 + 감속장 0.5
             _grenade    = PackItem("coredawn:item/grenade");           // 곡사 · 피해 70 + 방사 넉백
 
-            Run("1. 리드 수식 — 직사(이차식)·곡사(반복)",                 S1_Ballistics);
+            Run("1. 리드 수식 — 직사(이차식)·곡사(한 걸음 + 등비 외삽)",                 S1_Ballistics);
             Run("2. 포탑은 사거리 안 적에게 쿨다운 주기로 쏘고 탄을 소비한다", S2_TurretFires);
             Run("3. 탄이 없으면 굶고, 탄이 오면 깬다",                    S3_Starved);
             Run("4. 사거리 밖·최소 사거리 안은 쏘지 않는다",              S4_Range);
@@ -81,6 +81,18 @@ namespace CoreDawn.Tests
             for (int i = 0; i < 5000; i++) { p += v * dt; v += Vector3.down * 9.8f * dt; if (p.y < 0f) { closest = Mathf.Abs(p.x - 10f); break; } }
             Expect(closest < 0.2f, $"곡사 탄착 오차 {closest:F2}m");
             Expect((impact - new Vector3(10f, 0, 0)).magnitude < 0.01f, "정지 표적의 탄착점은 표적 자신");
+
+            // 움직이는 표적 — 등비 외삽 리드가 실제로 맞는지 수치 적분으로 확인(표적 속도 3.5·6 m/s, 옆·접근·이탈)
+            float worst = 0f;
+            foreach (var tv in new[] { new Vector3(0, 0, 3.5f), new Vector3(-3.5f, 0, 0), new Vector3(3.5f, 0, 0), new Vector3(4f, 0, 4.5f) })
+            {
+                Vector3 tp = new Vector3(12f, 0, 0);
+                var d = Ballistics.BallisticLead(o, tp, tv, 25f, 9.8f, false, out _);
+                Vector3 pp = o, pv = d * 25f; float time = 0f, dtt = 0.0005f, missBy = -1f;
+                for (int i = 0; i < 40000; i++) { pp += pv * dtt; pv += Vector3.down * 9.8f * dtt; time += dtt; if (pp.y <= 0f && time > 0.05f) { var at = tp + tv * time; missBy = Vector2.Distance(new Vector2(pp.x, pp.z), new Vector2(at.x, at.z)); break; } }
+                worst = Mathf.Max(worst, missBy);
+            }
+            Expect(worst >= 0f && worst < 0.05f, $"이동 표적 곡사 탄착 오차 최대 {worst:F3}m (5cm 안)");
         }
 
         static void S2_TurretFires()
