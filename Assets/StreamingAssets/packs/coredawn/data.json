@@ -2704,7 +2704,7 @@
         {
           "type": "AuraEmitter",
           "radius": 28.0,
-          "interval": 5.0
+          "interval": 4.9999999254941949
         },
         {
           "type": "AmmoConsumer",
@@ -2794,7 +2794,7 @@
         },
         {
           "type": "Movement",
-          "moveSpeed": 4.0,
+          "moveSpeed": 6.0,
           "rotateSpeed": 720.0,
           "crowdRadius": 0.4,
           "knockbackDamping": 8.0,
@@ -2842,7 +2842,7 @@
         },
         {
           "type": "Movement",
-          "moveSpeed": 4.0,
+          "moveSpeed": 6.0,
           "rotateSpeed": 720.0,
           "crowdRadius": 0.4,
           "knockbackDamping": 10.0,
@@ -3506,29 +3506,29 @@
   "wave": {
     "dayPoints": 40.0,
     "gatePoints": 80.0,
-    "stimulusAmplitude": 2.0,
-    "stimulusExponent": 4.0,
+    "stimulusAmplitude": 3.0,
+    "stimulusExponent": 6.0,
     "stimulusLinear": 0.1,
     "stimulusBuffs": [
       {
         "effect": "coredawn:effect/attack_up",
         "base": 1.0,
-        "perStimulus": 0.25,
+        "perStimulus": 0.1,
         "min": 0.1,
         "max": 10.0
       },
       {
         "effect": "coredawn:effect/damage_taken",
         "base": 1.0,
-        "perStimulus": -0.15,
+        "perStimulus": -0.1,
         "min": 0.25,
         "max": 1.0
       }
     ],
     "nestsPerNightMin": 1,
-    "nestsPerNightMax": 0,
-    "targetNightLength": 40.0,
-    "burstsPerNight": 4,
+    "nestsPerNightMax": 3,
+    "targetNightLength": 100.0,
+    "burstsPerNight": 5,
     "burstSpread": 2.0,
     "roster": [
       {
@@ -3556,12 +3556,12 @@
     "trickle": {
       "monster": "coredawn:entity/basic",
       "group": 3,
-      "interval": 20.0,
+      "interval": 10.0,
       "untilKilledFraction": 0.9
     }
   },
   "dayCycle": {
-    "dayDuration": 360.0,
+    "dayDuration": 300.0,
     "nightDuration": 10.0
   }
 }

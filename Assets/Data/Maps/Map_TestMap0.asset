@@ -129,8 +129,6 @@ MonoBehaviour:
     chaseRange: 0
     leashRange: 0
     engageDayOnly: 0
-    bossRecoveryDays: 0
-    nestRecoveryDays: 0
   - cell: {x: 92, y: 34}
     warningRange: 25
     triggerRange: 15
@@ -146,8 +144,6 @@ MonoBehaviour:
     chaseRange: 0
     leashRange: 0
     engageDayOnly: 0
-    bossRecoveryDays: 0
-    nestRecoveryDays: 0
   - cell: {x: 28, y: 33}
     warningRange: 25
     triggerRange: 15
@@ -165,8 +161,6 @@ MonoBehaviour:
     chaseRange: 0
     leashRange: 0
     engageDayOnly: 0
-    bossRecoveryDays: 0
-    nestRecoveryDays: 0
   - cell: {x: 41, y: 70}
     warningRange: 25
     triggerRange: 15
@@ -180,8 +174,6 @@ MonoBehaviour:
     chaseRange: 0
     leashRange: 0
     engageDayOnly: 0
-    bossRecoveryDays: 0
-    nestRecoveryDays: 0
   nightSpawnPoints:
   - {x: 36, y: 36}
   - {x: 83, y: 35}

@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   prefab: {fileID: 1332241365330258894, guid: ee2565cc74fdb074ca483cccf4a3be55, type: 3}
   maxHp: 60
-  moveSpeed: 4
+  moveSpeed: 6
   rotateSpeed: 720
   crowdRadius: 0.4
   knockbackDamping: 10

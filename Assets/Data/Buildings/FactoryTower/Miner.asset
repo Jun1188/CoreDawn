@@ -39,4 +39,4 @@ MonoBehaviour:
   maxHp: 150
   isDemolishable: 1
   isAttackable: 0
-  speedMultiplier: 1
+  speedMultiplier: 2
