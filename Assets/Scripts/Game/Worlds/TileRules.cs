@@ -9,7 +9,7 @@ namespace CoreDawn.Worlds
     /// 판정마다 흩어져 있으면(길찾기는 A에서, 배치는 B에서, 이동은 C에서) 강 하나를 조정할 때
     /// 세 곳을 고쳐야 하고 서로 어긋난다.
     ///
-    /// 비용의 단위: <b>직교 한 칸 = 10</b> (대각은 14). 그래서 강 30은 "3칸 우회할 값어치"다.
+    /// 비용의 단위: <b>직교 한 칸 = 10</b> (대각은 14). 그래서 강 50은 "5칸 우회할 값어치"다.
     /// </summary>
     public static class TileRules
     {
@@ -22,13 +22,13 @@ namespace CoreDawn.Worlds
         /// <summary>
         /// 이 칸에 발을 들이는 비용. 낮을수록 선호한다.
         ///   지면 10 — 기준
-        ///   강   30 — 건널 수는 있지만 3칸 우회할 값어치. 다리·길목 설계가 의미를 갖는다
+        ///   강   50 — 건널 수는 있지만 5칸 우회할 값어치. 다리·길목 설계가 의미를 갖는다
         ///   절벽 ∞  — 유일한 진짜 차단
         /// </summary>
         public static int EnterCost(MapTile tile) => tile switch
         {
             MapTile.Ground => BaseCost,
-            MapTile.River => BaseCost * 3,
+            MapTile.River => BaseCost * 5,
             _ => Blocked,          // Cliff · 맵 밖
         };
 
