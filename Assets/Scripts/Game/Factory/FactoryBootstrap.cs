@@ -88,6 +88,9 @@ namespace CoreDawn.Factory
             Instance = this;
             Factory = new FactorySystem(SimHost.World, new GridGeometry(_cellSize, _gridOrigin), _tps, _maxCatchUpTicks);
 
+            // 심이 몰라야 하는 게임 규칙의 배선 — 배치 직후 1회
+            Factory.Placed += WireGameRules;
+
             // 벨트 철거로 세그먼트에서 밀려난 아이템 → 월드 드롭 (통지 시점엔 벨트 뷰가 아직 살아있음)
             Factory.Belts.ItemDiscarded += (belt, item) =>
             {
@@ -140,6 +143,20 @@ namespace CoreDawn.Factory
             var buildings = new List<BuildingModule>(Factory.Buildings);
             foreach (var b in buildings)
                 if (b.OwnsEntity && b.Owner != null && !b.Owner.IsRemoved) Factory.World.Remove(b.Owner);
+        }
+
+        /// <summary>
+        /// 심이 모르는 게임 규칙의 배선 — 배치 직후 1회. 코어는 진행도(티어)·확인창 대리자를 받고(CoreSystem.Wire),
+        /// 제작기의 기본 레시피(심이 첫 레시피를 고른다)는 해금 전이면 도로 물린다(옛 AssemblerBehavior의 해금 검사).
+        /// </summary>
+        static void WireGameRules(BuildingModule b)
+        {
+            var core = b.Owner.Get<CoreModule>();
+            if (core != null) CoreSystem.Wire(b, core);
+
+            var crafter = b.Owner.Get<CrafterModule>();
+            if (crafter != null && crafter.Recipe != null && !RecipeDatabaseSO.IsUnlocked(crafter.Recipe))
+                crafter.SetRecipe(null);
         }
 
         // ── 코어 자동 설치 ───────────────────────────────────────────

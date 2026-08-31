@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Factory;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Navigation
 {

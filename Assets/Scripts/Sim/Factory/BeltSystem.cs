@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using CoreDawn.Data;
-using CoreDawn.Sim;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     // ─── 벨트 시스템 ──────────────────────────────────────────────
 

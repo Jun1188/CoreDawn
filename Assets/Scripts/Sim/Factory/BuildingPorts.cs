@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Data;
-using CoreDawn.Sim;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     /// <summary>
     /// 정의의 크기·포트를 회전해 읽는다 — 옛 BuildingDataSO.GetRotatedSize/GetRotatedPorts의 정의판.

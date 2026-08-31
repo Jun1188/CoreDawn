@@ -1,11 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using CoreDawn.Inventories;
-using CoreDawn.Sim;
-using CoreDawn.Data;   // RecipeDatabaseSO(레시피 해금 판정) — 5a-3에서 게임 쪽으로 정리
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     /// <summary>
     /// 배치된 건물 — 심 엔티티에 붙는 모듈(plain C#, MonoBehaviour 아님).
@@ -125,9 +122,8 @@ namespace CoreDawn.Factory
             var inventory = Owner.Get<InventoryModule>();
             Input  = inventory?.Input  ?? new ItemContainer(0);
             Output = inventory?.Output ?? new ItemContainer(0);
-            // 코어: 진행 규칙(티어·해금·확인창)은 게임(CoreSystem.Wire)이 대리자로 꽂고, 보호막·준비는 모듈이 갖는다
-            var core = Owner.Get<CoreModule>();
-            if (core != null) { CoreSystem.Wire(this, core); _moduleShield = core; }
+            // 코어 보호막 — 피해 체인이 아군 무시 다음에 모듈로 넘긴다. 진행 규칙 배선은 게임이 Placed에서 한다
+            _moduleShield = Owner.Get<CoreModule>();
             // 라우터(분배기·합류기): 규칙은 모듈이, 흘리기는 이 건물(PumpRouted)이. 필터가 바뀌면 다시 판단한다
             _router = Owner.Get<RouterModule>();
             if (_router != null) _router.Changed += WakeSelf;
@@ -138,8 +134,8 @@ namespace CoreDawn.Factory
                 Input.SingleStackPerType = true;            // 한 재료가 입력 슬롯 전부를 독점하는 데드락 방지
                 Input.AcceptFilter = crafter.IsIngredient;  // 입력 버퍼는 현재 레시피의 재료만
                 crafter.Delivered += FlushOutputs;          // 완성품을 넣는 즉시 밀어야 같은 틱에 다음 1회가 시작될 자리가 난다
-                var first = crafter.Recipes.FirstOrDefault();
-                if (crafter.Recipe == null && first != null && RecipeDatabaseSO.IsUnlocked(first)) crafter.SetRecipe(first);
+                // 기본 레시피 = 첫 레시피. 해금 전이면 게임 배선(FactoryBootstrap.WireGameRules)이 도로 물린다
+                if (crafter.Recipe == null) crafter.SetRecipe(crafter.Recipes.FirstOrDefault());
             }
             // 그릇이 바뀌면 다음 틱에 다시 판단한다 — 손으로 넣고 빼는 경로는 벨트를 안 거쳐
             // 아무도 깨워 주지 않는다(옛 행동들이 하나씩 달던 구독의 공통화). 벨트만 예외(세그먼트가 산다).

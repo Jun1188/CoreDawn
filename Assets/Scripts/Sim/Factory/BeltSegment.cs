@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Data;
-using CoreDawn.Sim;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     /// <summary>
     /// 연속으로 연결된 같은 종류의 벨트 체인을 하나의 유닛으로 처리. (plain C#)

@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Sim;
-using CoreDawn.Data;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     // ================================================================
     //  FactorySystem.cs
@@ -246,6 +244,7 @@ namespace CoreDawn.Factory
             _buildings.Add(b);
             Graph.OnPlaced(b);
             MarkDirty(b);
+            Placed?.Invoke(b);
             return b;
         }
 
@@ -256,6 +255,12 @@ namespace CoreDawn.Factory
         /// 엔티티가 월드에서 빠지기 전이라 수신자는 b.Owner를 아직 읽을 수 있다.
         /// </summary>
         public event Action<BuildingModule> Removed;
+
+        /// <summary>
+        /// 건물 배치 직후 1회(그래프 연결 완료 뒤). 게임 배선이 듣는다 — 코어의 진행도 대리자,
+        /// 제작기 기본 레시피의 해금 검증처럼 심이 몰라야 하는 규칙(FactoryBootstrap.WireGameRules).
+        /// </summary>
+        public event Action<BuildingModule> Placed;
 
         public void Remove(BuildingModule b)
         {

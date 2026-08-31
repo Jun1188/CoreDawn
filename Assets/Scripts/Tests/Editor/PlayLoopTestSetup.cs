@@ -8,6 +8,7 @@ using CoreDawn.Factory;
 using CoreDawn.Navigation;
 using CoreDawn.Placement;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Tests
 {

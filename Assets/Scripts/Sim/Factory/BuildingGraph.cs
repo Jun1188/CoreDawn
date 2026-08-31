@@ -1,11 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using CoreDawn.Inventories;
-using CoreDawn.Data;
-using CoreDawn.Sim;
 
-namespace CoreDawn.Factory
+namespace CoreDawn.Sim
 {
     // ================================================================
     //  BuildingGraph.cs
