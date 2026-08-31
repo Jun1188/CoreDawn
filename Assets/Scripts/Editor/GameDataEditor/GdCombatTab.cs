@@ -46,7 +46,7 @@ namespace CoreDawn.EditorTools
     // 밤 웨이브 규칙 — 점수식 계수·자극 버프·명단·진입로 무리(옛 일차별 표는 없다). 웨이브 탭이 편집한다.
     class GWaveRule
     {
-        public float dayPoints = 40, gatePoints = 80;
+        public float basePoints, dayPoints = 40, gatePoints = 80;
         public float stimulusAmplitude = 2, stimulusExponent = 4, stimulusLinear = 0.1f;   // 강화분 h(r) = A·r^p + b·r
         public List<GStimulusBuff> stimulusBuffs = new();
         public int nestsPerNightMin = 1, nestsPerNightMax;
@@ -165,7 +165,7 @@ namespace CoreDawn.EditorTools
             var wr = win.root.wave ?? new GameDataImporter.WaveRuleDto();
             wave = new GWaveRule
             {
-                dayPoints = wr.dayPoints, gatePoints = wr.gatePoints, stimulusAmplitude = Mathf.Max(0, wr.stimulusAmplitude), stimulusExponent = Mathf.Max(1, wr.stimulusExponent), stimulusLinear = Mathf.Max(0, wr.stimulusLinear),
+                basePoints = Mathf.Max(0, wr.basePoints), dayPoints = wr.dayPoints, gatePoints = wr.gatePoints, stimulusAmplitude = Mathf.Max(0, wr.stimulusAmplitude), stimulusExponent = Mathf.Max(1, wr.stimulusExponent), stimulusLinear = Mathf.Max(0, wr.stimulusLinear),
                 stimulusBuffs = (wr.stimulusBuffs ?? Array.Empty<GameDataImporter.StimulusBuffDto>())
                     .Select(b => new GStimulusBuff { effect = b.effect ?? "", baseValue = b.baseValue, perStimulus = b.perStimulus, min = b.min, max = b.max }).ToList(),
                 nestsPerNightMin = Mathf.Max(1, wr.nestsPerNightMin), nestsPerNightMax = Mathf.Max(0, wr.nestsPerNightMax),
@@ -250,7 +250,7 @@ namespace CoreDawn.EditorTools
         GameDataImporter.WaveRuleDto ExportWave(GWaveRule w)
         {
             var o = w.src ?? new GameDataImporter.WaveRuleDto();
-            o.dayPoints = w.dayPoints; o.gatePoints = w.gatePoints; o.stimulusAmplitude = w.stimulusAmplitude; o.stimulusExponent = w.stimulusExponent; o.stimulusLinear = w.stimulusLinear;
+            o.basePoints = w.basePoints; o.dayPoints = w.dayPoints; o.gatePoints = w.gatePoints; o.stimulusAmplitude = w.stimulusAmplitude; o.stimulusExponent = w.stimulusExponent; o.stimulusLinear = w.stimulusLinear;
             o.stimulusBuffs = w.stimulusBuffs.Select(b => new GameDataImporter.StimulusBuffDto { effect = b.effect, baseValue = b.baseValue, perStimulus = b.perStimulus, min = b.min, max = b.max }).ToArray();
             o.nestsPerNightMin = w.nestsPerNightMin; o.nestsPerNightMax = w.nestsPerNightMax; o.targetNightLength = w.targetNightLength; o.burstsPerNight = w.burstsPerNight; o.burstSpread = w.burstSpread;
             o.roster = w.roster.Select(r => new GameDataImporter.RosterDto { monster = r.monster, cost = r.cost, weight = r.weight, minDay = r.minDay, minGate = r.minGate }).ToArray();

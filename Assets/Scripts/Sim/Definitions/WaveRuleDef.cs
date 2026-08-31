@@ -12,6 +12,8 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class WaveRuleDef : Def
     {
+        /// <summary>밤마다 깔리는 기본 점수 — 일차·게이트와 무관.</summary>
+        [JsonProperty("basePoints")] public float BasePoints;
         /// <summary>일차 1당 점수.</summary>
         [JsonProperty("dayPoints")] public float DayPoints = 40f;
         /// <summary>납품한 게이트(코어 티어) 1당 점수 — 곱이 아니라 합.</summary>
@@ -93,6 +95,7 @@ namespace CoreDawn.Sim
             }
             if (TargetNightLength <= 0f) errors.Add($"{Id}: targetNightLength는 0보다 커야 합니다");
             if (BurstsPerNight <= 0) errors.Add($"{Id}: burstsPerNight는 1 이상이어야 합니다");
+            if (BasePoints < 0f || DayPoints < 0f || GatePoints < 0f) errors.Add($"{Id}: basePoints·dayPoints·gatePoints는 0 이상이어야 합니다");
             if (StimulusAmplitude < 0f || StimulusLinear < 0f) errors.Add($"{Id}: stimulusAmplitude·stimulusLinear는 0 이상이어야 합니다");
             if (StimulusExponent < 1f) errors.Add($"{Id}: stimulusExponent는 1 이상이어야 합니다(1 미만이면 초반부터 가팔라 첫 파괴에 공세가 는다)");
         }
@@ -111,7 +114,7 @@ namespace CoreDawn.Sim
 
         /// <summary>점수식. 둥지가 하나도 없으면 0 — 스폰원이 없다.</summary>
         public float ScoreFor(int day, int gate, int livingNests, int totalNests)
-            => (day * DayPoints + gate * GatePoints) * TotalFactor(livingNests, totalNests);
+            => (BasePoints + day * DayPoints + gate * GatePoints) * TotalFactor(livingNests, totalNests);
 
         /// <summary>자극(버프 축) = 남은 둥지 하나의 강도 = 총량 ÷ 살아 있는 몫. 파괴 0이면 1. 버프는 (자극 − 1)에 비례.</summary>
         public float StimuliFor(int destroyedNests, int totalNests)

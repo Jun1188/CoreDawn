@@ -229,7 +229,7 @@ if 'player' in d:
 # wave — 밤 웨이브 규칙 하나(점수식)
 if 'wave' in d:
     wr = d['wave']
-    o = {'dayPoints': wr.get('dayPoints', 40.0), 'gatePoints': wr.get('gatePoints', 80.0),
+    o = {'basePoints': wr.get('basePoints', 0.0), 'dayPoints': wr.get('dayPoints', 40.0), 'gatePoints': wr.get('gatePoints', 80.0),
          'stimulusAmplitude': wr.get('stimulusAmplitude', 2.0), 'stimulusExponent': wr.get('stimulusExponent', 4.0), 'stimulusLinear': wr.get('stimulusLinear', 0.1),
          'stimulusBuffs': [{'effect': newid(b['effect']), 'base': b.get('baseValue', 1.0), 'perStimulus': b.get('perStimulus', 0.0), 'min': b.get('min', 0.05), 'max': b.get('max', 10.0)} for b in wr.get('stimulusBuffs') or []],
          'nestsPerNightMin': wr.get('nestsPerNightMin', 1), 'nestsPerNightMax': wr.get('nestsPerNightMax', 0),

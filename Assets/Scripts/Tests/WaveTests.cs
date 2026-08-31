@@ -42,6 +42,7 @@ namespace CoreDawn.Tests
             Run("8. 둥지가 전부 파괴되면 점수 0 — 즉시 종료",                     S8_NoNests);
             Run("9. 세이브 복원",                                                S9_Restore);
             Run("10. 자극은 둥지가 세우는 몬스터에도 — 파괴가 늘면 살아 있는 몬스터에 다시", S10_StimulusEverywhere);
+            Run("11. 점수가 적고 버스트가 많아도 첫 버스트부터 나온다(조각 ≥ 가장 싼 몹값)", S11_SmallScoreManyBursts);
 
             int passed = 0;
             var sb = new System.Text.StringBuilder();
@@ -73,6 +74,9 @@ namespace CoreDawn.Tests
         static void S1_Score()
         {
             Expect(Approx(_rule.ScoreFor(1, 0, 5, 5), 40f), $"1일·게이트 0·5/5 = 40 (실제 {_rule.ScoreFor(1, 0, 5, 5)})");
+            _rule.BasePoints = 20f;
+            Expect(Approx(_rule.ScoreFor(1, 0, 5, 5), 60f), $"기본 20 + 1일 40 = 60 (실제 {_rule.ScoreFor(1, 0, 5, 5)})");
+            _rule.BasePoints = 0f;
             Expect(Approx(_rule.ScoreFor(3, 1, 5, 5), 200f), $"3일·게이트 1 = 120+80 = 200 (합연산) (실제 {_rule.ScoreFor(3, 1, 5, 5)})");
             Expect(Approx(_rule.ScoreFor(3, 1, 3, 5), 200f * (0.6f + 2f * Mathf.Pow(0.4f, 4) + 0.1f * 0.4f)), $"둘 파괴: 200 × (3/5 + 2·0.4⁴ + 0.1·0.4) = 138.24 (실제 {_rule.ScoreFor(3, 1, 3, 5)})");
             Expect(_rule.ScoreFor(1, 0, 4, 5) < _rule.ScoreFor(1, 0, 5, 5), $"첫 파괴엔 총량이 준다 (40 → {_rule.ScoreFor(1, 0, 4, 5)})");
@@ -199,6 +203,17 @@ namespace CoreDawn.Tests
             Expect(_waves.TrickleMonsters.Count == 0, "끝난 밤에는 무리도 없다");
         }
 
+        static void S11_SmallScoreManyBursts()
+        {
+            Nests(4, 1);
+            Night(1, 0, 150f, null, seed: 21);   // 40점, 버스트 5회 → 조각 8pt < basic 10pt (디버그 패널에서 "버스트 1/5 +0"으로 발견)
+            Tick(0.05f);
+            Expect(_waves.Bursts == 5 && _waves.SpawnedCount == 1, $"첫 버스트에 basic 1 (버스트 {_waves.Bursts}, 스폰 {_waves.SpawnedCount})");
+            Expect(Approx(_waves.Remaining, 30f), $"남은 30pt (실제 {_waves.Remaining})");
+            for (int i = 0; i < 4; i++) Tick(31f);   // 간격 30초 + 여유(경계에서 부동소수 누적으로 한 번 놓칠 수 있다)
+            Expect(_waves.SpawnedCount == 4 && _waves.Remaining == 0f && _waves.BurstsDone == 5, $"5회 뒤 basic 4·점수 소진 (스폰 {_waves.SpawnedCount}, 남은 {_waves.Remaining}, 버스트 {_waves.BurstsDone})");
+        }
+
         static void S10_StimulusEverywhere()
         {
             var nests = Nests(4, 1);
@@ -252,7 +267,7 @@ namespace CoreDawn.Tests
 
         static WaveRuleDef Rule()
         {
-            var r = new WaveRuleDef { Id = "test:wave/rule", DayPoints = 40f, GatePoints = 80f, StimulusAmplitude = 2f, StimulusExponent = 4f, StimulusLinear = 0.1f,
+            var r = new WaveRuleDef { Id = "test:wave/rule", BasePoints = 0f, DayPoints = 40f, GatePoints = 80f, StimulusAmplitude = 2f, StimulusExponent = 4f, StimulusLinear = 0.1f,
                                       NestsPerNightMin = 1, NestsPerNightMax = 0, TargetNightLength = 120f, BurstsPerNight = 4, BurstSpread = 2f };
             r.StimulusBuffs.Add(new WaveRuleDef.StimulusBuff { EffectId = _attackUp.Id, Spec = _attackUp, Base = 1f, PerStimulus = 0.25f, Min = 0.1f, Max = 10f });
             r.StimulusBuffs.Add(new WaveRuleDef.StimulusBuff { EffectId = _damageTaken.Id, Spec = _damageTaken, Base = 1f, PerStimulus = -0.15f, Min = 0.25f, Max = 1f });

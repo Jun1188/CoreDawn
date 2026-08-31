@@ -187,6 +187,10 @@ namespace CoreDawn.Sim
         {
             int left = Bursts - BurstsDone;
             float slice = left <= 1 ? Remaining : Remaining / left;
+            // 조각이 지금 뽑을 수 있는 가장 싼 몹값보다 작으면 그 값까지 올린다 — 점수가 적고 버스트가 많을 때 빈 버스트가 이어지지 않게
+            float cheapest = float.MaxValue;
+            foreach (var r in rule.Roster) if (r.Eligible(Day, Gate) && r.Cost > 0f) cheapest = Math.Min(cheapest, r.Cost);
+            if (cheapest < float.MaxValue && slice < cheapest) slice = Math.Min(Remaining, cheapest);
             var (nest, point) = selected[NextInt(0, selected.Count)];
             Vector3 at = nest.Get<NestModule>().Points[point].Position;
 

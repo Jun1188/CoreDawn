@@ -3033,8 +3033,9 @@
     }
   ],
   "wave": {
-    "dayPoints": 40.0,
-    "gatePoints": 80.0,
+    "basePoints": 100.0,
+    "dayPoints": 50.0,
+    "gatePoints": 100.0,
     "stimulusAmplitude": 3.0,
     "stimulusExponent": 6.0,
     "stimulusLinear": 0.1,

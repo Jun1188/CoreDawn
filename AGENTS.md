@@ -94,7 +94,7 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   screen-occlusion raycast). `NestView.SyncModule` pushes points into the module; `CombatSaveModule` reads point state from it.
 - Night waves are score-based (2026-08-31, design "둥지 시스템 — 낮의 공격 루프"): no per-day wave table (`WaveDataSO` is
   gone). The pack has one `wave` rule (`WaveRuleDef`, GameData editor → Wave tab). `WaveSystem` (`Sim/Systems`, ticked by
-  `SimRunner`) computes `score = (day·dayPoints + gate·gatePoints) × stimuli × (living nests / total)` — gate is additive,
+  `SimRunner`) computes `score = (basePoints + day·dayPoints + gate·gatePoints) × total factor` — gate is additive,
   the score **is** the point budget, roster entries have `cost` (price) and `weight` (pick ratio among currently eligible
   entries; bosses use the same weights). Night total = living share (1 − r) + stimulus bonus `stimulusAmplitude`·r^`stimulusExponent` + `stimulusLinear`·r
   (r = destroyed / total nests; additive, the user's own curve — first destruction is a loss, the last nest is stronger than
@@ -107,11 +107,15 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   the score monsters are dead, independent of score. No fallbacks (no edge spawn). The night ends when nothing is left to
   spawn and nothing is alive (`NightCleared` → `EndNightEarly`). Views: `WaveSpawnManager` attaches prefabs on `Spawned`
   (`MonsterAssets.OfEntity`), `BattleManager` only feeds day/gate/night length/entrances/seed. Save: `combat.wave` = full
-  system state, monsters carry `wave: burst|trickle`. The day/night clock lengths live in a separate top-level pack block `dayCycle{dayDuration, nightDuration}`
+  system state, monsters carry `wave: burst|trickle`. **F3** toggles `WaveDebugHUD` (editor/dev builds only, self-spawned,
+  OnGUI): score/total factor, bursts, next burst/trickle timers, stimuli + buff values, and an event log (night start, bursts,
+  trickle groups, clear). A burst slice smaller than the cheapest eligible monster is raised to that cost so early bursts are never empty. The day/night clock lengths live in a separate top-level pack block `dayCycle{dayDuration, nightDuration}`
   (`DayCycleDef`; `nightDuration` = moon rise/set time, not the night length) — `TimeManager` reads it from the pack and throws
   if it is missing (no inspector values). GameData editor previews are charts (`BarChart`/`LineChart` in GdWaveTab.cs — Painter2D + `DrawText`, styled by
   `gd-chart`/`gd-legend` in `GdEditor.uss`, fixed widths — never stretched to the window); nest counts come from the map data, never from hardcoded sample sizes, and never fake
-  tables with padded monospace labels.
+  tables with padded monospace labels. Editor number fields apply per keystroke but push history on FocusOut only, and never
+  rebuild the focused body while typing (rebuild a sub-host instead); every tab must override `Undo/Redo` (delegate if the
+  model lives in another tab).
 - Towers are not a module: a tower is `Building + (AmmoConsumer | FixedAmmo) + (Turret | AuraEmitter | Trigger)` (5a-2e-1, 2026-08-31).
   Emitters never know effects — they ask the entity's `IAmmoSource` ("can I fire, what is this shot": `HasAmmo`, `TryPeek`, `TryTake`,
   `Bake`). `AmmoConsumerModule` = magazine (input-container filter, one round per shot, damage-like × `damageMultiplier` → owner

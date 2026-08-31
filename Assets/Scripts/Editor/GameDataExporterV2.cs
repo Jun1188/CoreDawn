@@ -313,7 +313,7 @@ namespace CoreDawn.EditorTools
             {
                 waveRule = new JObject
                 {
-                    ["dayPoints"] = wr["dayPoints"] ?? 40.0, ["gatePoints"] = wr["gatePoints"] ?? 80.0,
+                    ["basePoints"] = wr["basePoints"] ?? 0.0, ["dayPoints"] = wr["dayPoints"] ?? 40.0, ["gatePoints"] = wr["gatePoints"] ?? 80.0,
                     ["stimulusAmplitude"] = wr["stimulusAmplitude"] ?? 2.0, ["stimulusExponent"] = wr["stimulusExponent"] ?? 4.0, ["stimulusLinear"] = wr["stimulusLinear"] ?? 0.1,
                     ["stimulusBuffs"] = new JArray(Arr(wr["stimulusBuffs"]).Select(b => new JObject
                     {

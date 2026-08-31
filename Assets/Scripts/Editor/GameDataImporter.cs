@@ -283,7 +283,7 @@ namespace CoreDawn.EditorTools
         /// <summary>밤 웨이브 규칙 — 점수식·명단·자극 버프·진입로 무리. 일차별 표(옛 웨이브 SO)는 없다. SO를 만들지 않고 v2 exporter가 wave 블록으로 낸다.</summary>
         [Serializable] internal class WaveRuleDto : JsonDtoBase
         {
-            public float dayPoints = 40f, gatePoints = 80f;                 // score = (day×dayPoints + gate×gatePoints) × 자극 × 살아 있는 둥지 비율
+            public float basePoints, dayPoints = 40f, gatePoints = 80f;     // score = (base + day×dayPoints + gate×gatePoints) × 총량(살아 있는 몫 + 강화분)
             public float stimulusAmplitude = 2f, stimulusExponent = 4f, stimulusLinear = 0.1f;   // 강화분 h(r) = A·r^p + b·r, r = 파괴/전체
             public StimulusBuffDto[] stimulusBuffs;
             public int   nestsPerNightMin = 1, nestsPerNightMax;             // max 0 = 전부
