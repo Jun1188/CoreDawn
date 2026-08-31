@@ -461,8 +461,8 @@ namespace CoreDawn.UI
             {
                 shownGun = weapon;
                 shownAmmo = shownReserve = int.MinValue;
-                ammoName.text = (weapon.gunData.displayName ?? "").ToUpperInvariant();
-                ammoCap.text = unlimited ? "" : $" / {weapon.gunData.magSize}";
+                ammoName.text = (weapon.Def.DisplayName ?? "").ToUpperInvariant();
+                ammoCap.text = unlimited ? "" : $" / {weapon.Def.MagSize}";
             }
 
             int ammo = weapon.CurrentAmmo;
@@ -475,7 +475,7 @@ namespace CoreDawn.UI
 
             // 탄종 + 인벤토리 예비탄 (실소비). 인벤토리 없는 씬은 ReserveAmmo -1 = 무한 보급.
             var item = weapon.CurrentAmmoItem;
-            ammoType.text = unlimited ? "근접" : item != null ? item.displayName : "";
+            ammoType.text = unlimited ? "근접" : item != null ? item.DisplayName : "";
 
             int reserve = weapon.ReserveAmmo;
             if (shownReserve != reserve || shownReloading != weapon.IsReloading)

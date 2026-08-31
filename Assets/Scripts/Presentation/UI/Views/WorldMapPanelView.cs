@@ -7,6 +7,7 @@ using CoreDawn.Inputs;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
 using InputEvent = CoreDawn.Inputs.InputEvent;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -281,12 +282,11 @@ namespace CoreDawn.UI
             return tex;
         }
 
-        static Color32 NodeColor(ItemDataSO item)
+        static Color32 NodeColor(ItemDef item) => item != null ? item.Line switch
         {
-            string n = item != null ? item.name : "";
-            if (n.Contains("Copper")) return CopperC;
-            if (n.Contains("Crystal")) return CrystalC;
-            return IronC;
-        }
+            ItemLine.Copper  => CopperC,
+            ItemLine.Crystal => CrystalC,
+            _                => IronC,
+        } : IronC;
     }
 }

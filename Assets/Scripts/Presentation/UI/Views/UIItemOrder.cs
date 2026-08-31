@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using CoreDawn.Factory;
-using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -17,58 +16,58 @@ namespace CoreDawn.UI
     /// </summary>
     public static class UIItemOrder
     {
-        static Dictionary<ItemDataSO, int> _tierCache;
+        static Dictionary<ItemDef, int> _tierCache;
+        static SimDatabase _cacheOf;   // 팩이 다시 로드되면(다른 db 인스턴스) 캐시를 버린다
 
         /// <summary>이 아이템이 열리는 코어 티어. 원광처럼 처음부터 있는 것은 0.</summary>
-        public static int TierOf(ItemDataSO item)
+        public static int TierOf(ItemDef item)
         {
             if (item == null) return int.MaxValue;
             EnsureCache();
-            return _tierCache.TryGetValue(item, out var t) ? t : 0;
+            return _tierCache != null && _tierCache.TryGetValue(item, out var t) ? t : 0;
         }
 
         /// <summary>티어 → 계통 → 용도 → 이름 순으로 정렬한다.</summary>
-        public static IEnumerable<ItemDataSO> Sorted(IEnumerable<ItemDataSO> items) =>
+        public static IEnumerable<ItemDef> Sorted(IEnumerable<ItemDef> items) =>
             items.Where(i => i != null)
                  .OrderBy(TierOf)
-                 .ThenBy(i => (int)i.line)
-                 .ThenBy(i => (int)i.type)
-                 .ThenBy(NameOf, System.StringComparer.Ordinal);
-
-        static string NameOf(ItemDataSO i) =>
-            string.IsNullOrEmpty(i.displayName) ? i.name : i.displayName;
+                 .ThenBy(i => (int)i.Line)
+                 .ThenBy(i => (int)i.Type)
+                 .ThenBy(i => i.DisplayName ?? "", System.StringComparer.Ordinal);
 
         /// <summary>데이터가 다시 임포트되면 버린다 (에디터에서 티어를 고칠 때).</summary>
-        public static void Invalidate() => _tierCache = null;
+        public static void Invalidate() { _tierCache = null; _cacheOf = null; }
 
         /// <summary>
-        /// 레시피는 Resources에 없으므로 BuildingDatabase의 조립기들을 통해 모은다 —
-        /// 모든 레시피는 어느 조립기의 availableRecipes에 들어 있다.
+        /// 정의(팩)의 제작기들을 훑는다 — 모든 자동 레시피는 어느 제작 건물(Crafter 정의)의 목록에 들어 있다.
+        /// 레시피 자체의 티어와 그것을 돌리는 건물의 티어 중 늦은 쪽이 실제 해금 시점이다.
         /// </summary>
         static void EnsureCache()
         {
-            if (_tierCache != null) return;
-            _tierCache = new Dictionary<ItemDataSO, int>();
+            var db = SimHost.Database;
+            if (db == null) { _tierCache = null; _cacheOf = null; return; }
+            if (_tierCache != null && ReferenceEquals(_cacheOf, db)) return;
 
-            var db = BuildingDatabaseSO.LoadDefault();
-            if (db == null || db.buildings == null) return;
+            _tierCache = new Dictionary<ItemDef, int>();
+            _cacheOf = db;
 
-            foreach (var b in db.buildings)
+            foreach (var e in db.Entities.Values)
             {
-                if (b is not AssemblerDataSO asm || asm.availableRecipes == null) continue;
+                var crafter = e.Get<CrafterModuleDef>();
+                if (crafter == null || crafter.Manual) continue;
 
-                foreach (var r in asm.availableRecipes)
+                int buildingTier = e.Get<BuildingModuleDef>()?.RequiredCoreTier ?? 0;
+
+                foreach (var r in crafter.Recipes)
                 {
-                    if (r == null || r.outputs == null) continue;
+                    if (r?.Outputs == null) continue;
+                    int tier = System.Math.Max(r.Tier, buildingTier);
 
-                    // 레시피 자체의 티어와 그것을 돌리는 건물의 티어 중 늦은 쪽이 실제 해금 시점이다
-                    int tier = System.Math.Max(r.tier, b.requiredCoreTier);
-
-                    foreach (var o in r.outputs)
+                    foreach (var o in r.Outputs)
                     {
-                        if (o.item == null) continue;
-                        if (!_tierCache.TryGetValue(o.item, out var cur) || tier < cur)
-                            _tierCache[o.item] = tier;
+                        if (o?.Item == null) continue;
+                        if (!_tierCache.TryGetValue(o.Item, out var cur) || tier < cur)
+                            _tierCache[o.Item] = tier;
                     }
                 }
             }

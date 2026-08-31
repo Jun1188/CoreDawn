@@ -382,7 +382,7 @@ namespace CoreDawn.UI
             RefreshCarry();
         }
 
-        protected static void DropToWorld(ItemDataSO item, int amount)
+        protected static void DropToWorld(ItemDef item, int amount)
         {
             // 떨굴 위치는 플레이어가 정한다 — 구 uGUI 매니저를 경유하지 않는다
             var pc = PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.playerController : null;
@@ -394,8 +394,8 @@ namespace CoreDawn.UI
 
         // ───────────────────── 잡동사니 ─────────────────────
 
-        protected static string DisplayNameOf(ItemDataSO item) =>
-            item == null ? "" : string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+        protected static string DisplayNameOf(ItemDef item) =>
+            item == null ? "" : string.IsNullOrEmpty(item.DisplayName) ? item.Id : item.DisplayName;
 
         protected static void Show(VisualElement e, bool on)
         {

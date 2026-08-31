@@ -229,8 +229,8 @@ namespace CoreDawn.UI
             // AllowedAt은 HashSet이라 순서가 없다 — 목록과 같은 기준으로 정렬해야
             // 왼쪽 점과 오른쪽 목록이 같은 물건을 같은 자리에서 말한다
             var colors = new List<Color>();
-            foreach (var item in UIItemOrder.Sorted(router.AllowedAt(dir).Select(d => (ItemDataSO)d)))
-                colors.Add(UIFlowColors.Of(item.line));
+            foreach (var item in UIItemOrder.Sorted(router.AllowedAt(dir)))
+                colors.Add(UIFlowColors.Of(item.Line));
 
             var (cols, size, gap) = FitGrid(colors.Count);
             return Grid(colors, cols, size, gap);
@@ -429,19 +429,19 @@ namespace CoreDawn.UI
 
             UpdateSelectionHeader();
 
-            var db = ItemDatabaseSO.LoadDefault();
-            if (db == null || db.items == null || !hasSelection)
+            var db = SimHost.Database;
+            if (db == null || !hasSelection)
             {
                 Show(listEmpty, true);
-                listEmpty.text = hasSelection ? "ItemDatabase 없음 (Resources 확인)" : "출력 포트가 없습니다";
+                listEmpty.text = hasSelection ? "팩 정의(SimHost.Database)가 없습니다" : "출력 포트가 없습니다";
                 return;
             }
 
             int shown = 0;
 
-            foreach (var item in UIItemOrder.Sorted(db.items))
+            foreach (var item in UIItemOrder.Sorted(db.Items.Values))
             {
-                if (item.hideFromMenu) continue;   // 내부 탄약 등 — 벨트에 오를 일이 없는 것은 필터에서 뺀다
+                if (item.HideFromMenu) continue;   // 내부 탄약 등 — 벨트에 오를 일이 없는 것은 필터에서 뺀다
 
                 string name = DisplayNameOf(item);
                 if (search.Length > 0 && name.IndexOf(search, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
@@ -461,14 +461,14 @@ namespace CoreDawn.UI
         /// 그래서 목록이 비었을 때 토글을 전부 꺼서 보여주면 화면이 거짓말을 한다 —
         /// 켜진 것이 곧 지나가는 것이어야 한다.
         /// </summary>
-        bool AllowedNow(ItemDataSO item) => router.StateOf(selected) switch
+        bool AllowedNow(ItemDef item) => router.StateOf(selected) switch
         {
             OutletState.Blocked => false,
             OutletState.All     => true,
             _                   => router.IsAllowedAt(selected, item),
         };
 
-        VisualElement MakeRow(ItemDataSO item, string name)
+        VisualElement MakeRow(ItemDef item, string name)
         {
             bool on = AllowedNow(item);
 
@@ -513,7 +513,7 @@ namespace CoreDawn.UI
         /// 낫다. 목록이 비어 있는 동안은 나중에 추가되는 아이템도 자동으로 지나가기 때문이다.
         /// 같은 이유로 다시 전부 켜지면 목록을 도로 비운다.
         /// </summary>
-        void Toggle(ItemDataSO item)
+        void Toggle(ItemDef item)
         {
             var state = router.StateOf(selected);
 
@@ -549,14 +549,14 @@ namespace CoreDawn.UI
             RebuildAll();
         }
 
-        static IEnumerable<ItemDataSO> AllItems()
+        static IEnumerable<ItemDef> AllItems()
         {
-            var db = ItemDatabaseSO.LoadDefault();
-            if (db == null || db.items == null) yield break;
-            foreach (var i in db.items) if (i != null && !i.hideFromMenu) yield return i;
+            var db = SimHost.Database;
+            if (db == null) yield break;
+            foreach (var i in db.Items.Values) if (i != null && !i.HideFromMenu) yield return i;
         }
 
-        string MetaOf(ItemDataSO item)
+        string MetaOf(ItemDef item)
         {
             if (!router.HasPassed(item)) return "";
 
@@ -588,8 +588,8 @@ namespace CoreDawn.UI
 
         // ───────────────────── 잡동사니 ─────────────────────
 
-        static string DisplayNameOf(ItemDataSO item) =>
-            item == null ? "" : string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+        static string DisplayNameOf(ItemDef item) =>
+            item == null ? "" : string.IsNullOrEmpty(item.DisplayName) ? item.Id : item.DisplayName;
 
         static void Show(VisualElement e, bool on)
         {

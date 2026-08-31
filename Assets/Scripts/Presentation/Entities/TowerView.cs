@@ -188,14 +188,13 @@ namespace CoreDawn.Entities
             if (visual != null) visual.OnShotFired();
         }
 
-        /// <summary>탄의 표현 에셋(프리팹·연출). 없으면 경고 한 번 — 판정은 되지만 투사체는 몸(프리팹)이 없어 맞힐 수 없다.</summary>
-        private static AmmoModuleSO AmmoAssetOf(ItemDef item)
+        /// <summary>탄의 표현 에셋(프리팹·연출) — 뷰 카탈로그. 없으면 경고 한 번 — 판정은 되지만 투사체는 몸(프리팹)이 없어 맞힐 수 없다.</summary>
+        private static ViewCatalogSO.Entry AmmoAssetOf(ItemDef item)
         {
             if (item == null) return null;
-            var so = ItemAssets.Of(item);
-            var round = so != null ? so.GetModule<AmmoModuleSO>() : null;
-            if (round == null && warnedRounds.Add(item.Id))
-                Debug.LogError($"[TowerView] 탄 '{item.Id}'의 표현 에셋(ItemDataSO/AmmoModuleSO)이 없습니다 — 탄 프리팹·연출 없이 발사됩니다.");
+            var round = ViewCatalogSO.Of(item);
+            if ((round == null || round.bulletPrefab == null) && warnedRounds.Add(item.Id))
+                Debug.LogError($"[TowerView] 탄 '{item.Id}'의 표현 에셋(뷰 카탈로그 bullet)이 없습니다 — 탄 프리팹·연출 없이 발사됩니다.");
             return round;
         }
     }

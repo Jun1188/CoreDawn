@@ -730,13 +730,13 @@ namespace CoreDawn.UI
 
         class Row
         {
-            public ItemDataSO Item;
+            public ItemDef Item;
             public int Chosen;
             public VisualElement Root, Chip, BarFill, Stepper;
             public Label ChipName, ChipN, Have, Missing, StepValue;
         }
 
-        Row MakeRow(ItemDataSO item)
+        Row MakeRow(ItemDef item)
         {
             var row = new Row { Item = item };
 
@@ -859,7 +859,7 @@ namespace CoreDawn.UI
         static ItemContainer Bag =>
             PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.MainContainer : null;
 
-        static int PlayerCountOf(ItemDataSO item)
+        static int PlayerCountOf(ItemDef item)
         {
             int n = 0;
             if (Bag != null) n += Bag.CountOf(item);
@@ -867,7 +867,7 @@ namespace CoreDawn.UI
         }
 
         /// <summary>소지품에서 뺀다 — 그릇이 뒤 칸(가방)부터 빼므로 핫바(장착)는 마지막에 줄어든다.</summary>
-        static bool PlayerConsume(ItemDataSO item, int n)
+        static bool PlayerConsume(ItemDef item, int n)
         {
             if (n <= 0 || Bag == null || PlayerCountOf(item) < n) return false;
             return Bag.TryConsume(item, n);
@@ -875,8 +875,8 @@ namespace CoreDawn.UI
 
         // ───────────────────────── 잡동사니 ─────────────────────────
 
-        static string DisplayNameOf(ItemDataSO item) =>
-            item == null ? "" : string.IsNullOrEmpty(item.displayName) ? item.name : item.displayName;
+        static string DisplayNameOf(ItemDef item) =>
+            item == null ? "" : string.IsNullOrEmpty(item.DisplayName) ? item.Id : item.DisplayName;
 
         static void AddIf(VisualElement e, string className)
         {

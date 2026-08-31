@@ -230,7 +230,7 @@ namespace CoreDawn.Worlds
         static int PlaceStartingDrops(World world, Transform root)
         {
             // 1) 사양 수집 — 씬 마커는 읽고 지운다(복원 중이라도 지운다: 실물로 남으면 안 된다)
-            ItemDataSO item = null;
+            ItemDef item = null;
             int total = 0;
 
             foreach (var marker in Object.FindObjectsByType<DroppedItem>(FindObjectsInactive.Include,
@@ -241,7 +241,7 @@ namespace CoreDawn.Worlds
                     continue;
 
                 item ??= marker.item;
-                if (marker.item == (ItemDef)item) total += marker.amount;
+                if (marker.item == item) total += marker.amount;
                 Object.Destroy(marker.gameObject);
             }
 

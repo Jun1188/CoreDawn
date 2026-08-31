@@ -56,14 +56,14 @@ namespace CoreDawn.FPS
 
         // ── 공개 API ───────────────────────────────────────────────
 
-        /// <summary>인벤토리에서 GunData를 넘겨주면 해당 무기를 찾아 장착한다.</summary>
-        public void EquipWeapon(GunData targetData)
+        /// <summary>아이템 정의의 총(GunDef)으로 해당 무기를 찾아 장착한다 — 씬 Gun은 자기 Def로 대답한다.</summary>
+        public void EquipWeapon(GunDef target)
         {
-            if (targetData == null) return;
+            if (target == null) return;
 
             for (int i = 0; i < weapons.Length; i++)
             {
-                if (weapons[i].gunData != targetData) continue;
+                if (!ReferenceEquals(weapons[i].Def, target)) continue;
                 if (currentIndex == i) return; // 이미 들고 있는 무기
 
                 SwapTo(i);
@@ -71,7 +71,7 @@ namespace CoreDawn.FPS
                 return;
             }
 
-            Debug.LogWarning($"[WeaponManager] {targetData.displayName} 데이터를 가진 무기 오브젝트가 WeaponHolder 하위에 없습니다!");
+            Debug.LogWarning($"[WeaponManager] 총 정의 '{target.Id}' 를 가진 무기 오브젝트가 WeaponHolder 하위에 없습니다!");
         }
 
         public void UnequipWeapon()

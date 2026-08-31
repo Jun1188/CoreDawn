@@ -73,13 +73,13 @@ namespace CoreDawn.Placement
         private PortFlowOverlay portFlow;
 
         // 프리뷰 포트를 다시 만들어야 하는지 판정하는 키 — 위치만 바뀌면 루트만 옮긴다
-        private BuildingDataSO flowSo;
+        private EntityDef flowSo;
         private int flowRot = -1;
         private BeltShape flowShape;
         private BuildMode mode = BuildMode.None;
 
         // 배치 모드 상태
-        private BuildingDataSO current;
+        private EntityDef current;
         private int lastIndex;                  // 배치 토글용 — 마지막 선택 건물 인덱스
         private GameObject preview;
         private List<Renderer> previewRenderers = new();
@@ -122,10 +122,31 @@ namespace CoreDawn.Placement
 
         /// <summary>씬이 내려가거나 시스템이 꺼지면 모드도 끝난다 — 전역 플래그가 켜진 채 남지 않게.</summary>
         private void OnDisable() => SetMode(BuildMode.None);
-        public BuildingDataSO CurrentBuilding => current;
-        public IReadOnlyList<BuildingDataSO> Buildings =>
-            database != null ? database.buildings : System.Array.Empty<BuildingDataSO>();
-        public BuildingDatabaseSO Database => database;
+        public EntityDef CurrentBuilding => current;
+
+        /// <summary>배치 가능한 건물 정의 — 단축키 인덱스용 안정 순서(카테고리 → 티어 → 메뉴 순서 → 이름).</summary>
+        public IReadOnlyList<EntityDef> Buildings
+        {
+            get
+            {
+                var db = SimHost.Database;
+                if (db == null) return System.Array.Empty<EntityDef>();
+                if (_buildings != null && ReferenceEquals(_buildingsOf, db)) return _buildings;
+                _buildings = db.Entities.Values
+                    .Select(e => (def: e, b: e.Get<BuildingModuleDef>()))
+                    .Where(x => x.b != null && x.b.Placeable)
+                    .OrderBy(x => x.b.Category, System.StringComparer.Ordinal)
+                    .ThenBy(x => x.b.RequiredCoreTier)
+                    .ThenBy(x => x.b.MenuOrder)
+                    .ThenBy(x => x.def.DisplayName, System.StringComparer.Ordinal)
+                    .Select(x => x.def)
+                    .ToList();
+                _buildingsOf = db;
+                return _buildings;
+            }
+        }
+        List<EntityDef> _buildings;
+        SimDatabase _buildingsOf;
 
         /// <summary>철거 모드에서 지금 조준 중인 건물. 없으면 null (HUD가 카드를 접는다).</summary>
         public BuildingModule HoveredBuilding => hovered;
@@ -233,7 +254,7 @@ namespace CoreDawn.Placement
         /// <summary>벨트 모양 순환(직선→L→R). 벨트 배치 중이 아니면 false.</summary>
         public bool CycleBeltShape()
         {
-            if (mode != BuildMode.Placing || current is not BeltDataSO) return false;
+            if (mode != BuildMode.Placing || !IsBelt) return false;
             beltShape = (BeltShape)(((int)beltShape + 1) % 3);
             SpawnPreview();   // 모양이 바뀌면 프리뷰 메시 교체
             return true;
@@ -266,10 +287,12 @@ namespace CoreDawn.Placement
 
         // ===================== 모드 진입/종료 (UI 연동 표면) =====================
 
-        public void SelectBuilding(BuildingDataSO data)
+        bool IsBelt => current != null && current.Has<ConveyorModuleDef>();
+
+        public void SelectBuilding(EntityDef data)
         {
-            if (data == null) return;
-            if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(data.requiredCoreTier)) return;
+            if (data == null || data.Get<BuildingModuleDef>() is not { } bd) return;
+            if (GameManager.Instance != null && !GameManager.Instance.IsTierUnlocked(bd.RequiredCoreTier)) return;
             ExitMode();
             SetMode(BuildMode.Placing);
             current = data;
@@ -326,7 +349,7 @@ namespace CoreDawn.Placement
             if (preview != null && !preview.activeSelf) preview.SetActive(true);
 
             Vector2Int origin = grid.WorldToGrid(cursorPoint);
-            Vector2Int size = current.GetRotatedSize(rotation);
+            Vector2Int size = BuildingPorts.RotatedSize(current, rotation);
 
             bool heightOk = TryGetFootprintHeight(origin, size, out float groundY);
 
@@ -340,8 +363,8 @@ namespace CoreDawn.Placement
             // 채굴기는 광맥 위에서만 (광맥이 없는 씬/비채굴기는 항상 통과)
             // 재료가 모자라면 프리뷰가 빨갛게 떠서 누르기 전에 알 수 있다
             lastCanPlace = heightOk && CanBuildTerrain(origin, size) && CanPlace(origin, size)
-                        && FactoryBootstrap.Instance.Factory.CanPlace(current.Def, origin, size, out _)
-                        && BuildCost.CanAfford(current.Def);
+                        && FactoryBootstrap.Instance.Factory.CanPlace(current, origin, size, out _)
+                        && BuildCost.CanAfford(current);
             lastOrigin   = origin;
             lastPos      = pos;
             SetPreviewColor(lastCanPlace);
@@ -354,31 +377,31 @@ namespace CoreDawn.Placement
 
         /// <summary>프리뷰 건물의 회전 반영 포트 — 벨트는 모양(직선/L/R)에 따라 달라진다.</summary>
         private PortDefinition[] PreviewPorts()
-            => current is BeltDataSO
-                ? BeltDataSO.BuildPorts(beltShape, rotation)
-                : current.GetRotatedPorts(rotation);
+            => IsBelt
+                ? BeltGeometry.BuildPorts(beltShape, rotation)
+                : BuildingPorts.Rotated(current, rotation);
 
         /// <summary>프리뷰 메시의 요(yaw). 벨트 커브만 포트에 맞추는 보정이 더 붙는다.</summary>
         private float PreviewYaw()
-            => current is BeltDataSO ? BeltDataSO.MeshYaw(beltShape, rotation) : rotation * 90f;
+            => IsBelt ? BeltGeometry.MeshYaw(beltShape, rotation) : rotation * 90f;
 
         private void Place(Vector2Int origin, Vector3 pos)
         {
             // 재료를 먼저 깎는다. 실패하면 배치도 하지 않는다 —
             // 프리뷰 판정과 실제 클릭 사이에 인벤토리가 바뀌었을 수 있다.
-            if (!BuildCost.TryCharge(current.Def))
+            if (!BuildCost.TryCharge(current))
             {
-                Debug.Log($"[Placement] 재료가 부족해 '{current.name}' 을 지을 수 없습니다.");
+                Debug.Log($"[Placement] 재료가 부족해 '{current.DisplayName}' 을 지을 수 없습니다.");
                 // 왜 아무 일도 안 일어났는지 소리로 알린다 — 로그는 플레이어가 못 본다
                 if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Warning);
                 return;
             }
 
-            if (current is BeltDataSO belt)
-                PlacementBridge.Place(current.Def, origin, pos, rotation,
-                    BeltDataSO.BuildPorts(beltShape, rotation), belt.PrefabFor(beltShape), beltShape);
+            if (IsBelt)
+                PlacementBridge.Place(current, origin, pos, rotation,
+                    BeltGeometry.BuildPorts(beltShape, rotation), ViewCatalogSO.BeltPrefabOf(current, beltShape), beltShape);
             else
-                PlacementBridge.Place(current.Def, origin, pos, rotation);
+                PlacementBridge.Place(current, origin, pos, rotation);
 
             // 벨트 한 칸까지 포함해 무엇을 짓든 같은 설치음이 난다 — 공장을 짓는 리듬이 손에 붙는다
             if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Construct);
@@ -413,13 +436,12 @@ namespace CoreDawn.Placement
             if (!FactoryBootstrap.Instance.Factory.CanPlace(def, origin, size, out string depositReason)) { reason = depositReason; return false; }
 
             Vector3 pos = grid.GetFootprintCenter(origin, size);
-            var so = BuildingAssets.Of(def);   // 표현 에셋 — 들어올림·커브 메시는 아직 프리팹이 안다
-            pos.y = groundY + SurfaceLift(so, origin);
+            pos.y = groundY + SurfaceLift(def, origin);
 
             // 조준 배치(Place)와 같은 규칙 — 벨트는 모양에 맞는 포트·커브 메시로 세운다
             placed = def.Has<ConveyorModuleDef>()
                 ? PlacementBridge.Place(def, origin, pos, rotSteps,
-                    BeltDataSO.BuildPorts(shape, rotSteps), (so as BeltDataSO)?.PrefabFor(shape), shape)
+                    BeltGeometry.BuildPorts(shape, rotSteps), ViewCatalogSO.BeltPrefabOf(def, shape), shape)
                 : PlacementBridge.Place(def, origin, pos, rotSteps);
             return placed != null;
         }
@@ -609,7 +631,7 @@ namespace CoreDawn.Placement
         // ===================== 표면 위 올려놓기 =====================
 
         // 프리팹 → "피벗에서 밑면까지 거리". 프리팹마다 고정이라 처음 한 번만 재고 캐시한다.
-        private static readonly Dictionary<BuildingDataSO, float> pivotLiftCache = new();
+        private static readonly Dictionary<EntityDef, float> pivotLiftCache = new();
 
         /// <summary>
         /// 채굴기를 광맥 위에 지을 때만 건물을 표면 위로 들어올린다.
@@ -622,34 +644,35 @@ namespace CoreDawn.Placement
         /// 이 함수가 도는 UpdatePreview는 어차피 매 프레임 지면 레이캐스트를 던지고 있으므로
         /// 추가 레이캐스트나 센서는 필요 없다.
         /// </summary>
-        public static float SurfaceLift(BuildingDataSO so, Vector2Int origin)
+        public static float SurfaceLift(EntityDef def, Vector2Int origin)
         {
-            if (so is not MinerDataSO)                     return 0f;
+            if (def == null || !def.Has<ExtractorModuleDef>())  return 0f;
             if (FactoryBootstrap.Instance == null || FactoryBootstrap.Instance.Factory.DepositAt(origin) == null) return 0f;
 
-            return PivotLift(so);
+            return PivotLift(def);
         }
 
         /// <summary>프리팹 피벗에서 렌더러 밑면까지의 거리 (프리팹 로컬 기준, 회전 0 가정).</summary>
-        private static float PivotLift(BuildingDataSO so)
+        private static float PivotLift(EntityDef def)
         {
-            if (so == null || so.prefab == null) return 0f;
-            if (pivotLiftCache.TryGetValue(so, out float cached)) return cached;
+            var prefab = ViewCatalogSO.PrefabOf(def);
+            if (prefab == null) return 0f;
+            if (pivotLiftCache.TryGetValue(def, out float cached)) return cached;
 
             // 모델 프리팹은 "지면 = 로컬 y0" 규약으로 저작된다 — y0 아래로 내려간 부분(채굴기
             // 드릴)은 일부러 땅에 박히는 부위다. 렌더러 최저점 기준으로 들어올리면 드릴 끝이
             // 표면 위에 얹혀 몸체가 뜬다. 들어올림은 피벗이 중앙인 큐브 플레이스홀더("Mesh")에만
             // 필요하다 — 모델 프리팹은 그대로 놓는 것이 맞다.
-            if (so.prefab.transform.Find("Mesh") == null)
+            if (prefab.transform.Find("Mesh") == null)
             {
-                pivotLiftCache[so] = 0f;
+                pivotLiftCache[def] = 0f;
                 return 0f;
             }
 
             float min = float.MaxValue;
-            Transform root = so.prefab.transform;
+            Transform root = prefab.transform;
 
-            foreach (var mf in so.prefab.GetComponentsInChildren<MeshFilter>(true))
+            foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
             {
                 if (mf.sharedMesh == null) continue;
 
@@ -666,7 +689,7 @@ namespace CoreDawn.Placement
             }
 
             float lift = min == float.MaxValue ? 0f : -min;
-            pivotLiftCache[so] = lift;
+            pivotLiftCache[def] = lift;
             return lift;
         }
 
@@ -721,7 +744,7 @@ namespace CoreDawn.Placement
             if (preview != null) Destroy(preview);
             previewRenderers.Clear();
 
-            var prefab = current is BeltDataSO belt ? belt.PrefabFor(beltShape) : current.prefab;
+            var prefab = IsBelt ? ViewCatalogSO.BeltPrefabOf(current, beltShape) : ViewCatalogSO.PrefabOf(current);
             if (prefab == null)
             {
                 preview = new GameObject("Preview (프리팹 없음)");

@@ -283,9 +283,9 @@ namespace CoreDawn.Tests
         /// </summary>
         BuildingModule Place(BuildingDataSO so, Vector2Int cell)
         {
-            Vector2Int size = so.GetRotatedSize(0);
+            Vector2Int size = BuildingPorts.RotatedSize(so.Def, 0);
             Vector3 pos = Grid.GetFootprintCenter(cell, size);
-            pos.y = SurfaceTopAt(pos) + PlacementSystem.SurfaceLift(so, cell);
+            pos.y = SurfaceTopAt(pos) + PlacementSystem.SurfaceLift(so.Def, cell);
 
             return PlacementBridge.Place(so.Def, cell, pos);
         }

@@ -8,6 +8,7 @@ using CoreDawn.Managers;
 using CoreDawn.Placement;
 using CoreDawn.Data;
 using InputEvent = CoreDawn.Inputs.InputEvent;
+using CoreDawn.Sim;
 
 namespace CoreDawn.UI
 {
@@ -103,21 +104,50 @@ namespace CoreDawn.UI
 
         // ───────────────────────── 목록 ─────────────────────────
 
-        BuildingDatabaseSO Database =>
-            placement != null && placement.Database != null ? placement.Database : BuildingDatabaseSO.LoadDefault();
+        /// <summary>
+        /// (카테고리, 항목들) — 팩 정의에서. 배치 가능한 건물(placeable)만, 순서는 티어 → 메뉴 순서 → 표시명
+        /// (구 BuildingDatabaseSO.GroupedByCategory와 같은 기준). 카테고리 문자열이 enum에 없으면 그 건물은 메뉴에 없다.
+        /// </summary>
+        static IEnumerable<(BuildingCategory cat, List<EntityDef> items)> GroupedByCategory()
+        {
+            var db = SimHost.Database;
+            if (db == null) yield break;
 
-        /// <summary>탭은 DB에 실제로 항목이 있는 카테고리만 만든다 — 빈 탭을 두지 않는다.</summary>
+            var groups = new Dictionary<BuildingCategory, List<EntityDef>>();
+            foreach (var e in db.Entities.Values)
+            {
+                var b = e.Get<BuildingModuleDef>();
+                if (b == null || !b.Placeable) continue;
+                if (!System.Enum.TryParse(b.Category, true, out BuildingCategory cat)) continue;
+                if (!groups.TryGetValue(cat, out var list)) groups[cat] = list = new List<EntityDef>();
+                list.Add(e);
+            }
+
+            foreach (BuildingCategory cat in System.Enum.GetValues(typeof(BuildingCategory)))
+            {
+                if (!groups.TryGetValue(cat, out var list)) continue;
+                list.Sort((a, b) =>
+                {
+                    var ba = a.Get<BuildingModuleDef>(); var bb = b.Get<BuildingModuleDef>();
+                    int c = ba.RequiredCoreTier.CompareTo(bb.RequiredCoreTier);
+                    if (c != 0) return c;
+                    c = ba.MenuOrder.CompareTo(bb.MenuOrder);
+                    if (c != 0) return c;
+                    return string.CompareOrdinal(NameOf(a), NameOf(b));
+                });
+                yield return (cat, list);
+            }
+        }
+
+        /// <summary>탭은 팩에 실제로 항목이 있는 카테고리만 만든다 — 빈 탭을 두지 않는다.</summary>
         void RebuildTabs()
         {
             tabs.Clear();
             tabButtons.Clear();
 
-            var db = Database;
-            if (db == null) return;
-
             bool categoryStillExists = false;
 
-            foreach (var (cat, items) in db.GroupedByCategory())
+            foreach (var (cat, items) in GroupedByCategory())
             {
                 if (!HasAnyVisible(items)) continue;
                 if (cat == category) categoryStillExists = true;
@@ -136,7 +166,7 @@ namespace CoreDawn.UI
             // 선택 중이던 카테고리가 사라졌으면 첫 탭으로
             if (!categoryStillExists && tabButtons.Count > 0)
             {
-                foreach (var (cat, items) in db.GroupedByCategory())
+                foreach (var (cat, items) in GroupedByCategory())
                 {
                     if (!HasAnyVisible(items)) continue;
                     category = cat;
@@ -146,33 +176,23 @@ namespace CoreDawn.UI
             }
         }
 
-        static bool HasAnyVisible(List<BuildingDataSO> items)
-        {
-            foreach (var so in items)
-                if (so != null && !so.hideFromBuildMenu) return true;
-            return false;
-        }
+        static bool HasAnyVisible(List<EntityDef> items) => items != null && items.Count > 0;
 
         void RebuildGrid()
         {
             grid.Clear();
 
-            var db = Database;
             int shown = 0;
 
-            if (db != null)
+            foreach (var (cat, items) in GroupedByCategory())
             {
-                foreach (var (cat, items) in db.GroupedByCategory())
-                {
-                    if (cat != category) continue;
+                if (cat != category) continue;
 
-                    // 순서(티어 → 표시명)는 GroupedByCategory가 정한다 — uGUI 메뉴와 같은 차례로 뜬다
-                    foreach (var so in items)
-                    {
-                        if (so == null || so.hideFromBuildMenu) continue;
-                        grid.Add(MakeCell(so));
-                        shown++;
-                    }
+                // 순서(티어 → 메뉴 순서 → 표시명)는 GroupedByCategory가 정한다
+                foreach (var def in items)
+                {
+                    grid.Add(MakeCell(def));
+                    shown++;
                 }
             }
 
@@ -180,7 +200,7 @@ namespace CoreDawn.UI
             ClearDetails();
         }
 
-        VisualElement MakeCell(BuildingDataSO so)
+        VisualElement MakeCell(EntityDef so)
         {
             bool unlocked = IsUnlocked(so);
 
@@ -194,17 +214,18 @@ namespace CoreDawn.UI
             var icon = new VisualElement();
             icon.AddToClassList("ui-slot__icon");
             icon.AddToClassList("ui-slot__icon--xs");
-            if (so.icon != null) icon.style.backgroundImage = new StyleBackground(so.icon);
+            var sprite = ViewCatalogSO.IconOf(so);
+            if (sprite != null) icon.style.backgroundImage = new StyleBackground(sprite);
             row.Add(icon);
 
-            var name = new Label(DisplayNameOf(so));
+            var name = new Label(NameOf(so));
             name.AddToClassList("ui-row__name");
             row.Add(name);
 
             // 잠긴 항목만 예외로 해금 조건을 줄에 남긴다 — 고르기 전에 알아야 하는 정보다
             if (!unlocked)
             {
-                var meta = new Label($"게이트 {so.requiredCoreTier}");
+                var meta = new Label($"게이트 {TierOf(so)}");
                 meta.AddToClassList("ui-row__meta");
                 row.Add(meta);
             }
@@ -220,15 +241,17 @@ namespace CoreDawn.UI
             return cell;
         }
 
-        void StartPlacing(BuildingDataSO so)
+        void StartPlacing(EntityDef so)
         {
             if (so == null || placement == null) return;
             placement.SelectBuilding(so);
             Close();
         }
 
-        static bool IsUnlocked(BuildingDataSO so) =>
-            GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(so.requiredCoreTier);
+        static int TierOf(EntityDef def) => def.Get<BuildingModuleDef>()?.RequiredCoreTier ?? 0;
+
+        static bool IsUnlocked(EntityDef so) =>
+            GameManager.Instance == null || GameManager.Instance.IsTierUnlocked(TierOf(so));
 
         // ───────────────────── 하단 힌트·버튼 ─────────────────────
 
@@ -247,43 +270,45 @@ namespace CoreDawn.UI
         // ───────────────────── 하단 상세 (hover) ─────────────────────
 
         /// <summary>커서를 올린 건물의 정보를 하단 고정 자리에 채운다.</summary>
-        void ShowDetails(BuildingDataSO so, bool unlocked)
+        void ShowDetails(EntityDef so, bool unlocked)
         {
+            var bd = so.Get<BuildingModuleDef>();
+            System.Enum.TryParse(bd.Category, true, out BuildingCategory cat);
             Show(detEmpty, false);
             Show(detName, true);
             Show(detType, true);
             Show(detMeta, true);
 
-            detName.text = DisplayNameOf(so);
+            detName.text = NameOf(so);
             detType.text = unlocked
-                ? $"TIER {so.requiredCoreTier} · {BuildingCategoryNames.Korean(so.category)}"
-                : $"TIER {so.requiredCoreTier} · {BuildingCategoryNames.Korean(so.category)} · 게이트 {so.requiredCoreTier} 필요";
+                ? $"TIER {bd.RequiredCoreTier} · {BuildingCategoryNames.Korean(cat)}"
+                : $"TIER {bd.RequiredCoreTier} · {BuildingCategoryNames.Korean(cat)} · 게이트 {bd.RequiredCoreTier} 필요";
 
-            detDesc.text = so.description ?? "";
-            Show(detDesc, !string.IsNullOrEmpty(so.description));
+            detDesc.text = so.Description ?? "";
+            Show(detDesc, !string.IsNullOrEmpty(so.Description));
 
-            detSize.text = $"크기 {so.size.x} × {so.size.y}";
+            detSize.text = $"크기 {bd.Size.x} × {bd.Size.y}";
 
             // 비용은 "필요/보유"로 함께 적고, 모자란 칩만 붉힌다 — 배치 HUD(SCR-05)와 같은 문법이라
             // 메뉴에서 본 것과 배치 중에 보는 것이 어긋나지 않는다
             detCost.Clear();
             int chips = 0;
-            if (BuildCost.HasCost(so.Def))
+            if (BuildCost.HasCost(so))
             {
-                foreach (var c in so.buildCost)
+                foreach (var c in bd.Cost)
                 {
-                    if (c.item == null || c.amount <= 0) continue;
+                    if (c.Item == null || c.Amount <= 0) continue;
 
-                    int have = BuildCost.PlayerCountOf(c.item);
-                    bool short_ = have < c.amount;
+                    int have = BuildCost.PlayerCountOf(c.Item);
+                    bool short_ = have < c.Amount;
 
                     var chip = new VisualElement();
                     chip.AddToClassList("ui-chip");
-                    var modifier = short_ ? "ui-chip--short" : UIItemPalette.ChipClass(c.item);
+                    var modifier = short_ ? "ui-chip--short" : UIItemPalette.ChipClass(c.Item);
                     if (modifier != null) chip.AddToClassList(modifier);
 
-                    chip.Add(new Label(DisplayNameOf(c.item)));
-                    var n = new Label($"{have}/{c.amount}");   // 보유/필요 — 코어 납품 표시(현재/필요)와 같은 방향
+                    chip.Add(new Label(NameOf(c.Item)));
+                    var n = new Label($"{have}/{c.Amount}");   // 보유/필요 — 코어 납품 표시(현재/필요)와 같은 방향
                     n.AddToClassList("ui-chip__n");
                     chip.Add(n);
                     detCost.Add(chip);
@@ -299,7 +324,7 @@ namespace CoreDawn.UI
             if (unlocked)
             {
                 hints.Add(KeyHint("R", "회전"));
-                if (so is BeltDataSO) hints.Add(KeyHint("T", "모양 변경"));
+                if (so.Has<ConveyorModuleDef>()) hints.Add(KeyHint("T", "모양 변경"));
                 hints.Add(KeyHint("LMB", "배치"));
                 hints.Add(KeyHint("RMB", "취소"));
             }
@@ -318,8 +343,8 @@ namespace CoreDawn.UI
 
         // ───────────────────────── 잡동사니 ─────────────────────────
 
-        static string DisplayNameOf(GameDataSO so) =>
-            so == null ? "" : string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName;
+        static string NameOf(Def def) =>
+            def == null ? "" : string.IsNullOrEmpty(def.DisplayName) ? def.Id : def.DisplayName;
 
         static void Show(VisualElement e, bool on)
         {

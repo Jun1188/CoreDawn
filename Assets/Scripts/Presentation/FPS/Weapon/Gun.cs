@@ -75,7 +75,7 @@ namespace CoreDawn.FPS
         public int CurrentAmmo => Mag?.Loaded ?? 0;
 
         /// <summary>지금 장전된 탄종의 표현 에셋 — HUD 이름·아이콘용. 정본은 심(Magazine.Round).</summary>
-        public ItemDataSO CurrentAmmoItem => Mag != null ? ItemAssets.Of(Mag.Round) : null;
+        public ItemDef CurrentAmmoItem => Mag?.Round;
 
         /// <summary>소지품에 남은 현재 탄종 수 — HUD 예비탄 표시용. 무한 탄약(근접)·소지품 없는 씬은 -1(무한).</summary>
         public int ReserveAmmo => Def.UnlimitedAmmo || Weapon == null ? -1 : Weapon.ReserveOf(Mag?.Round);
@@ -183,10 +183,9 @@ namespace CoreDawn.FPS
 
             // 탄도(속도·중력·폭발·수명·외형)는 장전된 탄종의 성질 — 총은 각도(조준·탄퍼짐)만 정한다.
             // 프리팹·연출은 아직 SO 모듈에 있다(5a-3 카탈로그로).
-            var so = ItemAssets.Of(shot.Round);
-            var round = so != null ? so.GetModule<AmmoModuleSO>() : null;
-            if (round == null)
-                Debug.LogError($"[Gun] '{Def.Id}': 탄 '{shot.Round?.Id}'의 표현 에셋(AmmoModuleSO)이 없습니다 — 프리팹·연출 없이 발사됩니다.");
+            var round = ViewCatalogSO.Of(shot.Round);
+            if (round == null || round.bulletPrefab == null)
+                Debug.LogError($"[Gun] '{Def.Id}': 탄 '{shot.Round?.Id}'의 표현 에셋(뷰 카탈로그 bullet)이 없습니다 — 프리팹·연출 없이 발사됩니다.");
 
             // 판정 축 = 카메라(조준선). 총구 축으로 쏘면 ① 비행 중 충돌이 조준선 밖에서 판정되고
             // ② 근접 표적에서 탄이 옆으로 날며 ③ 중력탄(유탄)의 포물선이 크로스헤어와 어긋난다.
