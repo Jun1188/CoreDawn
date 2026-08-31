@@ -177,6 +177,11 @@ namespace CoreDawn.EditorTools
             public bool   hideFromMenu;  // 아이템 고르는 목록(분배기 필터 등)에서 숨김 — 내부 탄약용
             public string icon;          // 스프라이트 이름 — 아틀라스 안에서 어느 스프라이트인지 고르는 열쇠이기도 하다
             public string iconGuid;      // 스프라이트를 담은 에셋의 guid — 이쪽이 파일을 특정한다
+            // Ammo 전용 뷰 참조 — 탄 외형·연출 프리팹, 이름 + guid 짝(model/modelGuid 규약).
+            // 값의 출처는 에셋 배선(AmmoModuleSO에서 1회 유틸이 채움) — 뷰 카탈로그가 이 guid를 굽는다
+            public string bullet, bulletGuid;             // 탄 외형(Bullet 컴포넌트 필수)
+            public string muzzleFlash, muzzleFlashGuid;   // 총구 화염
+            public string hitEffect, hitEffectGuid;       // 착탄/폭발 이펙트
             public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
             public float  damage;        // Ammo 전용 구 숏컷 — attackEffects가 없을 때만 {Damage, damage}로 변환
             public string gun;           // Weapon 전용 — 연결할 GunData id (예: "Gun:Rifle")
@@ -214,6 +219,13 @@ namespace CoreDawn.EditorTools
             public string category;      // BuildingCategory 이름
             public string model;          // 모델 파일명 — 사람이 읽는 표시이자 guid가 죽었을 때의 폴백
             public string modelGuid;      // 모델 에셋 guid — 이쪽이 진실. 이름은 프로젝트에 둘 있으면 어느 쪽이 걸릴지 정해지지 않는다
+            public string icon;           // 빌드 메뉴 아이콘 — 스프라이트 이름(아이템 icon과 같은 규약)
+            public string iconGuid;       // 스프라이트를 담은 에셋의 guid
+            // 배치 프리팹 참조 — 임포터가 model에서 굽는 산출물(둥지·나무는 손 프리팹)의 주소.
+            // 뷰 카탈로그가 이 guid를 굽는다. 값은 1회 유틸이 SO에서 채우고, 임포터가 프리팹을 다시 구워도 guid는 유지된다(경로 불변)
+            public string prefab, prefabGuid;
+            public string prefabCurveL, prefabCurveLGuid;   // 벨트 커브 프리팹 (벨트만)
+            public string prefabCurveR, prefabCurveRGuid;
             public Vec2Dto size;
             public PortDto[] ports;
             public int   inputSlots, outputSlots, bufferStackCap, requiredCoreTier, maxHp;
