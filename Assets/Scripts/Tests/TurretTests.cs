@@ -252,12 +252,12 @@ namespace CoreDawn.Tests
             Monster(new Vector3(5f, 0, 0));
             RunSim(0.3f);
             Expect(module.ReadyAt > 0f, "한 발 쏘고 쿨다운이 걸려 있어야 함");
-            var saved = ((TurretBehavior)turret.Behavior).CaptureState();
+            var saved = ((ISaveableModule)turret.Owner.Get<TurretModule>()).CaptureState();
             var tok = Newtonsoft.Json.Linq.JToken.FromObject(saved);
             Expect(tok["readyAt"] != null && tok["yaw"] != null, $"세이브 키 readyAt·yaw (실제 {tok})");
 
             var again = _sim.Place(Turret(range: 8f, fireRate: 0.5f, turnSpeed: 0f, ammo: _basicAmmo), new Vector2Int(4, 4));
-            ((TurretBehavior)again.Behavior).RestoreState(tok);
+            ((ISaveableModule)again.Owner.Get<TurretModule>()).RestoreState(tok); _sim.MarkDirty(again);
             var m2 = again.Owner.Get<TurretModule>();
             Expect(Mathf.Approximately(m2.ReadyAt, module.ReadyAt) && Mathf.Approximately(m2.Yaw, module.Yaw), "복원된 쿨다운·방위가 같아야 함");
         }

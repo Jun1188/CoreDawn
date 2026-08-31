@@ -50,8 +50,10 @@ namespace CoreDawn.Save
             [JsonProperty("hpMax")] public float HpMax;
             [JsonProperty("hpCur")] public float HpCurrent;
 
-            /// <summary>행동 고유 상태. 어떤 모양인지는 각 행동이 정한다.</summary>
+            /// <summary>행동 고유 상태(과도기 — 아직 행동이 있는 건물). 어떤 모양인지는 각 행동이 정한다.</summary>
             [JsonProperty("behavior")] public JToken Behavior;
+            /// <summary>모듈별 상태(ISaveableModule) — 키는 모듈 타입 이름(…Module 제외, 예: "Turret").</summary>
+            [JsonProperty("modules")] public Dictionary<string, JToken> Modules = new();
         }
 
         public class BeltDto
@@ -95,6 +97,7 @@ namespace CoreDawn.Save
                     HpMax = hp != null ? hp.MaxHealth : 0f,
                     HpCurrent = hp != null ? hp.CurrentHealth : 0f,
                     Behavior = b.Behavior is ISaveableBehavior s ? SaveJson.ToToken(s.CaptureState()) : null,
+                    Modules = CaptureModules(b.Owner),
                 });
             }
 
@@ -188,6 +191,7 @@ namespace CoreDawn.Save
                 // 행동 상태가 먼저 들어가야 한다 — 코어가 보호막을 최대치로 자르는 등
                 // 상태에 따라 달라지는 판단이 있고, 그 최대치는 티어(이미 복원됨)에서 나온다
                 if (b.Behavior is ISaveableBehavior s && want.Behavior != null) s.RestoreState(want.Behavior);
+                RestoreModules(b.Owner, want.Modules);
 
                 if (want.HpMax > 0f) b.Owner?.Health?.RestoreState(want.HpMax, want.HpCurrent, isDead: false);
 
@@ -202,6 +206,29 @@ namespace CoreDawn.Save
         /// 벨트 위 아이템을 되돌린다. 세그먼트 자체는 건물을 놓는 과정에서 이미 이어 붙여져 있으므로
         /// 여기서는 출구 벨트를 열쇠로 세그먼트를 찾아 내용물만 얹는다.
         /// </summary>
+        // ── 모듈 상태 — 엔티티의 ISaveableModule을 전부, 건물 종류를 모르고 ──
+        static Dictionary<string, JToken> CaptureModules(CoreDawn.Sim.Entity e)
+        {
+            var d = new Dictionary<string, JToken>();
+            if (e == null) return d;
+            foreach (var m in e.Modules)
+                if (m is ISaveableModule s) d[ModuleKey(m)] = SaveJson.ToToken(s.CaptureState());
+            return d;
+        }
+
+        static void RestoreModules(CoreDawn.Sim.Entity e, Dictionary<string, JToken> saved)
+        {
+            if (e == null || saved == null || saved.Count == 0) return;
+            foreach (var m in e.Modules)
+                if (m is ISaveableModule s && saved.TryGetValue(ModuleKey(m), out var tok) && tok != null) s.RestoreState(tok);
+        }
+
+        static string ModuleKey(CoreDawn.Sim.EntityModule m)
+        {
+            string n = m.GetType().Name;
+            return n.EndsWith("Module") ? n.Substring(0, n.Length - 6) : n;
+        }
+
         static void RestoreBeltItems(FactoryBootstrap boot, Dto dto)
         {
             // 재사용된 벨트에는 이전 아이템이 남아 있다 — 얹기 전에 전부 비운다

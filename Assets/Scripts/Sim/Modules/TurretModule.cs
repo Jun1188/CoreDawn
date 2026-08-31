@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using UnityEngine;
 
@@ -49,7 +51,7 @@ namespace CoreDawn.Sim
     /// 시계는 공장 틱(Step의 now) — 몬스터 시계와 별개지만 쿨다운은 상대 시간이라 문제 없다.
     /// 사거리·반경은 m — 플레이어 총(GunData.range)과 같은 단위. 칸 단위가 아니다.
     /// </summary>
-    public sealed class TurretModule : EntityModule
+    public sealed class TurretModule : EntityModule, ISteppable, ISaveableModule
     {
         public TurretModuleDef Def { get; }
 
@@ -192,5 +194,26 @@ namespace CoreDawn.Sim
 
         /// <summary>세이브 복원 — 쿨다운·방위. 표적은 저장하지 않는다(다음 탐색이 싸다).</summary>
         public void RestoreState(float readyAt, float yaw) { ReadyAt = readyAt; Yaw = yaw; }
+
+        // ── 공통 틱(ISteppable): 굶으면 예약 없음(탄이 오면 그릇 변화가 깨운다), 표적이 있으면 매 틱, 없으면 탐색 주기 ──
+        float ISteppable.Step(float now, float dt)
+        {
+            Step(now, dt);
+            if (Phase == TurretPhase.Starved) return 0f;
+            return Target != null ? dt : ScanInterval;
+        }
+
+        // ── 세이브(ISaveableModule) — 키는 옛 행동 저장과 같다 ──
+        public sealed class SaveState
+        {
+            [JsonProperty("readyAt")] public float ReadyAt;
+            [JsonProperty("yaw")] public float Yaw;
+        }
+        public object CaptureState() => new SaveState { ReadyAt = ReadyAt, Yaw = Yaw };
+        public void RestoreState(JToken state)
+        {
+            var s = state?.ToObject<SaveState>();
+            if (s != null) RestoreState(s.ReadyAt, s.Yaw);
+        }
     }
 }

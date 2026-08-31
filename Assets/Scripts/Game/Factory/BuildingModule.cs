@@ -125,6 +125,9 @@ namespace CoreDawn.Factory
             Output = inventory?.Output ?? new ItemContainer(0);
             // 행동은 그릇·정의가 갖춰진 뒤에 — 조립기는 생성자에서 입력 필터를 건다
             _behavior = BuildingBehaviors.Create(this);
+            // 행동 없이 모듈이 스스로 걷는 건물(포탑·오라·지뢰…): 그릇이 바뀌면 다음 틱에 다시 판단한다.
+            // 손으로 넣고 빼는 경로는 벨트를 안 거쳐 아무도 깨워 주지 않는다(옛 행동들이 하나씩 달던 구독의 공통화)
+            if (_behavior == null && !IsConveyor) { Input.Changed += WakeSelf; Output.Changed += WakeSelf; }
             Owner.Health?.AddInterceptor(this);
         }
         protected internal override void OnDetach() => Owner.Health?.RemoveInterceptor(this);
@@ -165,8 +168,33 @@ namespace CoreDawn.Factory
         /// <summary>BuildingGraph.OnPlaced() 완료 후 호출 — 연결이 확정된 뒤 초기화.</summary>
         public void OnAfterConnected() => _behavior?.OnAfterPlaced();
 
-        /// <summary>FactorySystem이 이 건물이 깨어 있는 틱에 호출.</summary>
-        public void Tick(float dt) => _behavior?.Tick(dt);
+        /// <summary>FactorySystem이 이 건물이 깨어 있는 틱에 호출. 행동이 있으면 행동이(과도기), 없으면 모듈 공통 틱.</summary>
+        public void Tick(float dt)
+        {
+            if (_behavior != null) { _behavior.Tick(dt); return; }
+            TickModules(dt);
+        }
+
+        void WakeSelf() => Factory.MarkDirty(this);
+
+        /// <summary>
+        /// 모듈 공통 틱 — 행동이 하던 공장 어댑터 일을 한 곳에서: 밀린 출력부터 밀어내고, 걷는 모듈(ISteppable)을 전부 한 걸음,
+        /// 산출이 늘었으면 다시 밀어내고, 입력이 줄었으면(재료·탄 소비) 막혀 있던 상류를 깨우고, 모듈이 원하는 시각에 깨움을 예약한다.
+        /// 모듈은 공장을 모른다 — 그릇의 개수 변화만으로 무엇이 일어났는지 안다.
+        /// </summary>
+        void TickModules(float dt)
+        {
+            FlushOutputs();
+            int inBefore = Input.Total, outBefore = Output.Total;
+            float wake = 0f;
+            var modules = Owner.Modules;
+            for (int i = 0; i < modules.Count; i++)
+                if (modules[i] is ISteppable s) wake = Mathf.Max(wake, s.Step(Factory.Now, dt));
+            if (IsRemoved) return;                       // 지뢰처럼 걷다가 스스로 죽은 건물
+            if (Output.Total > outBefore) FlushOutputs();
+            if (Input.Total < inBefore) NotifyUpstream();
+            if (wake > 0f) Factory.ScheduleWake(this, wake);
+        }
 
         /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용). 행동 없는 건물(나무·둥지·울타리)은 null.</summary>
         public IBuildingBehavior Behavior => _behavior;

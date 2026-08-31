@@ -30,10 +30,8 @@ namespace CoreDawn.Factory
             var core = def.Get<CoreModuleDef>();
             if (core != null) return new CoreBehavior(b, core);
 
-            // 사격·펄스·기폭 건물 — 판단은 심 모듈(정의의 Create)이 하고, 행동은 공장 어댑터(칸 크기·깨우기·세이브·상류 깨우기)
-            if (b.Owner.Get<TurretModule>() is { } turret) return new TurretBehavior(b, turret);
-            if (b.Owner.Get<AuraEmitterModule>() is { } aura) return new AuraBehavior(b, aura);
-            if (b.Owner.Get<TriggerModule>() is { } trigger) return new TriggerBehavior(b, trigger);
+            // 스스로 걷는 모듈(ISteppable: 포탑·오라·지뢰…)이 있으면 행동 없음 — BuildingModule의 공통 틱이 돌린다
+            foreach (var m in b.Owner.Modules) if (m is ISteppable) return null;
 
             // 버퍼와 포트만 있는 건물 = 통과 보관소(보관소·드론 포트)
             if (def.Has<InventoryModuleDef>() && def.Has<PortsModuleDef>()) return new StorageBehavior(b);

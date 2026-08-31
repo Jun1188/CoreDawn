@@ -40,6 +40,9 @@ namespace CoreDawn.Sim
 
         public int SlotCount => _slots.Length;
 
+        /// <summary>담긴 개수 합 — 종류 무관. 공통 틱이 "줄었나/늘었나"를 볼 때 쓴다.</summary>
+        public int Total { get { int n = 0; foreach (var s in _slots) if (!s.IsEmpty) n += s.amount; return n; } }
+
         /// <summary>
         /// 이 컨테이너에서 이 아이템이 한 슬롯에 몇 개까지 쌓이는가.
         /// 아이템 상한과 컨테이너 상한 중 더 좁은 쪽 — 컨테이너는 좁히기만 하지 넓히지 않는다.

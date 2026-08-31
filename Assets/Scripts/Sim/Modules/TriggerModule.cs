@@ -18,7 +18,7 @@ namespace CoreDawn.Sim
     /// 무엇이 터지는지는 탄의 출처(<see cref="IAmmoSource"/>)가 정한다 — 지뢰는 고정 탄(<see cref="FixedAmmoModule"/>: 자기 정의의 효과).
     /// once면 한 번 터지고 스스로 죽는다(Health.Kill → 공장이 건물을 치운다).
     /// </summary>
-    public sealed class TriggerModule : EntityModule
+    public sealed class TriggerModule : EntityModule, ISteppable
     {
         public TriggerModuleDef Def { get; }
 
@@ -59,6 +59,15 @@ namespace CoreDawn.Sim
         }
 
         /// <summary>한 틱 — 반경에 적이 있으면 터진다. now는 공장 시계.</summary>
+        // ── 공통 틱(ISteppable): 터졌으면(Armed=false) 예약 없음, 아니면 다음 감지 시각(최소 한 틱) ──
+        float ISteppable.Step(float now, float dt)
+        {
+            Step(now);
+            if (!Armed) return 0f;
+            float wait = ReadyAt > now ? ReadyAt - now : ScanInterval;
+            return Mathf.Max(dt, wait);
+        }
+
         public void Step(float now)
         {
             if (!Armed || now < ReadyAt) return;
