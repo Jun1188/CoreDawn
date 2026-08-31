@@ -40,6 +40,7 @@ namespace CoreDawn.Tests
             Run("6. 오라는 반경 안 전원에게 연료의 효과를 걸고 연료를 태운다", S6_Aura);
             Run("7. 지뢰는 고정 탄으로 한 번 터지고 스스로 죽는다",          S7_Mine);
             Run("8. 세이브 왕복 — 쿨다운·방위",                           S8_Save);
+            Run("9. 가려진 적은 쏘지 않는다 — 차폐가 풀리면 쏜다",            S9_LineOfSight);
 
             int passed = 0;
             var sb = new System.Text.StringBuilder();
@@ -56,6 +57,8 @@ namespace CoreDawn.Tests
         static void Run(string name, Action scenario)
         {
             _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
+            SimHost.LineOfSight = (shooter, target, from, to) => !_blocked.Contains(target);   // 헤드리스: 시나리오가 가린 표적만 안 보인다
+            _blocked.Clear();
             _fails.Clear();
             try { scenario(); }
             catch (Exception e) { _fails.Add("예외 발생:\n" + e); }
@@ -136,6 +139,26 @@ namespace CoreDawn.Tests
             RunSim(2f);
             Expect(shots == 3, $"장전한 3발을 다 쏘고 멈춤 (실제 {shots})");
             Expect(module.Phase == TurretPhase.Starved, $"다 쓰면 다시 굶음 (실제 {module.Phase})");
+        }
+
+        static readonly HashSet<Entity> _blocked = new();
+
+        static void S9_LineOfSight()
+        {
+            var turret = _sim.Place(Turret(range: 10f, minRange: 0f, fireRate: 5f, turnSpeed: 0f, ammo: _basicAmmo), new Vector2Int(0, 0));
+            var module = turret.Owner.Get<TurretModule>();
+            int shots = 0; module.FireRequested += _ => shots++;
+            Load(turret, _basicAmmo, 50);
+            var hidden = Monster(new Vector3(4f, 0, 0)); _blocked.Add(hidden);   // 가까운 적이 벽 뒤
+            var open = Monster(new Vector3(7f, 0, 0));                              // 먼 적은 보인다
+            RunSim(1f);
+            Expect(module.Target == open && shots >= 3, $"가려진 가까운 적 대신 보이는 먼 적을 쏜다 (표적 {(module.Target == open ? "open" : module.Target == hidden ? "hidden" : "none")}, {shots}발)");
+            _blocked.Add(open);
+            int before = shots; RunSim(1f);
+            Expect(module.Target == null && shots == before, $"둘 다 가려지면 표적을 놓고 쏘지 않는다 (표적 {(module.Target == null ? "없음" : "있음")}, +{shots - before}발)");
+            _blocked.Clear();
+            RunSim(1f);
+            Expect(module.Target == hidden && shots > before, $"차폐가 풀리면 가장 가까운 적을 다시 잡는다 (+{shots - before}발)");
         }
 
         static void S4_Range()

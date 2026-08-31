@@ -1949,7 +1949,7 @@
             "x": 2,
             "y": 2
           },
-          "category": "Storage",
+          "category": "Logistics",
           "isAttackable": false,
           "requiredCoreTier": 1,
           "threatSeedCost": 100,
@@ -2399,7 +2399,7 @@
           "aimTolerance": 3.0,
           "preferHighArc": false,
           "muzzleHeight": 1.2,
-          "aimHeight": 0.6,
+          "aimHeight": 0.0,
           "hitscan": false
         },
         {
@@ -2479,7 +2479,7 @@
           "aimTolerance": 3.0,
           "preferHighArc": false,
           "muzzleHeight": 1.2,
-          "aimHeight": 0.6,
+          "aimHeight": 0.0,
           "hitscan": false
         },
         {
@@ -2558,7 +2558,7 @@
           "aimTolerance": 3.0,
           "preferHighArc": false,
           "muzzleHeight": 1.2,
-          "aimHeight": 0.6,
+          "aimHeight": 0.0,
           "hitscan": false
         },
         {
@@ -2636,7 +2636,7 @@
           "aimTolerance": 3.0,
           "preferHighArc": false,
           "muzzleHeight": 1.2,
-          "aimHeight": 0.6,
+          "aimHeight": 0.0,
           "hitscan": true
         },
         {
@@ -2704,7 +2704,7 @@
         {
           "type": "AuraEmitter",
           "radius": 28.0,
-          "interval": 4.9999999254941949
+          "interval": 5.0
         },
         {
           "type": "AmmoConsumer",

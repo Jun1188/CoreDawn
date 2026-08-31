@@ -22,6 +22,16 @@ namespace CoreDawn.Sim
         /// <summary>팩을 읽어 오는 함수 — 파일·플랫폼을 아는 쪽(PackLoader)이 꽂는다. 심은 경로를 모른다.</summary>
         public static Func<SimDatabase> DatabaseLoader { get; set; }
 
+        /// <summary>
+        /// 차폐 판정 — 뷰(PhysX)가 꽂는다(5a 결정: 사격 판정·LOS만 PhysX). 심은 지형·벽을 모른다.
+        /// (shooter, target, from, to) → 둘 사이가 가려지지 않았으면 true. 쏘는 쪽·표적 자신의 콜라이더는 제외.
+        /// </summary>
+        public static Func<Entity, Entity, Vector3, Vector3, bool> LineOfSight { get; set; }
+
+        /// <summary>제공자가 없으면 예외 — 헤드리스 테스트는 직접 넣는다. 조용한 "항상 보임"은 없다.</summary>
+        public static bool HasLineOfSight(Entity shooter, Entity target, Vector3 from, Vector3 to)
+            => (LineOfSight ?? throw new InvalidOperationException("SimHost.LineOfSight가 없습니다 — 뷰(ProjectileSystem)가 꽂아야 하고, 헤드리스 테스트는 직접 넣는다"))(shooter, target, from, to);
+
         /// <summary>정의의 정본. 처음 요청될 때 로더로 읽는다. 로더가 없으면(에디터 도구 등) null.</summary>
         public static SimDatabase Database
         {

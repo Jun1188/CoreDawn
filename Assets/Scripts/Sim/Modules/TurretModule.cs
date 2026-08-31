@@ -41,7 +41,7 @@ namespace CoreDawn.Sim
     }
 
     /// <summary>
-    /// 포탑 — 조준 사격의 두뇌(심 모듈). 표적 선택(최근접·최소 사거리·유지 여유), 선회(turnSpeed), 정렬 판정(aimTolerance),
+    /// 포탑 — 조준 사격의 두뇌(심 모듈). 표적 선택(최근접·최소 사거리·유지 여유·차폐 없음 — 차폐는 SimHost.LineOfSight로 뷰에 묻는다), 선회(turnSpeed), 정렬 판정(aimTolerance),
     /// 리드·탄도해(<see cref="Ballistics"/>), 쿨다운(fireRate), 탄 꺼내기(<see cref="IAmmoSource"/>)까지 여기서 끝나고,
     /// 뷰에는 <see cref="FireRequested"/> 하나만 나간다 — 뷰는 탄 프리팹을 만들어 그 방향으로 날린다.
     ///
@@ -88,10 +88,13 @@ namespace CoreDawn.Sim
         public TurretModule(TurretModuleDef def)
         {
             Def = def ?? throw new ArgumentNullException(nameof(def));
-            _hostile = IsHostile;
+            _hostile = IsCandidate;
         }
 
         bool IsHostile(Entity e) => e.Faction.IsHostileTo(Owner.Faction);
+        /// <summary>적이고 총구에서 조준점까지 가려지지 않은 것만 표적. 고각 포탑(preferHighArc)은 벽을 넘겨 쏘므로 차폐를 보지 않는다.</summary>
+        bool IsCandidate(Entity e) => IsHostile(e) && Visible(e);
+        bool Visible(Entity e) => Def.PreferHighArc || SimHost.HasLineOfSight(Owner, e, Muzzle, AimPointOf(e));
 
         /// <summary>심의 총구 — 엔티티 위치 + muzzleHeight. 뷰의 진짜 총구는 연출 출발점일 뿐, 각은 여기서 푼다.</summary>
         public Vector3 Muzzle => Owner.Position + Vector3.up * Def.MuzzleHeight;
@@ -178,7 +181,7 @@ namespace CoreDawn.Sim
             if (Target != null && Target.IsAlive)
             {
                 float d = Vector3.Distance(Target.Position, Owner.Position);
-                if (d <= Range + TargetKeepMargin && d >= MinRange) return;   // 유지
+                if (d <= Range + TargetKeepMargin && d >= MinRange && Visible(Target)) return;   // 유지 — 가려지면 놓고 다시 찾는다
             }
             Target = null;
             if (now < _nextScan) return;
