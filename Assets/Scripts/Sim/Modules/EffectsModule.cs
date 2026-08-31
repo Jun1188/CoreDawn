@@ -135,6 +135,16 @@ namespace CoreDawn.Sim
             Changed?.Invoke();
         }
 
+        /// <summary>같은 정의의 지속 효과를 전부 뗀다(예: 진입로 무리에서 자극 버프 회수). 뗀 것이 있으면 true.</summary>
+        public bool Remove(EffectSpec spec)
+        {
+            bool any = false;
+            for (int i = active.Count - 1; i >= 0; i--)
+                if (ReferenceEquals(active[i].Spec, spec)) { active.RemoveAt(i); any = true; }
+            if (any) { Recompute(); Changed?.Invoke(); }
+            return any;
+        }
+
         // ── 나가는 공격 베이크 ──────────────────────────────────────
 
         /// <summary>

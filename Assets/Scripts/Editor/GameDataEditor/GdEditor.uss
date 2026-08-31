@@ -411,6 +411,47 @@
     color: #5C6E8C;
 }
 
+/* ── 미리보기 그래프(웨이브 탭) — LineChart(Painter2D)와 범례 ── */
+.gd-chart {
+    height: 220px;
+    align-self: flex-start;   /* 폭은 각 차트가 정한다 — 화면 폭으로 늘어나지 않게 */
+    border-width: 1px;
+    border-color: #223350;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    background-color: #0E1727;
+}
+
+.gd-legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.gd-legend-item {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 14px;
+}
+
+.gd-legend-item Label {
+    font-size: 11px;
+    color: #D9E4F5;
+}
+
+.gd-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    margin-right: 5px;
+}
+
+.gd-legend-note {
+    font-size: 11px;
+    color: #5C6E8C;
+}
+
 .gd-root .gd-setdef {
     background-color: rgba(0, 0, 0, 0);
     color: #5C6E8C;

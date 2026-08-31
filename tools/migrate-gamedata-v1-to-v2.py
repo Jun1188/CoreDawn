@@ -18,7 +18,7 @@ def snake(name):
 
 
 SECTION_OF = {'Item': 'item', 'Recipe': 'recipe', 'Effect': 'effect', 'Building': 'entity', 'Monster': 'entity',
-              'Wave': 'wave', 'Gun': 'gun', 'Tutorial': 'tutorial'}
+              'Gun': 'gun', 'Tutorial': 'tutorial'}
 idmap = {}
 
 
@@ -36,7 +36,7 @@ def key_of(old):
 
 
 # 먼저 모든 id를 등록(참조 치환용)
-for sec in ['items', 'recipes', 'effects', 'buildings', 'monsters', 'waves', 'guns', 'tutorial']:
+for sec in ['items', 'recipes', 'effects', 'buildings', 'monsters', 'guns', 'tutorial']:
     for e in d.get(sec, []):
         newid(e['id'])
 assert len(set(idmap.values())) == len(idmap), 'id 충돌: ' + str([k for k, v in collections.Counter(idmap.values()).items() if v > 1])
@@ -59,7 +59,7 @@ def head(e):
     return h
 
 
-out = {'format': 2, 'pack': PACK, 'items': {}, 'recipes': {}, 'effects': {}, 'entities': {}, 'waves': {}, 'guns': {}, 'tutorial': {}}
+out = {'format': 2, 'pack': PACK, 'items': {}, 'recipes': {}, 'effects': {}, 'entities': {}, 'guns': {}, 'tutorial': {}}
 
 # items
 for it in d['items']:
@@ -226,12 +226,25 @@ if 'player' in d:
         {'type': 'Crafter', 'manual': True, 'speed': 1.0, 'recipes': []},
         {'type': 'Weapon'}]}
 
-# waves
-for w in d['waves']:
-    o = head(w)
-    o.update({'day': w['day'], 'requiredCoreTier': w['requiredCoreTier'], 'baseAmount': w['baseAmount'], 'maxAliveAmount': w['maxAliveAmount'],
-              'spawnInterval': w['spawnInterval'], 'monster': newid(w['monster']), 'buffs': uses(w.get('buffs'))})
-    out['waves'][key_of(w['id'])] = o
+# wave — 밤 웨이브 규칙 하나(점수식)
+if 'wave' in d:
+    wr = d['wave']
+    o = {'dayPoints': wr.get('dayPoints', 40.0), 'gatePoints': wr.get('gatePoints', 80.0),
+         'stimulusAmplitude': wr.get('stimulusAmplitude', 2.0), 'stimulusExponent': wr.get('stimulusExponent', 4.0), 'stimulusLinear': wr.get('stimulusLinear', 0.1),
+         'stimulusBuffs': [{'effect': newid(b['effect']), 'base': b.get('baseValue', 1.0), 'perStimulus': b.get('perStimulus', 0.0), 'min': b.get('min', 0.05), 'max': b.get('max', 10.0)} for b in wr.get('stimulusBuffs') or []],
+         'nestsPerNightMin': wr.get('nestsPerNightMin', 1), 'nestsPerNightMax': wr.get('nestsPerNightMax', 0),
+         'targetNightLength': wr.get('targetNightLength', 60.0), 'burstsPerNight': wr.get('burstsPerNight', 4), 'burstSpread': wr.get('burstSpread', 2.0),
+         'roster': [{'monster': newid(r['monster']), 'cost': r.get('cost', 10.0), 'weight': r.get('weight', 1.0), 'minDay': r.get('minDay', 1), 'minGate': r.get('minGate', 0)} for r in wr.get('roster') or []]}
+    tr = wr.get('trickle')
+    if tr and tr.get('monster'):
+        o['trickle'] = {'monster': newid(tr['monster']), 'group': tr.get('group', 3), 'interval': tr.get('interval', 20.0), 'untilKilledFraction': tr.get('untilKilledFraction', 0.9)}
+    assert o['roster'], 'wave: roster가 비었습니다'
+    out['wave'] = o
+
+# dayCycle — 주야 시계 하나(낮·밤 길이)
+if 'dayCycle' in d:
+    dc = d['dayCycle']
+    out['dayCycle'] = {'dayDuration': dc.get('dayDuration', 360.0), 'nightDuration': dc.get('nightDuration', 10.0)}
 
 # guns · tutorial — 원본 그대로(id만 치환)
 def remap(x):

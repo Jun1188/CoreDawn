@@ -86,12 +86,32 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   switch, melee = unlimited) ticked by `PlayerSystem.Tick`. `Gun` (view) forwards input (`TryFire/StartReload/TrySwitchAmmo`) and turns
   the approved `WeaponShot` into `ProjectileSystem.Fire` calls with spread/pellets; `WeaponManager.Equip/Unequip` tell the module which
   gun is held. Saves store `player.weapons[{gun, round, loaded}]` keyed by gun id.
-- Nests are sim-owned state (5a-2e-3, 2026-08-31): `NestModule` (pack module `Nest{bossRecoveryDays, nestRecoveryDays}`) holds the
-  spawn points' destroyed/day state, the nest's destroyed/day state, the invulnerability rule as an `IDamageInterceptor`
-  (any live spawn point → no damage; `DamageGateModule` is gone) and detects boss death via the entity `Died` event.
-  `NestView` keeps only the point transforms, boss prefab spawning (answers `BossNeeded`, then `BindBoss`), visuals, the
-  day/night bridge (`OnDayStarted/OnNightStarted`) and the day-defender spawn timing (player distance + screen-occlusion
-  raycast). `NestView.SyncModule` pushes points/recovery days into the module; `CombatSaveModule` reads point state from it.
+- Nests are sim-owned state (5a-2e-3, 2026-08-31): `NestModule` (pack module `Nest`, no fields) holds the spawn points'
+  destroyed state, the invulnerability rule as an `IDamageInterceptor` (any live spawn point → no damage; `DamageGateModule`
+  is gone) and detects boss death via the entity `Died` event. **Nests never recover** (user decision 2026-08-31): kill the
+  bosses, break the nest, and it stays broken — no waves come from it again. `NestView` keeps only the point transforms,
+  boss prefab spawning (answers `BossNeeded`, then `BindBoss`), visuals and the day-defender spawn timing (player distance +
+  screen-occlusion raycast). `NestView.SyncModule` pushes points into the module; `CombatSaveModule` reads point state from it.
+- Night waves are score-based (2026-08-31, design "둥지 시스템 — 낮의 공격 루프"): no per-day wave table (`WaveDataSO` is
+  gone). The pack has one `wave` rule (`WaveRuleDef`, GameData editor → Wave tab). `WaveSystem` (`Sim/Systems`, ticked by
+  `SimRunner`) computes `score = (day·dayPoints + gate·gatePoints) × stimuli × (living nests / total)` — gate is additive,
+  the score **is** the point budget, roster entries have `cost` (price) and `weight` (pick ratio among currently eligible
+  entries; bosses use the same weights). Night total = living share (1 − r) + stimulus bonus `stimulusAmplitude`·r^`stimulusExponent` + `stimulusLinear`·r
+  (r = destroyed / total nests; additive, the user's own curve — first destruction is a loss, the last nest is stronger than
+  two). Stimuli for buffs = total ÷ living share (strength of one remaining nest), and `stimulusBuffs` (effects scaled per stimulus) go on **every
+  monster except trickle groups** — bursts, nest bosses, day defenders (`WaveSystem` hooks `MonsterSystem.Spawned` and re-applies
+  to living monsters when the destroyed count changes; non-stacking effects refresh in place). Each night it picks a random number of living nests, uses their live
+  spawn points as exits, and spawns in **bursts** (`burstsPerNight`, interval = `targetNightLength` / count — both rule values; `TimeManager`'s
+  night duration is the moon's rise/set time, not the night length; each burst takes one exit
+  and a slice of the remaining score). `trickle` = anti-boredom groups of un-buffed basics at `NightSpawnPoints` until 90% of
+  the score monsters are dead, independent of score. No fallbacks (no edge spawn). The night ends when nothing is left to
+  spawn and nothing is alive (`NightCleared` → `EndNightEarly`). Views: `WaveSpawnManager` attaches prefabs on `Spawned`
+  (`MonsterAssets.OfEntity`), `BattleManager` only feeds day/gate/night length/entrances/seed. Save: `combat.wave` = full
+  system state, monsters carry `wave: burst|trickle`. The day/night clock lengths live in a separate top-level pack block `dayCycle{dayDuration, nightDuration}`
+  (`DayCycleDef`; `nightDuration` = moon rise/set time, not the night length) — `TimeManager` reads it from the pack and throws
+  if it is missing (no inspector values). GameData editor previews are charts (`BarChart`/`LineChart` in GdWaveTab.cs — Painter2D + `DrawText`, styled by
+  `gd-chart`/`gd-legend` in `GdEditor.uss`, fixed widths — never stretched to the window); nest counts come from the map data, never from hardcoded sample sizes, and never fake
+  tables with padded monospace labels.
 - Towers are not a module: a tower is `Building + (AmmoConsumer | FixedAmmo) + (Turret | AuraEmitter | Trigger)` (5a-2e-1, 2026-08-31).
   Emitters never know effects — they ask the entity's `IAmmoSource` ("can I fire, what is this shot": `HasAmmo`, `TryPeek`, `TryTake`,
   `Bake`). `AmmoConsumerModule` = magazine (input-container filter, one round per shot, damage-like × `damageMultiplier` → owner
@@ -128,7 +148,7 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   duration effects. Melee: the sim `AttackModule` module applies directly. Projectiles/auras: PhysX detects the hit, then
   `EntityView.ApplyEffects(Effect[], Entity source, point, dir)` hands it to the sim — the only view entry point.
   Incoming multipliers, shields, ally-ignore and nest invulnerability are all `IDamageInterceptor`s inside
-  `HealthModule.Damage` (`EffectsModule`, `BuildingModule`, `DamageGateModule`). `EffectSO` subclasses are data only (`Kind` + fields).
+  `HealthModule.Damage` (`EffectsModule`, `BuildingModule`, `NestModule`). `EffectSO` subclasses are data only (`Kind` + fields).
 - `SimRunner` (static, `Monsters` · `EffectsModule` · `Players`) drives the sim every frame in that order — the transitional
   access point until the phase-5 `WorldRunner` (fixed tick, scene lifecycle).
 - Entity identity is `EntityUUID` (a Guid; `Entity.Id`, `EntityUUID.New()`), minted by whoever creates the entity —

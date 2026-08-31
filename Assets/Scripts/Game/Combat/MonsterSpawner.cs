@@ -26,6 +26,16 @@ namespace CoreDawn.Combat
             }
 
             var entity = SimRunner.Monsters.Spawn(def, position, rotation * Vector3.forward);
+            return AttachView(entity, data, parent);
+        }
+
+        /// <summary>이미 심이 세운 몬스터 엔티티에 프리팹 뷰를 붙인다 — 밤 웨이브(WaveSystem)가 심에서 먼저 세우는 경우.</summary>
+        public static MonsterView AttachView(Entity entity, MonsterDataSO data, Transform parent)
+        {
+            if (entity == null) return null;
+            if (data == null) data = MonsterDatabaseSO.LoadDefault()?.Default;
+            Vector3 position = entity.Position;
+            Quaternion rotation = entity.Facing.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(entity.Facing) : Quaternion.identity;
 
             GameObject go = data != null && data.prefab != null
                 ? Object.Instantiate(data.prefab, position, rotation, parent)

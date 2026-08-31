@@ -389,9 +389,7 @@
           "engageMaxRange": 0.0,
           "chaseRange": 0.0,
           "leashRange": 0.0,
-          "engageDayOnly": false,
-          "bossRecoveryDays": 0,
-          "nestRecoveryDays": 0
+          "engageDayOnly": false
         },
         {
           "x": 92,
@@ -416,9 +414,7 @@
           "engageMaxRange": 0.0,
           "chaseRange": 0.0,
           "leashRange": 0.0,
-          "engageDayOnly": false,
-          "bossRecoveryDays": 0,
-          "nestRecoveryDays": 0
+          "engageDayOnly": false
         },
         {
           "x": 28,
@@ -448,9 +444,7 @@
           "engageMaxRange": 0.0,
           "chaseRange": 0.0,
           "leashRange": 0.0,
-          "engageDayOnly": false,
-          "bossRecoveryDays": 0,
-          "nestRecoveryDays": 0
+          "engageDayOnly": false
         },
         {
           "x": 41,
@@ -470,9 +464,7 @@
           "engageMaxRange": 0.0,
           "chaseRange": 0.0,
           "leashRange": 0.0,
-          "engageDayOnly": false,
-          "bossRecoveryDays": 0,
-          "nestRecoveryDays": 0
+          "engageDayOnly": false
         }
       ],
       "nightSpawnPoints": [

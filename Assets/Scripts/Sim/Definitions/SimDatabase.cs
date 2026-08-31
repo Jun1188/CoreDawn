@@ -9,7 +9,7 @@ namespace CoreDawn.Sim
     /// 정의의 정본 — 팩 json(data.json)에서 한 번 읽어 불변으로 든다. 심은 여기서만 정의를 얻는다(에셋·UnityEngine.Object 없음).
     ///
     /// id는 저장하지 않고 위치에서 파생한다: <c>팩:섹션/키</c>(소문자 snake, 예 <c>coredawn:item/iron_plate</c>).
-    /// 섹션 = items · recipes · effects · entities · waves · guns(+ tutorial은 아직 원본 JObject로 보관 — 심이 안 쓴다).
+    /// 섹션 = items · recipes · effects · entities · guns · wave(규칙 하나 — 밤 웨이브 점수식) · dayCycle(주야 시계 하나)(+ tutorial은 아직 원본 JObject로 보관 — 심이 안 쓴다).
     /// 로드 뒤 Resolve 패스가 id 문자열을 정의 참조로 잇고, 모르는 id·잘못된 키는 오류로 모은다(strict면 예외).
     /// </summary>
     public sealed class SimDatabase
@@ -17,7 +17,7 @@ namespace CoreDawn.Sim
         static readonly Regex KeyRule = new Regex("^[a-z0-9_]+$");
         static readonly (string section, string singular)[] Sections =
         {
-            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("waves", "wave"), ("guns", "gun"),
+            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("guns", "gun"),
         };
 
         public string Pack { get; }
@@ -26,7 +26,8 @@ namespace CoreDawn.Sim
         readonly Dictionary<string, RecipeDef> recipes = new Dictionary<string, RecipeDef>();
         readonly Dictionary<string, EffectSpec> effects = new Dictionary<string, EffectSpec>();
         readonly Dictionary<string, EntityDef> entities = new Dictionary<string, EntityDef>();
-        readonly Dictionary<string, WaveDef> waves = new Dictionary<string, WaveDef>();
+        WaveRuleDef wave;
+        DayCycleDef dayCycle;
         readonly Dictionary<string, GunDef> guns = new Dictionary<string, GunDef>();
         readonly List<string> errors = new List<string>();
 
@@ -34,7 +35,10 @@ namespace CoreDawn.Sim
         public IReadOnlyDictionary<string, RecipeDef> Recipes => recipes;
         public IReadOnlyDictionary<string, EffectSpec> Effects => effects;
         public IReadOnlyDictionary<string, EntityDef> Entities => entities;
-        public IReadOnlyDictionary<string, WaveDef> Waves => waves;
+        /// <summary>밤 웨이브 규칙(점수식) — 팩 wave 블록. 없으면 null(밤 웨이브 없음).</summary>
+        public WaveRuleDef Wave => wave;
+        /// <summary>주야 시계(낮·밤 길이) — 팩 dayCycle 블록. 없으면 null.</summary>
+        public DayCycleDef DayCycle => dayCycle;
         public IReadOnlyDictionary<string, GunDef> Guns => guns;
 
         /// <summary>심이 아직 안 읽는 섹션(tutorial) — 튜토리얼이 가져간다.</summary>
@@ -49,7 +53,7 @@ namespace CoreDawn.Sim
         static readonly Dictionary<string, string> LegacySections = new Dictionary<string, string>
         {
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
-            ["Wave"] = "wave", ["Gun"] = "gun", ["Tutorial"] = "tutorial",
+            ["Gun"] = "gun", ["Tutorial"] = "tutorial",
         };
 
         /// <summary>
@@ -81,7 +85,16 @@ namespace CoreDawn.Sim
             db.LoadSection(root, "recipes", "recipe", db.recipes, serializer);
             db.LoadSection(root, "effects", "effect", db.effects, serializer);
             db.LoadSection(root, "entities", "entity", db.entities, serializer);
-            db.LoadSection(root, "waves", "wave", db.waves, serializer);
+            if (root["wave"] is JObject waveObj)
+            {
+                try { db.wave = waveObj.ToObject<WaveRuleDef>(serializer); db.wave.Id = IdOf(pack, "wave", "rule"); }
+                catch (Exception e) { db.errors.Add($"wave: {e.Message}"); }
+            }
+            if (root["dayCycle"] is JObject dcObj)
+            {
+                try { db.dayCycle = dcObj.ToObject<DayCycleDef>(serializer); db.dayCycle.Id = IdOf(pack, "dayCycle", "rule"); }
+                catch (Exception e) { db.errors.Add($"dayCycle: {e.Message}"); }
+            }
             db.LoadSection(root, "guns", "gun", db.guns, serializer);
             db.Raw = root;
 
@@ -90,7 +103,8 @@ namespace CoreDawn.Sim
             foreach (var d in db.recipes.Values) d.Resolve(db, db.errors);
             foreach (var d in db.effects.Values) d.Resolve(db, db.errors);
             foreach (var d in db.entities.Values) d.Resolve(db, db.errors);
-            foreach (var d in db.waves.Values) d.Resolve(db, db.errors);
+            db.wave?.Resolve(db, db.errors);
+            db.dayCycle?.Resolve(db, db.errors);
 
             if (strict && db.errors.Count > 0)
                 throw new InvalidOperationException($"SimDatabase({pack}) 로드 실패 {db.errors.Count}건:\n  " + string.Join("\n  ", db.errors));
@@ -140,7 +154,6 @@ namespace CoreDawn.Sim
         public RecipeDef Recipe(string id) => recipes.TryGetValue(id, out var d) ? d : null;
         public EffectSpec Effect(string id) => effects.TryGetValue(id, out var d) ? d : null;
         public EntityDef Entity(string id) => entities.TryGetValue(id, out var d) ? d : null;
-        public WaveDef Wave(string id) => waves.TryGetValue(id, out var d) ? d : null;
         public GunDef Gun(string id) => guns.TryGetValue(id, out var d) ? d : null;
     }
 }

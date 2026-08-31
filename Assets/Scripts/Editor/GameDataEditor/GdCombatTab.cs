@@ -14,7 +14,7 @@ namespace CoreDawn.EditorTools
     // ═══════════════════════════════════════════════════════════
     //  전투 탭 — Effect · Gun (Web/js/combat-editor.js 대응)
     //
-    //  waves 배열의 정본도 여기다 — 웨이브 탭은 같은 배열을 읽고 쓰는 또 하나의
+    //  웨이브 규칙(wave)의 정본도 여기다 — 웨이브 탭은 같은 배열을 읽고 쓰는 또 하나의
     //  뷰다(원본 wave-editor.js 와 같은 관계. 저장소를 둘로 쪼개지 않는다).
     //
     //  원본과 다른 점 하나: 원본 내보내기는 툴이 모르는 필드(visualKickbackRot 등)를
@@ -43,15 +43,23 @@ namespace CoreDawn.EditorTools
         [JsonIgnore] public GameDataImporter.GunDto src;
     }
 
-    class GWave
+    // 밤 웨이브 규칙 — 점수식 계수·자극 버프·명단·진입로 무리(옛 일차별 표는 없다). 웨이브 탭이 편집한다.
+    class GWaveRule
     {
-        public string id = "", displayName = "", description = "";
-        public int day = 1, requiredCoreTier, baseAmount = 4, maxAliveAmount = 4;
-        public float spawnInterval = 2;
-        public string monster = "";              // 몬스터 종류 id — 비면 DB 기본(경고)
-        public List<GEff> buffs = new();          // 스폰 시 영구 효과 — 그날의 강약
-        [JsonIgnore] public GameDataImporter.WaveDto src;
+        public float dayPoints = 40, gatePoints = 80;
+        public float stimulusAmplitude = 2, stimulusExponent = 4, stimulusLinear = 0.1f;   // 강화분 h(r) = A·r^p + b·r
+        public List<GStimulusBuff> stimulusBuffs = new();
+        public int nestsPerNightMin = 1, nestsPerNightMax;
+        public float targetNightLength = 60; public int burstsPerNight = 4; public float burstSpread = 2;
+        public List<GRoster> roster = new();
+        public GTrickle trickle = new();
+        [JsonIgnore] public GameDataImporter.WaveRuleDto src;
     }
+    // 주야 시계 — 팩 dayCycle 블록(웨이브 규칙과 별개). 웨이브 탭이 편집한다.
+    class GDayCycle { public float dayDuration = 360, nightDuration = 10; }
+    class GStimulusBuff { public string effect = ""; public float baseValue = 1, perStimulus, min = 0.05f, max = 10; }
+    class GRoster { public string monster = ""; public float cost = 10, weight = 1; public int minDay = 1, minGate; }
+    class GTrickle { public string monster = ""; public int group = 3; public float interval = 20, untilKilledFraction = 0.9f; }
 
     // 몬스터 종류 — MonsterDataSO의 편집 모델. 프리팹은 guid로 든다(아이콘 규약과 같다)
     class GMonster
@@ -103,7 +111,8 @@ namespace CoreDawn.EditorTools
 
         internal readonly List<GEffect> effects = new();
         internal readonly List<GGun> guns = new();
-        internal readonly List<GWave> waves = new();
+        internal GWaveRule wave = new();
+        internal GDayCycle dayCycle = new();
         internal readonly List<GMonster> monsters = new();
         string curTab = "effects";
         int curE, curG;
@@ -153,18 +162,21 @@ namespace CoreDawn.EditorTools
                     spreadRecoveryRate = g.spreadRecoveryRate >= 0 ? g.spreadRecoveryRate : 5,
                     src = g,
                 });
-            waves.Clear();
-            foreach (var w in (win.root.waves ?? Array.Empty<GameDataImporter.WaveDto>()).OrderBy(w => w.day))
-                waves.Add(new GWave
-                {
-                    id = w.id ?? "", displayName = w.displayName ?? "", description = w.description ?? "",
-                    day = Mathf.Max(1, w.day), requiredCoreTier = Mathf.Max(0, w.requiredCoreTier),
-                    baseAmount = w.baseAmount, maxAliveAmount = w.maxAliveAmount,
-                    spawnInterval = w.spawnInterval, monster = w.monster ?? "",
-                    buffs = (w.buffs ?? Array.Empty<GameDataImporter.EffectEntryDto>())
-                        .Select(b => new GEff { effect = b.effect, value = b.value }).ToList(),
-                    src = w,
-                });
+            var wr = win.root.wave ?? new GameDataImporter.WaveRuleDto();
+            wave = new GWaveRule
+            {
+                dayPoints = wr.dayPoints, gatePoints = wr.gatePoints, stimulusAmplitude = Mathf.Max(0, wr.stimulusAmplitude), stimulusExponent = Mathf.Max(1, wr.stimulusExponent), stimulusLinear = Mathf.Max(0, wr.stimulusLinear),
+                stimulusBuffs = (wr.stimulusBuffs ?? Array.Empty<GameDataImporter.StimulusBuffDto>())
+                    .Select(b => new GStimulusBuff { effect = b.effect ?? "", baseValue = b.baseValue, perStimulus = b.perStimulus, min = b.min, max = b.max }).ToList(),
+                nestsPerNightMin = Mathf.Max(1, wr.nestsPerNightMin), nestsPerNightMax = Mathf.Max(0, wr.nestsPerNightMax),
+                targetNightLength = wr.targetNightLength > 0 ? wr.targetNightLength : 60, burstsPerNight = Mathf.Max(1, wr.burstsPerNight), burstSpread = Mathf.Max(0, wr.burstSpread),
+                roster = (wr.roster ?? Array.Empty<GameDataImporter.RosterDto>())
+                    .Select(r => new GRoster { monster = r.monster ?? "", cost = r.cost, weight = r.weight, minDay = Mathf.Max(1, r.minDay), minGate = Mathf.Max(0, r.minGate) }).ToList(),
+                trickle = wr.trickle != null ? new GTrickle { monster = wr.trickle.monster ?? "", group = wr.trickle.group, interval = wr.trickle.interval, untilKilledFraction = wr.trickle.untilKilledFraction } : new GTrickle(),
+                src = win.root.wave,
+            };
+            var dc = win.root.dayCycle ?? new GameDataImporter.DayCycleDto();
+            dayCycle = new GDayCycle { dayDuration = dc.dayDuration > 0 ? dc.dayDuration : 360, nightDuration = dc.nightDuration > 0 ? dc.nightDuration : 10 };
             monsters.Clear();
             foreach (var m in win.root.monsters ?? Array.Empty<GameDataImporter.MonsterDto>())
                 monsters.Add(new GMonster
@@ -193,7 +205,8 @@ namespace CoreDawn.EditorTools
             if (win.root == null) return;
             win.root.effects = effects.Select(ExportEffect).ToArray();
             win.root.guns = guns.Select(ExportGun).ToArray();
-            win.root.waves = waves.Select(ExportWave).ToArray();
+            win.root.wave = ExportWave(wave);
+            win.root.dayCycle = ExportDayCycle(dayCycle);
             win.root.monsters = monsters.Select(ExportMonster).ToArray();
         }
 
@@ -232,18 +245,17 @@ namespace CoreDawn.EditorTools
             return o;
         }
 
-        GameDataImporter.WaveDto ExportWave(GWave w)
+        static GameDataImporter.DayCycleDto ExportDayCycle(GDayCycle c) => new() { dayDuration = c.dayDuration, nightDuration = c.nightDuration };
+
+        GameDataImporter.WaveRuleDto ExportWave(GWaveRule w)
         {
-            var o = w.src ?? new GameDataImporter.WaveDto();
-            o.id = w.id; o.displayName = w.displayName;
-            o.description = string.IsNullOrEmpty(w.description) ? null : w.description;
-            o.day = w.day; o.requiredCoreTier = w.requiredCoreTier;
-            o.baseAmount = w.baseAmount; o.maxAliveAmount = w.maxAliveAmount;
-            o.spawnInterval = w.spawnInterval;
-            o.monster = string.IsNullOrEmpty(w.monster) ? null : w.monster;
-            o.buffs = w.buffs.Count > 0
-                ? w.buffs.Select(b => new GameDataImporter.EffectEntryDto { effect = b.effect, value = b.value }).ToArray()
-                : null;
+            var o = w.src ?? new GameDataImporter.WaveRuleDto();
+            o.dayPoints = w.dayPoints; o.gatePoints = w.gatePoints; o.stimulusAmplitude = w.stimulusAmplitude; o.stimulusExponent = w.stimulusExponent; o.stimulusLinear = w.stimulusLinear;
+            o.stimulusBuffs = w.stimulusBuffs.Select(b => new GameDataImporter.StimulusBuffDto { effect = b.effect, baseValue = b.baseValue, perStimulus = b.perStimulus, min = b.min, max = b.max }).ToArray();
+            o.nestsPerNightMin = w.nestsPerNightMin; o.nestsPerNightMax = w.nestsPerNightMax; o.targetNightLength = w.targetNightLength; o.burstsPerNight = w.burstsPerNight; o.burstSpread = w.burstSpread;
+            o.roster = w.roster.Select(r => new GameDataImporter.RosterDto { monster = r.monster, cost = r.cost, weight = r.weight, minDay = r.minDay, minGate = r.minGate }).ToArray();
+            o.trickle = string.IsNullOrEmpty(w.trickle.monster) ? null
+                : new GameDataImporter.TrickleDto { monster = w.trickle.monster, group = w.trickle.group, interval = w.trickle.interval, untilKilledFraction = w.trickle.untilKilledFraction };
             return o;
         }
 
@@ -273,7 +285,8 @@ namespace CoreDawn.EditorTools
         {
             effects = effects.Select(ExportEffect),
             guns = guns.Select(ExportGun),
-            waves = waves.Select(ExportWave),
+            wave = ExportWave(wave),
+            dayCycle = ExportDayCycle(dayCycle),
             monsters = monsters.Select(ExportMonster),
         }, GameDataEditorWindow.JsonSettings);
 
@@ -283,12 +296,13 @@ namespace CoreDawn.EditorTools
             {
                 effects = Array.Empty<GameDataImporter.EffectDto>(),
                 guns = Array.Empty<GameDataImporter.GunDto>(),
-                waves = Array.Empty<GameDataImporter.WaveDto>(),
+                wave = new GameDataImporter.WaveRuleDto(),
+                dayCycle = new GameDataImporter.DayCycleDto(),
                 monsters = Array.Empty<GameDataImporter.MonsterDto>(),
             });
             // 보던 탭과 선택은 유지한다 — 되돌리기가 화면을 옮기면 어디를 고쳤는지 놓친다
             var t = curTab; int e = curE, g = curG;
-            win.root.effects = o.effects; win.root.guns = o.guns; win.root.waves = o.waves; win.root.monsters = o.monsters;
+            win.root.effects = o.effects; win.root.guns = o.guns; win.root.wave = o.wave; win.root.dayCycle = o.dayCycle; win.root.monsters = o.monsters;
             var keep = hist; OnDataLoaded(); hist = keep;
             curTab = t;
             curE = Mathf.Clamp(e, 0, Mathf.Max(0, effects.Count - 1));
@@ -302,14 +316,6 @@ namespace CoreDawn.EditorTools
         public override void Undo() { hist?.Undo(); }
         public override void Redo() { hist?.Redo(); }
         internal void PushHist() { hist?.Push(); win.MarkDirty(); }
-
-        // 웨이브 탭(다른 뷰)이 부른다 — 정렬 규칙(day 순)도 여기서 지킨다
-        internal void SetWaves(List<GWave> list)
-        {
-            waves.Clear();
-            waves.AddRange(list.OrderBy(w => w.day));
-            PushHist();
-        }
 
         // 몬스터 탭(다른 뷰)이 부른다
         internal void SetMonsters(List<GMonster> list)
@@ -442,7 +448,7 @@ namespace CoreDawn.EditorTools
             RenderList();
             RenderDetail();
             RenderWarn();
-            statLabel.text = $"효과 {effects.Count} · 화기 {guns.Count} · 웨이브 {waves.Count}";
+            statLabel.text = $"효과 {effects.Count} · 화기 {guns.Count} · 웨이브 명단 {wave.roster.Count}";
             win.RefreshSharedStat();
         }
 
@@ -840,7 +846,7 @@ namespace CoreDawn.EditorTools
                 bool used = Items().Any(i => (i.attackEffects ?? Array.Empty<GameDataImporter.EffectEntryDto>())
                     .Any(e => e.effect == x.id))
                     || monsters.Any(m => m.attackEffects.Any(e => e.effect == x.id))
-                    || waves.Any(w => w.buffs.Any(b => b.effect == x.id));
+                    || wave.stimulusBuffs.Any(b => b.effect == x.id);
                 if (!used && !string.IsNullOrEmpty(x.id)) outp.Add("어떤 탄약·몬스터·웨이브도 이 효과를 쓰지 않습니다");
             }
             else

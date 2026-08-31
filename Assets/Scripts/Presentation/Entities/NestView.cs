@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using CoreDawn.Combat;
-using CoreDawn.DayTime;
 using CoreDawn.Navigation;
 using CoreDawn.Save;
 using CoreDawn.Sim;
@@ -55,12 +54,6 @@ namespace CoreDawn.Entities
 
         public void SetData(NestDataSO nestData) => data = nestData;
 
-        [Header("Recovery Settings")]
-        [Tooltip("보스 파괴 후 복구되는 기간(일). 0 = 팩 정의(Nest 모듈) 값.")]
-        [SerializeField] private int bossRecoveryDays;
-        [Tooltip("둥지 파괴 후 복구되는 기간(일). 0 = 팩 정의(Nest 모듈) 값.")]
-        [SerializeField] private int nestRecoveryDays;
-
         [Header("Defense Settings")]
         [Tooltip("플레이어 접근 경고 반경")]
         public float warningRange = 25f;
@@ -90,7 +83,6 @@ namespace CoreDawn.Entities
         public NestModule Module => Entity?.Get<NestModule>();
 
         public bool IsDestroyed => Module != null && Module.IsDestroyed;
-        public int DestroyedDay => Module != null ? Module.DestroyedDay : -1;
         public bool HasWarned => hasWarned;
 
         public IReadOnlyList<NestSpawnPoint> Points =>
@@ -218,20 +210,17 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>맵 데이터로 세울 때 쓴다. 0 이하는 "프리팹/정의 값을 그대로 둔다".</summary>
-        public void Configure(float warning, float trigger, int defenseAmount, float defenseCooldown,
-                              int bossDays, int nestDays)
+        public void Configure(float warning, float trigger, int defenseAmount, float defenseCooldown)
         {
             if (warning > 0f) warningRange = warning;
             if (trigger > 0f) { triggerRange = trigger; daySpawnMaxRange = trigger; }
             if (defenseAmount > 0) defenseSpawnAmount = defenseAmount;
             if (defenseCooldown > 0f) defenseSpawnCooldown = defenseCooldown;
-            if (bossDays > 0) bossRecoveryDays = bossDays;
-            if (nestDays > 0) nestRecoveryDays = nestDays;
             SyncModule();
         }
 
         /// <summary>
-        /// 포인트의 자리·보스 유무·복구일을 심 모듈에 밀어 넣는다 — 포인트 목록이 바뀔 때마다(맵 배치·프리팹).
+        /// 포인트의 자리·보스 유무를 심 모듈에 밀어 넣는다 — 포인트 목록이 바뀔 때마다(맵 배치·프리팹).
         /// 자리의 정본은 아직 뷰(Transform)다: 맵이 정한 오프셋을 WorldPopulator가 Transform으로 세운다.
         /// </summary>
         public void SyncModule()
@@ -243,8 +232,6 @@ namespace CoreDawn.Entities
                 foreach (var sp in spawnPoints)
                     list.Add((sp != null && sp.point != null ? sp.point.position : transform.position, sp != null && sp.bossData != null));
             m.ConfigurePoints(list);
-            m.ConfigureRecovery(bossRecoveryDays, nestRecoveryDays);
-            m.RefillBossesAtNight = GetComponent<NestEngagementZone>() == null;
         }
 
         protected override void Awake()
@@ -263,14 +250,11 @@ namespace CoreDawn.Entities
                 return;
             }
             SyncModule();
-            if (TimeManager.Instance != null) m.Day = TimeManager.Instance.DayNumber;
             if (!subscribed)
             {
                 m.BossNeeded += OnBossNeeded;
                 m.PointDestroyed += OnPointDestroyed;
-                m.PointRestored += OnPointRestored;
                 m.Destroyed += OnNestDestroyed;
-                m.Restored += OnNestRestored;
                 subscribed = true;
             }
         }
@@ -290,16 +274,8 @@ namespace CoreDawn.Entities
 
             // 교전 구역은 Awake가 아니라 여기서 — WorldPopulator가 Instantiate 뒤에 AddComponent한다
             engagementZone = GetComponent<NestEngagementZone>();
-            var m = Module;
-            if (m != null) m.RefillBossesAtNight = engagementZone == null;
 
-            if (TimeManager.Instance != null && TimeManager.Instance.Cycle != null)
-            {
-                TimeManager.Instance.Cycle.NightStarted += OnNightStarted;
-                TimeManager.Instance.Cycle.DayStarted += OnDayStarted;
-            }
-
-            // 보스는 낮 던전의 고정 전투 대상 — 시작 때 세운다(세이브 복원 중이면 저장된 보스가 곧 되살아나므로 만들지 않는다)
+            // 보스는 낮 던전의 고정 전투 대상 — 시작 때 세운다(세이브 복원 중이면 저장된 보스가 곧 되살아나므로 만들지 않는다). 복구는 없다
             EnsureBossesSpawned();
 
             Transform core = indestructibleVisuals != null && indestructibleVisuals.Length > 0 && indestructibleVisuals[0] != null
@@ -315,18 +291,11 @@ namespace CoreDawn.Entities
             {
                 m.BossNeeded -= OnBossNeeded;
                 m.PointDestroyed -= OnPointDestroyed;
-                m.PointRestored -= OnPointRestored;
                 m.Destroyed -= OnNestDestroyed;
-                m.Restored -= OnNestRestored;
                 subscribed = false;
             }
             base.OnDestroy();
             if (e != null && !e.IsRemoved && !ApplicationQuitting) SimHost.World.Remove(e);
-            if (TimeManager.Instance != null && TimeManager.Instance.Cycle != null)
-            {
-                TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
-                TimeManager.Instance.Cycle.DayStarted -= OnDayStarted;
-            }
         }
 
         // ── 심 → 뷰 ──────────────────────────────────────────────
@@ -345,26 +314,13 @@ namespace CoreDawn.Entities
         {
             if (spawnPoints != null && index < spawnPoints.Count && spawnPoints[index]?.point != null)
                 spawnPoints[index].point.gameObject.SetActive(false);
-            Debug.Log($"[NestView] 보스가 죽어 스폰 포인트 {index + 1}이 비활성화됐습니다. (Day {Module?.Day})");
-        }
-
-        private void OnPointRestored(int index)
-        {
-            if (spawnPoints != null && index < spawnPoints.Count && spawnPoints[index]?.point != null)
-                spawnPoints[index].point.gameObject.SetActive(true);
-            Debug.Log($"[NestView] 스폰 포인트 {index + 1}이 복구됐습니다. (Day {Module?.Day})");
+            Debug.Log($"[NestView] 보스가 죽어 스폰 포인트 {index + 1}이 영구히 비활성화됐습니다.");
         }
 
         private void OnNestDestroyed()
         {
             SetVisualsDestroyed(true);
-            Debug.Log($"[NestView] 둥지가 파괴되었습니다 (Day {DestroyedDay}). 당분간 웨이브가 약화됩니다.");
-        }
-
-        private void OnNestRestored()
-        {
-            SetVisualsDestroyed(false);
-            Debug.Log($"[NestView] 파괴되었던 둥지가 복구되었습니다 (Day {Module?.Day}).");
+            Debug.Log("[NestView] 둥지가 파괴되었습니다 — 다시 서지 않는다. 이 둥지에서는 웨이브가 나오지 않고, 남은 둥지가 자극된다.");
         }
 
         private void SetVisualsDestroyed(bool destroyed)
@@ -376,11 +332,6 @@ namespace CoreDawn.Entities
 
         // 드롭(괴수핵)은 정의의 Loot 모듈 — 심의 Died를 듣는 LootSpawner가 뿌린다. 파괴 상태는 모듈이 Died에서 정한다.
         protected override void HandleDeath() { }
-
-        // ── 주야 → 심 ────────────────────────────────────────────
-
-        private void OnDayStarted(int day) => Module?.OnDayStarted(day);
-        private void OnNightStarted(int day) => Module?.OnNightStarted(day);
 
         // ── 보스 세우기 (프리팹은 아직 뷰의 것) ──────────────────────
 
@@ -491,17 +442,17 @@ namespace CoreDawn.Entities
         // ── 세이브 복원 표면 ─────────────────────────────────────
 
         /// <summary>세이브 복원 전용 — 둥지 자체의 파괴 상태와 외형을 되돌린다.</summary>
-        public void RestoreSaveState(bool isDestroyed, int day, bool warned)
+        public void RestoreSaveState(bool isDestroyed, bool warned)
         {
-            Module?.RestoreState(isDestroyed, day);
+            Module?.RestoreState(isDestroyed);
             hasWarned = warned;
             SetVisualsDestroyed(isDestroyed);
         }
 
         /// <summary>세이브 복원 전용 — 스폰 포인트 한 곳의 파괴 상태를 되돌린다.</summary>
-        public void RestoreSpawnPoint(int index, bool destroyed, int day)
+        public void RestoreSpawnPoint(int index, bool destroyed)
         {
-            Module?.RestorePoint(index, destroyed, day);
+            Module?.RestorePoint(index, destroyed);
             if (spawnPoints != null && index >= 0 && index < spawnPoints.Count && spawnPoints[index]?.point != null)
                 spawnPoints[index].point.gameObject.SetActive(!destroyed);
         }

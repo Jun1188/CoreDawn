@@ -26,7 +26,7 @@ namespace CoreDawn.Managers
             if (db.Errors.Count > 0)
                 Debug.LogError($"[PackLoader] {pack}: 정의 오류 {db.Errors.Count}건\n  " + string.Join("\n  ", db.Errors));
             else
-                Debug.Log($"[PackLoader] {pack}: entities {db.Entities.Count} · items {db.Items.Count} · recipes {db.Recipes.Count} · effects {db.Effects.Count} · waves {db.Waves.Count}");
+                Debug.Log($"[PackLoader] {pack}: entities {db.Entities.Count} · items {db.Items.Count} · recipes {db.Recipes.Count} · effects {db.Effects.Count} · guns {db.Guns.Count} · wave {(db.Wave != null ? "rule" : "none")}");
             return db;
         }
 

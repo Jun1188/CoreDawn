@@ -27,11 +27,6 @@ namespace CoreDawn.Combat
         [SerializeField] private WaveSpawnManager spawnManager = new WaveSpawnManager();
         [SerializeField] private NightSpawnPointProvider nightSpawnPointProvider;
 
-        [Header("Night Wave Completion")]
-        [Tooltip("기본 동작: 밤은 시간이 아니라 웨이브 물량(WaveDataSO.baseAmount)을 전멸시켜야 끝난다. " +
-                 "낮은 기존대로 시간제. 끄면 레거시 시간제 밤으로 돌아간다.")]
-        [SerializeField] private bool quantityBasedNightWaves = true;
-
         [Tooltip("팩 정의(coredawn:entity/player)가 없는 씬의 폴백 최대 체력. 정본은 팩 json의 Health.maxHp.")]
         [SerializeField] private float playerMaxHealth = 300f;
 
@@ -44,7 +39,9 @@ namespace CoreDawn.Combat
         public GridManager Grid => gridManager;
         public FlowFieldManager FlowField => flowFieldManager;
         public WaveSpawnManager Spawner => spawnManager;
-        public bool UsesQuantityBasedNightWaves => quantityBasedNightWaves;
+        /// <summary>밤 웨이브 심 시스템 — 팩에 wave 규칙이 없는 씬은 null.</summary>
+        public CoreDawn.Sim.WaveSystem Waves => waveSystem;
+        CoreDawn.Sim.WaveSystem waveSystem;
         public event System.Action<int, int> NightWaveCleared;
 
         private void Awake()
@@ -98,7 +95,7 @@ namespace CoreDawn.Combat
         public void RestoreGameOver(bool isGameOver)
         {
             IsGameOver = isGameOver;
-            if (isGameOver) spawnManager.SetSpawningEnabled(false);
+            if (isGameOver) waveSystem?.EndNight();
         }
 
         private void Start()
@@ -106,25 +103,19 @@ namespace CoreDawn.Combat
             EnsurePlayerEntity();
             SimHost.World.Died += OnEntityDied;   // 코어 파괴 = 게임오버 — 뷰 이벤트가 아니라 심의 사망 통지
 
-            spawnManager.SetQuantityBasedMode(quantityBasedNightWaves);
-            spawnManager.QuantityWaveCompleted += OnQuantityWaveCompleted;
-
-            if (nightSpawnPointProvider != null)
-                spawnManager.Initialize(gridManager, transform, nightSpawnPointProvider.SpawnPoints);
-            else
-                spawnManager.Initialize(gridManager, transform);
+            // 밤 웨이브의 판단은 심(WaveSystem) — 여기는 밤 시작·끝을 알리고 프리팹 뷰를 붙이는 어댑터를 잇는다
+            waveSystem = SimRunner.Waves;
+            spawnManager.Initialize(gridManager, transform, waveSystem);
+            if (waveSystem != null) waveSystem.NightCleared += OnNightCleared;
+            else Debug.LogWarning("[BattleManager] 팩에 wave 규칙이 없습니다 — 이 씬에는 밤 웨이브가 없습니다.");
 
             if (TimeManager.Instance != null)
             {
-                TimeManager.Instance.SetNightCompletionControlled(quantityBasedNightWaves);
+                TimeManager.Instance.SetNightCompletionControlled(true);   // 밤은 시간이 아니라 웨이브가 끝나야 끝난다
                 TimeManager.Instance.Cycle.NightStarted += OnNightStarted;
                 TimeManager.Instance.Cycle.DayStarted += OnDayStarted;
-                spawnManager.SetSpawningEnabled(TimeManager.Instance.Phase == DayPhase.Night);
-            }
-            else
-            {
-                // 주야 매니저가 없는 테스트 씬에서는 항상 스폰
-                spawnManager.SetSpawningEnabled(true);
+                if (TimeManager.Instance.Phase == DayPhase.Night && waveSystem != null && !waveSystem.Active)
+                    OnNightStarted(TimeManager.Instance.DayNumber);
             }
         }
 
@@ -132,11 +123,11 @@ namespace CoreDawn.Combat
         {
             if (Instance == this) Instance = null;
             SimHost.World.Died -= OnEntityDied;
-            spawnManager.QuantityWaveCompleted -= OnQuantityWaveCompleted;
+            if (waveSystem != null) waveSystem.NightCleared -= OnNightCleared;
+            spawnManager.Dispose();
             if (TimeManager.Instance != null)
             {
-                if (quantityBasedNightWaves)
-                    TimeManager.Instance.SetNightCompletionControlled(false);
+                TimeManager.Instance.SetNightCompletionControlled(false);
                 TimeManager.Instance.Cycle.NightStarted -= OnNightStarted;
                 TimeManager.Instance.Cycle.DayStarted -= OnDayStarted;
             }
@@ -190,7 +181,7 @@ namespace CoreDawn.Combat
         {
             if (IsGameOver) return;
             IsGameOver = true;
-            spawnManager.SetSpawningEnabled(false);
+            waveSystem?.EndNight();
             Debug.Log("====== 💀 게임오버 — 코어가 파괴되었습니다! ======");
             GameOver?.Invoke();
         }
@@ -214,7 +205,15 @@ namespace CoreDawn.Combat
 
         private void OnNightStarted(int day)
         {
-            spawnManager.SetSpawningEnabled(true);
+            if (waveSystem != null)
+            {
+                int gate = GameManager.Instance != null ? GameManager.Instance.UnlockedTier : 0;
+                var entrances = new System.Collections.Generic.List<Vector3>();
+                if (nightSpawnPointProvider != null)
+                    foreach (var t in nightSpawnPointProvider.SpawnPoints) if (t != null) entrances.Add(t.position);
+                uint seed = unchecked((uint)day * 2654435761u) ^ (uint)UnityEngine.Random.Range(1, int.MaxValue);
+                waveSystem.StartNight(day, gate, entrances, seed);   // 밤 길이는 규칙의 몫(주야 시계의 밤은 달 시간)
+            }
 
             if (SoundManager.Instance != null)
                 SoundManager.Instance.PlayBGM(BGMType.Battle, 1.0f);
@@ -223,24 +222,20 @@ namespace CoreDawn.Combat
         private void OnDayStarted(int day)
         {
             // 아침 — 스폰 중단 + 살아남은 군집 일괄 소멸
-            spawnManager.SetSpawningEnabled(false);
-            spawnManager.DespawnAll();
+            waveSystem?.EndNight();     // 심의 웨이브 몬스터는 심이 치운다 — 뷰는 Removed로 따라 사라진다
+            spawnManager.DespawnAll();   // 남은 뷰(둥지 방어자 등)
             RevivePlayerIfDead();
 
             if (SoundManager.Instance != null)
                 SoundManager.Instance.PlayBGM(BGMType.Main, 1.0f);
         }
 
-        private void OnQuantityWaveCompleted(int defeatedAmount)
+        // 더 나올 것도 나온 것도 없다 — 밤을 끝낸다
+        private void OnNightCleared(int day, int killed)
         {
-            int day = TimeManager.Instance != null ? TimeManager.Instance.DayNumber : 1;
-            NightWaveCleared?.Invoke(day, defeatedAmount);
-
-            if (quantityBasedNightWaves && TimeManager.Instance != null &&
-                TimeManager.Instance.Phase == DayPhase.Night)
-            {
+            NightWaveCleared?.Invoke(day, killed);
+            if (TimeManager.Instance != null && TimeManager.Instance.Phase == DayPhase.Night)
                 TimeManager.Instance.EndNightEarly();
-            }
         }
 
         // 밤에 전사한 플레이어와 카메라 계층을 아침에 다시 활성화하고 부활시킨다.

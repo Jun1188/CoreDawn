@@ -67,7 +67,6 @@ namespace CoreDawn.EditorTools
             public float engageMinRange, engageMaxRange, chaseRange, leashRange;
             public bool engageDayOnly;
 
-            public int bossRecoveryDays, nestRecoveryDays;
         }
 
         [Serializable] internal class SpawnDto : GameDataImporter.JsonDtoBase { public int x, y; public bool hasBoss; }
@@ -293,8 +292,6 @@ namespace CoreDawn.EditorTools
                     leashRange = nest.leashRange,
                     engageDayOnly = nest.engageDayOnly,
 
-                    bossRecoveryDays = nest.bossRecoveryDays,
-                    nestRecoveryDays = nest.nestRecoveryDays,
                 });
             }
             return list.ToArray();

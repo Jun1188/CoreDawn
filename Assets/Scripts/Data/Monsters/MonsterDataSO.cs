@@ -6,12 +6,12 @@ namespace CoreDawn.Data
 {
     /// <summary>
     /// 몬스터 종류의 정의 — 체력·이동·공격·보스 리쉬 수치와 씬 표현(프리팹). GameData.json의 "monsters" 섹션이 정본이고
-    /// 임포터가 이 에셋을 만든다(Data/Monster). 웨이브(WaveDataSO.monster)와 둥지(NestSpawnPoint.bossData)가 참조한다.
+    /// 임포터가 이 에셋을 만든다(Data/Monster). 웨이브(wave 규칙의 명단)와 둥지(NestSpawnPoint.bossData)가 참조한다.
     ///
     /// 예전에는 이 값들이 프리팹 3개(Monster·Monster_Spitter·BossMonster)의 인라인 컴포넌트에만 있었고, HP는
-    /// 프리팹·WaveDataSO.monsterMaxHp·wave_settings.json 세 곳이 서로 덮어썼다. 종류가 데이터가 되면
+    /// 프리팹·wave 규칙의 명단MaxHp·wave_settings.json 세 곳이 서로 덮어썼다. 종류가 데이터가 되면
     /// 디자이너가 GameData 에디터에서 고치고, 심이 프리팹 없이도(헤드리스) 몬스터를 만들 수 있다.
-    /// 일차별 강약은 HP 덮어쓰기가 아니라 웨이브 버프(WaveDataSO.buffs — 효과)로 준다.
+    /// 일차별 강약은 HP 덮어쓰기가 아니라 웨이브 버프(wave 규칙의 자극 버프 — 효과)로 준다.
     ///
     /// 리팩토링 3단계: 지금은 스폰 시 프리팹의 뷰에 HP만 넣고, 이동·공격·두뇌는 커밋 3(심 모듈)부터 Build(entity)가 조립한다.
     /// </summary>

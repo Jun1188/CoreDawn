@@ -29,7 +29,7 @@ namespace CoreDawn.EditorTools
         static readonly Dictionary<string, string> SectionOf = new()
         {
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
-            ["Wave"] = "wave", ["Gun"] = "gun", ["Tutorial"] = "tutorial",
+            ["Gun"] = "gun", ["Tutorial"] = "tutorial",
         };
 
         [MenuItem("Tools/Factory/Export pack data.json (v2)")]
@@ -64,7 +64,7 @@ namespace CoreDawn.EditorTools
             string KeyOf(string old) => NewId(old).Split('/', 2)[1];
             JArray Arr(JToken t) => t as JArray ?? new JArray();
 
-            foreach (var sec in new[] { "items", "recipes", "effects", "buildings", "monsters", "waves", "guns", "tutorial" })
+            foreach (var sec in new[] { "items", "recipes", "effects", "buildings", "monsters", "guns", "tutorial" })
                 foreach (var e in Arr(d[sec])) NewId((string)e["id"]);
             var dup = idmap.Values.GroupBy(v => v).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
             if (dup.Count > 0) throw new InvalidOperationException("id 충돌: " + string.Join(", ", dup));
@@ -102,7 +102,7 @@ namespace CoreDawn.EditorTools
             }
 
             var items = new JObject(); var recipes = new JObject(); var effects = new JObject();
-            var entities = new JObject(); var waves = new JObject(); var guns = new JObject(); var tutorial = new JObject();
+            var entities = new JObject(); var guns = new JObject(); var tutorial = new JObject();
 
             foreach (var it in Arr(d["items"]))
             {
@@ -307,12 +307,30 @@ namespace CoreDawn.EditorTools
                 entities["player"] = o;
             }
 
-            foreach (var w in Arr(d["waves"]))
+            // 밤 웨이브 규칙 — 하나. 점수식 계수·자극 버프·명단·진입로 무리. id는 v2로 치환
+            JObject waveRule = null;
+            if (d["wave"] is JObject wr)
             {
-                var o = Head(w);
-                o["day"] = w["day"]; o["requiredCoreTier"] = w["requiredCoreTier"]; o["baseAmount"] = w["baseAmount"]; o["maxAliveAmount"] = w["maxAliveAmount"];
-                o["spawnInterval"] = w["spawnInterval"]; o["monster"] = NewId((string)w["monster"]); o["buffs"] = Uses(w["buffs"]);
-                waves[KeyOf((string)w["id"])] = o;
+                waveRule = new JObject
+                {
+                    ["dayPoints"] = wr["dayPoints"] ?? 40.0, ["gatePoints"] = wr["gatePoints"] ?? 80.0,
+                    ["stimulusAmplitude"] = wr["stimulusAmplitude"] ?? 2.0, ["stimulusExponent"] = wr["stimulusExponent"] ?? 4.0, ["stimulusLinear"] = wr["stimulusLinear"] ?? 0.1,
+                    ["stimulusBuffs"] = new JArray(Arr(wr["stimulusBuffs"]).Select(b => new JObject
+                    {
+                        ["effect"] = NewId((string)b["effect"]), ["base"] = b["baseValue"] ?? 1.0, ["perStimulus"] = b["perStimulus"] ?? 0.0,
+                        ["min"] = b["min"] ?? 0.05, ["max"] = b["max"] ?? 10.0,
+                    })),
+                    ["nestsPerNightMin"] = wr["nestsPerNightMin"] ?? 1, ["nestsPerNightMax"] = wr["nestsPerNightMax"] ?? 0,
+                    ["targetNightLength"] = wr["targetNightLength"] ?? 60.0, ["burstsPerNight"] = wr["burstsPerNight"] ?? 4, ["burstSpread"] = wr["burstSpread"] ?? 2.0,
+                    ["roster"] = new JArray(Arr(wr["roster"]).Select(r => new JObject
+                    {
+                        ["monster"] = NewId((string)r["monster"]), ["cost"] = r["cost"] ?? 10.0, ["weight"] = r["weight"] ?? 1.0,
+                        ["minDay"] = r["minDay"] ?? 1, ["minGate"] = r["minGate"] ?? 0,
+                    })),
+                };
+                if (wr["trickle"] is JObject tr && !string.IsNullOrEmpty((string)tr["monster"]))
+                    waveRule["trickle"] = new JObject { ["monster"] = NewId((string)tr["monster"]), ["group"] = tr["group"] ?? 3, ["interval"] = tr["interval"] ?? 20.0, ["untilKilledFraction"] = tr["untilKilledFraction"] ?? 0.9 };
+                if (Arr(wr["roster"]).Count == 0) throw new InvalidOperationException("wave: roster가 비었습니다 — 무엇을 스폰할지 없다");
             }
 
             JToken Remap(JToken x)
@@ -336,8 +354,12 @@ namespace CoreDawn.EditorTools
             var outRoot = new JObject
             {
                 ["format"] = 2, ["pack"] = Pack, ["items"] = items, ["recipes"] = recipes, ["effects"] = effects,
-                ["entities"] = entities, ["waves"] = waves, ["guns"] = guns, ["tutorial"] = tutorial,
+                ["entities"] = entities, ["guns"] = guns, ["tutorial"] = tutorial,
             };
+            if (waveRule != null) outRoot["wave"] = waveRule;
+            // 주야 시계 — 하나. TimeManager가 읽는다
+            if (d["dayCycle"] is JObject dc)
+                outRoot["dayCycle"] = new JObject { ["dayDuration"] = dc["dayDuration"] ?? 360.0, ["nightDuration"] = dc["nightDuration"] ?? 10.0 };
             Directory.CreateDirectory(PackFolder);
             File.WriteAllText(OutputPath, outRoot.ToString(Formatting.Indented).Replace("\r\n", "\n") + "\n");
             var map = new JObject();
@@ -347,7 +369,7 @@ namespace CoreDawn.EditorTools
 
             // 내보낸 결과를 심 로더로 곧장 검증 — 편집기에서 깨진 참조를 저장 시점에 잡는다
             var db = Sim.SimDatabase.Load(File.ReadAllText(OutputPath), Pack, strict: false);
-            string report = $"[v2 export] {OutputPath}: entities {entities.Count} · items {items.Count} · recipes {recipes.Count} · effects {effects.Count} · waves {waves.Count} · id {idmap.Count}";
+            string report = $"[v2 export] {OutputPath}: entities {entities.Count} · items {items.Count} · recipes {recipes.Count} · effects {effects.Count} · wave {(waveRule != null ? "rule" : "none")} · id {idmap.Count}";
             if (db.Errors.Count > 0)
             {
                 report += $"\n  로드 오류 {db.Errors.Count}건:\n  " + string.Join("\n  ", db.Errors);

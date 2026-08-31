@@ -2953,93 +2953,32 @@
     "main": 25,
     "hotbar": 7
   },
-  "waves": [
-    {
-      "id": "Wave:Day1",
-      "displayName": "Day 1 Wave",
-      "description": "First wave",
-      "day": 1,
-      "requiredCoreTier": 0,
-      "baseAmount": 4,
-      "maxAliveAmount": 4,
-      "spawnInterval": 2.0,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 1.5
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day2",
-      "displayName": "Day 2 Wave",
-      "description": "Second wave",
-      "day": 2,
-      "requiredCoreTier": 0,
-      "baseAmount": 10,
-      "maxAliveAmount": 6,
-      "spawnInterval": 2.0,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 1.5
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day3",
-      "displayName": "Day 3 Wave",
-      "description": "Third wave",
-      "day": 3,
-      "requiredCoreTier": 1,
-      "baseAmount": 20,
-      "maxAliveAmount": 10,
-      "spawnInterval": 1.5,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 1.5
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day4",
-      "displayName": "Day 4 Wave",
-      "description": "Fourth wave",
-      "day": 4,
-      "requiredCoreTier": 1,
-      "baseAmount": 20,
-      "maxAliveAmount": 15,
-      "spawnInterval": 1.0,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 0.75
-        }
-      ]
-    },
-    {
-      "id": "Wave:Day5",
-      "displayName": "Day 5 Wave",
-      "description": "Fifth wave",
-      "day": 5,
-      "requiredCoreTier": 2,
-      "baseAmount": 40,
-      "maxAliveAmount": 15,
-      "spawnInterval": 0.5,
-      "monster": "Monster:Basic",
-      "buffs": [
-        {
-          "effect": "Effect:DamageTaken",
-          "value": 0.75
-        }
-      ]
-    }
-  ],
+  "dayCycle": {
+    "dayDuration": 360.0,
+    "nightDuration": 10.0
+  },
+  "wave": {
+    "dayPoints": 40.0,
+    "gatePoints": 80.0,
+    "stimulusAmplitude": 2.0,
+    "stimulusExponent": 4.0,
+    "stimulusLinear": 0.1,
+    "stimulusBuffs": [
+      { "effect": "Effect:AttackUp", "baseValue": 1.0, "perStimulus": 0.25, "min": 0.1, "max": 10.0 },
+      { "effect": "Effect:DamageTaken", "baseValue": 1.0, "perStimulus": -0.15, "min": 0.25, "max": 1.0 }
+    ],
+    "nestsPerNightMin": 1,
+    "nestsPerNightMax": 0,
+    "targetNightLength": 40.0,
+    "burstsPerNight": 4,
+    "burstSpread": 2.0,
+    "roster": [
+      { "monster": "Monster:Basic", "cost": 10.0, "weight": 70.0, "minDay": 1, "minGate": 0 },
+      { "monster": "Monster:Spitter", "cost": 20.0, "weight": 25.0, "minDay": 3, "minGate": 0 },
+      { "monster": "Monster:Boss", "cost": 60.0, "weight": 5.0, "minDay": 4, "minGate": 1 }
+    ],
+    "trickle": { "monster": "Monster:Basic", "group": 3, "interval": 20.0, "untilKilledFraction": 0.9 }
+  },
   "tutorial": [
     {
       "id": "Tutorial:Move1",

@@ -41,7 +41,6 @@ namespace CoreDawn.EditorTools
         public List<GSpawnPt> spawnPoints = new() { new GSpawnPt() };
         public float engageMinRange = 4, engageMaxRange = 18, chaseRange = 24, leashRange = 32;
         public bool engageDayOnly = true;
-        public int bossRecoveryDays = 3, nestRecoveryDays = 5;
         [JsonIgnore] public MapImporter.NestDto src;
     }
 
@@ -105,7 +104,7 @@ namespace CoreDawn.EditorTools
         };
 
         // ── 데이터 ──
-        readonly List<GMap> maps = new();
+        internal readonly List<GMap> maps = new();   // 웨이브 탭 미리보기가 둥지 수를 읽는다
         int curMap;
         GMap M => maps.ElementAtOrDefault(curMap);
 
@@ -184,7 +183,6 @@ namespace CoreDawn.EditorTools
                                 : new[] { new GSpawnPt() }.AsEnumerable()).ToList(),
                             engageMinRange = n.engageMinRange, engageMaxRange = n.engageMaxRange,
                             chaseRange = n.chaseRange, leashRange = n.leashRange, engageDayOnly = n.engageDayOnly,
-                            bossRecoveryDays = n.bossRecoveryDays, nestRecoveryDays = n.nestRecoveryDays,
                             src = n,
                         }).ToList(),
                         nightSpawnPoints = (m.nightSpawnPoints ?? Array.Empty<MapImporter.CellDto>())
@@ -264,7 +262,6 @@ namespace CoreDawn.EditorTools
                 { x = p.x, y = p.y, hasBoss = p.hasBoss }).ToArray();
                 d.engageMinRange = n.engageMinRange; d.engageMaxRange = n.engageMaxRange;
                 d.chaseRange = n.chaseRange; d.leashRange = n.leashRange; d.engageDayOnly = n.engageDayOnly;
-                d.bossRecoveryDays = n.bossRecoveryDays; d.nestRecoveryDays = n.nestRecoveryDays;
                 return d;
             }).ToArray();
             o.nightSpawnPoints = g.nightSpawnPoints
@@ -322,7 +319,6 @@ namespace CoreDawn.EditorTools
                             .Select(p => new GSpawnPt { x = p.x, y = p.y, hasBoss = p.hasBoss }).ToList(),
                         engageMinRange = n.engageMinRange, engageMaxRange = n.engageMaxRange,
                         chaseRange = n.chaseRange, leashRange = n.leashRange, engageDayOnly = n.engageDayOnly,
-                        bossRecoveryDays = n.bossRecoveryDays, nestRecoveryDays = n.nestRecoveryDays, src = n,
                     }).ToList(),
                     nightSpawnPoints = (m.nightSpawnPoints ?? Array.Empty<MapImporter.CellDto>())
                         .Select(p => new Vector2Int(p.x, p.y)).ToList(),
@@ -947,8 +943,6 @@ namespace CoreDawn.EditorTools
             propsBox.Add(GroupTitle("복구 · 부순 뒤 다시 서기까지"));
             var g5 = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             propsBox.Add(g5);
-            g5.Add(GCell("보스(일)", n.bossRecoveryDays, v => n.bossRecoveryDays = Mathf.Max(0, (int)v)));
-            g5.Add(GCell("둥지(일)", n.nestRecoveryDays, v => n.nestRecoveryDays = Mathf.Max(0, (int)v), last: true));
 
             var del = new Button(() => { m.nests.Remove(n); sel = null; PushHist(); RenderAll(); })
             { text = "둥지 삭제", style = { marginTop = 14, alignSelf = Align.FlexStart } };

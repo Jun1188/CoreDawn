@@ -262,10 +262,10 @@ namespace CoreDawn.EditorTools
                 foreach (var e in m.attackEffects)
                     if (!combat.effects.Any(x => x.id == e.effect)) warn.Add($"{nm}: 효과 \"{e.effect}\" 를 찾을 수 없습니다");
             }
-            var used = new HashSet<string>(combat.waves.Select(w => w.monster).Where(s => !string.IsNullOrEmpty(s)));
+            var used = new HashSet<string>(combat.wave.roster.Select(r => r.monster).Append(combat.wave.trickle.monster).Where(s => !string.IsNullOrEmpty(s)));
             foreach (var m in list)
                 if (!string.IsNullOrEmpty(m.id) && !used.Contains(m.id))
-                    warn.Add($"{m.displayName}: 어떤 웨이브도 이 종류를 쓰지 않습니다 (둥지 보스·방어자는 씬/프리팹이 정한다)");
+                    warn.Add($"{m.displayName}: 웨이브 명단·진입로 무리가 이 종류를 쓰지 않습니다 (둥지 보스·방어자는 씬/프리팹이 정한다)");
             warnLabel.text = string.Join("\n", warn);
             win.RefreshSharedStat();
         }
