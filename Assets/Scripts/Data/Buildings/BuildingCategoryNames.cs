@@ -18,7 +18,6 @@ namespace CoreDawn.Data
         {
             BuildingCategory.Production => "생산",
             BuildingCategory.Logistics  => "물류",
-            BuildingCategory.Storage    => "저장",
             BuildingCategory.Defense    => "방어",
             _ => c.ToString(),
         };

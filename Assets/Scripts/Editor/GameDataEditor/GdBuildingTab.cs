@@ -89,7 +89,7 @@ namespace CoreDawn.EditorTools
             new("Belt",      "벨트",         "Logistics",  "speedTilesPerSec", "curveLPrefab", "curveRPrefab"),
             new("Splitter",  "분배기",       "Logistics"),
             new("Merger",    "합류기",       "Logistics"),
-            new("Storage",   "보관소",       "Storage"),
+            new("Storage",   "보관소",       "Logistics"),   // 분류 '저장'은 물류로 합쳤다(2026-09-01)
             new("DronePort", "드론 스테이션", "Logistics",  "droneRange", "carryCapacity", "travelSpeed"),
             new("Core",      "코어",         "Production", "tiers"),
             new("Tower",     "방어 타워",    "Defense",    "fireMode", "damageMultiplier", "range", "fireRate", "ammoFilter", "attackEffects"),
@@ -97,7 +97,7 @@ namespace CoreDawn.EditorTools
             new("Tree",      "나무",         "Production"),
         };
         static readonly (string v, string ko)[] Categories =
-        { ("Production", "생산"), ("Logistics", "물류"), ("Storage", "저장"), ("Defense", "방어") };
+        { ("Production", "생산"), ("Logistics", "물류"), ("Defense", "방어") };
         static readonly string[] Dirs = { "North", "East", "South", "West" };
         static readonly (string v, string ko)[] FireModes =
         { ("Projectile", "투사체 — 조준 사격(Turret)"), ("Hitscan", "즉시 판정 — 레이저(Turret, 리드 없음)"), ("Aura", "펄스 — 반경 전원(AuraEmitter)"),
