@@ -35,7 +35,7 @@ namespace CoreDawn.Save
             // v2 → v3 (2026-09-01, 5a-2f): 행동(IBuildingBehavior)이 심 모듈로 흡수되며 저장 주체가 바뀌었다.
             //   건물의 behavior 덩어리를 modules{키: 상태}로 옮긴다 — 키는 모듈 타입 이름(…Module 제외, 예: "Turret").
             //   내부 키(readyAt·yaw·recipe·filters…)는 그대로다.
-            { 2, MigrateBehaviorToModules },
+            { 2, f => { MigrateBehaviorToModules(f); DropRuntimeWaveExits(f); } },
         };
 
         /// <summary>
@@ -242,6 +242,18 @@ namespace CoreDawn.Save
                 }
             Debug.Log($"[Save] v2 → v3: 행동 상태 {moved}개를 modules로 옮겼습니다" +
                       (dropped > 0 ? $" (정의를 몰라 버린 것 {dropped}개)" : "") + ".");
+        }
+
+        /// <summary>
+        /// v2의 웨이브 출구는 런타임 UUID 참조였다 — 구운 둥지의 UUID는 세션마다 새로 나서 새 세션에서는
+        /// 해석할 수 없다(그 결함 때문에 v3부터 씬 경로로 싣는다). 조용히 안 맞는 채 두는 대신 여기서 비운다.
+        /// </summary>
+        static void DropRuntimeWaveExits(SaveFile f)
+        {
+            if (Module(f, "combat") is not JObject combat || combat["wave"] is not JObject wave) return;
+            if (wave["exits"] is not JArray exits || exits.Count == 0) return;
+            wave["exits"] = new JArray();
+            Debug.Log($"[Save] v2 → v3: 웨이브 출구 {exits.Count}개를 비웠습니다 — 런타임 UUID 참조라 새 세션에서 복구할 수 없습니다(v3부터 씬 경로로 저장).");
         }
 
         static string ModuleKeyOf(string buildingId)

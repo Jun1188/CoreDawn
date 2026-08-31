@@ -90,6 +90,8 @@ namespace CoreDawn.Save
 
         public class ExitDto
         {
+            /// <summary>둥지의 씬 경로(NestDto와 같은 안정 키). 런타임 UUID가 아니다 —
+            /// 구운 둥지의 UUID는 세션마다 새로 나서, UUID로 실으면 새 세션 로드에서 출구가 전부 유실된다(v3에서 교체).</summary>
             [JsonProperty("nest")] public string Nest;
             [JsonProperty("point")] public int Point;
         }
@@ -158,18 +160,34 @@ namespace CoreDawn.Save
                 if (waves != null)
                 {
                     var s = waves.Capture();
+
+                    // 심은 출구를 엔티티 UUID로 말한다 — 저장은 씬 경로로 번역한다(둥지의 안정 키).
+                    var pathByUuid = new Dictionary<string, string>();
+                    foreach (var n in nests)
+                        if (n.Entity != null) pathByUuid[n.Entity.Id.ToString()] = SaveScenePath.Of(n);
+
                     dto.Wave = new WaveDto
                     {
                         Active = s.Active, Day = s.Day, Gate = s.Gate, Now = s.Now, Score = s.Score, Remaining = s.Remaining,
                         Bursts = s.Bursts, BurstsDone = s.BurstsDone, NextBurstAt = s.NextBurstAt, NextTrickleAt = s.NextTrickleAt,
                         Spawned = s.Spawned, Killed = s.Killed, Rng = s.Rng,
-                        Exits = s.Selected.Select(x => new ExitDto { Nest = x.nest, Point = x.point }).ToList(),
+                        Exits = s.Selected.Select(x => new ExitDto
+                        {
+                            Nest = pathByUuid.TryGetValue(x.nest, out var path) ? path : Unmapped(x.nest),
+                            Point = x.point,
+                        }).ToList(),
                         Entrances = s.Entrances,
                     };
                 }
             }
 
             return dto;
+        }
+
+        static string Unmapped(string uuid)
+        {
+            Debug.LogWarning($"[Save] 웨이브 출구의 둥지(uuid {uuid})가 씬의 NestView와 매칭되지 않습니다 — 그대로 싣지만 로드에서 버려질 수 있습니다.");
+            return uuid;
         }
 
         static MonsterDto Describe(MonsterView m) => new()
@@ -253,10 +271,16 @@ namespace CoreDawn.Save
                     Spawned = w.Spawned, Killed = w.Killed, Rng = w.Rng,
                     Selected = w.Exits.Select(x => (x.Nest, x.Point)).ToList(), Entrances = w.Entrances,
                 };
-                var nestsById = new Dictionary<string, CoreDawn.Sim.Entity>();
+                // 출구는 씬 경로로 실려 있다(저장 쪽 번역) — 이 세션의 둥지 엔티티로 되돌린다
+                var nestsByPath = new Dictionary<string, CoreDawn.Sim.Entity>();
                 foreach (var n in Object.FindObjectsByType<NestView>(FindObjectsSortMode.None))
-                    if (n != null && n.Entity != null) nestsById[n.Entity.Id.ToString()] = n.Entity;
-                waves.Restore(s, id => nestsById.TryGetValue(id, out var e) ? e : null);
+                    if (n != null && n.Entity != null) nestsByPath[SaveScenePath.Of(n)] = n.Entity;
+                waves.Restore(s, path =>
+                {
+                    if (nestsByPath.TryGetValue(path, out var e)) return e;
+                    Debug.LogWarning($"[Save] 웨이브 출구의 둥지 '{path}'를 씬에서 찾지 못했습니다 — 그 출구는 버립니다.");
+                    return null;
+                });
             }
 
             var database = MonsterDatabaseSO.LoadDefault();
