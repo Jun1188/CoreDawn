@@ -103,9 +103,6 @@ namespace CoreDawn.Data
                  "(몬스터의 공격은 이 값과 무관하다 — 그쪽은 밤 웨이브의 목표 선정이 정한다).")]
         public bool isAttackable = false;
 
-        /// <summary>이 건물의 런타임 행동 생성. Building 생성자에서 호출.</summary>
-        // 행동은 더 이상 SO가 만들지 않는다 — 정의의 모듈 조합으로 BuildingBehaviors(등록부)가 고른다.
-
         EntityDef _def;
         /// <summary>이 설계도의 팩 정의 — 심은 이것만 든다. SO는 프리팹·아이콘을 가진 표현 에셋(5a-3에서 뷰 카탈로그로).</summary>
         public EntityDef Def

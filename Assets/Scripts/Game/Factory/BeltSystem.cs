@@ -4,13 +4,15 @@ using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
-    // ─── 벨트 세그먼트 매니저 ──────────────────────────────────────
+    // ─── 벨트 시스템 ──────────────────────────────────────────────
 
     /// <summary>
-    /// 벨트 연결/해제 이벤트를 받아 BeltSegment를 생성·병합·분리한다. (plain C#)
+    /// 벨트 — 엔티티 단위가 아니라 세그먼트(여러 벨트를 합친 것) 단위로 산다(구 BeltSegmentManager + BeltBehavior).
+    /// 연결/해제 이벤트를 받아 BeltSegment를 생성·병합·분리하고, 벨트 건물의 틱을 돌린다. (plain C#)
     /// BuildingGraph.RegisterConn() → OnNewConnection() 순으로 호출된다.
+    /// Conveyor 정의는 속도·모양 값만 갖는 데이터 전용이라 벨트 엔티티에 모듈이 없다.
     /// </summary>
-    public class BeltSegmentManager
+    public class BeltSystem
     {
         readonly FactorySystem _sim;
 
@@ -26,7 +28,38 @@ namespace CoreDawn.Factory
 
         public IReadOnlyList<BeltSegment> Segments => _segs;
 
-        public BeltSegmentManager(FactorySystem sim) => _sim = sim;
+        public BeltSystem(FactorySystem sim) => _sim = sim;
+
+        /// <summary>
+        /// 벨트 틱(구 BeltBehavior.Tick) — 입력 버퍼를 세그먼트 입구에 올리고,
+        /// 대표 벨트(입구 = 마지막 인덱스)가 세그먼트 전체를 1번만 구동한다. 실제 아이템 이동은 BeltSegment가 담당한다.
+        /// </summary>
+        public void Tick(BuildingModule belt, float dt)
+        {
+            var seg = EnsureSegment(belt);  // 항상 세그먼트 존재
+
+            // 입력 버퍼 아이템을 벨트 위로 (입구가 막혔으면 받아준 만큼만 소비).
+            // TryAddItem은 세그먼트 입구(pos 0) 삽입 — 생산자로부터 입력을 받는 벨트는
+            // 상류 벨트가 없는 벨트뿐이므로(1입력 포트) 항상 자기 세그먼트의 입구다.
+            foreach (var (item, count) in belt.Input.Snapshot())
+            {
+                int moved = 0;
+                while (moved < count && seg.TryAddItem(item)) moved++;
+                if (moved > 0)
+                {
+                    belt.Input.TryConsume(item, moved);
+                    belt.NotifyUpstream(); // 입력 버퍼에 자리 생김 → 막혀 있던 상류 깨움
+                }
+            }
+
+            // 대표 벨트(입구 = 마지막 인덱스)가 세그먼트 전체를 1번만 구동
+            if (seg.BeltCount > 0 && seg.Belts[^1] == belt)
+                seg.Tick(dt);
+
+            // 입구가 막혀 버퍼가 안 비면 다음 틱에 재시도
+            if (belt.Input.HasAny)
+                _sim.MarkDirty(belt);
+        }
 
         /// <summary>이 벨트의 세그먼트를 보장(없으면 1칸 세그먼트 즉시 생성).</summary>
         public BeltSegment EnsureSegment(BuildingModule belt)

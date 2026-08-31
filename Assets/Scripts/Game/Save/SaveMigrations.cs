@@ -31,6 +31,11 @@ namespace CoreDawn.Save
             //   ③ 핫바 병합 — 플레이어 containers.hotbar + containers.main → main 하나(핫바 칸이 앞, 옛 가방 칸은 인덱스가 핫바 칸 수만큼 뒤로).
             //   ④ 광맥 매장량 삭제 — world.nodes[]의 stock·nextAt을 뗀다(누적 채굴량만 남긴다).
             { 1, f => { MigrateIdsToPack(f); MigrateContainersToRoles(f); MergeHotbarIntoMain(f); DropDepositStock(f); DropLegacyWeaponAmmo(f); } },
+
+            // v2 → v3 (2026-09-01, 5a-2f): 행동(IBuildingBehavior)이 심 모듈로 흡수되며 저장 주체가 바뀌었다.
+            //   건물의 behavior 덩어리를 modules{키: 상태}로 옮긴다 — 키는 모듈 타입 이름(…Module 제외, 예: "Turret").
+            //   내부 키(readyAt·yaw·recipe·filters…)는 그대로다.
+            { 2, MigrateBehaviorToModules },
         };
 
         /// <summary>
@@ -212,6 +217,44 @@ namespace CoreDawn.Save
         {
             if (Module(f, "player") is JObject player && player.Remove("ammo"))
                 Debug.Log("[Save] v1 → v2 ⑤: 옛 무기 탄수(ammo — WeaponManager 배열 순서)를 뗐습니다. 탄창은 총 id로 다시 저장됩니다(weapons) — 옛 값은 순서 기반이라 옮길 수 없다.");
+        }
+
+        // ── 행동 → 모듈 상태 (v2 → v3) ───────────────────────────────
+        //
+        // 어느 모듈의 상태였는지는 건물 정의가 말한다 — 옛 행동 등록부(BuildingBehaviors)와 같은 순서로
+        // 정의의 모듈 조합을 본다. 상태를 저장하던 행동만 옮기면 된다(벨트·보관소·합류기는 무상태였다).
+        static void MigrateBehaviorToModules(SaveFile f)
+        {
+            int moved = 0, dropped = 0;
+            if (Module(f, "factory") is JObject factory)
+                foreach (var b in Arr(factory["buildings"]))
+                {
+                    if (b is not JObject o) continue;
+                    var beh = o["behavior"];
+                    if (beh == null) continue;
+                    o.Remove("behavior");
+                    if (beh.Type == JTokenType.Null) continue;
+                    string key = ModuleKeyOf((string)o["id"]);
+                    if (key == null) { dropped++; continue; }   // 정의가 없는 건물은 복원 자체가 건너뛰어진다
+                    if (o["modules"] is not JObject modules) o["modules"] = modules = new JObject();
+                    modules[key] = beh;
+                    moved++;
+                }
+            Debug.Log($"[Save] v2 → v3: 행동 상태 {moved}개를 modules로 옮겼습니다" +
+                      (dropped > 0 ? $" (정의를 몰라 버린 것 {dropped}개)" : "") + ".");
+        }
+
+        static string ModuleKeyOf(string buildingId)
+        {
+            var def = SaveRefs.Building(buildingId);
+            if (def == null) return null;   // SaveRefs가 이미 경고를 남겼다
+            if (def.Has<CrafterModuleDef>()) return "Crafter";
+            if (def.Has<ExtractorModuleDef>()) return "Extractor";
+            if (def.Has<RouterModuleDef>()) return "Router";
+            if (def.Has<CoreModuleDef>()) return "Core";
+            if (def.Has<TurretModuleDef>()) return "Turret";
+            if (def.Has<AuraEmitterModuleDef>()) return "AuraEmitter";
+            return null;   // 무상태 행동(벨트·보관소 등)이었던 것 — 옮길 곳이 없다
         }
 
         // ── 공통 ──────────────────────────────────────────

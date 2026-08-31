@@ -56,7 +56,7 @@ namespace CoreDawn.Factory
 
         public readonly GridIndex          Grid;
         public readonly BuildingGraph      Graph;
-        public readonly BeltSegmentManager Belts;
+        public readonly BeltSystem Belts;
 
         /// <summary>
         /// 배치된 모든 건물 — 세이브·목표 수집이 순회하는 정본 목록.
@@ -185,7 +185,7 @@ namespace CoreDawn.Factory
             _maxCatchUpTicks = Mathf.Max(1, maxCatchUpTicks);
             Grid  = new GridIndex();
             Graph = new BuildingGraph(this);
-            Belts = new BeltSegmentManager(this);
+            Belts = new BeltSystem(this);
 
             World.Died += OnEntityDied;
         }

@@ -50,8 +50,6 @@ namespace CoreDawn.Save
             [JsonProperty("hpMax")] public float HpMax;
             [JsonProperty("hpCur")] public float HpCurrent;
 
-            /// <summary>행동 고유 상태(과도기 — 아직 행동이 있는 건물). 어떤 모양인지는 각 행동이 정한다.</summary>
-            [JsonProperty("behavior")] public JToken Behavior;
             /// <summary>모듈별 상태(ISaveableModule) — 키는 모듈 타입 이름(…Module 제외, 예: "Turret").</summary>
             [JsonProperty("modules")] public Dictionary<string, JToken> Modules = new();
         }
@@ -96,7 +94,6 @@ namespace CoreDawn.Save
                     Containers = SaveContainers.Capture(b.Owner?.Get<InventoryModule>()),
                     HpMax = hp != null ? hp.MaxHealth : 0f,
                     HpCurrent = hp != null ? hp.CurrentHealth : 0f,
-                    Behavior = b.Behavior is ISaveableBehavior s ? SaveJson.ToToken(s.CaptureState()) : null,
                     Modules = CaptureModules(b.Owner),
                 });
             }
@@ -188,9 +185,8 @@ namespace CoreDawn.Save
 
                 SaveContainers.Restore(want.Containers, b.Owner?.Get<InventoryModule>(), want.DataId);
 
-                // 행동 상태가 먼저 들어가야 한다 — 코어가 보호막을 최대치로 자르는 등
+                // 모듈 상태는 그릇 다음이다 — 코어가 보호막을 최대치로 자르는 등
                 // 상태에 따라 달라지는 판단이 있고, 그 최대치는 티어(이미 복원됨)에서 나온다
-                if (b.Behavior is ISaveableBehavior s && want.Behavior != null) s.RestoreState(want.Behavior);
                 RestoreModules(b.Owner, want.Modules);
 
                 if (want.HpMax > 0f) b.Owner?.Health?.RestoreState(want.HpMax, want.HpCurrent, isDead: false);

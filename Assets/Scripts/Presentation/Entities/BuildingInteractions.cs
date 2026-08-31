@@ -8,8 +8,7 @@ using CoreDawn.UI;
 namespace CoreDawn.Entities
 {
     /// <summary>
-    /// 건물 상호작용(E) 등록부 — 정의의 <b>모듈 조합</b>으로 "무슨 화면을 여는가"를 고른다. 심은 UI를 모르고(마커 모듈 없음),
-    /// 행동(IBuildingBehavior)도 더 이상 UI를 열지 않는다. 심 쪽 <see cref="BuildingBehaviors"/>와 같은 꼴:
+    /// 건물 상호작용(E) 등록부 — 정의의 <b>모듈 조합</b>으로 "무슨 화면을 여는가"를 고른다. 심은 UI를 모른다(마커 모듈 없음).
     /// 새 상호작용 건물 = 여기 한 줄. 조합에 안 맞으면 상호작용 없음(프롬프트 null).
     ///
     /// </summary>

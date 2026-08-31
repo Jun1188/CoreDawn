@@ -11,15 +11,15 @@ namespace CoreDawn.Factory
     /// 배치된 건물 — 심 엔티티에 붙는 모듈(plain C#, MonoBehaviour 아님).
     /// EntityDef(팩 정의, 불변·공유) = 설계도, BuildingModule = 실물 (각자 독립적 상태).
     ///
-    /// 이 모듈이 건물 데이터의 원본(source of truth)이다 — Def/Origin/회전/버퍼/연결/행동/IsRemoved.
+    /// 이 모듈이 건물 데이터의 원본(source of truth)이다 — Def/Origin/회전/버퍼/연결/IsRemoved.
     /// HP·편·번호는 모듈이 아니라 <see cref="Owner"/>(심 엔티티)의 것이다: 둥지는 건물이면서 스포너이고
     /// 코어는 건물이면서 목표라, "건물"을 상속으로 만들면 곧 다이아몬드가 되므로 조합으로 붙인다.
     /// 씬 표현은 BuildingView(MonoBehaviour)가 껍데기로 맡고, 이 건물이 제거되면 FactorySystem.Removed를 타고 껍데기도 함께 정리된다.
     /// (순수 C#인 이유: 씬·프레임 없이 돌리는 헤드리스 시뮬레이션·테스트가 가능해야 한다)
     ///
-    /// 연결 목록(InputConnections/OutputConnections)은 BuildingGraph가 채우고,
-    /// 행동(IBuildingBehavior)은 정의의 모듈 조합으로 <see cref="BuildingBehaviors"/>가 고른다.
+    /// 연결 목록(InputConnections/OutputConnections)은 BuildingGraph가 채운다.
     /// 정의에서 무엇을 읽을지는 정의 타입이 말한다 — 크기·철거·비용은 <see cref="Building"/>, 포트는 Ports, 버퍼는 Inventory.
+    /// 틱은 무엇이 <b>있느냐</b>로 정해진다: 벨트(Conveyor)는 세그먼트 단위(BeltSystem), 나머지는 모듈 공통 틱.
     /// </summary>
     public class BuildingModule : EntityModule, IDamageInterceptor, IFootprint
     {
@@ -60,7 +60,6 @@ namespace CoreDawn.Factory
         public readonly List<BuildingConnection> InputConnections  = new();
         public readonly List<BuildingConnection> OutputConnections = new();
 
-        IBuildingBehavior _behavior;
         RouterModule _router;             // 분배기·합류기의 규칙 모듈 — OnAttach에서 굳힌다
         IDamageInterceptor _moduleShield; // 코어 보호막 — 행동이 사라진 뒤엔 모듈(CoreModule)이 받는다
 
@@ -117,17 +116,15 @@ namespace CoreDawn.Factory
         ///    몬스터의 공격은 이 값과 무관하다 — 밤 웨이브가 무엇을 노리는지는 목표 선정(threatSeedCost)이 정하고,
         ///    정한 목표는 실제로 부술 수 있어야 한다.
         ///    출처를 모르는 피해(null)는 아군으로 본다 — 실제 공격자는 모두 자신을 넘기므로 출처 없음 = 누구의 공격도 아님.
-        /// ② 행동이 인터셉터면(코어의 보호막) 남은 몫을 그쪽에 넘긴다.
+        /// ② 코어면(모듈 인터셉터) 남은 몫을 보호막에 넘긴다.
         /// </summary>
-        // 받는 피해 체인 등록 — 아군 무시·행동 인터셉터(코어 보호막)는 Health의 체인에서 돈다
+        // 받는 피해 체인 등록 — 아군 무시·코어 보호막은 Health의 체인에서 돈다
         protected internal override void OnAttach()
         {
             // 그릇은 엔티티의 Inventory 모듈(정의가 만든다). 없는 건물(나무·둥지·울타리)은 0칸 그릇 — 아무것도 받지 않는다
             var inventory = Owner.Get<InventoryModule>();
             Input  = inventory?.Input  ?? new ItemContainer(0);
             Output = inventory?.Output ?? new ItemContainer(0);
-            // 행동은 그릇·정의가 갖춰진 뒤에 — 조립기는 생성자에서 입력 필터를 건다
-            _behavior = BuildingBehaviors.Create(this);
             // 코어: 진행 규칙(티어·해금·확인창)은 게임(CoreSystem.Wire)이 대리자로 꽂고, 보호막·준비는 모듈이 갖는다
             var core = Owner.Get<CoreModule>();
             if (core != null) { CoreSystem.Wire(this, core); _moduleShield = core; }
@@ -136,7 +133,7 @@ namespace CoreDawn.Factory
             if (_router != null) _router.Changed += WakeSelf;
             // 제작 설비(조립기·제련로 — 행동이 사라진 건물): 옛 AssemblerBehavior 생성자가 걸던 그릇 정책의 공통화
             var crafter = Owner.Get<CrafterModule>();
-            if (_behavior == null && crafter != null)
+            if (crafter != null)
             {
                 Input.SingleStackPerType = true;            // 한 재료가 입력 슬롯 전부를 독점하는 데드락 방지
                 Input.AcceptFilter = crafter.IsIngredient;  // 입력 버퍼는 현재 레시피의 재료만
@@ -144,9 +141,9 @@ namespace CoreDawn.Factory
                 var first = crafter.Recipes.FirstOrDefault();
                 if (crafter.Recipe == null && first != null && RecipeDatabaseSO.IsUnlocked(first)) crafter.SetRecipe(first);
             }
-            // 행동 없이 모듈이 스스로 걷는 건물(포탑·오라·지뢰…): 그릇이 바뀌면 다음 틱에 다시 판단한다.
-            // 손으로 넣고 빼는 경로는 벨트를 안 거쳐 아무도 깨워 주지 않는다(옛 행동들이 하나씩 달던 구독의 공통화)
-            if (_behavior == null && !IsConveyor) { Input.Changed += WakeSelf; Output.Changed += WakeSelf; }
+            // 그릇이 바뀌면 다음 틱에 다시 판단한다 — 손으로 넣고 빼는 경로는 벨트를 안 거쳐
+            // 아무도 깨워 주지 않는다(옛 행동들이 하나씩 달던 구독의 공통화). 벨트만 예외(세그먼트가 산다).
+            if (!IsConveyor) { Input.Changed += WakeSelf; Output.Changed += WakeSelf; }
             Owner.Health?.AddInterceptor(this);
         }
         protected internal override void OnDetach() => Owner.Health?.RemoveInterceptor(this);
@@ -158,7 +155,6 @@ namespace CoreDawn.Factory
                 bool hostile = source != null && Owner != null && source.Faction.IsHostileTo(Owner.Faction);
                 if (!hostile) return 0f;
             }
-            if (_behavior is IDamageInterceptor i) return i.Intercept(amount, source);
             return _moduleShield != null ? _moduleShield.Intercept(amount, source) : amount;
         }
 
@@ -190,13 +186,12 @@ namespace CoreDawn.Factory
         {
             // 채굴기: 덮는 칸들의 광맥을 모듈에 넘긴다 — 모듈은 그리드를 모른다
             Owner.Get<ExtractorModule>()?.SetDeposits(Factory.DepositsUnder(Origin, Size));
-            _behavior?.OnAfterPlaced();
         }
 
-        /// <summary>FactorySystem이 이 건물이 깨어 있는 틱에 호출. 행동이 있으면 행동이(과도기), 없으면 모듈 공통 틱.</summary>
+        /// <summary>FactorySystem이 이 건물이 깨어 있는 틱에 호출. 벨트는 세그먼트 단위(BeltSystem), 나머지는 모듈 공통 틱.</summary>
         public void Tick(float dt)
         {
-            if (_behavior != null) { _behavior.Tick(dt); return; }
+            if (IsConveyor) { Factory.Belts.Tick(this, dt); return; }
             TickModules(dt);
         }
 
@@ -287,9 +282,6 @@ namespace CoreDawn.Factory
             }
             return false;   // 갈 곳이 없다 → 대기(stall). 하류가 소비하면 NotifyUpstream으로 깨어난다
         }
-
-        /// <summary>행동 객체 조회 (레시피 지정 등 외부 설정용). 행동 없는 건물(나무·둥지·울타리)은 null.</summary>
-        public IBuildingBehavior Behavior => _behavior;
 
         // 출력 라운드로빈 커서 — 다음에 먼저 밀어볼 출력 연결 인덱스.
         // 세이브하지 않는다: 로드 뒤 0에서 다시 돌기 시작해도 분배는 곧 고르게 되고, 잃는 것이 없다.
