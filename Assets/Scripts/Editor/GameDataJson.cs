@@ -9,7 +9,7 @@ namespace CoreDawn.EditorTools
     //
     //  정본은 하나(Assets/Data/Import/GameData.json)이고 GameData 편집기(GameDataEditorWindow)가 이 DTO로
     //  읽고 쓴다. 저장할 때 GameDataExporterV2가 v2 팩(StreamingAssets/packs/<pack>/data.json)을 내고,
-    //  ViewCatalogBaker가 뷰 카탈로그를 굽는다. 런타임은 v2 팩만 읽는다 — SO 에셋은 5a-3e에서 퇴역했다.
+    //  런타임은 v2 팩만 읽는다(에셋 참조는 내보내기가 팩 파일로 복사한다) — SO 에셋은 5a-3e에서 퇴역했다.
     //  (구 GameDataImporter의 SO 생성부는 삭제. v2 직접 편집은 5a-3e-2에서.)
     // ================================================================
     public static class GameDataJson

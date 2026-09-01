@@ -112,10 +112,11 @@ namespace CoreDawn.FPS
             var parent = gunRoot != null ? gunRoot : transform;
             var view = ViewSchema.Of(def);
             if (view.Type != "Gun") { Debug.LogError($"[WeaponManager] {def.Id}: view.type이 Gun이 아닙니다('{view.Type}') — 조립하지 않습니다."); return null; }
-            // 모델 — 팩 glb(view.model[0] {file, materials})이면 PackAssets, 옛 guid 문자열이면 카탈로그(과도기)
+            // 모델 — 팩 glb(view.model[0] {file, materials})
             var refs = view.Models();
             var chosen = refs.Count > 0 ? refs[0] : null;
-            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : ViewCatalogSO.ModelOf(def);
+            if (chosen != null && !chosen.IsPack) Debug.LogError($"[WeaponManager] {def.Id}: view.model '{chosen.File}'은 팩 모델이 아닙니다 — 카탈로그(guid) 참조는 퇴역했습니다.");
+            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : null;
             if (model == null) Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 없습니다 — 내장 체커 상자로 조립합니다.");
 
             var go = new GameObject(PascalKeyOf(def.Id));

@@ -30,11 +30,12 @@ namespace CoreDawn.Entities
             var rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = true; rb.useGravity = false;
 
-            // 모델 — 팩 glb(view.model[0] {file, materials}: 스킨 + 클립)이면 PackAssets, 옛 guid 문자열이면 카탈로그(과도기)
+            // 모델 — 팩 glb(view.model[0] {file, materials}: 스킨 + 클립)
             Transform body = null; Animation animation = null;
             var refs = view.Models();
             var chosen = refs.Count > 0 ? refs[0] : null;
-            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : ViewCatalogSO.ModelOf(def);
+            if (chosen != null && !chosen.IsPack) Debug.LogError($"[MonsterAssembler] {def.Id}: view.model '{chosen.File}'은 팩 모델이 아닙니다 — 카탈로그(guid) 참조는 퇴역했습니다.");
+            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : null;
             if (model != null)
             {
                 var inst = Object.Instantiate(model, go.transform);

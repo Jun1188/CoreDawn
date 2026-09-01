@@ -154,7 +154,7 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>
-        /// 모델 출처 — view.model(배열, [0]이 기본·나머지는 변형)이 팩 경로(.glb)면 PackAssets(런타임 로드), 옛 guid 참조면 ViewCatalog(과도기).
+        /// 모델 출처 — view.model(배열, [0]이 기본·나머지는 변형)의 팩 glb(PackAssets). 없으면 null(호출부가 체커 상자). 옛 guid 문자열은 오류.
         /// 변형은 <paramref name="variant"/> % 개수로 고른다(나무는 칸에서 결정적으로 뽑는다).
         /// </summary>
         public static GameObject ResolveModel(EntityDef def, ViewSpec view, BeltShape shape, int variant, out ViewSpec.ModelRef chosen)
@@ -162,8 +162,9 @@ namespace CoreDawn.Entities
             string key = shape == BeltShape.CurveL ? "modelCurveL" : shape == BeltShape.CurveR ? "modelCurveR" : "model";
             var list = view.Models(key);
             chosen = list.Count > 0 ? list[((variant % list.Count) + list.Count) % list.Count] : null;
-            if (chosen != null && chosen.IsPack) return Managers.PackAssets.ModelOf(chosen.File);
-            return ViewCatalogSO.ModelOf(def, shape);
+            if (chosen == null) return null;
+            if (!chosen.IsPack) { Debug.LogError($"[BuildingAssembler] {def.Id}: view.{key} '{chosen.File}'은 팩 모델({{file, materials}})이 아닙니다 — 카탈로그(guid) 참조는 퇴역했습니다."); return null; }
+            return Managers.PackAssets.ModelOf(chosen.File);
         }
 
         static void SetLayerRecursively(Transform t, int layer)

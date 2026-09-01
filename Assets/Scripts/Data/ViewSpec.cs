@@ -30,7 +30,7 @@ namespace CoreDawn.Data
 
     /// <summary>
     /// 정의의 view 블록을 읽은 것 — 뷰 종류(<see cref="Type"/>, <see cref="ViewSchema"/> 표의 키)와 소리 자리(<see cref="Sfx"/>).
-    /// 모델·프리팹·아이콘 같은 에셋 참조는 카탈로그(<see cref="ViewCatalogSO"/>)가 굽고, 여기는 값만 든다.
+    /// 모델·아이콘·소리는 팩 파일(PackAssets)이고, 여기는 값만 든다.
     /// 잘못된 값(모르는 type·표에 없는 sfx 이름·팩에 없는 소리)은 첫 조회에서 소리 내어 알린다 — 조용한 폴백 없음.
     /// </summary>
     public sealed class ViewSpec
@@ -46,7 +46,7 @@ namespace CoreDawn.Data
         public SoundUse SfxOf(string name) => sfx.TryGetValue(name, out var u) ? u : null;
 
         /// <summary>
-        /// 모델 한 항목 — 팩 glb(<c>{file, materials[]}</c>: materials[i]는 glb 재질 슬롯 i에 꽂을 팩 재질 id)이거나, 옛 guid 참조 문자열(과도기 — ViewCatalog가 읽는다).
+        /// 모델 한 항목 — 팩 glb(<c>{file, materials[]}</c>: materials[i]는 glb 재질 슬롯 i에 꽂을 팩 재질 id). 문자열 하나는 옛 guid 참조(퇴역 — IsPack=false, 조립기가 오류).
         /// </summary>
         public sealed class ModelRef
         {
