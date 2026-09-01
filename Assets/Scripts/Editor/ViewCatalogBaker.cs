@@ -138,6 +138,7 @@ namespace CoreDawn.EditorTools
 
         static GameObject LoadPrefab(JObject view, string nameKey, string guidKey, string id, ref int warnings)
         {
+            if (view[nameKey] is JArray) return null;   // 팩 경로 배열 — PackAssets가 런타임에 읽는다
             string name = (string)view[nameKey], guid = (string)view[guidKey];
             if (string.IsNullOrEmpty(guid)) return null;
 

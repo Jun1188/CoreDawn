@@ -3052,7 +3052,44 @@
         }
       ],
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "model": [
+          {
+            "file": "models/tree_broadleaf_01.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_02.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_03.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_04.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_05.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          }
+        ]
       }
     },
     "basic": {
@@ -4503,6 +4540,89 @@
             "clip": "poly_explosion_bullet",
             "clipGuid": "d4bcb5c56d9c70c48998d3943e83f1cf"
           }
+        ]
+      }
+    }
+  },
+  "materials": {
+    "tree_bark": {
+      "displayName": "Tree_Bark_Lit",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/bark_albedo.png",
+            "linear": false
+          },
+          "_BumpMap": {
+            "file": "textures/bark_normal.png",
+            "linear": true
+          },
+          "_MainTex": {
+            "file": "textures/bark_albedo.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            1.0,
+            0.7108003,
+            0.4009434,
+            1.0
+          ],
+          "_Color": [
+            1.0,
+            0.7108003,
+            0.4009434,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.0
+        },
+        "keywords": [
+          "_NORMALMAP"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "broadleaf_green": {
+      "displayName": "Broadleaf_Green_Lit",
+      "view": {
+        "shader": "CoreDawn/Vegetation Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/broadleaf_tree_leaves.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_Top_Color": [
+            0.668223,
+            0.8,
+            0.0,
+            0.0
+          ],
+          "_Bottom_Color": [
+            0.6182256,
+            0.754717,
+            0.0,
+            0.0
+          ]
+        },
+        "floats": {
+          "_Custom_Color": 1.0,
+          "_Blend_Height": 0.13,
+          "_Normal_Up": 0.15,
+          "_Wind_Strength": 0.22,
+          "_Wind_Speed": 0.16,
+          "_Bend_Start": 2.0,
+          "_Bend_Height": 8.5
+        },
+        "keywords": [
+          "_ALPHATEST_ON"
         ]
       }
     }

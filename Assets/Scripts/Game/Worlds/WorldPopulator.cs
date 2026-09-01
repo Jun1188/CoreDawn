@@ -54,6 +54,7 @@ namespace CoreDawn.Worlds
             var baked = world.transform.Find(RootName);
             if (baked != null)
             {
+                DressWhenReady(world, baked);   // 뷰 마커에 모델을 입힌다(팩 자원 preload 뒤, 비동기)
                 int connected = Connect(world, baked);
                 int lateNodes = PlaceMissingNodes(world, baked);   // 굳힌 씬에 광맥 뷰가 빠졌으면(맵만 바뀌고 씬 저장 전) 런타임이 세우되 소리 낸다
                 var bakedProvider = PlaceNightSpawns(world, baked, battleRoot);
@@ -119,8 +120,8 @@ namespace CoreDawn.Worlds
                         + new Vector3(1.5f, 0f, 1.5f) * world.CellSize;
             pos.y = GroundYAt(world, pos);
 
-            // 코어도 다른 건물처럼 정의에서 조립한다 — 굳힌 씬(베이커)에서도 같은 길(프리팹 링크 없음)
-            var go = BuildingAssembler.Build(coreDef, BeltShape.Straight, pos, Quaternion.identity, world.CellSize);
+            // 코어도 정의에서 온다 — 굳히는 경로라 마커만(모델은 런타임이 입힌다, DressWhenReady). CoreBootstrap이 RequireComponent로 BuildingView를 붙인다
+            var go = BuildingAssembler.Marker(coreDef, pos, Quaternion.identity, world.CellSize, 0);
             go.transform.SetParent(root, true);
             go.name = "Core";
 
@@ -193,6 +194,26 @@ namespace CoreDawn.Worlds
             if (skipped > 0)
                 Debug.Log($"[WorldPopulator] 굳어 있는 배치물 {skipped}개는 칸이 이미 차 있어 잇지 못했습니다.", world);
             return connected + nodes;
+        }
+
+        /// <summary>
+        /// 굳힌 씬의 뷰 마커(<see cref="ViewMarker"/>)에 모델·콜라이더를 입힌다 — 팩 자원(glb·재질) preload가 끝난 뒤. 심 연결(Connect)은 기다리지 않는다:
+        /// 마커에 BuildingView가 이미 있어 잇기는 즉시 되고, 모양만 늦게 온다. 로딩 화면 게이트는 4c 후속.
+        /// </summary>
+        static async void DressWhenReady(World world, Transform root)
+        {
+            await Managers.PackAssets.PreloadAsync(SimHost.Database);
+            if (root == null) return;
+            int dressed = 0;
+            foreach (var marker in root.GetComponentsInChildren<ViewMarker>(true))
+            {
+                if (marker == null || marker.GetComponentInChildren<Renderer>(true) != null) continue;
+                var def = marker.Def;
+                if (def == null) { Debug.LogError($"[WorldPopulator] 뷰 마커 '{marker.name}'의 정의 '{marker.DataId}'가 팩에 없습니다.", marker); continue; }
+                BuildingAssembler.Dress(marker.gameObject, def, BeltShape.Straight, marker.Variant);
+                dressed++;
+            }
+            if (dressed > 0) Debug.Log($"[WorldPopulator] 굳은 배치물 {dressed}개에 뷰를 입혔습니다.", world);
         }
 
         /// <summary>이 배치물이 어느 칸의 무엇인지 적어 둔다 — 런타임의 잇기가 이것을 읽는다.</summary>
@@ -581,15 +602,6 @@ namespace CoreDawn.Worlds
             var map = world.Map;
             if (map.trees == null || map.trees.Length == 0) return 0;
 
-            var prefabs = new List<GameObject>();
-            foreach (var p in world.TreePrefabs) if (p != null) prefabs.Add(p);
-            if (prefabs.Count == 0)
-            {
-                Debug.LogWarning($"[WorldPopulator] 나무 프리팹이 World에 배선되지 않아 나무 {map.trees.Length}그루를 " +
-                                 "세우지 못했습니다.", world);
-                return 0;
-            }
-
             var treeDef = FindEntity(TreeEntityKey);
             if (treeDef == null)
             {
@@ -597,6 +609,7 @@ namespace CoreDawn.Worlds
                                  world);
                 return 0;
             }
+            int variants = Mathf.Max(1, ViewSchema.Of(treeDef).Models().Count);   // view.model 배열 = 변형 목록
 
             // 심은 <b>런타임에만</b> 필요하다 — 에디터에서 씬에 굳힐 때는 그림만 만들고,
             // 칸을 잡는 것은 플레이가 시작될 때 Connect 가 한다.
@@ -605,6 +618,11 @@ namespace CoreDawn.Worlds
             if (connecting && (boot == null || boot.Factory == null))
             {
                 Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 나무를 세우지 못했습니다.", world);
+                return 0;
+            }
+            if (connecting && !Managers.PackAssets.IsReady)
+            {
+                Debug.LogError("[WorldPopulator] 팩 모델(glb) preload가 끝나기 전에 나무를 세우려 했습니다 — 굳지 않은 씬은 로딩 게이트가 필요합니다(4c 후속). 나무를 세우지 않습니다.", world);
                 return 0;
             }
 
@@ -617,19 +635,20 @@ namespace CoreDawn.Worlds
                 // 그 위에 건물이 올라간다. GridIndex.Add 는 덮어쓰기라 먼저 확인해야 한다.
                 if (connecting && boot.Factory.Grid.IsOccupied(cell)) { skipped++; continue; }
 
-                TreePose(world, cell, prefabs.Count, out int pi, out Vector3 pos, out float yaw, out float scale);
+                TreePose(world, cell, variants, out int pi, out Vector3 pos, out float yaw, out float scale);
 
-                var go = Spawn(prefabs[pi], pos, Quaternion.Euler(0f, yaw, 0f), root);
-                go.transform.localScale = Vector3.one * scale;
+                // 나무도 다른 건물처럼 정의에서 조립한다 — 변형(view.model 배열)은 칸에서 결정적으로, 크기 흔들기는 루트 배율에 곱한다.
+                // 굳히는 중이면 마커만 세운다(위치·정의·변형) — 팩 모델을 씬에 굳히면 런타임 생성 메시가 씬 파일에 통째로 박힌다. 뷰는 런타임이 입힌다(DressWhenReady).
+                var rot = Quaternion.Euler(0f, yaw, 0f);
+                var go = connecting ? BuildingAssembler.Build(treeDef, BeltShape.Straight, pos, rot, world.CellSize, pi)
+                                    : BuildingAssembler.Marker(treeDef, pos, rot, world.CellSize, pi);
+                go.transform.SetParent(root, true);
+                go.transform.localScale *= scale;
                 go.name = $"Tree_{cell.x}_{cell.y}";
                 Mark(go, cell, treeDef);
 
-                // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect).
-                // 뷰는 프리팹에 없으므로 지금 붙여 둔다: 굳은 씬에서 인스펙터로 확인할 수 있고,
-                // 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
-                var view = go.GetComponent<BuildingView>();
-                if (view == null) view = go.AddComponent<BuildingView>();
-                if (connecting) ConnectTree(view, treeDef, cell);
+                // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect). 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
+                if (connecting) ConnectTree(go.GetComponent<BuildingView>(), treeDef, cell);
                 placed++;
             }
 

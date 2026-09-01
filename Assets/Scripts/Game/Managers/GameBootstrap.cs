@@ -179,6 +179,16 @@ namespace CoreDawn.Managers
             // static 구독이 플레이를 넘어 살아남으므로, 빼고 다시 걸어야 중복되지 않는다
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            BootAsync();
+        }
+
+        /// <summary>
+        /// 팩 파일 자원(glb…) 읽기를 시작하고 씬을 동기로 얹는다. 씬 로드는 프레임 1의 Start() 전에 끝나야 한다(InputManager·심 엔티티를 거기서 찾는다) —
+        /// 그래서 preload를 기다리지 않는다. 굳은 World 씬은 부팅 시 모델이 필요 없고, 굳지 않은 경로는 PackAssets.IsReady를 보고 소리 낸다.
+        /// </summary>
+        static void BootAsync()
+        {
+            _ = PackAssets.PreloadAsync(SimHost.Database);
             TryLoadAll();
         }
 
@@ -187,7 +197,7 @@ namespace CoreDawn.Managers
             // Single 로드는 additive로 얹힌 기능 씬도 함께 내리므로 씬 전환마다 다시 검사한다
             if (mode == LoadSceneMode.Single)
             {
-                TryLoadAll();
+                BootAsync();
                 return;
             }
 

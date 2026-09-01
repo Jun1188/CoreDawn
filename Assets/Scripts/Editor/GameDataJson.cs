@@ -33,6 +33,7 @@ namespace CoreDawn.EditorTools
         [Serializable] internal class Root : JsonDtoBase
         {
             public SoundDto[] sounds;                    // 소리 — 변형 클립 묶음
+            public MaterialDto[] materials;              // 재질 — 셰이더 이름 + 값·텍스처(5a-4c). 셰이더는 내장, 값은 팩
             public Dictionary<string, SfxUseDto> sfx;   // 공용 소리 자리(ui_click·construct·mine…) — 구 CommonSFX
             public EffectDto[]   effects;
             public GunDto[]      guns;
@@ -95,6 +96,26 @@ namespace CoreDawn.EditorTools
         /// <summary>소리 한 종 — 변형 클립 묶음(재생 때 무작위). id 관례 "Sound:이름".</summary>
         [Serializable] internal class SoundDto : JsonDtoBase { public string id; public string displayName; public ClipDto[] clips; }
         [Serializable] internal class ClipDto : JsonDtoBase { public string clip; public string clipGuid; }
+
+        // 재질(5a-4c) — PackMaterialHarvester가 거두고 v2 내보내기가 textures를 팩 png로 복사한다. 값은 셰이더 기본값과 다른 것만
+        [Serializable] internal class MaterialDto : JsonDtoBase
+        {
+            public string id;              // "Material:TreeBark"
+            public string displayName;
+            public string shader;          // 내장 셰이더 이름("CoreDawn/Vegetation Lit", "Universal Render Pipeline/Lit")
+            public TextureRefDto[] textures;
+            public ColorDto[] colors;
+            public ColorDto[] vectors;
+            public FloatDto[] floats;
+            public string[] keywords;
+            public int renderQueue = -1;   // -1 = 셰이더 기본
+            public TagDto[] tags;          // 태그 오버라이드(RenderType 등)
+        }
+        [Serializable] internal class TextureRefDto : JsonDtoBase { public string name; public string texture; public string textureGuid; public bool linear; }
+        [Serializable] internal class ColorDto : JsonDtoBase { public string name; public float r, g, b, a; }
+        [Serializable] internal class FloatDto : JsonDtoBase { public string name; public float value; }
+        [Serializable] internal class TagDto : JsonDtoBase { public string name; public string value; }
+        [Serializable] internal class ModelDto : JsonDtoBase { public string file; public string[] materials; }   // 팩 모델 + 슬롯별 재질 id
 
         [Serializable] internal class EffectDto : JsonDtoBase
         {
@@ -191,6 +212,7 @@ namespace CoreDawn.EditorTools
             public string displayName;   // 필수
             public string description;
             public string category;      // BuildingCategory 이름
+            public ModelDto[] models;     // 팩 모델 배열 {file: "models/x.glb", materials: ["Material:…"(슬롯 순)]} — [0]이 기본, 나머지는 변형. 있으면 model/modelGuid 대신 이것이 v2 view.model이 된다(5a-4c)
             public string model;          // 모델 파일명 — 사람이 읽는 표시이자 guid가 죽었을 때의 폴백
             public string modelGuid;      // 모델 에셋 guid — 이쪽이 진실. 이름은 프로젝트에 둘 있으면 어느 쪽이 걸릴지 정해지지 않는다
             public string icon;           // 빌드 메뉴 아이콘 — 스프라이트 이름(아이템 icon과 같은 규약)

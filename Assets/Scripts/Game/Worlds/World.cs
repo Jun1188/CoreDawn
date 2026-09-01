@@ -29,16 +29,12 @@ namespace CoreDawn.Worlds
         [Tooltip("둥지 프리팹 — 반경·방어 수치는 맵이 정한다.")]
         [SerializeField] private GameObject nestPrefab;
 
-        [Tooltip("나무 프리팹들 — 어느 칸에 서는지는 맵이 정하고, 그루마다 이 중 하나를 골라 쓴다. " +
-                 "여러 종을 넣을수록 숲이 덜 반복된다.")]
-        [SerializeField] private GameObject[] treePrefabs = new GameObject[0];
 
         public MapDataSO Map => map;
         /// <summary>칸 한 변(m) — 맵 데이터의 값. 씬에 사본을 두지 않는다(GameBootstrap이 공장·배치·길찾기에 이 값을 주입한다).</summary>
         public float CellSize => map != null && map.cellSize > 0f ? map.cellSize : 1f;
         public GameObject ResourceNodePrefab => resourceNodePrefab;
         public GameObject NestPrefab => nestPrefab;
-        public GameObject[] TreePrefabs => treePrefabs;
 
         /// <summary>맵 (0,0) 타일이 놓이는 월드 좌표.</summary>
         public Vector3 Origin => transform.position;

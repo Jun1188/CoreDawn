@@ -336,6 +336,128 @@
       ]
     }
   ],
+  "materials": [
+    {
+      "id": "Material:TreeBark",
+      "displayName": "Tree_Bark_Lit",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "Bark_Albedo",
+          "textureGuid": "17a37cd0101440044ba0b3e55a1ae61e",
+          "linear": false
+        },
+        {
+          "name": "_BumpMap",
+          "texture": "Bark_Normal",
+          "textureGuid": "2affd080f0247a2409435d9bde482780",
+          "linear": true
+        },
+        {
+          "name": "_MainTex",
+          "texture": "Bark_Albedo",
+          "textureGuid": "17a37cd0101440044ba0b3e55a1ae61e",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 1.0,
+          "g": 0.7108003,
+          "b": 0.4009434,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 1.0,
+          "g": 0.7108003,
+          "b": 0.4009434,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.0
+        }
+      ],
+      "keywords": [
+        "_NORMALMAP"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:BroadleafGreen",
+      "displayName": "Broadleaf_Green_Lit",
+      "shader": "CoreDawn/Vegetation Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "BroadleafTree_Leaves",
+          "textureGuid": "abe554664dc628d439bfd4c3004ddc41",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_Top_Color",
+          "r": 0.668223,
+          "g": 0.8,
+          "b": 0.0,
+          "a": 0.0
+        },
+        {
+          "name": "_Bottom_Color",
+          "r": 0.6182256,
+          "g": 0.754717,
+          "b": 0.0,
+          "a": 0.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Custom_Color",
+          "value": 1.0
+        },
+        {
+          "name": "_Blend_Height",
+          "value": 0.13
+        },
+        {
+          "name": "_Normal_Up",
+          "value": 0.15
+        },
+        {
+          "name": "_Wind_Strength",
+          "value": 0.22
+        },
+        {
+          "name": "_Wind_Speed",
+          "value": 0.16
+        },
+        {
+          "name": "_Bend_Start",
+          "value": 2.0
+        },
+        {
+          "name": "_Bend_Height",
+          "value": 8.5
+        }
+      ],
+      "keywords": [
+        "_ALPHATEST_ON"
+      ],
+      "renderQueue": -1
+    }
+  ],
   "sfx": {
     "ui_click": {
       "sound": "Sound:UiClick",
@@ -3869,7 +3991,44 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/tree_broadleaf_01.glb",
+          "materials": [
+            "Material:TreeBark",
+            "Material:BroadleafGreen"
+          ]
+        },
+        {
+          "file": "models/tree_broadleaf_02.glb",
+          "materials": [
+            "Material:TreeBark",
+            "Material:BroadleafGreen"
+          ]
+        },
+        {
+          "file": "models/tree_broadleaf_03.glb",
+          "materials": [
+            "Material:TreeBark",
+            "Material:BroadleafGreen"
+          ]
+        },
+        {
+          "file": "models/tree_broadleaf_04.glb",
+          "materials": [
+            "Material:TreeBark",
+            "Material:BroadleafGreen"
+          ]
+        },
+        {
+          "file": "models/tree_broadleaf_05.glb",
+          "materials": [
+            "Material:TreeBark",
+            "Material:BroadleafGreen"
+          ]
+        }
+      ]
     }
   ],
   "monsters": [

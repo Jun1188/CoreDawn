@@ -17,35 +17,67 @@ namespace CoreDawn.Entities
         const float PlaceholderFill = 0.9f, PlaceholderHeight = 0.6f;   // 칸 단위 — 구 임포터의 큐브 플레이스홀더와 같은 크기
 
         /// <summary>실제 건물 — 컴포넌트·콜라이더까지. 심에 잇는 것(BuildingView.Building)은 호출부(PlacementBridge)가 한다.</summary>
-        public static GameObject Build(EntityDef def, BeltShape shape, Vector3 position, Quaternion rotation, float cellSize)
+        public static GameObject Build(EntityDef def, BeltShape shape, Vector3 position, Quaternion rotation, float cellSize, int variant = 0)
         {
-            var go = Assemble(def, shape, cellSize, ghost: false);
+            var go = Assemble(def, shape, cellSize, ghost: false, variant: variant);
             go.transform.SetPositionAndRotation(position, rotation);
             go.SetActive(true);
             return go;
         }
 
         /// <summary>배치 미리보기용 유령 — 그림만(콜라이더·컴포넌트 없음). 호출부가 색을 입히고 움직인다.</summary>
-        public static GameObject BuildGhost(EntityDef def, BeltShape shape, float cellSize)
+        public static GameObject BuildGhost(EntityDef def, BeltShape shape, float cellSize, int variant = 0)
         {
-            var go = Assemble(def, shape, cellSize, ghost: true);
+            var go = Assemble(def, shape, cellSize, ghost: true, variant: variant);
             go.SetActive(true);
             return go;
         }
 
-        static GameObject Assemble(EntityDef def, BeltShape shape, float cellSize, bool ghost)
+        /// <summary>
+        /// 굳힌 씬용 마커 — 루트(칸 크기 배율) + <see cref="ViewMarker"/>(정의·변형) + view.type의 뷰 컴포넌트만. 모델·콜라이더는 런타임이 <see cref="Dress"/>로 입힌다.
+        /// 팩 모델을 씬에 굳히면 런타임 생성 메시가 씬 파일에 통째로 박히므로, 씬에는 배치만 적는다.
+        /// </summary>
+        public static GameObject Marker(EntityDef def, Vector3 position, Quaternion rotation, float cellSize, int variant)
+        {
+            var view = ViewSchema.Of(def);
+            var go = new GameObject(PascalKeyOf(def.Id));
+            go.transform.SetPositionAndRotation(position, rotation);
+            go.transform.localScale = Vector3.one * cellSize;
+            go.AddComponent<ViewMarker>().Configure(def, variant);
+            AddViewComponents(go, def, view, null);
+            return go;
+        }
+
+        /// <summary>마커(또는 뷰 컴포넌트만 있는 루트)에 모델·콜라이더·레이어를 입힌다. 이미 있는 뷰 컴포넌트는 다시 붙이지 않는다.</summary>
+        public static void Dress(GameObject go, EntityDef def, BeltShape shape, int variant)
+        {
+            var view = ViewSchema.Of(def);
+            var body = AttachBody(go, def, view, shape, variant, ghost: false);
+            AddViewComponents(go, def, view, body);
+        }
+
+        static GameObject Assemble(EntityDef def, BeltShape shape, float cellSize, bool ghost, int variant)
         {
             var view = ViewSchema.Of(def);
             var go = new GameObject(ghost ? "Preview " + PascalKeyOf(def.Id) : PascalKeyOf(def.Id));
             go.SetActive(false);   // 컴포넌트를 다 붙인 뒤 켠다 — Awake에서 서로를 GetComponent로 찾는다(TowerView ↔ TowerVisualController)
             go.transform.localScale = Vector3.one * cellSize;
+            var body = AttachBody(go, def, view, shape, variant, ghost);
+            if (!ghost) AddViewComponents(go, def, view, body);
+            return go;
+        }
 
-            var model = ViewCatalogSO.ModelOf(def, shape);
+        /// <summary>모델 인스턴스(팩이면 슬롯 재질까지) 또는 자리표시 큐브를 루트 아래에 붙이고, 레이어·콜라이더를 맞춘다. 반환 = 몸체 트랜스폼.</summary>
+        static Transform AttachBody(GameObject go, EntityDef def, ViewSpec view, BeltShape shape, int variant, bool ghost)
+        {
+            var model = ResolveModel(def, view, shape, variant, out var chosen);
             Transform body;
             if (model != null)
             {
                 var inst = Object.Instantiate(model, go.transform);
                 inst.name = model.name;
+                inst.SetActive(true);   // 팩 템플릿(PackAssets)은 비활성으로 보관된다
+                if (chosen != null && chosen.IsPack) Managers.PackAssets.BindSlots(inst, chosen.Materials, def.Id);
                 var (pos, rot, scale) = view.PoseFor(shape);
                 inst.transform.localPosition = pos;
                 inst.transform.localRotation = rot;
@@ -71,7 +103,7 @@ namespace CoreDawn.Entities
             if (ghost)
             {
                 foreach (var col in go.GetComponentsInChildren<Collider>(true)) Object.Destroy(col);
-                return go;
+                return body;
             }
 
             foreach (var mr in body.GetComponentsInChildren<MeshRenderer>(true))
@@ -80,25 +112,43 @@ namespace CoreDawn.Entities
             foreach (var smr in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))   // 블렌드셰이프 애니(벨트)도 맞아야 한다
                 if (smr.GetComponent<Collider>() == null && smr.sharedMesh != null)
                     smr.gameObject.AddComponent<MeshCollider>().sharedMesh = smr.sharedMesh;
+            return body;
+        }
 
+        /// <summary>view.type별 뷰 컴포넌트 — 없을 때만 붙인다(마커에 이미 있을 수 있다). 타워 리그 배선은 몸체가 있을 때.</summary>
+        static void AddViewComponents(GameObject go, EntityDef def, ViewSpec view, Transform body)
+        {
             switch (view.Type)
             {
                 case "Tower":
                 {
-                    var visual = go.AddComponent<TowerVisualController>();
-                    visual.WireRig(body, view);
-                    go.AddComponent<TowerView>();
+                    var visual = go.GetComponent<TowerVisualController>();
+                    if (visual == null) visual = go.AddComponent<TowerVisualController>();
+                    if (body != null) visual.WireRig(body, view);
+                    if (go.GetComponent<TowerView>() == null) go.AddComponent<TowerView>();
                     break;
                 }
                 case "Building":
-                    go.AddComponent<BuildingView>();
+                    if (go.GetComponent<BuildingView>() == null) go.AddComponent<BuildingView>();
                     break;
                 default:
                     Debug.LogError($"[BuildingAssembler] {def.Id}: view.type '{view.Type}'은 건물 조립기가 모르는 종류입니다 — BuildingView로 세웁니다.");
-                    go.AddComponent<BuildingView>();
+                    if (go.GetComponent<BuildingView>() == null) go.AddComponent<BuildingView>();
                     break;
             }
-            return go;
+        }
+
+        /// <summary>
+        /// 모델 출처 — view.model(배열, [0]이 기본·나머지는 변형)이 팩 경로(.glb)면 PackAssets(런타임 로드), 옛 guid 참조면 ViewCatalog(과도기).
+        /// 변형은 <paramref name="variant"/> % 개수로 고른다(나무는 칸에서 결정적으로 뽑는다).
+        /// </summary>
+        public static GameObject ResolveModel(EntityDef def, ViewSpec view, BeltShape shape, int variant, out ViewSpec.ModelRef chosen)
+        {
+            string key = shape == BeltShape.CurveL ? "modelCurveL" : shape == BeltShape.CurveR ? "modelCurveR" : "model";
+            var list = view.Models(key);
+            chosen = list.Count > 0 ? list[((variant % list.Count) + list.Count) % list.Count] : null;
+            if (chosen != null && chosen.IsPack) return Managers.PackAssets.ModelOf(chosen.File);
+            return ViewCatalogSO.ModelOf(def, shape);
         }
 
         static void SetLayerRecursively(Transform t, int layer)
