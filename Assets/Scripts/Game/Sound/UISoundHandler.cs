@@ -74,7 +74,7 @@ namespace CoreDawn.Sound
                 return;
 
             pressedPointers.Add(pointerId);
-            PlaySound(CommonSFX.Click);
+            PlaySound("ui_click");
         }
         private void OnPointerUp(PointerUpEvent evt)
         {
@@ -91,7 +91,7 @@ namespace CoreDawn.Sound
             if (clickable == null || clickable == lastHovered) return;
 
             lastHovered = clickable;
-            PlaySound(CommonSFX.Hover);
+            PlaySound("ui_hover");
         }
 
         private void OnPointerLeave(PointerLeaveEvent evt)
@@ -128,10 +128,10 @@ namespace CoreDawn.Sound
             return null;
         }
 
-        private void PlaySound(CommonSFX sfx)
+        private void PlaySound(string name)
         {
             if (SoundManager.Instance == null) return;
-            SoundManager.Instance.PlayCommonSFX(sfx);
+            SoundManager.Instance.PlayCommon(name);
         }
         private void OnDisable()
         {

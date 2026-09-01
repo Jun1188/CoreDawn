@@ -3,6 +3,7 @@ using CoreDawn.Combat;
 using CoreDawn.Factory;
 using CoreDawn.Managers;
 using CoreDawn.Sound;
+using CoreDawn.Data;
 
 namespace CoreDawn.Entities
 {
@@ -52,19 +53,6 @@ namespace CoreDawn.Entities
         [SerializeField] private float recoilDistance = 0.15f;
         [Tooltip("클수록 빨리 제자리로 돌아온다.")]
         [SerializeField] private float recoilRecover = 7f;
-
-        [Header("사운드")]
-        [Tooltip("발사음 후보 — 매 발 랜덤. 기관총처럼 연사가 빠른 타워는 여러 개 넣어야 귀가 덜 피곤하다.")]
-        [SerializeField] private AudioClip[] fireClips;
-        [SerializeField, Range(0f, 1f)] private float fireVolume = 0.7f;
-
-        [Tooltip("파괴음 후보 — 랜덤. 뷰가 즉시 사라지므로 위치 기반으로 분리 재생한다.")]
-        [SerializeField] private AudioClip[] destroyClips;
-        [SerializeField, Range(0f, 1f)] private float destroyVolume = 1f;
-
-        [Tooltip("탄약이 끊긴 순간 1회 — 벨트 보급이 멈춘 것을 소리로 알린다.")]
-        [SerializeField] private AudioClip starvedClip;
-        [SerializeField, Range(0f, 1f)] private float starvedVolume = 0.6f;
 
         [Header("연출 프리팹")]
         [SerializeField] private GameObject destroyVfx;
@@ -227,12 +215,7 @@ namespace CoreDawn.Entities
         {
             recoilOffset = -recoilDistance;
 
-            if (fireClips != null && fireClips.Length > 0)
-            {
-                AudioClip clip = fireClips[Random.Range(0, fireClips.Length)];
-                Vector3 at = lastMuzzle != null ? lastMuzzle.position : transform.position;
-                Play3D(clip, at, fireVolume);
-            }
+            Play(View?.SfxOf("fire"), lastMuzzle != null ? lastMuzzle.position : transform.position);
         }
 
         // ── 상태 반영 ───────────────────────────────────────────────
@@ -250,7 +233,7 @@ namespace CoreDawn.Entities
                 animator.SetBool(HashStarved, state == TowerState.Starved);
 
             if (state == TowerState.Starved && !wasStarved)
-                Play3D(starvedClip, transform.position, starvedVolume);
+                Play(View?.SfxOf("starved"), transform.position);
 
             if (state == TowerState.Destroyed) PlayDestroyed();
         }
@@ -268,17 +251,13 @@ namespace CoreDawn.Entities
             Vector3 at = transform.position;
             ProjectileSystem.PlayEffect(destroyVfx, at, Quaternion.identity);
 
-            if (destroyClips != null && destroyClips.Length > 0)
-                Play3D(destroyClips[Random.Range(0, destroyClips.Length)], at, destroyVolume);
+            Play(View?.SfxOf("destroy"), at);
         }
 
+        /// <summary>정의의 표현 사양 — 소리 자리(fire·destroy·starved)는 팩 view.sfx에 있다. 심에 붙기 전엔 null.</summary>
+        private ViewSpec View => ViewSchema.Of(GetComponent<BuildingView>()?.Def);
+
         /// <summary>SoundManager가 없는 씬(테스트 씬 등)에서도 게임은 돌아가야 한다.</summary>
-        private static void Play3D(AudioClip clip, Vector3 position, float volume)
-        {
-            if (clip == null) return;
-            var sm = SoundManager.Instance;
-            if (sm == null) return;
-            sm.Play3DSFX(clip, position, volume);
-        }
+        private static void Play(SoundUse use, Vector3 position) => SoundManager.Instance?.Play(use, position);
     }
 }

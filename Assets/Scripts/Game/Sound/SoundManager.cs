@@ -5,20 +5,10 @@ using UnityEngine;
 using UnityEngine.Audio;
 using CoreDawn.Sound;
 using CoreDawn.UI;
+using CoreDawn.Data;
 
 namespace CoreDawn.Sound
 {
-    public enum CommonSFX
-    {
-        Click,          // UI 버튼 클릭
-        Hover,          // UI 마우스 올림
-        Construct,      // 건물 설치
-        Destroy,        // 건물 파괴
-        Warning,        // 경고/에러음
-        LevelUp,        // 해금/승급
-        ItemPickup,     // 아이템이 인벤토리(핫바·가방)에 들어감
-        Mine            // 손 채굴 1회 완료 — 광맥에서 한 덩이가 떨어져 나옴
-    }
     public enum BGMType
     {
         Main,           // 메인 배경음악
@@ -56,12 +46,6 @@ namespace CoreDawn.Sound
         }
 
         [Serializable]
-        public struct CommonSoundData
-        {
-            public CommonSFX sfxType;
-            public AudioClip clip;
-        }
-        [Serializable]
         public struct BGMData
         {
             public BGMType bgmType;
@@ -78,7 +62,6 @@ namespace CoreDawn.Sound
         [SerializeField] private AudioSource sfxSource;
 
         [Header("=== Common Sound Library (Enum/Dictionary) ===")]
-        [SerializeField] private List<CommonSoundData> commonSoundList;
         [Header("=== BGM Library (Enum/Dictionary) ===")]
         [SerializeField] private List<BGMData> bgmList;
 
@@ -91,7 +74,6 @@ namespace CoreDawn.Sound
         [SerializeField] private AudioMixerSnapshot pausedSnapshot;
 
         // 런타임에 $O(1)$ 속도로 찾기 위한 딕셔너리
-        private readonly Dictionary<CommonSFX, AudioClip> commonSFXDict = new Dictionary<CommonSFX, AudioClip>();
         private readonly Dictionary<BGMType, AudioClip> bgmDict = new Dictionary<BGMType, AudioClip>();
 
         // 동일 효과음 쿨타임 관리용 딕셔너리 (귀 테러 방지)
@@ -116,7 +98,6 @@ namespace CoreDawn.Sound
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 InitAudioSources();
-                InitCommonSoundDictionary(); // Inspector 리스트를 Dictionary로 변환
                 InitBGMDictionary(); // BGM 리스트를 Dictionary로 변환
                 Init3DPool(); // 3D 사운드 풀링 초기화
             }
@@ -225,18 +206,6 @@ namespace CoreDawn.Sound
             activeBgmSource = bgmSourceA;
         }
 
-        /// <summary> Inspector에 등록한 CommonSoundData 리스트를 딕셔너리로 바인딩 </summary>
-        private void InitCommonSoundDictionary()
-        {
-            commonSFXDict.Clear();
-            foreach (var data in commonSoundList)
-            {
-                if (data.clip != null && !commonSFXDict.ContainsKey(data.sfxType))
-                {
-                    commonSFXDict.Add(data.sfxType, data.clip);
-                }
-            }
-        }
         private void InitBGMDictionary()
         {
             bgmDict.Clear();
@@ -312,21 +281,40 @@ namespace CoreDawn.Sound
         }
 
         // ========================================================================
-        // 공통 UI/시스템 소리 딕셔너리 호출용
+        // 팩 소리 — 자리(SoundUse)를 재생한다. 클립은 카탈로그(sounds 섹션)에서 변형 하나를 고른다
         // ========================================================================
 
-        /// <summary> Enum 키값으로 딕셔너리에서 찾아 재생 </summary>
-        public void PlayCommonSFX(CommonSFX sfxType, float volume = 1.0f)
+        /// <summary>
+        /// 소리 자리 하나를 재생 — <paramref name="at"/>이 있고 자리가 spatial이면 3D, 아니면 2D.
+        /// 자리가 null이면(정의에 그 자리가 없음) 조용히 지나간다 — 자리 이름 검증은 ViewSchema가 로드 때 한다.
+        /// </summary>
+        public void Play(SoundUse use, Vector3? at = null, float volumeScale = 1f)
         {
-            if (commonSFXDict.TryGetValue(sfxType, out AudioClip clip))
-            {
-                PlaySFX(clip, volume, false);
-            }
-            else
-            {
-                Debug.LogWarning($"[SoundManager] {sfxType}에 해당하는 공통 사운드가 등록되지 않았습니다.");
-            }
+            if (use == null) return;
+            var clip = ClipOf(use.Sound);
+            if (clip == null) return;
+            if (use.Spatial && at.HasValue) Play3DSFX(clip, at.Value, use.Volume * volumeScale);
+            else PlaySFX(clip, use.Volume * volumeScale, false);
         }
+
+        /// <summary>팩 최상위 sfx의 공용 자리(ui_click·construct·destroy·warning·item_pickup·mine…) — 구 CommonSFX enum.</summary>
+        public void PlayCommon(string name, float volumeScale = 1f) => Play(ViewSchema.Common(name), null, volumeScale);
+
+        static readonly HashSet<string> warnedSounds = new HashSet<string>();
+
+        /// <summary>소리 id의 변형 클립 하나(무작위). 카탈로그에 없으면 한 번 경고하고 null.</summary>
+        public static AudioClip ClipOf(string soundId)
+        {
+            if (string.IsNullOrEmpty(soundId)) return null;
+            var clips = ViewCatalogSO.ClipsOf(soundId);
+            if (clips == null || clips.Length == 0)
+            {
+                if (warnedSounds.Add(soundId)) Debug.LogWarning($"[SoundManager] 소리 '{soundId}'의 클립이 카탈로그에 없습니다 — 팩 sounds와 ViewCatalog 베이크를 확인하세요.");
+                return null;
+            }
+            return clips[UnityEngine.Random.Range(0, clips.Length)];
+        }
+
         public void PlayBGM(BGMType bgmType, float fadeDuration = 1.0f)
         {
             if (bgmDict.TryGetValue(bgmType, out AudioClip clip))

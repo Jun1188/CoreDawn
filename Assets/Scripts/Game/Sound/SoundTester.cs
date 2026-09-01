@@ -29,7 +29,7 @@ namespace CoreDawn.Sound
             if (Input.GetKeyDown(KeyCode.Alpha3))
             {
                 Debug.Log("[Test] 공통 효과음 (Construct)");
-                SoundManager.Instance.PlayCommonSFX(CommonSFX.Construct);
+                SoundManager.Instance.PlayCommon("construct");
             }
 
             // 3. 클립 직접 전달 SFX 테스트 (피치 랜더마이징)
