@@ -12,35 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc58441a8d78328459955ad5cd12b1e4, type: 3}
   m_Name: ViewCatalog
   m_EditorClassIdentifier: Assembly-CSharp::CoreDawn.Data.ViewCatalogSO
-  entries:
-  - id: coredawn:entity/basic
-    icon: {fileID: 0}
-    prefab: {fileID: 0}
-    model: {fileID: 3875949503363778825, guid: 167499a04fae3354dbd4c36e0918fc15, type: 3}
-    curveLModel: {fileID: 0}
-    curveRModel: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
-  - id: coredawn:entity/boss
-    icon: {fileID: 0}
-    prefab: {fileID: 0}
-    model: {fileID: 6379059024075365167, guid: 9addc2eb4a7621a4c85b711dfc73cfaa, type: 3}
-    curveLModel: {fileID: 0}
-    curveRModel: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
-  - id: coredawn:entity/spitter
-    icon: {fileID: 0}
-    prefab: {fileID: 0}
-    model: {fileID: 433872393533835241, guid: 5ff85545fafe21b40a18e34c43ef4b98, type: 3}
-    curveLModel: {fileID: 0}
-    curveRModel: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
+  entries: []
   droppedItemPrefab: {fileID: 5100000000000000001, guid: 4800f66116cf4329885747041f5ece99, type: 3}

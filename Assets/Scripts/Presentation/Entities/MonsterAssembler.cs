@@ -30,26 +30,31 @@ namespace CoreDawn.Entities
             var rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = true; rb.useGravity = false;
 
-            Transform body = null; Animator animator = null;
-            var model = ViewCatalogSO.ModelOf(def);
+            // 모델 — 팩 glb(view.model[0] {file, materials}: 스킨 + 클립)이면 PackAssets, 옛 guid 문자열이면 카탈로그(과도기)
+            Transform body = null; Animation animation = null;
+            var refs = view.Models();
+            var chosen = refs.Count > 0 ? refs[0] : null;
+            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : ViewCatalogSO.ModelOf(def);
             if (model != null)
             {
                 var inst = Object.Instantiate(model, go.transform);
                 inst.name = model.name;
+                inst.SetActive(true);   // 팩 템플릿은 비활성으로 보관된다
+                if (chosen != null && chosen.IsPack) Managers.PackAssets.BindSlots(inst, chosen.Materials, def.Id);
                 var (pos, rot, scale) = view.Pose;
                 inst.transform.localPosition = pos; inst.transform.localRotation = rot; inst.transform.localScale = Vector3.one * scale;
                 body = inst.transform;
-                animator = inst.GetComponentInChildren<Animator>(true);
+                animation = inst.GetComponentInChildren<Animation>(true);
+                if (animation == null) Debug.LogError($"[MonsterAssembler] {def.Id}: 모델에 클립(Animation)이 없습니다 — 연출 없이 섭니다.");
             }
             else
             {
-                Debug.LogError($"[MonsterAssembler] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 내장 체커 상자로 섭니다.");
+                Debug.LogError($"[MonsterAssembler] {def.Id}: 모델(view.model)이 없습니다 — 내장 체커 상자로 섭니다.");
                 body = Managers.MissingAssets.Box("Missing", new Vector3(1f, 1.8f, 1f), go.transform).transform;
             }
 
             var visual = go.AddComponent<MonsterVisualController>();
-            visual.Wire(body, animator,
-                (int?)view.Raw["attackVariants"] ?? 1, (int?)view.Raw["hitVariants"] ?? 1,
+            visual.Wire(body, animation, MonsterVisualController.ClipMap.From(view.Object("anim")),
                 System.Enum.TryParse((string)view.Raw["deathStyle"], out MonsterVisualController.DeathStyle style) ? style : MonsterVisualController.DeathStyle.AnimationClip,
                 view.Float("sinkDepth", 1.5f));
             var mv = go.AddComponent<MonsterView>();

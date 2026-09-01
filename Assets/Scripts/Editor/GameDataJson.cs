@@ -273,6 +273,7 @@ namespace CoreDawn.EditorTools
             public string id;            // 필수. 예: "Monster:Basic"
             public string displayName;   // 필수
             public string description;
+            public ModelDto[] models;    // 팩 모델(glb: 스킨 + 클립) + 슬롯 재질 — 있으면 model/modelGuid 대신(5a-4c)
             public string model;         // 모델 프리팹 이름(Art/Models/Monsters — 리그·Animator·머티리얼을 안에 든 모델) — 사람이 읽는 용도
             public string modelGuid;     // 모델 에셋 guid — 이쪽이 파일을 특정한다
             public float  maxHp;

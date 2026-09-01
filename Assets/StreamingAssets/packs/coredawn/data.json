@@ -3282,8 +3282,15 @@
       ],
       "view": {
         "type": "Monster",
-        "model": "Basic",
-        "modelGuid": "167499a04fae3354dbd4c36e0918fc15",
+        "model": [
+          {
+            "file": "models/basic.glb",
+            "materials": [
+              "coredawn:material/chomper_body_mat",
+              "coredawn:material/chomper_internals_mat"
+            ]
+          }
+        ],
         "pose": {
           "position": [
             0.0,
@@ -3301,11 +3308,25 @@
             0.0
           ]
         },
-        "attackVariants": 1,
-        "hitVariants": 4,
         "deathStyle": "SinkAway",
         "sinkDepth": 1.3,
-        "deathDelay": 2.0
+        "deathDelay": 2.0,
+        "anim": {
+          "idle": "ChomperIdle",
+          "walk": "ChomperWalkForward",
+          "run": "ChomperRunForward",
+          "alert": "ChomperCutsceneTOIdle",
+          "attack": [
+            "ChomperAttack"
+          ],
+          "hit": [
+            "ChomperHit1",
+            "ChomperHit2",
+            "ChomperHit3",
+            "ChomperHit4"
+          ],
+          "death": "ChomperHit1"
+        }
       }
     },
     "spitter": {
@@ -3353,8 +3374,15 @@
       ],
       "view": {
         "type": "Monster",
-        "model": "Spitter",
-        "modelGuid": "5ff85545fafe21b40a18e34c43ef4b98",
+        "model": [
+          {
+            "file": "models/spitter.glb",
+            "materials": [
+              "coredawn:material/spitter_body_mat",
+              "coredawn:material/spitter_internals_mat"
+            ]
+          }
+        ],
         "pose": {
           "position": [
             0.0,
@@ -3372,11 +3400,26 @@
             0.0
           ]
         },
-        "attackVariants": 2,
-        "hitVariants": 4,
         "deathStyle": "SinkAway",
         "sinkDepth": 1.365,
-        "deathDelay": 2.0
+        "deathDelay": 2.0,
+        "anim": {
+          "idle": "ChomperIdle",
+          "walk": "ChomperWalkForward",
+          "run": "ChomperRunForward",
+          "alert": "Spotted",
+          "attack": [
+            "ChomperAttack",
+            "SpitterSpit"
+          ],
+          "hit": [
+            "ChomperHit1",
+            "ChomperHit2",
+            "ChomperHit3",
+            "ChomperHit4"
+          ],
+          "death": "ChomperHit2"
+        }
       }
     },
     "boss": {
@@ -3424,15 +3467,23 @@
       ],
       "view": {
         "type": "Monster",
-        "model": "Boss",
-        "modelGuid": "9addc2eb4a7621a4c85b711dfc73cfaa",
+        "model": [
+          {
+            "file": "models/boss.glb",
+            "materials": [
+              "coredawn:material/grenadier_mat",
+              "coredawn:material/grenadier_core_mat",
+              "coredawn:material/grenadier_eye_mat"
+            ]
+          }
+        ],
         "pose": {
           "position": [
             0.0,
-            -1.8916,
+            -1.793,
             0.0
           ],
-          "scale": 0.657
+          "scale": 0.6022
         },
         "collider": {
           "radius": 1.0,
@@ -3443,11 +3494,26 @@
             0.0
           ]
         },
-        "attackVariants": 2,
-        "hitVariants": 4,
         "deathStyle": "AnimationClip",
         "sinkDepth": 4.42,
-        "deathDelay": 4.5
+        "deathDelay": 4.5,
+        "anim": {
+          "idle": "GrenadierIdle",
+          "walk": "GrenadierWalk",
+          "run": "GrenadierWalkFast",
+          "alert": "GrenadierIdle",
+          "attack": [
+            "GrenadierMeleeAttack",
+            "GrenadierCloseRangeAttack"
+          ],
+          "hit": [
+            "GrenadierHit1",
+            "GrenadierHit2",
+            "GrenadierHit3",
+            "GrenadierHit4"
+          ],
+          "death": "GrenadierDeath"
+        }
       }
     },
     "player": {
@@ -5291,6 +5357,231 @@
           "_Smoothness": 0.7
         },
         "keywords": [
+          "_EMISSION"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "chomper_body_mat": {
+      "displayName": "Chomper_Body_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/chomper_albedo.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/chomper_albedo.png",
+            "linear": false
+          }
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "chomper_internals_mat": {
+      "displayName": "Chomper_Internals_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ],
+          "_Color": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "spitter_body_mat": {
+      "displayName": "Spitter_Body_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/spitter_albedo.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/spitter_albedo.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            0.6062656,
+            0.8806524,
+            0.9811321,
+            1.0
+          ],
+          "_Color": [
+            0.6062656,
+            0.8806524,
+            0.9811321,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "spitter_internals_mat": {
+      "displayName": "Spitter_Internals_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ],
+          "_Color": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "grenadier_mat": {
+      "displayName": "Grenadier_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/grenadier_albedo.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/grenadier_albedo.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            0.6093209,
+            0.7869288,
+            0.8455882,
+            1.0
+          ],
+          "_Color": [
+            0.6093209,
+            0.7869288,
+            0.8455882,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "grenadier_core_mat": {
+      "displayName": "Grenadier_Core_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.0,
+            6.49086952,
+            10.5560637,
+            1.0
+          ],
+          "_Color": [
+            0.0,
+            6.49086952,
+            10.5560637,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "grenadier_eye_mat": {
+      "displayName": "Grenadier_Eye_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BumpMap": {
+            "file": "textures/grenadier_eye_normal.png",
+            "linear": true
+          },
+          "_EmissionMap": {
+            "file": "textures/grenadier_eye_emission.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "_EmissionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "_Color": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "keywords": [
+          "_NORMALMAP",
           "_EMISSION"
         ],
         "tags": {

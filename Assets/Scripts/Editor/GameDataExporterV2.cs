@@ -459,6 +459,7 @@ namespace CoreDawn.EditorTools
                 };
                 var mview = View(m, "model", "modelGuid");
                 MergeView(mview, m);
+                if (m["models"] is JArray monsterModels && monsterModels.Count > 0) { mview["model"] = PackModels(monsterModels, (string)m["id"]); mview.Remove("modelGuid"); }
                 o["view"] = mview;
                 entities[KeyOf((string)m["id"])] = o;
             }
