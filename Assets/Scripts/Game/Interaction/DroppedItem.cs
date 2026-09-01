@@ -190,22 +190,31 @@ namespace CoreDawn.Interaction
 
             // 3. 콜라이더 2개 — 바닥 충돌용 고체 + 플레이어 획득 감지용 센서
             BoxCollider solidCol = dropObj.AddComponent<BoxCollider>();
-            solidCol.size = new Vector3(0.3f, 0.3f, 0.3f);
+            solidCol.size = new Vector3(0.5f, 0.5f, 0.5f); solidCol.center = new Vector3(0f, 0.1f, 0f);
             solidCol.isTrigger = false;
 
             BoxCollider triggerCol = dropObj.AddComponent<BoxCollider>();
-            triggerCol.size = new Vector3(1.5f, 1.5f, 1.5f);
+            triggerCol.size = new Vector3(1.5f, 1.5f, 1.5f); triggerCol.center = new Vector3(0f, 0.5f, 0f);
             triggerCol.isTrigger = true;
 
             // 4. 비주얼 자식 (둥둥 떠서 도는 아이콘)
             GameObject visualObj = new("Visual");
             visualObj.transform.SetParent(dropObj.transform);
-            visualObj.transform.localPosition = Vector3.zero;
+            visualObj.transform.localPosition = new Vector3(0f, 0.5f, 0f);
+            visualObj.transform.localScale = Vector3.one * 0.25f;   // 아이콘(256px, 100ppu = 2.56m)을 0.64m로 — 구 프리팹 값
             visualObj.layer = dropObj.layer;
 
             var sr = visualObj.AddComponent<SpriteRenderer>();
             visualObj.AddComponent<ItemRotator>();
-            visualObj.AddComponent<EPOOutline.Outlinable>();          // 조준 강조(아웃라인) — 구 프리팹의 Visual과 같게
+            // 항상 켜진 아웃라인(바닥 아이템이 눈에 띄게) — 구 프리팹의 Outlinable 값. 대상 렌더러를 넣어야 그려진다
+            var outline = visualObj.AddComponent<EPOOutline.Outlinable>();
+            outline.RenderStyle = EPOOutline.RenderStyle.Single;
+            outline.DrawingMode = EPOOutline.OutlinableDrawingMode.Normal;
+            outline.TryAddTarget(new EPOOutline.OutlineTarget(sr));
+            outline.OutlineParameters.Enabled = true;
+            outline.OutlineParameters.Color = new Color(0.9539399f, 0.9996342f, 1.498039f, 1f);
+            outline.OutlineParameters.DilateShift = 0.5f;
+            outline.OutlineParameters.BlurShift = 0f;
 
             var dropped = dropObj.AddComponent<DroppedItem>();
             dropped.visual = sr;

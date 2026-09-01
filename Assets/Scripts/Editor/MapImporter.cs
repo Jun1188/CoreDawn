@@ -115,14 +115,7 @@ namespace CoreDawn.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            // 열려 있는 씬이 이 맵을 쓰고 있으면 배치물을 다시 세운다 — 배치의 정본은 맵이므로
-            // 맵이 바뀌는 순간이 곧 씬이 따라가야 할 순간이다. 별도 버튼을 두면 누르는 것을 잊는다.
-            foreach (var dto in root.maps)
-            {
-                if (dto == null || string.IsNullOrEmpty(dto.id)) continue;
-                if (byId.TryGetValue(dto.id, out var imported))
-                    WorldPlaceableBaker.BakeIfOpen(imported);
-            }
+            WorldPreviewDrawer.Invalidate();   // 씬에 굳히지 않는다 — 미리보기가 맵을 다시 읽게만 한다
 
             string msg = $"[MapImporter] 맵 {created}개 생성, {updated}개 갱신";
             if (errors > 0) Debug.LogError($"{msg} — 오류 {errors}건 (위 로그 확인)");

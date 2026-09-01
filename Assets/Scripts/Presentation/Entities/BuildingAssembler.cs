@@ -8,7 +8,7 @@ namespace CoreDawn.Entities
     /// 건물 뷰 조립기 — 정의의 view 블록만으로 씬 오브젝트를 세운다(5a-4b, 구 GameDataImporter.EnsureContract의 후계).
     ///
     /// 규약: 건물 모델은 <b>칸 단위</b>로 저작된다 — 루트를 칸 크기(<c>cellSize</c>)로 키운다. 모델 인스턴스는 view.pose(루트 기준 자세)에,
-    /// 없으면 원점에. 모델이 없으면 풋프린트 크기의 내장 체커 상자(MissingAssets, 밑면이 지면). 콜라이더는 메시 렌더러마다 MeshCollider(비볼록),
+    /// 없으면 원점에. 모델이 없으면 풋프린트 크기의 내장 체커 상자(MissingAssets, 밑면이 지면). 씬에 굳히지 않는다 — 에디터 미리보기는 WorldPreviewDrawer. 콜라이더는 메시 렌더러마다 MeshCollider(비볼록),
     /// 레이어는 전부 Entity. 컴포넌트는 view.type이 정한다 — Tower: TowerView + TowerVisualController(리그 노드는 이름으로 찾는다),
     /// Building: BuildingView. 유령(배치 미리보기)은 그림만 — 컴포넌트·콜라이더 없음.
     /// </summary>
@@ -31,29 +31,6 @@ namespace CoreDawn.Entities
             var go = Assemble(def, shape, cellSize, ghost: true, variant: variant);
             go.SetActive(true);
             return go;
-        }
-
-        /// <summary>
-        /// 굳힌 씬용 마커 — 루트(칸 크기 배율) + <see cref="ViewMarker"/>(정의·변형) + view.type의 뷰 컴포넌트만. 모델·콜라이더는 런타임이 <see cref="Dress"/>로 입힌다.
-        /// 팩 모델을 씬에 굳히면 런타임 생성 메시가 씬 파일에 통째로 박히므로, 씬에는 배치만 적는다.
-        /// </summary>
-        public static GameObject Marker(EntityDef def, Vector3 position, Quaternion rotation, float cellSize, int variant)
-        {
-            var view = ViewSchema.Of(def);
-            var go = new GameObject(PascalKeyOf(def.Id));
-            go.transform.SetPositionAndRotation(position, rotation);
-            go.transform.localScale = Vector3.one * cellSize;
-            go.AddComponent<ViewMarker>().Configure(def, variant);
-            AddViewComponents(go, def, view, null);
-            return go;
-        }
-
-        /// <summary>마커(또는 뷰 컴포넌트만 있는 루트)에 모델·콜라이더·레이어를 입힌다. 이미 있는 뷰 컴포넌트는 다시 붙이지 않는다.</summary>
-        public static void Dress(GameObject go, EntityDef def, BeltShape shape, int variant)
-        {
-            var view = ViewSchema.Of(def);
-            var body = AttachBody(go, def, view, shape, variant, ghost: false);
-            AddViewComponents(go, def, view, body);
         }
 
         static GameObject Assemble(EntityDef def, BeltShape shape, float cellSize, bool ghost, int variant)

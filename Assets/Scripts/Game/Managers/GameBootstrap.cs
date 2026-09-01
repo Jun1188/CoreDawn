@@ -188,6 +188,15 @@ namespace CoreDawn.Managers
         /// </summary>
         static void BootAsync()
         {
+            // 게임 씬을 부팅 씬 없이 열었으면(에디터에서 World를 바로 재생, 테스트) 부팅 씬으로 돌아가 자원을 다 읽고 다시 온다 —
+            // 조립기·배치는 동기라 팩 자원이 먼저 준비돼 있어야 한다. 부팅 씬 자신과 플레이어 없는 순수 테스트 씬은 제외.
+            var scene = SceneManager.GetActiveScene();
+            if (!PackAssets.IsReady && !BootScene.IsBootScene(scene) && Object.FindFirstObjectByType<PlayerController>() != null)
+            {
+                Debug.Log($"[GameBootstrap] '{scene.name}'을 부팅 씬 없이 열어 팩 자원이 없습니다 — Boot를 거쳐 다시 엽니다.");
+                BootScene.Enter(scene.name);
+                return;
+            }
             _ = PackAssets.PreloadAsync(SimHost.Database);
             TryLoadAll();
         }

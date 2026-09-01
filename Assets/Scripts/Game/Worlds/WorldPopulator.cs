@@ -28,42 +28,21 @@ namespace CoreDawn.Worlds
     {
         const string RootName = "Spawned";
 
-        /// <summary>
-        /// 프리팹을 세우는 방법. 런타임은 그냥 Instantiate 하지만, 에디터가 씬에 굳힐 때는
-        /// <b>프리팹 연결을 남기는</b> PrefabUtility 로 갈아끼운다 — 연결이 없으면 씬 파일에 메시
-        /// 참조까지 통째로 복사되어 크게 불어나고, 프리팹을 고쳐도 씬의 것이 따라오지 않는다.
-        /// </summary>
-        public static System.Func<GameObject, Vector3, Quaternion, Transform, GameObject> SpawnOverride;
-
-        static GameObject Spawn(GameObject prefab, Vector3 pos, Quaternion rot, Transform parent)
-            => SpawnOverride != null ? SpawnOverride(prefab, pos, rot, parent)
-                                     : Object.Instantiate(prefab, pos, rot, parent);
 
         /// <summary>
         /// 맵대로 세우고, 밤 웨이브의 진입로를 담은 제공자를 돌려준다.
         ///
-        /// 배치물이 <b>이미 씬에 굳어 있으면 다시 세우지 않고 잇기만 한다.</b> 맵을 임포트할 때
-        /// 에디터가 미리 세워 두기 때문이다(<see cref="BakeIntoScene"/>) — 그래야 플레이하지 않고도
-        /// 맵이 어떻게 생겼는지 보인다. 런타임이 다시 세우면 같은 것이 둘이 된다.
-        ///
-        /// 굳어 있지 않은 씬(테스트 씬 등)에서는 예전처럼 여기서 세운다 — 그래야 맵만 꽂아도 돈다.
+        /// 배치물은 전부 여기서 세운다 — 씬에는 굳히지 않는다(5a-4c). 코어는 FactoryBootstrap.AutoPlaceCore가
+        /// 맵의 core 칸에 세운다(GameBootstrap이 주입). 에디터 미리보기는 WorldPreviewDrawer가 GameObject 없이 그린다.
         /// </summary>
         public static NightSpawnPointProvider Populate(World world, Transform battleRoot)
         {
             if (world == null || world.Map == null) return null;
 
-            var baked = world.transform.Find(RootName);
-            if (baked != null)
-            {
-                DressWhenReady(world, baked);   // 뷰 마커에 모델을 입힌다(팩 자원 preload 뒤, 비동기)
-                int connected = Connect(world, baked);
-                int lateNodes = PlaceMissingNodes(world, baked);   // 굳힌 씬에 광맥 뷰가 빠졌으면(맵만 바뀌고 씬 저장 전) 런타임이 세우되 소리 낸다
-                var bakedProvider = PlaceNightSpawns(world, baked, battleRoot);
-                Debug.Log($"[WorldPopulator] '{world.Map.Id}' 굳어 있는 배치물을 이었습니다 — {connected}개 · " +
-                          $"밤 진입로 {(bakedProvider != null ? bakedProvider.SpawnPoints.Count : 0)}", world);
-                PlaceStartingDrops(world, baked);
-                return bakedProvider;
-            }
+            // 씬에는 배치물이 없다(5a-4c: 굳히기 퇴역 — 씬은 지형·조명만, 배치의 정본은 맵). 에디터 미리보기는 WorldPreviewDrawer가 그린다.
+            var old = world.transform.Find(RootName);
+            if (old != null) Debug.LogError($"[WorldPopulator] 씬에 옛 굳힌 배치물 루트('{RootName}')가 남아 있습니다 — 지우세요(런타임이 다시 세웁니다).", old);
+            if (!Managers.PackAssets.IsReady) Debug.LogError("[WorldPopulator] 팩 자원 preload 전에 배치하려 했습니다 — 부팅 씬(Boot)을 거쳐야 합니다(GameBootstrap이 우회시킨다).", world);
 
             var root = new GameObject(RootName).transform;
             root.SetParent(world.transform, false);
@@ -79,157 +58,6 @@ namespace CoreDawn.Worlds
                       $"시작 아이템 {startingDrops} · 밤 진입로 {(provider != null ? provider.SpawnPoints.Count : 0)} · " +
                       $"나무 {trees}", world);
             return provider;
-        }
-
-        /// <summary>
-        /// 에디터가 씬에 배치물을 굳힌다 — 맵을 임포트할 때 불린다.
-        ///
-        /// 심(FactorySystem)은 건드리지 않는다. 에디터 모드에는 심이 없고, 칸을 잡는 것은 플레이가
-        /// 시작될 때 <see cref="Connect"/> 가 할 일이다. 여기서 만드는 것은 <b>보이는 것</b>뿐이다.
-        /// </summary>
-        public static void BakeIntoScene(World world, Transform root)
-        {
-            if (world == null || world.Map == null) return;
-            BakeNodes(world, root);   // 광맥 뷰만 — 심 엔티티는 플레이 때 Connect가 마커의 칸으로 세운다
-            PlaceNests(world, root);
-            PlaceTrees(world, root);
-            PlaceCore(world, root);
-        }
-
-        /// <summary>
-        /// 코어를 씬에 세운다 — <b>굳히는 경로 전용</b>이다.
-        ///
-        /// 심에 잇는 것은 <see cref="CoreBootstrap"/> 이 자기 Start 에서 한다(예전부터 그랬다).
-        /// 그래서 여기서는 PlacedMapObject 표식을 붙이지 않는다 — 붙이면 Connect 가 한 번 더
-        /// 이으려 들어 같은 칸을 두 번 잡는다.
-        ///
-        /// 런타임에 코어가 없는 씬은 FactoryBootstrap.AutoPlaceCore 가 세운다. 굳어 있으면
-        /// 그쪽이 알아서 비켜난다 — HasCore() 가 씬의 코어를 먼저 본다.
-        /// </summary>
-        static void PlaceCore(World world, Transform root)
-        {
-            var coreDef = FindEntityWith<CoreModuleDef>();
-            if (coreDef == null)
-            {
-                Debug.LogWarning("[WorldPopulator] 코어 정의(Core 모듈)를 팩에서 찾지 못해 코어를 세우지 못했습니다.", world);
-                return;
-            }
-
-            var map = world.Map;
-            // 코어는 3×3 이라 원점 칸에서 1.5칸이 한가운데다(World 의 기즈모와 같은 식)
-            Vector3 pos = world.CellToWorld(map.core)
-                        + new Vector3(1.5f, 0f, 1.5f) * world.CellSize;
-            pos.y = GroundYAt(world, pos);
-
-            // 코어도 정의에서 온다 — 굳히는 경로라 마커만(모델은 런타임이 입힌다, DressWhenReady). CoreBootstrap이 RequireComponent로 BuildingView를 붙인다
-            var go = BuildingAssembler.Marker(coreDef, pos, Quaternion.identity, world.CellSize, 0);
-            go.transform.SetParent(root, true);
-            go.name = "Core";
-
-            var boot = go.GetComponent<CoreBootstrap>();
-            if (boot == null) boot = go.AddComponent<CoreBootstrap>();
-            boot.Configure(coreDef, map.core);
-        }
-
-        /// <summary>
-        /// 씬에 굳어 있는 배치물을 팩토리 심에 잇는다 — 칸을 잡고, 뷰를 심에 연결한다.
-        ///
-        /// 굳은 오브젝트는 그림일 뿐이라 이 단계를 거치지 않으면 그 위에 건물이 그대로 올라간다.
-        /// 무엇이 어느 칸인지는 <see cref="PlacedMapObject"/> 가 적어 두었다 — 트랜스폼에서
-        /// 역산하지 않는 이유는 모형이 칸 중앙에서 흔들려 있기 때문이다.
-        /// </summary>
-        static int Connect(World world, Transform root)
-        {
-            var boot = FactoryBootstrap.Instance;
-            if (boot == null || boot.Factory == null)
-            {
-                Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 굳어 있는 배치물을 잇지 못했습니다 — " +
-                                 "그 위에 건물이 올라갑니다.", world);
-                return 0;
-            }
-
-            // 광맥은 칸을 잡지 않지만 <b>다시 등록해야</b> 한다.
-            // 씬에 굳은 광맥은 자기 OnEnable(씬 로드)에서 등록하는데, 그때는 PlacementSystem 에
-            // 격자가 아직 주입되기 전이라 칸 크기 1로 좌표를 계산한다 — 채굴기가 "광맥 위가
-            // 아니다"로 거부되던 원인이다. 격자가 잡힌 지금 다시 등록해 좌표를 맞춘다.
-            // 굳힌 광맥 뷰 — 마커의 칸으로 심에 세워 붙인다(칸 계산에 격자 수학을 쓰지 않는다: 마커가 정본)
-            int nodes = 0;
-            foreach (var view in root.GetComponentsInChildren<ResourceDepositView>(true))
-            {
-                if (view == null || view.Entity != null) continue;
-                var mark = view.GetComponent<PlacedMapObject>();
-                if (mark == null) continue;   // 마커 없는 뷰는 자기 Start가 처리한다(테스트 씬)
-                if (view.TryAttachAt(mark.Cell)) nodes++;
-            }
-
-            int connected = 0, skipped = 0;
-            foreach (var placed in root.GetComponentsInChildren<PlacedMapObject>(true))
-            {
-                if (placed == null || string.IsNullOrEmpty(placed.DataId)) continue;   // 광맥은 자체 레지스트리가 맡는다
-
-                var def = placed.Def;
-                if (def == null) { Debug.LogWarning($"[WorldPopulator] '{placed.DataId}'의 팩 정의가 없어 잇지 못했습니다.", placed); continue; }
-                var size = BuildingPorts.RotatedSize(def, 0);
-                var origin = placed.Cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
-
-                bool free = true;
-                for (int dx = 0; dx < size.x && free; dx++)
-                    for (int dy = 0; dy < size.y && free; dy++)
-                        if (boot.Factory.Grid.IsOccupied(origin + new Vector2Int(dx, dy))) free = false;
-                if (!free) { skipped++; continue; }
-
-                var view = placed.GetComponent<BuildingView>();
-                if (view != null) PlacementBridge.PlaceExisting(def, origin, 0, view);
-                else
-                {
-                    // 둥지처럼 뷰가 따로 있는 개체(MonsterNest)는 심 엔티티를 여기서 만들어 붙이고 그 위에 건물을 얹는다 —
-                    // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
-                    // 굳어 있는(씬에 구운) 둥지는 PlaceNests를 안 타므로 생성 주체는 이 자리다.
-                    var host = placed.GetComponent<EntityView>();
-                    if (host != null && host.Entity == null) AttachFreshEntity(host, def);
-                    boot.Factory.Place(def, origin, 0, host: host != null ? host.Entity : null);
-                }
-                connected++;
-            }
-
-            if (skipped > 0)
-                Debug.Log($"[WorldPopulator] 굳어 있는 배치물 {skipped}개는 칸이 이미 차 있어 잇지 못했습니다.", world);
-            return connected + nodes;
-        }
-
-        /// <summary>굳지 않은 씬(런타임 생성) — 팩 자원이 준비돼 있어야 한다(부팅 씬이 보장). 아니면 오류.</summary>
-        static void DressNow(GameObject go, EntityDef def)
-        {
-            if (!Managers.PackAssets.IsReady) { Debug.LogError($"[WorldPopulator] {def.Id}: 팩 자원 preload 전에 세우려 했습니다 — 부팅 씬(Boot)을 거쳐야 합니다.", go); return; }
-            BuildingAssembler.Dress(go, def, BeltShape.Straight, 0);
-        }
-
-        /// <summary>
-        /// 굳힌 씬의 뷰 마커(<see cref="ViewMarker"/>)에 모델·콜라이더를 입힌다 — 팩 자원(glb·재질) preload가 끝난 뒤. 심 연결(Connect)은 기다리지 않는다:
-        /// 마커에 BuildingView가 이미 있어 잇기는 즉시 되고, 모양만 늦게 온다. 로딩 화면 게이트는 4c 후속.
-        /// </summary>
-        static async void DressWhenReady(World world, Transform root)
-        {
-            await Managers.PackAssets.PreloadAsync(SimHost.Database);
-            if (root == null) return;
-            int dressed = 0;
-            foreach (var marker in root.GetComponentsInChildren<ViewMarker>(true))
-            {
-                if (marker == null || marker.GetComponentInChildren<Renderer>(true) != null) continue;
-                var def = marker.Def;
-                if (def == null) { Debug.LogError($"[WorldPopulator] 뷰 마커 '{marker.name}'의 정의 '{marker.DataId}'가 팩에 없습니다.", marker); continue; }
-                BuildingAssembler.Dress(marker.gameObject, def, BeltShape.Straight, marker.Variant);
-                dressed++;
-            }
-            if (dressed > 0) Debug.Log($"[WorldPopulator] 굳은 배치물 {dressed}개에 뷰를 입혔습니다.", world);
-        }
-
-        /// <summary>이 배치물이 어느 칸의 무엇인지 적어 둔다 — 런타임의 잇기가 이것을 읽는다.</summary>
-        static void Mark(GameObject go, Vector2Int cell, EntityDef data)
-        {
-            var mark = go.GetComponent<PlacedMapObject>();
-            if (mark == null) mark = go.AddComponent<PlacedMapObject>();
-            mark.Configure(cell, data);
         }
 
         /// <summary>런타임에 갓 세운 나무를 심에 잇는다(굳어 있지 않은 씬 경로).</summary>
@@ -350,38 +178,6 @@ namespace CoreDawn.Worlds
             return placed;
         }
 
-        /// <summary>
-        /// 굳힌 씬에 맵의 광맥 뷰가 없는 칸을 런타임이 세운다. 맵을 다시 임포트했는데 씬을 저장하지 않았을 때 생기는 상태라
-        /// 조용히 넘기지 않고 경고한다 — 게임은 돌게 하되, 고칠 것(맵 재임포트 + 씬 저장)을 말한다.
-        /// </summary>
-        static int PlaceMissingNodes(World world, Transform root)
-        {
-            var map = world.Map;
-            var boot = FactoryBootstrap.Instance;
-            if (map.nodes == null || map.nodes.Length == 0 || boot == null || boot.Factory == null) return 0;
-            int placed = 0;
-            foreach (var spec in map.nodes)
-            {
-                if (string.IsNullOrEmpty(spec.itemId) || boot.Factory.DepositAt(spec.cell) != null) continue;
-                var view = SpawnNodeView(world, root, spec.itemId, spec.cell);
-                if (view != null && view.TryAttachAt(spec.cell)) placed++;
-            }
-            if (placed > 0)
-                Debug.LogWarning($"[WorldPopulator] 굳힌 씬에 없는 광맥 {placed}개를 런타임이 세웠습니다 — 맵을 다시 임포트하고 씬을 저장하세요.", world);
-            return placed;
-        }
-
-        /// <summary>에디터가 광맥 뷰를 씬에 굳힌다 — 심 엔티티는 플레이 때 Connect가 마커의 칸으로 세운다.</summary>
-        static int BakeNodes(World world, Transform root)
-        {
-            var map = world.Map;
-            if (map.nodes == null || map.nodes.Length == 0) return 0;
-            int placed = 0;
-            foreach (var spec in map.nodes)
-                if (!string.IsNullOrEmpty(spec.itemId) && SpawnNodeView(world, root, spec.itemId, spec.cell) != null) placed++;
-            return placed;
-        }
-
         /// <summary>광맥 한 칸의 뷰(프리팹)를 칸 중앙에 세우고 마커(칸)와 자원을 적는다. 심에는 아직 서지 않는다.</summary>
         static ResourceDepositView SpawnNodeView(World world, Transform root, string itemId, Vector2Int cell)
         {
@@ -398,13 +194,11 @@ namespace CoreDawn.Worlds
                 Debug.LogError($"[WorldPopulator] 광맥({cell.x},{cell.y})의 정의 '{item.Id.Split('/').Last()}_deposit'가 팩에 없습니다.", world);
                 return null;
             }
-            // 오브젝트 위치는 칸 중앙. 마커만 세운다(모델·콜라이더는 런타임이 입힌다 — DressWhenReady); 굳지 않은 씬에서는 즉시 입힌다
+            // 오브젝트 위치는 칸 중앙. 정의에서 조립한다(모델·콜라이더·ResourceDepositView)
             Vector3 center = world.CellToWorld(cell) + new Vector3(0.5f, 0f, 0.5f) * world.CellSize;
-            var go = BuildingAssembler.Marker(depositDef, center, Quaternion.identity, world.CellSize, 0);
+            var go = BuildingAssembler.Build(depositDef, BeltShape.Straight, center, Quaternion.identity, world.CellSize);
             go.transform.SetParent(root, true);
             go.name = $"Node_{PascalKeyOf(item.Id)}_{cell.x}_{cell.y}";
-            Mark(go, cell, null);   // 광맥은 공장 칸을 잡지 않는다 — 마커는 칸의 정본이고, 공장의 광맥 색인이 따로 관리한다
-            if (SpawnOverride == null) DressNow(go, depositDef);
             var view = go.GetComponent<ResourceDepositView>();
             view.Configure(item);
             return view;
@@ -437,12 +231,10 @@ namespace CoreDawn.Worlds
             int placed = 0;
             foreach (var spec in map.nests)
             {
-                // 마커만 세운다(바위 모델·NestCore 캡슐은 런타임이 입힌다 — DressWhenReady); 스폰 포인트는 맵 사양으로 아래서 만든다
-                var go = BuildingAssembler.Marker(nestDef, world.CellToWorldCenter(spec.cell), Quaternion.identity, world.CellSize, 0);
+                // 정의에서 조립(바위 모델·NestCore 캡슐·NestView); 스폰 포인트는 맵 사양으로 아래서 만든다
+                var go = BuildingAssembler.Build(nestDef, BeltShape.Straight, world.CellToWorldCenter(spec.cell), Quaternion.identity, world.CellSize);
                 go.transform.SetParent(root, true);
                 go.name = $"Nest_{spec.cell.x}_{spec.cell.y}";
-                if (SpawnOverride == null) DressNow(go, nestDef);
-                Mark(go, spec.cell, nestDef);
 
                 var nest = go.GetComponent<NestView>();
                 if (nest != null)
@@ -458,7 +250,7 @@ namespace CoreDawn.Worlds
                     nest.SyncModule();   // 자리·보스 유무를 심 Nest 모듈에 — 상태(파괴·무적)는 심의 것
                 }
 
-                if (SpawnOverride == null) ClaimNestCells(nestDef, spec.cell, go);
+                ClaimNestCells(nestDef, spec.cell, go);
 
                 // 교전 구역은 값이 있을 때만 붙인다 — 프리팹에 없으면 둥지는 기본 동작을 그대로 쓴다
                 if (spec.engageMaxRange > 0f)
@@ -610,13 +402,12 @@ namespace CoreDawn.Worlds
             // 심은 <b>런타임에만</b> 필요하다 — 에디터에서 씬에 굳힐 때는 그림만 만들고,
             // 칸을 잡는 것은 플레이가 시작될 때 Connect 가 한다.
             var boot = FactoryBootstrap.Instance;
-            bool connecting = SpawnOverride == null;
-            if (connecting && (boot == null || boot.Factory == null))
+            if (boot == null || boot.Factory == null)
             {
                 Debug.LogWarning("[WorldPopulator] FactorySim이 아직 없어 나무를 세우지 못했습니다.", world);
                 return 0;
             }
-            if (connecting && !Managers.PackAssets.IsReady)
+            if (!Managers.PackAssets.IsReady)
             {
                 Debug.LogError("[WorldPopulator] 팩 모델(glb) preload가 끝나기 전에 나무를 세우려 했습니다 — 굳지 않은 씬은 로딩 게이트가 필요합니다(4c 후속). 나무를 세우지 않습니다.", world);
                 return 0;
@@ -629,22 +420,16 @@ namespace CoreDawn.Worlds
 
                 // 칸이 차 있으면 세우지 않는다 — 세워 놓고 칸을 못 잡으면 눈에는 나무가 있는데
                 // 그 위에 건물이 올라간다. GridIndex.Add 는 덮어쓰기라 먼저 확인해야 한다.
-                if (connecting && boot.Factory.Grid.IsOccupied(cell)) { skipped++; continue; }
+                if (boot.Factory.Grid.IsOccupied(cell)) { skipped++; continue; }
 
                 TreePose(world, cell, variants, out int pi, out Vector3 pos, out float yaw, out float scale);
 
-                // 나무도 다른 건물처럼 정의에서 조립한다 — 변형(view.model 배열)은 칸에서 결정적으로, 크기 흔들기는 루트 배율에 곱한다.
-                // 굳히는 중이면 마커만 세운다(위치·정의·변형) — 팩 모델을 씬에 굳히면 런타임 생성 메시가 씬 파일에 통째로 박힌다. 뷰는 런타임이 입힌다(DressWhenReady).
-                var rot = Quaternion.Euler(0f, yaw, 0f);
-                var go = connecting ? BuildingAssembler.Build(treeDef, BeltShape.Straight, pos, rot, world.CellSize, pi)
-                                    : BuildingAssembler.Marker(treeDef, pos, rot, world.CellSize, pi);
+                // 나무도 다른 건물처럼 정의에서 조립한다 — 변형(view.model 배열)은 칸에서 결정적으로, 크기 흔들기는 루트 배율에 곱한다
+                var go = BuildingAssembler.Build(treeDef, BeltShape.Straight, pos, Quaternion.Euler(0f, yaw, 0f), world.CellSize, pi);
                 go.transform.SetParent(root, true);
                 go.transform.localScale *= scale;
                 go.name = $"Tree_{cell.x}_{cell.y}";
-                Mark(go, cell, treeDef);
-
-                // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect). 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
-                if (connecting) ConnectTree(go.GetComponent<BuildingView>(), treeDef, cell);
+                ConnectTree(go.GetComponent<BuildingView>(), treeDef, cell);
                 placed++;
             }
 
@@ -655,7 +440,7 @@ namespace CoreDawn.Worlds
         }
 
         /// <summary>나무 엔티티의 팩 키 — 나무는 역할 모듈이 없어(Building·Health·Effects뿐) 이름으로 찾는다. 맵이 종류를 고르게 되면 맵 데이터로 간다.</summary>
-        const string TreeEntityKey = "tree";
+        public const string TreeEntityKey = "tree";
 
         // 나무 한 그루의 생김새를 정하는 값들 — 칸 좌표에서 뽑으므로 같은 맵은 언제나 같은 숲이다
         const float TreeScaleMin = 0.85f, TreeScaleMax = 1.35f;
@@ -686,7 +471,7 @@ namespace CoreDawn.Worlds
         /// 그 자리의 지면 높이. 지형이 있으면 실제 표면을, 없으면 월드 원점 높이를 쓴다 —
         /// 지형 없는 구성(테스트 씬)에서도 나무가 뜨거나 잠기지 않게.
         /// </summary>
-        static float GroundYAt(World world, Vector3 pos)
+        public static float GroundYAt(World world, Vector3 pos)
         {
             var terrain = world.GetComponentInChildren<Terrain>(true);
             if (terrain == null) return world.Origin.y;

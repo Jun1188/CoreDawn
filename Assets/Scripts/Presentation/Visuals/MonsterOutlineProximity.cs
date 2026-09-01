@@ -83,20 +83,23 @@ namespace CoreDawn.Visuals
 
             foreach (var m in stale)
             {
-                if (m != null && outlines[m] != null) outlines[m].enabled = false;
+                OutlinePool.Return(outlines[m]);
                 outlines.Remove(m);
             }
         }
 
         Outlinable Attach(MonsterView m)
         {
-            var o = EpoOutlines.Ensure(m.gameObject);   // 핑과 같은 부착 절차 — 같은 Outlinable을 나눠 쓴다
-            EpoOutlines.Style(o, color, dilateShift, blurShift);
-            o.enabled = false;   // 켜는 것은 거리 판정이 한다
+            var o = OutlinePool.Rent(m.gameObject, color, dilateShift, blurShift);   // 풀에서 빌려 몬스터 렌더러를 가리킨다 — 몬스터에 컴포넌트를 붙이지 않는다
+            if (o != null) o.enabled = false;   // 켜는 것은 거리 판정이 한다
             return o;
         }
 
-        void OnDisable() => DisableAll();
+        void OnDisable()
+        {
+            foreach (var kv in outlines) OutlinePool.Return(kv.Value);
+            outlines.Clear();
+        }
 
         void DisableAll()
         {
