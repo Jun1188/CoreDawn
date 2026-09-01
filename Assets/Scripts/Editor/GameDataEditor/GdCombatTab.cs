@@ -62,10 +62,10 @@ namespace CoreDawn.EditorTools
     class GRoster { public string monster = ""; public float cost = 10, weight = 1; public int minDay = 1, minGate; }
     class GTrickle { public string monster = ""; public int group = 3; public float interval = 20, untilKilledFraction = 0.9f; }
 
-    // 몬스터 종류 — MonsterDataSO의 편집 모델. 프리팹은 guid로 든다(아이콘 규약과 같다)
+    // 몬스터 종류 — 편집 모델. 모델 프리팹은 guid로 든다(아이콘 규약과 같다)
     class GMonster
     {
-        public string id = "", displayName = "", description = "", prefab = "", prefabGuid = "";
+        public string id = "", displayName = "", description = "", model = "", modelGuid = "";
         public float maxHp = 30, moveSpeed = 4, rotateSpeed = 720, crowdRadius = 0.4f, knockbackDamping = 8;
         public bool stickToGround = true;
         public float attackRange = 1.5f, attackCooldown = 2;
@@ -185,7 +185,7 @@ namespace CoreDawn.EditorTools
                 monsters.Add(new GMonster
                 {
                     id = m.id ?? "", displayName = m.displayName ?? "", description = m.description ?? "",
-                    prefab = m.prefab ?? "", prefabGuid = m.prefabGuid ?? "",
+                    model = m.model ?? "", modelGuid = m.modelGuid ?? "",
                     maxHp = m.maxHp > 0 ? m.maxHp : 30, moveSpeed = m.moveSpeed > 0 ? m.moveSpeed : 4,
                     rotateSpeed = m.rotateSpeed > 0 ? m.rotateSpeed : 720, crowdRadius = Mathf.Max(0, m.crowdRadius),
                     knockbackDamping = m.knockbackDamping > 0 ? m.knockbackDamping : 8, stickToGround = m.stickToGround,
@@ -270,8 +270,8 @@ namespace CoreDawn.EditorTools
             o.view = m.view;
             o.id = m.id; o.displayName = m.displayName;
             o.description = string.IsNullOrEmpty(m.description) ? null : m.description;
-            o.prefab = string.IsNullOrEmpty(m.prefab) ? null : m.prefab;
-            o.prefabGuid = string.IsNullOrEmpty(m.prefabGuid) ? null : m.prefabGuid;
+            o.model = string.IsNullOrEmpty(m.model) ? null : m.model;
+            o.modelGuid = string.IsNullOrEmpty(m.modelGuid) ? null : m.modelGuid;
             o.maxHp = m.maxHp; o.moveSpeed = m.moveSpeed; o.rotateSpeed = m.rotateSpeed;
             o.crowdRadius = m.crowdRadius; o.knockbackDamping = m.knockbackDamping; o.stickToGround = m.stickToGround;
             o.attackRange = m.attackRange; o.attackCooldown = m.attackCooldown;

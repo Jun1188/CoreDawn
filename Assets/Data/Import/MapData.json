@@ -6,6 +6,7 @@
       "description": "던전 포함한 맵 테스트",
       "width": 121,
       "height": 121,
+      "cellSize": 4,
       "core": {
         "x": 59,
         "y": 59

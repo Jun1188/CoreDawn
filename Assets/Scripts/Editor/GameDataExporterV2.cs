@@ -314,7 +314,7 @@ namespace CoreDawn.EditorTools
                     new JObject { ["type"] = "Attack", ["range"] = m["attackRange"], ["cooldown"] = m["attackCooldown"], ["effects"] = Uses(m["attackEffects"]) },
                     brain,
                 };
-                var mview = new JObject { ["prefab"] = m["prefab"], ["prefabGuid"] = m["prefabGuid"] };
+                var mview = View(m, "model", "modelGuid");
                 MergeView(mview, m);
                 o["view"] = mview;
                 entities[KeyOf((string)m["id"])] = o;

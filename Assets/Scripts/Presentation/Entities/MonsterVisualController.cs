@@ -71,6 +71,17 @@ namespace CoreDawn.Entities
         [Tooltip("가라앉는 깊이(월드 단위).")]
         [SerializeField] private float sinkDepth = 1.5f;
 
+        /// <summary>조립기가 정의(view)로 채운다 — 프리팹 인스펙터 대신. 모델·Animator는 카탈로그 모델 프리팹 안의 것.</summary>
+        public void Wire(Transform viewRoot, Animator anim, int attackVariantCount, int hitVariantCount, DeathStyle style, float sink)
+        {
+            view = viewRoot;
+            animator = anim;
+            attackVariants = Mathf.Max(1, attackVariantCount);
+            hitVariants = Mathf.Max(1, hitVariantCount);
+            deathStyle = style;
+            sinkDepth = sink;
+        }
+
         // 파라미터는 MonsterAnimationBuilder가 만드는 MonsterCommon.controller와 이름이 맞아야 한다.
         // 없는 파라미터에 Set을 하면 매 호출 에러가 찍히므로 양쪽을 함께 고칠 것.
         private static readonly int HashSpeed = Animator.StringToHash("Speed");

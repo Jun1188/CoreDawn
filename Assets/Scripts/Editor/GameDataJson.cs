@@ -250,8 +250,8 @@ namespace CoreDawn.EditorTools
             public string id;            // 필수. 예: "Monster:Basic"
             public string displayName;   // 필수
             public string description;
-            public string prefab;        // 프리팹 이름 — 사람이 읽는 용도
-            public string prefabGuid;    // 프리팹 에셋 guid — 이쪽이 파일을 특정한다
+            public string model;         // 모델 프리팹 이름(Art/Models/Monsters — 리그·Animator·머티리얼을 안에 든 모델) — 사람이 읽는 용도
+            public string modelGuid;     // 모델 에셋 guid — 이쪽이 파일을 특정한다
             public float  maxHp;
             public float  moveSpeed, rotateSpeed, crowdRadius, knockbackDamping;
             public bool   stickToGround = true;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것

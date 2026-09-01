@@ -15,8 +15,8 @@ MonoBehaviour:
   entries:
   - id: coredawn:entity/basic
     icon: {fileID: 0}
-    prefab: {fileID: 1332241365330258894, guid: a0ab261b89819e4489aaf424fc926d00, type: 3}
-    model: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 3875949503363778825, guid: 167499a04fae3354dbd4c36e0918fc15, type: 3}
     curveLModel: {fileID: 0}
     curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
@@ -45,8 +45,8 @@ MonoBehaviour:
     clips: []
   - id: coredawn:entity/boss
     icon: {fileID: 0}
-    prefab: {fileID: 1332241365330258894, guid: 67999408593709d4c995a60d2c03fac2, type: 3}
-    model: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 6379059024075365167, guid: 9addc2eb4a7621a4c85b711dfc73cfaa, type: 3}
     curveLModel: {fileID: 0}
     curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
@@ -155,8 +155,8 @@ MonoBehaviour:
     clips: []
   - id: coredawn:entity/spitter
     icon: {fileID: 0}
-    prefab: {fileID: 1332241365330258894, guid: ee2565cc74fdb074ca483cccf4a3be55, type: 3}
-    model: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 433872393533835241, guid: 5ff85545fafe21b40a18e34c43ef4b98, type: 3}
     curveLModel: {fileID: 0}
     curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}

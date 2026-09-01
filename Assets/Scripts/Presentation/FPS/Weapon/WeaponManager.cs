@@ -21,7 +21,7 @@ namespace CoreDawn.FPS
         [SerializeField] private Transform gunRoot;
         [Tooltip("탄이 맞힐 레이어 — 모든 총이 같다(뷰 값).")]
         [SerializeField] private LayerMask enemyLayer;
-        private Gun[] weapons = System.Array.Empty<Gun>();
+        private Gun current;   // 지금 든 총 — 장착할 때 정의에서 조립하고, 내리면 지운다
 
         [Header("연출 모듈 (Weapon_Holder)")]
         [SerializeField] private WeaponMotionManager motionManager;
@@ -30,10 +30,8 @@ namespace CoreDawn.FPS
         [SerializeField] private ProceduralRecoil recoilManager;
         [SerializeField] private WeaponSwing swingModule;
 
-        private int currentIndex = -1; // -1이면 현재 맨손 상태
 
-        public Gun CurrentWeapon =>
-            currentIndex >= 0 && currentIndex < weapons.Length ? weapons[currentIndex] : null;
+        public Gun CurrentWeapon => current;
 
         /// <summary>정조준 중인가 — 조준 상태의 원본. 연출(ADS·킥백)은 이 값을 받아 반응한다.</summary>
         public bool IsAiming { get; private set; }
@@ -41,57 +39,6 @@ namespace CoreDawn.FPS
         /// <summary>소지자(플레이어 엔티티)의 무기 모듈 — 든 총·탄창·재장전의 정본. 세이브는 심 상태를 저장한다(PlayerSaveModule).</summary>
         static WeaponModule Weapon => PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.Entity?.Get<WeaponModule>() : null;
         static float Now => SimRunner.Players.Now;
-
-        private void Awake() => AssembleGuns();
-
-        private void Start()
-        {
-            // 시작할 때 모든 무기를 꺼둔다 (맨손 상태로 시작)
-            foreach (var weapon in weapons)
-            {
-                weapon.gameObject.SetActive(false);
-                weapon.Fired += OnWeaponFired;
-            }
-        }
-
-        /// <summary>
-        /// 팩의 총 정의마다 총 오브젝트 하나 — 정의의 view가 전부 정한다: model(카탈로그), pose(홀더 기준 자세),
-        /// muzzle·sight(모델 기준 앵커 — 모델 안에 MuzzlePoint/SightPos 노드가 있으면 그것), knockback, sfx(Gun이 읽는다).
-        /// 프리팹에 손으로 둔 총 오브젝트는 없다(5a-4b). view.type이 Gun이 아니거나 모델이 없으면 그 총은 소리 내고 건너뛴다.
-        /// </summary>
-        private void AssembleGuns()
-        {
-            var db = SimHost.Database;
-            if (db == null) { Debug.LogError("[WeaponManager] 팩 정의(SimHost.Database)가 없어 총을 조립하지 못했습니다.", this); return; }
-            var parent = gunRoot != null ? gunRoot : transform;
-            var list = new System.Collections.Generic.List<Gun>();
-            foreach (var def in db.Guns.Values)
-            {
-                var view = ViewSchema.Of(def);
-                if (view.Type != "Gun") { Debug.LogError($"[WeaponManager] {def.Id}: view.type이 Gun이 아닙니다('{view.Type}') — 조립하지 않습니다."); continue; }
-                var model = ViewCatalogSO.ModelOf(def);
-                if (model == null) { Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 조립하지 않습니다."); continue; }
-
-                var go = new GameObject(PascalKeyOf(def.Id));
-                go.transform.SetParent(parent, false);
-                var (pos, rot, scale) = view.Pose;
-                go.transform.localPosition = pos; go.transform.localRotation = rot; go.transform.localScale = Vector3.one * scale;
-
-                var body = Instantiate(model, go.transform);
-                body.name = model.name;
-                body.transform.localPosition = Vector3.zero; body.transform.localRotation = Quaternion.identity; body.transform.localScale = Vector3.one;
-
-                var gun = go.AddComponent<Gun>();
-                gun.gunId = def.Id;
-                gun.enemyLayer = enemyLayer;
-                gun.muzzlePoint = Anchor(body.transform, "MuzzlePoint", view.Vec3("muzzle"));
-                gun.sightPoint = Anchor(body.transform, "SightPos", view.Vec3("sight"));
-                var kb = view.Object("knockback");
-                if (kb != null) { gun.knockbackEffectId = (string)kb["effect"]; gun.knockbackPerDamage = (float?)kb["perDamage"] ?? gun.knockbackPerDamage; }
-                list.Add(gun);
-            }
-            weapons = list.ToArray();
-        }
 
         /// <summary>모델 안의 이름 노드(리그 규약) 또는 view의 좌표(서드파티 모델)로 앵커를 만든다. 둘 다 없으면 null(근접 등).</summary>
         static Transform Anchor(Transform model, string nodeName, Vector3? local)
@@ -114,36 +61,90 @@ namespace CoreDawn.FPS
 
         private void OnDestroy()
         {
-            foreach (var weapon in weapons)
-                if (weapon != null) weapon.Fired -= OnWeaponFired;
+            if (current != null) current.Fired -= OnWeaponFired;
         }
 
-        // ── 공개 API ───────────────────────────────────────────────
+        // ── 공개 API
 
-        /// <summary>아이템 정의의 총(GunDef)으로 해당 무기를 찾아 장착한다 — 씬 Gun은 자기 Def로 대답한다.</summary>
+        /// <summary>아이템 정의의 총(GunDef)을 든다 — 그 순간 정의에서 조립하고, 들고 있던 총은 지운다. 같은 총이면 아무것도 안 한다.</summary>
         public void EquipWeapon(GunDef target)
         {
             if (target == null) return;
-
-            for (int i = 0; i < weapons.Length; i++)
-            {
-                if (!ReferenceEquals(weapons[i].Def, target)) continue;
-                if (currentIndex == i) return; // 이미 들고 있는 무기
-
-                SwapTo(i);
-                Weapon?.Equip(weapons[i].Def, Now);   // 심에 든 총을 알린다 — 하던 재장전은 취소된다
-                return;
-            }
-
-            Debug.LogWarning($"[WeaponManager] 총 정의 '{target.Id}' 의 총이 조립되지 않았습니다 — 팩 guns.view(type·model)를 확인하세요.");
+            if (current != null && ReferenceEquals(current.Def, target)) return;   // 이미 들고 있는 무기
+            var gun = AssembleGun(target);
+            if (gun == null) return;   // 조립 실패는 AssembleGun이 소리 냈다 — 들고 있던 총은 그대로
+            DropCurrent();
+            current = gun;
+            current.Fired += OnWeaponFired;
+            SwapIn(current);
+            Weapon?.Equip(current.Def, Now);   // 심에 든 총을 알린다 — 하던 재장전은 취소된다
         }
 
         public void UnequipWeapon()
         {
-            if (CurrentWeapon != null) CurrentWeapon.gameObject.SetActive(false);
-            currentIndex = -1;
+            DropCurrent();
             Weapon?.Equip(null, Now);
             SetAiming(false);
+        }
+
+        /// <summary>든 총을 내리고 오브젝트를 지운다 — 탄창 상태는 심(WeaponModule)에 있어 잃는 것이 없다.</summary>
+        private void DropCurrent()
+        {
+            if (current == null) return;
+            current.Fired -= OnWeaponFired;
+            Destroy(current.gameObject);
+            current = null;
+        }
+
+        /// <summary>
+        /// 총 하나를 정의에서 조립한다 — 장착하는 순간 만들고 내리면 지운다(미리 만들어 두지 않는다). 정의의 view가 전부 정한다:
+        /// model(카탈로그), pose(홀더 기준 자세), muzzle·sight(모델 기준 앵커 — 모델 안에 MuzzlePoint/SightPos 노드가 있으면 그것),
+        /// knockback, sfx(Gun이 읽는다). view.type이 Gun이 아니거나 모델이 없으면 소리 내고 null.
+        /// </summary>
+        private Gun AssembleGun(GunDef def)
+        {
+            var parent = gunRoot != null ? gunRoot : transform;
+            var view = ViewSchema.Of(def);
+            if (view.Type != "Gun") { Debug.LogError($"[WeaponManager] {def.Id}: view.type이 Gun이 아닙니다('{view.Type}') — 조립하지 않습니다."); return null; }
+            var model = ViewCatalogSO.ModelOf(def);
+            if (model == null) { Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 조립하지 않습니다."); return null; }
+
+            var go = new GameObject(PascalKeyOf(def.Id));
+            go.SetActive(false);   // 자세·앵커를 다 잡은 뒤 켠다 — Gun.Awake가 카메라를 찾는다
+            go.transform.SetParent(parent, false);
+            var (pos, rot, scale) = view.Pose;
+            go.transform.localPosition = pos; go.transform.localRotation = rot; go.transform.localScale = Vector3.one * scale;
+
+            var body = Instantiate(model, go.transform);
+            body.name = model.name;
+            body.transform.localPosition = Vector3.zero; body.transform.localRotation = Quaternion.identity; body.transform.localScale = Vector3.one;
+
+            var gun = go.AddComponent<Gun>();
+            gun.gunId = def.Id;
+            gun.enemyLayer = enemyLayer;
+            gun.muzzlePoint = Anchor(body.transform, "MuzzlePoint", view.Vec3("muzzle"));
+            gun.sightPoint = Anchor(body.transform, "SightPos", view.Vec3("sight"));
+            var kb = view.Object("knockback");
+            if (kb != null) { gun.knockbackEffectId = (string)kb["effect"]; gun.knockbackPerDamage = (float?)kb["perDamage"] ?? gun.knockbackPerDamage; }
+            return gun;
+        }
+
+        // 새로 조립한 총을 손에 맞춘다 — 가늠자 오프셋 계산은 홀더가 원점일 때 해야 한다(스왑 순간의 흔들림이 섞이지 않게)
+        private void SwapIn(Gun weapon)
+        {
+            if (motionManager != null && adsModule != null)
+            {
+                Vector3 tempPos = motionManager.transform.localPosition;
+                Quaternion tempRot = motionManager.transform.localRotation;
+                motionManager.transform.localPosition = Vector3.zero;
+                motionManager.transform.localRotation = Quaternion.identity;
+
+                adsModule.SetupWeapon(weapon.sightPoint, weapon.Def.ZoomMultiplier);
+
+                motionManager.transform.localPosition = tempPos;
+                motionManager.transform.localRotation = tempRot;
+            }
+            weapon.gameObject.SetActive(true);
         }
 
         /// <summary>
@@ -165,32 +166,6 @@ namespace CoreDawn.FPS
         }
 
         // ── 내부 ───────────────────────────────────────────────────
-
-        // 실제 무기 오브젝트를 껐다 켜는 내부 로직
-        private void SwapTo(int newIndex)
-        {
-            if (CurrentWeapon != null) CurrentWeapon.gameObject.SetActive(false);
-
-            currentIndex = newIndex;
-            var weapon = weapons[currentIndex];
-
-            // 가늠자 오프셋 계산은 홀더가 원점일 때 해야 한다 — 스왑 순간의 흔들림(모션 오프셋)이
-            // 섞이지 않게 잠시 초기화했다가 복구한다 (안 하면 스왑할 때 화면이 튐)
-            if (motionManager != null && adsModule != null)
-            {
-                Vector3 tempPos = motionManager.transform.localPosition;
-                Quaternion tempRot = motionManager.transform.localRotation;
-                motionManager.transform.localPosition = Vector3.zero;
-                motionManager.transform.localRotation = Quaternion.identity;
-
-                adsModule.SetupWeapon(weapon.sightPoint, weapon.Def.ZoomMultiplier);
-
-                motionManager.transform.localPosition = tempPos;
-                motionManager.transform.localRotation = tempRot;
-            }
-
-            weapon.gameObject.SetActive(true);
-        }
 
         // 발사 연출 팬아웃 — Gun은 "쐈다"만 알리고, 무엇이 흔들릴지는 여기서 정한다
         private void OnWeaponFired(Gun weapon)

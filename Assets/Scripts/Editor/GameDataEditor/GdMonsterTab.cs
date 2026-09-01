@@ -154,22 +154,22 @@ namespace CoreDawn.EditorTools
             detailBox.Add(Text("이름", m.displayName, v => { m.displayName = v; RenderList(); RefreshMeta(); }));
             detailBox.Add(Text("설명", m.description, v => m.description = v, multiline: true));
 
-            // ── 뷰 프리팹 — 에셋 참조라 guid로 적는다(아이템 아이콘과 같은 규약)
+            // ── 모델 — 리그·Animator·머티리얼을 안에 든 모델 프리팹(Art/Models/Monsters). 에셋 참조라 guid로 적는다
             detailBox.Add(H3("뷰"));
             GameObject current = null;
-            if (!string.IsNullOrEmpty(m.prefabGuid))
-                current = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(m.prefabGuid));
-            var prefabF = new ObjectField { objectType = typeof(GameObject), allowSceneObjects = false, value = current,
-                tooltip = "Monster 컴포넌트가 붙은 프리팹. 씬 표현일 뿐 — 수치는 위·아래 필드가 정한다" };
-            prefabF.RegisterValueChangedCallback(e =>
+            if (!string.IsNullOrEmpty(m.modelGuid))
+                current = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(m.modelGuid));
+            var modelF = new ObjectField { objectType = typeof(GameObject), allowSceneObjects = false, value = current,
+                tooltip = "모델 프리팹(리그·Animator·머티리얼 포함). 조립기가 콜라이더·컴포넌트를 붙여 세운다 — 수치는 위·아래 필드가 정한다" };
+            modelF.RegisterValueChangedCallback(e =>
             {
                 var go = e.newValue as GameObject;
                 string path = go != null ? AssetDatabase.GetAssetPath(go) : null;
-                m.prefabGuid = string.IsNullOrEmpty(path) ? "" : AssetDatabase.AssetPathToGUID(path);
-                m.prefab = go != null ? go.name : "";
+                m.modelGuid = string.IsNullOrEmpty(path) ? "" : AssetDatabase.AssetPathToGUID(path);
+                m.model = go != null ? go.name : "";
                 combat.PushHist(); RefreshMeta();
             });
-            detailBox.Add(Field2("프리팹", prefabF));
+            detailBox.Add(Field2("모델", modelF));
             detailBox.Add(GdViewUI.Build(m.view ??= new GameDataJson.ViewDto { type = "Monster" }, combat.PushHist, win.SoundIds));
 
             // ── 수치 ──
@@ -257,7 +257,7 @@ namespace CoreDawn.EditorTools
                 string nm = string.IsNullOrEmpty(m.displayName) ? "(이름 없음)" : m.displayName;
                 if (string.IsNullOrEmpty(m.id)) warn.Add($"{nm}: id가 비어 있습니다 — 임포트에서 스킵됩니다");
                 else if (!ids.Add(m.id)) warn.Add($"{nm}: id \"{m.id}\" 가 중복입니다");
-                if (string.IsNullOrEmpty(m.prefabGuid)) warn.Add($"{nm}: 프리팹이 없습니다 — 코드 조립 캡슐로 나옵니다");
+                if (string.IsNullOrEmpty(m.modelGuid)) warn.Add($"{nm}: 모델이 없습니다 — 코드 조립 캡슐로 나옵니다");
                 if (!(m.maxHp > 0)) warn.Add($"{nm}: 최대 체력은 0보다 커야 합니다");
                 if (m.attackEffects.Count == 0) warn.Add($"{nm}: 명중 효과가 없어 때려도 아무 일도 없습니다");
                 foreach (var e in m.attackEffects)
