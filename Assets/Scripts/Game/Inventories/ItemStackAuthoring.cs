@@ -10,7 +10,6 @@ namespace CoreDawn.Inventories
     {
         public string itemId;
         public int amount = 1;
-        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public CoreDawn.Data.ItemDataSO item;
 
         public ItemStack ToStack()
         {

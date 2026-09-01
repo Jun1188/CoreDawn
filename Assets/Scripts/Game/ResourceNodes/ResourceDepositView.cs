@@ -30,7 +30,6 @@ namespace CoreDawn.ResourceNodes
         [Header("자원")]
         [Tooltip("이 칸에 묻힌 자원의 팩 id(coredawn:item/iron_ore) — 맵이 굳힌 광맥은 베이커가 채우고, 씬에 직접 놓는 광맥은 손으로 적는다.")]
         [SerializeField] private string resourceId;
-        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] private ItemDataSO resource;
 
         [Header("기즈모")]
         [SerializeField] private Color gizmoColor = new Color(1f, 0.75f, 0.1f, 0.35f);

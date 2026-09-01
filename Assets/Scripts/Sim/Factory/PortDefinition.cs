@@ -5,7 +5,7 @@ namespace CoreDawn.Sim
 {
     /// <summary>
     /// 건물의 입출력 연결점.
-    /// BuildingDataSO.ports[] 배열에 Inspector로 설정.
+    /// 정의(PortsModuleDef.ports[])에 팩 json으로 적는다.
     ///
     /// 예 — Miner (1×1, 오른쪽 출력):
     ///   ports[0]: IsInput=false, LocalOffset=(0,0), Direction=East

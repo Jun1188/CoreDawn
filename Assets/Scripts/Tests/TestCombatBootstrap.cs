@@ -16,7 +16,6 @@ namespace CoreDawn.Tests
     {
         [Tooltip("시작 시 플레이어 인벤토리에 넣어줄 무기 아이템의 팩 id(Weapon 모듈을 단 아이템). 비우면 지급하지 않는다.")]
         [SerializeField] private string startingWeaponId;
-        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] private ItemDataSO startingWeapon;
 
         [Tooltip("시작 시 함께 지급할 아이템들(탄약 등) — 실소비 세계에서는 탄이 있어야 재장전이 된다.")]
         [SerializeField] private StartingStack[] startingItems;
@@ -25,7 +24,6 @@ namespace CoreDawn.Tests
         private struct StartingStack
         {
             public string itemId;
-            [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public ItemDataSO item;
             public int amount;
         }
 

@@ -18,7 +18,6 @@ namespace CoreDawn.Factory
     {
         [Tooltip("이 코어의 엔티티 정의 팩 id(coredawn:entity/core) — 티어별 요구량은 정의의 Core 모듈이 갖는다.")]
         [SerializeField] private string coreId;
-        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] private CoreDawn.Data.CoreDataSO coreData;
 
         [Tooltip("이 코어가 차지하는 그리드 원점 좌표.")]
         [SerializeField] private Vector2Int gridOrigin;

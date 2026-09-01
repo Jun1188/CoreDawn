@@ -51,7 +51,6 @@ namespace CoreDawn.Factory
 
         [Tooltip("세울 코어 정의의 팩 id. 비워두면 팩에서 Core 모듈을 가진 엔티티를 찾아 쓴다.")]
         [SerializeField] string _coreId;
-        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] CoreDataSO _coreData;
 
         [Tooltip("코어를 세울 그리드 좌표. 월드(맵)가 있으면 맵이 정한 자리로 덮인다 — Inject 참조.")]
         [SerializeField] Vector2Int _coreOrigin = Vector2Int.zero;

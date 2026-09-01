@@ -13,7 +13,7 @@ namespace CoreDawn.Combat
 {
     /// <summary>
     /// 전달 방식 — 효과를 대상에게 어떻게 전달하는가. 클래스 상속이 아니라 데이터가 정하며,
-    /// 총(GunData)과 타워(TowerDataSO)가 공용으로 쓴다.
+    /// 총(GunDef)과 타워(TurretModuleDef)가 공용으로 쓴다.
     /// </summary>
     public enum FireMode
     {

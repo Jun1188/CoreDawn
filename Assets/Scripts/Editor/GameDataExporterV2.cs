@@ -21,7 +21,7 @@ namespace CoreDawn.EditorTools
     public static class GameDataExporterV2
     {
         public const string Pack = "coredawn";
-        public static string SourcePath => $"{GameDataImporter.ImportFolder}/GameData.json";
+        public static string SourcePath => $"{GameDataJson.ImportFolder}/GameData.json";
         public static string PackFolder => $"Assets/StreamingAssets/packs/{Pack}";
         public static string OutputPath => $"{PackFolder}/data.json";
         public const string IdMapPath = "tools/id-migration-v1-v2.json";

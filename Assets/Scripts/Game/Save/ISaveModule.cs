@@ -14,7 +14,7 @@ namespace CoreDawn.Save
     ///   - 대상 시스템이 씬에 없으면 Capture는 null을, Restore는 조용히 반환할 것
     ///     (테스트 씬처럼 일부 시스템만 있는 씬에서도 세이브가 동작해야 한다)
     ///   - Capture가 돌려준 객체는 그대로 JSON이 된다 — Unity 오브젝트 참조가 아니라
-    ///     안정 ID(<see cref="GameDataSO.Id"/>)와 값으로만 채울 것
+    ///     안정 ID(팩 id, coredawn:item/…)와 값으로만 채울 것
     /// </summary>
     public interface ISaveModule
     {

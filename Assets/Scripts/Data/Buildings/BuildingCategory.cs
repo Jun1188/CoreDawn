@@ -12,7 +12,7 @@ using CoreDawn.Factory;
 namespace CoreDawn.Data
 {
     /// <summary>
-    /// 빌드 메뉴 분류 — BuildingDatabaseSO가 이 순서대로 그룹·정렬한다.
+    /// 빌드 메뉴 분류 — BuildMenuView가 이 순서대로 그룹·정렬한다(정의의 Building.category 문자열을 이 enum으로 읽는다).
     /// (예전 YAGNI로 제거했던 카테고리의 부활 — 이제 UI 정렬이라는 실소비자가 있다)
     /// </summary>
     public enum BuildingCategory

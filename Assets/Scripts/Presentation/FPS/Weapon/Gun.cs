@@ -24,7 +24,6 @@ namespace CoreDawn.FPS
         [Header("Core References")]
         [Tooltip("팩 총 정의 id(coredawn:gun/pistol) — 수치의 정본.")]
         public string gunId;
-        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public GunData gunData;
         public Transform muzzlePoint;
 
         [Header("뷰 값 — 소리·피격 레이어")]
@@ -41,7 +40,6 @@ namespace CoreDawn.FPS
         [Header("피해 비례 넉백")]
         [Tooltip("탄에 얹을 넉백 효과의 팩 id(coredawn:effect/knockback) — 탄약이 넉백을 직접 명시하지 않았을 때만, 피해 합 × 계수만큼 밀어낸다. 비우면 꺼짐.")]
         public string knockbackEffectId;
-        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public KnockbackEffectSO knockbackEffect;
         [Tooltip("피해 1당 밀어내는 거리(m). 유탄의 수동 튜닝(피해 70 · 넉백 2)과 같은 비율이 약 0.03.")]
         public float knockbackPerDamage = 0.03f;
 

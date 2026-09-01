@@ -14,11 +14,9 @@ namespace CoreDawn.Combat
         [Min(1)] public int requiredClearedNights = 1;
         [Tooltip("해금할 레시피의 팩 id(coredawn:recipe/dense_ammo).")]
         public string unlockedRecipeId;
-        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public RecipeDataSO unlockedRecipe;
 
         [Tooltip("표시용 메타: 이 보상이 어느 레시피의 대체 레시피인지(팩 id). 비워도 된다.")]
         public string alternativeForId;
-        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public RecipeDataSO alternativeFor;
 
         public RecipeDef UnlockedRecipe => SaveRefs.Recipe(unlockedRecipeId);
         public RecipeDef AlternativeFor => SaveRefs.Recipe(alternativeForId);

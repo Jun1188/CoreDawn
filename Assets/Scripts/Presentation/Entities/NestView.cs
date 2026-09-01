@@ -24,7 +24,6 @@ namespace CoreDawn.Entities
             public MonsterView linkedBoss;
             [Tooltip("이 포인트에 서는 보스의 팩 id(coredawn:entity/boss). 비우면 보스 없음. 프리팹은 뷰 카탈로그, HP·공격은 정의가 정한다.")]
             public string bossId;
-            [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public MonsterDataSO bossData;
 
             public bool HasBoss => !string.IsNullOrEmpty(bossId);
             public EntityDef BossDef => HasBoss ? SaveRefs.Entity(bossId) : null;
@@ -49,7 +48,6 @@ namespace CoreDawn.Entities
 
         [Tooltip("낮 방어 몬스터·보스전 지원군의 팩 id. 비우면 스포너의 기본 종류.")]
         [SerializeField] private string defenderId;
-        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] private MonsterDataSO defenderMonster;
 
         /// <summary>방어자 정의 — WaveSpawnManager.SpawnNestDefenders가 읽는다. null = 스포너 기본.</summary>
         public EntityDef DefenderDef => string.IsNullOrEmpty(defenderId) ? null : SaveRefs.Entity(defenderId);

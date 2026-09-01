@@ -15,7 +15,6 @@ namespace CoreDawn.Interaction
         // 씬에 미리 놓는 더미(StartItem_* 마커·저작 드롭)는 팩 id로 적는다 — 정의(ItemDef)는 Unity가 직렬화하지 않는다.
         // 런타임 스폰은 Setup이 정의를 바로 넣는다.
         [SerializeField] string authoredItemId;
-        [SerializeField, FormerlySerializedAs("item")] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] ItemDataSO authoredItem;
         ItemDef runtimeItem;
 
         /// <summary>이 더미의 아이템 정의. 씬 저작(id)은 첫 조회에서 정의로 풀린다.</summary>

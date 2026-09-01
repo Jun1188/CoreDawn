@@ -16,7 +16,7 @@ namespace CoreDawn.EditorTools
     // ═══════════════════════════════════════════════════════════
     //  튜토리얼 탭 — 안내 카드의 순서·문구·완료 조건을 편집한다.
     //
-    //  데이터는 GameData.json 의 tutorial 배열. 저장+임포트하면 GameDataImporter 가
+    //  데이터는 GameData.json 의 tutorial 배열. 저장+임포트하면 GameDataJson 가
     //  저장하면 v2 팩 data.json의 tutorial 섹션으로 나간다 — 런타임(TutorialManager)이 그것을 읽는다.
     //
     //  조건 종류는 런타임 클래스(TutorialCondition 파생)에서 긁는다 — 프로그래머가
@@ -28,7 +28,7 @@ namespace CoreDawn.EditorTools
         public override string Title => "튜토리얼";
         public GdTutorialTab(GameDataEditorWindow win) : base(win) { }
 
-        List<GameDataImporter.TutorialStepDto> steps = new();
+        List<GameDataJson.TutorialStepDto> steps = new();
         int sel = -1;
         GdHistory hist;
 
@@ -72,7 +72,7 @@ namespace CoreDawn.EditorTools
         void ImportFromRoot()
         {
             // root 와 객체를 공유하지 않는다 — 언두가 root 를 직접 건드리면 저장 전 상태가 뒤섞인다
-            steps = (win.root?.tutorial ?? Array.Empty<GameDataImporter.TutorialStepDto>()).Select(Clone).ToList();
+            steps = (win.root?.tutorial ?? Array.Empty<GameDataJson.TutorialStepDto>()).Select(Clone).ToList();
             SortSteps();
             sel = steps.Count > 0 ? 0 : -1;
         }
@@ -83,8 +83,8 @@ namespace CoreDawn.EditorTools
             win.root.tutorial = steps.Select(Clone).ToArray();
         }
 
-        static GameDataImporter.TutorialStepDto Clone(GameDataImporter.TutorialStepDto d)
-            => JsonConvert.DeserializeObject<GameDataImporter.TutorialStepDto>(JsonConvert.SerializeObject(d));
+        static GameDataJson.TutorialStepDto Clone(GameDataJson.TutorialStepDto d)
+            => JsonConvert.DeserializeObject<GameDataJson.TutorialStepDto>(JsonConvert.SerializeObject(d));
 
         void SortSteps()
         {
@@ -97,7 +97,7 @@ namespace CoreDawn.EditorTools
 
         void Restore(string snap)
         {
-            var o = JsonConvert.DeserializeAnonymousType(snap, new { steps = new List<GameDataImporter.TutorialStepDto>(), sel = -1 });
+            var o = JsonConvert.DeserializeAnonymousType(snap, new { steps = new List<GameDataJson.TutorialStepDto>(), sel = -1 });
             steps = o.steps ?? new();
             sel = Mathf.Clamp(o.sel, -1, steps.Count - 1);
             Render();
@@ -174,11 +174,11 @@ namespace CoreDawn.EditorTools
         void AddStep()
         {
             var last = steps.LastOrDefault();
-            var s = new GameDataImporter.TutorialStepDto
+            var s = new GameDataJson.TutorialStepDto
             {
                 id = "", displayName = "새 안내", order = last != null ? last.order + 10 : 10,
                 tag = "GUIDE", body = "", keyHints = Array.Empty<string>(),
-                conditions = Array.Empty<GameDataImporter.TutorialConditionDto>(),
+                conditions = Array.Empty<GameDataJson.TutorialConditionDto>(),
             };
             steps.Add(s);
             sel = steps.Count - 1;
@@ -291,7 +291,7 @@ namespace CoreDawn.EditorTools
 
             detailHost.Add(GroupTitle("완료 조건 — 전부 충족해야 끝난다"));
 
-            var conds = (s.conditions ?? Array.Empty<GameDataImporter.TutorialConditionDto>()).ToList();
+            var conds = (s.conditions ?? Array.Empty<GameDataJson.TutorialConditionDto>()).ToList();
             if (conds.Count == 0)
                 detailHost.Add(WarnItem("조건이 없습니다 — 이 안내는 영영 끝나지 않습니다 (저작 중일 때만 그대로 두세요)"));
 
@@ -304,7 +304,7 @@ namespace CoreDawn.EditorTools
             detailHost.Add(addC);
         }
 
-        VisualElement BuildConditionBox(GameDataImporter.TutorialStepDto s, List<GameDataImporter.TutorialConditionDto> conds, int i)
+        VisualElement BuildConditionBox(GameDataJson.TutorialStepDto s, List<GameDataJson.TutorialConditionDto> conds, int i)
         {
             var c = conds[i];
             var kind = KindOf(c.type);
@@ -396,7 +396,7 @@ namespace CoreDawn.EditorTools
                     }
                     case "item":
                     {
-                        var ids = (win.root?.items ?? Array.Empty<GameDataImporter.ItemDto>())
+                        var ids = (win.root?.items ?? Array.Empty<GameDataJson.ItemDto>())
                             .Select(it => it.id).Where(id => !string.IsNullOrEmpty(id)).OrderBy(id => id, StringComparer.Ordinal).ToList();
                         var choices = new List<string> { "(없음)" };
                         choices.AddRange(ids);
@@ -424,7 +424,7 @@ namespace CoreDawn.EditorTools
             return box;
         }
 
-        void ShowAddConditionMenu(GameDataImporter.TutorialStepDto s)
+        void ShowAddConditionMenu(GameDataJson.TutorialStepDto s)
         {
             var menu = new GenericMenu();
             foreach (var k in Kinds)
@@ -432,8 +432,8 @@ namespace CoreDawn.EditorTools
                 var captured = k;
                 menu.AddItem(new GUIContent(k.label), false, () =>
                 {
-                    var list = (s.conditions ?? Array.Empty<GameDataImporter.TutorialConditionDto>()).ToList();
-                    list.Add(new GameDataImporter.TutorialConditionDto { type = captured.key });
+                    var list = (s.conditions ?? Array.Empty<GameDataJson.TutorialConditionDto>()).ToList();
+                    list.Add(new GameDataJson.TutorialConditionDto { type = captured.key });
                     s.conditions = list.ToArray();
                     PushHist();
                     RenderDetail(); RenderList(); RefreshMeta();

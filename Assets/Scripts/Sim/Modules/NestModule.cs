@@ -22,7 +22,7 @@ namespace CoreDawn.Sim
     /// <see cref="IDamageInterceptor"/>로 심 안에서 끝낸다. 보스의 <b>죽음</b>은 엔티티 이벤트로 듣는다.
     /// <b>복구는 없다</b> — 보스를 잡은 자리는 영구히 비고, 부순 둥지는 다시 서지 않으며 웨이브의 출구에서 빠진다(자극만 남긴다 — WaveSystem).
     ///
-    /// 보스를 <b>세우는</b> 것은 아직 뷰다 — 프리팹·종류(MonsterDataSO)가 뷰 에셋이라, 모듈은 <see cref="BossNeeded"/>로 "이 자리에 보스가 필요하다"고만
+    /// 보스를 <b>세우는</b> 것은 아직 뷰다 — 프리팹(뷰 카탈로그)·종류(NestView.bossId)가 뷰 저작이라, 모듈은 <see cref="BossNeeded"/>로 "이 자리에 보스가 필요하다"고만
     /// 말하고 뷰가 세워 <see cref="BindBoss"/>로 잇는다(5a-3 카탈로그 뒤에는 심이 직접 세운다). 낮 방어 스폰의 시점·자리(플레이어 거리·화면 가림)는
     /// 뷰에 남아 있다 — 가림 판정이 PhysX라 5단계 과제.
     /// </summary>

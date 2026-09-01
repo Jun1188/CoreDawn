@@ -318,7 +318,7 @@ namespace CoreDawn.EditorTools
                 if (t.name.EndsWith("_Shadow")) doomed.Add(t.gameObject);
 
             // 템플릿의 총구 화염 파티클 뭉치도 뗀다. 이 프로젝트에서 발사 연출의 주인은
-            // 탄약(AmmoModuleSO.muzzleFlashPrefab)이지 타워가 아니다 — 같은 탄을 쓰면
+            // 탄약(뷰 카탈로그 muzzleFlash)이지 타워가 아니다 — 같은 탄을 쓰면
             // 총과 타워가 같은 연출을 쓴다는 규칙을 지키려면 여기 붙어 있으면 안 된다.
             // (원본은 템플릿 프리팹에 그대로 남아 있으니 나중에 따로 뽑아 쓰면 된다.)
             foreach (var ps in view.GetComponentsInChildren<ParticleSystem>(true))

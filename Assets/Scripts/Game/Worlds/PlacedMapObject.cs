@@ -24,7 +24,6 @@ namespace CoreDawn.Worlds
         [Tooltip("차지하는 칸의 주인이 될 엔티티 정의의 팩 id(coredawn:entity/tree). 비어 있으면 칸을 잡지 않는다(광맥은 자체 " +
                  "레지스트리가 따로 관리한다).")]
         [SerializeField] private string dataId;
-        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] private CoreDawn.Data.BuildingDataSO data;
 
         public Vector2Int Cell => cell;
         public string DataId => dataId;

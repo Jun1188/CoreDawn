@@ -49,7 +49,7 @@ namespace CoreDawn.Sim
     ///
     /// 오라(<see cref="AuraEmitterModule"/>)의 형제가 아니라 별개다: 저쪽은 표적도 조준도 없는 펄스. 둘이 공유하는 것은 탄 소비뿐이다.
     /// 시계는 공장 틱(Step의 now) — 몬스터 시계와 별개지만 쿨다운은 상대 시간이라 문제 없다.
-    /// 사거리·반경은 m — 플레이어 총(GunData.range)과 같은 단위. 칸 단위가 아니다.
+    /// 사거리·반경은 m — 플레이어 총(GunDef.range)과 같은 단위. 칸 단위가 아니다.
     /// </summary>
     public sealed class TurretModule : EntityModule, ISteppable, ISaveableModule
     {
