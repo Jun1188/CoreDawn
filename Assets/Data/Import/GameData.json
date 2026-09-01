@@ -1745,6 +1745,62 @@
           "value": "Opaque"
         }
       ]
+    },
+    {
+      "id": "Material:ResourceNodeGround",
+      "displayName": "M_ResourceNode_Ground",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.1,
+          "g": 0.1,
+          "b": 0.11,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 0.1,
+          "g": 0.1,
+          "b": 0.11,
+          "a": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:NestCoreRocks",
+      "displayName": "M_NestCore_Rocks",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.85,
+          "g": 0.12,
+          "b": 0.1,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 0.85,
+          "g": 0.12,
+          "b": 0.1,
+          "a": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
     }
   ],
   "sfx": {
@@ -5404,7 +5460,24 @@
     },
     {
       "view": {
-        "type": "Nest"
+        "type": "Nest",
+        "layer": "Nest",
+        "meshCollider": false,
+        "colliders": [
+          {
+            "name": "NestCore",
+            "layer": "Nest",
+            "capsule": {
+              "center": [
+                0,
+                0.125,
+                0
+              ],
+              "radius": 0.1875,
+              "height": 0.5
+            }
+          }
+        ]
       },
       "id": "Building:Nest",
       "kind": "Nest",
@@ -5444,6 +5517,14 @@
         {
           "item": "Item:BeastCore",
           "amount": 1
+        }
+      ],
+      "models": [
+        {
+          "file": "models/nest_rocks.glb",
+          "materials": [
+            "Material:NestCoreRocks"
+          ]
         }
       ]
     },
@@ -6173,5 +6254,54 @@
     "maxHp": 300.0,
     "main": 25,
     "hotbar": 7
+  },
+  "deposit": {
+    "models": [
+      {
+        "file": "models/deposit_ground.glb",
+        "materials": [
+          "Material:ResourceNodeGround"
+        ]
+      }
+    ],
+    "view": {
+      "type": "Deposit",
+      "layer": "Ground",
+      "meshCollider": false,
+      "colliders": [
+        {
+          "name": "Obstacle",
+          "layer": "Obstacle",
+          "box": {
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.75,
+              0.3,
+              0.75
+            ]
+          }
+        },
+        {
+          "name": "Visual",
+          "layer": "Ground",
+          "box": {
+            "center": [
+              0,
+              0.025,
+              0
+            ],
+            "size": [
+              0.7125,
+              0.05,
+              0.7125
+            ]
+          }
+        }
+      ]
+    }
   }
 }

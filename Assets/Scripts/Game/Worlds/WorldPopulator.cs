@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Sim;
@@ -196,6 +197,13 @@ namespace CoreDawn.Worlds
             return connected + nodes;
         }
 
+        /// <summary>굳지 않은 씬(런타임 생성) — 팩 자원이 준비돼 있어야 한다(부팅 씬이 보장). 아니면 오류.</summary>
+        static void DressNow(GameObject go, EntityDef def)
+        {
+            if (!Managers.PackAssets.IsReady) { Debug.LogError($"[WorldPopulator] {def.Id}: 팩 자원 preload 전에 세우려 했습니다 — 부팅 씬(Boot)을 거쳐야 합니다.", go); return; }
+            BuildingAssembler.Dress(go, def, BeltShape.Straight, 0);
+        }
+
         /// <summary>
         /// 굳힌 씬의 뷰 마커(<see cref="ViewMarker"/>)에 모델·콜라이더를 입힌다 — 팩 자원(glb·재질) preload가 끝난 뒤. 심 연결(Connect)은 기다리지 않는다:
         /// 마커에 BuildingView가 이미 있어 잇기는 즉시 되고, 모양만 늦게 온다. 로딩 화면 게이트는 4c 후속.
@@ -340,11 +348,6 @@ namespace CoreDawn.Worlds
                 Debug.LogWarning("[WorldPopulator] 공장(FactoryBootstrap)이 없어 광맥을 세우지 못했습니다.", world);
                 return 0;
             }
-            if (world.ResourceNodePrefab == null)
-            {
-                Debug.LogWarning("[WorldPopulator] 광맥 프리팹이 World에 배선되지 않아 광맥을 세우지 못했습니다.", world);
-                return 0;
-            }
             int placed = 0;
             foreach (var spec in map.nodes)
             {
@@ -363,7 +366,7 @@ namespace CoreDawn.Worlds
         {
             var map = world.Map;
             var boot = FactoryBootstrap.Instance;
-            if (map.nodes == null || map.nodes.Length == 0 || boot == null || boot.Factory == null || world.ResourceNodePrefab == null) return 0;
+            if (map.nodes == null || map.nodes.Length == 0 || boot == null || boot.Factory == null) return 0;
             int placed = 0;
             foreach (var spec in map.nodes)
             {
@@ -381,11 +384,6 @@ namespace CoreDawn.Worlds
         {
             var map = world.Map;
             if (map.nodes == null || map.nodes.Length == 0) return 0;
-            if (world.ResourceNodePrefab == null)
-            {
-                Debug.LogWarning("[WorldPopulator] 광맥 프리팹이 World에 배선되지 않아 광맥을 굳히지 못했습니다.", world);
-                return 0;
-            }
             int placed = 0;
             foreach (var spec in map.nodes)
                 if (!string.IsNullOrEmpty(spec.itemId) && SpawnNodeView(world, root, spec.itemId, spec.cell) != null) placed++;
@@ -401,17 +399,21 @@ namespace CoreDawn.Worlds
                 Debug.LogError($"[WorldPopulator] 광맥({cell.x},{cell.y})의 자원 '{itemId}'이 팩에 없어 세우지 못했습니다.", world);
                 return null;
             }
-            // 오브젝트 위치는 칸 중앙. 위치는 Instantiate에 함께 넘긴다.
-            Vector3 center = world.CellToWorld(cell) + new Vector3(0.5f, 0f, 0.5f) * world.CellSize;
-            var go = Spawn(world.ResourceNodePrefab, center, Quaternion.identity, root);
-            go.name = $"Node_{PascalKeyOf(item.Id)}_{cell.x}_{cell.y}";
-            Mark(go, cell, null);   // 광맥은 공장 칸을 잡지 않는다 — 마커는 칸의 정본이고, 공장의 광맥 색인이 따로 관리한다
-            var view = go.GetComponent<ResourceDepositView>();
-            if (view == null)
+            // 광맥 정의 — Ore 아이템마다 exporter가 만든 entities/<item>_deposit
+            var depositDef = FindEntity(item.Id.Split('/').Last() + "_deposit");
+            if (depositDef == null)
             {
-                Debug.LogError($"[WorldPopulator] 광맥 프리팹에 ResourceDepositView가 없습니다 — ({cell}) 광맥을 세우지 못했습니다.", world);
+                Debug.LogError($"[WorldPopulator] 광맥({cell.x},{cell.y})의 정의 '{item.Id.Split('/').Last()}_deposit'가 팩에 없습니다.", world);
                 return null;
             }
+            // 오브젝트 위치는 칸 중앙. 마커만 세운다(모델·콜라이더는 런타임이 입힌다 — DressWhenReady); 굳지 않은 씬에서는 즉시 입힌다
+            Vector3 center = world.CellToWorld(cell) + new Vector3(0.5f, 0f, 0.5f) * world.CellSize;
+            var go = BuildingAssembler.Marker(depositDef, center, Quaternion.identity, world.CellSize, 0);
+            go.transform.SetParent(root, true);
+            go.name = $"Node_{PascalKeyOf(item.Id)}_{cell.x}_{cell.y}";
+            Mark(go, cell, null);   // 광맥은 공장 칸을 잡지 않는다 — 마커는 칸의 정본이고, 공장의 광맥 색인이 따로 관리한다
+            if (SpawnOverride == null) DressNow(go, depositDef);
+            var view = go.GetComponent<ResourceDepositView>();
             view.Configure(item);
             return view;
         }
@@ -434,18 +436,20 @@ namespace CoreDawn.Worlds
             var map = world.Map;
             if (map.nests == null || map.nests.Length == 0) return 0;
 
-            if (world.NestPrefab == null)
+            var nestDef = FindEntityWith<NestModuleDef>();
+            if (nestDef == null)
             {
-                Debug.LogWarning("[WorldPopulator] 둥지 프리팹이 World에 배선되지 않아 둥지를 세우지 못했습니다.", world);
+                Debug.LogWarning("[WorldPopulator] 둥지 정의(Nest 모듈)가 팩에 없어 둥지를 세우지 못했습니다.", world);
                 return 0;
             }
-
-            var nestDef = FindEntityWith<NestModuleDef>();
             int placed = 0;
             foreach (var spec in map.nests)
             {
-                var go = Spawn(world.NestPrefab, world.CellToWorldCenter(spec.cell), Quaternion.identity, root);
+                // 마커만 세운다(바위 모델·NestCore 캡슐은 런타임이 입힌다 — DressWhenReady); 스폰 포인트는 맵 사양으로 아래서 만든다
+                var go = BuildingAssembler.Marker(nestDef, world.CellToWorldCenter(spec.cell), Quaternion.identity, world.CellSize, 0);
+                go.transform.SetParent(root, true);
                 go.name = $"Nest_{spec.cell.x}_{spec.cell.y}";
+                if (SpawnOverride == null) DressNow(go, nestDef);
                 Mark(go, spec.cell, nestDef);
 
                 var nest = go.GetComponent<NestView>();

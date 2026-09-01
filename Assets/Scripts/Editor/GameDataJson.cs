@@ -34,6 +34,7 @@ namespace CoreDawn.EditorTools
         {
             public SoundDto[] sounds;                    // 소리 — 변형 클립 묶음
             public MaterialDto[] materials;              // 재질 — 셰이더 이름 + 값·텍스처(5a-4c). 셰이더는 내장, 값은 팩
+            public DepositViewDto deposit;               // 광맥 뷰(모든 광맥 공용: 팩 모델 + view 조각) — 광맥 정의는 Ore 아이템에서 생성된다
             public Dictionary<string, SfxUseDto> sfx;   // 공용 소리 자리(ui_click·construct·mine…) — 구 CommonSFX
             public EffectDto[]   effects;
             public GunDto[]      guns;
@@ -116,6 +117,7 @@ namespace CoreDawn.EditorTools
         [Serializable] internal class FloatDto : JsonDtoBase { public string name; public float value; }
         [Serializable] internal class TagDto : JsonDtoBase { public string name; public string value; }
         [Serializable] internal class ModelDto : JsonDtoBase { public string file; public string[] materials; }   // 팩 모델 + 슬롯별 재질 id
+        [Serializable] internal class DepositViewDto : JsonDtoBase { public ModelDto[] models; public ViewDto view; }   // 광맥 공용 뷰 — view.type은 Deposit 고정
 
         [Serializable] internal class EffectDto : JsonDtoBase
         {

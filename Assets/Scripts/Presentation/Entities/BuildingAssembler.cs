@@ -95,8 +95,11 @@ namespace CoreDawn.Entities
                 body = cube.transform;
             }
 
-            int layer = LayerMask.NameToLayer("Entity");
-            if (layer >= 0) SetLayerRecursively(go.transform, layer);
+            // 레이어 — 기본 Entity, view.layer로 바꿀 수 있다(광맥 몸은 Ground, 둥지는 Nest). 이름이 없는 레이어는 오류
+            string layerName = view.String("layer") ?? "Entity";
+            int layer = LayerMask.NameToLayer(layerName);
+            if (layer < 0) Debug.LogError($"[BuildingAssembler] {def.Id}: view.layer '{layerName}'이 프로젝트 레이어에 없습니다.");
+            else SetLayerRecursively(go.transform, layer);
 
             if (ghost)
             {
@@ -104,12 +107,17 @@ namespace CoreDawn.Entities
                 return body;
             }
 
-            foreach (var mr in body.GetComponentsInChildren<MeshRenderer>(true))
-                if (mr.GetComponent<Collider>() == null && mr.GetComponent<MeshFilter>() is { sharedMesh: not null } mf)
-                    mr.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
-            foreach (var smr in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))   // 블렌드셰이프 애니(벨트)도 맞아야 한다
-                if (smr.GetComponent<Collider>() == null && smr.sharedMesh != null)
-                    smr.gameObject.AddComponent<MeshCollider>().sharedMesh = smr.sharedMesh;
+            // 렌더러마다 MeshCollider — view.meshCollider:false면 안 붙인다(광맥·둥지처럼 데이터 콜라이더만 쓰는 정의)
+            if (view.Raw["meshCollider"] == null || (bool)view.Raw["meshCollider"])
+            {
+                foreach (var mr in body.GetComponentsInChildren<MeshRenderer>(true))
+                    if (mr.GetComponent<Collider>() == null && mr.GetComponent<MeshFilter>() is { sharedMesh: not null } mf)
+                        mr.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
+                foreach (var smr in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))   // 블렌드셰이프 애니(벨트)도 맞아야 한다
+                    if (smr.GetComponent<Collider>() == null && smr.sharedMesh != null)
+                        smr.gameObject.AddComponent<MeshCollider>().sharedMesh = smr.sharedMesh;
+            }
+            AddDataColliders(go, def, view);
             return body;
         }
 
@@ -130,6 +138,39 @@ namespace CoreDawn.Entities
             anim.Play(clipName);
         }
 
+        /// <summary>
+        /// view.colliders — 데이터로 적은 콜라이더(칸 단위, 루트 기준): <c>[{name, layer, box:{center,size}} | {name, layer, capsule:{center,radius,height}}]</c>.
+        /// 각각 자식 오브젝트(name)로 붙인다 — 광맥의 Obstacle 상자(상호작용·막힘), 둥지의 NestCore 캡슐(파괴 뒤에도 남는 핵).
+        /// </summary>
+        static void AddDataColliders(GameObject go, EntityDef def, ViewSpec view)
+        {
+            if (!(view.Raw["colliders"] is Newtonsoft.Json.Linq.JArray arr)) return;
+            int i = 0;
+            foreach (var t in arr)
+            {
+                if (!(t is Newtonsoft.Json.Linq.JObject c)) continue;
+                var child = new GameObject((string)c["name"] ?? $"Collider_{i}");
+                child.transform.SetParent(go.transform, false);
+                string layerName = (string)c["layer"];
+                int layer = string.IsNullOrEmpty(layerName) ? go.layer : LayerMask.NameToLayer(layerName);
+                if (layer < 0) { Debug.LogError($"[BuildingAssembler] {def.Id}: colliders[{i}].layer '{layerName}'이 프로젝트 레이어에 없습니다."); layer = go.layer; }
+                child.layer = layer;
+                Vector3 V(Newtonsoft.Json.Linq.JToken a, Vector3 dflt) => a is Newtonsoft.Json.Linq.JArray v && v.Count >= 3 ? new Vector3((float)v[0], (float)v[1], (float)v[2]) : dflt;
+                if (c["box"] is Newtonsoft.Json.Linq.JObject box)
+                {
+                    var bc = child.AddComponent<BoxCollider>();
+                    bc.center = V(box["center"], Vector3.zero); bc.size = V(box["size"], Vector3.one);
+                }
+                else if (c["capsule"] is Newtonsoft.Json.Linq.JObject cap)
+                {
+                    var cc = child.AddComponent<CapsuleCollider>();
+                    cc.center = V(cap["center"], Vector3.zero); cc.radius = (float?)cap["radius"] ?? 0.5f; cc.height = (float?)cap["height"] ?? 1f;
+                }
+                else Debug.LogError($"[BuildingAssembler] {def.Id}: colliders[{i}]에 box나 capsule이 없습니다.");
+                i++;
+            }
+        }
+
         /// <summary>view.type별 뷰 컴포넌트 — 없을 때만 붙인다(마커에 이미 있을 수 있다). 타워 리그 배선은 몸체가 있을 때.</summary>
         static void AddViewComponents(GameObject go, EntityDef def, ViewSpec view, Transform body)
         {
@@ -146,6 +187,18 @@ namespace CoreDawn.Entities
                 case "Building":
                     if (go.GetComponent<BuildingView>() == null) go.AddComponent<BuildingView>();
                     break;
+                case "Deposit":
+                    if (go.GetComponent<CoreDawn.ResourceNodes.ResourceDepositView>() == null) go.AddComponent<CoreDawn.ResourceNodes.ResourceDepositView>();
+                    break;
+                case "Nest":
+                {
+                    var nest = go.GetComponent<NestView>();
+                    if (nest == null) nest = go.AddComponent<NestView>();
+                    var core = go.transform.Find("NestCore");   // 파괴 뒤에도 남는 핵 — view.colliders의 NestCore 캡슐
+                    if (core != null) nest.indestructibleVisuals = new[] { core.gameObject };
+                    if (body != null) nest.destructibleVisuals = new[] { body.gameObject };
+                    break;
+                }
                 default:
                     Debug.LogError($"[BuildingAssembler] {def.Id}: view.type '{view.Type}'은 건물 조립기가 모르는 종류입니다 — BuildingView로 세웁니다.");
                     if (go.GetComponent<BuildingView>() == null) go.AddComponent<BuildingView>();

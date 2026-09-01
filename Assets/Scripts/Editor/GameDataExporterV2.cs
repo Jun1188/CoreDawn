@@ -286,11 +286,17 @@ namespace CoreDawn.EditorTools
                     if (!(interval > 0f)) throw new InvalidOperationException($"Ore 아이템 '{it["id"]}'에 extractInterval(>0)이 없습니다");
                     string key = KeyOf((string)it["id"]) + "_deposit";
                     if (entities[key] != null) throw new InvalidOperationException($"entities/{key} id 충돌");
+                    var depositView = new JObject { ["type"] = "Deposit" };
+                    if (d["deposit"] is JObject dep)   // 광맥 공용 뷰(v1 root deposit) — 모델·레이어·콜라이더
+                    {
+                        if (dep["models"] is JArray dm && dm.Count > 0) depositView["model"] = PackModels(dm, "deposit");
+                        if (dep["view"] is JObject dv) foreach (var pr in dv.Properties()) if (pr.Name != "type") depositView[pr.Name] = Remap(pr.Value);
+                    }
                     entities[key] = new JObject
                     {
                         ["displayName"] = (string)it["displayName"] + " 광맥",
                         ["faction"] = "Neutral",
-                        ["view"] = new JObject { ["type"] = "Deposit" },
+                        ["view"] = depositView,
                         ["modules"] = new JArray { new JObject { ["type"] = "ResourceDeposit", ["resource"] = NewId((string)it["id"]), ["extractInterval"] = interval } },
                     };
                 }
