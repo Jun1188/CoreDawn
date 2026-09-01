@@ -58,6 +58,7 @@ namespace CoreDawn.EditorTools
         public int threatSeedCost = 80;   // 몬스터 위협도 시드 (월드 칸=10)
         public bool isDemolishable = true, isAttackable;   // 공격 가능은 기본 꺼짐 — 둥지·지형물만 켠다
         public bool walkable;                              // 밟고 지나갈 수 있음(지뢰) — 길찾기가 땅으로 본다
+        public GameDataJson.ViewDto view;                  // 뷰 종류(Tower/Building/Nest) + 소리 자리
         public float speedMultiplier = 1, speedTilesPerSec = 2;
         public List<string> availableRecipes = new();
         public float damageMultiplier = 1, range = 8, fireRate = 1;
@@ -211,6 +212,7 @@ namespace CoreDawn.EditorTools
                         unlocks = (t.unlocks ?? Array.Empty<string>()).ToList(),
                         maxHpBonus = t.maxHpBonus, isFinal = t.isFinal, src = t,
                     }).ToList(),
+                    view = o.view ?? new GameDataJson.ViewDto { type = o.kind == "Tower" ? "Tower" : o.kind == "Nest" ? "Nest" : "Building" },
                     src = o,
                 });
             }
@@ -228,6 +230,7 @@ namespace CoreDawn.EditorTools
             o.id = Bid(b); o.kind = b.kind; o.displayName = b.displayName; o.description = b.description ?? "";
             o.category = b.category; o.model = b.model ?? "";
             o.modelGuid = b.modelGuid ?? "";
+            o.view = b.view;
             o.size ??= new GameDataJson.Vec2Dto();
             o.size.x = b.sizeX; o.size.y = b.sizeY;
             o.ports = b.ports.Select(p => new GameDataJson.PortDto
@@ -569,8 +572,9 @@ namespace CoreDawn.EditorTools
                 (n, g) => { b.model = n; b.modelGuid = g; })));
             propsBox.Add(Field2("", new Label(string.IsNullOrEmpty(b.model)
                 ? "모델이 없으면 풋프린트 크기의 큐브로 만들어진다"
-                : "프리팹은 임포트할 때 이 모델로 자동 생성된다")
+                : "프리팹(Assets/Prefabs/Buildings)은 5a-4 조립기가 이 모델로 대체한다")
             { style = { fontSize = 11, color = GdEnum.Faint, whiteSpace = WhiteSpace.Normal } }));
+            propsBox.Add(GdViewUI.Build(b.view ??= new GameDataJson.ViewDto { type = b.kind == "Tower" ? "Tower" : b.kind == "Nest" ? "Nest" : "Building" }, PushHist, win.SoundIds));
 
             // Size (X, Y) — row2. 줄이면 풋프린트 밖 포트를 함께 지운다 —
             // 격자에서 보이지도 지울 수도 없는 유령이 되기 때문(실수는 Ctrl+Z).

@@ -3192,6 +3192,21 @@
   },
   "guns": {
     "pistol": {
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/pistol_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/pistol_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      },
       "displayName": "기본 권총",
       "description": "시작 화기. 느리지만 탄약이 싸다.",
       "isAutomatic": false,
@@ -3218,24 +3233,24 @@
       "spreadRecoveryRate": 5.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false,
+      "swingAlternate": false
+    },
+    "rifle": {
       "view": {
         "type": "Gun",
         "sfx": {
           "fire": {
-            "sound": "coredawn:sound/pistol_fire",
+            "sound": "coredawn:sound/rifle_fire",
             "volume": 0.8,
             "spatial": true
           },
           "reload": {
-            "sound": "coredawn:sound/pistol_reload",
+            "sound": "coredawn:sound/rifle_reload",
             "volume": 0.7,
             "spatial": true
           }
         }
-      }
-    },
-    "rifle": {
+      },
       "displayName": "라이플",
       "description": "주력 화기. 탄약 소모가 빠르다.",
       "isAutomatic": true,
@@ -3262,24 +3277,24 @@
       "spreadRecoveryRate": 5.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false,
+      "swingAlternate": false
+    },
+    "shotgun": {
       "view": {
         "type": "Gun",
         "sfx": {
           "fire": {
-            "sound": "coredawn:sound/rifle_fire",
+            "sound": "coredawn:sound/shotgun_fire",
             "volume": 0.8,
             "spatial": true
           },
           "reload": {
-            "sound": "coredawn:sound/rifle_reload",
+            "sound": "coredawn:sound/shotgun_reload",
             "volume": 0.7,
             "spatial": true
           }
         }
-      }
-    },
-    "shotgun": {
+      },
       "displayName": "샷건",
       "description": "근접 다수. 한 번에 8발을 소비한다.",
       "isAutomatic": false,
@@ -3306,24 +3321,24 @@
       "spreadRecoveryRate": 4.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false,
+      "swingAlternate": false
+    },
+    "sniper": {
       "view": {
         "type": "Gun",
         "sfx": {
           "fire": {
-            "sound": "coredawn:sound/shotgun_fire",
+            "sound": "coredawn:sound/sniper_fire",
             "volume": 0.8,
             "spatial": true
           },
           "reload": {
-            "sound": "coredawn:sound/shotgun_reload",
+            "sound": "coredawn:sound/sniper_reload",
             "volume": 0.7,
             "spatial": true
           }
         }
-      }
-    },
-    "sniper": {
+      },
       "displayName": "스나이퍼",
       "description": "원거리 단일 대상. 한 발의 무게가 크다.",
       "isAutomatic": false,
@@ -3351,24 +3366,24 @@
       "spreadRecoveryRate": 3.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false,
+      "swingAlternate": false
+    },
+    "grenade_launcher": {
       "view": {
         "type": "Gun",
         "sfx": {
           "fire": {
-            "sound": "coredawn:sound/sniper_fire",
+            "sound": "coredawn:sound/grenade_launcher_fire",
             "volume": 0.8,
             "spatial": true
           },
           "reload": {
-            "sound": "coredawn:sound/sniper_reload",
+            "sound": "coredawn:sound/grenade_launcher_reload",
             "volume": 0.7,
             "spatial": true
           }
         }
-      }
-    },
-    "grenade_launcher": {
+      },
       "displayName": "유탄 발사기",
       "description": "범위. 박격포 타워와 탄약을 공유한다.",
       "isAutomatic": false,
@@ -3395,24 +3410,24 @@
       "spreadRecoveryRate": 4.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false,
+      "swingAlternate": false
+    },
+    "energy_rifle": {
       "view": {
         "type": "Gun",
         "sfx": {
           "fire": {
-            "sound": "coredawn:sound/grenade_launcher_fire",
+            "sound": "coredawn:sound/energy_rifle_fire",
             "volume": 0.8,
             "spatial": true
           },
           "reload": {
-            "sound": "coredawn:sound/grenade_launcher_reload",
+            "sound": "coredawn:sound/energy_rifle_reload",
             "volume": 0.7,
             "spatial": true
           }
         }
-      }
-    },
-    "energy_rifle": {
+      },
       "displayName": "에너지 소총",
       "description": "관통. 좁은 길목에서 최강.",
       "isAutomatic": true,
@@ -3439,24 +3454,19 @@
       "spreadRecoveryRate": 6.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false,
+      "swingAlternate": false
+    },
+    "plasma_cutter": {
       "view": {
         "type": "Gun",
         "sfx": {
           "fire": {
-            "sound": "coredawn:sound/energy_rifle_fire",
-            "volume": 0.8,
-            "spatial": true
-          },
-          "reload": {
-            "sound": "coredawn:sound/energy_rifle_reload",
-            "volume": 0.7,
+            "sound": "coredawn:sound/plasma_cutter_fire",
+            "volume": 0.55,
             "spatial": true
           }
         }
-      }
-    },
-    "plasma_cutter": {
+      },
       "displayName": "플라즈마 커터",
       "description": "잔해 해체용 절단기. 사거리는 코앞뿐이지만 탄약이 필요 없고, 한 번 휘두르면 주변까지 함께 갈린다.",
       "isAutomatic": true,
@@ -3498,17 +3508,7 @@
         0.025,
         0.06
       ],
-      "swingAlternate": true,
-      "view": {
-        "type": "Gun",
-        "sfx": {
-          "fire": {
-            "sound": "coredawn:sound/plasma_cutter_fire",
-            "volume": 0.55,
-            "spatial": true
-          }
-        }
-      }
+      "swingAlternate": true
     }
   },
   "tutorial": {

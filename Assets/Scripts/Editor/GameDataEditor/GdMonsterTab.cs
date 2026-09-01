@@ -170,6 +170,7 @@ namespace CoreDawn.EditorTools
                 combat.PushHist(); RefreshMeta();
             });
             detailBox.Add(Field2("프리팹", prefabF));
+            detailBox.Add(GdViewUI.Build(m.view ??= new GameDataJson.ViewDto { type = "Monster" }, combat.PushHist, win.SoundIds));
 
             // ── 수치 ──
             detailBox.Add(H3("체력"));
