@@ -29,9 +29,7 @@ namespace CoreDawn.Visuals
 
         struct Held
         {
-            public Outlinable Outline;
-            public bool WasEnabled;
-            public Color PrevColor;
+            public Outlinable Outline;   // 풀에서 빌린 것 — 대상에 붙이지 않는다(OutlinePool)
         }
 
         readonly Dictionary<Ping, Held> held = new();
@@ -59,14 +57,9 @@ namespace CoreDawn.Visuals
         {
             if (ping == null || !ping.HasTarget || held.ContainsKey(ping)) return;
 
-            var o = EpoOutlines.Ensure(ping.Target);
+            var o = OutlinePool.Rent(ping.Target, ColorOf(ping.Kind), dilateShift, blurShift);   // 풀에서 빌려 대상 렌더러를 가리킨다
             if (o == null) return;
-
-            var h = new Held { Outline = o, WasEnabled = o.enabled, PrevColor = o.OutlineParameters.Color };
-            held[ping] = h;
-
-            EpoOutlines.Style(o, ColorOf(ping.Kind), dilateShift, blurShift);
-            o.enabled = true;
+            held[ping] = new Held { Outline = o };
         }
 
         void OnExpired(Ping ping)
@@ -76,12 +69,7 @@ namespace CoreDawn.Visuals
             Restore(h);
         }
 
-        static void Restore(Held h)
-        {
-            if (h.Outline == null) return;   // 대상이 파괴됐다 — 되돌릴 것이 없다
-            h.Outline.OutlineParameters.Color = h.PrevColor;
-            h.Outline.enabled = h.WasEnabled;
-        }
+        static void Restore(Held h) => OutlinePool.Return(h.Outline);
 
         Color ColorOf(PingKind kind) => kind switch
         {

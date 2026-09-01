@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Visuals;
@@ -5,125 +7,129 @@ using CoreDawn.Visuals;
 namespace CoreDawn.Entities
 {
     /// <summary>
-    /// 몬스터의 <b>연출</b> 담당 — 이동/공격/피격/사망 애니메이션과 사망 후처리.
-    /// 전투 판정은 일절 하지 않는다. 무엇이 언제 일어날지는 <see cref="Monster"/>와 상태머신이 정하고,
-    /// 여기는 "그렇게 보이도록" 만들 뿐이다. <see cref="TowerVisualController"/>와 같은 역할·같은 자리다.
-    ///
-    /// 리그 참조는 전부 선택이다 — 모델이 없는 몬스터(자리표시 캡슐)는 animator를 비워두면
-    /// 모든 호출이 무해하게 통과한다. 그래서 적 종류가 늘어도 여기에 분기가 생기지 않는다.
-    ///
-    /// 트랜스폼 하나당 주인은 하나다:
-    ///   루트          → MovementComponent (위치·회전)
-    ///   View          → 이 스크립트 (사망 시 가라앉기)
-    ///   Anim 이하 본  → Animator (클립)
-    /// 셋이 겹치면 매 프레임 싸우므로, MonsterRigBuilder가 계층을 그렇게 나눠 두었다.
-    ///
-    /// <b>Update()가 없다.</b> 매 프레임 구동은 <see cref="MonsterAnimationSystem"/>이
-    /// <see cref="VisualTick"/>으로 대신 돌린다 — 개체 수만큼의 Update() 호출을 없애는 것이
-    /// 물량 대비의 절반이다(CrowdSystem이 겹침 해소에 쓴 것과 같은 논리).
+    /// 몬스터 연출 — 심 이벤트(공격·피격·사망)와 이동 속도를 팩 모델(glb)의 클립으로 옮긴다(5a-4c: Animator·오버라이드 컨트롤러 퇴역).
+    /// 상태기는 심에 있고 여기는 얇은 재생기다: <c>view.anim{idle, walk, run, alert, attack[], hit[], death}</c>의 클립 이름을
+    /// glTFast가 만든 legacy <see cref="Animation"/>에서 찾아 CrossFade 한다. 이동은 속도(0..1)로 idle/walk/run 중 하나를 고르고,
+    /// 한 번 재생(alert·attack·hit·death)은 끝날 때까지 이동 클립을 덮는다.
+    /// 클립 이름이 모델에 없으면 오류 한 번 + 그 연출은 건너뛴다(폴백 없음).
     /// </summary>
     [DisallowMultipleComponent]
     public class MonsterVisualController : MonoBehaviour
     {
-        /// <summary>사망 연출 방식 — 종에 사망 클립이 있는지에 따라 갈린다.</summary>
         public enum DeathStyle
         {
-            /// <summary>전용 사망 클립이 있다 (Grenadier).</summary>
-            AnimationClip,
+            AnimationClip,   // death 클립을 끝까지 틀고 멈춘다
+            SinkAway,        // 피격 모션 한 번 뒤 가라앉는다(사망 클립이 없는 종)
+        }
 
-            /// <summary>사망 클립이 없다 (Chomper·Spitter). 피격 모션 뒤 지면으로 가라앉힌다.</summary>
-            SinkAway,
+        /// <summary>view.anim — 상태 → 클립 이름. attack/hit는 변형 배열(재생 때 무작위).</summary>
+        public sealed class ClipMap
+        {
+            public string Idle, Walk, Run, Alert, Death;
+            public string[] Attack = System.Array.Empty<string>(), Hit = System.Array.Empty<string>();
+
+            public static ClipMap From(JObject anim)
+            {
+                var m = new ClipMap();
+                if (anim == null) return m;
+                m.Idle = (string)anim["idle"]; m.Walk = (string)anim["walk"]; m.Run = (string)anim["run"];
+                m.Alert = (string)anim["alert"]; m.Death = (string)anim["death"];
+                m.Attack = Names(anim["attack"]); m.Hit = Names(anim["hit"]);
+                return m;
+            }
+
+            static string[] Names(JToken t)
+            {
+                if (t is JArray a) { var l = new List<string>(); foreach (var x in a) if (x.Type == JTokenType.String) l.Add((string)x); return l.ToArray(); }
+                return t != null && t.Type == JTokenType.String ? new[] { (string)t } : System.Array.Empty<string>();
+            }
         }
 
         [Header("리그 — 비우면 해당 연출을 건너뛴다")]
-        [Tooltip("빌더가 축척·접지를 실어 둔 노드. 사망 시 이 노드를 가라앉힌다. Animator는 건드리지 않는다.")]
+        [Tooltip("모델 루트(pose가 실린 노드). 사망 시 이 노드를 가라앉힌다.")]
         [SerializeField] private Transform view;
+        [Tooltip("glb 클립을 든 legacy Animation. 비우면 애니메이션 연출 전체를 건너뛴다.")]
+        [SerializeField] private Animation anim;
 
-        [Tooltip("종별 AnimatorOverrideController가 붙은 Animator. 비우면 애니메이션 연출 전체를 건너뛴다.")]
-        [SerializeField] private Animator animator;
-
-        [Header("이동 → Speed 파라미터")]
-        [Tooltip("이 속도(월드 단위/초)에서 Speed=1(달리기)이 된다. 0 이하면 심 MovementModule.MoveSpeed를 쓴다.")]
+        [Header("이동")]
+        [Tooltip("이 속도(월드 단위/초)에서 달리기가 된다. 0 이하면 심 MovementModule.MoveSpeed를 쓴다.")]
         [SerializeField] private float runSpeed = 0f;
-
-        [Tooltip("Speed 파라미터 감쇠 시간(초). 클수록 걷기↔달리기 전환이 느긋해진다.")]
+        [Tooltip("속도 감쇠 시간(초). 클수록 걷기↔달리기 전환이 느긋해진다.")]
         [SerializeField] private float speedDamp = 0.12f;
-
-        [Header("변종 — 오버라이드 컨트롤러가 실제로 채운 슬롯 수")]
-        [Tooltip("공격 모션 개수. 1이면 항상 Attack_0.")]
-        [SerializeField, Min(1)] private int attackVariants = 1;
-
-        [Tooltip("피격 모션 개수. 1이면 항상 Hit_0.")]
-        [SerializeField, Min(1)] private int hitVariants = 1;
+        [Tooltip("걷기로 넘어가는 정규화 속도")]
+        [SerializeField] private float walkThreshold = 0.15f;
+        [Tooltip("달리기로 넘어가는 정규화 속도")]
+        [SerializeField] private float runThreshold = 0.6f;
+        [Tooltip("클립 전환 페이드(초)")]
+        [SerializeField] private float fade = 0.15f;
 
         [Tooltip("피격 반응 최소 간격(초). 없으면 연사에 맞을 때 몸이 계속 튕겨 이동이 뭉개져 보인다.")]
         [SerializeField] private float hitReactionCooldown = 0.6f;
 
         [Header("사망")]
         [SerializeField] private DeathStyle deathStyle = DeathStyle.AnimationClip;
-
         [Tooltip("가라앉기 시작까지의 뜸(초). 피격 모션이 한 번 보일 시간을 준다.")]
         [SerializeField] private float sinkDelay = 0.4f;
-
         [Tooltip("가라앉는 데 걸리는 시간(초). Entity.deathDelay보다 짧아야 소멸 전에 다 묻힌다.")]
         [SerializeField] private float sinkDuration = 1.2f;
-
         [Tooltip("가라앉는 깊이(월드 단위).")]
         [SerializeField] private float sinkDepth = 1.5f;
 
-        /// <summary>조립기가 정의(view)로 채운다 — 프리팹 인스펙터 대신. 모델·Animator는 카탈로그 모델 프리팹 안의 것.</summary>
-        public void Wire(Transform viewRoot, Animator anim, int attackVariantCount, int hitVariantCount, DeathStyle style, float sink)
+        ClipMap clips = new ClipMap();
+        readonly HashSet<string> warned = new HashSet<string>();
+
+        public void Wire(Transform viewRoot, Animation animation, ClipMap clipMap, DeathStyle style, float sink)
         {
             view = viewRoot;
-            animator = anim;
-            attackVariants = Mathf.Max(1, attackVariantCount);
-            hitVariants = Mathf.Max(1, hitVariantCount);
+            anim = animation;
+            clips = clipMap ?? new ClipMap();
             deathStyle = style;
             sinkDepth = sink;
+            if (anim != null)
+            {
+                anim.playAutomatically = false;
+                foreach (var name in new[] { clips.Idle, clips.Walk, clips.Run }) SetWrap(name, WrapMode.Loop);
+                foreach (var name in clips.Attack) SetWrap(name, WrapMode.Once);
+                foreach (var name in clips.Hit) SetWrap(name, WrapMode.Once);
+                SetWrap(clips.Alert, WrapMode.Once);
+                SetWrap(clips.Death, WrapMode.ClampForever);
+            }
         }
 
-        // 파라미터는 MonsterAnimationBuilder가 만드는 MonsterCommon.controller와 이름이 맞아야 한다.
-        // 없는 파라미터에 Set을 하면 매 호출 에러가 찍히므로 양쪽을 함께 고칠 것.
-        private static readonly int HashSpeed = Animator.StringToHash("Speed");
-        private static readonly int HashAttack = Animator.StringToHash("Attack");
-        private static readonly int HashAttackIndex = Animator.StringToHash("AttackIndex");
-        private static readonly int HashHit = Animator.StringToHash("Hit");
-        private static readonly int HashHitIndex = Animator.StringToHash("HitIndex");
-        private static readonly int HashAlert = Animator.StringToHash("Alert");
-        private static readonly int HashDead = Animator.StringToHash("Dead");
+        void SetWrap(string name, WrapMode mode)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            var st = anim[name];
+            if (st != null) st.wrapMode = mode;
+        }
 
         private EntityView entity;
         private Renderer[] renderers;
-
         private Vector3 lastPosition;
         private float lastHealth = -1f;
         private float lastHitTime = float.MinValue;
-
+        private float speed;               // 정규화 속도(감쇠)
+        private string locomotion;         // 지금 도는 이동 클립
+        private float busyUntil = float.MinValue;   // 한 번 재생이 끝나는 시각 — 그때까지 이동 클립을 덮는다
         private bool dead;
         private float deadElapsed;
         private Vector3 viewHome;
 
-        /// <summary>LOD 시스템이 갱신 주기를 조절하려고 읽는다. 없을 수 있다.</summary>
-        public Animator Animator => animator;
-
-        /// <summary>LOD 시스템이 그림자·스키닝 품질을 조절하려고 읽는다.</summary>
+        /// <summary>legacy Animation — MonsterAnimationSystem이 LOD로 켜고 끈다.</summary>
+        public Animation Anim => anim;
         public Renderer[] Renderers => renderers;
 
         private void Awake()
         {
             entity = GetComponent<EntityView>();
             if (entity == null) entity = GetComponentInParent<EntityView>();
-
-            if (animator == null) animator = GetComponentInChildren<Animator>();
-            if (view == null && animator != null) view = animator.transform.parent;
-
+            if (anim == null) anim = GetComponentInChildren<Animation>(true);
+            if (view == null && anim != null) view = anim.transform;
             renderers = GetComponentsInChildren<Renderer>(true);
-
             // 화면 밖에서 본 경계를 매 프레임 다시 재는 비용은 몬스터 물량에서 그대로 부담이 된다.
             // 우리 몬스터는 스킨 경계를 크게 벗어나는 클립이 없어 꺼도 잘린 그림이 나오지 않는다.
             foreach (var r in renderers)
                 if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = false;
-
             if (view != null) viewHome = view.localPosition;
             lastPosition = transform.position;
         }
@@ -134,31 +140,26 @@ namespace CoreDawn.Entities
             dead = false;
             deadElapsed = 0f;
             lastHitTime = float.MinValue;
+            busyUntil = float.MinValue;
+            speed = 0f;
+            locomotion = null;
             lastPosition = transform.position;
             if (view != null) view.localPosition = viewHome;
-
             if (entity != null)
             {
-                // 심이 먼저 만드는 몬스터는 Instantiate 시점(OnEnable)에 아직 엔티티가 없다 — 붙을 때 AttachEntity가 OnHealthChanged를 한 번 쏴 준다
+                // 심이 먼저 만드는 몬스터는 Instantiate 시점(OnEnable)에 아직 엔티티가 없다 — 붙을 때 AttachEntity가 OnHealthChanged를 한 번 쏜다
                 lastHealth = entity.Health != null ? entity.Health.CurrentHealth : 0f;
                 entity.OnAttackAction += PlayAttack;
                 entity.OnHealthChanged += HandleHealthChanged;
                 entity.OnDeath += PlayDeath;
             }
-
-            if (animator != null)
-            {
-                animator.applyRootMotion = false;
-                animator.SetBool(HashDead, false);
-            }
-
+            PlayLocomotion(clips.Idle, true);
             MonsterAnimationSystem.Register(this);
         }
 
         private void OnDisable()
         {
             MonsterAnimationSystem.Unregister(this);
-
             if (entity != null)
             {
                 entity.OnAttackAction -= PlayAttack;
@@ -167,44 +168,36 @@ namespace CoreDawn.Entities
             }
         }
 
-        /// <summary>
-        /// <see cref="MonsterAnimationSystem"/>이 티어에 맞는 주기로 호출한다.
-        /// <paramref name="deltaTime"/>은 <b>지난 호출 이후 누적된 시간</b>이지 Time.deltaTime이 아니다 —
-        /// 저빈도 티어에서는 한 번에 여러 프레임치가 들어온다.
-        /// </summary>
         public void VisualTick(float deltaTime)
         {
             if (deltaTime <= 0f) return;
-
             if (dead)
             {
                 TickDeath(deltaTime);
                 return;
             }
-
             TickSpeed(deltaTime);
         }
 
-        /// <summary>
-        /// 컬링 티어에서 돌아왔다 — 위치 기준점을 다시 잡는다.
-        /// 이걸 안 하면 그동안 이동한 거리가 한 번에 속도로 환산돼 정지한 몬스터가 달리는 모션을 낸다.
-        /// </summary>
+        /// <summary>LOD Reduced — Animation이 꺼진 채로 우리가 시간을 밀어 샘플한다(Animator.Update의 자리).</summary>
+        public void Advance(float step)
+        {
+            if (anim == null || step <= 0f) return;
+            foreach (AnimationState st in anim)
+                if (st.enabled) st.time += step;
+            anim.Sample();
+        }
+
         public void ResumeFromCulled()
         {
             lastPosition = transform.position;
         }
 
-        // ── 이동 ────────────────────────────────────────────────────
+        // ── 이동 ────────────────────────────────────────────────
 
-        /// <summary>
-        /// Speed는 <see cref="MovementComponent.IsMoving"/>이 아니라 <b>실제 변위</b>로 낸다.
-        /// 플로우필드 모드에서는 벽에 막혀도 IsMoving이 true라(MovementComponent.cs:26)
-        /// 그 값을 그대로 쓰면 제자리걸음이 생긴다. 넉백·군중 밀림까지 자연히 반영되는 것은 덤이다.
-        /// </summary>
         private void TickSpeed(float deltaTime)
         {
-            if (animator == null) return;
-
+            if (anim == null) return;
             Vector3 position = transform.position;
             Vector3 delta = position - lastPosition;
             delta.y = 0f;
@@ -215,76 +208,89 @@ namespace CoreDawn.Entities
                 : (entity is MonsterView mv && mv.SimMovement != null ? mv.SimMovement.MoveSpeed : 5f);
             if (reference < 0.01f) reference = 5f;
 
-            float normalized = Mathf.Clamp01(delta.magnitude / deltaTime / reference);
-            animator.SetFloat(HashSpeed, normalized, speedDamp, deltaTime);
+            float target = Mathf.Clamp01(delta.magnitude / deltaTime / reference);
+            speed = speedDamp > 0f ? Mathf.Lerp(speed, target, 1f - Mathf.Exp(-deltaTime / speedDamp)) : target;
+
+            if (Time.time < busyUntil) return;   // 한 번 재생 중 — 끝나면 이동 클립으로 돌아간다
+            string want = speed >= runThreshold && !string.IsNullOrEmpty(clips.Run) ? clips.Run
+                        : speed >= walkThreshold && !string.IsNullOrEmpty(clips.Walk) ? clips.Walk
+                        : clips.Idle;
+            PlayLocomotion(want, false);
         }
+
+        void PlayLocomotion(string name, bool immediate)
+        {
+            if (anim == null || string.IsNullOrEmpty(name)) return;
+            if (locomotion == name && anim.IsPlaying(name)) return;
+            if (!Has(name)) return;
+            locomotion = name;
+            if (immediate) anim.Play(name); else anim.CrossFade(name, fade);
+        }
+
+        /// <summary>한 번 재생 — 끝날 때까지 이동 클립을 덮는다.</summary>
+        void PlayOnce(string name)
+        {
+            if (anim == null || string.IsNullOrEmpty(name) || !Has(name)) return;
+            var st = anim[name];
+            st.time = 0f;
+            anim.CrossFade(name, fade * 0.5f);
+            busyUntil = Time.time + st.length / Mathf.Max(0.01f, st.speed);
+            locomotion = null;   // 끝나면 TickSpeed가 다시 고른다
+        }
+
+        bool Has(string name)
+        {
+            if (anim[name] != null) return true;
+            if (warned.Add(name)) Debug.LogError($"[MonsterVisualController] {name}: 클립이 모델에 없습니다(view.anim을 확인).", this);
+            return false;
+        }
+
+        static string Pick(string[] variants) => variants.Length == 0 ? null : variants[variants.Length > 1 ? Random.Range(0, variants.Length) : 0];
 
         // ── 이벤트 반응 ─────────────────────────────────────────────
 
-        /// <summary>플레이어를 발견했다 — 짧은 경계 모션. Monster가 어그로를 잡을 때 부른다.</summary>
         public void PlayAlert()
         {
-            if (dead || animator == null) return;
-            animator.SetTrigger(HashAlert);
+            if (dead || anim == null) return;
+            PlayOnce(clips.Alert);
         }
 
         private void PlayAttack()
         {
-            if (dead || animator == null) return;
-            animator.SetInteger(HashAttackIndex, attackVariants > 1 ? Random.Range(0, attackVariants) : 0);
-            animator.SetTrigger(HashAttack);
+            if (dead || anim == null) return;
+            PlayOnce(Pick(clips.Attack));
         }
 
-        /// <summary>
-        /// 체력 변화 이벤트는 회복에도 온다(보스의 교전 포기 시 Health.Initialize 등).
-        /// 줄었을 때만 피격 반응을 낸다.
-        /// </summary>
         private void HandleHealthChanged(float current, float max)
         {
             bool damaged = lastHealth >= 0f && current < lastHealth;
             lastHealth = current;
-
-            if (!damaged || dead || animator == null) return;
+            if (!damaged || dead || anim == null) return;
             if (Time.time < lastHitTime + hitReactionCooldown) return;
             lastHitTime = Time.time;
-
-            animator.SetInteger(HashHitIndex, hitVariants > 1 ? Random.Range(0, hitVariants) : 0);
-            animator.SetTrigger(HashHit);
+            PlayOnce(Pick(clips.Hit));
         }
 
-        // ── 사망 ────────────────────────────────────────────────────
+        // ── 사망 ────────────────────────────────────────────────
 
-        /// <summary>
-        /// Dead는 트리거가 아니라 <b>bool</b>이다. LOD가 Animator를 껐다 켜는 사이에
-        /// 트리거가 소비되지 않고 남거나 반대로 흘러가 버리는 사고를 막는다.
-        /// </summary>
         private void PlayDeath()
         {
             if (dead) return;
             dead = true;
             deadElapsed = 0f;
-
-            if (animator == null) return;
-
-            animator.SetBool(HashDead, true);
-            animator.SetFloat(HashSpeed, 0f);
-
+            if (anim == null) return;
             // 사망 클립이 없는 종은 마지막으로 피격 모션을 한 번 보여주고 가라앉기로 넘긴다.
-            if (deathStyle == DeathStyle.SinkAway)
-            {
-                animator.SetInteger(HashHitIndex, hitVariants > 1 ? Random.Range(0, hitVariants) : 0);
-                animator.SetTrigger(HashHit);
-            }
+            if (deathStyle == DeathStyle.SinkAway) PlayOnce(Pick(clips.Hit));
+            else PlayOnce(clips.Death);
+            busyUntil = float.MaxValue;   // 죽은 뒤엔 이동 클립으로 돌아가지 않는다
         }
 
         private void TickDeath(float deltaTime)
         {
             if (deathStyle != DeathStyle.SinkAway || view == null) return;
-
             deadElapsed += deltaTime;
             float t = Mathf.Clamp01((deadElapsed - sinkDelay) / Mathf.Max(0.01f, sinkDuration));
             if (t <= 0f) return;
-
             // 부드럽게 시작해 일정하게 묻힌다 — 툭 떨어지면 죽은 게 아니라 사라진 것처럼 보인다
             view.localPosition = viewHome + Vector3.down * (sinkDepth * Mathf.SmoothStep(0f, 1f, t));
         }

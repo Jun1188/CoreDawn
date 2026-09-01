@@ -117,7 +117,7 @@ namespace CoreDawn.Visuals
                 switch (m.Tier)
                 {
                     case Tier.Full:
-                        // Animator는 스스로 돈다 — 연출 로직만 밀어준다
+                        // Animation은 스스로 돈다 — 연출 로직만 밀어준다
                         m.Visual.VisualTick(deltaTime);
                         break;
 
@@ -129,7 +129,7 @@ namespace CoreDawn.Visuals
                         m.Accumulated = 0f;
                         m.Phase = 0f;
                         m.Visual.VisualTick(step);
-                        if (m.Visual.Animator != null) m.Visual.Animator.Update(step);
+                        m.Visual.Advance(step);   // Animation이 꺼져 있으니 우리가 시간을 밀어 샘플한다
                         break;
 
                     case Tier.Culled:
@@ -213,14 +213,14 @@ namespace CoreDawn.Visuals
             member.Accumulated = 0f;
 
             var visual = member.Visual;
-            var animator = visual.Animator;
+            var animation = visual.Anim;
 
-            if (animator != null)
+            if (animation != null)
             {
-                // Full일 때만 Animator가 스스로 돈다. 나머지는 우리가 직접 Update를 부르거나 아예 멈춘다.
-                animator.enabled = tier == Tier.Full;
+                // Full일 때만 Animation이 스스로 돈다. 나머지는 우리가 직접 Advance를 부르거나 아예 멈춘다.
+                animation.enabled = tier == Tier.Full;
                 if (tier == Tier.Full)
-                    animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                    animation.cullingType = AnimationCullingType.BasedOnRenderers;
             }
 
             // 멀리 있는 몬스터의 그림자는 화면에서 몇 픽셀도 차지하지 않으면서 스킨된 메시를

@@ -29,8 +29,28 @@ namespace CoreDawn.EditorTools
         static readonly Dictionary<string, string> SectionOf = new()
         {
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
-            ["Gun"] = "gun", ["Tutorial"] = "tutorial", ["Sound"] = "sound",
+            ["Gun"] = "gun", ["Tutorial"] = "tutorial", ["Sound"] = "sound", ["Material"] = "material",
         };
+
+        /// <summary>임포트된 텍스처를 png 바이트로 — 원본이 LoadImage가 못 읽는 형식(tif·psd·tga)일 때. 노멀맵은 linear로 읽어 그대로 굽는다(런타임 UnpackNormal은 RG/AG 둘 다 푼다).</summary>
+        static byte[] TexturePng(string assetPath, bool linear)
+        {
+            var src = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            if (src == null) throw new InvalidOperationException($"텍스처를 읽지 못했습니다: {assetPath}");
+            var rt = RenderTexture.GetTemporary(src.width, src.height, 0, RenderTextureFormat.ARGB32, linear ? RenderTextureReadWrite.Linear : RenderTextureReadWrite.sRGB);
+            var prev = RenderTexture.active;
+            try
+            {
+                Graphics.Blit(src, rt);
+                RenderTexture.active = rt;
+                var tex = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false, linear);
+                tex.ReadPixels(new Rect(0, 0, src.width, src.height), 0, 0); tex.Apply();
+                var png = tex.EncodeToPNG();
+                UnityEngine.Object.DestroyImmediate(tex);
+                return png;
+            }
+            finally { RenderTexture.active = prev; RenderTexture.ReleaseTemporary(rt); }
+        }
 
         /// <summary>옛 v1 id("Item:IronOre") → 팩 id("coredawn:item/iron_ore") — 에디터 도구(맵 임포터·이관)가 쓴다. 이미 팩 id면 그대로.</summary>
         public static string PackIdOf(string v1Id)
@@ -76,8 +96,119 @@ namespace CoreDawn.EditorTools
             string KeyOf(string old) => NewId(old).Split('/', 2)[1];
             JArray Arr(JToken t) => t as JArray ?? new JArray();
 
-            foreach (var sec in new[] { "items", "recipes", "effects", "buildings", "monsters", "guns", "tutorial", "sounds" })
+            foreach (var sec in new[] { "items", "recipes", "effects", "buildings", "monsters", "guns", "tutorial", "sounds", "materials" })
                 foreach (var e in Arr(d[sec])) NewId((string)e["id"]);
+
+            // 아이콘(5a-4c) — 스프라이트 시트/낱장 png를 팩 textures/로 복사하고 좌표표(<파일>.json: pixelsPerUnit, frames{이름: x,y,w,h,px,py})를 쓴다.
+            // v2 view.icon = {file, frame}. 같은 시트는 한 번만.
+            var iconFiles = new Dictionary<string, (string file, JObject frames)>();
+            JObject IconRef(JToken e, string owner)
+            {
+                string guid = (string)e["iconGuid"], spriteName = (string)e["icon"];
+                if (string.IsNullOrEmpty(guid)) return null;
+                if (!iconFiles.TryGetValue(guid, out var sheet))
+                {
+                    string src = AssetDatabase.GUIDToAssetPath(guid);
+                    if (string.IsNullOrEmpty(src)) throw new InvalidOperationException($"{owner}: iconGuid {guid}의 에셋이 없습니다");
+                    string ext = Path.GetExtension(src).ToLowerInvariant();
+                    Directory.CreateDirectory($"{PackFolder}/textures");
+                    string file = "textures/" + Snake(Path.GetFileNameWithoutExtension(src)) + ((ext == ".png" || ext == ".jpg" || ext == ".jpeg") ? ext : ".png");
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") File.Copy(src, $"{PackFolder}/{file}", true);
+                    else File.WriteAllBytes($"{PackFolder}/{file}", TexturePng(src, false));
+                    var frames = new JObject(); float ppu = 100f;
+                    var all = AssetDatabase.LoadAllAssetRepresentationsAtPath(src).OfType<Sprite>().ToList();
+                    if (all.Count == 0) { var single = AssetDatabase.LoadAssetAtPath<Sprite>(src); if (single != null) all.Add(single); }
+                    if (all.Count == 0) throw new InvalidOperationException($"{owner}: '{src}'에 스프라이트가 없습니다");
+                    foreach (var sp in all)
+                    {
+                        frames[sp.name] = new JObject { ["x"] = sp.rect.x, ["y"] = sp.rect.y, ["w"] = sp.rect.width, ["h"] = sp.rect.height, ["px"] = sp.pivot.x, ["py"] = sp.pivot.y };
+                        ppu = sp.pixelsPerUnit;
+                    }
+                    File.WriteAllText($"{PackFolder}/{file}.json", new JObject { ["pixelsPerUnit"] = ppu, ["frames"] = frames }.ToString(Newtonsoft.Json.Formatting.Indented) + "\n");
+                    sheet = (file, frames); iconFiles[guid] = sheet;
+                }
+                string frame = !string.IsNullOrEmpty(spriteName) && sheet.frames[spriteName] != null ? spriteName
+                             : sheet.frames.Count == 1 ? ((JProperty)sheet.frames.First).Name : null;
+                if (frame == null) throw new InvalidOperationException($"{owner}: 아이콘 '{spriteName}'이 시트 '{sheet.file}'에 없습니다");
+                return new JObject { ["file"] = sheet.file, ["frame"] = frame };
+            }
+            // 내장 연출(파티클·탄 프리팹)은 팩 파일이 아니다 — 이름만(Resources/Builtin/Effects/<이름>). guid로 이름을 확인한다
+            string EffectName(JToken e, string nameKey, string guidKey, string owner)
+            {
+                string guid = (string)e[guidKey], name = (string)e[nameKey];
+                if (string.IsNullOrEmpty(guid) && string.IsNullOrEmpty(name)) return null;
+                if (!string.IsNullOrEmpty(guid))
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (string.IsNullOrEmpty(path)) throw new InvalidOperationException($"{owner}: {guidKey} {guid}의 프리팹이 없습니다");
+                    if (!path.StartsWith("Assets/Resources/Builtin/Effects/")) throw new InvalidOperationException($"{owner}: {nameKey} '{path}'는 내장 연출 폴더(Resources/Builtin/Effects)에 있어야 합니다");
+                    name = Path.GetFileNameWithoutExtension(path);
+                }
+                return name;
+            }
+
+            var materials = new JObject();
+            // 팩 모델 배열 v1 [{file, materials:["Material:…"]}] → v2 [{file, materials:[팩 id]}]. 재질 존재를 검사한다
+            JArray PackModels(JArray packModels, string owner)
+            {
+                var arr = new JArray();
+                foreach (var pm in packModels)
+                {
+                    if (!(pm is JObject po) || string.IsNullOrEmpty((string)po["file"])) throw new InvalidOperationException($"{owner}: models 항목은 {{file, materials}} 객체여야 합니다");
+                    var mats = new JArray();
+                    foreach (var m in Arr(po["materials"]))
+                    {
+                        string nid = NewId((string)m);
+                        if (materials[nid.Split('/').Last()] == null) throw new InvalidOperationException($"{owner}: 재질 '{m}'가 materials에 없습니다");
+                        mats.Add(nid);
+                    }
+                    arr.Add(new JObject { ["file"] = po["file"], ["materials"] = mats });
+                }
+                return arr;
+            }
+
+            // 재질(5a-4c) — 셰이더는 내장, 값·텍스처는 팩. 텍스처 파일을 팩 textures/로 복사한다(png·jpg는 그대로, 그 밖은 png로 변환).
+            foreach (var mat in Arr(d["materials"]))
+            {
+                string mid = (string)mat["id"];
+                if (string.IsNullOrEmpty((string)mat["shader"])) throw new InvalidOperationException($"materials/{mid}: shader가 비었습니다");
+                var v = new JObject { ["shader"] = mat["shader"] };
+                var texs = new JObject();
+                foreach (var t in Arr(mat["textures"]))
+                {
+                    string src = AssetDatabase.GUIDToAssetPath((string)t["textureGuid"]);
+                    if (string.IsNullOrEmpty(src)) throw new InvalidOperationException($"materials/{mid}: 텍스처 '{t["name"]}'({t["texture"]})의 guid가 죽었습니다");
+                    string ext = Path.GetExtension(src).ToLowerInvariant();
+                    bool linear = (bool?)t["linear"] ?? false;
+                    string file;
+                    Directory.CreateDirectory($"{PackFolder}/textures");
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg")
+                    {
+                        file = "textures/" + Snake(Path.GetFileNameWithoutExtension(src)) + ext;
+                        File.Copy(src, $"{PackFolder}/{file}", true);
+                    }
+                    else
+                    {
+                        // tif·psd·tga 등 — 임포트된 텍스처를 그대로 png로 굽는다(LoadImage가 읽는 형식만 팩에 둔다)
+                        file = "textures/" + Snake(Path.GetFileNameWithoutExtension(src)) + ".png";
+                        File.WriteAllBytes($"{PackFolder}/{file}", TexturePng(src, linear));
+                    }
+                    texs[(string)t["name"]] = new JObject { ["file"] = file, ["linear"] = linear };
+                    texs[(string)t["name"]] = new JObject { ["file"] = file, ["linear"] = (bool?)t["linear"] ?? false };
+                }
+                if (texs.Count > 0) v["textures"] = texs;
+                JObject Vec4s(JToken arr) { var o = new JObject(); foreach (var c in Arr(arr)) o[(string)c["name"]] = new JArray((float)c["r"], (float)c["g"], (float)c["b"], (float)c["a"]); return o; }
+                if (Arr(mat["colors"]).Count > 0) v["colors"] = Vec4s(mat["colors"]);
+                if (Arr(mat["vectors"]).Count > 0) v["vectors"] = Vec4s(mat["vectors"]);
+                if (Arr(mat["floats"]).Count > 0) { var o = new JObject(); foreach (var f in Arr(mat["floats"])) o[(string)f["name"]] = (float)f["value"]; v["floats"] = o; }
+                if (Arr(mat["keywords"]).Count > 0) v["keywords"] = mat["keywords"].DeepClone();
+                if ((int?)mat["renderQueue"] is int rq && rq >= 0) v["renderQueue"] = rq;
+                if (Arr(mat["tags"]).Count > 0) { var o = new JObject(); foreach (var t in Arr(mat["tags"])) o[(string)t["name"]] = t["value"]; v["tags"] = o; }
+                var mo = new JObject();
+                if (!string.IsNullOrEmpty((string)mat["displayName"])) mo["displayName"] = mat["displayName"];
+                mo["view"] = v;
+                materials[KeyOf(mid)] = mo;
+            }
             var dup = idmap.Values.GroupBy(v => v).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
             if (dup.Count > 0) throw new InvalidOperationException("id 충돌: " + string.Join(", ", dup));
 
@@ -135,8 +266,14 @@ namespace CoreDawn.EditorTools
                                            ["lifetime"] = it["lifetime"], ["pierce"] = it["pierce"], ["effects"] = Uses(it["attackEffects"]) });
                 if (!string.IsNullOrEmpty((string)it["gun"])) mods.Add(new JObject { ["type"] = "Weapon", ["gun"] = NewId((string)it["gun"]) });
                 o["modules"] = mods;
-                var itemView = View(it, "icon", "iconGuid", "bullet", "bulletGuid",
-                                    "muzzleFlash", "muzzleFlashGuid", "hitEffect", "hitEffectGuid");
+                var itemView = new JObject();
+                var iconRef = IconRef(it, (string)it["id"]);
+                if (iconRef != null) itemView["icon"] = iconRef;
+                foreach (var (nk, gk) in new[] { ("bullet", "bulletGuid"), ("muzzleFlash", "muzzleFlashGuid"), ("hitEffect", "hitEffectGuid") })
+                {
+                    string fx = EffectName(it, nk, gk, (string)it["id"]);
+                    if (fx != null) itemView[nk] = fx;
+                }
                 MergeView(itemView, it);
                 if (itemView.Count > 0) o["view"] = itemView;
                 items[KeyOf((string)it["id"])] = o;
@@ -149,11 +286,17 @@ namespace CoreDawn.EditorTools
                     if (!(interval > 0f)) throw new InvalidOperationException($"Ore 아이템 '{it["id"]}'에 extractInterval(>0)이 없습니다");
                     string key = KeyOf((string)it["id"]) + "_deposit";
                     if (entities[key] != null) throw new InvalidOperationException($"entities/{key} id 충돌");
+                    var depositView = new JObject { ["type"] = "Deposit" };
+                    if (d["deposit"] is JObject dep)   // 광맥 공용 뷰(v1 root deposit) — 모델·레이어·콜라이더
+                    {
+                        if (dep["models"] is JArray dm && dm.Count > 0) depositView["model"] = PackModels(dm, "deposit");
+                        if (dep["view"] is JObject dv) foreach (var pr in dv.Properties()) if (pr.Name != "type") depositView[pr.Name] = Remap(pr.Value);
+                    }
                     entities[key] = new JObject
                     {
                         ["displayName"] = (string)it["displayName"] + " 광맥",
                         ["faction"] = "Neutral",
-                        ["view"] = new JObject { ["type"] = "Deposit" },
+                        ["view"] = depositView,
                         ["modules"] = new JArray { new JObject { ["type"] = "ResourceDeposit", ["resource"] = NewId((string)it["id"]), ["extractInterval"] = interval } },
                     };
                 }
@@ -291,9 +434,15 @@ namespace CoreDawn.EditorTools
                     mods.Add(loot);
                 }
                 o["modules"] = mods;
-                var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid",
-                                "icon", "iconGuid");
+                var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid");
+                var bIcon = IconRef(b, (string)b["id"]); if (bIcon != null) view["icon"] = bIcon;
                 MergeView(view, b);
+                if (b["models"] is JArray packModels && packModels.Count > 0)   // 팩 모델 배열이 있으면 그것이 정본 — guid 참조를 지운다
+                {
+                    view["model"] = PackModels(packModels, (string)b["id"]); view.Remove("modelGuid");
+                }
+                if (b["modelsCurveL"] is JArray curveL && curveL.Count > 0) { view["modelCurveL"] = PackModels(curveL, (string)b["id"]); view.Remove("modelCurveLGuid"); }
+                if (b["modelsCurveR"] is JArray curveR && curveR.Count > 0) { view["modelCurveR"] = PackModels(curveR, (string)b["id"]); view.Remove("modelCurveRGuid"); }
                 if (view.Count > 0) o["view"] = view;
                 entities[KeyOf((string)b["id"])] = o;
             }
@@ -316,6 +465,7 @@ namespace CoreDawn.EditorTools
                 };
                 var mview = View(m, "model", "modelGuid");
                 MergeView(mview, m);
+                if (m["models"] is JArray monsterModels && monsterModels.Count > 0) { mview["model"] = PackModels(monsterModels, (string)m["id"]); mview.Remove("modelGuid"); }
                 o["view"] = mview;
                 entities[KeyOf((string)m["id"])] = o;
             }
@@ -378,7 +528,15 @@ namespace CoreDawn.EditorTools
                     default: return x.DeepClone();
                 }
             }
-            foreach (var g in Arr(d["guns"])) guns[KeyOf((string)g["id"])] = Remap(g);
+            foreach (var g in Arr(d["guns"]))
+            {
+                var o = Remap(g) as JObject;
+                if (o?["view"] is JObject gv && gv["models"] is JArray gm && gm.Count > 0)   // 팩 모델 — guid 참조를 지운다
+                {
+                    gv["model"] = PackModels(gm, (string)g["id"]); gv.Remove("models"); gv.Remove("modelGuid");
+                }
+                guns[KeyOf((string)g["id"])] = o;
+            }
             foreach (var t in Arr(d["tutorial"])) tutorial[KeyOf((string)t["id"])] = Remap(t);
             // 소리 — 변형 클립 묶음만(표현 전용). 볼륨·공간감은 쓰는 자리(view.sfx · sfx)의 값이다.
             foreach (var snd in Arr(d["sounds"]))
@@ -387,7 +545,18 @@ namespace CoreDawn.EditorTools
                 if (!string.IsNullOrEmpty((string)snd["displayName"])) o["displayName"] = snd["displayName"];
                 var clips = new JArray();
                 foreach (var c in Arr(snd["clips"]))
-                    if (!string.IsNullOrEmpty((string)c["clipGuid"])) clips.Add(new JObject { ["clip"] = c["clip"], ["clipGuid"] = c["clipGuid"] });
+                {
+                    string guid = (string)c["clipGuid"];
+                    if (string.IsNullOrEmpty(guid)) continue;
+                    string src = AssetDatabase.GUIDToAssetPath(guid);
+                    if (string.IsNullOrEmpty(src)) throw new InvalidOperationException($"sounds/{snd["id"]}: 클립 '{c["clip"]}'의 guid가 죽었습니다");
+                    string ext = Path.GetExtension(src).ToLowerInvariant();
+                    if (ext != ".wav" && ext != ".ogg" && ext != ".mp3") throw new InvalidOperationException($"sounds/{snd["id"]}: 클립 '{src}'는 wav/ogg/mp3가 아닙니다");
+                    string file = "sounds/" + Snake(Path.GetFileNameWithoutExtension(src)) + ext;
+                    Directory.CreateDirectory($"{PackFolder}/sounds");
+                    File.Copy(src, $"{PackFolder}/{file}", true);
+                    clips.Add(file);
+                }
                 if (clips.Count == 0) throw new InvalidOperationException($"sounds/{snd["id"]}: clips가 비었습니다");
                 o["view"] = new JObject { ["clips"] = clips };
                 sounds[KeyOf((string)snd["id"])] = o;
@@ -425,7 +594,7 @@ namespace CoreDawn.EditorTools
             var outRoot = new JObject
             {
                 ["format"] = 2, ["pack"] = Pack, ["items"] = items, ["recipes"] = recipes, ["effects"] = effects,
-                ["entities"] = entities, ["guns"] = guns, ["tutorial"] = tutorial, ["sounds"] = sounds,
+                ["entities"] = entities, ["guns"] = guns, ["tutorial"] = tutorial, ["sounds"] = sounds, ["materials"] = materials,
             };
             if (waveRule != null) outRoot["wave"] = waveRule;
             if (sfxRoot != null) outRoot["sfx"] = sfxRoot;

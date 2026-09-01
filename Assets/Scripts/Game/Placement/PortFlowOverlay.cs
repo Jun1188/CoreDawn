@@ -40,9 +40,7 @@ namespace CoreDawn.Placement
         [SerializeField] float refreshMoveTiles = 6f;
 
         [Header("셰이더")]
-        [Tooltip("비워두면 Shader.Find(\"LevelUp/PortFlow\")로 런타임 생성. " +
-                 "빌드에 셰이더를 포함시키려면 이 필드에 머티리얼을 연결하거나 " +
-                 "Project Settings > Graphics > Always Included Shaders 에 넣을 것.")]
+        [Tooltip("비워두면 내장 셰이더 목록(BuiltinShaders)의 \"CoreDawn/PortFlow\"로 런타임 생성.")]
         [SerializeField] Material flowMaterial;
 
         float _cellSize = 1f;
@@ -69,11 +67,10 @@ namespace CoreDawn.Placement
             {
                 if (flowMaterial != null) return flowMaterial;
 
-                var shader = Shader.Find("LevelUp/PortFlow");
+                var shader = CoreDawn.Managers.BuiltinShaders.Of("CoreDawn/PortFlow");
                 if (shader == null)
                 {
-                    Debug.LogWarning("[PortFlow] 셰이더 'LevelUp/PortFlow'를 찾지 못했습니다. " +
-                                     "빌드에서는 Always Included Shaders에 넣거나 머티리얼을 연결하세요.", this);
+                    Debug.LogWarning("[PortFlow] 셰이더 'CoreDawn/PortFlow'를 찾지 못했습니다.", this);
                     return null;
                 }
                 flowMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };

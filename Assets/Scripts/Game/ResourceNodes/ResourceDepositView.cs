@@ -65,7 +65,6 @@ namespace CoreDawn.ResourceNodes
         {
             base.Start();
             if (Entity != null) return;                       // 이미 심에 섰다(WorldPopulator)
-            if (GetComponent<PlacedMapObject>() != null) return;   // 맵이 굳힌 광맥 — Connect가 마커의 칸으로 세운다
             // 씬에 직접 놓인 광맥(테스트 씬) — 자원으로 광맥 정의를 찾아 심에 세운다
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null)

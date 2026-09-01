@@ -1,0 +1,20 @@
+{
+    "name": "CoreDawn.PackExport.Editor",
+    "rootNamespace": "CoreDawn.EditorTools",
+    "references": [
+        "glTFast",
+        "glTFast.Export",
+        "Unity.Nuget.Newtonsoft-Json"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

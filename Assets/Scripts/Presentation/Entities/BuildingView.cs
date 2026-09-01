@@ -19,7 +19,7 @@ namespace CoreDawn.Entities
     //   Building (순수 C#, Runtime/Factory) = 데이터 원본. Data/Origin/회전/버퍼/연결/행동/IsRemoved, 피해 규칙.
     //   BuildingView (여기)                = 씬 표현. 상호작용 창구, 체력바·파괴음 연출, 길찾기 비용 재칠,
     //                                         그리고 심 데이터는 아래 위임 프로퍼티로만 노출한다.
-    // 소비자는 정의(view.Def)와 뷰 카탈로그(ViewCatalogSO)로 읽는다 — SO 위임(view.Data)은 5a-3b에서 제거.
+    // 소비자는 정의(view.Def)와 팩 자원(PackAssets)으로 읽는다 — SO 위임(view.Data)은 5a-3b에서 제거.
     //
     // 생명주기는 심이 앞선다: 배치(FactorySystem.Place)가 엔티티·건물을 먼저 만들고 브리지가 이 뷰에 잇는다.
     //   심 제거 → FactorySystem.Removed → FactoryBootstrap이 이 GameObject를 파괴

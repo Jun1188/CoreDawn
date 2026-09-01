@@ -19,7 +19,7 @@
 //  같이 고친 것 — 정점 색 대신 높이로 굽힘 마스크를 만든다.
 //  자세한 이유는 VegetationLitInput.hlsl의 VegetationBendMask 주석 참고.
 // ─────────────────────────────────────────────────────────────────────────────
-Shader "TeamProj/Vegetation Lit"
+Shader "CoreDawn/Vegetation Lit"
 {
     Properties
     {

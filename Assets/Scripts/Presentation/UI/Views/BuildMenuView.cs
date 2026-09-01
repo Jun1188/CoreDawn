@@ -214,7 +214,7 @@ namespace CoreDawn.UI
             var icon = new VisualElement();
             icon.AddToClassList("ui-slot__icon");
             icon.AddToClassList("ui-slot__icon--xs");
-            var sprite = ViewCatalogSO.IconOf(so);
+            var sprite = PackAssets.IconOf(so);
             if (sprite != null) icon.style.backgroundImage = new StyleBackground(sprite);
             row.Add(icon);
 

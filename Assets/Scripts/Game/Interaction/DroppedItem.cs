@@ -103,7 +103,7 @@ namespace CoreDawn.Interaction
             promptMessage = $"{item.DisplayName ?? item.Id} x{amount} 줍기";
 
             // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
-            if (visual != null) visual.sprite = ViewCatalogSO.IconOf(itemData);
+            if (visual != null) visual.sprite = Managers.PackAssets.IconOf(itemData);
         }
 
         /// <summary>
@@ -136,14 +136,8 @@ namespace CoreDawn.Interaction
 
         static DroppedItem CreateInstance()
         {
-            var catalog = ViewCatalogSO.LoadDefault();
-            var prefab = catalog != null ? catalog.droppedItemPrefab : null;
-            var created = prefab != null ? Instantiate(prefab).GetComponent<DroppedItem>() : null;
-            if (created == null)
-            {
-                if (prefab != null) Debug.LogError("[DroppedItem] 뷰 카탈로그의 droppedItemPrefab에 DroppedItem 컴포넌트가 없습니다 — 코드 조립으로 대신합니다.");
-                created = BuildFallback(Vector3.zero);
-            }
+            // 바닥 아이템은 프리팹이 아니라 코드가 조립한다(5a-4c) — 계약 컴포넌트·콜라이더·레이어는 코드의 몫, 그림은 아이템 아이콘(팩)
+            var created = Build(Vector3.zero);
             created.name = PooledName;
             created.transform.SetParent(poolRoot, false);
             return created;
@@ -179,10 +173,10 @@ namespace CoreDawn.Interaction
         }
 
         /// <summary>공용 프리팹이 없을 때의 코드 조립 (구 방식). 프리팹과 같은 구조를 만든다.</summary>
-        static DroppedItem BuildFallback(Vector3 position)
+        static DroppedItem Build(Vector3 position)
         {
             // 1. 루트 오브젝트 + 레이어
-            GameObject dropObj = new("Dropped(Fallback)");
+            GameObject dropObj = new("Dropped");
             dropObj.transform.position = position;
 
             int layer = LayerMask.NameToLayer("Interactable");
@@ -196,21 +190,31 @@ namespace CoreDawn.Interaction
 
             // 3. 콜라이더 2개 — 바닥 충돌용 고체 + 플레이어 획득 감지용 센서
             BoxCollider solidCol = dropObj.AddComponent<BoxCollider>();
-            solidCol.size = new Vector3(0.3f, 0.3f, 0.3f);
+            solidCol.size = new Vector3(0.5f, 0.5f, 0.5f); solidCol.center = new Vector3(0f, 0.1f, 0f);
             solidCol.isTrigger = false;
 
             BoxCollider triggerCol = dropObj.AddComponent<BoxCollider>();
-            triggerCol.size = new Vector3(1.5f, 1.5f, 1.5f);
+            triggerCol.size = new Vector3(1.5f, 1.5f, 1.5f); triggerCol.center = new Vector3(0f, 0.5f, 0f);
             triggerCol.isTrigger = true;
 
             // 4. 비주얼 자식 (둥둥 떠서 도는 아이콘)
             GameObject visualObj = new("Visual");
             visualObj.transform.SetParent(dropObj.transform);
-            visualObj.transform.localPosition = Vector3.zero;
+            visualObj.transform.localPosition = new Vector3(0f, 0.5f, 0f);
+            visualObj.transform.localScale = Vector3.one * 0.25f;   // 아이콘(256px, 100ppu = 2.56m)을 0.64m로 — 구 프리팹 값
             visualObj.layer = dropObj.layer;
 
             var sr = visualObj.AddComponent<SpriteRenderer>();
             visualObj.AddComponent<ItemRotator>();
+            // 항상 켜진 아웃라인(바닥 아이템이 눈에 띄게) — 구 프리팹의 Outlinable 값. 대상 렌더러를 넣어야 그려진다
+            var outline = visualObj.AddComponent<EPOOutline.Outlinable>();
+            outline.RenderStyle = EPOOutline.RenderStyle.Single;
+            outline.DrawingMode = EPOOutline.OutlinableDrawingMode.Normal;
+            outline.TryAddTarget(new EPOOutline.OutlineTarget(sr));
+            outline.OutlineParameters.Enabled = true;
+            outline.OutlineParameters.Color = new Color(0.9539399f, 0.9996342f, 1.498039f, 1f);
+            outline.OutlineParameters.DilateShift = 0.5f;
+            outline.OutlineParameters.BlurShift = 0f;
 
             var dropped = dropObj.AddComponent<DroppedItem>();
             dropped.visual = sr;

@@ -179,6 +179,25 @@ namespace CoreDawn.Managers
             // static 구독이 플레이를 넘어 살아남으므로, 빼고 다시 걸어야 중복되지 않는다
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            BootAsync();
+        }
+
+        /// <summary>
+        /// 팩 파일 자원(glb…) 읽기를 시작하고 씬을 동기로 얹는다. 씬 로드는 프레임 1의 Start() 전에 끝나야 한다(InputManager·심 엔티티를 거기서 찾는다) —
+        /// 그래서 preload를 기다리지 않는다. 굳은 World 씬은 부팅 시 모델이 필요 없고, 굳지 않은 경로는 PackAssets.IsReady를 보고 소리 낸다.
+        /// </summary>
+        static void BootAsync()
+        {
+            // 게임 씬을 부팅 씬 없이 열었으면(에디터에서 World를 바로 재생, 테스트) 부팅 씬으로 돌아가 자원을 다 읽고 다시 온다 —
+            // 조립기·배치는 동기라 팩 자원이 먼저 준비돼 있어야 한다. 부팅 씬 자신과 플레이어 없는 순수 테스트 씬은 제외.
+            var scene = SceneManager.GetActiveScene();
+            if (!PackAssets.IsReady && !BootScene.IsBootScene(scene) && Object.FindFirstObjectByType<PlayerController>() != null)
+            {
+                Debug.Log($"[GameBootstrap] '{scene.name}'을 부팅 씬 없이 열어 팩 자원이 없습니다 — Boot를 거쳐 다시 엽니다.");
+                BootScene.Enter(scene.name);
+                return;
+            }
+            _ = PackAssets.PreloadAsync(SimHost.Database);
             TryLoadAll();
         }
 
@@ -187,7 +206,7 @@ namespace CoreDawn.Managers
             // Single 로드는 additive로 얹힌 기능 씬도 함께 내리므로 씬 전환마다 다시 검사한다
             if (mode == LoadSceneMode.Single)
             {
-                TryLoadAll();
+                BootAsync();
                 return;
             }
 

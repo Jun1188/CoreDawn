@@ -9,7 +9,7 @@ namespace CoreDawn.EditorTools
     //
     //  정본은 하나(Assets/Data/Import/GameData.json)이고 GameData 편집기(GameDataEditorWindow)가 이 DTO로
     //  읽고 쓴다. 저장할 때 GameDataExporterV2가 v2 팩(StreamingAssets/packs/<pack>/data.json)을 내고,
-    //  ViewCatalogBaker가 뷰 카탈로그를 굽는다. 런타임은 v2 팩만 읽는다 — SO 에셋은 5a-3e에서 퇴역했다.
+    //  런타임은 v2 팩만 읽는다(에셋 참조는 내보내기가 팩 파일로 복사한다) — SO 에셋은 5a-3e에서 퇴역했다.
     //  (구 GameDataImporter의 SO 생성부는 삭제. v2 직접 편집은 5a-3e-2에서.)
     // ================================================================
     public static class GameDataJson
@@ -33,6 +33,8 @@ namespace CoreDawn.EditorTools
         [Serializable] internal class Root : JsonDtoBase
         {
             public SoundDto[] sounds;                    // 소리 — 변형 클립 묶음
+            public MaterialDto[] materials;              // 재질 — 셰이더 이름 + 값·텍스처(5a-4c). 셰이더는 내장, 값은 팩
+            public DepositViewDto deposit;               // 광맥 뷰(모든 광맥 공용: 팩 모델 + view 조각) — 광맥 정의는 Ore 아이템에서 생성된다
             public Dictionary<string, SfxUseDto> sfx;   // 공용 소리 자리(ui_click·construct·mine…) — 구 CommonSFX
             public EffectDto[]   effects;
             public GunDto[]      guns;
@@ -95,6 +97,27 @@ namespace CoreDawn.EditorTools
         /// <summary>소리 한 종 — 변형 클립 묶음(재생 때 무작위). id 관례 "Sound:이름".</summary>
         [Serializable] internal class SoundDto : JsonDtoBase { public string id; public string displayName; public ClipDto[] clips; }
         [Serializable] internal class ClipDto : JsonDtoBase { public string clip; public string clipGuid; }
+
+        // 재질(5a-4c) — PackMaterialHarvester가 거두고 v2 내보내기가 textures를 팩 png로 복사한다. 값은 셰이더 기본값과 다른 것만
+        [Serializable] internal class MaterialDto : JsonDtoBase
+        {
+            public string id;              // "Material:TreeBark"
+            public string displayName;
+            public string shader;          // 내장 셰이더 이름("CoreDawn/Vegetation Lit", "Universal Render Pipeline/Lit")
+            public TextureRefDto[] textures;
+            public ColorDto[] colors;
+            public ColorDto[] vectors;
+            public FloatDto[] floats;
+            public string[] keywords;
+            public int renderQueue = -1;   // -1 = 셰이더 기본
+            public TagDto[] tags;          // 태그 오버라이드(RenderType 등)
+        }
+        [Serializable] internal class TextureRefDto : JsonDtoBase { public string name; public string texture; public string textureGuid; public bool linear; }
+        [Serializable] internal class ColorDto : JsonDtoBase { public string name; public float r, g, b, a; }
+        [Serializable] internal class FloatDto : JsonDtoBase { public string name; public float value; }
+        [Serializable] internal class TagDto : JsonDtoBase { public string name; public string value; }
+        [Serializable] internal class ModelDto : JsonDtoBase { public string file; public string[] materials; }   // 팩 모델 + 슬롯별 재질 id
+        [Serializable] internal class DepositViewDto : JsonDtoBase { public ModelDto[] models; public ViewDto view; }   // 광맥 공용 뷰 — view.type은 Deposit 고정
 
         [Serializable] internal class EffectDto : JsonDtoBase
         {
@@ -191,6 +214,7 @@ namespace CoreDawn.EditorTools
             public string displayName;   // 필수
             public string description;
             public string category;      // BuildingCategory 이름
+            public ModelDto[] models;     // 팩 모델 배열 {file: "models/x.glb", materials: ["Material:…"(슬롯 순)]} — [0]이 기본, 나머지는 변형. 있으면 model/modelGuid 대신 이것이 v2 view.model이 된다(5a-4c)
             public string model;          // 모델 파일명 — 사람이 읽는 표시이자 guid가 죽었을 때의 폴백
             public string modelGuid;      // 모델 에셋 guid — 이쪽이 진실. 이름은 프로젝트에 둘 있으면 어느 쪽이 걸릴지 정해지지 않는다
             public string icon;           // 빌드 메뉴 아이콘 — 스프라이트 이름(아이템 icon과 같은 규약)
@@ -213,6 +237,7 @@ namespace CoreDawn.EditorTools
             // 종류별 전용 필드 — 해당 kind가 아니면 무시된다
             public float    speedMultiplier;      // Miner
             public float    speedTilesPerSec;     // Belt
+            public ModelDto[] modelsCurveL, modelsCurveR;   // 벨트 커브의 팩 모델(5a-4c) — 있으면 modelCurveL/R guid 대신
             public string   modelCurveL, modelCurveR;
             public string   modelCurveLGuid, modelCurveRGuid;
             public string[] availableRecipes;     // Assembler
@@ -250,6 +275,7 @@ namespace CoreDawn.EditorTools
             public string id;            // 필수. 예: "Monster:Basic"
             public string displayName;   // 필수
             public string description;
+            public ModelDto[] models;    // 팩 모델(glb: 스킨 + 클립) + 슬롯 재질 — 있으면 model/modelGuid 대신(5a-4c)
             public string model;         // 모델 프리팹 이름(Art/Models/Monsters — 리그·Animator·머티리얼을 안에 든 모델) — 사람이 읽는 용도
             public string modelGuid;     // 모델 에셋 guid — 이쪽이 파일을 특정한다
             public float  maxHp;

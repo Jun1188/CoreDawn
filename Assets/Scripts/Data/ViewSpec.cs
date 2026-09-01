@@ -30,7 +30,7 @@ namespace CoreDawn.Data
 
     /// <summary>
     /// 정의의 view 블록을 읽은 것 — 뷰 종류(<see cref="Type"/>, <see cref="ViewSchema"/> 표의 키)와 소리 자리(<see cref="Sfx"/>).
-    /// 모델·프리팹·아이콘 같은 에셋 참조는 카탈로그(<see cref="ViewCatalogSO"/>)가 굽고, 여기는 값만 든다.
+    /// 모델·아이콘·소리는 팩 파일(PackAssets)이고, 여기는 값만 든다.
     /// 잘못된 값(모르는 type·표에 없는 sfx 이름·팩에 없는 소리)은 첫 조회에서 소리 내어 알린다 — 조용한 폴백 없음.
     /// </summary>
     public sealed class ViewSpec
@@ -44,6 +44,40 @@ namespace CoreDawn.Data
 
         /// <summary>이름의 소리 자리. 정의에 없으면 null — 그 연출은 소리 없이 지나간다(빠진 이름은 이미 로드 때 검증됐다).</summary>
         public SoundUse SfxOf(string name) => sfx.TryGetValue(name, out var u) ? u : null;
+
+        /// <summary>
+        /// 모델 한 항목 — 팩 glb(<c>{file, materials[]}</c>: materials[i]는 glb 재질 슬롯 i에 꽂을 팩 재질 id). 문자열 하나는 옛 guid 참조(퇴역 — IsPack=false, 조립기가 오류).
+        /// </summary>
+        public sealed class ModelRef
+        {
+            public readonly string File;
+            public readonly IReadOnlyList<string> Materials;
+            public readonly bool IsPack;
+            public ModelRef(string file, IReadOnlyList<string> materials, bool isPack) { File = file; Materials = materials; IsPack = isPack; }
+        }
+
+        /// <summary>모델 목록 — view.model은 배열([0]이 기본, 나머지는 변형)이고 옛 형식은 문자열 하나. 없으면 빈 목록.</summary>
+        public IReadOnlyList<ModelRef> Models(string key = "model") => ModelsOf(Raw, key);
+
+        /// <summary>검증 없이 원시 view에서 모델 목록만 읽는다 — 부팅 preload가 쓴다.</summary>
+        public static IReadOnlyList<ModelRef> ModelsOf(JObject raw, string key)
+        {
+            var list = new List<ModelRef>();
+            void Add(JToken x)
+            {
+                if (x is JObject o)
+                {
+                    var mats = new List<string>();
+                    if (o["materials"] is JArray ma) foreach (var m in ma) if (m.Type == JTokenType.String) mats.Add((string)m);
+                    list.Add(new ModelRef((string)o["file"], mats, true));
+                }
+                else if (x != null && x.Type == JTokenType.String) list.Add(new ModelRef((string)x, Array.Empty<string>(), false));
+            }
+            var t = raw?[key];
+            if (t is JArray arr) foreach (var x in arr) Add(x);
+            else if (t != null) Add(t);
+            return list;
+        }
 
         /// <summary>view의 [x, y, z] 배열. 없거나 짧으면 null.</summary>
         public Vector3? Vec3(string key)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using CoreDawn.Managers;
 using CoreDawn.Interaction;
 using CoreDawn.Placement;
 using CoreDawn.Worlds;
@@ -175,7 +176,7 @@ namespace CoreDawn.Factory
         /// </summary>
         private static void ApplyVisual(SpriteRenderer slot, ItemDef item)
         {
-            var icon = ViewCatalogSO.IconOf(item);
+            var icon = PackAssets.IconOf(item);
             if (slot.sprite != icon) slot.sprite = icon;
         }
     }
