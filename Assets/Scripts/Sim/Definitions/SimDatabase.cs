@@ -9,7 +9,7 @@ namespace CoreDawn.Sim
     /// 정의의 정본 — 팩 json(data.json)에서 한 번 읽어 불변으로 든다. 심은 여기서만 정의를 얻는다(에셋·UnityEngine.Object 없음).
     ///
     /// id는 저장하지 않고 위치에서 파생한다: <c>팩:섹션/키</c>(소문자 snake, 예 <c>coredawn:item/iron_plate</c>).
-    /// 섹션 = items · recipes · effects · entities · guns · wave(규칙 하나 — 밤 웨이브 점수식) · dayCycle(주야 시계 하나)(+ tutorial은 아직 원본 JObject로 보관 — 심이 안 쓴다).
+    /// 섹션 = items · recipes · effects · entities · guns · tutorial · wave(규칙 하나 — 밤 웨이브 점수식) · dayCycle(주야 시계 하나).
     /// 로드 뒤 Resolve 패스가 id 문자열을 정의 참조로 잇고, 모르는 id·잘못된 키는 오류로 모은다(strict면 예외).
     /// </summary>
     public sealed class SimDatabase
@@ -17,7 +17,7 @@ namespace CoreDawn.Sim
         static readonly Regex KeyRule = new Regex("^[a-z0-9_]+$");
         static readonly (string section, string singular)[] Sections =
         {
-            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("guns", "gun"),
+            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("guns", "gun"), ("tutorial", "tutorial"),
         };
 
         public string Pack { get; }
@@ -29,6 +29,8 @@ namespace CoreDawn.Sim
         WaveRuleDef wave;
         DayCycleDef dayCycle;
         readonly Dictionary<string, GunDef> guns = new Dictionary<string, GunDef>();
+        readonly Dictionary<string, TutorialStepDef> tutorial = new Dictionary<string, TutorialStepDef>();
+        List<TutorialStepDef> tutorialOrdered;
         readonly List<string> errors = new List<string>();
 
         public IReadOnlyDictionary<string, ItemDef> Items => items;
@@ -40,8 +42,22 @@ namespace CoreDawn.Sim
         /// <summary>주야 시계(낮·밤 길이) — 팩 dayCycle 블록. 없으면 null.</summary>
         public DayCycleDef DayCycle => dayCycle;
         public IReadOnlyDictionary<string, GunDef> Guns => guns;
+        public IReadOnlyDictionary<string, TutorialStepDef> Tutorial => tutorial;
+        /// <summary>튜토리얼 스텝을 order → id 순으로. 게임(TutorialManager)이 이 순서대로 안내한다.</summary>
+        public IReadOnlyList<TutorialStepDef> TutorialSteps
+        {
+            get
+            {
+                if (tutorialOrdered == null)
+                {
+                    tutorialOrdered = new List<TutorialStepDef>(tutorial.Values);
+                    tutorialOrdered.Sort((a, b) => a.Order != b.Order ? a.Order.CompareTo(b.Order) : string.CompareOrdinal(a.Id, b.Id));
+                }
+                return tutorialOrdered;
+            }
+        }
 
-        /// <summary>심이 아직 안 읽는 섹션(tutorial) — 튜토리얼이 가져간다.</summary>
+        /// <summary>원본 json 트리 — 에디터 도구(카탈로그 베이커 등)가 view 블록을 읽는다. 심은 쓰지 않는다.</summary>
         public JObject Raw { get; private set; }
 
         public IReadOnlyList<string> Errors => errors;
@@ -57,8 +73,8 @@ namespace CoreDawn.Sim
         };
 
         /// <summary>
-        /// 옛 id("Item:IronPlate", SO·세이브가 아직 쓴다) → 이 팩의 v2 id("coredawn:item/iron_plate"). 규칙이 순수해서 표가 필요 없다.
-        /// 이미 v2 형식이면 그대로. SO가 퇴역하고 세이브 마이그레이션이 끝나면(5a-1c·5a-3) 사라진다.
+        /// 옛 id("Item:IronPlate" — 구 SO id 체계) → 이 팩의 v2 id("coredawn:item/iron_plate"). 규칙이 순수해서 표가 필요 없다.
+        /// 이미 v2 형식이면 그대로. 호출처는 세이브 마이그레이션(SaveMigrations)뿐이다 — 런타임 정의 조회에 쓰지 말 것.
         /// </summary>
         public string LegacyId(string oldId)
         {
@@ -96,6 +112,7 @@ namespace CoreDawn.Sim
                 catch (Exception e) { db.errors.Add($"dayCycle: {e.Message}"); }
             }
             db.LoadSection(root, "guns", "gun", db.guns, serializer);
+            db.LoadSection(root, "tutorial", "tutorial", db.tutorial, serializer);
             db.Raw = root;
 
             foreach (var d in db.guns.Values) d.Resolve(db, db.errors);     // 총 → 탄 아이템. 아이템의 Weapon 모듈은 총을 가리키므로 총이 먼저
@@ -105,6 +122,7 @@ namespace CoreDawn.Sim
             foreach (var d in db.entities.Values) d.Resolve(db, db.errors);
             db.wave?.Resolve(db, db.errors);
             db.dayCycle?.Resolve(db, db.errors);
+            foreach (var d in db.tutorial.Values) d.Resolve(db, db.errors);
 
             if (strict && db.errors.Count > 0)
                 throw new InvalidOperationException($"SimDatabase({pack}) 로드 실패 {db.errors.Count}건:\n  " + string.Join("\n  ", db.errors));
@@ -155,5 +173,6 @@ namespace CoreDawn.Sim
         public EffectSpec Effect(string id) => effects.TryGetValue(id, out var d) ? d : null;
         public EntityDef Entity(string id) => entities.TryGetValue(id, out var d) ? d : null;
         public GunDef Gun(string id) => guns.TryGetValue(id, out var d) ? d : null;
+        public TutorialStepDef TutorialStep(string id) => tutorial.TryGetValue(id, out var d) ? d : null;
     }
 }

@@ -17,10 +17,10 @@ namespace CoreDawn.EditorTools
     //  튜토리얼 탭 — 안내 카드의 순서·문구·완료 조건을 편집한다.
     //
     //  데이터는 GameData.json 의 tutorial 배열. 저장+임포트하면 GameDataImporter 가
-    //  Assets/Data/Tutorial/*.asset 과 조건 서브에셋, Resources/TutorialDatabase 를 갱신한다.
+    //  저장하면 v2 팩 data.json의 tutorial 섹션으로 나간다 — 런타임(TutorialManager)이 그것을 읽는다.
     //
-    //  조건 종류는 런타임 클래스(TutorialConditionSO 파생)에서 긁는다 — 프로그래머가
-    //  조건 클래스를 하나 만들면 등록 없이 이 탭의 "+ 조건" 메뉴에 바로 뜬다. 파라미터도
+    //  조건 종류는 런타임 클래스(TutorialCondition 파생)에서 긁는다 — 프로그래머가
+    //  조건 클래스를 하나 만들고 TutorialConditions 표에 한 줄 더하면 이 탭의 "+ 조건" 메뉴에 뜬다. 파라미터도
     //  그 클래스의 public 필드를 반사로 읽어 그린다(count/seconds/tier/itemType/item).
     // ═══════════════════════════════════════════════════════════
     class GdTutorialTab : GdTab
@@ -45,7 +45,7 @@ namespace CoreDawn.EditorTools
         }
 
         static List<CondKind> kinds;
-        static List<CondKind> Kinds => kinds ??= TypeCache.GetTypesDerivedFrom<TutorialConditionSO>()
+        static List<CondKind> Kinds => kinds ??= TypeCache.GetTypesDerivedFrom<TutorialCondition>()
             .Where(t => !t.IsAbstract)
             .Select(t => new CondKind
             {
@@ -156,7 +156,7 @@ namespace CoreDawn.EditorTools
             right.Add(warnLabel);
             right.Add(Hint(
                 "스텝은 order 순으로 뜬다. 완료 조건은 전부 충족해야 다음으로 넘어가며, 조건이 없는 스텝은 영영 끝나지 않는다(저작 중). " +
-                "id 는 세이브 키다 — 배포 뒤에는 바꾸지 말 것. 새 조건 종류가 필요하면 TutorialConditionSO 를 상속한 클래스 하나를 만들면 " +
+                "id 는 세이브 키다 — 배포 뒤에는 바꾸지 말 것. 새 조건 종류가 필요하면 TutorialCondition 을 상속한 클래스 하나 + TutorialConditions 표 한 줄이면 " +
                 "여기 메뉴에 바로 뜬다."));
             body.Add(right);
 
@@ -350,7 +350,7 @@ namespace CoreDawn.EditorTools
 
             if (kind == null)
             {
-                box.Add(WarnItem("이 조건 종류를 아는 클래스가 없습니다 — 임포트에서 제외됩니다. 종류를 다시 고르세요."));
+                box.Add(WarnItem("이 조건 종류를 아는 클래스가 없습니다 — 런타임이 이 조건을 건너뜁니다. 종류를 다시 고르세요."));
                 return box;
             }
 
@@ -415,7 +415,7 @@ namespace CoreDawn.EditorTools
                         break;
                     }
                     default:
-                        box.Add(Hint($"{f.Name} — 이 에디터가 모르는 필드입니다. 임포트 뒤 SO 인스펙터에서 편집하세요."));
+                        box.Add(Hint($"{f.Name} — 이 에디터가 모르는 필드입니다. 편집기 스위치(GdTutorialTab)에 케이스를 더하세요."));
                         break;
                 }
             }

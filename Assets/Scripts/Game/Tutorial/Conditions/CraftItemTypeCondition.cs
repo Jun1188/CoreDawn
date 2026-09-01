@@ -1,0 +1,19 @@
+using UnityEngine;
+using CoreDawn.Sim;
+
+namespace CoreDawn.Tutorial
+{
+    [TutorialConditionMenu("아이템/분류별 손 제작")]
+    public sealed class CraftItemTypeCondition : CumulativeCondition
+    {
+        /// <summary>이 분류의 물건을 손으로 만들면 센다. 갖고 있는지가 아니라 만들었는지를 묻는다.</summary>
+        public ItemType itemType = ItemType.Weapon;
+        public override void Configure(TutorialConditionDef def)
+        {
+            base.Configure(def);
+            if (!string.IsNullOrEmpty(def.ItemType) && System.Enum.TryParse(def.ItemType, true, out ItemType t)) itemType = t;
+        }
+        protected override int Counter(TutorialObserver w) => w.CraftedOfType(itemType);
+        protected override string Verb => $"{itemType} 손 제작";
+    }
+}

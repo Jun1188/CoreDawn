@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Data;
 
 namespace CoreDawn.Tutorial
 {
@@ -20,7 +19,7 @@ namespace CoreDawn.Tutorial
     /// </summary>
     public sealed class TutorialProgress
     {
-        readonly List<TutorialStepSO> _steps;
+        readonly List<TutorialStep> _steps;
         readonly TutorialObserver _world;
         readonly HashSet<string> _completed = new();
         readonly Dictionary<string, int[]> _baseline = new();   // 스텝 id → 조건별 기준점
@@ -29,21 +28,21 @@ namespace CoreDawn.Tutorial
         /// 스텝의 minSeconds는 여기에 더해지므로 순수한 "읽을 시간"이 된다.</summary>
         readonly float _leadInSeconds;
 
-        TutorialStepSO _current;
+        TutorialStep _current;
         int _currentIndex;
         float _judgeFrom;   // 이 시각(unscaled) 전에는 어떤 스텝도 완료로 찍지 않는다
         bool _skipped;
 
-        public TutorialProgress(List<TutorialStepSO> steps, TutorialObserver world, float leadInSeconds)
+        public TutorialProgress(List<TutorialStep> steps, TutorialObserver world, float leadInSeconds)
         {
-            _steps = steps ?? new List<TutorialStepSO>();
+            _steps = steps ?? new List<TutorialStep>();
             _world = world;
             _leadInSeconds = leadInSeconds;
         }
 
         // ── 공개 상태 ──
 
-        public TutorialStepSO CurrentStep => _current;
+        public TutorialStep CurrentStep => _current;
         /// <summary>1부터 시작하는 현재 스텝 번호 — HUD의 "n/전체" 표시용.</summary>
         public int CurrentIndex => _currentIndex;
         public int StepCount => _steps.Count;
@@ -55,7 +54,7 @@ namespace CoreDawn.Tutorial
         public float JudgeHoldRemaining(float nowUnscaled) => Mathf.Max(0f, _judgeFrom - nowUnscaled);
 
         /// <summary>현재 안내가 바뀔 때. 끝났으면 null이 온다. (Runtime 컨벤션 — On 접두사 없음)</summary>
-        public event Action<TutorialStepSO> StepChanged;
+        public event Action<TutorialStep> StepChanged;
         public event Action TutorialFinished;
 
         // ─────────────────────────── 판정 ───────────────────────────
@@ -80,7 +79,7 @@ namespace CoreDawn.Tutorial
                 // 앞질러 완료를 금지한 스텝은 자기 차례가 오기 전엔 아예 보지 않는다.
                 // 숫자키·T처럼 앞선 안내를 따르다 얻어걸리는 동작, 그리고 밤 경고가 여기 해당한다 —
                 // 그런 것까지 "이미 할 줄 아네" 규칙에 맡기면 안내가 뜨자마자 사라진다.
-                if (s.requireInOrder && !everShown) continue;
+                if (s.Def.RequireInOrder && !everShown) continue;
 
                 // 기준점이 없는 스텝(= 아직 뜬 적 없는 뒤쪽 스텝)은 null(=전부 0) — 절대값으로 판정되어 자동 완료된다
                 int[] baseline = everShown ? _baseline[s.Id] : null;
@@ -92,7 +91,7 @@ namespace CoreDawn.Tutorial
 
         void SelectCurrent(float nowUnscaled)
         {
-            TutorialStepSO next = null;
+            TutorialStep next = null;
             int index = 0;
             for (int i = 0; i < _steps.Count; i++)
             {
@@ -115,7 +114,7 @@ namespace CoreDawn.Tutorial
                 // 그리고 잠시 판정을 멈춘다. 카드가 다 들어오는 데 걸리는 시간을 더하므로
                 // minSeconds는 순수하게 "읽을 시간"이다. 이게 없으면 한 번의 동작이 여러 안내를
                 // 동시에 만족시켜 카드가 두세 장씩 스쳐 지나간다.
-                _judgeFrom = nowUnscaled + _leadInSeconds + Mathf.Max(0f, _current.minSeconds);
+                _judgeFrom = nowUnscaled + _leadInSeconds + Mathf.Max(0f, _current.Def.MinSeconds);
             }
 
             StepChanged?.Invoke(_current);
