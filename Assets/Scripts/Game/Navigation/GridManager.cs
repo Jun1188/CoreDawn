@@ -20,7 +20,9 @@ namespace CoreDawn.Navigation
         [Tooltip("정적 장애물이 위치한 레이어 이름. Awake에서 마스크로 변환된다. 런타임 설치 건물은 심의 GridIndex로 별도 처리.")]
         [SerializeField] private string obstacleLayerName = "Obstacle";
         private LayerMask unwalkableMask;
-        public float cellSize = 1f;       // GridSystem의 CellSize와 동일한 역할
+        public float cellSize = 1f;       // GridSystem의 CellSize와 동일한 역할 — 맵이 주입한다(Inject). 굽고 나면 노드 한 변이 된다
+        [Tooltip("길찾기 노드 한 변(m). 칸을 이 크기로 나눈다 — 칸 4m·노드 1m면 4등분. 칸 크기가 바뀌어도 노드는 이 크기를 유지한다.")]
+        [SerializeField] private float nodeSize = 1f;
 
         [Header("Map Bounds")]
         [Tooltip("맵(바닥) 콜라이더. 지정하면 이 바운즈로 originPosition과 gridSize를 자동 계산해 " +
@@ -82,9 +84,9 @@ namespace CoreDawn.Navigation
 
             // 길찾기 해상도 세분화 — 월드 칸(예: 4m)이 그대로 노드가 되면 너무 성겨서,
             // 몬스터가 목표와 "같은 칸"에 선 순간 이동이 끝나는데 공격 사거리는 안 닿는다.
-            // 칸을 반올림 값으로 등분해 노드를 약 1m로 만든다 (칸 4m → 4등분, 1m 칸은 그대로).
+            // 칸을 nodeSize(기본 1m)로 등분한다 (칸 4m → 4등분, 1m 칸은 그대로) — 칸 크기는 맵의 값이라 여기서 4를 가정하지 않는다.
             // 맵 타일·심 건물은 여전히 월드 칸 단위다 — 조회 시 subdiv로 되돌려 변환한다.
-            subdiv = Mathf.Max(1, Mathf.RoundToInt(cellSize));
+            subdiv = Mathf.Max(1, Mathf.RoundToInt(cellSize / Mathf.Max(0.01f, nodeSize)));
             cellSize /= subdiv;
             gridSize = new Vector2Int(gridSize.x * subdiv, gridSize.y * subdiv);   // 바운즈 경로는 아래서 새로 계산해 덮는다
 

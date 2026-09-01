@@ -292,8 +292,7 @@ namespace CoreDawn.EditorTools
                 }
                 o["modules"] = mods;
                 var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid",
-                                "icon", "iconGuid", "prefab", "prefabGuid",
-                                "prefabCurveL", "prefabCurveLGuid", "prefabCurveR", "prefabCurveRGuid");
+                                "icon", "iconGuid");
                 MergeView(view, b);
                 if (view.Count > 0) o["view"] = view;
                 entities[KeyOf((string)b["id"])] = o;
@@ -315,7 +314,7 @@ namespace CoreDawn.EditorTools
                     new JObject { ["type"] = "Attack", ["range"] = m["attackRange"], ["cooldown"] = m["attackCooldown"], ["effects"] = Uses(m["attackEffects"]) },
                     brain,
                 };
-                var mview = new JObject { ["prefab"] = m["prefab"], ["prefabGuid"] = m["prefabGuid"] };
+                var mview = View(m, "model", "modelGuid");
                 MergeView(mview, m);
                 o["view"] = mview;
                 entities[KeyOf((string)m["id"])] = o;

@@ -46,6 +46,7 @@ namespace CoreDawn.EditorTools
                 CollectSection(entries, d, pack, "items", "item", ref warnings);
                 CollectSection(entries, d, pack, "entities", "entity", ref warnings);
                 CollectSection(entries, d, pack, "sounds", "sound", ref warnings);
+                CollectSection(entries, d, pack, "guns", "gun", ref warnings);
             }
 
             entries.Sort((a, b) => string.CompareOrdinal(a.id, b.id));   // 같은 팩 → 같은 에셋 (diff 안정)
@@ -81,15 +82,16 @@ namespace CoreDawn.EditorTools
 
                 e.icon              = LoadSprite(view, "icon", "iconGuid", id, ref warnings);
                 e.prefab            = LoadPrefab(view, "prefab", "prefabGuid", id, ref warnings);
-                e.curveLPrefab      = LoadPrefab(view, "prefabCurveL", "prefabCurveLGuid", id, ref warnings);
-                e.curveRPrefab      = LoadPrefab(view, "prefabCurveR", "prefabCurveRGuid", id, ref warnings);
+                e.model             = LoadPrefab(view, "model", "modelGuid", id, ref warnings);
+                e.curveLModel       = LoadPrefab(view, "modelCurveL", "modelCurveLGuid", id, ref warnings);
+                e.curveRModel       = LoadPrefab(view, "modelCurveR", "modelCurveRGuid", id, ref warnings);
                 e.bulletPrefab      = LoadPrefab(view, "bullet", "bulletGuid", id, ref warnings);
                 e.muzzleFlashPrefab = LoadPrefab(view, "muzzleFlash", "muzzleFlashGuid", id, ref warnings);
                 e.hitEffectPrefab   = LoadPrefab(view, "hitEffect", "hitEffectGuid", id, ref warnings);
                 e.clips             = LoadClips(view, id, ref warnings);
 
-                // 모델(fbx)만 있고 실을 게 없는 항목(예: 광맥 — 뷰는 씬에 굽는다)은 카탈로그에 안 담는다
-                if (e.icon != null || e.prefab != null || e.curveLPrefab != null || e.curveRPrefab != null ||
+                // 실을 게 하나도 없는 항목은 카탈로그에 안 담는다
+                if (e.icon != null || e.prefab != null || e.model != null || e.curveLModel != null || e.curveRModel != null ||
                     e.bulletPrefab != null || e.muzzleFlashPrefab != null || e.hitEffectPrefab != null || e.clips != null)
                     entries.Add(e);
             }

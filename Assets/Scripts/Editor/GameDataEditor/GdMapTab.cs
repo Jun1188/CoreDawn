@@ -50,6 +50,7 @@ namespace CoreDawn.EditorTools
         public string id = "";
         public string displayName = "", description = "";
         public int width = 121, height = 121;
+        public float cellSize = 4f;   // 칸 한 변(m)
         public int coreX, coreY;
         public byte[] tiles;
         public List<GMapNode> nodes = new();
@@ -144,7 +145,7 @@ namespace CoreDawn.EditorTools
             return new GMap
             {
                 id = "Map:New" + n, displayName = "새 맵",
-                width = w, height = h,
+                width = w, height = h, cellSize = 4f,
                 coreX = (w >> 1) - 1, coreY = (h >> 1) - 1,
                 tiles = new byte[w * h],
             };
@@ -164,7 +165,7 @@ namespace CoreDawn.EditorTools
                     var g = new GMap
                     {
                         id = m.id ?? "", displayName = m.displayName ?? "", description = m.description ?? "",
-                        width = w, height = h,
+                        width = w, height = h, cellSize = m.cellSize > 0 ? m.cellSize : 4f,
                         coreX = m.core?.x ?? 59, coreY = m.core?.y ?? 59,
                         tiles = DecodeTiles(m.tiles, w, h),
                         nodes = (m.nodes ?? Array.Empty<MapImporter.NodeDto>()).Select(n => new GMapNode
@@ -245,7 +246,7 @@ namespace CoreDawn.EditorTools
         {
             var o = g.src ?? (g.src = new MapImporter.MapDto());
             o.id = g.id; o.displayName = g.displayName; o.description = g.description ?? "";
-            o.width = g.width; o.height = g.height;
+            o.width = g.width; o.height = g.height; o.cellSize = g.cellSize; o.cellSize = g.cellSize;
             o.core ??= new MapImporter.CellDto();
             o.core.x = g.coreX; o.core.y = g.coreY;
             o.tiles = EncodeTiles(g.tiles, g.width, g.height);
@@ -307,7 +308,7 @@ namespace CoreDawn.EditorTools
                 maps.Add(new GMap
                 {
                     id = m.id ?? "", displayName = m.displayName ?? "", description = m.description ?? "",
-                    width = w, height = h,
+                    width = w, height = h, cellSize = m.cellSize > 0 ? m.cellSize : 4f,
                     coreX = m.core?.x ?? 59, coreY = m.core?.y ?? 59,
                     tiles = DecodeTiles(m.tiles, w, h),
                     nodes = (m.nodes ?? Array.Empty<MapImporter.NodeDto>()).Select(n => new GMapNode
@@ -823,6 +824,10 @@ namespace CoreDawn.EditorTools
             sizeGrid.Add(GCell("가로", m.width, v => ResizeMap(m, Odd((int)v), m.height),
                 "홀수만 — 코어 3×3 이 정확히 가운데 오려면 중심 칸이 하나여야 한다"));
             sizeGrid.Add(GCell("세로", m.height, v => ResizeMap(m, m.width, Odd((int)v)), "홀수만", last: true));
+            propsBox.Add(Num("칸 한 변 (m)", m.cellSize, v => { m.cellSize = Mathf.Max(0.1f, v); RenderWarn(); }));
+            propsBox.Add(Hint("칸 크기의 정본 — 공장 격자·배치·길찾기·건물 조립 배율(건물 모델은 칸 단위로 저작)이 전부 이 값을 쓴다."));
+            propsBox.Add(Num("칸 한 변 (m)", m.cellSize, v => { m.cellSize = Mathf.Max(0.1f, v); RenderWarn(); }));
+            propsBox.Add(Hint("칸 크기의 정본 — 공장 격자·배치·길찾기·건물 조립 배율(건물 모델은 칸 단위로 저작)이 전부 이 값을 쓴다."));
 
             propsBox.Add(RingStat(m));
         }

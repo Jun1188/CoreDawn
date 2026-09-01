@@ -13,200 +13,242 @@ MonoBehaviour:
   m_Name: ViewCatalog
   m_EditorClassIdentifier: Assembly-CSharp::CoreDawn.Data.ViewCatalogSO
   entries:
-  - id: coredawn:entity/assembler
-    icon: {fileID: 0}
-    prefab: {fileID: 2807618140420393409, guid: f21554090b8662041865fae8ac84acf4, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
   - id: coredawn:entity/basic
     icon: {fileID: 0}
-    prefab: {fileID: 1332241365330258894, guid: a0ab261b89819e4489aaf424fc926d00, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 3875949503363778825, guid: 167499a04fae3354dbd4c36e0918fc15, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/basic_turret
     icon: {fileID: 0}
-    prefab: {fileID: 5029460367566490423, guid: f50c1af3e0d06944fabe0d34dc16aac3, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: fea1300688d374841a4f23cfff8ffbae, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/belt
     icon: {fileID: 0}
-    prefab: {fileID: 1756110906143664289, guid: 0bf1db28421cbd541a35566362273cfa, type: 3}
-    curveLPrefab: {fileID: 8008316256139863917, guid: 7a9640f62bc6f404fa1b9ade84cf47f8, type: 3}
-    curveRPrefab: {fileID: 2357311465470800421, guid: 6514f9f08f82db64e8d5ca4c2c8a0dfb, type: 3}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
-  - id: coredawn:entity/belt_mk2
-    icon: {fileID: 0}
-    prefab: {fileID: 5753743094921581644, guid: a28ebf27af00fde46833092b742b5913, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 152929459723054080, guid: 19042ae8bf9e72943b1b3eec44bea3ce, type: 3}
+    curveLModel: {fileID: 4128997546806287882, guid: 0512ad4aadb7b874e8526c18eeb11444, type: 3}
+    curveRModel: {fileID: 2486316438202827186, guid: 7b06e6d2d63b86d43bd7b1804b184bfc, type: 3}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/boss
     icon: {fileID: 0}
-    prefab: {fileID: 1332241365330258894, guid: 67999408593709d4c995a60d2c03fac2, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 6379059024075365167, guid: 9addc2eb4a7621a4c85b711dfc73cfaa, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/constructor
     icon: {fileID: 0}
-    prefab: {fileID: 3074911791980220335, guid: f5a783afd8b2d6a48b02259b1cc25bcd, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: 28cee9ec78d36094388f7fddb8b70132, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/core
     icon: {fileID: 0}
-    prefab: {fileID: 7185148387470958661, guid: 87ccd477b828f0c458048e4c6e68d8c2, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: 8e653362f0109004983636cf44f424dc, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/fence
     icon: {fileID: 0}
-    prefab: {fileID: 6574155968364847625, guid: e6214c0413d00174abf3040eab2d1aa1, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: 3231ff7581e6d4e43951229dfb936aa9, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/heavy_turret
     icon: {fileID: 0}
-    prefab: {fileID: 7276461332977000175, guid: 63049ff461071ed4596438f0ebbc617b, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: e6fa6663ce1c39045b845afc86480977, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/laser_tower
     icon: {fileID: 0}
-    prefab: {fileID: 1631026919013201843, guid: c4018ffa10eb81a4bb750acf98ed7d5f, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
-  - id: coredawn:entity/manufacturer
-    icon: {fileID: 0}
-    prefab: {fileID: 3223742120988269179, guid: 8e72872f52f7d26458e07e2f3105188e, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: a6be5a1031f4b534c81ee73224cab637, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/merger
     icon: {fileID: 0}
-    prefab: {fileID: 8039542826557808100, guid: 326f8420de63f324fbe1a0df87f16c51, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
-  - id: coredawn:entity/mine
-    icon: {fileID: 0}
-    prefab: {fileID: 5266862440184732111, guid: 10e8294c883dee04fa2a3882bef2b8e4, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: f9d1fa3ef5596374ca29e18fd2cdfd74, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/miner
     icon: {fileID: 0}
-    prefab: {fileID: 1941327714935223113, guid: 687143ae40f3c5041a38fa275fc61709, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
-    bulletPrefab: {fileID: 0}
-    muzzleFlashPrefab: {fileID: 0}
-    hitEffectPrefab: {fileID: 0}
-    clips: []
-  - id: coredawn:entity/miner_mk2
-    icon: {fileID: 0}
-    prefab: {fileID: 7566926525653472586, guid: 9f10b408811a648468f9bc495fad6181, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: 38bc4162e9cc06c449ab7fa8686b5fcb, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/mortar_tower
     icon: {fileID: 0}
-    prefab: {fileID: 1055173862136762178, guid: 8d23edf3e85cd3144859023827622c98, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: da92ae0620899354083d536c7abe165c, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/slow_field_tower
     icon: {fileID: 0}
-    prefab: {fileID: 6049234118905680982, guid: 7d3b3cf4e96f16b468227f6f7b341b38, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: d807b040fed44fe4683d5550a1430798, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/smelter
     icon: {fileID: 0}
-    prefab: {fileID: 3093962331292353149, guid: 98954c35404031d44b6cf0b5bb769d42, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: ea46188c8bdb2b347a989f03493e6ccc, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/spitter
     icon: {fileID: 0}
-    prefab: {fileID: 1332241365330258894, guid: ee2565cc74fdb074ca483cccf4a3be55, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 433872393533835241, guid: 5ff85545fafe21b40a18e34c43ef4b98, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/splitter
     icon: {fileID: 0}
-    prefab: {fileID: 998504222903923757, guid: ec8176281d9d0a540b8a96c88a550a42, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: 00858b560d59d074180a59958b7d9e2d, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
     clips: []
   - id: coredawn:entity/storage
     icon: {fileID: 0}
-    prefab: {fileID: 8856740278733482008, guid: 935e9bd1c205c7044b36b398d51ffa2e, type: 3}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 919132149155446097, guid: c6ea25c29fb3ea442b634a0d909d2a52, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/energy_rifle
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 1924322362191970, guid: b4a1a184f2dfb834fa98f05e44867d04, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/grenade_launcher
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 1114408565104772, guid: aaa699c05fa2cd74fad0f1bdaeeade4a, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/pistol
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 1903248536913498, guid: 50847d0c89afcb04fbb94ea3d83fa02b, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/plasma_cutter
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 8221263165147816576, guid: a9128e96b6679e144b3f76ceace04326, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/rifle
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 1256266554085788, guid: 2eab7d8cf189380478ebb3fad3935652, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/shotgun
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 1713179018660390, guid: 3058199639e1a314dbab496b92c1cfaa, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
+    bulletPrefab: {fileID: 0}
+    muzzleFlashPrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
+    clips: []
+  - id: coredawn:gun/sniper
+    icon: {fileID: 0}
+    prefab: {fileID: 0}
+    model: {fileID: 1567828314353034, guid: da100db5ca11ec24ca178e51bde2e730, type: 3}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -214,8 +256,9 @@ MonoBehaviour:
   - id: coredawn:item/basic_ammo
     icon: {fileID: -1099145482, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
     muzzleFlashPrefab: {fileID: 1383616907660598, guid: 1d58b0b48b0be754a946ef13a5b47064, type: 3}
     hitEffectPrefab: {fileID: 1546657409941744, guid: 701fe55687f0a6143a595adb30249cfb, type: 3}
@@ -223,8 +266,9 @@ MonoBehaviour:
   - id: coredawn:item/beast_core
     icon: {fileID: -2085933056, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -232,8 +276,9 @@ MonoBehaviour:
   - id: coredawn:item/circuit_board
     icon: {fileID: 971242041, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -241,8 +286,9 @@ MonoBehaviour:
   - id: coredawn:item/control_module
     icon: {fileID: -1110902257, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -250,8 +296,9 @@ MonoBehaviour:
   - id: coredawn:item/copper_ingot
     icon: {fileID: 58408779, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -259,8 +306,9 @@ MonoBehaviour:
   - id: coredawn:item/copper_ore
     icon: {fileID: -1480028079, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -268,8 +316,9 @@ MonoBehaviour:
   - id: coredawn:item/copper_wire
     icon: {fileID: 951356533, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -277,8 +326,9 @@ MonoBehaviour:
   - id: coredawn:item/crystal_ammo
     icon: {fileID: 136700167, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 6104304068761616416, guid: 60dbfc80def39a042abb9eb0be9b1459, type: 3}
     muzzleFlashPrefab: {fileID: 1909230596122784, guid: d7d7f5edf939ae74a9c85c9655849dff, type: 3}
     hitEffectPrefab: {fileID: 1588091547206974, guid: 06c01719d67a8284b891e3011c7b3a71, type: 3}
@@ -286,8 +336,9 @@ MonoBehaviour:
   - id: coredawn:item/crystal_ore
     icon: {fileID: 1172722530, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -295,8 +346,9 @@ MonoBehaviour:
   - id: coredawn:item/dense_ammo
     icon: {fileID: -1728149137, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 6104304068761616416, guid: d0ab4e1deef0b934c91bb2c4888b232f, type: 3}
     muzzleFlashPrefab: {fileID: 1121870369866028, guid: 56a6f8a898bebd64d96faf8434833bfd, type: 3}
     hitEffectPrefab: {fileID: 1385251717090070, guid: 17175243210cbdb4b97f12fa99811418, type: 3}
@@ -304,8 +356,9 @@ MonoBehaviour:
   - id: coredawn:item/energy_cell
     icon: {fileID: -1801086059, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -313,8 +366,9 @@ MonoBehaviour:
   - id: coredawn:item/energy_cell_ammo
     icon: {fileID: 1151934686, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 6104304068761616416, guid: 60dbfc80def39a042abb9eb0be9b1459, type: 3}
     muzzleFlashPrefab: {fileID: 1903369569249518, guid: 6716924e2ed157843b9d9295af57bf0e, type: 3}
     hitEffectPrefab: {fileID: 1493148575174948, guid: 383ff3797b825254293298bbf11b2858, type: 3}
@@ -322,8 +376,9 @@ MonoBehaviour:
   - id: coredawn:item/energy_rifle
     icon: {fileID: 21300000, guid: 2a9cd9ba278812a4db106de4718601d6, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -331,8 +386,9 @@ MonoBehaviour:
   - id: coredawn:item/grenade
     icon: {fileID: 234227774, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 6104304068761616416, guid: 6fb28be86ecaf034ab6b3bde5d9a3ad2, type: 3}
     muzzleFlashPrefab: {fileID: 1569006322450168, guid: c970c55aaa68fda439fa7efa01c4545d, type: 3}
     hitEffectPrefab: {fileID: 1822773341328252, guid: 9a6234d093d15ac4c8b4b52e4c6be97f, type: 3}
@@ -340,8 +396,9 @@ MonoBehaviour:
   - id: coredawn:item/grenade_launcher
     icon: {fileID: 21300000, guid: 9773aecee1ac0ff439cd79ecdab562f4, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -349,8 +406,9 @@ MonoBehaviour:
   - id: coredawn:item/hull_panel
     icon: {fileID: -583718681, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -358,8 +416,9 @@ MonoBehaviour:
   - id: coredawn:item/iron_gear
     icon: {fileID: 1641110024, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -367,8 +426,9 @@ MonoBehaviour:
   - id: coredawn:item/iron_ingot
     icon: {fileID: -1786476198, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -376,8 +436,9 @@ MonoBehaviour:
   - id: coredawn:item/iron_ore
     icon: {fileID: 1507388747, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -385,8 +446,9 @@ MonoBehaviour:
   - id: coredawn:item/iron_plate
     icon: {fileID: -2066756299, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -394,8 +456,9 @@ MonoBehaviour:
   - id: coredawn:item/nav_control_unit
     icon: {fileID: 1695248270, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -403,8 +466,9 @@ MonoBehaviour:
   - id: coredawn:item/pistol
     icon: {fileID: 21300000, guid: edf27d1135600e245ac99153f1177507, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -412,8 +476,9 @@ MonoBehaviour:
   - id: coredawn:item/plasma_arc
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 4925474407012076622, guid: ce9e3d6125abed14ebdebe370e018f5e, type: 3}
     muzzleFlashPrefab: {fileID: 3054901163473534677, guid: 2896d3662d923f546bc6a803fae0eebd, type: 3}
     hitEffectPrefab: {fileID: 8123500623578600021, guid: d7456e1f6e5242540b63b9042a2e3915, type: 3}
@@ -421,8 +486,9 @@ MonoBehaviour:
   - id: coredawn:item/plasma_cutter
     icon: {fileID: 21300000, guid: ffdbf5143bcd651499a9f3a01ec2336c, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -430,8 +496,9 @@ MonoBehaviour:
   - id: coredawn:item/power_module
     icon: {fileID: 1913199033, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -439,8 +506,9 @@ MonoBehaviour:
   - id: coredawn:item/refined_crystal
     icon: {fileID: 400049508, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -448,8 +516,9 @@ MonoBehaviour:
   - id: coredawn:item/rifle
     icon: {fileID: 21300000, guid: 5c2946d85ab19a04baf2b6e3f6354a44, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -457,8 +526,9 @@ MonoBehaviour:
   - id: coredawn:item/ship_debris
     icon: {fileID: 1925702632, guid: 22c77adfccde8ce44aa7a3b50a1acfaa, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -466,8 +536,9 @@ MonoBehaviour:
   - id: coredawn:item/shotgun
     icon: {fileID: 21300000, guid: 38f317d4c2c337f4baced47e4de101ac, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -475,8 +546,9 @@ MonoBehaviour:
   - id: coredawn:item/sniper
     icon: {fileID: 21300000, guid: 722185e6f4af1ae4fa819f76322195a1, type: 3}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -484,8 +556,9 @@ MonoBehaviour:
   - id: coredawn:sound/basic_turret_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -507,8 +580,9 @@ MonoBehaviour:
   - id: coredawn:sound/construct
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -517,8 +591,9 @@ MonoBehaviour:
   - id: coredawn:sound/destroy
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -527,8 +602,9 @@ MonoBehaviour:
   - id: coredawn:sound/energy_rifle_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -537,8 +613,9 @@ MonoBehaviour:
   - id: coredawn:sound/energy_rifle_reload
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -547,8 +624,9 @@ MonoBehaviour:
   - id: coredawn:sound/grenade_launcher_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -557,8 +635,9 @@ MonoBehaviour:
   - id: coredawn:sound/grenade_launcher_reload
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -567,8 +646,9 @@ MonoBehaviour:
   - id: coredawn:sound/heavy_turret_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -577,8 +657,9 @@ MonoBehaviour:
   - id: coredawn:sound/item_pickup
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -587,8 +668,9 @@ MonoBehaviour:
   - id: coredawn:sound/laser_tower_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -597,8 +679,9 @@ MonoBehaviour:
   - id: coredawn:sound/mine
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -607,8 +690,9 @@ MonoBehaviour:
   - id: coredawn:sound/mortar_tower_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -623,8 +707,9 @@ MonoBehaviour:
   - id: coredawn:sound/pistol_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -633,8 +718,9 @@ MonoBehaviour:
   - id: coredawn:sound/pistol_reload
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -643,8 +729,9 @@ MonoBehaviour:
   - id: coredawn:sound/plasma_cutter_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -653,8 +740,9 @@ MonoBehaviour:
   - id: coredawn:sound/rifle_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -663,8 +751,9 @@ MonoBehaviour:
   - id: coredawn:sound/rifle_reload
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -673,8 +762,9 @@ MonoBehaviour:
   - id: coredawn:sound/shotgun_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -683,8 +773,9 @@ MonoBehaviour:
   - id: coredawn:sound/shotgun_reload
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -693,8 +784,9 @@ MonoBehaviour:
   - id: coredawn:sound/slow_field_tower_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -703,8 +795,9 @@ MonoBehaviour:
   - id: coredawn:sound/sniper_fire
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -713,8 +806,9 @@ MonoBehaviour:
   - id: coredawn:sound/sniper_reload
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -723,8 +817,9 @@ MonoBehaviour:
   - id: coredawn:sound/tower_destroy
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -737,8 +832,9 @@ MonoBehaviour:
   - id: coredawn:sound/tower_starved
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -747,8 +843,9 @@ MonoBehaviour:
   - id: coredawn:sound/ui_click
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -757,8 +854,9 @@ MonoBehaviour:
   - id: coredawn:sound/ui_hover
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
@@ -767,8 +865,9 @@ MonoBehaviour:
   - id: coredawn:sound/warning
     icon: {fileID: 0}
     prefab: {fileID: 0}
-    curveLPrefab: {fileID: 0}
-    curveRPrefab: {fileID: 0}
+    model: {fileID: 0}
+    curveLModel: {fileID: 0}
+    curveRModel: {fileID: 0}
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}

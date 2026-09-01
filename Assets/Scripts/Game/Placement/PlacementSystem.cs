@@ -395,7 +395,7 @@ namespace CoreDawn.Placement
 
             if (IsBelt)
                 PlacementBridge.Place(current, origin, pos, rotation,
-                    BeltGeometry.BuildPorts(beltShape, rotation), ViewCatalogSO.BeltPrefabOf(current, beltShape), beltShape);
+                    BeltGeometry.BuildPorts(beltShape, rotation), beltShape);
             else
                 PlacementBridge.Place(current, origin, pos, rotation);
 
@@ -437,7 +437,7 @@ namespace CoreDawn.Placement
             // 조준 배치(Place)와 같은 규칙 — 벨트는 모양에 맞는 포트·커브 메시로 세운다
             placed = def.Has<ConveyorModuleDef>()
                 ? PlacementBridge.Place(def, origin, pos, rotSteps,
-                    BeltGeometry.BuildPorts(shape, rotSteps), ViewCatalogSO.BeltPrefabOf(def, shape), shape)
+                    BeltGeometry.BuildPorts(shape, rotSteps), shape)
                 : PlacementBridge.Place(def, origin, pos, rotSteps);
             return placed != null;
         }
@@ -627,7 +627,6 @@ namespace CoreDawn.Placement
         // ===================== 표면 위 올려놓기 =====================
 
         // 프리팹 → "피벗에서 밑면까지 거리". 프리팹마다 고정이라 처음 한 번만 재고 캐시한다.
-        private static readonly Dictionary<EntityDef, float> pivotLiftCache = new();
 
         /// <summary>
         /// 채굴기를 광맥 위에 지을 때만 건물을 표면 위로 들어올린다.
@@ -645,48 +644,7 @@ namespace CoreDawn.Placement
             if (def == null || !def.Has<ExtractorModuleDef>())  return 0f;
             if (FactoryBootstrap.Instance == null || FactoryBootstrap.Instance.Factory.DepositAt(origin) == null) return 0f;
 
-            return PivotLift(def);
-        }
-
-        /// <summary>프리팹 피벗에서 렌더러 밑면까지의 거리 (프리팹 로컬 기준, 회전 0 가정).</summary>
-        private static float PivotLift(EntityDef def)
-        {
-            var prefab = ViewCatalogSO.PrefabOf(def);
-            if (prefab == null) return 0f;
-            if (pivotLiftCache.TryGetValue(def, out float cached)) return cached;
-
-            // 모델 프리팹은 "지면 = 로컬 y0" 규약으로 저작된다 — y0 아래로 내려간 부분(채굴기
-            // 드릴)은 일부러 땅에 박히는 부위다. 렌더러 최저점 기준으로 들어올리면 드릴 끝이
-            // 표면 위에 얹혀 몸체가 뜬다. 들어올림은 피벗이 중앙인 큐브 플레이스홀더("Mesh")에만
-            // 필요하다 — 모델 프리팹은 그대로 놓는 것이 맞다.
-            if (prefab.transform.Find("Mesh") == null)
-            {
-                pivotLiftCache[def] = 0f;
-                return 0f;
-            }
-
-            float min = float.MaxValue;
-            Transform root = prefab.transform;
-
-            foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
-            {
-                if (mf.sharedMesh == null) continue;
-
-                // 메시 바운즈 8개 꼭짓점을 프리팹 루트 기준으로 변환해 최저점을 찾는다
-                Matrix4x4 m = root.worldToLocalMatrix * mf.transform.localToWorldMatrix;
-                Bounds mb = mf.sharedMesh.bounds;
-
-                for (int i = 0; i < 8; i++)
-                {
-                    var corner = mb.center + Vector3.Scale(mb.extents, new Vector3(
-                        (i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
-                    min = Mathf.Min(min, m.MultiplyPoint3x4(corner).y);
-                }
-            }
-
-            float lift = min == float.MaxValue ? 0f : -min;
-            pivotLiftCache[def] = lift;
-            return lift;
+            return 0f;   // 모델은 "지면 = 로컬 y0" 규약이고 자리표시 큐브도 조립기가 밑면을 지면에 둔다 — 들어올림 없음
         }
 
         /// <summary>
@@ -740,44 +698,9 @@ namespace CoreDawn.Placement
             if (preview != null) Destroy(preview);
             previewRenderers.Clear();
 
-            var prefab = IsBelt ? ViewCatalogSO.BeltPrefabOf(current, beltShape) : ViewCatalogSO.PrefabOf(current);
-            if (prefab == null)
-            {
-                preview = new GameObject("Preview (프리팹 없음)");
-                return;
-            }
-
-            preview = Instantiate(prefab);
-            foreach (var col in preview.GetComponentsInChildren<Collider>())
-                col.enabled = false;
-
-            StripLogic(preview);
-
+            // 유령은 조립기가 그림만 세운다 — 컴포넌트·콜라이더가 없어 논리·소리·등록이 새지 않는다
+            preview = BuildingAssembler.BuildGhost(current, beltShape, cellSize);
             previewRenderers = preview.GetComponentsInChildren<Renderer>().ToList();
-        }
-
-        /// <summary>
-        /// 프리뷰는 <b>진짜 건물 프리팹</b>을 그대로 Instantiate한 것이라, 손대지 않으면 살아 움직인다 —
-        /// 타워 프리뷰가 커서를 따라다니며 몬스터를 조준하고, 발사음을 내고, 등장 파티클을 터뜨린다.
-        /// 게다가 Entity는 OnEnable에서 전역 레지스트리에 자기를 등록해, 아직 짓지도 않은 건물이
-        /// 사거리 계산과 사망 처리의 대상이 된다.
-        ///
-        /// 그래서 유령에게서 논리와 소리를 걷어낸다. Destroy는 프레임 끝에 처리되지만
-        /// OnDisable이 레지스트리 등록을 되돌리므로 한 프레임 이상 남지 않는다.
-        /// </summary>
-        private static void StripLogic(GameObject ghost)
-        {
-            foreach (var entity in ghost.GetComponentsInChildren<EntityView>(true)) Destroy(entity);
-            foreach (var visual in ghost.GetComponentsInChildren<TowerVisualController>(true)) Destroy(visual);
-
-            foreach (var animator in ghost.GetComponentsInChildren<Animator>(true)) animator.enabled = false;
-            foreach (var audio in ghost.GetComponentsInChildren<AudioSource>(true)) audio.enabled = false;
-            foreach (var ps in ghost.GetComponentsInChildren<ParticleSystem>(true))
-            {
-                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                var emission = ps.emission;
-                emission.enabled = false;
-            }
         }
 
         private void SetPreviewColor(bool valid)

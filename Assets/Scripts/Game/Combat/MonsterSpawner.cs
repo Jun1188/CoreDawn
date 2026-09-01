@@ -32,39 +32,14 @@ namespace CoreDawn.Combat
             Vector3 position = entity.Position;
             Quaternion rotation = entity.Facing.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(entity.Facing) : Quaternion.identity;
 
-            var prefab = ViewCatalogSO.PrefabOf(entity.Def);
-            GameObject go = prefab != null
-                ? Object.Instantiate(prefab, position, rotation, parent)
-                : CreateFallback(position, parent);
-            go.SetActive(true);
-
-            // 레이어는 물리·렌더링용이다(적대 판정은 편). 프리팹이 Default면 몬스터 레이어로 — 총알 스윕·타워 오라가 이 마스크를 쓴다
-            int monsterLayer = LayerMask.NameToLayer("Monster");
-            if (monsterLayer >= 0 && go.layer == 0) SetLayerRecursively(go.transform, monsterLayer);
-
-            // 플레이어를 몸으로 밀기 위한 kinematic 몸체 — 이동은 심이 하므로 물리는 접촉만 맡는다
-            var rb = go.GetComponent<Rigidbody>();
-            if (rb == null) rb = go.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.useGravity = false;
-
+            // 뷰는 정의(view.type·model·collider…)에서 조립한다 — 프리팹은 없다(5a-4b)
+            var go = MonsterAssembler.Build(entity.Def, position, rotation, parent);
             var view = go.GetComponent<MonsterView>();
-            if (view == null) view = go.AddComponent<MonsterView>();
             view.AttachEntity(entity);
             return view;
         }
 
         /// <summary>프리팹이 없을 때의 코드 조립 (캡슐) — 테스트 씬 안전.</summary>
-        static GameObject CreateFallback(Vector3 position, Transform parent)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = "Monster(Spawned)";
-            go.transform.SetParent(parent);
-            go.transform.position = position;
-            go.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-            return go;
-        }
-
         static void SetLayerRecursively(Transform t, int layer)
         {
             t.gameObject.layer = layer;

@@ -1208,8 +1208,6 @@
       "view": {
         "model": "Miner.fbx",
         "modelGuid": "38bc4162e9cc06c449ab7fa8686b5fcb",
-        "prefab": "Miner",
-        "prefabGuid": "687143ae40f3c5041a38fa275fc61709",
         "type": "Building"
       }
     },
@@ -1275,8 +1273,6 @@
         }
       ],
       "view": {
-        "prefab": "MinerMk2",
-        "prefabGuid": "9f10b408811a648468f9bc495fad6181",
         "type": "Building"
       }
     },
@@ -1354,8 +1350,6 @@
       "view": {
         "model": "Smelter.fbx",
         "modelGuid": "ea46188c8bdb2b347a989f03493e6ccc",
-        "prefab": "Smelter",
-        "prefabGuid": "98954c35404031d44b6cf0b5bb769d42",
         "type": "Building"
       }
     },
@@ -1435,8 +1429,6 @@
       "view": {
         "model": "Constructor.fbx",
         "modelGuid": "28cee9ec78d36094388f7fddb8b70132",
-        "prefab": "Constructor",
-        "prefabGuid": "f5a783afd8b2d6a48b02259b1cc25bcd",
         "type": "Building"
       }
     },
@@ -1531,8 +1523,6 @@
         }
       ],
       "view": {
-        "prefab": "Assembler",
-        "prefabGuid": "f21554090b8662041865fae8ac84acf4",
         "type": "Building"
       }
     },
@@ -1634,8 +1624,6 @@
         }
       ],
       "view": {
-        "prefab": "Manufacturer",
-        "prefabGuid": "8e72872f52f7d26458e07e2f3105188e",
         "type": "Building"
       }
     },
@@ -1776,17 +1764,25 @@
       "view": {
         "model": "Conveyor.prefab",
         "modelGuid": "19042ae8bf9e72943b1b3eec44bea3ce",
-        "modelCurveL": "Conveyor_L.fbx",
-        "modelCurveLGuid": "e4dd130d39a2f394ca180cbeada7fba2",
-        "modelCurveR": "Conveyor_R.fbx",
-        "modelCurveRGuid": "441ae0e8dfa059c4cbf87444217d14f3",
-        "prefab": "Belt",
-        "prefabGuid": "0bf1db28421cbd541a35566362273cfa",
-        "prefabCurveL": "BeltLCurve",
-        "prefabCurveLGuid": "7a9640f62bc6f404fa1b9ade84cf47f8",
-        "prefabCurveR": "BeltRCurve",
-        "prefabCurveRGuid": "6514f9f08f82db64e8d5ca4c2c8a0dfb",
-        "type": "Building"
+        "modelCurveL": "Conveyor_L.prefab",
+        "modelCurveLGuid": "0512ad4aadb7b874e8526c18eeb11444",
+        "modelCurveR": "Conveyor_R.prefab",
+        "modelCurveRGuid": "7b06e6d2d63b86d43bd7b1804b184bfc",
+        "type": "Building",
+        "poseCurveL": {
+          "rotation": [
+            0,
+            180,
+            0
+          ]
+        },
+        "poseCurveR": {
+          "rotation": [
+            0,
+            180,
+            0
+          ]
+        }
       }
     },
     "belt_mk2": {
@@ -1853,8 +1849,6 @@
         }
       ],
       "view": {
-        "prefab": "BeltMk2",
-        "prefabGuid": "a28ebf27af00fde46833092b742b5913",
         "type": "Building"
       }
     },
@@ -1937,9 +1931,20 @@
       "view": {
         "model": "Splitter.fbx",
         "modelGuid": "00858b560d59d074180a59958b7d9e2d",
-        "prefab": "Splitter",
-        "prefabGuid": "ec8176281d9d0a540b8a96c88a550a42",
-        "type": "Building"
+        "type": "Building",
+        "pose": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ],
+          "scale": 1.0
+        }
       }
     },
     "merger": {
@@ -2021,9 +2026,20 @@
       "view": {
         "model": "Merger.fbx",
         "modelGuid": "f9d1fa3ef5596374ca29e18fd2cdfd74",
-        "prefab": "Merger",
-        "prefabGuid": "326f8420de63f324fbe1a0df87f16c51",
-        "type": "Building"
+        "type": "Building",
+        "pose": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ],
+          "scale": 1.0
+        }
       }
     },
     "storage": {
@@ -2122,10 +2138,8 @@
         }
       ],
       "view": {
-        "model": "Storage.prefab",
-        "modelGuid": "935e9bd1c205c7044b36b398d51ffa2e",
-        "prefab": "Storage",
-        "prefabGuid": "935e9bd1c205c7044b36b398d51ffa2e",
+        "model": "Storage.fbx",
+        "modelGuid": "c6ea25c29fb3ea442b634a0d909d2a52",
         "type": "Building"
       }
     },
@@ -2343,8 +2357,6 @@
       "view": {
         "model": "SpaceShip.fbx",
         "modelGuid": "8e653362f0109004983636cf44f424dc",
-        "prefab": "Core",
-        "prefabGuid": "87ccd477b828f0c458048e4c6e68d8c2",
         "type": "Building"
       }
     },
@@ -2382,8 +2394,8 @@
         }
       ],
       "view": {
-        "prefab": "Fence",
-        "prefabGuid": "e6214c0413d00174abf3040eab2d1aa1",
+        "model": "FenceRig.fbx",
+        "modelGuid": "3231ff7581e6d4e43951229dfb936aa9",
         "type": "Tower",
         "sfx": {
           "destroy": {
@@ -2396,6 +2408,9 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "scale": 0.4918
         }
       }
     },
@@ -2451,8 +2466,6 @@
         }
       ],
       "view": {
-        "prefab": "Mine",
-        "prefabGuid": "10e8294c883dee04fa2a3882bef2b8e4",
         "type": "Tower"
       }
     },
@@ -2532,8 +2545,8 @@
         }
       ],
       "view": {
-        "prefab": "BasicTurret",
-        "prefabGuid": "f50c1af3e0d06944fabe0d34dc16aac3",
+        "model": "BasicTurretRig.fbx",
+        "modelGuid": "fea1300688d374841a4f23cfff8ffbae",
         "type": "Tower",
         "sfx": {
           "fire": {
@@ -2551,6 +2564,9 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "scale": 0.6451
         }
       }
     },
@@ -2633,8 +2649,8 @@
         }
       ],
       "view": {
-        "prefab": "HeavyTurret",
-        "prefabGuid": "63049ff461071ed4596438f0ebbc617b",
+        "model": "HeavyTurretRig.fbx",
+        "modelGuid": "e6fa6663ce1c39045b845afc86480977",
         "type": "Tower",
         "sfx": {
           "fire": {
@@ -2652,6 +2668,14 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            -0.0197,
+            0.0
+          ],
+          "scale": 1.0602
         }
       }
     },
@@ -2733,8 +2757,8 @@
         }
       ],
       "view": {
-        "prefab": "MortarTower",
-        "prefabGuid": "8d23edf3e85cd3144859023827622c98",
+        "model": "MortarTowerRig.fbx",
+        "modelGuid": "da92ae0620899354083d536c7abe165c",
         "type": "Tower",
         "sfx": {
           "fire": {
@@ -2752,6 +2776,14 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            -0.0022,
+            0.0
+          ],
+          "scale": 0.6075
         }
       }
     },
@@ -2833,8 +2865,8 @@
         }
       ],
       "view": {
-        "prefab": "LaserTower",
-        "prefabGuid": "c4018ffa10eb81a4bb750acf98ed7d5f",
+        "model": "LaserTowerRig.fbx",
+        "modelGuid": "a6be5a1031f4b534c81ee73224cab637",
         "type": "Tower",
         "sfx": {
           "fire": {
@@ -2852,6 +2884,9 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "scale": 0.9925
         }
       }
     },
@@ -2922,8 +2957,8 @@
         }
       ],
       "view": {
-        "prefab": "SlowFieldTower",
-        "prefabGuid": "7d3b3cf4e96f16b468227f6f7b341b38",
+        "model": "SlowFieldTowerRig.fbx",
+        "modelGuid": "d807b040fed44fe4683d5550a1430798",
         "type": "Tower",
         "sfx": {
           "fire": {
@@ -2941,6 +2976,14 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            0.9429,
+            0.0
+          ],
+          "scale": 0.4918
         }
       }
     },
@@ -3056,9 +3099,31 @@
         }
       ],
       "view": {
-        "prefab": "Monster",
-        "prefabGuid": "a0ab261b89819e4489aaf424fc926d00",
-        "type": "Monster"
+        "type": "Monster",
+        "model": "Basic",
+        "modelGuid": "167499a04fae3354dbd4c36e0918fc15",
+        "pose": {
+          "position": [
+            0.0,
+            -0.5742,
+            0.0
+          ],
+          "scale": 0.8811
+        },
+        "collider": {
+          "radius": 0.3,
+          "height": 1.2,
+          "center": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "attackVariants": 1,
+        "hitVariants": 4,
+        "deathStyle": "SinkAway",
+        "sinkDepth": 1.3,
+        "deathDelay": 2.0
       }
     },
     "spitter": {
@@ -3105,9 +3170,31 @@
         }
       ],
       "view": {
-        "prefab": "Monster_Spitter",
-        "prefabGuid": "ee2565cc74fdb074ca483cccf4a3be55",
-        "type": "Monster"
+        "type": "Monster",
+        "model": "Spitter",
+        "modelGuid": "5ff85545fafe21b40a18e34c43ef4b98",
+        "pose": {
+          "position": [
+            0.0,
+            -0.5752,
+            0.0
+          ],
+          "scale": 0.8212
+        },
+        "collider": {
+          "radius": 0.3,
+          "height": 1.2,
+          "center": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "attackVariants": 2,
+        "hitVariants": 4,
+        "deathStyle": "SinkAway",
+        "sinkDepth": 1.365,
+        "deathDelay": 2.0
       }
     },
     "boss": {
@@ -3154,9 +3241,31 @@
         }
       ],
       "view": {
-        "prefab": "BossMonster",
-        "prefabGuid": "67999408593709d4c995a60d2c03fac2",
-        "type": "Monster"
+        "type": "Monster",
+        "model": "Boss",
+        "modelGuid": "9addc2eb4a7621a4c85b711dfc73cfaa",
+        "pose": {
+          "position": [
+            0.0,
+            -1.8916,
+            0.0
+          ],
+          "scale": 0.657
+        },
+        "collider": {
+          "radius": 1.0,
+          "height": 4.0,
+          "center": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "attackVariants": 2,
+        "hitVariants": 4,
+        "deathStyle": "AnimationClip",
+        "sinkDepth": 4.42,
+        "deathDelay": 4.5
       }
     },
     "player": {
@@ -3205,6 +3314,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "LaserPistol",
+        "modelGuid": "50847d0c89afcb04fbb94ea3d83fa02b",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            0.9
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0727,
+          0.3499
+        ],
+        "sight": [
+          0.0,
+          0.1549,
+          -0.0127
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "기본 권총",
@@ -3249,6 +3387,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "LowPowerRailGun",
+        "modelGuid": "2eab7d8cf189380478ebb3fad3935652",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0737,
+          0.3947
+        ],
+        "sight": [
+          0.0,
+          0.1541,
+          -0.0064
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "라이플",
@@ -3293,6 +3460,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "RegularShotgun",
+        "modelGuid": "3058199639e1a314dbab496b92c1cfaa",
+        "pose": {
+          "position": [
+            0.35,
+            -0.15,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0026,
+          0.5097
+        ],
+        "sight": [
+          0.0,
+          0.0391,
+          0.1016
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "샷건",
@@ -3337,6 +3533,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "SilencedSniperRifle",
+        "modelGuid": "da100db5ca11ec24ca178e51bde2e730",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0618,
+          0.6786
+        ],
+        "sight": [
+          0.0,
+          0.1366,
+          -0.069
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "스나이퍼",
@@ -3382,6 +3607,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "BombLauncher",
+        "modelGuid": "aaa699c05fa2cd74fad0f1bdaeeade4a",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.1345,
+          0.3045
+        ],
+        "sight": [
+          -0.0838,
+          0.1302,
+          0.037
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "유탄 발사기",
@@ -3426,6 +3680,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "HighPowerThermalRifle",
+        "modelGuid": "b4a1a184f2dfb834fa98f05e44867d04",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0674,
+          0.5178
+        ],
+        "sight": [
+          0.0,
+          0.1816,
+          0.1275
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "에너지 소총",
@@ -3465,6 +3748,25 @@
             "volume": 0.55,
             "spatial": true
           }
+        },
+        "model": "PlasmaCutter_Model",
+        "modelGuid": "a9128e96b6679e144b3f76ceace04326",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            0.85
+          ],
+          "rotation": [
+            300.0,
+            334.0,
+            18.0
+          ],
+          "scale": 0.25
+        },
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
         }
       },
       "displayName": "플라즈마 커터",

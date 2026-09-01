@@ -41,6 +41,8 @@ namespace CoreDawn.Data
         [Header("크기 (타일)")]
         public int width;
         public int height;
+        [Tooltip("칸 한 변(m) — 이 맵의 정본. 공장 격자·배치·길찾기·건물 조립 배율이 전부 여기서 온다(맵을 불러올 때 주입).")]
+        public float cellSize = 4f;
 
         [Tooltip("코어 3×3의 왼쪽 아래 칸. 중심 칸이 정확히 하나여야 해서 width/height는 홀수를 쓴다.")]
         public Vector2Int core;

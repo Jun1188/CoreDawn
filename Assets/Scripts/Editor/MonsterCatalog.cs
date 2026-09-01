@@ -8,11 +8,11 @@ namespace CoreDawn.EditorTools
     /// <summary>
     /// 몬스터 종(種) 목록 — <b>새 적을 추가할 때 손대는 유일한 곳.</b>
     ///
-    /// 임포터 설정(<see cref="MonsterAssetSetup"/>), 애니메이터 생성(<see cref="MonsterAnimationBuilder"/>),
-    /// 프리팹 조립(<see cref="MonsterRigBuilder"/>) 셋이 전부 이 표 하나를 읽는다.
+    /// 임포터 설정(구 MonsterAssetSetup(삭제됨)), 애니메이터 생성(<see cref="MonsterAnimationBuilder"/>),
+    /// 프리팹 조립(구 MonsterRigBuilder(삭제됨 — 몬스터 뷰는 MonsterAssembler가 팩 view로 세운다)) 셋이 전부 이 표 하나를 읽는다.
     /// 종이 늘어도 그 세 도구의 코드는 바뀌지 않는다.
     ///
-    /// 타워 쪽 <see cref="TowerRigBuilder.Spec"/>와 같은 발상이되, 몬스터는 종마다 리그가 달라
+    /// 타워 쪽 구 TowerRigBuilder.Spec(타워는 5a-4b에서 팩 view로 대체됨)와 같은 발상이되, 몬스터는 종마다 리그가 달라
     /// 클립을 직접 공유할 수 없으므로 "슬롯 → 종별 클립" 매핑이 한 겹 더 있다.
     /// </summary>
     public static class MonsterCatalog

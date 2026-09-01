@@ -22,10 +22,6 @@ namespace CoreDawn.Worlds
         [Tooltip("이 월드의 맵 데이터 — MapData.json에서 MapImporter가 구운 에셋.")]
         [SerializeField] private MapDataSO map;
 
-        [Tooltip("타일 한 칸의 월드 크기(m). 길찾기 격자와 건설 격자가 이 값을 함께 쓴다 — " +
-                 "둘이 어긋나면 몬스터가 건물을 통과하거나 못 지나간다.")]
-        [SerializeField] private float cellSize = 1f;
-
         [Header("맵대로 세울 것들")]
         [Tooltip("광맥 프리팹 — 아이템·크기·채굴 속도는 맵이 정하고, 이건 껍데기다.")]
         [SerializeField] private GameObject resourceNodePrefab;
@@ -38,7 +34,8 @@ namespace CoreDawn.Worlds
         [SerializeField] private GameObject[] treePrefabs = new GameObject[0];
 
         public MapDataSO Map => map;
-        public float CellSize => cellSize;
+        /// <summary>칸 한 변(m) — 맵 데이터의 값. 씬에 사본을 두지 않는다(GameBootstrap이 공장·배치·길찾기에 이 값을 주입한다).</summary>
+        public float CellSize => map != null && map.cellSize > 0f ? map.cellSize : 1f;
         public GameObject ResourceNodePrefab => resourceNodePrefab;
         public GameObject NestPrefab => nestPrefab;
         public GameObject[] TreePrefabs => treePrefabs;
@@ -48,30 +45,26 @@ namespace CoreDawn.Worlds
 
         /// <summary>타일 좌표 → 월드 좌표(칸의 왼쪽 아래).</summary>
         public Vector3 CellToWorld(Vector2Int cell) =>
-            Origin + new Vector3(cell.x * cellSize, 0f, cell.y * cellSize);
+            Origin + new Vector3(cell.x * CellSize, 0f, cell.y * CellSize);
 
         /// <summary>타일 좌표 → 칸 중앙의 월드 좌표.</summary>
         public Vector3 CellToWorldCenter(Vector2Int cell) =>
-            CellToWorld(cell) + new Vector3(cellSize * 0.5f, 0f, cellSize * 0.5f);
+            CellToWorld(cell) + new Vector3(CellSize * 0.5f, 0f, CellSize * 0.5f);
 
-        void OnValidate()
-        {
-            if (cellSize <= 0f) cellSize = 1f;
-        }
 
         void OnDrawGizmosSelected()
         {
             if (map == null) return;
 
             // 맵 경계를 그려 배치 감각을 잡는다 (선택했을 때만)
-            Vector3 size = new(map.width * cellSize, 0f, map.height * cellSize);
+            Vector3 size = new(map.width * CellSize, 0f, map.height * CellSize);
             Gizmos.color = new Color(0.35f, 0.75f, 1f, 0.9f);
             Gizmos.DrawWireCube(Origin + size * 0.5f, size);
 
             // 코어 3×3 자리
             Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-            Gizmos.DrawWireCube(CellToWorld(map.core) + new Vector3(cellSize * 1.5f, 0f, cellSize * 1.5f),
-                                new Vector3(cellSize * 3f, 0f, cellSize * 3f));
+            Gizmos.DrawWireCube(CellToWorld(map.core) + new Vector3(CellSize * 1.5f, 0f, CellSize * 1.5f),
+                                new Vector3(CellSize * 3f, 0f, CellSize * 3f));
         }
     }
 }

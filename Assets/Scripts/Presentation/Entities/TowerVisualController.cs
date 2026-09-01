@@ -17,7 +17,7 @@ namespace CoreDawn.Entities
     ///
     /// 트랜스폼 하나당 주인은 하나다:
     ///   yawPivot·pitchPivot·recoil → 이 스크립트
-    ///   view·droop                 → Animator (클립)
+    ///   droop                      → 코드(굶으면 처짐)
     /// 둘이 같은 트랜스폼을 건드리면 매 프레임 싸우므로, 프리팹 계층을 그렇게 나눠 두었다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -27,7 +27,7 @@ namespace CoreDawn.Entities
         // 예전엔 쓰지도 않는 view 필드를 빌더가 배선해 두었는데, "이 스크립트도 View를 만진다"는
         // 오해만 부르므로 걷어냈다.
 
-        [Header("리그 — 비우면 해당 연출을 건너뛴다")]
+        [Header("리그 — 조립기가 모델의 노드 이름으로 채운다(WireRig). 비면 해당 연출을 건너뛴다")]
         [Tooltip("좌우 선회 축. 비우면 조준 회전이 없는 타워로 취급하고 항상 '조준 완료'로 답한다.")]
         [SerializeField] private Transform yawPivot;
 
@@ -39,6 +39,12 @@ namespace CoreDawn.Entities
 
         [Tooltip("총구들. 여러 개면 발사마다 번갈아 쓴다(다총신). 비우면 BattleTower가 muzzleHeight로 대신한다.")]
         [SerializeField] private Transform[] muzzles;
+        [Tooltip("탄약이 끊기면 처지는 마디(Droop). 비면 처짐 연출 없음.")]
+        [SerializeField] private Transform droop;
+        [Header("처짐 — 탄약이 끊긴 타워")]
+        [SerializeField] private float droopAngle = 18f;
+        [Tooltip("클수록 빨리 처지고 빨리 든다.")]
+        [SerializeField] private float droopSpeed = 4f;
 
         [Header("조준")]
         [Tooltip("부앙 가동범위(도). x=아래 한계, y=위 한계. 모델 사정이라 밸런스가 아닌 여기에 둔다.")]
@@ -58,7 +64,6 @@ namespace CoreDawn.Entities
         [SerializeField] private GameObject destroyVfx;
 
         // ── 내부 상태 ───────────────────────────────────────────────
-        private Animator animator;
         private TowerView tower;
 
         private float yaw;
@@ -68,18 +73,44 @@ namespace CoreDawn.Entities
         private int muzzleIndex;
         private Transform lastMuzzle;
         private bool deathPlayed;
+        private float droopTilt;
 
         // 애니메이터 파라미터는 이 하나뿐이다. 등장(Deploy)→기본(Active) 전이는 클립 길이로
         // 끝내므로 파라미터가 필요 없다 — 없는 파라미터에 SetBool을 하면 매번 에러가 찍힌다.
-        private static readonly int HashStarved = Animator.StringToHash("Starved");
 
         /// <summary>총구가 하나라도 있는가 — BattleTower가 muzzleHeight 폴백을 쓸지 판단한다.</summary>
         public bool HasMuzzle => muzzles != null && muzzles.Length > 0;
 
         private void Awake()
         {
-            animator = GetComponent<Animator>();
             tower = GetComponent<TowerView>();
+        }
+
+        /// <summary>
+        /// 리그 배선 — 모델 안에서 이름으로 찾는다(블렌더 규약: YawPivot → PitchPivot → Droop → Recoil, 총구 Muzzle_*).
+        /// 이름은 정의의 view.rig{yaw, pitch, droop, recoil, muzzle}로 바꿀 수 있다(모델을 못 고치는 서드파티 리그).
+        /// </summary>
+        public void WireRig(Transform model, ViewSpec view)
+        {
+            var rig = view?.Object("rig");
+            string N(string key, string fallback) => (string)rig?[key] ?? fallback;
+            yawPivot   = Find(model, N("yaw", "YawPivot"));
+            pitchPivot = Find(model, N("pitch", "PitchPivot"));
+            droop      = Find(model, N("droop", "Droop"));
+            recoil     = Find(model, N("recoil", "Recoil"));
+            string muzzlePrefix = N("muzzle", "Muzzle_");
+            var list = new System.Collections.Generic.List<Transform>();
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith(muzzlePrefix, System.StringComparison.Ordinal)) list.Add(t);
+            list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            muzzles = list.ToArray();
+        }
+
+        static Transform Find(Transform root, string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            foreach (var t in root.GetComponentsInChildren<Transform>(true)) if (t.name == name) return t;
+            return null;
         }
 
         private void OnEnable()
@@ -94,6 +125,14 @@ namespace CoreDawn.Entities
 
         private void Update()
         {
+            // 처짐 — 굶으면 포신이 아래로 처지고, 보급되면 다시 든다(구 Animator 클립을 코드로)
+            if (droop != null)
+            {
+                float target = current == TowerState.Starved ? droopAngle : 0f;
+                droopTilt = Mathf.Lerp(droopTilt, target, 1f - Mathf.Exp(-droopSpeed * Time.deltaTime));
+                droop.localRotation = Quaternion.Euler(droopTilt, 0f, 0f);
+            }
+
             // 반동 복귀 — 발사와 무관하게 항상 0을 향해 되돌아온다
             if (recoil != null)
             {
@@ -229,8 +268,6 @@ namespace CoreDawn.Entities
             bool wasStarved = current == TowerState.Starved;
             current = state;
 
-            if (animator != null)
-                animator.SetBool(HashStarved, state == TowerState.Starved);
 
             if (state == TowerState.Starved && !wasStarved)
                 Play(View?.SfxOf("starved"), transform.position);

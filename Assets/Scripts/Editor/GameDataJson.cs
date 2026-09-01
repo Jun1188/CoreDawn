@@ -197,9 +197,6 @@ namespace CoreDawn.EditorTools
             public string iconGuid;       // 스프라이트를 담은 에셋의 guid
             // 배치 프리팹 참조 — 임포터가 model에서 굽는 산출물(둥지·나무는 손 프리팹)의 주소.
             // 뷰 카탈로그가 이 guid를 굽는다. 값은 1회 유틸이 SO에서 채우고, 임포터가 프리팹을 다시 구워도 guid는 유지된다(경로 불변)
-            public string prefab, prefabGuid;
-            public string prefabCurveL, prefabCurveLGuid;   // 벨트 커브 프리팹 (벨트만)
-            public string prefabCurveR, prefabCurveRGuid;
             public Vec2Dto size;
             public PortDto[] ports;
             public int   inputSlots, outputSlots, bufferStackCap, requiredCoreTier, maxHp;
@@ -253,8 +250,8 @@ namespace CoreDawn.EditorTools
             public string id;            // 필수. 예: "Monster:Basic"
             public string displayName;   // 필수
             public string description;
-            public string prefab;        // 프리팹 이름 — 사람이 읽는 용도
-            public string prefabGuid;    // 프리팹 에셋 guid — 이쪽이 파일을 특정한다
+            public string model;         // 모델 프리팹 이름(Art/Models/Monsters — 리그·Animator·머티리얼을 안에 든 모델) — 사람이 읽는 용도
+            public string modelGuid;     // 모델 에셋 guid — 이쪽이 파일을 특정한다
             public float  maxHp;
             public float  moveSpeed, rotateSpeed, crowdRadius, knockbackDamping;
             public bool   stickToGround = true;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것

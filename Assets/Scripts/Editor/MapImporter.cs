@@ -37,6 +37,7 @@ namespace CoreDawn.EditorTools
             public string displayName;   // 필수
             public string description;
             public int width, height;
+            public float cellSize;        // 칸 한 변(m). 필수(>0)
             public CellDto core;
             public string[] tiles;       // 행마다 한 줄, 한 글자가 한 칸
             public NodeDto[] nodes;
@@ -162,6 +163,18 @@ namespace CoreDawn.EditorTools
             map.description = dto.description ?? "";
             map.width = dto.width;
             map.height = dto.height;
+            if (!(dto.cellSize > 0f))
+            {
+                Debug.LogError($"[MapImporter] '{dto.id}': cellSize(칸 한 변, m)가 없거나 0 이하입니다 — 공장·배치·길찾기가 이 값으로 격자를 잡습니다.");
+                errors++;
+            }
+            else map.cellSize = dto.cellSize;
+            if (!(dto.cellSize > 0f))
+            {
+                Debug.LogError($"[MapImporter] '{dto.id}': cellSize(칸 한 변, m)가 없거나 0 이하입니다 — 공장·배치·길찾기가 이 값으로 격자를 잡습니다.");
+                errors++;
+            }
+            else map.cellSize = dto.cellSize;
             map.core = dto.core != null ? new Vector2Int(dto.core.x, dto.core.y) : Vector2Int.zero;
             map.EditorSetTiles(BakeTiles(dto, ref errors));
             map.nodes = ResolveNodes(dto, pack, ref errors);

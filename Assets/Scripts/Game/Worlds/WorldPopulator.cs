@@ -107,10 +107,9 @@ namespace CoreDawn.Worlds
         static void PlaceCore(World world, Transform root)
         {
             var coreDef = FindEntityWith<CoreModuleDef>();
-            var corePrefab = ViewCatalogSO.PrefabOf(coreDef);
-            if (coreDef == null || corePrefab == null)
+            if (coreDef == null)
             {
-                Debug.LogWarning("[WorldPopulator] 코어 정의(Core 모듈) 또는 그 프리팹(뷰 카탈로그)을 찾지 못해 코어를 세우지 못했습니다.", world);
+                Debug.LogWarning("[WorldPopulator] 코어 정의(Core 모듈)를 팩에서 찾지 못해 코어를 세우지 못했습니다.", world);
                 return;
             }
 
@@ -120,7 +119,9 @@ namespace CoreDawn.Worlds
                         + new Vector3(1.5f, 0f, 1.5f) * world.CellSize;
             pos.y = GroundYAt(world, pos);
 
-            var go = Spawn(corePrefab, pos, Quaternion.identity, root);
+            // 코어도 다른 건물처럼 정의에서 조립한다 — 굳힌 씬(베이커)에서도 같은 길(프리팹 링크 없음)
+            var go = BuildingAssembler.Build(coreDef, BeltShape.Straight, pos, Quaternion.identity, world.CellSize);
+            go.transform.SetParent(root, true);
             go.name = "Core";
 
             var boot = go.GetComponent<CoreBootstrap>();

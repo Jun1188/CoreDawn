@@ -14,11 +14,9 @@ namespace CoreDawn.Factory
     public static class PlacementBridge
     {
         /// <param name="portOverride">인스턴스별 포트 형상 (벨트 커브 등). null이면 정의의 포트 사용.</param>
-        /// <param name="prefabOverride">인스턴스별 프리팹 (벨트 커브 메시 등). null이면 카탈로그 프리팹 사용.</param>
         /// <param name="shape">벨트 모양. 세이브가 그대로 되살릴 수 있도록 심에도 기록된다.</param>
         public static BuildingModule Place(EntityDef def, Vector2Int origin, Vector3 pos = default, int rotSteps = 0,
-            PortDefinition[] portOverride = null, GameObject prefabOverride = null,
-            BeltShape shape = BeltShape.Straight)
+            PortDefinition[] portOverride = null, BeltShape shape = BeltShape.Straight)
         {
             var boot = FactoryBootstrap.Instance;
             var b = boot.Factory.Place(def, origin, rotSteps, portOverride, shape);
@@ -26,15 +24,10 @@ namespace CoreDawn.Factory
             // 뷰 생성 — 벨트 커브는 메시의 뚫린 변을 포트에 맞추는 보정이 붙는다.
             // 프리뷰(PlacementSystem.PreviewYaw)와 반드시 같은 값이어야 한다: 여기만 고치면
             // 미리보기와 실제로 세워진 것이 다른 방향을 보게 된다.
-            var prefab = prefabOverride != null ? prefabOverride : ViewCatalogSO.PrefabOf(def);
             float yaw = def.Has<ConveyorModuleDef>() ? BeltGeometry.MeshYaw(shape, rotSteps) : rotSteps * 90f;
-            GameObject go = prefab != null
-                ? Object.Instantiate(prefab, pos, Quaternion.Euler(0, yaw, 0))
-                : new GameObject(def.Id);    // 프리팹 누락 시 빈 오브젝트
-
-            // 프리팹에 미리 붙어 있으면(타워의 canAttack 설정 등) 그대로 쓰고, 없으면 부착
+            // 뷰는 정의(view.type·model)에서 조립한다 — 프리팹은 없다(5a-4b). 컴포넌트(BuildingView/TowerView)도 조립기가 붙인다
+            GameObject go = BuildingAssembler.Build(def, shape, pos, Quaternion.Euler(0, yaw, 0), boot.Factory.Geometry.CellSize);
             var view = go.GetComponent<BuildingView>();
-            if (view == null) view = go.AddComponent<BuildingView>();
             view.Building = b;   // 엔티티(HP·편)도 이때 붙는다
             boot.RegisterView(b, view);
 
