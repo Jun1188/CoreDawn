@@ -117,8 +117,12 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   when there is no model, one non-convex `MeshCollider` per renderer, layer `Entity`, then `TowerView`+`TowerVisualController` or
   `BuildingView` by `view.type`. Tower rigs are found by node name (`YawPivot`, `PitchPivot`, `Droop`, `Recoil`, `Muzzle_*`; override via
   `view.rig`) and the starved droop is code, not an Animator. `PlacementBridge.Place`, the placement preview and `WorldPopulator.PlaceCore`
-  all go through the assembler — never instantiate a building prefab. Remaining prefabs: monsters (kept by decision), MonsterNest,
-  ResourceNode, DroppedItem, vegetation trees.
+  all go through the assembler — never instantiate a building prefab. Guns are assembled **when equipped** (`WeaponManager.EquipWeapon`
+  builds, unequip destroys — magazine state lives in the sim). Monsters are assembled too (`MonsterAssembler`: `view.collider`,
+  `MonsterVisualController.Wire`, model prefabs under `Art/Models/Monsters` that carry the rig, Animator override controller and URP
+  materials). **The cell size is map data** (`MapDataSO.cellSize` ← `MapData.json`); `World.CellSize` returns it and `GameBootstrap`
+  injects it into the factory geometry, placement and the nav grid — there are no inspector copies. The nav grid subdivides a cell into
+  `nodeSize` (1 m) nodes, never a hard-coded 4. Remaining prefabs: MonsterNest, ResourceNode, DroppedItem, vegetation trees.
 - Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,
   pellets, range in meters, ammo filter, damage multiplier + the view's feel values), and the player entity carries a `WeaponModule`
   (per-gun `Magazine`, equipped gun, fire cooldown, reload timer that really consumes rounds from the inventory, auto-reload, ammo
