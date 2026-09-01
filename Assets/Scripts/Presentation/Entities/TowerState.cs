@@ -14,9 +14,6 @@ namespace CoreDawn.Entities
         /// <summary>사망 — 뷰는 즉시 파괴된다. 폭발 연출은 분리 스폰이라야 보인다.</summary>
         Destroyed,
 
-        /// <summary>배치 직후의 등장 연출 구간. 짧고, 한 번만 지나간다.</summary>
-        Deploying,
-
         /// <summary>발사하지 않는 구조물(울타리) — 몸으로 막을 뿐이다. 영구 상태.</summary>
         Inert,
 

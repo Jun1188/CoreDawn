@@ -93,7 +93,6 @@ namespace CoreDawn.EditorTools
         private const string AudioRoot = TemplateRoot + "/Audio/SFX";
         private const string DestroyClipFolder = AudioRoot + "/Tower Destruction";
         private const string StarvedClip = "Assets/Art/Audio/Casual Game Sounds U6/CasualGameSounds/DM-CGS-04.wav";
-        private const string DeployVfx = TemplateRoot + "/Particles/Prefabs/BuildPfx.prefab";
         private const string DestroyVfx = TemplateRoot + "/Particles/Prefabs/TowerDeathExplosion.prefab";
 
         /// <summary>칸 하나당 월드 크기. PlacementSystem.cellSize와 맞춘다.</summary>
@@ -378,8 +377,6 @@ namespace CoreDawn.EditorTools
             SetObjectArray(so, "destroyClips", LoadClipFolder(DestroyClipFolder));
             so.FindProperty("starvedClip").objectReferenceValue =
                 AssetDatabase.LoadAssetAtPath<AudioClip>(StarvedClip);
-            so.FindProperty("deployVfx").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<GameObject>(DeployVfx);
             so.FindProperty("destroyVfx").objectReferenceValue =
                 AssetDatabase.LoadAssetAtPath<GameObject>(DestroyVfx);
 

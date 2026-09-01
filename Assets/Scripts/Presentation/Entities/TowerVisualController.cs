@@ -67,7 +67,6 @@ namespace CoreDawn.Entities
         [SerializeField, Range(0f, 1f)] private float starvedVolume = 0.6f;
 
         [Header("연출 프리팹")]
-        [SerializeField] private GameObject deployVfx;
         [SerializeField] private GameObject destroyVfx;
 
         // ── 내부 상태 ───────────────────────────────────────────────
@@ -254,12 +253,6 @@ namespace CoreDawn.Entities
                 Play3D(starvedClip, transform.position, starvedVolume);
 
             if (state == TowerState.Destroyed) PlayDestroyed();
-        }
-
-        /// <summary>배치 직후 1회 — 설치 파티클.</summary>
-        public void PlayDeploy()
-        {
-            ProjectileSystem.PlayEffect(deployVfx, transform.position, Quaternion.identity);
         }
 
         /// <summary>
