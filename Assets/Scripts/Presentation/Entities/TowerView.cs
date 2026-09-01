@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using CoreDawn.Managers;
 using CoreDawn.Combat;
 using CoreDawn.Sim;
 using CoreDawn.Data;
@@ -181,12 +182,12 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>탄의 표현 에셋(프리팹·연출) — 뷰 카탈로그. 없으면 경고 한 번 — 판정은 되지만 투사체는 몸(프리팹)이 없어 맞힐 수 없다.</summary>
-        private static ViewCatalogSO.Entry AmmoAssetOf(ItemDef item)
+        private static BuiltinEffects.Ammo AmmoAssetOf(ItemDef item)
         {
             if (item == null) return null;
-            var round = ViewCatalogSO.Of(item);
+            var round = BuiltinEffects.AmmoOf(item);
             if ((round == null || round.bulletPrefab == null) && warnedRounds.Add(item.Id))
-                Debug.LogError($"[TowerView] 탄 '{item.Id}'의 표현 에셋(뷰 카탈로그 bullet)이 없습니다 — 탄 프리팹·연출 없이 발사됩니다.");
+                Debug.LogError($"[TowerView] 탄 '{item.Id}'의 연출(view.bullet — 내장 연출 이름)이 없습니다 — 탄 프리팹·연출 없이 발사됩니다.");
             return round;
         }
     }

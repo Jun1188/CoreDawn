@@ -1,4 +1,5 @@
 using UnityEngine;
+using CoreDawn.Managers;
 using UnityEngine.UIElements;
 using CoreDawn.Data;
 using CoreDawn.Sim;
@@ -16,7 +17,7 @@ namespace CoreDawn.UI
     {
         public static void Apply(VisualElement ve, ItemDef item)
         {
-            var icon = item != null ? ViewCatalogSO.IconOf(item) : null;
+            var icon = item != null ? PackAssets.IconOf(item) : null;
             if (icon != null)
             {
                 ve.style.backgroundImage = new StyleBackground(icon);
@@ -34,7 +35,7 @@ namespace CoreDawn.UI
         public static void ApplyToggle(VisualElement ve, ItemDef item, bool on)
         {
             Apply(ve, item);
-            if (item != null && ViewCatalogSO.IconOf(item) != null)
+            if (item != null && PackAssets.IconOf(item) != null)
                 ve.style.unityBackgroundImageTintColor = on ? Color.white : UIFlowColors.Muted;
             else if (!on)
                 ve.style.backgroundColor = UIFlowColors.Muted;

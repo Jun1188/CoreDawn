@@ -10,8 +10,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "ShipDebris",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "ShipDebris"
+        }
       }
     },
     "iron_ore": {
@@ -22,8 +24,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "IronOre",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronOre"
+        }
       }
     },
     "iron_ingot": {
@@ -34,8 +38,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "IronIngot",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronIngot"
+        }
       }
     },
     "iron_plate": {
@@ -46,8 +52,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "IronPlate",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronPlate"
+        }
       }
     },
     "iron_gear": {
@@ -58,8 +66,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "IronGear",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronGear"
+        }
       }
     },
     "basic_ammo": {
@@ -85,14 +95,13 @@
         }
       ],
       "view": {
-        "icon": "BasicAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "BasicAmmo"
+        },
         "bullet": "Bullet",
-        "bulletGuid": "d0ab4e1deef0b934c91bb2c4888b232f",
         "muzzleFlash": "BaseAmmoMuzzle",
-        "muzzleFlashGuid": "1d58b0b48b0be754a946ef13a5b47064",
-        "hitEffect": "BaseAmmoExplosion",
-        "hitEffectGuid": "701fe55687f0a6143a595adb30249cfb"
+        "hitEffect": "BaseAmmoExplosion"
       }
     },
     "copper_ore": {
@@ -103,8 +112,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "CopperOre",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CopperOre"
+        }
       }
     },
     "copper_ingot": {
@@ -115,8 +126,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "CopperIngot",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CopperIngot"
+        }
       }
     },
     "copper_wire": {
@@ -127,8 +140,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "CopperWire",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CopperWire"
+        }
       }
     },
     "crystal_ore": {
@@ -139,8 +154,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "CrystalOre",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CrystalOre"
+        }
       }
     },
     "refined_crystal": {
@@ -151,8 +168,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "RefinedCrystal",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "RefinedCrystal"
+        }
       }
     },
     "hull_panel": {
@@ -163,8 +182,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "HullPanel",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "HullPanel"
+        }
       }
     },
     "circuit_board": {
@@ -175,8 +196,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "CircuitBoard",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CircuitBoard"
+        }
       }
     },
     "grenade": {
@@ -206,14 +229,13 @@
         }
       ],
       "view": {
-        "icon": "Grenade",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "Grenade"
+        },
         "bullet": "GrenadeBullet",
-        "bulletGuid": "6fb28be86ecaf034ab6b3bde5d9a3ad2",
         "muzzleFlash": "GrenadeMuzzle",
-        "muzzleFlashGuid": "c970c55aaa68fda439fa7efa01c4545d",
-        "hitEffect": "GrenadeExplosion",
-        "hitEffectGuid": "9a6234d093d15ac4c8b4b52e4c6be97f"
+        "hitEffect": "GrenadeExplosion"
       }
     },
     "dense_ammo": {
@@ -239,14 +261,13 @@
         }
       ],
       "view": {
-        "icon": "DenseAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "DenseAmmo"
+        },
         "bullet": "Bullet",
-        "bulletGuid": "d0ab4e1deef0b934c91bb2c4888b232f",
         "muzzleFlash": "DenseAmmoMuzzle",
-        "muzzleFlashGuid": "56a6f8a898bebd64d96faf8434833bfd",
-        "hitEffect": "DenseAmmoExplosion",
-        "hitEffectGuid": "17175243210cbdb4b97f12fa99811418"
+        "hitEffect": "DenseAmmoExplosion"
       }
     },
     "energy_cell": {
@@ -257,8 +278,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "EnergyCell",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "EnergyCell"
+        }
       }
     },
     "energy_cell_ammo": {
@@ -288,14 +311,13 @@
         }
       ],
       "view": {
-        "icon": "EnergyCellAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "EnergyCellAmmo"
+        },
         "bullet": "CrystalAmmoBullet",
-        "bulletGuid": "60dbfc80def39a042abb9eb0be9b1459",
         "muzzleFlash": "EnergeCellAmmoMuzzle",
-        "muzzleFlashGuid": "6716924e2ed157843b9d9295af57bf0e",
-        "hitEffect": "EnergeCellAmmoExplosion",
-        "hitEffectGuid": "383ff3797b825254293298bbf11b2858"
+        "hitEffect": "EnergeCellAmmoExplosion"
       }
     },
     "nav_control_unit": {
@@ -306,8 +328,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "NavControlUnit",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "NavControlUnit"
+        }
       }
     },
     "beast_core": {
@@ -318,8 +342,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "BeastCore",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "BeastCore"
+        }
       }
     },
     "control_module": {
@@ -330,8 +356,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "ControlModule",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "ControlModule"
+        }
       }
     },
     "power_module": {
@@ -342,8 +370,10 @@
       "maxStack": 50,
       "modules": [],
       "view": {
-        "icon": "PowerModule",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa"
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "PowerModule"
+        }
       }
     },
     "crystal_ammo": {
@@ -373,14 +403,13 @@
         }
       ],
       "view": {
-        "icon": "CrystalAmmo",
-        "iconGuid": "22c77adfccde8ce44aa7a3b50a1acfaa",
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CrystalAmmo"
+        },
         "bullet": "CrystalAmmoBullet",
-        "bulletGuid": "60dbfc80def39a042abb9eb0be9b1459",
         "muzzleFlash": "CrystalAmmoMuzzle",
-        "muzzleFlashGuid": "d7d7f5edf939ae74a9c85c9655849dff",
-        "hitEffect": "CrystalAmmoExplosion",
-        "hitEffectGuid": "06c01719d67a8284b891e3011c7b3a71"
+        "hitEffect": "CrystalAmmoExplosion"
       }
     },
     "pistol": {
@@ -396,8 +425,10 @@
         }
       ],
       "view": {
-        "icon": "Pistol",
-        "iconGuid": "edf27d1135600e245ac99153f1177507"
+        "icon": {
+          "file": "textures/pistol.png",
+          "frame": "Pistol"
+        }
       }
     },
     "rifle": {
@@ -413,8 +444,10 @@
         }
       ],
       "view": {
-        "icon": "Rifle",
-        "iconGuid": "5c2946d85ab19a04baf2b6e3f6354a44"
+        "icon": {
+          "file": "textures/rifle.png",
+          "frame": "Rifle"
+        }
       }
     },
     "shotgun": {
@@ -430,8 +463,10 @@
         }
       ],
       "view": {
-        "icon": "Shotgun",
-        "iconGuid": "38f317d4c2c337f4baced47e4de101ac"
+        "icon": {
+          "file": "textures/shotgun.png",
+          "frame": "Shotgun"
+        }
       }
     },
     "sniper": {
@@ -447,8 +482,10 @@
         }
       ],
       "view": {
-        "icon": "Sniper",
-        "iconGuid": "722185e6f4af1ae4fa819f76322195a1"
+        "icon": {
+          "file": "textures/sniper.png",
+          "frame": "Sniper"
+        }
       }
     },
     "grenade_launcher": {
@@ -464,8 +501,10 @@
         }
       ],
       "view": {
-        "icon": "GrenadeLauncher",
-        "iconGuid": "9773aecee1ac0ff439cd79ecdab562f4"
+        "icon": {
+          "file": "textures/grenade_launcher.png",
+          "frame": "GrenadeLauncher"
+        }
       }
     },
     "energy_rifle": {
@@ -481,8 +520,10 @@
         }
       ],
       "view": {
-        "icon": "EnergyRifle",
-        "iconGuid": "2a9cd9ba278812a4db106de4718601d6"
+        "icon": {
+          "file": "textures/energy_rifle.png",
+          "frame": "EnergyRifle"
+        }
       }
     },
     "plasma_arc": {
@@ -514,11 +555,8 @@
       ],
       "view": {
         "bullet": "MeleeStrike",
-        "bulletGuid": "ce9e3d6125abed14ebdebe370e018f5e",
         "muzzleFlash": "SlashWideBlue",
-        "muzzleFlashGuid": "2896d3662d923f546bc6a803fae0eebd",
-        "hitEffect": "SwordImpactBlue",
-        "hitEffectGuid": "d7456e1f6e5242540b63b9042a2e3915"
+        "hitEffect": "SwordImpactBlue"
       }
     },
     "plasma_cutter": {
@@ -534,8 +572,10 @@
         }
       ],
       "view": {
-        "icon": "PlasmaCutter",
-        "iconGuid": "ffdbf5143bcd651499a9f3a01ec2336c"
+        "icon": {
+          "file": "textures/plasma_cutter.png",
+          "frame": "PlasmaCutter"
+        }
       }
     }
   },
@@ -4342,362 +4382,212 @@
     "pistol_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "Zapper_1p_03",
-            "clipGuid": "fd3895a2d40b7c0438eb055779a0f92a"
-          }
+          "sounds/zapper_1p_03.wav"
         ]
       }
     },
     "pistol_reload": {
       "view": {
         "clips": [
-          {
-            "clip": "Pistol_ClipIn_05",
-            "clipGuid": "406c929b7299afb469c82778f8d15d5b"
-          }
+          "sounds/pistol_clip_in_05.wav"
         ]
       }
     },
     "rifle_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "AutoGun_1p_01",
-            "clipGuid": "1b145bcffd767854fb0c71c37678ebaa"
-          }
+          "sounds/auto_gun_1p_01.wav"
         ]
       }
     },
     "rifle_reload": {
       "view": {
         "clips": [
-          {
-            "clip": "Minigun_Reload_04",
-            "clipGuid": "e1d79f4a0c7873742babc5f6e9ff800e"
-          }
+          "sounds/minigun_reload_04.wav"
         ]
       }
     },
     "shotgun_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "JackHammer_1p_03",
-            "clipGuid": "6349a640dc07c3b4389c205f5b5a5145"
-          }
+          "sounds/jack_hammer_1p_03.wav"
         ]
       }
     },
     "shotgun_reload": {
       "view": {
         "clips": [
-          {
-            "clip": "JackHammer_Reload",
-            "clipGuid": "af63539a5e39c99489395bdea2471f60"
-          }
+          "sounds/jack_hammer_reload.wav"
         ]
       }
     },
     "sniper_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "AntiMaterialRifle_1p_01",
-            "clipGuid": "fecc3e7a0166a104cb810435f6fdf37b"
-          }
+          "sounds/anti_material_rifle_1p_01.wav"
         ]
       }
     },
     "sniper_reload": {
       "view": {
         "clips": [
-          {
-            "clip": "weapon-reload-and-pump",
-            "clipGuid": "33ecfe134e86c5d4a9b62f5e9927a85b"
-          }
+          "sounds/weapon-reload-and-pump.ogg"
         ]
       }
     },
     "grenade_launcher_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "grenade-launcher",
-            "clipGuid": "c08f2a886b6b70443b57be57be2ee7c9"
-          }
+          "sounds/grenade-launcher.wav"
         ]
       }
     },
     "grenade_launcher_reload": {
       "view": {
         "clips": [
-          {
-            "clip": "launcher-full-sequence",
-            "clipGuid": "3cfe0927ccb7ede4691b5433aedf2289"
-          }
+          "sounds/launcher-full-sequence.wav"
         ]
       }
     },
     "energy_rifle_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "AssaultCanon_3p",
-            "clipGuid": "81ac649d26a9a96419b76c635591f6d8"
-          }
+          "sounds/assault_canon_3p.wav"
         ]
       }
     },
     "energy_rifle_reload": {
       "view": {
         "clips": [
-          {
-            "clip": "Minigun_Reload_04",
-            "clipGuid": "e1d79f4a0c7873742babc5f6e9ff800e"
-          }
+          "sounds/minigun_reload_04.wav"
         ]
       }
     },
     "plasma_cutter_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "PlasmaCutter_Swing",
-            "clipGuid": "1961437f402f70a40a52757ecf78801d"
-          }
+          "sounds/plasma_cutter_swing.wav"
         ]
       }
     },
     "tower_destroy": {
       "view": {
         "clips": [
-          {
-            "clip": "Destruction 1",
-            "clipGuid": "f82348f044e4641f38816d5c92ce9618"
-          },
-          {
-            "clip": "Destruction 2",
-            "clipGuid": "dadcd6f20f187487ca6d872956f98c7d"
-          },
-          {
-            "clip": "Destruction 3",
-            "clipGuid": "6c7cd8002b13e4ca1974cb33ed5bd19c"
-          },
-          {
-            "clip": "Destruction 4",
-            "clipGuid": "731364f0ab9af462c884661ca839c89e"
-          },
-          {
-            "clip": "Destruction 5",
-            "clipGuid": "dbb5d987bb85a4b84aa3a9e48e093e7c"
-          }
+          "sounds/destruction 1.wav",
+          "sounds/destruction 2.wav",
+          "sounds/destruction 3.wav",
+          "sounds/destruction 4.wav",
+          "sounds/destruction 5.wav"
         ]
       }
     },
     "tower_starved": {
       "view": {
         "clips": [
-          {
-            "clip": "DM-CGS-04",
-            "clipGuid": "c5e2a73ad4706440f93bf05df0b465fe"
-          }
+          "sounds/dm-cgs-04.wav"
         ]
       }
     },
     "basic_turret_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "MG 1",
-            "clipGuid": "d440c9f7407a04474bf738520785306b"
-          },
-          {
-            "clip": "MG 10",
-            "clipGuid": "e893433625bae4c0584daccfde0c2866"
-          },
-          {
-            "clip": "MG 11",
-            "clipGuid": "3b5fc9b92d19541449a6b6ab388a7ffa"
-          },
-          {
-            "clip": "MG 12",
-            "clipGuid": "ebde808a5205d444193394a272542f85"
-          },
-          {
-            "clip": "MG 13",
-            "clipGuid": "b44217f5373cb4a628587e2194eb15a7"
-          },
-          {
-            "clip": "MG 14",
-            "clipGuid": "9cfc9c4c568e54e68a4038ecdf7ffac7"
-          },
-          {
-            "clip": "MG 2",
-            "clipGuid": "d88fd5368c36748d684ff9e8db416da9"
-          },
-          {
-            "clip": "MG 3",
-            "clipGuid": "5bf7c957d8f4a40ff9977d85be58d48f"
-          },
-          {
-            "clip": "MG 4",
-            "clipGuid": "11e15d42e0a474c719970d3b8ddf4b05"
-          },
-          {
-            "clip": "MG 5",
-            "clipGuid": "dc29f7080efef42e4bffce14778bca99"
-          },
-          {
-            "clip": "MG 6",
-            "clipGuid": "c44a398ac1bfe4fa79c75b96bebddd6a"
-          },
-          {
-            "clip": "MG 7",
-            "clipGuid": "4442df31c446a4ff4ac434e95e5de866"
-          },
-          {
-            "clip": "MG 8",
-            "clipGuid": "5a6ca7a364e294886845ab3c268ea63e"
-          },
-          {
-            "clip": "MG 9",
-            "clipGuid": "eed58edbe19094382b8536c1405fed61"
-          }
+          "sounds/mg 1.wav",
+          "sounds/mg 10.wav",
+          "sounds/mg 11.wav",
+          "sounds/mg 12.wav",
+          "sounds/mg 13.wav",
+          "sounds/mg 14.wav",
+          "sounds/mg 2.wav",
+          "sounds/mg 3.wav",
+          "sounds/mg 4.wav",
+          "sounds/mg 5.wav",
+          "sounds/mg 6.wav",
+          "sounds/mg 7.wav",
+          "sounds/mg 8.wav",
+          "sounds/mg 9.wav"
         ]
       }
     },
     "heavy_turret_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "Rocket Tower Shoot",
-            "clipGuid": "ce02cc583b9d84102a12a156e90ca692"
-          }
+          "sounds/rocket tower shoot.wav"
         ]
       }
     },
     "mortar_tower_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "Super Tower Shot 1",
-            "clipGuid": "ad00705ac426345289f10c69b726d683"
-          },
-          {
-            "clip": "Super Tower Shot 2",
-            "clipGuid": "bfc83a94c61ea44ccb7a2470d50b5f10"
-          },
-          {
-            "clip": "Super Tower Shot 3",
-            "clipGuid": "dad118443943d4d31be3a3edb4bb9785"
-          },
-          {
-            "clip": "Super Tower Shot 4",
-            "clipGuid": "02f0cc81719d043e3876b7b6ecdd1566"
-          },
-          {
-            "clip": "Super Tower Shot 5",
-            "clipGuid": "5ae744e8eed7a400b9acdf6d118e7323"
-          },
-          {
-            "clip": "Super Tower Shot 6",
-            "clipGuid": "9844909eb36d64f4eb7125edf616a3ae"
-          },
-          {
-            "clip": "Super Tower Shot 7",
-            "clipGuid": "83f515b3e0b9d48f2867c08c49b787f4"
-          }
+          "sounds/super tower shot 1.wav",
+          "sounds/super tower shot 2.wav",
+          "sounds/super tower shot 3.wav",
+          "sounds/super tower shot 4.wav",
+          "sounds/super tower shot 5.wav",
+          "sounds/super tower shot 6.wav",
+          "sounds/super tower shot 7.wav"
         ]
       }
     },
     "laser_tower_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "LaserFire",
-            "clipGuid": "f7f2b958b23574551b561f7e871a8306"
-          }
+          "sounds/laser_fire.wav"
         ]
       }
     },
     "slow_field_tower_fire": {
       "view": {
         "clips": [
-          {
-            "clip": "DM-CGS-22",
-            "clipGuid": "d8d04c6f80a1140db85ede568dab1f51"
-          }
+          "sounds/dm-cgs-22.wav"
         ]
       }
     },
     "ui_click": {
       "view": {
         "clips": [
-          {
-            "clip": "DM-CGS-03",
-            "clipGuid": "19f89c6e740e7447f9e12a8310d3e973"
-          }
+          "sounds/dm-cgs-03.wav"
         ]
       }
     },
     "ui_hover": {
       "view": {
         "clips": [
-          {
-            "clip": "Footsteps_Tile_Jump_Land_02",
-            "clipGuid": "c86476186f357d44eb470d68a2986520"
-          }
+          "sounds/footsteps_tile_jump_land_02.wav"
         ]
       }
     },
     "construct": {
       "view": {
         "clips": [
-          {
-            "clip": "Macross Placement",
-            "clipGuid": "599f5b1a96b0b478a8f61210e4a9aa48"
-          }
+          "sounds/macross placement.wav"
         ]
       }
     },
     "destroy": {
       "view": {
         "clips": [
-          {
-            "clip": "부수는소리",
-            "clipGuid": "5c9ef139a6ba14f48a8ef69cb7ffa8e1"
-          }
+          "sounds/부수는소리.wav"
         ]
       }
     },
     "warning": {
       "view": {
         "clips": [
-          {
-            "clip": "DM-CGS-04",
-            "clipGuid": "c5e2a73ad4706440f93bf05df0b465fe"
-          }
+          "sounds/dm-cgs-04.wav"
         ]
       }
     },
     "item_pickup": {
       "view": {
         "clips": [
-          {
-            "clip": "DM-CGS-22",
-            "clipGuid": "d8d04c6f80a1140db85ede568dab1f51"
-          }
+          "sounds/dm-cgs-22.wav"
         ]
       }
     },
     "mine": {
       "view": {
         "clips": [
-          {
-            "clip": "poly_explosion_bullet",
-            "clipGuid": "d4bcb5c56d9c70c48998d3943e83f1cf"
-          }
+          "sounds/poly_explosion_bullet.wav"
         ]
       }
     }

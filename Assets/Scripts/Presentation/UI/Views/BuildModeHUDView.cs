@@ -1,4 +1,5 @@
 using UnityEngine;
+using CoreDawn.Managers;
 using UnityEngine.UIElements;
 using CoreDawn.Factory;
 using CoreDawn.Placement;
@@ -129,7 +130,7 @@ namespace CoreDawn.UI
 
             Show(leadIcon, true);
             Show(leadRing, false);
-            var sprite = ViewCatalogSO.IconOf(so);
+            var sprite = PackAssets.IconOf(so);
             leadIconImg.style.backgroundImage = sprite != null ? new StyleBackground(sprite) : default;
 
             cardName.text = NameOf(so);

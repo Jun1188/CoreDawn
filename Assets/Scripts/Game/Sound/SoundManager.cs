@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CoreDawn.Managers;
 using UnityEngine.Audio;
 using CoreDawn.Sound;
 using CoreDawn.UI;
@@ -306,10 +307,10 @@ namespace CoreDawn.Sound
         public static AudioClip ClipOf(string soundId)
         {
             if (string.IsNullOrEmpty(soundId)) return null;
-            var clips = ViewCatalogSO.ClipsOf(soundId);
+            var clips = PackAssets.ClipsOf(soundId);
             if (clips == null || clips.Length == 0)
             {
-                if (warnedSounds.Add(soundId)) Debug.LogWarning($"[SoundManager] 소리 '{soundId}'의 클립이 카탈로그에 없습니다 — 팩 sounds와 ViewCatalog 베이크를 확인하세요.");
+                if (warnedSounds.Add(soundId)) Debug.LogWarning($"[SoundManager] 소리 '{soundId}'의 클립이 없습니다 — 팩 sounds.view.clips와 파일을 확인하세요.");
                 return null;
             }
             return clips[UnityEngine.Random.Range(0, clips.Length)];

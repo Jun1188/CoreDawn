@@ -101,6 +101,7 @@ namespace CoreDawn.EditorTools
         static AudioClip[] LoadClips(JObject view, string id, ref int warnings)
         {
             if (view["clips"] is not JArray arr || arr.Count == 0) return null;
+            if (arr[0].Type == JTokenType.String) return null;   // 팩 소리 파일 경로 — PackAssets가 읽는다
             var list = new List<AudioClip>();
             foreach (var c in arr)
             {
@@ -115,6 +116,7 @@ namespace CoreDawn.EditorTools
 
         static Sprite LoadSprite(JObject view, string nameKey, string guidKey, string id, ref int warnings)
         {
+            if (view[nameKey] is JObject) return null;   // 팩 아이콘 {file, frame} — PackAssets가 읽는다
             string name = (string)view[nameKey], guid = (string)view[guidKey];
             if (string.IsNullOrEmpty(guid)) return null;
 

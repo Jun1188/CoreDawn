@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using CoreDawn.Managers;
 using CoreDawn.Combat;
 using CoreDawn.Entities;
 using CoreDawn.Inventories;
@@ -186,9 +187,9 @@ namespace CoreDawn.FPS
 
             // 탄도(속도·중력·폭발·수명·외형)는 장전된 탄종의 성질 — 총은 각도(조준·탄퍼짐)만 정한다.
             // 프리팹·연출은 뷰 카탈로그(탄약 항목)가 든다.
-            var round = ViewCatalogSO.Of(shot.Round);
+            var round = BuiltinEffects.AmmoOf(shot.Round);
             if (round == null || round.bulletPrefab == null)
-                Debug.LogError($"[Gun] '{Def.Id}': 탄 '{shot.Round?.Id}'의 표현 에셋(뷰 카탈로그 bullet)이 없습니다 — 프리팹·연출 없이 발사됩니다.");
+                Debug.LogError($"[Gun] '{Def.Id}': 탄 '{shot.Round?.Id}'의 연출(view.bullet — 내장 연출 이름)이 없습니다 — 프리팹·연출 없이 발사됩니다.");
 
             // 판정 축 = 카메라(조준선). 총구 축으로 쏘면 ① 비행 중 충돌이 조준선 밖에서 판정되고
             // ② 근접 표적에서 탄이 옆으로 날며 ③ 중력탄(유탄)의 포물선이 크로스헤어와 어긋난다.

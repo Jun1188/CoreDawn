@@ -103,7 +103,7 @@ namespace CoreDawn.Interaction
             promptMessage = $"{item.DisplayName ?? item.Id} x{amount} 줍기";
 
             // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
-            if (visual != null) visual.sprite = ViewCatalogSO.IconOf(itemData);
+            if (visual != null) visual.sprite = Managers.PackAssets.IconOf(itemData);
         }
 
         /// <summary>
@@ -136,14 +136,8 @@ namespace CoreDawn.Interaction
 
         static DroppedItem CreateInstance()
         {
-            var catalog = ViewCatalogSO.LoadDefault();
-            var prefab = catalog != null ? catalog.droppedItemPrefab : null;
-            var created = prefab != null ? Instantiate(prefab).GetComponent<DroppedItem>() : null;
-            if (created == null)
-            {
-                if (prefab != null) Debug.LogError("[DroppedItem] 뷰 카탈로그의 droppedItemPrefab에 DroppedItem 컴포넌트가 없습니다 — 코드 조립으로 대신합니다.");
-                created = BuildFallback(Vector3.zero);
-            }
+            // 바닥 아이템은 프리팹이 아니라 코드가 조립한다(5a-4c) — 계약 컴포넌트·콜라이더·레이어는 코드의 몫, 그림은 아이템 아이콘(팩)
+            var created = Build(Vector3.zero);
             created.name = PooledName;
             created.transform.SetParent(poolRoot, false);
             return created;
@@ -179,10 +173,10 @@ namespace CoreDawn.Interaction
         }
 
         /// <summary>공용 프리팹이 없을 때의 코드 조립 (구 방식). 프리팹과 같은 구조를 만든다.</summary>
-        static DroppedItem BuildFallback(Vector3 position)
+        static DroppedItem Build(Vector3 position)
         {
             // 1. 루트 오브젝트 + 레이어
-            GameObject dropObj = new("Dropped(Fallback)");
+            GameObject dropObj = new("Dropped");
             dropObj.transform.position = position;
 
             int layer = LayerMask.NameToLayer("Interactable");
@@ -211,6 +205,7 @@ namespace CoreDawn.Interaction
 
             var sr = visualObj.AddComponent<SpriteRenderer>();
             visualObj.AddComponent<ItemRotator>();
+            visualObj.AddComponent<EPOOutline.Outlinable>();          // 조준 강조(아웃라인) — 구 프리팹의 Visual과 같게
 
             var dropped = dropObj.AddComponent<DroppedItem>();
             dropped.visual = sr;

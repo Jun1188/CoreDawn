@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GLTFast;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.Networking;
 using CoreDawn.Data;
 using CoreDawn.Sim;
 
@@ -26,6 +27,11 @@ namespace CoreDawn.Managers
         static readonly Dictionary<Material, int> slotIndex = new Dictionary<Material, int>();
         static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>(StringComparer.Ordinal);
         static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        static readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>(StringComparer.Ordinal);
+        static readonly Dictionary<string, JObject> sidecars = new Dictionary<string, JObject>(StringComparer.Ordinal);
+        static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(StringComparer.Ordinal);
+        static readonly Dictionary<string, AudioClip[]> soundClips = new Dictionary<string, AudioClip[]>(StringComparer.Ordinal);
+        static Sprite missingSprite;
         static Transform root;
         static Task preloading;
 
@@ -51,6 +57,8 @@ namespace CoreDawn.Managers
             if (db == null) { Debug.LogError("[PackAssets] 팩 정의가 없어 자원을 읽을 수 없습니다."); IsReady = true; return; }
             var paths = new HashSet<string>(StringComparer.Ordinal);
             var materialIds = new HashSet<string>(StringComparer.Ordinal);
+            var iconDefs = new List<Def>();
+            var clipPaths = new HashSet<string>(StringComparer.Ordinal);
             void Collect(Def def)
             {
                 // 검증(ViewSchema.Of)은 쓰는 쪽 몫 — 여기서는 경로만 모은다(아이템 view는 type이 없어 검증이 소리 낸다)
@@ -62,13 +70,16 @@ namespace CoreDawn.Managers
                         paths.Add(m.File);
                         foreach (var id in m.Materials) materialIds.Add(id);
                     }
+                if (def.View["icon"] is JObject) iconDefs.Add(def);
             }
             foreach (var d in db.Entities.Values) Collect(d);
             foreach (var d in db.Guns.Values) Collect(d);
             foreach (var d in db.Items.Values) Collect(d);
+            foreach (var d in db.Sounds.Values)
+                if (d.View?["clips"] is JArray arr) foreach (var c in arr) if (c.Type == JTokenType.String) clipPaths.Add((string)c);
 
             int ok = 0, done = 0;
-            Progress = (0, paths.Count + materialIds.Count);
+            Progress = (0, paths.Count + materialIds.Count + iconDefs.Count + clipPaths.Count);
             foreach (var rel in paths)
             {
                 if (await Load(db.Pack, rel) != null) ok++;
@@ -80,8 +91,21 @@ namespace CoreDawn.Managers
                 if (MaterialOf(id) != MissingAssets.Material) mats++;
                 Progress = (++done, Progress.total);
             }
+            int icons = 0;
+            foreach (var d in iconDefs)
+            {
+                if (IconOf(d) != MissingSprite()) icons++;
+                Progress = (++done, Progress.total);
+            }
+            int sounds = 0;
+            foreach (var rel in clipPaths)
+            {
+                if (await LoadClip(db.Pack, rel) != null) sounds++;
+                Progress = (++done, Progress.total);
+            }
+            foreach (var d in db.Sounds.Values) soundClips[d.Id] = ClipsFromView(d);
             IsReady = true;
-            Debug.Log($"[PackAssets] {db.Pack}: glb {ok}/{paths.Count} · 재질 {mats}/{materialIds.Count} 로드");
+            Debug.Log($"[PackAssets] {db.Pack}: glb {ok}/{paths.Count} · 재질 {mats}/{materialIds.Count} · 아이콘 {icons}/{iconDefs.Count} · 소리 {sounds}/{clipPaths.Count} 로드");
         }
 
         static async Task<GameObject> Load(string pack, string relative)
@@ -187,6 +211,90 @@ namespace CoreDawn.Managers
             return tex;
         }
 
+        // ── 아이콘 ──────────────────────────────────────────────
+
+        /// <summary>정의의 아이콘 — view.icon {file, frame}: 팩 png + 좌표표(같은 이름의 .json 사이드카: pixelsPerUnit, frames{이름: x,y,w,h,px,py}). 없으면 오류 + 체커.</summary>
+        public static Sprite IconOf(Def def)
+        {
+            if (!(def?.View?["icon"] is JObject icon)) return null;   // 아이콘 없는 정의 — 정상(호출부가 판단)
+            string file = (string)icon["file"], frame = (string)icon["frame"];
+            string key = file + "|" + frame;
+            if (sprites.TryGetValue(key, out var cached) && cached != null) return cached;
+            var db = SimHost.Database;
+            var sidecar = SidecarOf(db.Pack, file);
+            var tex = TextureOf(db.Pack, file, false);
+            if (sidecar == null || tex == MissingAssets.Texture) { Debug.LogError($"[PackAssets] {def.Id}: 아이콘 '{file}'을 읽지 못했습니다."); return MissingSprite(); }
+            if (!(sidecar["frames"] is JObject frames) || !(frames[frame] is JObject f))
+            {
+                Debug.LogError($"[PackAssets] {def.Id}: 아이콘 '{file}'의 좌표표에 프레임 '{frame}'이 없습니다.");
+                return MissingSprite();
+            }
+            float w = (float)f["w"], h = (float)f["h"];
+            var sprite = Sprite.Create(tex, new Rect((float)f["x"], (float)f["y"], w, h), new Vector2((float)f["px"] / w, (float)f["py"] / h), (float?)sidecar["pixelsPerUnit"] ?? 100f);
+            sprite.name = frame;
+            sprites[key] = sprite;
+            return sprite;
+        }
+
+        static JObject SidecarOf(string pack, string file)
+        {
+            if (sidecars.TryGetValue(file, out var j)) return j;
+            string full = FullPath(pack, file) + ".json";
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 아이콘 좌표표가 없습니다: {file}.json"); sidecars[file] = null; return null; }
+            j = JObject.Parse(File.ReadAllText(full));
+            sidecars[file] = j;
+            return j;
+        }
+
+        static Sprite MissingSprite()
+        {
+            if (missingSprite == null) { var t = MissingAssets.Texture; missingSprite = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f), 100f); missingSprite.name = "Missing"; }
+            return missingSprite;
+        }
+
+        // ── 소리 ────────────────────────────────────────────────
+
+        /// <summary>소리 id의 변형 클립 묶음(view.clips) — 부팅 preload가 읽어 둔 것. 없으면 빈 배열(호출부가 소리 낸다).</summary>
+        public static AudioClip[] ClipsOf(string soundId)
+        {
+            if (soundClips.TryGetValue(soundId, out var arr)) return arr;
+            var def = SimHost.Database?.Sound(soundId);
+            if (def == null) return Array.Empty<AudioClip>();
+            arr = ClipsFromView(def);
+            soundClips[soundId] = arr;
+            return arr;
+        }
+
+        static AudioClip[] ClipsFromView(Def def)
+        {
+            var list = new List<AudioClip>();
+            if (def.View?["clips"] is JArray arr)
+                foreach (var c in arr)
+                    if (c.Type == JTokenType.String && clips.TryGetValue((string)c, out var clip) && clip != null) list.Add(clip);
+                    else Debug.LogError($"[PackAssets] {def.Id}: 클립 '{c}'이 로드돼 있지 않습니다.");
+            return list.ToArray();
+        }
+
+        static async Task<AudioClip> LoadClip(string pack, string relative)
+        {
+            if (clips.TryGetValue(relative, out var cached) && cached != null) return cached;
+            string full = FullPath(pack, relative);
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 소리 파일이 없습니다: {relative} ({full})"); return null; }
+            string ext = Path.GetExtension(relative).ToLowerInvariant();
+            var type = ext == ".ogg" ? AudioType.OGGVORBIS : ext == ".mp3" ? AudioType.MPEG : ext == ".wav" ? AudioType.WAV : AudioType.UNKNOWN;
+            if (type == AudioType.UNKNOWN) { Debug.LogError($"[PackAssets] 소리 형식을 모릅니다: {relative} (wav·ogg·mp3)"); return null; }
+            using var req = UnityWebRequestMultimedia.GetAudioClip(new Uri(full).AbsoluteUri, type);
+            var tcs = new TaskCompletionSource<bool>();
+            req.SendWebRequest().completed += _ => tcs.TrySetResult(true);
+            await tcs.Task;
+            if (req.result != UnityWebRequest.Result.Success) { Debug.LogError($"[PackAssets] 소리를 읽지 못했습니다: {relative} — {req.error}"); return null; }
+            var clip = DownloadHandlerAudioClip.GetContent(req);
+            if (clip == null) { Debug.LogError($"[PackAssets] 소리를 읽지 못했습니다: {relative}"); return null; }
+            clip.name = relative;
+            clips[relative] = clip;
+            return clip;
+        }
+
         static void EnsureRoot()
         {
             if (root != null) return;
@@ -203,7 +311,7 @@ namespace CoreDawn.Managers
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); root = null; preloading = null; IsReady = false; Progress = (0, 0); }
+        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); sprites.Clear(); sidecars.Clear(); clips.Clear(); soundClips.Clear(); missingSprite = null; root = null; preloading = null; IsReady = false; Progress = (0, 0); }
 
         /// <summary>에디터 도구용 — 읽어 둔 것을 전부 버린다(팩이 바뀌었을 때).</summary>
         public static void Clear()
@@ -212,6 +320,9 @@ namespace CoreDawn.Managers
             foreach (var m in slotIndex.Keys) Destroy(m);
             foreach (var m in materials.Values) Destroy(m);
             foreach (var t in textures.Values) Destroy(t);
+            foreach (var sp in sprites.Values) Destroy(sp);
+            foreach (var c in clips.Values) Destroy(c);
+            Destroy(missingSprite);
             Reset();
         }
 
