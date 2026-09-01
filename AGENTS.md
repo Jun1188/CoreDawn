@@ -110,6 +110,15 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   the `ViewSchema.Types` table; adding a sound = the editor's 사운드 tab (clips are guid refs baked into `ViewCatalog.Entry.clips`).
   Nest boss/defender kinds come from the map (`NestSpec.spawnPoints[].boss`, `NestSpec.defender`), never from the MonsterNest prefab.
   Prefab default values must be cleared *before* re-baking World (instance values equal to the prefab are not recorded as overrides).
+- View assembler (5a-4b, 2026-09-01): **guns and buildings have no prefabs.** `WeaponManager.AssembleGuns` builds every pack gun from
+  `guns.view` (`model`, `pose`, `muzzle`/`sight` anchors — a `MuzzlePoint`/`SightPos` node inside the model wins over the data offsets —
+  and `knockback`). `BuildingAssembler.Build/BuildGhost` (Presentation/Entities) builds buildings: root scaled by the cell size (**building
+  models are authored in cell units**), the catalog `model` instance at `view.pose` (`poseCurveL/R` for belt curves) or a placeholder cube
+  when there is no model, one non-convex `MeshCollider` per renderer, layer `Entity`, then `TowerView`+`TowerVisualController` or
+  `BuildingView` by `view.type`. Tower rigs are found by node name (`YawPivot`, `PitchPivot`, `Droop`, `Recoil`, `Muzzle_*`; override via
+  `view.rig`) and the starved droop is code, not an Animator. `PlacementBridge.Place`, the placement preview and `WorldPopulator.PlaceCore`
+  all go through the assembler — never instantiate a building prefab. Remaining prefabs: monsters (kept by decision), MonsterNest,
+  ResourceNode, DroppedItem, vegetation trees.
 - Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,
   pellets, range in meters, ammo filter, damage multiplier + the view's feel values), and the player entity carries a `WeaponModule`
   (per-gun `Magazine`, equipped gun, fire cooldown, reload timer that really consumes rounds from the inventory, auto-reload, ammo
