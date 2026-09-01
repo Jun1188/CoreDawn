@@ -1,6 +1,7 @@
 using UnityEngine;
 using CoreDawn.Entities;
-using CoreDawn.Data;
+using CoreDawn.Save;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Factory
 {
@@ -15,8 +16,8 @@ namespace CoreDawn.Factory
     [RequireComponent(typeof(BuildingView))]
     public class CoreBootstrap : MonoBehaviour
     {
-        [Tooltip("이 코어의 건물 데이터(CoreDataSO) — 티어별 요구량을 정의한다.")]
-        [SerializeField] private CoreDataSO coreData;
+        [Tooltip("이 코어의 엔티티 정의 팩 id(coredawn:entity/core) — 티어별 요구량은 정의의 Core 모듈이 갖는다.")]
+        [SerializeField] private string coreId;
 
         [Tooltip("이 코어가 차지하는 그리드 원점 좌표.")]
         [SerializeField] private Vector2Int gridOrigin;
@@ -24,19 +25,20 @@ namespace CoreDawn.Factory
         [SerializeField] private int rotationSteps = 0;
 
         /// <summary>씬에 굳히는 쪽(에디터)이 채운다 — 인스펙터로 손대지 않아도 되게.</summary>
-        public void Configure(CoreDataSO data, Vector2Int origin, int rotation = 0)
-        { coreData = data; gridOrigin = origin; rotationSteps = rotation; }
+        public void Configure(EntityDef def, Vector2Int origin, int rotation = 0)
+        { coreId = def?.Id; gridOrigin = origin; rotationSteps = rotation; }
 
         void Start()
         {
-            if (coreData == null)
+            var def = SaveRefs.Entity(coreId);
+            if (def == null)
             {
-                Debug.LogError("[CoreBootstrap] coreData(CoreDataSO)가 지정되지 않았습니다.", this);
+                Debug.LogError($"[CoreBootstrap] coreId('{coreId}')가 비었거나 팩에 없습니다.", this);
                 return;
             }
 
             var view = GetComponent<BuildingView>();
-            PlacementBridge.PlaceExisting(coreData.Def, gridOrigin, rotationSteps, view);
+            PlacementBridge.PlaceExisting(def, gridOrigin, rotationSteps, view);
         }
     }
 }

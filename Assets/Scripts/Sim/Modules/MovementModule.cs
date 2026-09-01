@@ -174,7 +174,7 @@ namespace CoreDawn.Sim
             Owner.Position = position;
         }
 
-        // ── 넉백 — 효과 시스템(KnockbackEffectSO)이 주입하는 외부 충격 ──
+        // ── 넉백 — 효과 시스템(EffectKind.Knockback)이 주입하는 외부 충격 ──
         // 이동과 별개 레이어라 이동 속도 제한·감속의 영향을 받지 않는다. 밀린 결과로 생긴 겹침은 같은 틱 군중 패스가 풀어준다.
 
         Vector3 knockback; // 현재 넉백 속도 (지수 감쇠)

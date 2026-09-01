@@ -6,6 +6,8 @@ using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Managers;
+using CoreDawn.Sim;
 
 namespace CoreDawn.EditorTools
 {
@@ -27,9 +29,9 @@ namespace CoreDawn.EditorTools
 
         // ── DTO (JsonUtility가 채운다) ──────────────────────────────
 
-        [Serializable] internal class Root : GameDataImporter.JsonDtoBase { public MapDto[] maps; }
+        [Serializable] internal class Root : GameDataJson.JsonDtoBase { public MapDto[] maps; }
 
-        [Serializable] internal class MapDto : GameDataImporter.JsonDtoBase
+        [Serializable] internal class MapDto : GameDataJson.JsonDtoBase
         {
             public string id;            // 필수. 예: "Map:Plains01"
             public string displayName;   // 필수
@@ -47,15 +49,15 @@ namespace CoreDawn.EditorTools
             public CellDto[] trees;
         }
 
-        [Serializable] internal class CellDto : GameDataImporter.JsonDtoBase { public int x, y; }
+        [Serializable] internal class CellDto : GameDataJson.JsonDtoBase { public int x, y; }
 
-        [Serializable] internal class NodeDto : GameDataImporter.JsonDtoBase
+        [Serializable] internal class NodeDto : GameDataJson.JsonDtoBase
         {
             public string item;          // GameData의 아이템 id — 수치(재생·상한·난이도)는 팩의 광맥 정의가 갖는다
             public int x, y;             // 광맥은 한 칸짜리
         }
 
-        [Serializable] internal class NestDto : GameDataImporter.JsonDtoBase
+        [Serializable] internal class NestDto : GameDataJson.JsonDtoBase
         {
             public int x, y;
             public float warningRange, triggerRange;
@@ -69,7 +71,7 @@ namespace CoreDawn.EditorTools
 
         }
 
-        [Serializable] internal class SpawnDto : GameDataImporter.JsonDtoBase { public int x, y; public bool hasBoss; }
+        [Serializable] internal class SpawnDto : GameDataJson.JsonDtoBase { public int x, y; public bool hasBoss; }
 
         // ── 실행 ────────────────────────────────────────────────────
 
@@ -89,17 +91,20 @@ namespace CoreDawn.EditorTools
                 return;
             }
 
-            // 아이템 참조 해석용 색인 (광맥이 GameData의 아이템을 가리킨다)
-            var byId = new Dictionary<string, GameDataSO>();
-            foreach (var guid in AssetDatabase.FindAssets("t:GameDataSO"))
+            // 기존 맵 에셋 색인(제자리 갱신 — 참조 보존) + 광맥 자원 검증용 팩
+            var byId = new Dictionary<string, MapDataSO>();
+            foreach (var guid in AssetDatabase.FindAssets("t:MapDataSO"))
             {
-                var so = AssetDatabase.LoadAssetAtPath<GameDataSO>(AssetDatabase.GUIDToAssetPath(guid));
+                var so = AssetDatabase.LoadAssetAtPath<MapDataSO>(AssetDatabase.GUIDToAssetPath(guid));
                 if (so != null && !string.IsNullOrEmpty(so.Id)) byId[so.Id] = so;
             }
+            SimDatabase pack;
+            try { pack = SimDatabase.Load(File.ReadAllText(PackLoader.PathOf(PackLoader.DefaultPack)), PackLoader.DefaultPack); }
+            catch (Exception e) { Debug.LogError("[MapImporter] 팩 data.json을 읽지 못해 광맥 자원을 검증할 수 없습니다 — GameData 편집기에서 먼저 저장하세요. " + e.Message); return; }
 
             int created = 0, updated = 0, errors = 0;
             foreach (var dto in root.maps)
-                ImportMap(dto, byId, ref created, ref updated, ref errors);
+                ImportMap(dto, byId, pack, ref created, ref updated, ref errors);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -110,7 +115,7 @@ namespace CoreDawn.EditorTools
             {
                 if (dto == null || string.IsNullOrEmpty(dto.id)) continue;
                 if (byId.TryGetValue(dto.id, out var imported))
-                    WorldPlaceableBaker.BakeIfOpen(imported as MapDataSO);
+                    WorldPlaceableBaker.BakeIfOpen(imported);
             }
 
             string msg = $"[MapImporter] 맵 {created}개 생성, {updated}개 갱신";
@@ -118,7 +123,7 @@ namespace CoreDawn.EditorTools
             else Debug.Log(msg);
         }
 
-        static void ImportMap(MapDto dto, Dictionary<string, GameDataSO> byId,
+        static void ImportMap(MapDto dto, Dictionary<string, MapDataSO> byId, SimDatabase pack,
             ref int created, ref int updated, ref int errors)
         {
             if (dto == null || string.IsNullOrEmpty(dto.id) || string.IsNullOrEmpty(dto.displayName))
@@ -135,7 +140,7 @@ namespace CoreDawn.EditorTools
             }
 
             // 기존 에셋 제자리 갱신 (참조 보존)
-            MapDataSO map = byId.TryGetValue(dto.id, out var found) ? found as MapDataSO : null;
+            MapDataSO map = byId.TryGetValue(dto.id, out var found) ? found : null;
             bool isNew = map == null;
             if (isNew)
             {
@@ -158,7 +163,7 @@ namespace CoreDawn.EditorTools
             map.height = dto.height;
             map.core = dto.core != null ? new Vector2Int(dto.core.x, dto.core.y) : Vector2Int.zero;
             map.EditorSetTiles(BakeTiles(dto, ref errors));
-            map.nodes = ResolveNodes(dto, byId, ref errors);
+            map.nodes = ResolveNodes(dto, pack, ref errors);
             map.nests = ResolveNests(dto);
             map.nightSpawnPoints = ResolveNightSpawns(dto);
             map.trees = ResolveCells(dto.trees);
@@ -199,7 +204,7 @@ namespace CoreDawn.EditorTools
             return baked;
         }
 
-        static ResourceNodeSpec[] ResolveNodes(MapDto dto, Dictionary<string, GameDataSO> byId, ref int errors)
+        static ResourceNodeSpec[] ResolveNodes(MapDto dto, SimDatabase pack, ref int errors)
         {
             if (dto.nodes == null) return Array.Empty<ResourceNodeSpec>();
 
@@ -208,21 +213,18 @@ namespace CoreDawn.EditorTools
             {
                 if (n == null) continue;
 
-                ItemDataSO item = null;
-                if (!string.IsNullOrEmpty(n.item))
+                // 맵 json은 편집 형식(v1) id("Item:CopperOre")를 적는다 — 에셋에는 팩 id로 굳힌다(런타임이 읽는 형식)
+                string itemId = string.IsNullOrEmpty(n.item) ? null : GameDataExporterV2.PackIdOf(n.item);
+                if (itemId == null || pack.Item(itemId) == null)
                 {
-                    if (byId.TryGetValue(n.item, out var so)) item = so as ItemDataSO;
-                    if (item == null)
-                    {
-                        Debug.LogError($"[MapImporter] '{dto.id}' 광맥({n.x},{n.y}): 아이템 id '{n.item}' 를 찾을 수 없습니다.");
-                        errors++;
-                        continue;   // 캘 것이 없는 광맥은 넣지 않는다
-                    }
+                    Debug.LogError($"[MapImporter] '{dto.id}' 광맥({n.x},{n.y}): 아이템 '{n.item}'({itemId})이 팩에 없습니다.");
+                    errors++;
+                    continue;   // 캘 것이 없는 광맥은 넣지 않는다
                 }
 
                 list.Add(new ResourceNodeSpec
                 {
-                    item = item,
+                    itemId = itemId,
                     cell = new Vector2Int(n.x, n.y),
                 });
             }

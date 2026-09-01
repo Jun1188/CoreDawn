@@ -38,7 +38,7 @@ namespace CoreDawn.Tests
         const float ObstacleDepth  = 0.6f;
         const float ObstacleHeight = 1.2f;
 
-        public static ResourceDepositView Create(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
+        public static ResourceDepositView Create(string name, string oreId, Vector2Int cell, Vector2Int size,
                                           float interval, int amount, int max, GridSystem grid)
         {
             var go = new GameObject(name);
@@ -51,7 +51,7 @@ namespace CoreDawn.Tests
             size = Vector2Int.one;
             var node = go.AddComponent<ResourceDepositView>();
             var so = new SerializedObject(node);
-            so.FindProperty("resource").objectReferenceValue = ore;
+            so.FindProperty("resourceId").stringValue = oreId;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // 채굴기 설치는 B키 빌드 메뉴로 통일한다 (배치 규칙은 ResourceNodeRegistry.CanPlace 담당).

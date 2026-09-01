@@ -203,12 +203,10 @@ MonoBehaviour:
   gridManager: {fileID: 941072699}
   flowFieldManager: {fileID: 441924098}
   spawnManager:
-    monsterPrefab: {fileID: 1332241365330258894, guid: a0ab261b89819e4489aaf424fc926d00, type: 3}
     spawnHeight: 0
   nightSpawnPointProvider: {fileID: 1964513735}
   playerMaxHealth: 300
   playerDetectionRange: 5
-  playerMeleeDamage: 10
 --- !u!4 &92462724 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 958520021665225084, guid: c0eb0ac1195a4a441b10b27d04a22b78, type: 3}
@@ -386,15 +384,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   slotCount: 36
   slots:
-  - item: {fileID: 11400000, guid: e92829eb1699dab47a38ddd2df1e22ad, type: 2}
+  - itemId: 
     amount: 32
-    maxStackSize: 32
-  - item: {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
+    item: {fileID: 11400000, guid: e92829eb1699dab47a38ddd2df1e22ad, type: 2}
+  - itemId: 
     amount: 1
-    maxStackSize: 5
-  - item: {fileID: 11400000, guid: 7b5c61a2aef310e418c5575492c5a35d, type: 2}
+    item: {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
+  - itemId: 
     amount: 3
-    maxStackSize: 64
+    item: {fileID: 11400000, guid: 7b5c61a2aef310e418c5575492c5a35d, type: 2}
 --- !u!114 &152612382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -931,7 +929,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldManager
   rebuildInterval: 2
-  towerGoalCost: 30
+  fallbackGoalCost: 80
 --- !u!4 &441924099
 Transform:
   m_ObjectHideFlags: 0
@@ -983,6 +981,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d13d13fee2e387499f9af20db3d9c7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FactoryTest
+  ironOreId: coredawn:item/iron_ore
   ironOreSO: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
 --- !u!114 &479437656
 MonoBehaviour:
@@ -998,7 +997,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactoryBootstrap
   _tps: 10
   _maxCatchUpTicks: 5
+  _cellSize: 1
+  _gridOrigin: {x: 0, y: 0, z: 0}
   _autoPlaceCore: 1
+  _coreId: 
   _coreData: {fileID: 0}
   _coreOrigin: {x: 0, y: 0}
   _coreRotationSteps: 0
@@ -2040,6 +2042,8 @@ MonoBehaviour:
   mapBounds: {fileID: 1340414492}
   gridSize: {x: 0, y: 0}
   originPosition: {x: 0, y: 0, z: 0}
+  buildingCostPerHp: 0.5
+  buildingCostCap: 200
 --- !u!4 &941072700
 Transform:
   m_ObjectHideFlags: 0
@@ -3572,16 +3576,17 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1024
-  database: {fileID: 0}
   cellSize: 1
   gridOrigin: {x: 0, y: 0, z: 0}
   raycastStartHeight: 100
   maxSlopeHeightDiff: 0.25
+  fixedBuildHeight: 1
+  buildHeightOffset: 0
   validMat: {fileID: 2100000, guid: 8101430187e8a5a479f3ed5dfedd8bfa, type: 2}
   invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
-  showPortsOnAim: 1
   demolishHoldSeconds: 0.4
+  buildRangeFallback: 16
 --- !u!4 &1532001791
 Transform:
   m_ObjectHideFlags: 0
@@ -3652,18 +3657,7 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 500
-  isCore: 0
-  combat:
-    attackRange: 5
-    attackCooldown: 1.5
-    attackEffects: []
-  sensor:
-    detectionRange: 6
-    targetLayerName: Monster
-    scanInterval: 0.2
-  fallbackData: {fileID: 0}
+  destroySfx: {fileID: 0}
 --- !u!23 &1624227862
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3786,6 +3780,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a3a311cbd6bd6a4ab71f8bb72f398a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TestCombatBootstrap
+  startingWeaponId: 
   startingWeapon: {fileID: 11400000, guid: e92829eb1699dab47a38ddd2df1e22ad, type: 2}
   startingItems: []
 --- !u!1 &1667018179
@@ -3838,9 +3833,7 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 500
-  isCore: 1
+  destroySfx: {fileID: 0}
 --- !u!23 &1667018182
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4719,8 +4712,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98e7c19a9e491eb42b2001a10c292674, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimeManager
-  dayDuration: 30
-  nightDuration: 60
 --- !u!1 &1899632221
 GameObject:
   m_ObjectHideFlags: 0
@@ -5116,18 +5107,7 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 500
-  isCore: 0
-  combat:
-    attackRange: 5
-    attackCooldown: 1.5
-    attackEffects: []
-  sensor:
-    detectionRange: 6
-    targetLayerName: Monster
-    scanInterval: 0.2
-  fallbackData: {fileID: 0}
+  destroySfx: {fileID: 0}
 --- !u!23 &2054404550
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5256,18 +5236,7 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 500
-  isCore: 0
-  combat:
-    attackRange: 5
-    attackCooldown: 1.5
-    attackEffects: []
-  sensor:
-    detectionRange: 6
-    targetLayerName: Monster
-    scanInterval: 0.2
-  fallbackData: {fileID: 0}
+  destroySfx: {fileID: 0}
 --- !u!23 &2116149108
 MeshRenderer:
   m_ObjectHideFlags: 0

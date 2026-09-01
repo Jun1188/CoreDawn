@@ -5,23 +5,24 @@ using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
 using CoreDawn.Sim;
+using CoreDawn.Save;
 using UnityEngine.Serialization;
 
 namespace CoreDawn.Interaction
 {
     public class DroppedItem : Interactable
     {
-        // 씬에 미리 놓는 더미(StartItem_* 마커·저작 드롭)는 SO로 적는다 — 정의(ItemDef)는 Unity가 직렬화하지 않는다.
-        // 옛 필드 이름 "item"을 그대로 읽어 기존 씬이 깨지지 않는다. 런타임 스폰은 Setup이 정의를 바로 넣는다.
-        [SerializeField, FormerlySerializedAs("item")] ItemDataSO authoredItem;
+        // 씬에 미리 놓는 더미(StartItem_* 마커·저작 드롭)는 팩 id로 적는다 — 정의(ItemDef)는 Unity가 직렬화하지 않는다.
+        // 런타임 스폰은 Setup이 정의를 바로 넣는다.
+        [SerializeField] string authoredItemId;
         ItemDef runtimeItem;
 
-        /// <summary>이 더미의 아이템 정의. 씬 저작(SO)은 첫 조회에서 정의로 풀린다.</summary>
+        /// <summary>이 더미의 아이템 정의. 씬 저작(id)은 첫 조회에서 정의로 풀린다.</summary>
         public ItemDef item
         {
             get
             {
-                if (runtimeItem == null && authoredItem != null) runtimeItem = authoredItem.Def;
+                if (runtimeItem == null && !string.IsNullOrEmpty(authoredItemId)) runtimeItem = SaveRefs.Item(authoredItemId);
                 return runtimeItem;
             }
             private set => runtimeItem = value;
@@ -107,7 +108,7 @@ namespace CoreDawn.Interaction
 
         /// <summary>
         /// 월드 드롭 아이템 스폰 — 핫바 Q드롭, 인벤 캐리지 드롭, (예정) 몬스터 루팅 공용.
-        /// 마크처럼 정형화: ItemDatabase의 공용 프리팹 하나를 모든 아이템이 쓴다 (아이콘만 교체).
+        /// 마크처럼 정형화: 뷰 카탈로그의 공용 드롭 프리팹 하나를 모든 아이템이 쓴다 (아이콘만 교체).
         /// 프리팹 미지정 시 코드 조립 폴백 — 테스트 씬 안전.
         /// </summary>
         public static DroppedItem Spawn(ItemDef item, int amount, Vector3 position, Vector3 throwDirection)
@@ -135,9 +136,14 @@ namespace CoreDawn.Interaction
 
         static DroppedItem CreateInstance()
         {
-            var db = ItemDatabaseSO.LoadDefault();
-            var prefab = db != null ? db.droppedItemPrefab : null;
-            var created = prefab != null ? Instantiate(prefab) : BuildFallback(Vector3.zero);
+            var catalog = ViewCatalogSO.LoadDefault();
+            var prefab = catalog != null ? catalog.droppedItemPrefab : null;
+            var created = prefab != null ? Instantiate(prefab).GetComponent<DroppedItem>() : null;
+            if (created == null)
+            {
+                if (prefab != null) Debug.LogError("[DroppedItem] 뷰 카탈로그의 droppedItemPrefab에 DroppedItem 컴포넌트가 없습니다 — 코드 조립으로 대신합니다.");
+                created = BuildFallback(Vector3.zero);
+            }
             created.name = PooledName;
             created.transform.SetParent(poolRoot, false);
             return created;
@@ -153,7 +159,7 @@ namespace CoreDawn.Interaction
             if (!gameObject.activeSelf) return;
 
             item = null;
-            authoredItem = null;   // 저작 더미가 풀로 돌아오면 더는 그 아이템이 아니다
+            authoredItemId = null;   // 저작 더미가 풀로 돌아오면 더는 그 아이템이 아니다
             amount = 0;
             promptMessage = null;
             // 이름은 되돌린다 — WorldPopulator가 시작 아이템에 "StartItem_*"를 붙이는데,

@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEngine;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Managers;
+using CoreDawn.Sim;
 
 namespace CoreDawn.EditorTools
 {
@@ -37,6 +39,8 @@ namespace CoreDawn.EditorTools
         {
             if (world == null || world.Map == null) return;
 
+            // 배치물의 정의(코어·둥지·나무·광맥 자원)는 팩에서 온다 — 에디트 모드엔 런타임 로더 등록이 없어 직접 꽂는다
+            if (SimHost.Database == null) SimHost.DatabaseLoader = () => PackLoader.Load();
             var old = world.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
 

@@ -27,7 +27,7 @@ namespace CoreDawn.Inputs
         Ping,                 // T — 바라본 대상을 찍는다. CycleShape와 같은 키: 건설 모드면 그쪽이 먹고 핑은 침묵한다
 
         Reload, QuickDrop,
-        SwitchAmmo,           // V — 장전 가능한 탄종(GunData.ammoFilter) 순환
+        SwitchAmmo,           // V — 장전 가능한 탄종(GunDef.ammoFilter) 순환
         Aim,                  // 우클릭 조준(ADS) — 눌림 상태형 (Performed=시작, Canceled=해제)
         Hotbar, HotbarScroll, // Hotbar는 숫자키 1~9 멀티 바인딩 — 슬롯 번호는 control 이름에서 읽는다
         Cancel,               // ESC 전용. Gameplay와 UI 맵 양쪽에 같은 이름으로 존재 (활성 맵의 것이 발화)

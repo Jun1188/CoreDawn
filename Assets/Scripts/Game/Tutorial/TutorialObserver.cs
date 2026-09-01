@@ -17,7 +17,7 @@ namespace CoreDawn.Tutorial
     /// <summary>
     /// 세계를 관측만 하는 눈 — "플레이어가 무엇을 얼마나 했는가"의 원본 수치.
     ///
-    /// <b>스텝을 모른다.</b> 어떤 수치가 어떤 안내를 끝내는지는 조건 모듈(<see cref="TutorialConditionSO"/>)이,
+    /// <b>스텝을 모른다.</b> 어떤 수치가 어떤 안내를 끝내는지는 조건 모듈(<see cref="TutorialCondition"/>)이,
     /// 기준점("뜬 뒤로 n번 더")은 <see cref="TutorialProgress"/>가 안다. 여기는 세기만 한다 —
     /// 그래서 새 조건을 더할 때 이 파일은 새 신호가 필요할 때만 손댄다.
     ///

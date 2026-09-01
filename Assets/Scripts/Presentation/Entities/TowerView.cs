@@ -15,7 +15,7 @@ namespace CoreDawn.Entities
     //   연출 = TowerVisualController — 포탑 회전·반동·사운드
     //   전달 = ProjectileSystem — 투사체/히트스캔의 물리 판정(명중 효과는 심 Effects로 넘긴다)
     //
-    // 탄의 프리팹·연출(총구 화염·착탄 파티클)은 아직 SO(AmmoModuleSO)에 있다 — 5a-3 뷰 카탈로그로 간다.
+    // 탄의 프리팹·연출(총구 화염·착탄 파티클)은 뷰 카탈로그의 탄약 항목이 든다.
     public class TowerView : BuildingView
     {
         /// <summary>등장 연출 길이 — 이 동안은 연출만(심은 이미 돌고 있다).</summary>

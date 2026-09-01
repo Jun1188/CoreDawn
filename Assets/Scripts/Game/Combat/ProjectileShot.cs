@@ -26,7 +26,7 @@ namespace CoreDawn.Combat
         public readonly EntityView Source;         // 발사자 — 효과 출처이자 자기 명중 무시 기준
         public readonly float Gravity;         // 낙하 가속 — 0이면 직선탄, >0이면 포물선 (탄약의 성질)
         public readonly float ExplosionRadius; // 착탄 폭발 반경 — 0이면 단일 명중, >0이면 착탄점 Pulse
-        public readonly FireMode Mode;         // 전달 방식 — 발사기(GunData·TowerDataSO)가 정한다
+        public readonly FireMode Mode;         // 전달 방식 — 발사기(GunDef·TurretModuleDef)가 정한다
         public readonly GameObject Prefab;     // 탄 외형(탄약의 bulletPrefab) — Projectile은 판정하는 몸, Hitscan은 트레이서 연출
         public readonly int Pierce;            // 추가 관통 대상 수 — 0이면 첫 대상에서 멈춤 (탄약의 성질)
         public readonly Vector3 Muzzle;        // 연출 출발점(총구) — FromMuzzle일 때만 유효

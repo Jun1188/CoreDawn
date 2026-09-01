@@ -27,8 +27,17 @@ namespace CoreDawn.Data
     /// 좌표계는 GridSystem과 같다: 원점이 왼쪽 아래, x는 오른쪽, y는 월드의 <b>z</b> 축.
     /// </summary>
     [CreateAssetMenu(fileName = "NewMap", menuName = "Factory/Map")]
-    public class MapDataSO : GameDataSO
+    public class MapDataSO : ScriptableObject
     {
+        [Header("식별")]
+        [Tooltip("맵 id — MapData.json의 id(관례 \"Map:이름\"). 세이브·씬(World.map)이 이 에셋을 가리킨다.")]
+        [SerializeField] string id;
+        public string Id => id;
+
+        [Header("표시")]
+        public string displayName;
+        [TextArea] public string description;
+
         [Header("크기 (타일)")]
         public int width;
         public int height;
@@ -100,8 +109,8 @@ namespace CoreDawn.Data
     [Serializable]
     public struct ResourceNodeSpec
     {
-        [Tooltip("이 칸에 묻힌 자원. 광맥은 한 칸짜리다 — 넓은 광맥은 칸을 여럿 놓는다. 재생·상한·난이도 수치는 팩의 광맥 정의(ResourceDeposit)가 갖는다.")]
-        public ItemDataSO item;
+        [Tooltip("이 칸에 묻힌 자원의 팩 id(coredawn:item/iron_ore). 광맥은 한 칸짜리다 — 넓은 광맥은 칸을 여럿 놓는다. 재생·상한·난이도 수치는 팩의 광맥 정의(ResourceDeposit)가 갖는다.")]
+        public string itemId;
         [Tooltip("광맥 칸.")]
         public Vector2Int cell;
     }

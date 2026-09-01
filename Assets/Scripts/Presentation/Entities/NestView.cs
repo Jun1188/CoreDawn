@@ -22,8 +22,11 @@ namespace CoreDawn.Entities
         {
             public Transform point;
             public MonsterView linkedBoss;
-            [Tooltip("이 포인트에 서는 보스의 종류(MonsterDataSO). 비우면 보스 없음. 프리팹·HP·공격은 전부 데이터가 정한다.")]
-            public MonsterDataSO bossData;
+            [Tooltip("이 포인트에 서는 보스의 팩 id(coredawn:entity/boss). 비우면 보스 없음. 프리팹은 뷰 카탈로그, HP·공격은 정의가 정한다.")]
+            public string bossId;
+
+            public bool HasBoss => !string.IsNullOrEmpty(bossId);
+            public EntityDef BossDef => HasBoss ? SaveRefs.Entity(bossId) : null;
         }
 
         /// <summary>낮 방어 스폰 한 자리. 종류·HP는 둥지의 defenderMonster(데이터)가 정하므로 위치뿐이다.</summary>
@@ -43,16 +46,11 @@ namespace CoreDawn.Entities
         [Tooltip("파괴 시 꺼질 외형(구조물 및 콜라이더 포함) 오브젝트들")]
         public GameObject[] destructibleVisuals;
 
-        [Tooltip("둥지의 건물 데이터 — 표현 에셋. 규칙(칸·공격 가능)은 팩 정의(Building 모듈)가 정한다.")]
-        [SerializeField] private NestDataSO data;
+        [Tooltip("낮 방어 몬스터·보스전 지원군의 팩 id. 비우면 스포너의 기본 종류.")]
+        [SerializeField] private string defenderId;
 
-        [Tooltip("낮 방어 몬스터·보스전 지원군의 종류. 비우면 MonsterDatabase의 기본 종류.")]
-        [SerializeField] private MonsterDataSO defenderMonster;
-
-        /// <summary>방어자 종류 — WaveSpawnManager.SpawnNestDefenders가 읽는다. null = DB 기본.</summary>
-        public MonsterDataSO DefenderData => defenderMonster;
-
-        public void SetData(NestDataSO nestData) => data = nestData;
+        /// <summary>방어자 정의 — WaveSpawnManager.SpawnNestDefenders가 읽는다. null = 스포너 기본.</summary>
+        public EntityDef DefenderDef => string.IsNullOrEmpty(defenderId) ? null : SaveRefs.Entity(defenderId);
 
         [Header("Defense Settings")]
         [Tooltip("플레이어 접근 경고 반경")]
@@ -230,7 +228,7 @@ namespace CoreDawn.Entities
             var list = new List<(Vector3, bool)>();
             if (spawnPoints != null)
                 foreach (var sp in spawnPoints)
-                    list.Add((sp != null && sp.point != null ? sp.point.position : transform.position, sp != null && sp.bossData != null));
+                    list.Add((sp != null && sp.point != null ? sp.point.position : transform.position, sp != null && sp.HasBoss));
             m.ConfigurePoints(list);
         }
 
@@ -268,7 +266,7 @@ namespace CoreDawn.Entities
                 var def = SimHost.Database?.Entity("coredawn:entity/nest");
                 var e = SimHost.World.Create(Faction.Monster, transform.position);
                 if (def != null) def.Assemble(e);
-                else { e.Add(new HealthModule(Mathf.Max(1f, data != null ? data.maxHp : 500f))); e.Add(new EffectsModule()); }
+                else { Debug.LogError("[NestView] 팩에 둥지 정의(coredawn:entity/nest)가 없습니다 — HP 500 임시 엔티티로 섭니다.", this); e.Add(new HealthModule(500f)); e.Add(new EffectsModule()); }
                 AttachEntity(e);
             }
 
@@ -305,7 +303,7 @@ namespace CoreDawn.Entities
             if (SaveLoadContext.IsRestoring) return;
             if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return;
             var sp = spawnPoints[index];
-            if (sp == null || sp.point == null || sp.bossData == null) return;
+            if (sp == null || sp.point == null || !sp.HasBoss) return;
             if (sp.linkedBoss != null && !sp.linkedBoss.IsDead) { Module?.BindBoss(index, sp.linkedBoss.Entity); return; }
             SpawnBossAtPoint(index, sp);
         }
@@ -343,7 +341,7 @@ namespace CoreDawn.Entities
 
         private void SpawnBossAtPoint(int index, NestSpawnPoint spawnPoint)
         {
-            var boss = MonsterSpawner.Spawn(spawnPoint.bossData != null ? spawnPoint.bossData.Def : null, spawnPoint.point.position, spawnPoint.point.rotation, transform);
+            var boss = MonsterSpawner.Spawn(spawnPoint.BossDef, spawnPoint.point.position, spawnPoint.point.rotation, transform);
             SnapBossToGround(boss.gameObject);
             spawnPoint.linkedBoss = boss;
             boss.SetAsBoss(engagementZone);
@@ -462,10 +460,11 @@ namespace CoreDawn.Entities
         {
             if (spawnPoints == null || index < 0 || index >= spawnPoints.Count) return null;
             var sp = spawnPoints[index];
-            if (sp.bossData == null || sp.bossData.Def == null) return null;
+            var bossDef = sp.BossDef;
+            if (bossDef == null) return null;
 
             if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
-            var restored = MonsterSpawner.Spawn(sp.bossData.Def, position, rotation, transform);
+            var restored = MonsterSpawner.Spawn(bossDef, position, rotation, transform);
             sp.linkedBoss = restored;
             sp.linkedBoss?.SetAsBoss(engagementZone);
             Module?.BindBoss(index, restored?.Entity);

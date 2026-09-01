@@ -2,7 +2,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UIElements;
 using CoreDawn.UI;
-using CoreDawn.Data;
+using CoreDawn.Tutorial;
 
 namespace CoreDawn.UI
 {
@@ -94,7 +94,7 @@ namespace CoreDawn.UI
         /// 지금 떠 있는 카드를 내보내고, 한 박자 쉰 뒤 <paramref name="next"/>를 들여보낸다.
         /// <paramref name="next"/>가 null이면 내보내기만 한다(튜토리얼 종료).
         /// </summary>
-        public void PlayTransition(TutorialStepSO next, int index, int total)
+        public void PlayTransition(TutorialStep next, int index, int total)
         {
             if (!IsBound) return;
 
@@ -169,12 +169,12 @@ namespace CoreDawn.UI
         }
 
         /// <param name="index">1부터 시작하는 현재 스텝 번호.</param>
-        void ApplyContent(TutorialStepSO step, int index, int total)
+        void ApplyContent(TutorialStep step, int index, int total)
         {
-            if (_tag != null) _tag.text = string.IsNullOrEmpty(step.tag) ? "GUIDE" : step.tag;
+            if (_tag != null) _tag.text = string.IsNullOrEmpty(step.Def.Tag) ? "GUIDE" : step.Def.Tag;
             if (_stepLabel != null) _stepLabel.text = total > 0 ? $"{index}/{total}" : "";
-            if (_body != null) _body.text = step.body ?? "";
-            RebuildKeys(step.keyHints);
+            if (_body != null) _body.text = step.Def.Body ?? "";
+            RebuildKeys(step.Def.KeyHints);
         }
 
         /// <summary>

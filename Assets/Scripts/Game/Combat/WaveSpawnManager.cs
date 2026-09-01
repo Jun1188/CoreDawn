@@ -87,7 +87,7 @@ namespace CoreDawn.Combat
             for (int i = 0; i < amount; i++)
             {
                 NestView.DefenderSpawnSlot slot = spawnSlots[i % spawnSlots.Count];
-                var monster = InstantiateMonster(nest.DefenderData != null ? nest.DefenderData.Def : null, slot.position, Quaternion.identity);
+                var monster = InstantiateMonster(nest.DefenderDef, slot.position, Quaternion.identity);
                 SnapToGround(monster.gameObject, pushToSim: true);
 
                 var zone = nest.GetComponent<NestEngagementZone>();

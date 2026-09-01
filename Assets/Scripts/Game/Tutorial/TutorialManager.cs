@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using CoreDawn.FPS;
 using CoreDawn.Factory;
-using CoreDawn.Data;
 using CoreDawn.UI;
 using CoreDawn.Sim;
 
@@ -15,7 +14,7 @@ namespace CoreDawn.Tutorial
     ///
     /// 실제 일은 셋이 나눠 한다. 이 분업이 곧 파일 지도다:
     ///   관측  <see cref="TutorialObserver"/>          — 세계를 세기만 한다 (스텝을 모른다)
-    ///   조건  <see cref="TutorialConditionSO"/>          — 스텝에 조합하는 판정 모듈 (서브에셋, 임포터가 관리)
+    ///   조건  <see cref="TutorialCondition"/>            — 스텝에 조합하는 판정 모듈 (팩 조건 값 → 클래스, TutorialConditions 표)
     ///   진행  <see cref="TutorialProgress"/>           — 완료·기준점·현재 안내 선정
     ///   표시  <see cref="TutorialHUD"/>                — 우상단 카드 그리기·연출
     ///
@@ -40,14 +39,14 @@ namespace CoreDawn.Tutorial
 
         // ── 공개 상태 — 전부 진행 상태기로 위임 ──
 
-        public TutorialStepSO CurrentStep => _progress?.CurrentStep;
+        public TutorialStep CurrentStep => _progress?.CurrentStep;
         public bool IsFinished => _progress == null || _progress.IsFinished;
         public bool Skipped => _progress != null && _progress.Skipped;
         public int StepCount => _progress?.StepCount ?? 0;
         public int CompletedCount => _progress?.CompletedCount ?? 0;
 
         /// <summary>현재 안내가 바뀔 때. 끝났으면 null이 온다.</summary>
-        public event Action<TutorialStepSO> StepChanged;
+        public event Action<TutorialStep> StepChanged;
         public event Action TutorialFinished;
 
         // ─────────────────────────── 부팅 ───────────────────────────
@@ -88,18 +87,19 @@ namespace CoreDawn.Tutorial
             transform.SetParent(null);
             DontDestroyOnLoad(gameObject);
 
-            var db = TutorialDatabaseSO.LoadDefault();
+            // 스텝의 정본은 팩 tutorial 섹션(순서는 order → id). 팩이 없으면 튜토리얼도 없다 — 조용히 넘기지 않는다.
+            var db = SimHost.Database;
             if (db == null)
             {
-                Debug.LogWarning($"[Tutorial] Resources/{TutorialDatabaseSO.ResourcePath}.asset 이 없어 튜토리얼이 꺼집니다.");
+                Debug.LogError("[Tutorial] 팩 정의(SimHost.Database)가 없어 튜토리얼이 꺼집니다.");
                 enabled = false;
                 return;
             }
-
-            List<TutorialStepSO> steps = db.BuildOrdered();
+            var steps = new List<TutorialStep>();
+            foreach (var def in db.TutorialSteps) steps.Add(new TutorialStep(def));
             if (steps.Count == 0)
             {
-                Debug.LogWarning("[Tutorial] 스텝이 하나도 없습니다 — TutorialDatabase.asset의 steps를 채우세요.");
+                Debug.LogWarning("[Tutorial] 팩에 tutorial 스텝이 하나도 없습니다 — GameData 편집기 튜토리얼 탭에서 채우세요.");
                 enabled = false;
                 return;
             }

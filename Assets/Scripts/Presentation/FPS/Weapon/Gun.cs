@@ -6,6 +6,7 @@ using CoreDawn.Inventories;
 using CoreDawn.Data;
 using CoreDawn.Sound;
 using CoreDawn.Sim;
+using CoreDawn.Save;
 
 namespace CoreDawn.FPS
 {
@@ -15,21 +16,30 @@ namespace CoreDawn.FPS
     /// 풀어 <see cref="ProjectileSystem"/>에 넘기고, 소리·총구 화염을 낸다 — 포탑(TowerView)과 같은 "심 승인 → 뷰 발사" 틀.
     /// 상태 프로퍼티(CurrentAmmo·IsReloading·ReloadProgress…)는 HUD·입력이 읽는 심 상태의 창구다.
     ///
-    /// 수치의 정본은 팩 <see cref="GunDef"/>(<c>gunData.Id</c>로 찾는다). <see cref="gunData"/>(SO)는 소리·감각 값의 뷰 에셋으로만 남는다 — 5a-3에서 카탈로그로.
+    /// 수치의 정본은 팩 <see cref="GunDef"/>(<see cref="gunId"/>로 찾는다). 소리·피격 레이어 같은 뷰 값은 이 컴포넌트(총 프리팹)가 든다.
     /// 연출(반동·킥백·셰이크)은 모른다 — 발사하면 <see cref="Fired"/>만 알리고, 반응은 WeaponManager가 팬아웃한다.
     /// </summary>
     public class Gun : MonoBehaviour
     {
         [Header("Core References")]
-        public GunData gunData;
+        [Tooltip("팩 총 정의 id(coredawn:gun/pistol) — 수치의 정본.")]
+        public string gunId;
         public Transform muzzlePoint;
+
+        [Header("뷰 값 — 소리·피격 레이어")]
+        public AudioClip fireSound;
+        public AudioClip reloadSound;
+        [Range(0f, 1f)] public float fireVolume = 0.8f;
+        [Range(0f, 1f)] public float reloadVolume = 0.7f;
+        [Tooltip("탄이 맞힐 레이어.")]
+        public LayerMask enemyLayer;
 
         [Tooltip("이 총의 가늠자(눈 위치) 앵커 — ADS가 카메라 정렬에 쓴다.")]
         public Transform sightPoint;
 
         [Header("피해 비례 넉백")]
-        [Tooltip("탄에 얹을 넉백 효과 — 탄약이 넉백을 직접 명시하지 않았을 때만, 피해 합 × 계수만큼 밀어낸다. 비우면 꺼짐.")]
-        public KnockbackEffectSO knockbackEffect;
+        [Tooltip("탄에 얹을 넉백 효과의 팩 id(coredawn:effect/knockback) — 탄약이 넉백을 직접 명시하지 않았을 때만, 피해 합 × 계수만큼 밀어낸다. 비우면 꺼짐.")]
+        public string knockbackEffectId;
         [Tooltip("피해 1당 밀어내는 거리(m). 유탄의 수동 튜닝(피해 70 · 넉백 2)과 같은 비율이 약 0.03.")]
         public float knockbackPerDamage = 0.03f;
 
@@ -45,10 +55,9 @@ namespace CoreDawn.FPS
             get
             {
                 if (def != null) return def;
-                if (gunData == null) throw new InvalidOperationException($"[Gun] {name}: gunData가 없습니다");
-                var db = SimHost.Database;
-                def = db?.Gun(db.LegacyId(gunData.Id));
-                if (def == null) throw new InvalidOperationException($"[Gun] {name}: 팩에 총 정의 '{gunData.Id}'가 없습니다 — guns 섹션을 확인하세요");
+                if (string.IsNullOrEmpty(gunId)) throw new InvalidOperationException($"[Gun] {name}: gunId가 없습니다");
+                def = SimHost.Database?.Gun(gunId);
+                if (def == null) throw new InvalidOperationException($"[Gun] {name}: 팩에 총 정의 '{gunId}'가 없습니다 — guns 섹션을 확인하세요");
                 return def;
             }
         }
@@ -174,15 +183,15 @@ namespace CoreDawn.FPS
         // 발사 — 심이 승인한 방아쇠를 조준축·탄퍼짐·펠릿으로 풀어 공용 전달 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
         private void Fire(in WeaponShot shot)
         {
-            if (gunData != null && gunData.fireSound != null)
+            if (fireSound != null)
             {
                 Vector3 soundPos = muzzlePoint != null ? muzzlePoint.position : transform.position;
                 if (SoundManager.Instance != null)
-                    SoundManager.Instance.Play3DSFX(gunData.fireSound, soundPos, gunData.fireVolume);
+                    SoundManager.Instance.Play3DSFX(fireSound, soundPos, fireVolume);
             }
 
             // 탄도(속도·중력·폭발·수명·외형)는 장전된 탄종의 성질 — 총은 각도(조준·탄퍼짐)만 정한다.
-            // 프리팹·연출은 아직 SO 모듈에 있다(5a-3 카탈로그로).
+            // 프리팹·연출은 뷰 카탈로그(탄약 항목)가 든다.
             var round = ViewCatalogSO.Of(shot.Round);
             if (round == null || round.bulletPrefab == null)
                 Debug.LogError($"[Gun] '{Def.Id}': 탄 '{shot.Round?.Id}'의 표현 에셋(뷰 카탈로그 bullet)이 없습니다 — 프리팹·연출 없이 발사됩니다.");
@@ -207,10 +216,10 @@ namespace CoreDawn.FPS
 
             // 명중 효과는 심이 이미 구웠다(탄약 효과 × 총 배율 × 소유자 버프). 피해 비례 넉백은 뷰의 손맛 값이라 여기서 얹는다 —
             // 펠릿마다 얹히므로 샷건은 맞은 수만큼 세게 민다.
-            var effects = ProjectileSystem.AppendDamageKnockback(shot.Effects, EffectSpecs.Of(knockbackEffect), knockbackPerDamage);
+            var effects = ProjectileSystem.AppendDamageKnockback(shot.Effects, SaveRefs.Effect(knockbackEffectId), knockbackPerDamage);
 
             var spec = new ProjectileShot(shot.Ammo.Speed, shot.Ammo.Lifetime, shot.Range,
-                                          effects, gunData != null ? (int)gunData.enemyLayer : 0, OwnerEntity,
+                                          effects, enemyLayer.value, OwnerEntity,
                                           shot.Ammo.Gravity, shot.Ammo.ExplosionRadius,
                                           Def.IsAura ? FireMode.Aura : shot.Hitscan ? FireMode.Hitscan : FireMode.Projectile,
                                           round != null ? round.bulletPrefab : null, shot.Ammo.Pierce, muzzle,
@@ -238,7 +247,7 @@ namespace CoreDawn.FPS
         private void OnReloadStarted(GunDef gun)
         {
             if (!ReferenceEquals(gun, Def) || !isActiveAndEnabled) return;
-            if (gunData == null || gunData.reloadSound == null) return;
+            if (reloadSound == null) return;
             if (reloadSource == null)
             {
                 reloadSource = gameObject.AddComponent<AudioSource>();
@@ -247,8 +256,8 @@ namespace CoreDawn.FPS
                 // 공용 3D 세팅 — 안 거치면 SFX 믹서 그룹 밖이라 볼륨 슬라이더가 이 소리만 못 잡는다
                 if (SoundManager.Instance != null) SoundManager.Instance.Setup3DSource(reloadSource);
             }
-            reloadSource.clip = gunData.reloadSound;
-            reloadSource.volume = gunData.reloadVolume;
+            reloadSource.clip = reloadSound;
+            reloadSource.volume = reloadVolume;
             reloadSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
             reloadSource.Play();
         }

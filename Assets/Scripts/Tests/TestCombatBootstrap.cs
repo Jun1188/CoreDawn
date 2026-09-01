@@ -5,6 +5,7 @@ using CoreDawn.DayTime;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Data;
+using CoreDawn.Save;
 
 namespace CoreDawn.Tests
 {
@@ -13,8 +14,8 @@ namespace CoreDawn.Tests
     //   - H키로 낮/밤 강제 전환 (TimeManager 필요) — 낮=건설, 밤=웨이브 디펜스 사이클을 즉시 확인
     public class TestCombatBootstrap : MonoBehaviour
     {
-        [Tooltip("시작 시 플레이어 인벤토리에 넣어줄 무기 아이템(WeaponModuleSO를 단 아이템). 비우면 지급하지 않는다.")]
-        [SerializeField] private ItemDataSO startingWeapon;
+        [Tooltip("시작 시 플레이어 인벤토리에 넣어줄 무기 아이템의 팩 id(Weapon 모듈을 단 아이템). 비우면 지급하지 않는다.")]
+        [SerializeField] private string startingWeaponId;
 
         [Tooltip("시작 시 함께 지급할 아이템들(탄약 등) — 실소비 세계에서는 탄이 있어야 재장전이 된다.")]
         [SerializeField] private StartingStack[] startingItems;
@@ -22,7 +23,7 @@ namespace CoreDawn.Tests
         [System.Serializable]
         private struct StartingStack
         {
-            public ItemDataSO item;
+            public string itemId;
             public int amount;
         }
 
@@ -64,19 +65,23 @@ namespace CoreDawn.Tests
                 yield break;
             }
 
-            if (startingWeapon != null)
-                holder.AddItemToPlayer(startingWeapon, 1);
+            var weapon = SaveRefs.Item(startingWeaponId);
+            if (weapon != null)
+                holder.AddItemToPlayer(weapon, 1);
 
             if (startingItems != null)
                 foreach (var s in startingItems)
-                    if (s.item != null && s.amount > 0)
-                        holder.AddItemToPlayer(s.item, s.amount);
+                {
+                    var item = SaveRefs.Item(s.itemId);
+                    if (item != null && s.amount > 0)
+                        holder.AddItemToPlayer(item, s.amount);
+                }
 
             // 핫바에 들어간 무기를 즉시 장착 — 장착 브리지는 핫바 컨트롤러가 유일 소유
             if (HotbarController.Instance != null)
                 HotbarController.Instance.EquipFromActiveSlot();
 
-            Debug.Log($"[TestCombatBootstrap] 시작 지급 완료: 무기={(startingWeapon != null ? startingWeapon.name : "없음")}, 아이템 {startingItems?.Length ?? 0}종");
+            Debug.Log($"[TestCombatBootstrap] 시작 지급 완료: 무기={(weapon != null ? weapon.Id : "없음")}, 아이템 {startingItems?.Length ?? 0}종");
         }
     }
 }

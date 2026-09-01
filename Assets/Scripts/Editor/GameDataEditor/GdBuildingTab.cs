@@ -38,7 +38,7 @@ namespace CoreDawn.EditorTools
         public List<string> unlocks = new();
         public int maxHpBonus;
         public bool isFinal;
-        [JsonIgnore] public GameDataImporter.TierDto src;
+        [JsonIgnore] public GameDataJson.TierDto src;
     }
 
     class GBuilding
@@ -66,7 +66,7 @@ namespace CoreDawn.EditorTools
         public List<GEff> attackEffects = new();   // Tower — 탄창(ammoFilter) 없이 자기 효과로 쏘는 건물(지뢰·연료 없는 오라)
         public List<GTier> tiers = new();
         public float droneRange = 40, carryCapacity = 20, travelSpeed = 8;
-        [JsonIgnore] public GameDataImporter.BuildingDto src;
+        [JsonIgnore] public GameDataJson.BuildingDto src;
     }
 
     class GdBuildingTab : GdTab
@@ -136,34 +136,34 @@ namespace CoreDawn.EditorTools
 
         // ── 아이템·레시피 목록 (다른 탭이 정본 — root 에서 읽는다) ──
         (string id, string line, string type)[] KnownItems() =>
-            (win.root?.items ?? Array.Empty<GameDataImporter.ItemDto>())
+            (win.root?.items ?? Array.Empty<GameDataJson.ItemDto>())
             .Select(i => (i.id ?? "", string.IsNullOrEmpty(i.line) ? "None" : i.line, i.type ?? "")).ToArray();
         (string id, int inputs, int tier)[] KnownRecipes() =>
-            (win.root?.recipes ?? Array.Empty<GameDataImporter.RecipeDto>())
+            (win.root?.recipes ?? Array.Empty<GameDataJson.RecipeDto>())
             .Select(r => (r.id ?? "", r.inputs?.Length ?? 0, r.tier)).ToArray();
 
         // ═════════ 데이터 ↔ root ═════════
 
         // DronePort 필드는 임포터 DTO에 없다 — unknownJson(확장 데이터)으로 왕복한다
-        static float ExtraF(GameDataImporter.JsonDtoBase o, string key, float def)
+        static float ExtraF(GameDataJson.JsonDtoBase o, string key, float def)
         {
             if (o?.unknownJson != null && o.unknownJson.TryGetValue(key, out var v) && v != null)
                 try { return Convert.ToSingle(v); } catch { }
             return def;
         }
-        static void SetExtra(GameDataImporter.JsonDtoBase o, string key, float val) =>
+        static void SetExtra(GameDataJson.JsonDtoBase o, string key, float val) =>
             (o.unknownJson ??= new Dictionary<string, object>())[key] =
                 val == Mathf.Round(val) ? (long)val : (object)val;   // 정수는 정수로 — 60이 60.0이 되는 diff 노이즈 방지
 
         public override void OnDataLoaded()
         {
-            LoadFrom(win.root?.buildings ?? Array.Empty<GameDataImporter.BuildingDto>());
+            LoadFrom(win.root?.buildings ?? Array.Empty<GameDataJson.BuildingDto>());
             curIdx = 0; selPort = -1;
             hist = new GdHistory(Snapshot, Restore, 60);
             hist.Reset();
         }
 
-        void LoadFrom(GameDataImporter.BuildingDto[] dtos)
+        void LoadFrom(GameDataJson.BuildingDto[] dtos)
         {
             buildings.Clear();
             foreach (var o in dtos)
@@ -181,10 +181,10 @@ namespace CoreDawn.EditorTools
                     modelGuid = o.modelGuid ?? "",
                     modelCurveLGuid = o.modelCurveLGuid ?? "", modelCurveRGuid = o.modelCurveRGuid ?? "",
                     sizeX = Mathf.Max(1, o.size?.x ?? 1), sizeY = Mathf.Max(1, o.size?.y ?? 1),
-                    ports = (o.ports ?? Array.Empty<GameDataImporter.PortDto>())
+                    ports = (o.ports ?? Array.Empty<GameDataJson.PortDto>())
                         .Select(p => new GPort { x = p.x, y = p.y,
                             dir = string.IsNullOrEmpty(p.dir) ? "East" : p.dir, isInput = p.isInput }).ToList(),
-                    buildCost = (o.buildCost ?? Array.Empty<GameDataImporter.SlotDto>())
+                    buildCost = (o.buildCost ?? Array.Empty<GameDataJson.SlotDto>())
                         .Select(c => new GCost { item = c.item ?? "", amount = Mathf.Max(1, c.amount) }).ToList(),
                     inputSlots = o.inputSlots, outputSlots = o.outputSlots, bufferStackCap = o.bufferStackCap,
                     maxHp = o.maxHp, requiredCoreTier = o.requiredCoreTier, hideFromBuildMenu = o.hideFromBuildMenu,
@@ -199,14 +199,14 @@ namespace CoreDawn.EditorTools
                     range = o.range >= 0 ? o.range : 8,
                     fireRate = o.fireRate >= 0 ? o.fireRate : 1,
                     ammoFilter = (o.ammoFilter ?? Array.Empty<string>()).ToList(),
-                    attackEffects = (o.attackEffects ?? Array.Empty<GameDataImporter.EffectEntryDto>()).Select(e => new GEff { effect = e.effect, value = e.value }).ToList(),
+                    attackEffects = (o.attackEffects ?? Array.Empty<GameDataJson.EffectEntryDto>()).Select(e => new GEff { effect = e.effect, value = e.value }).ToList(),
                     droneRange = ExtraF(o, "droneRange", 40),
                     carryCapacity = ExtraF(o, "carryCapacity", 20),
                     travelSpeed = ExtraF(o, "travelSpeed", 8),
-                    tiers = (o.tiers ?? Array.Empty<GameDataImporter.TierDto>()).Select(t => new GTier
+                    tiers = (o.tiers ?? Array.Empty<GameDataJson.TierDto>()).Select(t => new GTier
                     {
                         name = t.name ?? "", description = t.description ?? "",
-                        requirements = (t.requirements ?? Array.Empty<GameDataImporter.SlotDto>())
+                        requirements = (t.requirements ?? Array.Empty<GameDataJson.SlotDto>())
                             .Select(r => new GCost { item = r.item ?? "", amount = Mathf.Max(1, r.amount) }).ToList(),
                         unlocks = (t.unlocks ?? Array.Empty<string>()).ToList(),
                         maxHpBonus = t.maxHpBonus, isFinal = t.isFinal, src = t,
@@ -222,17 +222,17 @@ namespace CoreDawn.EditorTools
             win.root.buildings = buildings.Select(Export).ToArray();
         }
 
-        GameDataImporter.BuildingDto Export(GBuilding b)
+        GameDataJson.BuildingDto Export(GBuilding b)
         {
-            var o = b.src ?? (b.src = new GameDataImporter.BuildingDto());
+            var o = b.src ?? (b.src = new GameDataJson.BuildingDto());
             o.id = Bid(b); o.kind = b.kind; o.displayName = b.displayName; o.description = b.description ?? "";
             o.category = b.category; o.model = b.model ?? "";
             o.modelGuid = b.modelGuid ?? "";
-            o.size ??= new GameDataImporter.Vec2Dto();
+            o.size ??= new GameDataJson.Vec2Dto();
             o.size.x = b.sizeX; o.size.y = b.sizeY;
-            o.ports = b.ports.Select(p => new GameDataImporter.PortDto
+            o.ports = b.ports.Select(p => new GameDataJson.PortDto
             { x = p.x, y = p.y, dir = p.dir, isInput = p.isInput }).ToArray();
-            o.buildCost = b.buildCost.Select(c => new GameDataImporter.SlotDto
+            o.buildCost = b.buildCost.Select(c => new GameDataJson.SlotDto
             { item = c.item, amount = c.amount }).ToArray();
             o.inputSlots = b.inputSlots; o.outputSlots = b.outputSlots; o.bufferStackCap = b.bufferStackCap;
             o.maxHp = b.maxHp; o.requiredCoreTier = b.requiredCoreTier; o.hideFromBuildMenu = b.hideFromBuildMenu;
@@ -262,9 +262,9 @@ namespace CoreDawn.EditorTools
             if (b.kind == "Core")
                 o.tiers = b.tiers.Select(t =>
                 {
-                    var td = t.src ?? (t.src = new GameDataImporter.TierDto());
+                    var td = t.src ?? (t.src = new GameDataJson.TierDto());
                     td.name = t.name ?? ""; td.description = t.description ?? "";
-                    td.requirements = t.requirements.Select(r => new GameDataImporter.SlotDto
+                    td.requirements = t.requirements.Select(r => new GameDataJson.SlotDto
                     { item = r.item, amount = r.amount }).ToArray();
                     td.unlocks = t.unlocks.ToArray(); td.maxHpBonus = t.maxHpBonus; td.isFinal = t.isFinal;
                     return td;
@@ -272,7 +272,7 @@ namespace CoreDawn.EditorTools
             if (b.kind == "Tower")
             {
                 o.damageMultiplier = b.damageMultiplier; o.range = b.range; o.fireRate = b.fireRate; o.fireMode = b.fireMode;
-                o.attackEffects = b.attackEffects.Count > 0 ? b.attackEffects.Select(e => new GameDataImporter.EffectEntryDto { effect = e.effect, value = e.value }).ToArray() : null;
+                o.attackEffects = b.attackEffects.Count > 0 ? b.attackEffects.Select(e => new GameDataJson.EffectEntryDto { effect = e.effect, value = e.value }).ToArray() : null;
                 o.ammoFilter = b.ammoFilter.ToArray();
             }
             return o;
@@ -280,7 +280,7 @@ namespace CoreDawn.EditorTools
 
         // ═════════ 히스토리 — 내보낸 형태의 스냅샷 (unknownJson 까지 왕복) ═════════
 
-        class Snap { public GameDataImporter.BuildingDto[] list; public int cur; }
+        class Snap { public GameDataJson.BuildingDto[] list; public int cur; }
 
         string Snapshot() => JsonConvert.SerializeObject(
             new Snap { list = buildings.Select(Export).ToArray(), cur = curIdx },
@@ -289,7 +289,7 @@ namespace CoreDawn.EditorTools
         void Restore(string json)
         {
             var s = JsonConvert.DeserializeObject<Snap>(json);
-            LoadFrom(s.list ?? Array.Empty<GameDataImporter.BuildingDto>());
+            LoadFrom(s.list ?? Array.Empty<GameDataJson.BuildingDto>());
             curIdx = Mathf.Clamp(s.cur, 0, Mathf.Max(0, buildings.Count - 1));
             selPort = -1;
             win.MarkDirty();
@@ -318,7 +318,7 @@ namespace CoreDawn.EditorTools
             var title = new Label("Building 에디터");
             title.AddToClassList("gd-topbar-title");
             top.Add(title);
-            var small = new Label("BuildingDataSO · 포트 3D 편집");
+            var small = new Label("건물 · 포트 3D 편집");
             small.AddToClassList("gd-topbar-small");
             top.Add(small);
 
@@ -876,7 +876,7 @@ namespace CoreDawn.EditorTools
         {
             var box = new VisualElement { style = { marginTop = 12 } };
             box.Add(GroupTitle("Attack Effects · 탄창 없이 쏘는 건물의 명중 효과 (Ammo Filter가 비어 있을 때)"));
-            var effectIds = (win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>())
+            var effectIds = (win.root.effects ?? Array.Empty<GameDataJson.EffectDto>())
                 .Select(e => e.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
             var holder = new VisualElement();
             box.Add(holder);
@@ -1337,7 +1337,7 @@ namespace CoreDawn.EditorTools
                 if (b.ammoFilter.Count > 0 && b.attackEffects.Count > 0)
                     outp.Add("Ammo Filter와 Attack Effects가 둘 다 있습니다 — 탄창이 있으면 효과는 탄약이 정하므로 Attack Effects는 무시됩니다");
                 foreach (var e in b.attackEffects)
-                    if (string.IsNullOrEmpty(e.effect) || !(win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>()).Any(x => x.id == e.effect))
+                    if (string.IsNullOrEmpty(e.effect) || !(win.root.effects ?? Array.Empty<GameDataJson.EffectDto>()).Any(x => x.id == e.effect))
                         outp.Add($"Attack Effects — 효과 id \"{e.effect}\" 을 찾을 수 없습니다");
                 // 건설 비용에 그 탄약이 들어 있으면 "설치할 때 장전되는 일회용"으로 본다 (지뢰)
                 bool oneShot = b.ammoFilter.Count > 0 && b.ammoFilter.All(a => b.buildCost.Any(c => c.item == a));

@@ -106,10 +106,11 @@ namespace CoreDawn.Worlds
         /// </summary>
         static void PlaceCore(World world, Transform root)
         {
-            var coreData = FindBuildingData<CoreDataSO>();
-            if (coreData == null || coreData.prefab == null)
+            var coreDef = FindEntityWith<CoreModuleDef>();
+            var corePrefab = ViewCatalogSO.PrefabOf(coreDef);
+            if (coreDef == null || corePrefab == null)
             {
-                Debug.LogWarning("[WorldPopulator] CoreDataSO 또는 그 프리팹을 찾지 못해 코어를 세우지 못했습니다.", world);
+                Debug.LogWarning("[WorldPopulator] 코어 정의(Core 모듈) 또는 그 프리팹(뷰 카탈로그)을 찾지 못해 코어를 세우지 못했습니다.", world);
                 return;
             }
 
@@ -119,12 +120,12 @@ namespace CoreDawn.Worlds
                         + new Vector3(1.5f, 0f, 1.5f) * world.CellSize;
             pos.y = GroundYAt(world, pos);
 
-            var go = Spawn(coreData.prefab, pos, Quaternion.identity, root);
+            var go = Spawn(corePrefab, pos, Quaternion.identity, root);
             go.name = "Core";
 
             var boot = go.GetComponent<CoreBootstrap>();
             if (boot == null) boot = go.AddComponent<CoreBootstrap>();
-            boot.Configure(coreData, map.core);
+            boot.Configure(coreDef, map.core);
         }
 
         /// <summary>
@@ -161,10 +162,10 @@ namespace CoreDawn.Worlds
             int connected = 0, skipped = 0;
             foreach (var placed in root.GetComponentsInChildren<PlacedMapObject>(true))
             {
-                if (placed == null || placed.Data == null) continue;   // 광맥은 자체 레지스트리가 맡는다
+                if (placed == null || string.IsNullOrEmpty(placed.DataId)) continue;   // 광맥은 자체 레지스트리가 맡는다
 
-                var def = placed.Data.Def;
-                if (def == null) { Debug.LogWarning($"[WorldPopulator] '{placed.Data.Id}'의 팩 정의가 없어 잇지 못했습니다.", placed); continue; }
+                var def = placed.Def;
+                if (def == null) { Debug.LogWarning($"[WorldPopulator] '{placed.DataId}'의 팩 정의가 없어 잇지 못했습니다.", placed); continue; }
                 var size = BuildingPorts.RotatedSize(def, 0);
                 var origin = placed.Cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
 
@@ -194,7 +195,7 @@ namespace CoreDawn.Worlds
         }
 
         /// <summary>이 배치물이 어느 칸의 무엇인지 적어 둔다 — 런타임의 잇기가 이것을 읽는다.</summary>
-        static void Mark(GameObject go, Vector2Int cell, BuildingDataSO data)
+        static void Mark(GameObject go, Vector2Int cell, EntityDef data)
         {
             var mark = go.GetComponent<PlacedMapObject>();
             if (mark == null) mark = go.AddComponent<PlacedMapObject>();
@@ -202,8 +203,8 @@ namespace CoreDawn.Worlds
         }
 
         /// <summary>런타임에 갓 세운 나무를 심에 잇는다(굳어 있지 않은 씬 경로).</summary>
-        static void ConnectTree(BuildingView view, TreeDataSO data, Vector2Int cell)
-            => PlacementBridge.PlaceExisting(data.Def, cell, 0, view);
+        static void ConnectTree(BuildingView view, EntityDef def, Vector2Int cell)
+            => PlacementBridge.PlaceExisting(def, cell, 0, view);
 
         // ── 시작 드롭 아이템 ───────────────────────────────────────
 
@@ -325,8 +326,8 @@ namespace CoreDawn.Worlds
             int placed = 0;
             foreach (var spec in map.nodes)
             {
-                if (spec.item == null) continue;
-                var view = SpawnNodeView(world, root, spec.item, spec.cell);
+                if (string.IsNullOrEmpty(spec.itemId)) continue;
+                var view = SpawnNodeView(world, root, spec.itemId, spec.cell);
                 if (view != null && view.TryAttachAt(spec.cell)) placed++;
             }
             return placed;
@@ -344,8 +345,8 @@ namespace CoreDawn.Worlds
             int placed = 0;
             foreach (var spec in map.nodes)
             {
-                if (spec.item == null || boot.Factory.DepositAt(spec.cell) != null) continue;
-                var view = SpawnNodeView(world, root, spec.item, spec.cell);
+                if (string.IsNullOrEmpty(spec.itemId) || boot.Factory.DepositAt(spec.cell) != null) continue;
+                var view = SpawnNodeView(world, root, spec.itemId, spec.cell);
                 if (view != null && view.TryAttachAt(spec.cell)) placed++;
             }
             if (placed > 0)
@@ -365,17 +366,23 @@ namespace CoreDawn.Worlds
             }
             int placed = 0;
             foreach (var spec in map.nodes)
-                if (spec.item != null && SpawnNodeView(world, root, spec.item, spec.cell) != null) placed++;
+                if (!string.IsNullOrEmpty(spec.itemId) && SpawnNodeView(world, root, spec.itemId, spec.cell) != null) placed++;
             return placed;
         }
 
         /// <summary>광맥 한 칸의 뷰(프리팹)를 칸 중앙에 세우고 마커(칸)와 자원을 적는다. 심에는 아직 서지 않는다.</summary>
-        static ResourceDepositView SpawnNodeView(World world, Transform root, ItemDataSO item, Vector2Int cell)
+        static ResourceDepositView SpawnNodeView(World world, Transform root, string itemId, Vector2Int cell)
         {
+            var item = SaveRefs.Item(itemId);
+            if (item == null)
+            {
+                Debug.LogError($"[WorldPopulator] 광맥({cell.x},{cell.y})의 자원 '{itemId}'이 팩에 없어 세우지 못했습니다.", world);
+                return null;
+            }
             // 오브젝트 위치는 칸 중앙. 위치는 Instantiate에 함께 넘긴다.
             Vector3 center = world.CellToWorld(cell) + new Vector3(0.5f, 0f, 0.5f) * world.CellSize;
             var go = Spawn(world.ResourceNodePrefab, center, Quaternion.identity, root);
-            go.name = $"Node_{item.name}_{cell.x}_{cell.y}";
+            go.name = $"Node_{PascalKeyOf(item.Id)}_{cell.x}_{cell.y}";
             Mark(go, cell, null);   // 광맥은 공장 칸을 잡지 않는다 — 마커는 칸의 정본이고, 공장의 광맥 색인이 따로 관리한다
             var view = go.GetComponent<ResourceDepositView>();
             if (view == null)
@@ -411,30 +418,29 @@ namespace CoreDawn.Worlds
                 return 0;
             }
 
-            var nestData = FindNestData();
+            var nestDef = FindEntityWith<NestModuleDef>();
             int placed = 0;
             foreach (var spec in map.nests)
             {
                 var go = Spawn(world.NestPrefab, world.CellToWorldCenter(spec.cell), Quaternion.identity, root);
                 go.name = $"Nest_{spec.cell.x}_{spec.cell.y}";
-                Mark(go, spec.cell, nestData);
+                Mark(go, spec.cell, nestDef);
 
                 var nest = go.GetComponent<NestView>();
                 if (nest != null)
                 {
                     // 둥지 엔티티는 심에 먼저 만든다(편·HP는 둥지 데이터, Effects) — 뷰는 받아서 그린다.
                     // 건물 모듈은 뒤의 ConnectPlaced가 이 엔티티를 호스트로 얹는다(둥지 하나에 엔티티 하나).
-                    if (nestData != null && nestData.Def != null) AttachFreshEntity(nest, nestData.Def);
-                    else Debug.LogWarning("[WorldPopulator] 둥지 데이터(Building:Nest)가 없어 둥지 엔티티를 만들지 못했습니다 — MonsterNest가 폴백으로 세웁니다.", world);
+                    if (nestDef != null) AttachFreshEntity(nest, nestDef);
+                    else Debug.LogWarning("[WorldPopulator] 둥지 정의(Nest 모듈)가 팩에 없어 둥지 엔티티를 만들지 못했습니다 — MonsterNest가 폴백으로 세웁니다.", world);
 
                     nest.Configure(spec.warningRange, spec.triggerRange,
                                    spec.defenseSpawnAmount, spec.defenseSpawnCooldown);
-                    nest.SetData(nestData);
                     ApplySpawnPoints(world, nest, spec);
                     nest.SyncModule();   // 자리·보스 유무를 심 Nest 모듈에 — 상태(파괴·무적)는 심의 것
                 }
 
-                if (SpawnOverride == null) ClaimNestCells(nestData, spec.cell, go);
+                if (SpawnOverride == null) ClaimNestCells(nestDef, spec.cell, go);
 
                 // 교전 구역은 값이 있을 때만 붙인다 — 프리팹에 없으면 둥지는 기본 동작을 그대로 쓴다
                 if (spec.engageMaxRange > 0f)
@@ -454,17 +460,36 @@ namespace CoreDawn.Worlds
         /// 둥지 데이터(NestDataSO) — BuildingDatabase에서 찾는다. 코어를 찾는 방식과 같은 규칙이라
         /// 씬 배선이 늘지 않는다. 없으면 칸 점유만 건너뛰고 둥지 자체는 그대로 선다.
         /// </summary>
-        static NestDataSO FindNestData() => FindBuildingData<NestDataSO>();
-
-        /// <summary>이 타입의 건물 데이터를 BuildingDatabase에서 찾는다 — 코어를 찾는 방식과 같은 규칙.</summary>
-        static T FindBuildingData<T>() where T : BuildingDataSO
+        /// <summary>이 모듈을 가진 엔티티 정의를 팩에서 찾는다(코어·둥지 — 역할이 모듈로 드러나는 것들). 없으면 null.</summary>
+        static EntityDef FindEntityWith<T>() where T : EntityModuleDef
         {
-            var db = BuildingDatabaseSO.LoadDefault();
-            if (db == null || db.buildings == null) return null;
-
-            foreach (var b in db.buildings)
-                if (b is T typed) return typed;
+            var db = SimHost.Database;
+            if (db == null) return null;
+            foreach (var e in db.Entities.Values)
+                if (e.Has<T>()) return e;
             return null;
+        }
+
+        /// <summary>팩 키로 엔티티 정의를 찾는다 — 나무처럼 역할 모듈이 없는 것.</summary>
+        static EntityDef FindEntity(string key)
+        {
+            var db = SimHost.Database;
+            return db?.Entity(SimDatabase.IdOf(db.Pack, "entity", key));
+        }
+
+        /// <summary>팩 키("iron_ore") → 씬 오브젝트 이름 조각("IronOre") — 구 SO 에셋 이름과 같은 꼴을 유지한다.</summary>
+        static string PascalKeyOf(string id)
+        {
+            string key = id.Substring(id.LastIndexOf('/') + 1);
+            var sb = new System.Text.StringBuilder(key.Length);
+            bool up = true;
+            foreach (char c in key)
+            {
+                if (c == '_') { up = true; continue; }
+                sb.Append(up ? char.ToUpperInvariant(c) : c);
+                up = false;
+            }
+            return sb.ToString();
         }
 
         /// <summary>
@@ -481,8 +506,8 @@ namespace CoreDawn.Worlds
         /// 풋프린트는 둥지 칸을 <b>가운데</b>에 둔다 — 맵은 둥지를 한 점(cell)으로 적는데
         /// 실제 모형은 그보다 크다. 3×3이면 cell을 중심으로 한 칸씩 번진다.
         /// </summary>
-        static void ClaimNestCells(NestDataSO nestData, Vector2Int cell, GameObject nestGo)
-            => ClaimCells(nestData, cell, nestGo, "둥지", warnOnOccupied: true);
+        static void ClaimNestCells(EntityDef nestDef, Vector2Int cell, GameObject nestGo)
+            => ClaimCells(nestDef, cell, nestGo, "둥지", warnOnOccupied: true);
 
         /// <summary>
         /// 이 데이터의 풋프린트만큼 팩토리 그리드에 칸을 잡는다. 성공하면 true.
@@ -496,10 +521,10 @@ namespace CoreDawn.Worlds
         /// warnOnOccupied — 둥지는 맵이 손으로 찍은 자리라 겹치면 사람이 고쳐야 할 실수지만,
         /// 나무는 수백 그루를 자동으로 심으므로 겹친 그루는 조용히 건너뛰고 총계만 보고한다.
         /// </summary>
-        static bool ClaimCells(BuildingDataSO data, Vector2Int cell, GameObject owner,
+        static bool ClaimCells(EntityDef def, Vector2Int cell, GameObject owner,
                                string label, bool warnOnOccupied)
         {
-            if (data == null) return false;
+            if (def == null) return false;
 
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null)
@@ -509,7 +534,7 @@ namespace CoreDawn.Worlds
                 return false;
             }
 
-            var size = data.size;
+            var size = BuildingPorts.RotatedSize(def, 0);
             var origin = cell - new Vector2Int((size.x - 1) / 2, (size.y - 1) / 2);
 
             for (int dx = 0; dx < size.x; dx++)
@@ -526,7 +551,7 @@ namespace CoreDawn.Worlds
             // 둥지처럼 스스로 심 엔티티를 가진 개체(MonsterNest)는 그 엔티티에 건물을 얹는다 —
             // 따로 만들면 한 둥지에 엔티티가 둘이 되어 몬스터가 자기 둥지를 목표로 삼는다.
             var hostView = owner != null ? owner.GetComponent<EntityView>() : null;
-            boot.Factory.Place(data.Def, origin, 0, host: hostView != null ? hostView.Entity : null);
+            boot.Factory.Place(def, origin, 0, host: hostView != null ? hostView.Entity : null);
             return true;
         }
 
@@ -564,10 +589,10 @@ namespace CoreDawn.Worlds
                 return 0;
             }
 
-            var treeData = FindBuildingData<TreeDataSO>();
-            if (treeData == null)
+            var treeDef = FindEntity(TreeEntityKey);
+            if (treeDef == null)
             {
-                Debug.LogWarning("[WorldPopulator] TreeDataSO를 BuildingDatabase에서 찾지 못해 나무를 세우지 못했습니다.",
+                Debug.LogWarning($"[WorldPopulator] 나무 정의(entities/{TreeEntityKey})가 팩에 없어 나무를 세우지 못했습니다.",
                                  world);
                 return 0;
             }
@@ -596,14 +621,14 @@ namespace CoreDawn.Worlds
                 var go = Spawn(prefabs[pi], pos, Quaternion.Euler(0f, yaw, 0f), root);
                 go.transform.localScale = Vector3.one * scale;
                 go.name = $"Tree_{cell.x}_{cell.y}";
-                Mark(go, cell, treeData);
+                Mark(go, cell, treeDef);
 
                 // 씬에 굳히는 중이면 여기까지다 — 심에 잇는 것은 런타임의 몫이다(Connect).
                 // 뷰는 프리팹에 없으므로 지금 붙여 둔다: 굳은 씬에서 인스펙터로 확인할 수 있고,
                 // 런타임이 PlaceExisting 으로 그대로 이어 쓴다.
                 var view = go.GetComponent<BuildingView>();
                 if (view == null) view = go.AddComponent<BuildingView>();
-                if (connecting) ConnectTree(view, treeData, cell);
+                if (connecting) ConnectTree(view, treeDef, cell);
                 placed++;
             }
 
@@ -612,6 +637,9 @@ namespace CoreDawn.Worlds
                           "(코어·광맥·둥지와 겹친 자리).", world);
             return placed;
         }
+
+        /// <summary>나무 엔티티의 팩 키 — 나무는 역할 모듈이 없어(Building·Health·Effects뿐) 이름으로 찾는다. 맵이 종류를 고르게 되면 맵 데이터로 간다.</summary>
+        const string TreeEntityKey = "tree";
 
         // 나무 한 그루의 생김새를 정하는 값들 — 칸 좌표에서 뽑으므로 같은 맵은 언제나 같은 숲이다
         const float TreeScaleMin = 0.85f, TreeScaleMax = 1.35f;
@@ -673,9 +701,9 @@ namespace CoreDawn.Worlds
             if (spec.spawnPoints == null || spec.spawnPoints.Length == 0) return;
             if (nest.spawnPoints == null) nest.spawnPoints = new List<NestView.NestSpawnPoint>();
 
-            MonsterDataSO bossTemplate = null;
+            string bossTemplate = null;
             foreach (var existing in nest.spawnPoints)
-                if (existing != null && existing.bossData != null) { bossTemplate = existing.bossData; break; }
+                if (existing != null && !string.IsNullOrEmpty(existing.bossId)) { bossTemplate = existing.bossId; break; }
 
             for (int i = 0; i < spec.spawnPoints.Length; i++)
             {
@@ -698,8 +726,8 @@ namespace CoreDawn.Worlds
                     else { slot = new NestView.NestSpawnPoint { point = t }; nest.spawnPoints.Add(slot); }
                 }
 
-                slot.bossData = point.hasBoss ? bossTemplate : null;
-                if (point.hasBoss && bossTemplate == null)
+                slot.bossId = point.hasBoss ? bossTemplate : null;
+                if (point.hasBoss && string.IsNullOrEmpty(bossTemplate))
                     Debug.LogWarning($"[WorldPopulator] 둥지({spec.cell.x},{spec.cell.y}) 스폰 포인트 {i + 1}: " +
                                      "hasBoss인데 프리팹에 보스 배선이 없어 보스를 세울 수 없습니다.", nest);
             }

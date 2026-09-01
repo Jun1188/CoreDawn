@@ -51,6 +51,20 @@ namespace CoreDawn.Sim
         [JsonIgnore] public int RoundsPerTrigger => Pellets > 1 ? Pellets : 1;
         [JsonIgnore] public ItemDef DefaultAmmo => AmmoFilter.Count > 0 ? AmmoFilter[0] : null;
 
+        /// <summary>방아쇠 한 번의 피해 총량(기본 탄의 즉발 피해 합 × 배율 × 펠릿 수) — 반동 연출 크기·툴팁 표기용. 전투 계산엔 쓰지 않는다.</summary>
+        [JsonIgnore] public float BaseDamage
+        {
+            get
+            {
+                var ammo = DefaultAmmo?.Get<AmmoModuleDef>();
+                float sum = 0f;
+                if (ammo != null)
+                    foreach (var e in ammo.Effects)
+                        if (e.Spec != null && e.Spec.Kind == EffectKind.Damage) sum += e.Value;
+                return sum * DamageMultiplier * RoundsPerTrigger;
+            }
+        }
+
         public override void Resolve(SimDatabase db, List<string> errors)
         {
             AmmoFilter.Clear();

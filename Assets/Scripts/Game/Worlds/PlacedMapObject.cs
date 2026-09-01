@@ -1,6 +1,6 @@
 using UnityEngine;
-using CoreDawn.Factory;
-using CoreDawn.Data;
+using CoreDawn.Save;
+using CoreDawn.Sim;
 
 namespace CoreDawn.Worlds
 {
@@ -21,14 +21,16 @@ namespace CoreDawn.Worlds
         [Tooltip("이 배치물이 차지하는 칸(맵 타일 좌표). 모형의 지터와 무관하게 심을 때 확정된다.")]
         [SerializeField] private Vector2Int cell;
 
-        [Tooltip("차지하는 칸의 주인이 될 건물 데이터. 비어 있으면 칸을 잡지 않는다(광맥은 자체 " +
+        [Tooltip("차지하는 칸의 주인이 될 엔티티 정의의 팩 id(coredawn:entity/tree). 비어 있으면 칸을 잡지 않는다(광맥은 자체 " +
                  "레지스트리가 따로 관리한다).")]
-        [SerializeField] private BuildingDataSO data;
+        [SerializeField] private string dataId;
 
         public Vector2Int Cell => cell;
-        public BuildingDataSO Data => data;
+        public string DataId => dataId;
+        /// <summary>정의 — 팩에 없으면 null(경고는 SaveRefs가 한 번 남긴다).</summary>
+        public EntityDef Def => string.IsNullOrEmpty(dataId) ? null : SaveRefs.Entity(dataId);
 
         /// <summary>씬에 굳히는 쪽(에디터)이 채운다.</summary>
-        public void Configure(Vector2Int c, BuildingDataSO d) { cell = c; data = d; }
+        public void Configure(Vector2Int c, EntityDef d) { cell = c; dataId = d?.Id; }
     }
 }

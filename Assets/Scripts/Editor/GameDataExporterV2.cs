@@ -21,7 +21,7 @@ namespace CoreDawn.EditorTools
     public static class GameDataExporterV2
     {
         public const string Pack = "coredawn";
-        public static string SourcePath => $"{GameDataImporter.ImportFolder}/GameData.json";
+        public static string SourcePath => $"{GameDataJson.ImportFolder}/GameData.json";
         public static string PackFolder => $"Assets/StreamingAssets/packs/{Pack}";
         public static string OutputPath => $"{PackFolder}/data.json";
         public const string IdMapPath = "tools/id-migration-v1-v2.json";
@@ -31,6 +31,18 @@ namespace CoreDawn.EditorTools
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
             ["Gun"] = "gun", ["Tutorial"] = "tutorial",
         };
+
+        /// <summary>옛 v1 id("Item:IronOre") → 팩 id("coredawn:item/iron_ore") — 에디터 도구(맵 임포터·이관)가 쓴다. 이미 팩 id면 그대로.</summary>
+        public static string PackIdOf(string v1Id)
+        {
+            if (string.IsNullOrEmpty(v1Id) || v1Id.Contains("/")) return v1Id;
+            int i = v1Id.IndexOf(':');
+            if (i < 0 || !SectionOf.TryGetValue(v1Id.Substring(0, i), out var section)) return v1Id;
+            var name = Regex.Replace(v1Id.Substring(i + 1), "^Recipe_", "");
+            var s = Regex.Replace(name, "(?<=[a-z0-9])(?=[A-Z])", "_");
+            s = Regex.Replace(s, "(?<=[A-Z])(?=[A-Z][a-z])", "_");
+            return $"{Pack}:{section}/{s.ToLowerInvariant()}";
+        }
 
         [MenuItem("Tools/Factory/Export pack data.json (v2)")]
         public static void ExportMenu()
@@ -122,7 +134,7 @@ namespace CoreDawn.EditorTools
                 items[KeyOf((string)it["id"])] = o;
 
                 // 광맥 — Ore 아이템마다 하나, entities/<item>_deposit. 맵은 칸과 자원만 적고 채굴 시간은 원광이 갖는다.
-                // 매장량 없음(바닥나지 않음), 부서지지 않으므로 Health 없음. 임포터가 Ore↔extractInterval 짝을 검사한다.
+                // 매장량 없음(바닥나지 않음), 부서지지 않으므로 Health 없음. Ore↔extractInterval 짝은 여기서 검사한다(구 임포터의 몫).
                 if ((string)it["type"] == "Ore")
                 {
                     float interval = (float?)it["extractInterval"] ?? -1f;
@@ -136,6 +148,8 @@ namespace CoreDawn.EditorTools
                         ["modules"] = new JArray { new JObject { ["type"] = "ResourceDeposit", ["resource"] = NewId((string)it["id"]), ["extractInterval"] = interval } },
                     };
                 }
+                else if (((float?)it["extractInterval"] ?? 0f) > 0f)
+                    throw new InvalidOperationException($"아이템 '{it["id"]}'은 Ore가 아닌데 extractInterval이 있습니다 — 채굴 시간은 원광(Ore)만 갖는다");
             }
 
             foreach (var r in Arr(d["recipes"]))

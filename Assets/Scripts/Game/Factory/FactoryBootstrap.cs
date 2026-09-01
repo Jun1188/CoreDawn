@@ -49,8 +49,8 @@ namespace CoreDawn.Factory
                  "씬에 CoreBootstrap으로 미리 배치해 뒀다면 그쪽이 우선이고 여기서는 아무것도 하지 않는다.")]
         [SerializeField] bool _autoPlaceCore = true;
 
-        [Tooltip("세울 코어 데이터. 비워두면 BuildingDatabase에서 CoreDataSO를 찾아 쓴다.")]
-        [SerializeField] CoreDataSO _coreData;
+        [Tooltip("세울 코어 정의의 팩 id. 비워두면 팩에서 Core 모듈을 가진 엔티티를 찾아 쓴다.")]
+        [SerializeField] string _coreId;
 
         [Tooltip("코어를 세울 그리드 좌표. 월드(맵)가 있으면 맵이 정한 자리로 덮인다 — Inject 참조.")]
         [SerializeField] Vector2Int _coreOrigin = Vector2Int.zero;
@@ -169,11 +169,11 @@ namespace CoreDawn.Factory
         {
             if (HasCore()) return;
 
-            var data = _coreData != null ? _coreData : FindCoreData();
+            var data = !string.IsNullOrEmpty(_coreId) ? SaveRefs.Entity(_coreId) : FindCoreDef();
             if (data == null)
             {
-                Debug.LogWarning("[FactoryBootstrap] 코어를 세울 CoreDataSO를 찾지 못했습니다 — " +
-                                 "인스펙터에 지정하거나 BuildingDatabase에 넣으세요.", this);
+                Debug.LogWarning("[FactoryBootstrap] 코어를 세울 정의를 찾지 못했습니다 — " +
+                                 "인스펙터에 팩 id를 지정하거나 팩에 Core 모듈을 가진 엔티티를 두세요.", this);
                 return;
             }
 
@@ -185,8 +185,8 @@ namespace CoreDawn.Factory
                 return;
             }
 
-            if (placement.TryPlaceAt(data.Def, _coreOrigin, _coreRotationSteps, out _, out string reason))
-                Debug.Log($"[FactoryBootstrap] 코어 자동 설치 — {data.name} @ {_coreOrigin}");
+            if (placement.TryPlaceAt(data, _coreOrigin, _coreRotationSteps, out _, out string reason))
+                Debug.Log($"[FactoryBootstrap] 코어 자동 설치 — {data.Id} @ {_coreOrigin}");
             else
                 Debug.LogWarning($"[FactoryBootstrap] 코어 자동 설치 실패 @ {_coreOrigin}: {reason}", this);
         }
@@ -198,13 +198,12 @@ namespace CoreDawn.Factory
             return false;
         }
 
-        static CoreDataSO FindCoreData()
+        static EntityDef FindCoreDef()
         {
-            var db = BuildingDatabaseSO.LoadDefault();
-            if (db == null || db.buildings == null) return null;
-
-            foreach (var b in db.buildings)
-                if (b is CoreDataSO core) return core;
+            var db = SimHost.Database;
+            if (db == null) return null;
+            foreach (var e in db.Entities.Values)
+                if (e.Has<CoreModuleDef>()) return e;
             return null;
         }
 

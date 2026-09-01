@@ -16,7 +16,7 @@ namespace CoreDawn.Tests
     public class FactoryTest : MonoBehaviour
     {
         [Header("ScriptableObjects — Inspector에서 연결")]
-        public ItemDataSO ironOreSO;
+        public string ironOreId;
 
         private Camera mainCamera;
         private string currentBuildingInfo = "";

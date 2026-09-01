@@ -171,7 +171,7 @@ namespace CoreDawn.EditorTools
             selection = null; seq = 1;
             var itemNode = new Dictionary<string, string>();   // "Item:X" → nodeId
 
-            foreach (var it in win.root.items ?? Array.Empty<GameDataImporter.ItemDto>())
+            foreach (var it in win.root.items ?? Array.Empty<GameDataJson.ItemDto>())
             {
                 string name = (it.id ?? "").StartsWith("Item:") ? it.id.Substring(5) : (it.id ?? it.displayName ?? "");
                 var id = Uid();
@@ -213,7 +213,7 @@ namespace CoreDawn.EditorTools
                 return id;
             }
 
-            foreach (var r in win.root.recipes ?? Array.Empty<GameDataImporter.RecipeDto>())
+            foreach (var r in win.root.recipes ?? Array.Empty<GameDataJson.RecipeDto>())
             {
                 string name = (r.id ?? "").StartsWith("Recipe:") ? r.id.Substring(7) : (r.id ?? r.displayName ?? "");
                 var id = Uid();
@@ -227,14 +227,14 @@ namespace CoreDawn.EditorTools
                     },
                 };
                 if (r.unknownJson is { Count: > 0 }) recipeExtra[name] = r.unknownJson;
-                foreach (var p in r.inputs ?? Array.Empty<GameDataImporter.SlotDto>())
+                foreach (var p in r.inputs ?? Array.Empty<GameDataJson.SlotDto>())
                 {
                     if (p.item == null) continue;
                     if (!itemNode.TryGetValue(p.item, out var src)) src = EnsureGhost(p.item);
                     var eid = Uid();
                     edges[eid] = new GEdge { id = eid, from = src, to = id, amount = Math.Max(1, p.amount) };
                 }
-                foreach (var p in r.outputs ?? Array.Empty<GameDataImporter.SlotDto>())
+                foreach (var p in r.outputs ?? Array.Empty<GameDataJson.SlotDto>())
                 {
                     if (p.item == null) continue;
                     if (!itemNode.TryGetValue(p.item, out var dst)) dst = EnsureGhost(p.item);
@@ -248,13 +248,13 @@ namespace CoreDawn.EditorTools
         public override void SyncToRoot()
         {
             if (win.root == null || nodes.Count == 0 && (win.root.items?.Length ?? 0) > 0) { }
-            var items = new List<GameDataImporter.ItemDto>();
-            var recipes = new List<GameDataImporter.RecipeDto>();
+            var items = new List<GameDataJson.ItemDto>();
+            var recipes = new List<GameDataJson.RecipeDto>();
 
             foreach (var n in nodes.Values.Where(n => n.kind == "item"))
             {
                 var d = n.data;
-                var it = new GameDataImporter.ItemDto
+                var it = new GameDataJson.ItemDto
                 {
                     id = "Item:" + Sanitize(d.name),
                     displayName = string.IsNullOrEmpty(d.displayName) ? d.name : d.displayName,
@@ -268,7 +268,7 @@ namespace CoreDawn.EditorTools
                 if (d.type == "Ammo")
                 {
                     if (d.attackEffects.Count > 0)
-                        it.attackEffects = d.attackEffects.Select(e => new GameDataImporter.EffectEntryDto { effect = e.effect, value = e.value }).ToArray();
+                        it.attackEffects = d.attackEffects.Select(e => new GameDataJson.EffectEntryDto { effect = e.effect, value = e.value }).ToArray();
                     // 탄도 — 0 이 정당한 값(직선·무폭발)이라 항상 내보낸다. 임포터는 음수를 "유지"로 본다
                     it.speed = d.speed; it.gravity = d.gravity; it.explosionRadius = d.explosionRadius;
                     it.lifetime = d.lifetime; it.pierce = d.pierce;
@@ -281,16 +281,16 @@ namespace CoreDawn.EditorTools
             foreach (var n in nodes.Values.Where(n => n.kind == "recipe"))
             {
                 var d = n.data;
-                var inputs = new List<GameDataImporter.SlotDto>();
-                var outputs = new List<GameDataImporter.SlotDto>();
+                var inputs = new List<GameDataJson.SlotDto>();
+                var outputs = new List<GameDataJson.SlotDto>();
                 foreach (var e in edges.Values)
                 {
                     if (e.to == n.id && nodes.TryGetValue(e.from, out var src))
-                        inputs.Add(new GameDataImporter.SlotDto { item = "Item:" + Sanitize(src.data.name), amount = e.amount });
+                        inputs.Add(new GameDataJson.SlotDto { item = "Item:" + Sanitize(src.data.name), amount = e.amount });
                     if (e.from == n.id && nodes.TryGetValue(e.to, out var dst))
-                        outputs.Add(new GameDataImporter.SlotDto { item = "Item:" + Sanitize(dst.data.name), amount = e.amount });
+                        outputs.Add(new GameDataJson.SlotDto { item = "Item:" + Sanitize(dst.data.name), amount = e.amount });
                 }
-                var r = new GameDataImporter.RecipeDto
+                var r = new GameDataJson.RecipeDto
                 {
                     id = "Recipe:" + Sanitize(d.name),
                     displayName = string.IsNullOrEmpty(d.displayName) ? d.name : d.displayName,
@@ -1481,7 +1481,7 @@ namespace CoreDawn.EditorTools
                 var ammoTtl = new Label("AMMOMODULE · 1발 명중 효과");
                 ammoTtl.AddToClassList("gd-groupttl");
                 sideBody.Add(ammoTtl);
-                var effectIds = (win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>())
+                var effectIds = (win.root.effects ?? Array.Empty<GameDataJson.EffectDto>())
                     .Select(e => e.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 var holder = new VisualElement();
                 sideBody.Add(holder);
@@ -1509,7 +1509,7 @@ namespace CoreDawn.EditorTools
                     }
                     float dmg = d.attackEffects.Where(e =>
                     {
-                        var ef = (win.root.effects ?? Array.Empty<GameDataImporter.EffectDto>()).FirstOrDefault(x => x.id == e.effect);
+                        var ef = (win.root.effects ?? Array.Empty<GameDataJson.EffectDto>()).FirstOrDefault(x => x.id == e.effect);
                         return ef != null && string.Equals(ef.kind, "Damage", StringComparison.OrdinalIgnoreCase);
                     }).Sum(e => e.value);
                     var foot = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
@@ -1539,7 +1539,7 @@ namespace CoreDawn.EditorTools
                 var wpnTtl = new Label("WEAPONMODULE · 장착할 총");
                 wpnTtl.AddToClassList("gd-groupttl");
                 sideBody.Add(wpnTtl);
-                var guns = (win.root.guns ?? Array.Empty<GameDataImporter.GunDto>())
+                var guns = (win.root.guns ?? Array.Empty<GameDataJson.GunDto>())
                     .Select(g => g.id).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 var choices = new List<string> { "(없음)" };
                 choices.AddRange(guns);
@@ -1563,7 +1563,7 @@ namespace CoreDawn.EditorTools
                 var preview = new Label { style = { color = GdEnum.Faint, fontSize = 11, whiteSpace = WhiteSpace.Normal } };
                 void RenderPreview()
                 {
-                    var miners = (win.root.buildings ?? Array.Empty<GameDataImporter.BuildingDto>())
+                    var miners = (win.root.buildings ?? Array.Empty<GameDataJson.BuildingDto>())
                         .Where(b => b.kind == "Miner" && b.speedMultiplier > 0)
                         .Select(b => $"{b.displayName ?? b.id} {d.extractInterval / b.speedMultiplier:0.##}초");
                     preview.text = $"손 {d.extractInterval:0.##}초에 1개 · " + (miners.Any() ? string.Join(" · ", miners) : "채굴기 없음");

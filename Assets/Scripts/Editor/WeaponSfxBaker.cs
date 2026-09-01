@@ -3,7 +3,6 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using CoreDawn.FPS;
-using CoreDawn.Data;
 
 namespace CoreDawn.EditorTools
 {
@@ -19,7 +18,8 @@ namespace CoreDawn.EditorTools
     public static class WeaponSfxBaker
     {
         const string OutPath = "Assets/Art/Audio/Weapon/PlasmaCutter_Swing.wav";
-        const string GunPath = "Assets/Data/Guns/PlasmaCutter.asset";
+        const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
+        const string GunId = "coredawn:gun/plasma_cutter";
 
         const int   SampleRate = 44100;
         const float Duration   = 0.36f;
@@ -91,19 +91,28 @@ namespace CoreDawn.EditorTools
                 importer.SaveAndReimport();
             }
 
-            // 총 데이터에 물려 준다 — 한 번의 메뉴 클릭으로 굽기+배선이 끝나야 재실행이 쉽다
+            // 총 프리팹(Player.prefab 안의 Gun 컴포넌트)에 물려 준다 — 한 번의 메뉴 클릭으로 굽기+배선이 끝나야 재실행이 쉽다
             var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(OutPath);
-            var gun = AssetDatabase.LoadAssetAtPath<GunData>(GunPath);
-            if (gun != null && clip != null)
+            bool wired = false;
+            if (clip != null)
             {
-                gun.fireSound = clip;
-                gun.fireVolume = 0.55f;
-                EditorUtility.SetDirty(gun);
-                AssetDatabase.SaveAssets();
+                var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+                try
+                {
+                    foreach (var gun in root.GetComponentsInChildren<Gun>(true))
+                    {
+                        if (gun.gunId != GunId) continue;
+                        gun.fireSound = clip;
+                        gun.fireVolume = 0.55f;
+                        wired = true;
+                    }
+                    if (wired) PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+                }
+                finally { PrefabUtility.UnloadPrefabContents(root); }
             }
 
             Debug.Log($"[WeaponSfxBaker] {OutPath} 생성 ({Duration:F2}s) — " +
-                      (gun != null ? $"{gun.displayName}의 발사음에 배선했습니다." : "총 데이터를 찾지 못해 배선은 생략."));
+                      (wired ? $"{GunId}의 발사음에 배선했습니다." : $"{PlayerPrefabPath}에서 gunId {GunId}인 Gun을 찾지 못해 배선은 생략."));
         }
 
         /// <summary>float(-1~1) 샘플을 16bit PCM 모노 RIFF/WAVE 바이트로.</summary>

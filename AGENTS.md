@@ -29,7 +29,7 @@ namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Prese
 | Folder (`Assets/Scripts/…`) | Namespace | What lives there |
 |---|---|---|
 | `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces (incl. `ISteppable`·`ISaveableModule`), `Inventory/` = `ItemStack`/`ItemContainer` (item storage shared by player and buildings), `Factory/` = the factory sim (5a-2f: `FactorySystem`·`BuildingModule`·`BuildingGraph`·`BuildingPorts`·`BeltSystem`·`BeltSegment` + `Direction`/`Dir`/`PortDefinition`/`BeltShape`), `Modules/` = entity modules (`*Module`, incl. `InventoryModule`·`CrafterModule`·`RouterModule`·`ExtractorModule`·`CoreModule`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
-| `Data/**` | `CoreDawn.Data` | every ScriptableObject definition + databases + `EffectEntry`/`EffectSpecs` (items, buildings, recipes, effects, monsters, waves, maps, tutorial, weapons) |
+| `Data/**` | `CoreDawn.Data` | the few Unity assets that remain after 5a-3e (2026-09-01): `ViewCatalogSO` (pack id → icon/prefab, baked from the pack `view` blocks; also holds the shared `droppedItemPrefab`), `MapDataSO` (maps are not pack content), `BuildingCategory`. **All game definitions (items, recipes, effects, entities, guns, tutorial, wave, dayCycle) are pack json only** — no `*DataSO`/`*DatabaseSO` exist anymore. |
 | `Game/Factory` | `CoreDawn.Factory` | Unity-facing factory bridges only (since 5a-2f, 2026-09-01): `FactoryBootstrap` (driver + `WireGameRules`), `PlacementBridge`, `CoreBootstrap`, `BeltItemView`, `CoreSystem` (core tier/UI wiring), `RecipeRewardUnlockService`. The factory sim itself lives in `Sim/Factory`. The behavior layer (`*Behavior`, `IBuildingBehavior`, `BuildingBehaviors`) is gone — building tick is decided by what the entity *has* |
 | `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
 | `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
@@ -86,8 +86,20 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   v1 `player` block → exporter). `PlayerInventoryHolder` spawns that entity in Awake and exposes its `InventoryModule` containers;
   `BattleManager` only attaches the view. Hand crafting (inventory panel) and assemblers share `CrafterModule`, which steps
   itself on the common building tick (`ISteppable`); recipe unlock checks are game/UI (MachinePanelView,
-  `FactoryBootstrap.WireGameRules`), never the sim. Inspector-authored stacks use `ItemStackAuthoring` (SO + amount),
-  never the sim `ItemStack`, because `ItemDef` is not Unity-serializable.
+  `FactoryBootstrap.WireGameRules`), never the sim. Inspector-authored stacks use `ItemStackAuthoring` (pack id string + amount, Game/Inventories),
+  never the sim `ItemStack`, because `ItemDef` is not Unity-serializable. The same rule holds for every scene/prefab field that names a
+  definition (`DroppedItem.authoredItemId`, `ResourceDepositView.resourceId`, `PlacedMapObject.dataId`, `CoreBootstrap.coreId`,
+  `NestView.bossId/defenderId`, `Gun.gunId`, `NightWaveRecipeReward.unlockedRecipeId`, `MapDataSO.ResourceNodeSpec.itemId`): a pack id
+  string resolved through `SaveRefs.Item/Entity/Recipe/Gun/Effect` (warns once, no fallback).
+- Data pipeline (5a-3e-1, 2026-09-01): **the v2 pack (`StreamingAssets/packs/coredawn/data.json`) is the only runtime source of definitions.**
+  The authoring format is still v1 `Assets/Data/Import/GameData.json` (DTOs in `Editor/GameDataJson.cs`), edited by the GameData
+  editor; its "저장" writes v1, exports v2 (`GameDataExporterV2`) and bakes `Resources/ViewCatalog.asset` (`ViewCatalogBaker`);
+  "저장 + 맵 임포트" additionally re-bakes the map SOs (`MapImporter`, validates deposit items against the pack). There is no
+  SO importer, no `Resources/*Database`, and no `EnsurePrefab` — building prefabs under `Assets/Prefabs/Buildings` are static
+  assets until the 5a-4 view assembler retires them. Tutorial steps are pack `tutorial` entries (`TutorialStepDef`); condition
+  logic is `Game/Tutorial/Conditions/*` plain classes registered in `TutorialConditions` (add a class + one table line — the
+  editor's tutorial tab discovers kinds from `TutorialCondition` subclasses and draws their public fields). Save tutorial keys
+  are pack ids (schema v5). Editing the editor to write v2 directly is 5a-3e-2 (pending).
 - Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,
   pellets, range in meters, ammo filter, damage multiplier + the view's feel values), and the player entity carries a `WeaponModule`
   (per-gun `Magazine`, equipped gun, fire cooldown, reload timer that really consumes rounds from the inventory, auto-reload, ammo
@@ -145,7 +157,7 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   covered deposits round-robin (the factory hands them over on placement via `SetDeposits` — the module never sees the grid).
   The map stores only `item + cell` per deposit. Deposit definitions are **not authored**:
   every v1 item of type `Ore` carries `extractInterval`, and the v2 exporter emits `entities/<item>_deposit` from it
-  (the importer rejects an Ore without it or a non-Ore with it). Edit the value in the GameData editor's item panel.
+  (the exporter rejects an Ore without it or a non-Ore with it). Edit the value in the GameData editor's item panel.
   `ResourceDepositView` (Game/ResourceNodes) is the view + hand-mining interaction. The map importer bakes the views into the
   scene (with a `PlacedMapObject` cell marker) so the map is visible without playing; at play `WorldPopulator.Connect` creates the
   sim entity at the marker's cell and attaches it (missing views are placed at runtime with a warning). Death drops: `Loot` module
@@ -156,12 +168,12 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   come from `InventoryModule.Roles`/`ByRole`, nowhere else). **No read-side fallbacks for old ids or old keys** — every format change
   bumps `SaveFile.CurrentSchemaVersion` and adds one step to `SaveMigrations` that rewrites the JSON, logs what it did, and fails the
   load if it cannot. Silent "accept both" code is not allowed.
-- Damage, effects and death end inside the sim. Effect *definitions* are `EffectSpec` (converted once per `EffectSO` by
-  `EffectSpecs`), a hit is an `Effect[]` (spec + value) applied to the target's `EffectsModule` module; `EffectSystem` ticks
+- Damage, effects and death end inside the sim. Effect *definitions* are `EffectSpec` (pack `effects` section, resolved by id —
+  `SaveRefs.Effect` for view-authored ones such as `Gun.knockbackEffectId`), a hit is an `Effect[]` (spec + value) applied to the target's `EffectsModule` module; `EffectSystem` ticks
   duration effects. Melee: the sim `AttackModule` module applies directly. Projectiles/auras: PhysX detects the hit, then
   `EntityView.ApplyEffects(Effect[], Entity source, point, dir)` hands it to the sim — the only view entry point.
   Incoming multipliers, shields, ally-ignore and nest invulnerability are all `IDamageInterceptor`s inside
-  `HealthModule.Damage` (`EffectsModule`, `BuildingModule`, `NestModule`). `EffectSO` subclasses are data only (`Kind` + fields).
+  `HealthModule.Damage` (`EffectsModule`, `BuildingModule`, `NestModule`). `EffectSpec.Kind` selects the channel; value is the amount.
 - `SimRunner` (static, `Monsters` · `EffectsModule` · `Players`) drives the sim every frame in that order — the transitional
   access point until the phase-5 `WorldRunner` (fixed tick, scene lifecycle).
 - Entity identity is `EntityUUID` (a Guid; `Entity.Id`, `EntityUUID.New()`), minted by whoever creates the entity —

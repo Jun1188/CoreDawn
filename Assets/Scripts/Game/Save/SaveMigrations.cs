@@ -26,7 +26,7 @@ namespace CoreDawn.Save
         {
             // v1 → v2 (2026-08-30, 5a-1c·5a-2d): 팀의 다른 작업이 시작되기 전이라 중간 버전(v2·v3)을 두지 않고 한 단계로 합쳤다.
             //   ① 정의 id — 옛 SO id("Item:IronOre"·"Building:Belt"·"Recipe:Recipe_IronPlate")를 팩 id("coredawn:item/iron_ore")로.
-            //      몬스터(combat.monsters[].data)는 아직 SO(MonsterDatabaseSO)로 복원하므로 손대지 않는다 — 5a-3에서 함께 옮긴다.
+            //      몬스터(combat.monsters[].data)는 그때 아직 SO로 복원했으므로 손대지 않았다 — v3→v4가 옮겼다.
             //   ② 그릇 — 건물 in/out, 플레이어 hotbar/main → 역할 키 사전 containers{}. 역할 이름표는 InventoryModule이 붙인다.
             //   ③ 핫바 병합 — 플레이어 containers.hotbar + containers.main → main 하나(핫바 칸이 앞, 옛 가방 칸은 인덱스가 핫바 칸 수만큼 뒤로).
             //   ④ 광맥 매장량 삭제 — world.nodes[]의 stock·nextAt을 뗀다(누적 채굴량만 남긴다).
@@ -40,6 +40,9 @@ namespace CoreDawn.Save
             // v3 → v4 (2026-09-01, 5a-3d): 몬스터 종류 id를 옛 SO id("Monster:Spitter") → 팩 id로.
             //   v1→v2 때 "몬스터는 아직 SO로 복원하므로 손대지 않는다 — 5a-3에서 함께"로 예약했던 항목.
             { 3, MigrateMonsterIdsToPack },
+            // v4 → v5 (2026-09-01, 5a-3e): 튜토리얼 완료 키를 옛 SO id("Tutorial:Mine") → 팩 id("coredawn:tutorial/mine")로.
+            //   스텝의 정본이 SO에서 팩 tutorial 섹션으로 옮겨졌다 — 옛 키를 그대로 두면 완료한 안내가 전부 되살아난다.
+            { 4, MigrateTutorialIdsToPack },
         };
 
         /// <summary>
@@ -292,6 +295,20 @@ namespace CoreDawn.Save
                         if (p is JObject po) Convert(po["boss"]);
             }
             Debug.Log($"[Save] v3 → v4: 몬스터 id {converted}개를 팩 id로 바꿨습니다.");
+        }
+
+        static void MigrateTutorialIdsToPack(SaveFile f)
+        {
+            var db = SimHost.Database ?? throw new InvalidOperationException("팩 정의(SimHost.Database)가 없어 튜토리얼 id를 변환할 수 없습니다.");
+            int converted = 0;
+            if (Module(f, "tutorial") is JObject t && t["done"] is JArray done)
+                for (int i = 0; i < done.Count; i++)
+                {
+                    if (done[i].Type != JTokenType.String) continue;
+                    string old = (string)done[i], now = db.LegacyId(old);
+                    if (now != old) { done[i] = now; converted++; }
+                }
+            Debug.Log($"[Save] v4 → v5: 튜토리얼 완료 키 {converted}개를 팩 id로 바꿨습니다.");
         }
 
         // ── 공통 ──────────────────────────────────────────

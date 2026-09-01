@@ -429,3 +429,4 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     muzzleFlashPrefab: {fileID: 0}
     hitEffectPrefab: {fileID: 0}
+  droppedItemPrefab: {fileID: 5100000000000000001, guid: 4800f66116cf4329885747041f5ece99, type: 3}

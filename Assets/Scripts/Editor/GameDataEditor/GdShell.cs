@@ -5,6 +5,7 @@ using System.IO;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using CoreDawn.Sim;
 using UnityEngine.UIElements;
 using CoreDawn.UI;
 
@@ -32,9 +33,9 @@ namespace CoreDawn.EditorTools
             Formatting = Formatting.Indented,
         };
 
-        static string JsonPath => $"{GameDataImporter.ImportFolder}/GameData.json";
+        static string JsonPath => $"{GameDataJson.ImportFolder}/GameData.json";
 
-        internal GameDataImporter.Root root;
+        internal GameDataJson.Root root;
         string loadError;
 
         GdTab[] tabs;
@@ -75,7 +76,7 @@ namespace CoreDawn.EditorTools
         void LoadFile()
         {
             loadError = null;
-            try { root = JsonConvert.DeserializeObject<GameDataImporter.Root>(File.ReadAllText(JsonPath)); }
+            try { root = JsonConvert.DeserializeObject<GameDataJson.Root>(File.ReadAllText(JsonPath)); }
             catch (Exception e) { root = null; loadError = e.Message; }
             hasUnsavedChanges = false;
             foreach (var t in tabs) t.OnDataLoaded();
@@ -87,12 +88,16 @@ namespace CoreDawn.EditorTools
             foreach (var t in tabs) t.SyncToRoot();   // 그래프처럼 자체 모델을 가진 탭이 root 에 반영한다
             File.WriteAllText(JsonPath, JsonConvert.SerializeObject(root, JsonSettings) + "\n");
             AssetDatabase.ImportAsset(JsonPath);
-            // 심이 읽는 v2 팩 data.json은 여기서 생성된다 — v1은 편집 형식, v2는 게임·모드 형식(편집 정본 하나, 파생 산출물 둘)
-            try { Debug.Log(GameDataExporterV2.Export()); }
+            // 심이 읽는 v2 팩 data.json과 뷰 카탈로그는 여기서 생성된다 — v1은 편집 형식, v2는 게임·모드 형식(편집 정본 하나, 파생 산출물 둘)
+            try
+            {
+                Debug.Log(GameDataExporterV2.Export());
+                SimHost.Database = null;   // 에디트 모드 도구(배치물 베이커 등)가 새 팩을 다시 읽게
+                ViewCatalogBaker.Bake();
+            }
             catch (System.Exception e) { Debug.LogError("[v2 export] 실패: " + e.Message); }
             foreach (var t in tabs) t.SaveExtraFiles(import);
             hasUnsavedChanges = false;
-            if (import) GameDataImporter.ImportAll();
             RefreshSharedStat();
         }
 
@@ -171,7 +176,7 @@ namespace CoreDawn.EditorTools
                 { LoadFile(); BuildShell(); }
             }) { text = "다시 불러오기" });
             bar.Add(new Button(() => Save(false)) { text = "저장" });
-            var si = new Button(() => Save(true)) { text = "저장 + 임포트" };
+            var si = new Button(() => Save(true)) { text = "저장 + 맵 임포트" };
             si.AddToClassList("gd-btn-primary");   // button.primary — 시안 테두리·글자
             bar.Add(si);
 

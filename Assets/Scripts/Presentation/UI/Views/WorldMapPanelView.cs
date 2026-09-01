@@ -8,6 +8,7 @@ using CoreDawn.Worlds;
 using CoreDawn.Data;
 using InputEvent = CoreDawn.Inputs.InputEvent;
 using CoreDawn.Sim;
+using CoreDawn.Save;
 
 namespace CoreDawn.UI
 {
@@ -268,7 +269,7 @@ namespace CoreDawn.UI
             if (map.nodes != null)
                 foreach (var n in map.nodes)
                 {
-                    Put(n.cell.x, n.cell.y, NodeColor(n.item));   // 광맥은 한 칸짜리
+                    Put(n.cell.x, n.cell.y, NodeColor(SaveRefs.Item(n.itemId)));   // 광맥은 한 칸짜리
                 }
 
             if (map.nightSpawnPoints != null)

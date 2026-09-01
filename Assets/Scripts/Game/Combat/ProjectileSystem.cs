@@ -405,28 +405,9 @@ namespace CoreDawn.Combat
         // ── 배율 ────────────────────────────────────────────────────
 
         /// <summary>
-        /// 발사기 배율(damageMultiplier)을 피해형(Damage·DoT) 항목에만 곱한다 —
-        /// 배율 1.5 발사기가 감속탄을 쏜다고 감속(비율형 value)이 뭉개지면 안 된다.
-        /// 총·타워 공용 (탄약이 효과의 주인, 발사기는 배율).
-        /// </summary>
-        public static EffectEntry[] ScaleDamage(EffectEntry[] effects, float multiplier)
-        {
-            if (effects == null || Mathf.Approximately(multiplier, 1f)) return effects;
-
-            var scaled = new EffectEntry[effects.Length];
-            for (int i = 0; i < effects.Length; i++)
-            {
-                var entry = effects[i];
-                bool damageLike = entry.effect is DamageEffectSO || entry.effect is DamageOverTimeEffectSO;
-                scaled[i] = damageLike ? new EffectEntry(entry.effect, entry.value * multiplier) : entry;
-            }
-            return scaled;
-        }
-
-        /// <summary>
         /// 피해 비례 넉백을 효과 목록에 얹는다 — value = 즉발 피해(Damage) 합 × perDamage.
         /// 탄약이 넉백을 직접 명시했으면(유탄 등 수동 튜닝) 그것을 존중하고 얹지 않는다.
-        /// 배율(ScaleDamage·BakeOutgoing)이 구워진 뒤에 불러야 최종 피해에 비례한다.
+        /// 배율(BakeOutgoing)이 구워진 뒤에 불러야 최종 피해에 비례한다.
         /// </summary>
         public static Effect[] AppendDamageKnockback(Effect[] effects, EffectSpec knockback, float perDamage)
         {
