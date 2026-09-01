@@ -32,8 +32,6 @@ namespace CoreDawn.Sim
     /// </summary>
     public sealed class TutorialStepDef : Def
     {
-        [JsonProperty("displayName")] public string DisplayName;
-        [JsonProperty("description")] public string Description;
         [JsonProperty("order")] public int Order;
         [JsonProperty("tag")] public string Tag = "GUIDE";
         [JsonProperty("body")] public string Body;

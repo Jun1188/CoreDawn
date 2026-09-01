@@ -32,6 +32,18 @@ namespace CoreDawn.EditorTools
             ["Gun"] = "gun", ["Tutorial"] = "tutorial",
         };
 
+        /// <summary>옛 v1 id("Item:IronOre") → 팩 id("coredawn:item/iron_ore") — 에디터 도구(맵 임포터·이관)가 쓴다. 이미 팩 id면 그대로.</summary>
+        public static string PackIdOf(string v1Id)
+        {
+            if (string.IsNullOrEmpty(v1Id) || v1Id.Contains("/")) return v1Id;
+            int i = v1Id.IndexOf(':');
+            if (i < 0 || !SectionOf.TryGetValue(v1Id.Substring(0, i), out var section)) return v1Id;
+            var name = Regex.Replace(v1Id.Substring(i + 1), "^Recipe_", "");
+            var s = Regex.Replace(name, "(?<=[a-z0-9])(?=[A-Z])", "_");
+            s = Regex.Replace(s, "(?<=[A-Z])(?=[A-Z][a-z])", "_");
+            return $"{Pack}:{section}/{s.ToLowerInvariant()}";
+        }
+
         [MenuItem("Tools/Factory/Export pack data.json (v2)")]
         public static void ExportMenu()
         {

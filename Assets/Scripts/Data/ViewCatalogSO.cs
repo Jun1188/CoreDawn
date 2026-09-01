@@ -33,6 +33,9 @@ namespace CoreDawn.Data
 
         public List<Entry> entries = new();
 
+        [Tooltip("바닥 아이템 공용 프리팹 — 모든 아이템이 같은 프리팹을 쓰고 아이콘만 바꾼다. 팩 view에는 아직 자리가 없어(5a-4) 카탈로그가 든다; 베이커는 이 필드를 건드리지 않는다.")]
+        public GameObject droppedItemPrefab;
+
         Dictionary<string, Entry> byId;
 
         Entry Find(string id)

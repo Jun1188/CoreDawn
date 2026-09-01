@@ -16,7 +16,8 @@ namespace CoreDawn.Tests
     public class FactoryTest : MonoBehaviour
     {
         [Header("ScriptableObjects — Inspector에서 연결")]
-        public ItemDataSO ironOreSO;
+        public string ironOreId;
+        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public ItemDataSO ironOreSO;
 
         private Camera mainCamera;
         private string currentBuildingInfo = "";

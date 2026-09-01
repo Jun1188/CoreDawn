@@ -51,7 +51,7 @@ namespace CoreDawn.Tests
         static GridSystem Grid => _grid ??= (FindFirstObjectByType<PlacementSystem>() is { } p ? new GridSystem(p.CellSize, p.GridOrigin) : new GridSystem(1f, Vector3.zero));
 
         ItemDef _ore;
-        BuildingDataSO _minerSO, _storageSO;
+        EntityDef _minerDef, _storageDef;
         BuildingModule _miner, _storage;
 
         void OnEnable()  => Application.logMessageReceived += OnLog;
@@ -92,11 +92,11 @@ namespace CoreDawn.Tests
             _ore = nodeA.Resource;
             if (_ore == null) return Fatal("광맥 A에 자원 아이템이 없습니다.");
 
-            var db = BuildingDatabaseSO.LoadDefault();
-            _minerSO   = db != null ? db.buildings.FirstOrDefault(b => b is MinerDataSO)   : null;
-            _storageSO = db != null ? db.buildings.FirstOrDefault(b => b is StorageDataSO) : null;
-            if (_minerSO == null || _storageSO == null)
-                return Fatal("BuildingDatabase에서 채굴기/저장고 SO를 찾지 못했습니다.");
+            var db = SimHost.Database;
+            _minerDef   = db?.Entity(SimDatabase.IdOf(db.Pack, "entity", "miner"));
+            _storageDef = db?.Entity(SimDatabase.IdOf(db.Pack, "entity", "storage"));
+            if (_minerDef == null || _storageDef == null)
+                return Fatal("팩에서 채굴기(miner)/저장고(storage) 정의를 찾지 못했습니다.");
 
             return true;
         }
@@ -123,11 +123,11 @@ namespace CoreDawn.Tests
 
             // 광맥 위 설치 — 실제 배치 경로(PlacementBridge)로 심 + 뷰를 함께 만든다
             Case("D4 광맥 위 채굴기는 설치 허용 판정",
-                 Factory.CanPlace(_minerSO.Def, nodeA.Cell, Vector2Int.one, out _),
+                 Factory.CanPlace(_minerDef, nodeA.Cell, Vector2Int.one, out _),
                  "CanPlace(광맥 위) == true 여야 함");
 
-            _miner   = Place(_minerSO,   nodeA.Cell);
-            _storage = Place(_storageSO, nodeA.Cell + Vector2Int.right);
+            _miner   = Place(_minerDef,   nodeA.Cell);
+            _storage = Place(_storageDef, nodeA.Cell + Vector2Int.right);
 
             int extractedBeforeMining = nodeA.TotalExtracted;
             yield return new WaitForSeconds(4f);
@@ -143,16 +143,16 @@ namespace CoreDawn.Tests
             // 광맥 밖 설치 — 판정은 false, 그래도 강행하면 러너가 되돌린다(안전망)
             Vector2Int off = FarEmptyCell();
             Case("D7 광맥 밖 채굴기는 설치 차단 판정 + 사유",
-                 !Factory.CanPlace(_minerSO.Def, off, Vector2Int.one, out string why) &&
+                 !Factory.CanPlace(_minerDef, off, Vector2Int.one, out string why) &&
                  !string.IsNullOrEmpty(why),
                  $"사유: {why ?? "(없음)"}");
 
             Case("D8 멀티타일 채굴기는 덮는 칸 전부가 광맥이어야 한다 (부분 덮기 금지)",
-                 Factory.CanPlace(_minerSO.Def, nodeB.Cell, Vector2Int.one, out _) &&
-                 !Factory.CanPlace(_minerSO.Def, nodeB.Cell, new Vector2Int(2, 2), out _),
+                 Factory.CanPlace(_minerDef, nodeB.Cell, Vector2Int.one, out _) &&
+                 !Factory.CanPlace(_minerDef, nodeB.Cell, new Vector2Int(2, 2), out _),
                  "1x1=허용, 광맥 한 칸 위 2x2=차단");
 
-            var stray = Place(_minerSO, off);          // 판정을 무시하고 강행한 경우(심 직접 배치)
+            var stray = Place(_minerDef, off);          // 판정을 무시하고 강행한 경우(심 직접 배치)
             yield return null; yield return null;
             Case("D9 광맥 밖에 강행 설치된 채굴기는 캘 광맥이 없어 아무것도 하지 않는다",
                  stray != null && stray.Owner.Get<ExtractorModule>() is { } sm && sm.Deposits.Count == 0 && sm.Target == null,
@@ -222,10 +222,10 @@ namespace CoreDawn.Tests
                  $"Day {dayBefore} → {TimeManager.Instance.DayNumber}, 건축={TimeManager.Instance.IsBuildingAllowed}");
 
             Case("M2 파괴된 자리에 다시 설치할 수 있다 (광맥은 그대로)",
-                 Factory.CanPlace(_minerSO.Def, nodeA.Cell, Vector2Int.one, out _),
+                 Factory.CanPlace(_minerDef, nodeA.Cell, Vector2Int.one, out _),
                  "CanPlace(같은 광맥) == true 여야 함");
 
-            _miner = Place(_minerSO, nodeA.Cell);
+            _miner = Place(_minerDef, nodeA.Cell);
             int before = Stored();
             yield return new WaitForSeconds(4f);
 
@@ -236,7 +236,7 @@ namespace CoreDawn.Tests
             // 작업3의 생명주기 계약 ②: 껍데기만 사라져도 심이 그리드에 유령으로 남지 않는다.
             // (전투·철거를 거치지 않고 GameObject가 직접 파괴되는 경로)
             var orphanCell = nodeB.Cell;
-            var orphan = Place(_minerSO, orphanCell);
+            var orphan = Place(_minerDef, orphanCell);
             yield return null;
             var orphanView = FactoryBootstrap.Instance.GetView(orphan);
             if (orphanView != null) Destroy(orphanView.gameObject);
@@ -281,13 +281,13 @@ namespace CoreDawn.Tests
         /// 그 자리의 표면(지면, 광맥 위라면 광맥 슬래브 윗면) + PlacementSystem.SurfaceLift.
         /// 덕분에 채굴기를 광맥에 지으면 하네스로 지어도 광맥 윗면에 올라앉는다.
         /// </summary>
-        BuildingModule Place(BuildingDataSO so, Vector2Int cell)
+        BuildingModule Place(EntityDef def, Vector2Int cell)
         {
-            Vector2Int size = BuildingPorts.RotatedSize(so.Def, 0);
+            Vector2Int size = BuildingPorts.RotatedSize(def, 0);
             Vector3 pos = Grid.GetFootprintCenter(cell, size);
-            pos.y = SurfaceTopAt(pos) + PlacementSystem.SurfaceLift(so.Def, cell);
+            pos.y = SurfaceTopAt(pos) + PlacementSystem.SurfaceLift(def, cell);
 
-            return PlacementBridge.Place(so.Def, cell, pos);
+            return PlacementBridge.Place(def, cell, pos);
         }
 
         /// <summary>표면 y — Ground 레이어를 위에서 훑는다. 광맥 슬래브도 Ground라 광맥 위면 그 윗면이 나온다.</summary>

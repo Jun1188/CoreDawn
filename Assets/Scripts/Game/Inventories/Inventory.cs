@@ -20,7 +20,7 @@ namespace CoreDawn.Inventories
         public int slotCount = 36; // 마크 인벤토리 기본 칸수
 
         [Tooltip("시작 아이템 — 씬/프리팹에서 저작 (상자 초기 내용물 등). 슬롯 위치 그대로 컨테이너에 주입된다.\n런타임 상태는 Container가 소유하며 이 배열로 되돌아오지 않는다.")]
-        [SerializeField] private ItemStackAuthoring[] slots;   // SO 저작 — 심의 ItemStack(정의)은 직렬화되지 않는다   // 구 공개 배열과 같은 이름 — 기존 씬 직렬화 데이터 유지
+        [SerializeField] private ItemStackAuthoring[] slots;   // 팩 id 저작 — 심의 ItemStack(정의)은 직렬화되지 않는다   // 구 공개 배열과 같은 이름 — 기존 씬 직렬화 데이터 유지
 
         private ItemContainer container;
 
@@ -46,7 +46,7 @@ namespace CoreDawn.Inventories
             if (SaveLoadContext.IsRestoring) return;
             for (int i = 0; i < slots.Length && i < container.SlotCount; i++)
             {
-                var s = slots[i] != null ? slots[i].ToStack() : ItemStack.Empty;   // SO 저작 → 정의 스택 (팩에 없는 아이템은 건너뛴다)
+                var s = slots[i] != null ? slots[i].ToStack() : ItemStack.Empty;   // id → 정의 스택 (팩에 없는 아이템은 경고 후 건너뛴다)
                 if (s.IsEmpty) continue;
                 // 상한 초과로 저작해 두면 TryPutAt이 통째로 거절한다 — 저작 실수로 상자가
                 // 텅 비어 열리는 것보다 들어가는 만큼이라도 넣는 편이 낫다

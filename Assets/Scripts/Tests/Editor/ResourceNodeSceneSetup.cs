@@ -26,7 +26,7 @@ namespace CoreDawn.Tests
     {
         const string SourceScene = "Assets/Scenes/Test/MainScene.unity";
         const string TargetScene = "Assets/Scenes/Test/ResourceNodeTest.unity";
-        const string OrePath     = "Assets/Data/Item/IronOre.asset";
+        const string OreId = "coredawn:item/iron_ore";
 
         // CLI 실행이 도메인 리로드(플레이모드 진입)를 건너 살아남게 하는 표식
         const string RunningKey  = "ResourceNodeSceneSetup.Running";
@@ -63,8 +63,7 @@ namespace CoreDawn.Tests
             if (!EditorSceneManager.SaveScene(scene, TargetScene))
                 throw new IOException($"씬 복사 실패: {SourceScene} → {TargetScene}");
 
-            var ore = AssetDatabase.LoadAssetAtPath<ItemDataSO>(OrePath);
-            if (ore == null) throw new FileNotFoundException($"광석 아이템을 찾을 수 없습니다: {OrePath}");
+            const string ore = OreId;   // 광맥 뷰는 팩 아이템 id를 적는다 — 정의는 플레이 때 팩에서 풀린다
 
             // 씬의 PlacementSystem 좌표계를 그대로 쓴다 (광맥과 배치가 어긋나지 않도록)
             var placement = Object.FindFirstObjectByType<PlacementSystem>();
@@ -93,7 +92,7 @@ namespace CoreDawn.Tests
         }
 
         /// <summary>광맥 하나 — 저작은 ResourceNodeAuthoring이 담당한다 (PlayLoopTest와 공유).</summary>
-        static ResourceDepositView CreateNode(string name, ItemDataSO ore, Vector2Int cell, Vector2Int size,
+        static ResourceDepositView CreateNode(string name, string ore, Vector2Int cell, Vector2Int size,
                                        float interval, int amount, int max, GridSystem grid)
             => ResourceNodeAuthoring.Create(name, ore, cell, size, interval, amount, max, grid);
 

@@ -34,7 +34,7 @@ namespace CoreDawn.Tests
     {
         const string SourceScene = "Assets/Scenes/Test/TestCombat/TestCombat1.0.unity";
         const string TargetScene = "Assets/Scenes/Test/PlayLoopTest.unity";
-        const string OrePath     = "Assets/Data/Item/IronOre.asset";
+        const string OreId = "coredawn:item/iron_ore";
         const string VolumeProfile = "Assets/Scenes/Test/MainScene/Global Volume Profile.asset";
 
         // 광맥 자리 — 코어/타워와 겹치지 않게 원점에서 떨어뜨린다
@@ -66,8 +66,7 @@ namespace CoreDawn.Tests
             if (!EditorSceneManager.SaveScene(scene, TargetScene))
                 throw new IOException($"씬 복사 실패: {SourceScene} → {TargetScene}");
 
-            var ore = AssetDatabase.LoadAssetAtPath<ItemDataSO>(OrePath);
-            if (ore == null) throw new FileNotFoundException($"광석 아이템을 찾을 수 없습니다: {OrePath}");
+            const string ore = OreId;   // 광맥 뷰는 팩 아이템 id를 적는다 — 정의는 플레이 때 팩에서 풀린다
 
             // 광맥은 배치 좌표계(PlacementSystem)를 그대로 따른다
             var placement = Object.FindFirstObjectByType<PlacementSystem>();

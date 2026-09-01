@@ -448,13 +448,13 @@ namespace CoreDawn.UI
         void UpdateAmmo()
         {
             var weapon = player != null && player.weaponManager != null ? player.weaponManager.CurrentWeapon : null;
-            bool has = weapon != null && weapon.gunData != null;
+            bool has = weapon != null;
 
             Show(ammoBox, has);
             if (!has) { shownGun = null; return; }
 
             // 근접무기(무한 탄약)는 셀 탄이 없다 — 탄창 칸을 ∞로 접어 장전 수/최대치를 지운다.
-            bool unlimited = weapon.gunData.unlimitedAmmo;
+            bool unlimited = weapon.Def.UnlimitedAmmo;
 
             // 무기에 딸린 값은 무기가 바뀔 때만 다시 만든다 (ToUpperInvariant가 매번 새 문자열이었다)
             if (shownGun != weapon)

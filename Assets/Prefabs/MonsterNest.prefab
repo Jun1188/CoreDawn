@@ -106,29 +106,25 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 500
-  dropItem: {fileID: 0}
   spawnPoints:
   - point: {fileID: 0}
     linkedBoss: {fileID: 0}
+    bossId: coredawn:entity/boss
     bossData: {fileID: 11400000, guid: 6b6c8f9c2ce6fec43bda25f75dba63b7, type: 2}
-    isDestroyed: 0
-    destroyedDay: -1
   - point: {fileID: 0}
     linkedBoss: {fileID: 0}
+    bossId: coredawn:entity/boss
     bossData: {fileID: 11400000, guid: 6b6c8f9c2ce6fec43bda25f75dba63b7, type: 2}
-    isDestroyed: 0
-    destroyedDay: -1
   indestructibleVisuals:
   - {fileID: 876364608623266681}
   destructibleVisuals: []
-  bossRecoveryDays: 2
-  nestRecoveryDays: 3
+  defenderId: 
+  defenderMonster: {fileID: 0}
   warningRange: 25
   triggerRange: 15
   defenseSpawnAmount: 3
   defenseSpawnCooldown: 10
+  bossFightSpawnCooldown: 6
   daySpawnMinRange: 2
   daySpawnMaxRange: 15
 --- !u!1 &7209407692156883048

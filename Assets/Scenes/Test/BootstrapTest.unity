@@ -205,27 +205,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a3a311cbd6bd6a4ab71f8bb72f398a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TestCombatBootstrap
+  startingWeaponId: coredawn:item/rifle
   startingWeapon: {fileID: 11400000, guid: 59085cd7adfb1e94baf26c6d7796ddb7, type: 2}
   startingItems:
-  - item: {fileID: 11400000, guid: 67b60f73b753fdd46b70a78b3cb04c60, type: 2}
+  - itemId: coredawn:item/pistol
+    item: {fileID: 11400000, guid: 67b60f73b753fdd46b70a78b3cb04c60, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: ec0bbffefc3668f4791690246010aab6, type: 2}
+  - itemId: coredawn:item/shotgun
+    item: {fileID: 11400000, guid: ec0bbffefc3668f4791690246010aab6, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: ea551c6dfe9887c48b352c6cdb4af230, type: 2}
+  - itemId: coredawn:item/sniper
+    item: {fileID: 11400000, guid: ea551c6dfe9887c48b352c6cdb4af230, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: 3956c3e5a8910a34fa6fa8895890eba0, type: 2}
+  - itemId: coredawn:item/grenade_launcher
+    item: {fileID: 11400000, guid: 3956c3e5a8910a34fa6fa8895890eba0, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: e17b9bc7dbf8648459fd1b9b42945fe1, type: 2}
+  - itemId: coredawn:item/energy_rifle
+    item: {fileID: 11400000, guid: e17b9bc7dbf8648459fd1b9b42945fe1, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
+  - itemId: coredawn:item/basic_ammo
+    item: {fileID: 11400000, guid: 2f7c216a88545f540bbff0b3adcecadd, type: 2}
     amount: 1000
-  - item: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
+  - itemId: coredawn:item/dense_ammo
+    item: {fileID: 11400000, guid: 39aafcb6cedacd944bfa7cbfdd239124, type: 2}
     amount: 60
-  - item: {fileID: 11400000, guid: e5a738777b5d0c6439fe96693c249825, type: 2}
+  - itemId: coredawn:item/crystal_ammo
+    item: {fileID: 11400000, guid: e5a738777b5d0c6439fe96693c249825, type: 2}
     amount: 30
-  - item: {fileID: 11400000, guid: fb4b36fa8fcb05248a3cf6d0c0d1a668, type: 2}
+  - itemId: coredawn:item/energy_cell_ammo
+    item: {fileID: 11400000, guid: fb4b36fa8fcb05248a3cf6d0c0d1a668, type: 2}
     amount: 60
-  - item: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
+  - itemId: coredawn:item/grenade
+    item: {fileID: 11400000, guid: d6171fe0628f52844a9a917d9e730481, type: 2}
     amount: 20
 --- !u!4 &500273057
 Transform:

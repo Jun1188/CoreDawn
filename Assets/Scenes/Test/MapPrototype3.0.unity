@@ -9604,12 +9604,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   slotCount: 36
   slots:
-  - item: {fileID: 0}
+  - itemId: 
     amount: 32
-    maxStackSize: 32
-  - item: {fileID: 0}
+    item: {fileID: 0}
+  - itemId: 
     amount: 1
-    maxStackSize: 5
+    item: {fileID: 0}
 --- !u!114 &152612382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21527,20 +21527,40 @@ PrefabInstance:
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[1].itemId
+      value: coredawn:item/iron_ingot
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: startingItems.Array.data[2].amount
       value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[2].itemId
+      value: coredawn:item/iron_plate
       objectReference: {fileID: 0}
     - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: startingItems.Array.data[3].amount
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[3].itemId
+      value: coredawn:item/iron_gear
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: startingItems.Array.data[4].amount
       value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[4].itemId
+      value: coredawn:item/basic_ammo
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: startingItems.Array.data[5].amount
       value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
+      propertyPath: startingItems.Array.data[5].itemId
+      value: coredawn:item/ship_debris
       objectReference: {fileID: 0}
     - target: {fileID: 8415338401495421512, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: startingItems.Array.data[0].maxStackSize
@@ -51932,8 +51952,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98e7c19a9e491eb42b2001a10c292674, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimeManager
-  dayDuration: 60
-  nightDuration: 40
 --- !u!1001 &819371426
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -127850,6 +127868,7 @@ MonoBehaviour:
   cellSize: 2
   resourceNodePrefab: {fileID: 8478676915281728500, guid: ea0756f9af96a5a439fc911b4cb48825, type: 3}
   nestPrefab: {fileID: 4760263801846313922, guid: c0eb0ac1195a4a441b10b27d04a22b78, type: 3}
+  treePrefabs: []
 --- !u!1001 &1978577604
 PrefabInstance:
   m_ObjectHideFlags: 0

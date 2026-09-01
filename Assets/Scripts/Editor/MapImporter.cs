@@ -222,6 +222,7 @@ namespace CoreDawn.EditorTools
 
                 list.Add(new ResourceNodeSpec
                 {
+                    itemId = GameDataExporterV2.PackIdOf(n.item),
                     item = item,
                     cell = new Vector2Int(n.x, n.y),
                 });

@@ -9,6 +9,7 @@ using CoreDawn.Worlds;
 using CoreDawn.Data;
 using CoreDawn.Sound;
 using CoreDawn.Sim;
+using CoreDawn.Save;
 
 namespace CoreDawn.ResourceNodes
 {
@@ -27,21 +28,23 @@ namespace CoreDawn.ResourceNodes
     public class ResourceDepositView : EntityView, IHoldInteractable
     {
         [Header("자원")]
-        [Tooltip("이 칸에 묻힌 자원 — 맵이 굳힌 광맥은 베이커가 채우고, 씬에 직접 놓는 광맥은 손으로 고른다.")]
-        [SerializeField] private ItemDataSO resource;   // 옛 필드 이름 유지 — 기존 프리팹·씬 값이 그대로 읽힌다
+        [Tooltip("이 칸에 묻힌 자원의 팩 id(coredawn:item/iron_ore) — 맵이 굳힌 광맥은 베이커가 채우고, 씬에 직접 놓는 광맥은 손으로 적는다.")]
+        [SerializeField] private string resourceId;
+        [SerializeField] [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] private ItemDataSO resource;
 
         [Header("기즈모")]
         [SerializeField] private Color gizmoColor = new Color(1f, 0.75f, 0.1f, 0.35f);
 
         public ResourceDepositModule Deposit => Entity?.Get<ResourceDepositModule>();
-        /// <summary>저작된 자원(SO) — 심에 서기 전(에디터·Connect 전)에 읽는다.</summary>
-        public ItemDataSO AuthoredResource => resource;
-        public ItemDef Resource => Deposit != null ? Deposit.Resource : (resource != null ? resource.Def : null);
+        /// <summary>저작된 자원 id — 심에 서기 전(에디터·Connect 전)에 읽는다.</summary>
+        public string AuthoredResourceId => resourceId;
+        ItemDef AuthoredResource => string.IsNullOrEmpty(resourceId) ? null : SaveRefs.Item(resourceId);
+        public ItemDef Resource => Deposit != null ? Deposit.Resource : AuthoredResource;
         public Vector2Int Cell => Deposit != null ? Deposit.Cell : CellOfTransform();
         public int TotalExtracted => Deposit?.TotalExtracted ?? 0;
 
         /// <summary>베이커·런타임 스폰이 자원을 적는다.</summary>
-        public void Configure(ItemDataSO item) => resource = item;
+        public void Configure(ItemDef item) => resourceId = item?.Id;
 
         public override string PingLabel
         {
@@ -80,10 +83,10 @@ namespace CoreDawn.ResourceNodes
         {
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null) return false;
-            var def = DepositDefs.For(resource != null ? resource.Def : null);
+            var def = DepositDefs.For(AuthoredResource);
             if (def == null)
             {
-                Debug.LogError($"[ResourceDeposit] '{name}': 자원 '{(resource != null ? resource.Id : "(없음)")}'을 캐는 광맥 정의가 팩에 없습니다.", this);
+                Debug.LogError($"[ResourceDeposit] '{name}': 자원 '{(string.IsNullOrEmpty(resourceId) ? "(없음)" : resourceId)}'을 캐는 광맥 정의가 팩에 없습니다.", this);
                 return false;
             }
             if (boot.Factory.DepositAt(cell) != null)

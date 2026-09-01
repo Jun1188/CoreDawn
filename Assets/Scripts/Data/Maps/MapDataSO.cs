@@ -100,8 +100,9 @@ namespace CoreDawn.Data
     [Serializable]
     public struct ResourceNodeSpec
     {
-        [Tooltip("이 칸에 묻힌 자원. 광맥은 한 칸짜리다 — 넓은 광맥은 칸을 여럿 놓는다. 재생·상한·난이도 수치는 팩의 광맥 정의(ResourceDeposit)가 갖는다.")]
-        public ItemDataSO item;
+        [Tooltip("이 칸에 묻힌 자원의 팩 id(coredawn:item/iron_ore). 광맥은 한 칸짜리다 — 넓은 광맥은 칸을 여럿 놓는다. 재생·상한·난이도 수치는 팩의 광맥 정의(ResourceDeposit)가 갖는다.")]
+        public string itemId;
+        [System.Obsolete("5a-3e 이관용 — SoRefMigrator가 id로 옮긴 뒤 삭제된다")] public ItemDataSO item;
         [Tooltip("광맥 칸.")]
         public Vector2Int cell;
     }

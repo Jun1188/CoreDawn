@@ -153,18 +153,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8c6f6fe7c81acb4ba44fcf2b390b7e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResourceNode
+  moveSpeed: 5
+  deathDelay: 2
+  destroyOnDeath: 1
+  resourceId: coredawn:item/iron_ore
   resource: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
-  size: {x: 1, y: 1}
-  extractInterval: 1
-  productionInterval: 0.5
-  amountPerCycle: 1
-  maxStock: 5
-  initialStock: 0
-  allowManualMining: 1
-  manualExtractSeconds: 3
-  manualYield: 1
-  currentStock: 0
-  snapToGrid: 1
   gizmoColor: {r: 1, g: 0.75, b: 0.1, a: 0.35}
 --- !u!1001 &6453884991471712344
 PrefabInstance:

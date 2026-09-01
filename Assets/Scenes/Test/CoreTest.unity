@@ -119,17 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!114 &1763535 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7292767164685691773, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
-  m_PrefabInstance: {fileID: 331194379}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83d0fd681cf63984c96cde90fb48bad7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &50308953
 GameObject:
   m_ObjectHideFlags: 0
@@ -339,12 +328,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   slotCount: 36
   slots:
-  - item: {fileID: 11400000, guid: e92829eb1699dab47a38ddd2df1e22ad, type: 2}
+  - itemId: 
     amount: 32
-    maxStackSize: 32
-  - item: {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
+    item: {fileID: 11400000, guid: e92829eb1699dab47a38ddd2df1e22ad, type: 2}
+  - itemId: 
     amount: 1
-    maxStackSize: 5
+    item: {fileID: 11400000, guid: 36923137f241d1946a83893261f4b9cb, type: 2}
 --- !u!114 &152612382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -799,7 +788,7 @@ PrefabInstance:
     - target: {fileID: 8239470649360977166, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: 'weapons.Array.data[1]'
       value: 
-      objectReference: {fileID: 1763535}
+      objectReference: {fileID: 0}
     - target: {fileID: 8247197806904067018, guid: 9c0e1513e619b28418f8a1a22933d74a, type: 3}
       propertyPath: m_Layer
       value: 12
@@ -1160,6 +1149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d13d13fee2e387499f9af20db3d9c7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FactoryTest
+  ironOreId: coredawn:item/iron_ore
   ironOreSO: {fileID: 11400000, guid: 607e314f4e7ebd443adabb092a59beee, type: 2}
 --- !u!114 &479437656
 MonoBehaviour:
@@ -1175,7 +1165,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactoryBootstrap
   _tps: 10
   _maxCatchUpTicks: 5
+  _cellSize: 1
+  _gridOrigin: {x: 0, y: 0, z: 0}
   _autoPlaceCore: 1
+  _coreId: 
   _coreData: {fileID: 0}
   _coreOrigin: {x: 0, y: 0}
   _coreRotationSteps: 0
@@ -3912,16 +3905,17 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1024
-  database: {fileID: 0}
   cellSize: 1
   gridOrigin: {x: 0, y: 0, z: 0}
   raycastStartHeight: 100
   maxSlopeHeightDiff: 0.25
+  fixedBuildHeight: 1
+  buildHeightOffset: 0
   validMat: {fileID: 2100000, guid: 8101430187e8a5a479f3ed5dfedd8bfa, type: 2}
   invalidMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
   demolishHighlightMat: {fileID: 2100000, guid: c2a0653153f3e1040ae176911b5a4cf7, type: 2}
-  showPortsOnAim: 1
   demolishHoldSeconds: 0.4
+  buildRangeFallback: 16
 --- !u!4 &1532001791
 Transform:
   m_ObjectHideFlags: 0
@@ -4063,17 +4057,6 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 100
-  movement:
-    moveSpeed: 5
-    rotateSpeed: 720
-    separationRadius: 0.8
-    separationWeight: 1.5
-  combat:
-    attackDamage: 10
-    attackRange: 1.5
-    attackCooldown: 2
 --- !u!54 &1765171981
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4586,8 +4569,6 @@ MonoBehaviour:
   moveSpeed: 5
   deathDelay: 2
   destroyOnDeath: 1
-  health:
-    maxHealth: 100
 --- !u!65 &1881460321
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5002,6 +4983,8 @@ MonoBehaviour:
   mapBounds: {fileID: 0}
   gridSize: {x: 80, y: 80}
   originPosition: {x: -20, y: 0, z: -20}
+  buildingCostPerHp: 0.5
+  buildingCostCap: 200
 --- !u!4 &2114508386
 Transform:
   m_ObjectHideFlags: 0

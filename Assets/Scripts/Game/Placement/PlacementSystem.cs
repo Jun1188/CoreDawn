@@ -36,8 +36,6 @@ namespace CoreDawn.Placement
         [Header("References")]
         [SerializeField] private Camera cam;
         [SerializeField] private LayerMask groundMask;
-        [Tooltip("건물 목록 — 비워두면 Resources의 BuildingDatabase를 자동 사용. 수동 배열 연결은 폐기됨.")]
-        [SerializeField] private BuildingDatabaseSO database;
 
         [Header("Grid")]
         [SerializeField] private float cellSize = 1f;
@@ -170,8 +168,6 @@ namespace CoreDawn.Placement
             if (portFlow == null) portFlow = gameObject.AddComponent<PortFlowOverlay>();
             portFlow.Configure(cellSize, gridOrigin);
 
-            if (database == null) database = BuildingDatabaseSO.LoadDefault();
-            if (database == null) Debug.LogError("[PlacementSystem] BuildingDatabase가 없습니다 (Resources/BuildingDatabase).", this);
         }
 
         // 주입된 맵 — 강·절벽에는 짓지 못한다. 없으면 지형 높이·점유만으로 판정한다(구 동작).
