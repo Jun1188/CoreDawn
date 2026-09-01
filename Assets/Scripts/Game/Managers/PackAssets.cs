@@ -32,6 +32,9 @@ namespace CoreDawn.Managers
 
         public static bool IsReady { get; private set; }
 
+        /// <summary>preload 진행도(읽은 파일 수 / 전체) — 로딩 화면용.</summary>
+        public static (int done, int total) Progress { get; private set; }
+
         /// <summary>팩 상대 경로("models/tree_broadleaf_01.glb")인가 — 아니면 옛 guid 참조.</summary>
         public static bool IsPackPath(string s) => !string.IsNullOrEmpty(s) && s.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
 
@@ -65,12 +68,19 @@ namespace CoreDawn.Managers
             foreach (var d in db.Guns.Values) Collect(d);
             foreach (var d in db.Items.Values) Collect(d);
 
-            int ok = 0;
+            int ok = 0, done = 0;
+            Progress = (0, paths.Count + materialIds.Count);
             foreach (var rel in paths)
+            {
                 if (await Load(db.Pack, rel) != null) ok++;
+                Progress = (++done, Progress.total);
+            }
             int mats = 0;
             foreach (var id in materialIds)
+            {
                 if (MaterialOf(id) != null) mats++;
+                Progress = (++done, Progress.total);
+            }
             IsReady = true;
             Debug.Log($"[PackAssets] {db.Pack}: glb {ok}/{paths.Count} · 재질 {mats}/{materialIds.Count} 로드");
         }
@@ -194,7 +204,7 @@ namespace CoreDawn.Managers
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); root = null; preloading = null; missing = null; IsReady = false; }
+        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); root = null; preloading = null; missing = null; IsReady = false; Progress = (0, 0); }
 
         /// <summary>에디터 도구용 — 읽어 둔 것을 전부 버린다(팩이 바뀌었을 때).</summary>
         public static void Clear()

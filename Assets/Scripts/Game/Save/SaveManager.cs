@@ -305,13 +305,14 @@ namespace CoreDawn.Save
             ResetPersistentSingletons();
 
             Time.timeScale = 1f;   // 일시정지 메뉴에서 불러오는 경로 대비
-            SceneManager.LoadScene(scene, LoadSceneMode.Single);
+            BootScene.Enter(scene);   // 부팅 씬(로딩 게이트)을 거친다 — 팩 자원이 다 읽힌 뒤 월드가 뜬다
             return true;
         }
 
         void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (mode != LoadSceneMode.Single) return;
+            if (BootScene.IsBootScene(scene)) return;   // 부팅 씬은 지나가는 길 — 복원은 목표 씬(World)에서
             if (SaveLoadContext.Pending == null) return;
             StartCoroutine(RestoreAfterSceneReady());
         }
@@ -397,7 +398,7 @@ namespace CoreDawn.Save
             ResetPersistentSingletons();
 
             Time.timeScale = 1f;
-            SceneManager.LoadScene(scene, LoadSceneMode.Single);
+            BootScene.Enter(scene);   // 부팅 씬(로딩 게이트)을 거친다
             return true;
         }
 
