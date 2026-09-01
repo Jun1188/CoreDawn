@@ -6,7 +6,7 @@
 //   uv.y = 가로 축. 바닥판·립은 좌우 폭, 지느러미는 높이
 // 셰이더와 컴포넌트 양쪽을 다 뒤집으면 원위치이므로, 축을 손볼 일이 생기면 한쪽만 건드릴 것.
 
-Shader "LevelUp/PortFlow"
+Shader "CoreDawn/PortFlow"
 {
     Properties
     {

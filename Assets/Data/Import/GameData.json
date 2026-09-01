@@ -517,7 +517,7 @@
     {
       "id": "Material:FactoryColor",
       "displayName": "FactoryColor",
-      "shader": "Shader Graphs/FactoryColor",
+      "shader": "CoreDawn/FactoryColor",
       "textures": [
         {
           "name": "_SampleTexture2D_32b88678b18a440daef85734904b9e30_Texture_1_Texture2D",
@@ -537,7 +537,7 @@
     {
       "id": "Material:Glass",
       "displayName": "Glass",
-      "shader": "Shader Graphs/Glass",
+      "shader": "CoreDawn/Glass",
       "floats": [
         {
           "name": "_QueueControl",
@@ -825,7 +825,7 @@
     {
       "id": "Material:MoltenColor",
       "displayName": "MoltenColor",
-      "shader": "Shader Graphs/MoltenColor",
+      "shader": "CoreDawn/MoltenColor",
       "floats": [
         {
           "name": "_QueueControl",

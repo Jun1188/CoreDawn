@@ -161,7 +161,7 @@ namespace CoreDawn.Managers
             }
         }
 
-        /// <summary>팩 재질(materials 섹션) → Unity Material. 셰이더는 내장 이름으로 찾고, 텍스처는 팩 png. 없거나 틀리면 오류 + MissingAssets.Material(체커).</summary>
+        /// <summary>팩 재질(materials 섹션) → Unity Material. 셰이더는 내장 목록(BuiltinShaders)에서 이름으로 찾고, 텍스처는 팩 png. 없거나 틀리면 오류 + MissingAssets.Material(체커).</summary>
         public static Material MaterialOf(string id)
         {
             if (materials.TryGetValue(id, out var cached) && cached != null) return cached;
@@ -170,8 +170,8 @@ namespace CoreDawn.Managers
             if (def == null) { Debug.LogError($"[PackAssets] 재질 '{id}'가 팩 materials에 없습니다."); return MissingAssets.Material; }
             var v = def.View;
             string shaderName = (string)v?["shader"];
-            var shader = string.IsNullOrEmpty(shaderName) ? null : Shader.Find(shaderName);
-            if (shader == null) { Debug.LogError($"[PackAssets] 재질 '{id}': 셰이더 '{shaderName}'를 찾지 못했습니다(내장 셰이더 이름이어야 하고, 빌드에 포함돼 있어야 합니다)."); return MissingAssets.Material; }
+            var shader = BuiltinShaders.Of(shaderName);
+            if (shader == null) { Debug.LogError($"[PackAssets] 재질 '{id}': 셰이더 '{shaderName}' 없음 → 체커 재질."); return MissingAssets.Material; }
 
             var m = new Material(shader) { name = id };
             if (v["textures"] is JObject texs)

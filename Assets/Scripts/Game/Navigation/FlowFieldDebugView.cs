@@ -74,10 +74,10 @@ namespace CoreDawn.Navigation
         {
             meshRenderer = GetComponent<MeshRenderer>();
 
-            var shader = Shader.Find("LevelUp/DebugVertexColor");
+            var shader = CoreDawn.Managers.BuiltinShaders.Of("CoreDawn/DebugVertexColor");
             if (shader == null)
             {
-                Debug.LogWarning("[FlowFieldDebug] 'LevelUp/DebugVertexColor' 셰이더를 찾지 못했습니다.", this);
+                Debug.LogWarning("[FlowFieldDebug] 'CoreDawn/DebugVertexColor' 셰이더를 찾지 못했습니다.", this);
                 enabled = false;
                 return;
             }

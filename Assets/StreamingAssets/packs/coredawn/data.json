@@ -4934,7 +4934,7 @@
     "factory_color": {
       "displayName": "FactoryColor",
       "view": {
-        "shader": "Shader Graphs/FactoryColor",
+        "shader": "CoreDawn/FactoryColor",
         "textures": {
           "_SampleTexture2D_32b88678b18a440daef85734904b9e30_Texture_1_Texture2D": {
             "file": "textures/palette.png",
@@ -4949,7 +4949,7 @@
     "glass": {
       "displayName": "Glass",
       "view": {
-        "shader": "Shader Graphs/Glass",
+        "shader": "CoreDawn/Glass",
         "floats": {
           "_QueueControl": 0.0
         }
@@ -5120,7 +5120,7 @@
     "molten_color": {
       "displayName": "MoltenColor",
       "view": {
-        "shader": "Shader Graphs/MoltenColor",
+        "shader": "CoreDawn/MoltenColor",
         "floats": {
           "_QueueControl": 0.0
         }
