@@ -30,7 +30,7 @@ namespace CoreDawn.EditorTools
         [JsonIgnore] public MapImporter.NodeDto src;
     }
 
-    class GSpawnPt { public int x, y; public bool hasBoss; }
+    class GSpawnPt { public int x, y; public string boss = ""; public bool HasBoss => !string.IsNullOrEmpty(boss); }
 
     class GNest
     {
@@ -41,6 +41,7 @@ namespace CoreDawn.EditorTools
         public List<GSpawnPt> spawnPoints = new() { new GSpawnPt() };
         public float engageMinRange = 4, engageMaxRange = 18, chaseRange = 24, leashRange = 32;
         public bool engageDayOnly = true;
+        public string defender = "";   // 낮 방어 몬스터 id(비면 스포너 기본)
         [JsonIgnore] public MapImporter.NestDto src;
     }
 
@@ -61,7 +62,8 @@ namespace CoreDawn.EditorTools
     class GdMapTab : GdTab
     {
         public override string Title => "맵";
-        public GdMapTab(GameDataEditorWindow win) : base(win) { }
+        readonly GdCombatTab combat;   // 몬스터 id 목록(보스·방어자 드롭다운)
+        public GdMapTab(GameDataEditorWindow win, GdCombatTab combat) : base(win) { this.combat = combat; }
 
         // ── TILES / NODE_KINDS (map-editor.js 상단) ──
         class TileInfo
@@ -179,10 +181,11 @@ namespace CoreDawn.EditorTools
                             defenseSpawnAmount = n.defenseSpawnAmount > 0 ? n.defenseSpawnAmount : 3,
                             defenseSpawnCooldown = n.defenseSpawnCooldown > 0 ? n.defenseSpawnCooldown : 10,
                             spawnPoints = (n.spawnPoints is { Length: > 0 } sp
-                                ? sp.Select(p => new GSpawnPt { x = p.x, y = p.y, hasBoss = p.hasBoss })
+                                ? sp.Select(p => new GSpawnPt { x = p.x, y = p.y, boss = p.boss ?? "" })
                                 : new[] { new GSpawnPt() }.AsEnumerable()).ToList(),
                             engageMinRange = n.engageMinRange, engageMaxRange = n.engageMaxRange,
                             chaseRange = n.chaseRange, leashRange = n.leashRange, engageDayOnly = n.engageDayOnly,
+                            defender = n.defender ?? "",
                             src = n,
                         }).ToList(),
                         nightSpawnPoints = (m.nightSpawnPoints ?? Array.Empty<MapImporter.CellDto>())
@@ -259,7 +262,8 @@ namespace CoreDawn.EditorTools
                 d.warningRange = n.warningRange; d.triggerRange = n.triggerRange;
                 d.defenseSpawnAmount = n.defenseSpawnAmount; d.defenseSpawnCooldown = n.defenseSpawnCooldown;
                 d.spawnPoints = n.spawnPoints.Select(p => new MapImporter.SpawnDto
-                { x = p.x, y = p.y, hasBoss = p.hasBoss }).ToArray();
+                { x = p.x, y = p.y, boss = string.IsNullOrEmpty(p.boss) ? null : p.boss }).ToArray();
+                d.defender = string.IsNullOrEmpty(n.defender) ? null : n.defender;
                 d.engageMinRange = n.engageMinRange; d.engageMaxRange = n.engageMaxRange;
                 d.chaseRange = n.chaseRange; d.leashRange = n.leashRange; d.engageDayOnly = n.engageDayOnly;
                 return d;
@@ -316,7 +320,7 @@ namespace CoreDawn.EditorTools
                         warningRange = n.warningRange, triggerRange = n.triggerRange,
                         defenseSpawnAmount = n.defenseSpawnAmount, defenseSpawnCooldown = n.defenseSpawnCooldown,
                         spawnPoints = (n.spawnPoints ?? Array.Empty<MapImporter.SpawnDto>())
-                            .Select(p => new GSpawnPt { x = p.x, y = p.y, hasBoss = p.hasBoss }).ToList(),
+                            .Select(p => new GSpawnPt { x = p.x, y = p.y, boss = p.boss ?? "" }).ToList(),
                         engageMinRange = n.engageMinRange, engageMaxRange = n.engageMaxRange,
                         chaseRange = n.chaseRange, leashRange = n.leashRange, engageDayOnly = n.engageDayOnly,
                     }).ToList(),
@@ -879,6 +883,8 @@ namespace CoreDawn.EditorTools
             g2.Add(GCell("쿨타임", n.defenseSpawnCooldown, v => n.defenseSpawnCooldown = Mathf.Max(1, v),
                 "다시 나오기까지 걸리는 시간(초)", last: true));
 
+            propsBox.Add(Field2("방어자", MonsterDrop(n.defender, v => { n.defender = v; PushHist(); },
+                "낮 방어·보스전 지원군의 몬스터 종류. (없음)이면 스포너 기본 종류")));
             propsBox.Add(GroupTitle("스폰 지점 · 밤 웨이브가 나오는 자리"));
             for (int i = 0; i < n.spawnPoints.Count; i++)
             {
@@ -900,10 +906,9 @@ namespace CoreDawn.EditorTools
                 yF.RegisterValueChangedCallback(e => { p.y = e.newValue; RedrawCanvas(); });
                 HookHist(yF);
                 row.Add(yF);
-                var bossT = new Toggle("보스") { value = p.hasBoss, tooltip = "이 지점에 보스가 붙는다",
-                    style = { marginLeft = 5, fontSize = 10.5f } };
-                bossT.RegisterValueChangedCallback(e => { p.hasBoss = e.newValue; PushHist(); RedrawCanvas(); });
-                row.Add(bossT);
+                var bossD = MonsterDrop(p.boss, v => { p.boss = v; PushHist(); RedrawCanvas(); }, "이 지점에 서는 보스의 종류. (없음)이면 자리만(웨이브 출구)");
+                bossD.style.marginLeft = 5; bossD.style.width = 110;
+                row.Add(bossD);
                 var x = new Label("✕") { style = { color = GdEnum.Faint, fontSize = 12, paddingLeft = 4 } };
                 x.RegisterCallback<PointerDownEvent>(_ =>
                 {
@@ -1396,11 +1401,11 @@ namespace CoreDawn.EditorTools
                 for (int i = 0; i < m.nests.Count; i++)
                 {
                     var n = m.nests[i];
-                    bool boss = n.spawnPoints.Any(sp => sp.hasBoss);
+                    bool boss = n.spawnPoints.Any(sp => sp.HasBoss);
                     var col = boss ? GdEnum.FromHex("#FF3355") : GdEnum.Warn;
                     foreach (var sp in n.spawnPoints)
                         FillRect(n.x + sp.x + 0.2f, n.y + sp.y + 0.2f, 0.6f, 0.6f,
-                            sp.hasBoss ? new Color(1f, 0.2f, 0.33f, 0.85f) : new Color(1f, 0.69f, 0.737f, 0.8f));
+                            sp.HasBoss ? new Color(1f, 0.2f, 0.33f, 0.85f) : new Color(1f, 0.69f, 0.737f, 0.8f));
                     FillRect(n.x, n.y, 1, 1, col);
                     if (k < 8) StrokeRect(n.x - 2.5f / k, n.y - 2.5f / k, 1 + 5f / k, 1 + 5f / k, col, 1.5f);
                     if (sel != null && sel.Value.type == "nest" && sel.Value.i == i)
@@ -1847,6 +1852,18 @@ namespace CoreDawn.EditorTools
             UpdateTileCells(m, cx - h, cy - h, cx + h, cy + h);
             overlay.MarkDirtyRepaint();
         }
+        /// <summary>몬스터 종류 드롭다운 — (없음) + 전투 탭의 몬스터 id. 목록에 없는 값은 "— 없음" 꼬리표로 보인다.</summary>
+        DropdownField MonsterDrop(string current, Action<string> set, string tooltip)
+        {
+            var ids = combat.monsters.Select(m => m.id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+            var choices = new List<string> { "(없음)" }; choices.AddRange(ids);
+            int idx = 0;
+            if (!string.IsNullOrEmpty(current)) { int at = ids.IndexOf(current); if (at >= 0) idx = at + 1; else { choices.Add(current + " — 없음"); idx = choices.Count - 1; } }
+            var d = new DropdownField(choices, idx) { tooltip = tooltip, style = { fontSize = 10.5f } };
+            d.RegisterValueChangedCallback(e => { int k = choices.IndexOf(e.newValue); set(k <= 0 || k - 1 >= ids.Count ? "" : ids[k - 1]); });
+            return d;
+        }
+
     }
 }
 #endif

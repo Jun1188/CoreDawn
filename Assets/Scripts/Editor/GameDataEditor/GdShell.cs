@@ -58,7 +58,7 @@ namespace CoreDawn.EditorTools
         {
             saveChangesMessage = "GameData.json에 저장하지 않은 변경이 있습니다. 저장할까요?";
             var combat = new GdCombatTab(this);
-            var map = new GdMapTab(this);
+            var map = new GdMapTab(this, combat);   // 둥지의 보스·방어자 종류 드롭다운이 전투 탭의 몬스터 목록을 본다
             tabs = new GdTab[]
             {
                 new GdGraphTab(this),

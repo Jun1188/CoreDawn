@@ -22,7 +22,7 @@ namespace CoreDawn.Entities
         {
             public Transform point;
             public MonsterView linkedBoss;
-            [Tooltip("이 포인트에 서는 보스의 팩 id(coredawn:entity/boss). 비우면 보스 없음. 프리팹은 뷰 카탈로그, HP·공격은 정의가 정한다.")]
+            [Tooltip("이 포인트에 서는 보스의 팩 id — 맵(NestSpec.spawnPoints[].boss)이 채운다. 프리팹에 손으로 적지 않는다.")]
             public string bossId;
 
             public bool HasBoss => !string.IsNullOrEmpty(bossId);
@@ -46,11 +46,13 @@ namespace CoreDawn.Entities
         [Tooltip("파괴 시 꺼질 외형(구조물 및 콜라이더 포함) 오브젝트들")]
         public GameObject[] destructibleVisuals;
 
-        [Tooltip("낮 방어 몬스터·보스전 지원군의 팩 id. 비우면 스포너의 기본 종류.")]
+        [Tooltip("낮 방어 몬스터·보스전 지원군의 팩 id — 맵(NestSpec.defender)이 채운다. 비면 스포너의 기본 종류.")]
         [SerializeField] private string defenderId;
 
         /// <summary>방어자 정의 — WaveSpawnManager.SpawnNestDefenders가 읽는다. null = 스포너 기본.</summary>
         public EntityDef DefenderDef => string.IsNullOrEmpty(defenderId) ? null : SaveRefs.Entity(defenderId);
+        /// <summary>맵(NestSpec.defender)이 종류를 준다 — WorldPopulator가 부른다.</summary>
+        public void SetDefender(string id) => defenderId = id;
 
         [Header("Defense Settings")]
         [Tooltip("플레이어 접근 경고 반경")]

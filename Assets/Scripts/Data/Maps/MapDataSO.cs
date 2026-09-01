@@ -152,6 +152,9 @@ namespace CoreDawn.Data
         [Tooltip("낮에만 이 규칙을 적용할지. 밤에는 웨이브가 주도하므로 보통 true.")]
         public bool engageDayOnly;
 
+        [Tooltip("낮 방어 몬스터·보스전 지원군의 팩 id. 비면 스포너의 기본 종류.")]
+        public string defender;
+
 
 
     }
@@ -160,6 +163,8 @@ namespace CoreDawn.Data
     public struct SpawnPointSpec
     {
         public Vector2Int offset;
-        public bool hasBoss;
+        [Tooltip("이 자리에 서는 보스의 팩 id(coredawn:entity/boss). 비면 보스 없음 — 자리는 웨이브 출구로만 쓴다.")]
+        public string boss;
+        public bool HasBoss => !string.IsNullOrEmpty(boss);
     }
 }

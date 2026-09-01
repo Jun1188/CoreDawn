@@ -68,10 +68,11 @@ namespace CoreDawn.EditorTools
             // 교전 규칙 — 생략하면 0이라 "교전 구역 없음"(둥지 기본 동작)이 된다
             public float engageMinRange, engageMaxRange, chaseRange, leashRange;
             public bool engageDayOnly;
-
+            public string defender;      // 낮 방어 몬스터 종류(GameData 몬스터 id). 생략 = 스포너 기본
         }
 
-        [Serializable] internal class SpawnDto : GameDataJson.JsonDtoBase { public int x, y; public bool hasBoss; }
+        /// <summary>스폰 자리 — boss는 이 자리에 서는 보스의 몬스터 id("Monster:Boss"), 없으면 보스 없음(자리는 웨이브 출구).</summary>
+        [Serializable] internal class SpawnDto : GameDataJson.JsonDtoBase { public int x, y; public string boss; }
 
         // ── 실행 ────────────────────────────────────────────────────
 
@@ -164,7 +165,7 @@ namespace CoreDawn.EditorTools
             map.core = dto.core != null ? new Vector2Int(dto.core.x, dto.core.y) : Vector2Int.zero;
             map.EditorSetTiles(BakeTiles(dto, ref errors));
             map.nodes = ResolveNodes(dto, pack, ref errors);
-            map.nests = ResolveNests(dto);
+            map.nests = ResolveNests(dto, pack, ref errors);
             map.nightSpawnPoints = ResolveNightSpawns(dto);
             map.trees = ResolveCells(dto.trees);
 
@@ -248,7 +249,21 @@ namespace CoreDawn.EditorTools
             return list.ToArray();
         }
 
-        static NestSpec[] ResolveNests(MapDto dto)
+        /// <summary>몬스터 id(v1 "Monster:Boss") → 팩 id. 비면 null, 팩에 없으면 오류(그 자리는 보스 없이).</summary>
+        static string ResolveMonster(string v1Id, SimDatabase pack, string where, ref int errors)
+        {
+            if (string.IsNullOrEmpty(v1Id)) return null;
+            string id = GameDataExporterV2.PackIdOf(v1Id);
+            if (pack.Entity(id) == null)
+            {
+                Debug.LogError($"[MapImporter] {where}: 몬스터 '{v1Id}'({id})가 팩에 없습니다.");
+                errors++;
+                return null;
+            }
+            return id;
+        }
+
+        static NestSpec[] ResolveNests(MapDto dto, SimDatabase pack, ref int errors)
         {
             if (dto.nests == null) return Array.Empty<NestSpec>();
 
@@ -260,7 +275,8 @@ namespace CoreDawn.EditorTools
                 var points = new List<SpawnPointSpec>();
                 if (nest.spawnPoints != null)
                     foreach (var p in nest.spawnPoints)
-                        if (p != null) points.Add(new SpawnPointSpec { offset = new Vector2Int(p.x, p.y), hasBoss = p.hasBoss });
+                        if (p != null) points.Add(new SpawnPointSpec { offset = new Vector2Int(p.x, p.y),
+                            boss = ResolveMonster(p.boss, pack, $"'{dto.id}' 둥지({nest.x},{nest.y}) 자리({p.x},{p.y})", ref errors) });
 
                 if (nest.triggerRange > nest.warningRange)
                     Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): triggerRange가 warningRange보다 큽니다 — " +
@@ -287,6 +303,7 @@ namespace CoreDawn.EditorTools
                     defenseSpawnAmount = nest.defenseSpawnAmount,
                     defenseSpawnCooldown = nest.defenseSpawnCooldown,
                     spawnPoints = points.ToArray(),
+                    defender = ResolveMonster(nest.defender, pack, $"'{dto.id}' 둥지({nest.x},{nest.y}) 방어자", ref errors),
 
                     engageMinRange = nest.engageMinRange,
                     engageMaxRange = nest.engageMaxRange,

@@ -692,18 +692,14 @@ namespace CoreDawn.Worlds
         /// 둥지의 스폰 자리를 맵대로 다시 놓는다. 프리팹에 이미 자식(SpawnPoint_1…)이 있으면
         /// 그것을 옮겨 쓰고, 모자라면 새로 만든다.
         ///
-        /// 보스 유무는 맵(hasBoss)이 정한다 — 프리팹 배선은 "무슨 보스인가"의 출처일 뿐이다.
-        /// 프리팹 배선을 그대로 두면 맵이 점을 늘리거나 보스를 빼도 반영되지 않아,
-        /// json과 실제 스폰 수가 어긋난다.
+        /// 보스 유무와 종류는 맵(spawnPoints[].boss)이 정한다 — 프리팹은 자리(Transform)만 든다.
         /// </summary>
         static void ApplySpawnPoints(World world, NestView nest, in NestSpec spec)
         {
             if (spec.spawnPoints == null || spec.spawnPoints.Length == 0) return;
             if (nest.spawnPoints == null) nest.spawnPoints = new List<NestView.NestSpawnPoint>();
 
-            string bossTemplate = null;
-            foreach (var existing in nest.spawnPoints)
-                if (existing != null && !string.IsNullOrEmpty(existing.bossId)) { bossTemplate = existing.bossId; break; }
+            nest.SetDefender(spec.defender);
 
             for (int i = 0; i < spec.spawnPoints.Length; i++)
             {
@@ -726,10 +722,7 @@ namespace CoreDawn.Worlds
                     else { slot = new NestView.NestSpawnPoint { point = t }; nest.spawnPoints.Add(slot); }
                 }
 
-                slot.bossId = point.hasBoss ? bossTemplate : null;
-                if (point.hasBoss && string.IsNullOrEmpty(bossTemplate))
-                    Debug.LogWarning($"[WorldPopulator] 둥지({spec.cell.x},{spec.cell.y}) 스폰 포인트 {i + 1}: " +
-                                     "hasBoss인데 프리팹에 보스 배선이 없어 보스를 세울 수 없습니다.", nest);
+                slot.bossId = point.HasBoss ? point.boss : null;   // 자리와 종류 모두 맵이 정한다
             }
 
             // 맵이 정한 것보다 많으면 남는 자리는 버린다 — 옛 배치가 유령처럼 남지 않게

@@ -8,7 +8,7 @@ namespace CoreDawn.Sim
     public sealed class NestPoint
     {
         public Vector3 Position { get; internal set; }
-        /// <summary>이 자리에 보스가 서는가(맵의 hasBoss). 보스 종류(프리팹)는 아직 뷰의 것.</summary>
+        /// <summary>이 자리에 보스가 서는가(맵의 spawnPoints[].boss). 보스 종류(프리팹)는 아직 뷰의 것.</summary>
         public bool HasBoss { get; internal set; }
         /// <summary>지금 이 자리에 붙어 있는 보스. 없거나 죽었으면 null 또는 !IsAlive.</summary>
         public Entity Boss { get; internal set; }

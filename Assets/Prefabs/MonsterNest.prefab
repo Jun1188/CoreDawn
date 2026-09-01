@@ -109,17 +109,14 @@ MonoBehaviour:
   spawnPoints:
   - point: {fileID: 0}
     linkedBoss: {fileID: 0}
-    bossId: coredawn:entity/boss
-    bossData: {fileID: 11400000, guid: 6b6c8f9c2ce6fec43bda25f75dba63b7, type: 2}
+    bossId: 
   - point: {fileID: 0}
     linkedBoss: {fileID: 0}
-    bossId: coredawn:entity/boss
-    bossData: {fileID: 11400000, guid: 6b6c8f9c2ce6fec43bda25f75dba63b7, type: 2}
+    bossId: 
   indestructibleVisuals:
   - {fileID: 876364608623266681}
   destructibleVisuals: []
   defenderId: 
-  defenderMonster: {fileID: 0}
   warningRange: 25
   triggerRange: 15
   defenseSpawnAmount: 3
