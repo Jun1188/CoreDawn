@@ -29,6 +29,7 @@ namespace CoreDawn.Data
             public GameObject bulletPrefab;    // 탄약 아이템 — 탄 외형(Bullet 컴포넌트 필수)
             public GameObject muzzleFlashPrefab;
             public GameObject hitEffectPrefab;
+            public AudioClip[] clips;         // 소리(sounds 섹션) — 변형 묶음, 재생 때 하나를 고른다
         }
 
         public List<Entry> entries = new();
@@ -62,6 +63,8 @@ namespace CoreDawn.Data
 
         public static Sprite IconOf(Def def) => Of(def)?.icon;
         public static GameObject PrefabOf(Def def) => Of(def)?.prefab;
+        /// <summary>소리 id의 클립 묶음. 없으면 null — 호출부(SoundManager)가 한 번 경고한다.</summary>
+        public static AudioClip[] ClipsOf(string soundId) => Of(soundId)?.clips;
 
         /// <summary>벨트 모양별 프리팹 — 직선은 본체(prefab), 커브는 커브 프리팹.</summary>
         public static GameObject BeltPrefabOf(Def def, BeltShape shape)

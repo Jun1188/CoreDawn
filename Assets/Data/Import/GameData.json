@@ -95,7 +95,22 @@
       "spreadRecoveryRate": 5.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false
+      "swingAlternate": false,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:PistolFire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "Sound:PistolReload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Gun:Rifle",
@@ -125,7 +140,22 @@
       "spreadRecoveryRate": 5.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false
+      "swingAlternate": false,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:RifleFire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "Sound:RifleReload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Gun:Shotgun",
@@ -155,7 +185,22 @@
       "spreadRecoveryRate": 4.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false
+      "swingAlternate": false,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:ShotgunFire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "Sound:ShotgunReload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Gun:Sniper",
@@ -186,7 +231,22 @@
       "spreadRecoveryRate": 3.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false
+      "swingAlternate": false,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:SniperFire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "Sound:SniperReload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Gun:GrenadeLauncher",
@@ -216,7 +276,22 @@
       "spreadRecoveryRate": 4.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false
+      "swingAlternate": false,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:GrenadeLauncherFire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "Sound:GrenadeLauncherReload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Gun:EnergyRifle",
@@ -246,7 +321,22 @@
       "spreadRecoveryRate": 6.0,
       "swingTime": -1.0,
       "swingWindup": -1.0,
-      "swingAlternate": false
+      "swingAlternate": false,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:EnergyRifleFire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "Sound:EnergyRifleReload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Gun:PlasmaCutter",
@@ -291,7 +381,17 @@
         0.025,
         0.06
       ],
-      "swingAlternate": true
+      "swingAlternate": true,
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:PlasmaCutterFire",
+            "volume": 0.55,
+            "spatial": true
+          }
+        }
+      }
     }
   ],
   "items": [
@@ -1530,7 +1630,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Miner",
-      "prefabGuid": "687143ae40f3c5041a38fa275fc61709"
+      "prefabGuid": "687143ae40f3c5041a38fa275fc61709",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:MinerMk2",
@@ -1588,7 +1691,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "MinerMk2",
-      "prefabGuid": "9f10b408811a648468f9bc495fad6181"
+      "prefabGuid": "9f10b408811a648468f9bc495fad6181",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Smelter",
@@ -1653,7 +1759,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Smelter",
-      "prefabGuid": "98954c35404031d44b6cf0b5bb769d42"
+      "prefabGuid": "98954c35404031d44b6cf0b5bb769d42",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Constructor",
@@ -1720,7 +1829,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Constructor",
-      "prefabGuid": "f5a783afd8b2d6a48b02259b1cc25bcd"
+      "prefabGuid": "f5a783afd8b2d6a48b02259b1cc25bcd",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Assembler",
@@ -1804,7 +1916,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Assembler",
-      "prefabGuid": "f21554090b8662041865fae8ac84acf4"
+      "prefabGuid": "f21554090b8662041865fae8ac84acf4",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Manufacturer",
@@ -1895,7 +2010,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Manufacturer",
-      "prefabGuid": "8e72872f52f7d26458e07e2f3105188e"
+      "prefabGuid": "8e72872f52f7d26458e07e2f3105188e",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:DronePort",
@@ -1956,7 +2074,10 @@
       "aimTolerance": -1.0,
       "droneRange": 60,
       "carryCapacity": 20,
-      "travelSpeed": 8
+      "travelSpeed": 8,
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Belt",
@@ -2024,7 +2145,10 @@
       "prefabCurveL": "BeltLCurve",
       "prefabCurveLGuid": "7a9640f62bc6f404fa1b9ade84cf47f8",
       "prefabCurveR": "BeltRCurve",
-      "prefabCurveRGuid": "6514f9f08f82db64e8d5ca4c2c8a0dfb"
+      "prefabCurveRGuid": "6514f9f08f82db64e8d5ca4c2c8a0dfb",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:BeltMk2",
@@ -2084,7 +2208,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "BeltMk2",
-      "prefabGuid": "a28ebf27af00fde46833092b742b5913"
+      "prefabGuid": "a28ebf27af00fde46833092b742b5913",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Splitter",
@@ -2156,7 +2283,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Splitter",
-      "prefabGuid": "ec8176281d9d0a540b8a96c88a550a42"
+      "prefabGuid": "ec8176281d9d0a540b8a96c88a550a42",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Merger",
@@ -2228,7 +2358,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Merger",
-      "prefabGuid": "326f8420de63f324fbe1a0df87f16c51"
+      "prefabGuid": "326f8420de63f324fbe1a0df87f16c51",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Storage",
@@ -2324,7 +2457,10 @@
       "turnSpeed": -1.0,
       "aimTolerance": -1.0,
       "prefab": "Storage",
-      "prefabGuid": "935e9bd1c205c7044b36b398d51ffa2e"
+      "prefabGuid": "935e9bd1c205c7044b36b398d51ffa2e",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Core",
@@ -2535,7 +2671,10 @@
         }
       ],
       "prefab": "Core",
-      "prefabGuid": "87ccd477b828f0c458048e4c6e68d8c2"
+      "prefabGuid": "87ccd477b828f0c458048e4c6e68d8c2",
+      "view": {
+        "type": "Building"
+      }
     },
     {
       "id": "Building:Fence",
@@ -2580,7 +2719,22 @@
       "aimTolerance": 3.0,
       "ammoFilter": [],
       "prefab": "Fence",
-      "prefabGuid": "e6214c0413d00174abf3040eab2d1aa1"
+      "prefabGuid": "e6214c0413d00174abf3040eab2d1aa1",
+      "view": {
+        "type": "Tower",
+        "sfx": {
+          "destroy": {
+            "sound": "Sound:TowerDestroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "Sound:TowerStarved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Building:Mine",
@@ -2635,7 +2789,10 @@
         }
       ],
       "prefab": "Mine",
-      "prefabGuid": "10e8294c883dee04fa2a3882bef2b8e4"
+      "prefabGuid": "10e8294c883dee04fa2a3882bef2b8e4",
+      "view": {
+        "type": "Tower"
+      }
     },
     {
       "id": "Building:BasicTurret",
@@ -2695,7 +2852,27 @@
         "Item:CrystalAmmo"
       ],
       "prefab": "BasicTurret",
-      "prefabGuid": "f50c1af3e0d06944fabe0d34dc16aac3"
+      "prefabGuid": "f50c1af3e0d06944fabe0d34dc16aac3",
+      "view": {
+        "type": "Tower",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:BasicTurretFire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "Sound:TowerDestroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "Sound:TowerStarved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Building:HeavyTurret",
@@ -2758,7 +2935,27 @@
         "Item:CrystalAmmo"
       ],
       "prefab": "HeavyTurret",
-      "prefabGuid": "63049ff461071ed4596438f0ebbc617b"
+      "prefabGuid": "63049ff461071ed4596438f0ebbc617b",
+      "view": {
+        "type": "Tower",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:HeavyTurretFire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "Sound:TowerDestroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "Sound:TowerStarved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Building:MortarTower",
@@ -2820,7 +3017,27 @@
         "Item:Grenade"
       ],
       "prefab": "MortarTower",
-      "prefabGuid": "8d23edf3e85cd3144859023827622c98"
+      "prefabGuid": "8d23edf3e85cd3144859023827622c98",
+      "view": {
+        "type": "Tower",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:MortarTowerFire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "Sound:TowerDestroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "Sound:TowerStarved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Building:LaserTower",
@@ -2882,7 +3099,27 @@
         "Item:EnergyCellAmmo"
       ],
       "prefab": "LaserTower",
-      "prefabGuid": "c4018ffa10eb81a4bb750acf98ed7d5f"
+      "prefabGuid": "c4018ffa10eb81a4bb750acf98ed7d5f",
+      "view": {
+        "type": "Tower",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:LaserTowerFire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "Sound:TowerDestroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "Sound:TowerStarved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Building:SlowFieldTower",
@@ -2940,7 +3177,27 @@
         "Item:EnergyCellAmmo"
       ],
       "prefab": "SlowFieldTower",
-      "prefabGuid": "7d3b3cf4e96f16b468227f6f7b341b38"
+      "prefabGuid": "7d3b3cf4e96f16b468227f6f7b341b38",
+      "view": {
+        "type": "Tower",
+        "sfx": {
+          "fire": {
+            "sound": "Sound:SlowFieldTowerFire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "Sound:TowerDestroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "Sound:TowerStarved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        }
+      }
     },
     {
       "id": "Building:Nest",
@@ -2982,7 +3239,10 @@
           "item": "Item:BeastCore",
           "amount": 1
         }
-      ]
+      ],
+      "view": {
+        "type": "Nest"
+      }
     },
     {
       "id": "Building:Tree",
@@ -3018,7 +3278,10 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "view": {
+        "type": "Building"
+      }
     }
   ],
   "monsters": [
@@ -3049,7 +3312,10 @@
       "patienceRecoverRate": 2.0,
       "absoluteLeashMultiplier": 1.0,
       "returnRegenPerSecond": 0.12,
-      "returnTimeout": 20.0
+      "returnTimeout": 20.0,
+      "view": {
+        "type": "Monster"
+      }
     },
     {
       "id": "Monster:Spitter",
@@ -3078,7 +3344,10 @@
       "patienceRecoverRate": 2.0,
       "absoluteLeashMultiplier": 1.0,
       "returnRegenPerSecond": 0.12,
-      "returnTimeout": 20.0
+      "returnTimeout": 20.0,
+      "view": {
+        "type": "Monster"
+      }
     },
     {
       "id": "Monster:Boss",
@@ -3107,7 +3376,10 @@
       "patienceRecoverRate": 2.0,
       "absoluteLeashMultiplier": 1.0,
       "returnRegenPerSecond": 0.2,
-      "returnTimeout": 40.0
+      "returnTimeout": 40.0,
+      "view": {
+        "type": "Monster"
+      }
     }
   ],
   "wave": {
@@ -3523,5 +3795,379 @@
     "maxHp": 300.0,
     "main": 25,
     "hotbar": 7
-  }
+  },
+  "sfx": {
+    "ui_click": {
+      "sound": "Sound:UiClick",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "ui_hover": {
+      "sound": "Sound:UiHover",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "construct": {
+      "sound": "Sound:Construct",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "destroy": {
+      "sound": "Sound:Destroy",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "warning": {
+      "sound": "Sound:Warning",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "item_pickup": {
+      "sound": "Sound:ItemPickup",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "mine": {
+      "sound": "Sound:Mine",
+      "volume": 1.0,
+      "spatial": false
+    }
+  },
+  "sounds": [
+    {
+      "id": "Sound:PistolFire",
+      "clips": [
+        {
+          "clip": "Zapper_1p_03",
+          "clipGuid": "fd3895a2d40b7c0438eb055779a0f92a"
+        }
+      ]
+    },
+    {
+      "id": "Sound:PistolReload",
+      "clips": [
+        {
+          "clip": "Pistol_ClipIn_05",
+          "clipGuid": "406c929b7299afb469c82778f8d15d5b"
+        }
+      ]
+    },
+    {
+      "id": "Sound:RifleFire",
+      "clips": [
+        {
+          "clip": "AutoGun_1p_01",
+          "clipGuid": "1b145bcffd767854fb0c71c37678ebaa"
+        }
+      ]
+    },
+    {
+      "id": "Sound:RifleReload",
+      "clips": [
+        {
+          "clip": "Minigun_Reload_04",
+          "clipGuid": "e1d79f4a0c7873742babc5f6e9ff800e"
+        }
+      ]
+    },
+    {
+      "id": "Sound:ShotgunFire",
+      "clips": [
+        {
+          "clip": "JackHammer_1p_03",
+          "clipGuid": "6349a640dc07c3b4389c205f5b5a5145"
+        }
+      ]
+    },
+    {
+      "id": "Sound:ShotgunReload",
+      "clips": [
+        {
+          "clip": "JackHammer_Reload",
+          "clipGuid": "af63539a5e39c99489395bdea2471f60"
+        }
+      ]
+    },
+    {
+      "id": "Sound:SniperFire",
+      "clips": [
+        {
+          "clip": "AntiMaterialRifle_1p_01",
+          "clipGuid": "fecc3e7a0166a104cb810435f6fdf37b"
+        }
+      ]
+    },
+    {
+      "id": "Sound:SniperReload",
+      "clips": [
+        {
+          "clip": "weapon-reload-and-pump",
+          "clipGuid": "33ecfe134e86c5d4a9b62f5e9927a85b"
+        }
+      ]
+    },
+    {
+      "id": "Sound:GrenadeLauncherFire",
+      "clips": [
+        {
+          "clip": "grenade-launcher",
+          "clipGuid": "c08f2a886b6b70443b57be57be2ee7c9"
+        }
+      ]
+    },
+    {
+      "id": "Sound:GrenadeLauncherReload",
+      "clips": [
+        {
+          "clip": "launcher-full-sequence",
+          "clipGuid": "3cfe0927ccb7ede4691b5433aedf2289"
+        }
+      ]
+    },
+    {
+      "id": "Sound:EnergyRifleFire",
+      "clips": [
+        {
+          "clip": "AssaultCanon_3p",
+          "clipGuid": "81ac649d26a9a96419b76c635591f6d8"
+        }
+      ]
+    },
+    {
+      "id": "Sound:EnergyRifleReload",
+      "clips": [
+        {
+          "clip": "Minigun_Reload_04",
+          "clipGuid": "e1d79f4a0c7873742babc5f6e9ff800e"
+        }
+      ]
+    },
+    {
+      "id": "Sound:PlasmaCutterFire",
+      "clips": [
+        {
+          "clip": "PlasmaCutter_Swing",
+          "clipGuid": "1961437f402f70a40a52757ecf78801d"
+        }
+      ]
+    },
+    {
+      "id": "Sound:TowerDestroy",
+      "clips": [
+        {
+          "clip": "Destruction 1",
+          "clipGuid": "f82348f044e4641f38816d5c92ce9618"
+        },
+        {
+          "clip": "Destruction 2",
+          "clipGuid": "dadcd6f20f187487ca6d872956f98c7d"
+        },
+        {
+          "clip": "Destruction 3",
+          "clipGuid": "6c7cd8002b13e4ca1974cb33ed5bd19c"
+        },
+        {
+          "clip": "Destruction 4",
+          "clipGuid": "731364f0ab9af462c884661ca839c89e"
+        },
+        {
+          "clip": "Destruction 5",
+          "clipGuid": "dbb5d987bb85a4b84aa3a9e48e093e7c"
+        }
+      ]
+    },
+    {
+      "id": "Sound:TowerStarved",
+      "clips": [
+        {
+          "clip": "DM-CGS-04",
+          "clipGuid": "c5e2a73ad4706440f93bf05df0b465fe"
+        }
+      ]
+    },
+    {
+      "id": "Sound:BasicTurretFire",
+      "clips": [
+        {
+          "clip": "MG 1",
+          "clipGuid": "d440c9f7407a04474bf738520785306b"
+        },
+        {
+          "clip": "MG 10",
+          "clipGuid": "e893433625bae4c0584daccfde0c2866"
+        },
+        {
+          "clip": "MG 11",
+          "clipGuid": "3b5fc9b92d19541449a6b6ab388a7ffa"
+        },
+        {
+          "clip": "MG 12",
+          "clipGuid": "ebde808a5205d444193394a272542f85"
+        },
+        {
+          "clip": "MG 13",
+          "clipGuid": "b44217f5373cb4a628587e2194eb15a7"
+        },
+        {
+          "clip": "MG 14",
+          "clipGuid": "9cfc9c4c568e54e68a4038ecdf7ffac7"
+        },
+        {
+          "clip": "MG 2",
+          "clipGuid": "d88fd5368c36748d684ff9e8db416da9"
+        },
+        {
+          "clip": "MG 3",
+          "clipGuid": "5bf7c957d8f4a40ff9977d85be58d48f"
+        },
+        {
+          "clip": "MG 4",
+          "clipGuid": "11e15d42e0a474c719970d3b8ddf4b05"
+        },
+        {
+          "clip": "MG 5",
+          "clipGuid": "dc29f7080efef42e4bffce14778bca99"
+        },
+        {
+          "clip": "MG 6",
+          "clipGuid": "c44a398ac1bfe4fa79c75b96bebddd6a"
+        },
+        {
+          "clip": "MG 7",
+          "clipGuid": "4442df31c446a4ff4ac434e95e5de866"
+        },
+        {
+          "clip": "MG 8",
+          "clipGuid": "5a6ca7a364e294886845ab3c268ea63e"
+        },
+        {
+          "clip": "MG 9",
+          "clipGuid": "eed58edbe19094382b8536c1405fed61"
+        }
+      ]
+    },
+    {
+      "id": "Sound:HeavyTurretFire",
+      "clips": [
+        {
+          "clip": "Rocket Tower Shoot",
+          "clipGuid": "ce02cc583b9d84102a12a156e90ca692"
+        }
+      ]
+    },
+    {
+      "id": "Sound:MortarTowerFire",
+      "clips": [
+        {
+          "clip": "Super Tower Shot 1",
+          "clipGuid": "ad00705ac426345289f10c69b726d683"
+        },
+        {
+          "clip": "Super Tower Shot 2",
+          "clipGuid": "bfc83a94c61ea44ccb7a2470d50b5f10"
+        },
+        {
+          "clip": "Super Tower Shot 3",
+          "clipGuid": "dad118443943d4d31be3a3edb4bb9785"
+        },
+        {
+          "clip": "Super Tower Shot 4",
+          "clipGuid": "02f0cc81719d043e3876b7b6ecdd1566"
+        },
+        {
+          "clip": "Super Tower Shot 5",
+          "clipGuid": "5ae744e8eed7a400b9acdf6d118e7323"
+        },
+        {
+          "clip": "Super Tower Shot 6",
+          "clipGuid": "9844909eb36d64f4eb7125edf616a3ae"
+        },
+        {
+          "clip": "Super Tower Shot 7",
+          "clipGuid": "83f515b3e0b9d48f2867c08c49b787f4"
+        }
+      ]
+    },
+    {
+      "id": "Sound:LaserTowerFire",
+      "clips": [
+        {
+          "clip": "LaserFire",
+          "clipGuid": "f7f2b958b23574551b561f7e871a8306"
+        }
+      ]
+    },
+    {
+      "id": "Sound:SlowFieldTowerFire",
+      "clips": [
+        {
+          "clip": "DM-CGS-22",
+          "clipGuid": "d8d04c6f80a1140db85ede568dab1f51"
+        }
+      ]
+    },
+    {
+      "id": "Sound:UiClick",
+      "clips": [
+        {
+          "clip": "DM-CGS-03",
+          "clipGuid": "19f89c6e740e7447f9e12a8310d3e973"
+        }
+      ]
+    },
+    {
+      "id": "Sound:UiHover",
+      "clips": [
+        {
+          "clip": "Footsteps_Tile_Jump_Land_02",
+          "clipGuid": "c86476186f357d44eb470d68a2986520"
+        }
+      ]
+    },
+    {
+      "id": "Sound:Construct",
+      "clips": [
+        {
+          "clip": "Macross Placement",
+          "clipGuid": "599f5b1a96b0b478a8f61210e4a9aa48"
+        }
+      ]
+    },
+    {
+      "id": "Sound:Destroy",
+      "clips": [
+        {
+          "clip": "부수는소리",
+          "clipGuid": "5c9ef139a6ba14f48a8ef69cb7ffa8e1"
+        }
+      ]
+    },
+    {
+      "id": "Sound:Warning",
+      "clips": [
+        {
+          "clip": "DM-CGS-04",
+          "clipGuid": "c5e2a73ad4706440f93bf05df0b465fe"
+        }
+      ]
+    },
+    {
+      "id": "Sound:ItemPickup",
+      "clips": [
+        {
+          "clip": "DM-CGS-22",
+          "clipGuid": "d8d04c6f80a1140db85ede568dab1f51"
+        }
+      ]
+    },
+    {
+      "id": "Sound:Mine",
+      "clips": [
+        {
+          "clip": "poly_explosion_bullet",
+          "clipGuid": "d4bcb5c56d9c70c48998d3943e83f1cf"
+        }
+      ]
+    }
+  ]
 }

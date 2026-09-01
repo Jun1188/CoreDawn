@@ -32,6 +32,8 @@ namespace CoreDawn.EditorTools
 
         [Serializable] internal class Root : JsonDtoBase
         {
+            public SoundDto[] sounds;                    // 소리 — 변형 클립 묶음
+            public Dictionary<string, SfxUseDto> sfx;   // 공용 소리 자리(ui_click·construct·mine…) — 구 CommonSFX
             public EffectDto[]   effects;
             public GunDto[]      guns;
             public ItemDto[]     items;
@@ -86,6 +88,14 @@ namespace CoreDawn.EditorTools
         /// <summary>공격 효과 한 항목 — EffectEntry의 json 형태. effect는 효과 id.</summary>
         [Serializable] internal class EffectEntryDto : JsonDtoBase { public string effect; public float value; }
 
+        /// <summary>소리를 쓰는 자리 — sound(소리 id) + 볼륨 + 공간감. EffectEntry가 효과 + 값이듯 소리 + 재생 값.</summary>
+        [Serializable] internal class SfxUseDto : JsonDtoBase { public string sound; public float volume = 1f; public bool spatial = true; }
+        /// <summary>정의의 표현 블록(v1) — 뷰 종류(ViewSchema 표의 키)와 소리 자리. 모델·프리팹·아이콘은 각 DTO의 평평한 필드로 남아 있다(exporter가 합친다).</summary>
+        [Serializable] internal class ViewDto : JsonDtoBase { public string type; public Dictionary<string, SfxUseDto> sfx; }
+        /// <summary>소리 한 종 — 변형 클립 묶음(재생 때 무작위). id 관례 "Sound:이름".</summary>
+        [Serializable] internal class SoundDto : JsonDtoBase { public string id; public string displayName; public ClipDto[] clips; }
+        [Serializable] internal class ClipDto : JsonDtoBase { public string clip; public string clipGuid; }
+
         [Serializable] internal class EffectDto : JsonDtoBase
         {
             public string id;            // 필수. 예: "Effect:Damage"
@@ -101,6 +111,7 @@ namespace CoreDawn.EditorTools
 
         [Serializable] internal class GunDto : JsonDtoBase
         {
+            public ViewDto view;   // 뷰 종류 + 소리 자리
             public string id;            // 필수. 예: "Gun:Rifle"
             public string displayName;   // 필수
             public string description;
@@ -174,6 +185,7 @@ namespace CoreDawn.EditorTools
 
         [Serializable] internal class BuildingDto : JsonDtoBase
         {
+            public ViewDto view;   // 뷰 종류 + 소리 자리
             public string id;            // 필수. 예: "Building:Assembler"
             public string kind;          // 필수 — 어느 서브클래스로 만들지 (KindMap 참조)
             public string displayName;   // 필수
@@ -237,6 +249,7 @@ namespace CoreDawn.EditorTools
         /// <summary>몬스터 종류 — MonsterDataSO. 프리팹은 에셋 참조라 guid로 적는다(아이템 아이콘과 같은 규약).</summary>
         [Serializable] internal class MonsterDto : JsonDtoBase
         {
+            public ViewDto view;   // 뷰 종류 + 소리 자리
             public string id;            // 필수. 예: "Monster:Basic"
             public string displayName;   // 필수
             public string description;

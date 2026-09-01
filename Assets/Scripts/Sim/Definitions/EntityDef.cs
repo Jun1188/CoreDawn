@@ -13,7 +13,6 @@ namespace CoreDawn.Sim
         [JsonProperty("modules")] public List<EntityModuleDef> Modules = new List<EntityModuleDef>();
 
         /// <summary>표현 카탈로그가 읽는 몫(모델·프리팹·아이콘 등). 심은 열어 보지 않는다.</summary>
-        [JsonProperty("view")] public JObject View;
 
         public T Get<T>() where T : EntityModuleDef
         {

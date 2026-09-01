@@ -29,7 +29,7 @@ namespace CoreDawn.EditorTools
         static readonly Dictionary<string, string> SectionOf = new()
         {
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
-            ["Gun"] = "gun", ["Tutorial"] = "tutorial",
+            ["Gun"] = "gun", ["Tutorial"] = "tutorial", ["Sound"] = "sound",
         };
 
         /// <summary>옛 v1 id("Item:IronOre") → 팩 id("coredawn:item/iron_ore") — 에디터 도구(맵 임포터·이관)가 쓴다. 이미 팩 id면 그대로.</summary>
@@ -76,7 +76,7 @@ namespace CoreDawn.EditorTools
             string KeyOf(string old) => NewId(old).Split('/', 2)[1];
             JArray Arr(JToken t) => t as JArray ?? new JArray();
 
-            foreach (var sec in new[] { "items", "recipes", "effects", "buildings", "monsters", "guns", "tutorial" })
+            foreach (var sec in new[] { "items", "recipes", "effects", "buildings", "monsters", "guns", "tutorial", "sounds" })
                 foreach (var e in Arr(d[sec])) NewId((string)e["id"]);
             var dup = idmap.Values.GroupBy(v => v).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
             if (dup.Count > 0) throw new InvalidOperationException("id 충돌: " + string.Join(", ", dup));
@@ -114,7 +114,14 @@ namespace CoreDawn.EditorTools
             }
 
             var items = new JObject(); var recipes = new JObject(); var effects = new JObject();
-            var entities = new JObject(); var guns = new JObject(); var tutorial = new JObject();
+            var entities = new JObject(); var guns = new JObject(); var tutorial = new JObject(); var sounds = new JObject();
+
+            // v1 항목의 view{type, sfx…} 객체를 v2 view 블록에 얹는다(평평한 model/prefab/icon 키는 View()가 이미 옮겼다). 소리 id는 팩 id로.
+            void MergeView(JObject view, JToken e)
+            {
+                if (e["view"] is not JObject v) return;
+                foreach (var p in v.Properties()) view[p.Name] = Remap(p.Value);
+            }
 
             foreach (var it in Arr(d["items"]))
             {
@@ -130,6 +137,7 @@ namespace CoreDawn.EditorTools
                 o["modules"] = mods;
                 var itemView = View(it, "icon", "iconGuid", "bullet", "bulletGuid",
                                     "muzzleFlash", "muzzleFlashGuid", "hitEffect", "hitEffectGuid");
+                MergeView(itemView, it);
                 if (itemView.Count > 0) o["view"] = itemView;
                 items[KeyOf((string)it["id"])] = o;
 
@@ -145,6 +153,7 @@ namespace CoreDawn.EditorTools
                     {
                         ["displayName"] = (string)it["displayName"] + " 광맥",
                         ["faction"] = "Neutral",
+                        ["view"] = new JObject { ["type"] = "Deposit" },
                         ["modules"] = new JArray { new JObject { ["type"] = "ResourceDeposit", ["resource"] = NewId((string)it["id"]), ["extractInterval"] = interval } },
                     };
                 }
@@ -285,6 +294,7 @@ namespace CoreDawn.EditorTools
                 var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid",
                                 "icon", "iconGuid", "prefab", "prefabGuid",
                                 "prefabCurveL", "prefabCurveLGuid", "prefabCurveR", "prefabCurveRGuid");
+                MergeView(view, b);
                 if (view.Count > 0) o["view"] = view;
                 entities[KeyOf((string)b["id"])] = o;
             }
@@ -305,7 +315,9 @@ namespace CoreDawn.EditorTools
                     new JObject { ["type"] = "Attack", ["range"] = m["attackRange"], ["cooldown"] = m["attackCooldown"], ["effects"] = Uses(m["attackEffects"]) },
                     brain,
                 };
-                o["view"] = new JObject { ["prefab"] = m["prefab"], ["prefabGuid"] = m["prefabGuid"] };
+                var mview = new JObject { ["prefab"] = m["prefab"], ["prefabGuid"] = m["prefabGuid"] };
+                MergeView(mview, m);
+                o["view"] = mview;
                 entities[KeyOf((string)m["id"])] = o;
             }
 
@@ -322,6 +334,7 @@ namespace CoreDawn.EditorTools
                     new JObject { ["type"] = "Crafter", ["manual"] = true, ["speed"] = 1.0, ["recipes"] = new JArray() },
                     new JObject { ["type"] = "Weapon" },   // 무기 소지자 — 총별 탄창·재장전·연사는 심이 판정
                 };
+                o["view"] = new JObject { ["type"] = "Player" };
                 entities["player"] = o;
             }
 
@@ -368,13 +381,55 @@ namespace CoreDawn.EditorTools
             }
             foreach (var g in Arr(d["guns"])) guns[KeyOf((string)g["id"])] = Remap(g);
             foreach (var t in Arr(d["tutorial"])) tutorial[KeyOf((string)t["id"])] = Remap(t);
+            // 소리 — 변형 클립 묶음만(표현 전용). 볼륨·공간감은 쓰는 자리(view.sfx · sfx)의 값이다.
+            foreach (var snd in Arr(d["sounds"]))
+            {
+                var o = new JObject();
+                if (!string.IsNullOrEmpty((string)snd["displayName"])) o["displayName"] = snd["displayName"];
+                var clips = new JArray();
+                foreach (var c in Arr(snd["clips"]))
+                    if (!string.IsNullOrEmpty((string)c["clipGuid"])) clips.Add(new JObject { ["clip"] = c["clip"], ["clipGuid"] = c["clipGuid"] });
+                if (clips.Count == 0) throw new InvalidOperationException($"sounds/{snd["id"]}: clips가 비었습니다");
+                o["view"] = new JObject { ["clips"] = clips };
+                sounds[KeyOf((string)snd["id"])] = o;
+            }
+            // 팩 view 검증 — 뷰 종류와 소리 자리(ViewSchema 표), 소리 id 존재
+            void CheckView(string owner, JToken view)
+            {
+                if (view is not JObject v) return;
+                string type = (string)v["type"];
+                if (string.IsNullOrEmpty(type)) return;   // type 없는 view(아이콘만 있는 아이템 등)는 뷰 종류가 없다
+                if (!CoreDawn.Data.ViewSchema.Types.TryGetValue(type, out var allowed))
+                    throw new InvalidOperationException($"{owner}: 모르는 view.type '{type}' (허용: {string.Join(", ", CoreDawn.Data.ViewSchema.Types.Keys)})");
+                if (v["sfx"] is JObject sfx)
+                    foreach (var p in sfx.Properties())
+                    {
+                        if (Array.IndexOf(allowed, p.Name) < 0) throw new InvalidOperationException($"{owner}: view.sfx '{p.Name}'는 {type}에 없는 자리 (허용: {string.Join(", ", allowed)})");
+                        string sid = (string)p.Value["sound"];
+                        if (string.IsNullOrEmpty(sid) || sounds[sid.Split('/').Last()] == null) throw new InvalidOperationException($"{owner}: view.sfx '{p.Name}'의 소리 '{sid}'가 sounds에 없습니다");
+                    }
+            }
+            foreach (var p in entities.Properties()) CheckView("entities/" + p.Name, p.Value["view"]);
+            foreach (var p in guns.Properties()) CheckView("guns/" + p.Name, p.Value["view"]);
+            foreach (var p in items.Properties()) CheckView("items/" + p.Name, p.Value["view"]);
+            JObject sfxRoot = null;
+            if (d["sfx"] is JObject sfxIn)
+            {
+                sfxRoot = (JObject)Remap(sfxIn);
+                foreach (var p in sfxRoot.Properties())
+                {
+                    string sid = (string)p.Value["sound"];
+                    if (string.IsNullOrEmpty(sid) || sounds[sid.Split('/').Last()] == null) throw new InvalidOperationException($"sfx/{p.Name}: 소리 '{sid}'가 sounds에 없습니다");
+                }
+            }
 
             var outRoot = new JObject
             {
                 ["format"] = 2, ["pack"] = Pack, ["items"] = items, ["recipes"] = recipes, ["effects"] = effects,
-                ["entities"] = entities, ["guns"] = guns, ["tutorial"] = tutorial,
+                ["entities"] = entities, ["guns"] = guns, ["tutorial"] = tutorial, ["sounds"] = sounds,
             };
             if (waveRule != null) outRoot["wave"] = waveRule;
+            if (sfxRoot != null) outRoot["sfx"] = sfxRoot;
             // 주야 시계 — 하나. TimeManager가 읽는다
             if (d["dayCycle"] is JObject dc)
                 outRoot["dayCycle"] = new JObject { ["dayDuration"] = dc["dayDuration"] ?? 360.0, ["nightDuration"] = dc["nightDuration"] ?? 10.0 };
