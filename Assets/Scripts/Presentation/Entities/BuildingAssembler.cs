@@ -83,6 +83,7 @@ namespace CoreDawn.Entities
                 inst.transform.localRotation = rot;
                 inst.transform.localScale = Vector3.one * scale;
                 body = inst.transform;
+                PlayLoop(inst, view, shape, def.Id);
             }
             else
             {
@@ -110,6 +111,23 @@ namespace CoreDawn.Entities
                 if (smr.GetComponent<Collider>() == null && smr.sharedMesh != null)
                     smr.gameObject.AddComponent<MeshCollider>().sharedMesh = smr.sharedMesh;
             return body;
+        }
+
+        /// <summary>
+        /// 항상 도는 클립(벨트 모프 애니) — view.loop(모양별 loopCurveL/loopCurveR)에 적힌 glb 애니메이션 이름을 반복 재생한다.
+        /// 상태에 따라 바뀌는 애니(타워·몬스터)는 각 뷰의 재생기 몫. 이름이 없으면 오류.
+        /// </summary>
+        static void PlayLoop(GameObject inst, ViewSpec view, BeltShape shape, string owner)
+        {
+            string key = shape == BeltShape.CurveL ? "loopCurveL" : shape == BeltShape.CurveR ? "loopCurveR" : "loop";
+            string clipName = view.String(key);
+            if (string.IsNullOrEmpty(clipName)) return;
+            var anim = inst.GetComponentInChildren<Animation>(true);
+            var clip = anim != null ? anim.GetClip(clipName) : null;
+            if (clip == null) { Debug.LogError($"[BuildingAssembler] {owner}: view.{key} '{clipName}' 클립이 모델에 없습니다.", inst); return; }
+            clip.wrapMode = WrapMode.Loop;
+            anim.wrapMode = WrapMode.Loop;
+            anim.Play(clipName);
         }
 
         /// <summary>view.type별 뷰 컴포넌트 — 없을 때만 붙인다(마커에 이미 있을 수 있다). 타워 리그 배선은 몸체가 있을 때.</summary>

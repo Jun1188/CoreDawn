@@ -97,6 +97,7 @@ namespace CoreDawn.Managers
             holder.transform.SetParent(root, false);
             bool inst = await gltf.InstantiateMainSceneAsync(holder.transform);
             if (!inst) { Debug.LogError($"[PackAssets] glb 장면을 세우지 못했습니다: {relative}"); Destroy(holder); return null; }
+            foreach (var anim in holder.GetComponentsInChildren<Animation>(true)) { anim.playAutomatically = false; anim.Stop(); }   // 클립은 뷰가 상태에 따라 튼다(view.loop 등)
             holder.SetActive(false);   // 템플릿 — 조립기가 Instantiate로 복제한다
             models[relative] = holder;
             return holder;

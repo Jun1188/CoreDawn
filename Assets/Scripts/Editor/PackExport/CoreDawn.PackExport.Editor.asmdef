@@ -3,7 +3,8 @@
     "rootNamespace": "CoreDawn.EditorTools",
     "references": [
         "glTFast",
-        "glTFast.Export"
+        "glTFast.Export",
+        "Unity.Nuget.Newtonsoft-Json"
     ],
     "includePlatforms": [
         "Editor"

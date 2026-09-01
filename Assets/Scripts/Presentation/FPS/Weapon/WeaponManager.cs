@@ -112,8 +112,11 @@ namespace CoreDawn.FPS
             var parent = gunRoot != null ? gunRoot : transform;
             var view = ViewSchema.Of(def);
             if (view.Type != "Gun") { Debug.LogError($"[WeaponManager] {def.Id}: view.type이 Gun이 아닙니다('{view.Type}') — 조립하지 않습니다."); return null; }
-            var model = ViewCatalogSO.ModelOf(def);
-            if (model == null) Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 내장 체커 상자로 조립합니다.");
+            // 모델 — 팩 glb(view.model[0] {file, materials})이면 PackAssets, 옛 guid 문자열이면 카탈로그(과도기)
+            var refs = view.Models();
+            var chosen = refs.Count > 0 ? refs[0] : null;
+            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : ViewCatalogSO.ModelOf(def);
+            if (model == null) Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 없습니다 — 내장 체커 상자로 조립합니다.");
 
             var go = new GameObject(PascalKeyOf(def.Id));
             go.SetActive(false);   // 자세·앵커를 다 잡은 뒤 켠다 — Gun.Awake가 카메라를 찾는다
@@ -122,7 +125,9 @@ namespace CoreDawn.FPS
             go.transform.localPosition = pos; go.transform.localRotation = rot; go.transform.localScale = Vector3.one * scale;
 
             var body = model != null ? Instantiate(model, go.transform) : Managers.MissingAssets.Box("Missing", new Vector3(0.1f, 0.1f, 0.4f), go.transform);
-            body.name = model.name;
+            body.name = model != null ? model.name : "Missing";
+            body.SetActive(true);   // 팩 템플릿은 비활성으로 보관된다
+            if (chosen != null && chosen.IsPack) Managers.PackAssets.BindSlots(body, chosen.Materials, def.Id);
             body.transform.localPosition = Vector3.zero; body.transform.localRotation = Quaternion.identity; body.transform.localScale = Vector3.one;
             // 뷰모델 레이어 — 홀더(Weapon_Holder, Weapon 레이어)의 것을 그대로 물려받는다. 오버레이 카메라가 이 레이어만 그리고 메인 카메라·조명은 뺀다
             SetLayerRecursively(go.transform, parent.gameObject.layer);

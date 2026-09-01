@@ -456,6 +456,978 @@
         "_ALPHATEST_ON"
       ],
       "renderQueue": -1
+    },
+    {
+      "id": "Material:MachineGunLevel3TexV003",
+      "displayName": "MachineGun_Level3_tex_v003",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "MachineGun_Level3_tex_v003",
+          "textureGuid": "f35086d0b6e364570a50a905e1866ca6",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "MachineGun_Level3_tex_v003",
+          "textureGuid": "f35086d0b6e364570a50a905e1866ca6",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_SpecColor",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 0.891
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:FactoryColor",
+      "displayName": "FactoryColor",
+      "shader": "Shader Graphs/FactoryColor",
+      "textures": [
+        {
+          "name": "_SampleTexture2D_32b88678b18a440daef85734904b9e30_Texture_1_Texture2D",
+          "texture": "Palette",
+          "textureGuid": "a824e5c2beba1c54f9b3eaa916e05bf6",
+          "linear": false
+        }
+      ],
+      "floats": [
+        {
+          "name": "_QueueControl",
+          "value": 0.0
+        }
+      ],
+      "renderQueue": -1
+    },
+    {
+      "id": "Material:Glass",
+      "displayName": "Glass",
+      "shader": "Shader Graphs/Glass",
+      "floats": [
+        {
+          "name": "_QueueControl",
+          "value": 0.0
+        }
+      ],
+      "renderQueue": -1
+    },
+    {
+      "id": "Material:EnergyPylonL03AlbedoV001",
+      "displayName": "EnergyPylon_L03_Albedo_V001",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "EnergyPylon_L03_Albedo_V001",
+          "textureGuid": "da42da7650c9a43d2a79636cc00ade3e",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "EnergyPylon_L03_Albedo_V001",
+          "textureGuid": "da42da7650c9a43d2a79636cc00ade3e",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_SpecColor",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:RocketTowerL03TextureV003",
+      "displayName": "Rocket_Tower_L03_Texture_V003",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "Rocket_Tower_L03_Texture_V003",
+          "textureGuid": "b2321b12dddb84659b9608663218e77b",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "Rocket_Tower_L03_Texture_V003",
+          "textureGuid": "b2321b12dddb84659b9608663218e77b",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_SpecColor",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:LaserTowerL03AlbedoV001",
+      "displayName": "LaserTower_L03_Albedo_V001",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "LaserTower_L03_Albedo_V001",
+          "textureGuid": "d7e80cbd04e364360b128effe2033b7e",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "LaserTower_L03_Albedo_V001",
+          "textureGuid": "d7e80cbd04e364360b128effe2033b7e",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_SpecColor",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:SuperTowerAlbedoV001",
+      "displayName": "SuperTower_Albedo_V001",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "SuperTower_Albedo_V001",
+          "textureGuid": "aa641dfadd2d1490fa27b0dbdfb7f121",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "SuperTower_Albedo_V001",
+          "textureGuid": "aa641dfadd2d1490fa27b0dbdfb7f121",
+          "linear": false
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:EMPTowerLevel3TexV001",
+      "displayName": "EMP_Tower_level_3_tex_v001",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "EMP_Tower_level_3_tex_v001",
+          "textureGuid": "afcf8eec8162947e48439011ecb77f51",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "EMP_Tower_level_3_tex_v001",
+          "textureGuid": "afcf8eec8162947e48439011ecb77f51",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_SpecColor",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:MoltenColor",
+      "displayName": "MoltenColor",
+      "shader": "Shader Graphs/MoltenColor",
+      "floats": [
+        {
+          "name": "_QueueControl",
+          "value": 0.0
+        }
+      ],
+      "renderQueue": -1
+    },
+    {
+      "id": "Material:YellowLight",
+      "displayName": "YellowLight",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 1.0,
+          "g": 0.3904782,
+          "b": 0.0,
+          "a": 1.0
+        },
+        {
+          "name": "_EmissionColor",
+          "r": 4.237095,
+          "g": 0.4806516,
+          "b": 0.0,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 1.0,
+          "g": 0.3904782,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.0
+        }
+      ],
+      "keywords": [
+        "_EMISSION"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:BuildingBase",
+      "displayName": "BuildingBase",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.482352972,
+          "g": 0.435294151,
+          "b": 0.396078467,
+          "a": 1.0
+        },
+        {
+          "name": "_EmissionColor",
+          "r": 0.0301880836,
+          "g": 0.0301880836,
+          "b": 0.0301880836,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 0.482352972,
+          "g": 0.435294151,
+          "b": 0.396078467,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.43
+        }
+      ],
+      "keywords": [
+        "_EMISSION"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:Black",
+      "displayName": "Black",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.274
+        },
+        {
+          "name": "_Metallic",
+          "value": 0.075
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:White",
+      "displayName": "White",
+      "shader": "Universal Render Pipeline/Lit",
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.0
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:BlackAndGreen",
+      "displayName": "BlackAndGreen",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "BlackAndGreen_basecolor",
+          "textureGuid": "67087ecccaf05eb47a13d0e9d684cbd6",
+          "linear": false
+        },
+        {
+          "name": "_MetallicGlossMap",
+          "texture": "BlackAndGreen_roughnessMetal",
+          "textureGuid": "8558f1e717ed4164ea5e98842ffda153",
+          "linear": false
+        },
+        {
+          "name": "_EmissionMap",
+          "texture": "BlackAndGreen_emission",
+          "textureGuid": "db20fcf70198feb4ea14b95b14a86ade",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "BlackAndGreen_basecolor",
+          "textureGuid": "67087ecccaf05eb47a13d0e9d684cbd6",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_EmissionColor",
+          "r": 2.0,
+          "g": 2.0,
+          "b": 2.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 1.0
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "keywords": [
+        "_EMISSION",
+        "_METALLICSPECGLOSSMAP"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:DawnWhite",
+      "displayName": "DawnWhite",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "DawnWhite_basecolor",
+          "textureGuid": "a4c335fa7e03e7440b96dfb85beb7ad7",
+          "linear": false
+        },
+        {
+          "name": "_MetallicGlossMap",
+          "texture": "DawnWhite_roughnessMetal",
+          "textureGuid": "8dd45e98bfdb2ad48a12540a74365c4c",
+          "linear": false
+        },
+        {
+          "name": "_EmissionMap",
+          "texture": "DawnWhite_emission",
+          "textureGuid": "14fc99d7d6ed54c469b149e451d70988",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "DawnWhite_basecolor",
+          "textureGuid": "a4c335fa7e03e7440b96dfb85beb7ad7",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_EmissionColor",
+          "r": 3.0,
+          "g": 3.0,
+          "b": 3.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 1.0
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "keywords": [
+        "_EMISSION",
+        "_METALLICSPECGLOSSMAP"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:Scope",
+      "displayName": "Scope",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.0392156877,
+          "g": 0.0392156877,
+          "b": 0.0784313753,
+          "a": 0.0784313753
+        },
+        {
+          "name": "_Color",
+          "r": 0.0392156877,
+          "g": 0.0392156877,
+          "b": 0.0784313753,
+          "a": 0.0784313753
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.98
+        },
+        {
+          "name": "_Metallic",
+          "value": 1.0
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_Surface",
+          "value": 1.0
+        },
+        {
+          "name": "_Blend",
+          "value": 1.0
+        },
+        {
+          "name": "_DstBlend",
+          "value": 10.0
+        },
+        {
+          "name": "_DstBlendAlpha",
+          "value": 10.0
+        },
+        {
+          "name": "_ZWrite",
+          "value": 0.0
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.98
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "keywords": [
+        "_SURFACE_TYPE_TRANSPARENT"
+      ],
+      "renderQueue": 3000,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Transparent"
+        }
+      ]
+    },
+    {
+      "id": "Material:DeepBlue",
+      "displayName": "DeepBlue",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "DeepBlue_basecolor",
+          "textureGuid": "90e3ffe368141a64daf66ca78844bbe3",
+          "linear": false
+        },
+        {
+          "name": "_MetallicGlossMap",
+          "texture": "DeepBlue_roughnessMetal",
+          "textureGuid": "5c01c478c9f7bcd4b9faa17fea5df176",
+          "linear": false
+        },
+        {
+          "name": "_EmissionMap",
+          "texture": "DeepBlue_emission",
+          "textureGuid": "f7877cd44d131e043b7508e75bb5db92",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "DeepBlue_basecolor",
+          "textureGuid": "90e3ffe368141a64daf66ca78844bbe3",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_EmissionColor",
+          "r": 3.0,
+          "g": 3.0,
+          "b": 3.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 1.0
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "keywords": [
+        "_EMISSION",
+        "_METALLICSPECGLOSSMAP"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:HellRed",
+      "displayName": "HellRed",
+      "shader": "Universal Render Pipeline/Lit",
+      "textures": [
+        {
+          "name": "_BaseMap",
+          "texture": "HellRed_basecolor",
+          "textureGuid": "0edae71e0c8150d4cb7df503389922e2",
+          "linear": false
+        },
+        {
+          "name": "_MetallicGlossMap",
+          "texture": "HellRed_roughnessMetal",
+          "textureGuid": "09cb64a81ae79e64db1b029f44a4a410",
+          "linear": false
+        },
+        {
+          "name": "_EmissionMap",
+          "texture": "HellRed_emission",
+          "textureGuid": "cc7b85e60fd027d418569bcc5d76be1f",
+          "linear": false
+        },
+        {
+          "name": "_MainTex",
+          "texture": "HellRed_basecolor",
+          "textureGuid": "0edae71e0c8150d4cb7df503389922e2",
+          "linear": false
+        }
+      ],
+      "colors": [
+        {
+          "name": "_EmissionColor",
+          "r": 3.0,
+          "g": 3.0,
+          "b": 3.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 1.0
+        },
+        {
+          "name": "_Parallax",
+          "value": 0.02
+        },
+        {
+          "name": "_GlossMapScale",
+          "value": 1.0
+        },
+        {
+          "name": "_Glossiness",
+          "value": 0.5
+        },
+        {
+          "name": "_GlossyReflections",
+          "value": 1.0
+        }
+      ],
+      "keywords": [
+        "_EMISSION",
+        "_METALLICSPECGLOSSMAP"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:PlasmaCutterGrip",
+      "displayName": "PlasmaCutterGrip",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.16,
+          "g": 0.17,
+          "b": 0.19,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 0.16,
+          "g": 0.17,
+          "b": 0.19,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.35
+        },
+        {
+          "name": "_Metallic",
+          "value": 0.8
+        }
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
+    },
+    {
+      "id": "Material:PlasmaCutterEdge",
+      "displayName": "PlasmaCutterEdge",
+      "shader": "Universal Render Pipeline/Lit",
+      "colors": [
+        {
+          "name": "_BaseColor",
+          "r": 0.3,
+          "g": 0.85,
+          "b": 1.0,
+          "a": 1.0
+        },
+        {
+          "name": "_EmissionColor",
+          "r": 0.35,
+          "g": 2.2,
+          "b": 3.0,
+          "a": 1.0
+        },
+        {
+          "name": "_Color",
+          "r": 0.3,
+          "g": 0.85,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ],
+      "floats": [
+        {
+          "name": "_Smoothness",
+          "value": 0.7
+        }
+      ],
+      "keywords": [
+        "_EMISSION"
+      ],
+      "renderQueue": -1,
+      "tags": [
+        {
+          "name": "RenderType",
+          "value": "Opaque"
+        }
+      ]
     }
   ],
   "sfx": {
@@ -606,7 +1578,17 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/pistol.glb",
+            "materials": [
+              "Material:HellRed",
+              "Material:DawnWhite",
+              "Material:Scope"
+            ]
+          }
+        ]
       },
       "id": "Gun:Pistol",
       "displayName": "기본 권총",
@@ -680,7 +1662,17 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/rifle.glb",
+            "materials": [
+              "Material:DeepBlue",
+              "Material:DawnWhite",
+              "Material:Scope"
+            ]
+          }
+        ]
       },
       "id": "Gun:Rifle",
       "displayName": "라이플",
@@ -754,7 +1746,16 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/shotgun.glb",
+            "materials": [
+              "Material:DeepBlue",
+              "Material:DawnWhite"
+            ]
+          }
+        ]
       },
       "id": "Gun:Shotgun",
       "displayName": "샷건",
@@ -828,7 +1829,16 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/sniper.glb",
+            "materials": [
+              "Material:DawnWhite",
+              "Material:Scope"
+            ]
+          }
+        ]
       },
       "id": "Gun:Sniper",
       "displayName": "스나이퍼",
@@ -903,7 +1913,17 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/grenade_launcher.glb",
+            "materials": [
+              "Material:DeepBlue",
+              "Material:DawnWhite",
+              "Material:Scope"
+            ]
+          }
+        ]
       },
       "id": "Gun:GrenadeLauncher",
       "displayName": "유탄 발사기",
@@ -977,7 +1997,17 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/energy_rifle.glb",
+            "materials": [
+              "Material:BlackAndGreen",
+              "Material:DawnWhite",
+              "Material:Scope"
+            ]
+          }
+        ]
       },
       "id": "Gun:EnergyRifle",
       "displayName": "에너지 소총",
@@ -1036,7 +2066,16 @@
         "knockback": {
           "effect": "Effect:Knockback",
           "perDamage": 0.2
-        }
+        },
+        "models": [
+          {
+            "file": "models/plasma_cutter.glb",
+            "materials": [
+              "Material:PlasmaCutterGrip",
+              "Material:PlasmaCutterEdge"
+            ]
+          }
+        ]
       },
       "id": "Gun:PlasmaCutter",
       "displayName": "플라즈마 커터",
@@ -2320,7 +3359,15 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/miner.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -2443,7 +3490,16 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/smelter.glb",
+          "materials": [
+            "Material:FactoryColor",
+            "Material:MoltenColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -2511,7 +3567,15 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/constructor.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -2766,7 +3830,10 @@
             180,
             0
           ]
-        }
+        },
+        "loop": "Belt_Action",
+        "loopCurveL": "Belt.L_Action",
+        "loopCurveR": "Belt.R_Action"
       },
       "id": "Building:Belt",
       "kind": "Belt",
@@ -2827,7 +3894,31 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/belt.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ],
+      "modelsCurveL": [
+        {
+          "file": "models/belt_curve_l.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ],
+      "modelsCurveR": [
+        {
+          "file": "models/belt_curve_r.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -2972,7 +4063,15 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/splitter.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -3058,7 +4157,15 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/merger.glb",
+          "materials": [
+            "Material:FactoryColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -3155,7 +4262,19 @@
       "muzzleHeight": -1.0,
       "preferHighArc": false,
       "turnSpeed": -1.0,
-      "aimTolerance": -1.0
+      "aimTolerance": -1.0,
+      "models": [
+        {
+          "file": "models/storage.glb",
+          "materials": [
+            "Material:YellowLight",
+            "Material:BuildingBase",
+            "Material:Black",
+            "Material:White",
+            "Material:FactoryColor"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -3367,6 +4486,15 @@
           "maxHpBonus": 1000,
           "isFinal": true
         }
+      ],
+      "models": [
+        {
+          "file": "models/core.glb",
+          "materials": [
+            "Material:FactoryColor",
+            "Material:Glass"
+          ]
+        }
       ]
     },
     {
@@ -3428,7 +4556,15 @@
       "preferHighArc": false,
       "turnSpeed": 0.0,
       "aimTolerance": 3.0,
-      "ammoFilter": []
+      "ammoFilter": [],
+      "models": [
+        {
+          "file": "models/fence.glb",
+          "materials": [
+            "Material:EnergyPylonL03AlbedoV001"
+          ]
+        }
+      ]
     },
     {
       "view": {
@@ -3563,6 +4699,14 @@
         "Item:BasicAmmo",
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
+      ],
+      "models": [
+        {
+          "file": "models/basic_turret.glb",
+          "materials": [
+            "Material:MachineGunLevel3TexV003"
+          ]
+        }
       ]
     },
     {
@@ -3652,6 +4796,14 @@
       "ammoFilter": [
         "Item:DenseAmmo",
         "Item:CrystalAmmo"
+      ],
+      "models": [
+        {
+          "file": "models/heavy_turret.glb",
+          "materials": [
+            "Material:RocketTowerL03TextureV003"
+          ]
+        }
       ]
     },
     {
@@ -3740,6 +4892,14 @@
       "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:Grenade"
+      ],
+      "models": [
+        {
+          "file": "models/mortar_tower.glb",
+          "materials": [
+            "Material:SuperTowerAlbedoV001"
+          ]
+        }
       ]
     },
     {
@@ -3823,6 +4983,14 @@
       "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
+      ],
+      "models": [
+        {
+          "file": "models/laser_tower.glb",
+          "materials": [
+            "Material:LaserTowerL03AlbedoV001"
+          ]
+        }
       ]
     },
     {
@@ -3907,6 +5075,14 @@
       "aimTolerance": 3.0,
       "ammoFilter": [
         "Item:EnergyCellAmmo"
+      ],
+      "models": [
+        {
+          "file": "models/slow_field_tower.glb",
+          "materials": [
+            "Material:EMPTowerLevel3TexV001"
+          ]
+        }
       ]
     },
     {

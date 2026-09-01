@@ -61,7 +61,7 @@ namespace CoreDawn.EditorTools
         }
 
         /// <summary>씬 오브젝트(인스턴스)를 glb로 — 루트를 원점·<paramref name="scale"/>로 놓고 굽는다. 인스턴스는 호출자가 지운다.</summary>
-        static async Task<string> ExportObject(GameObject inst, string outPath, float scale)
+        public static async Task<string> ExportObject(GameObject inst, string outPath, float scale)
         {
             var temps = new List<Material>();
             inst.name = Path.GetFileNameWithoutExtension(outPath);
@@ -91,6 +91,7 @@ namespace CoreDawn.EditorTools
         static List<Material> StripMaterialsToNames(GameObject root)
         {
             var temps = new List<Material>();
+            var byName = new Dictionary<string, Material>();   // 원본 이름마다 하나 — glb 재질 슬롯이 렌더러 수만큼 중복되지 않게
             var lit = Shader.Find("Universal Render Pipeline/Lit");
             foreach (var r in root.GetComponentsInChildren<Renderer>(true))
             {
@@ -98,12 +99,23 @@ namespace CoreDawn.EditorTools
                 for (int i = 0; i < mats.Length; i++)
                 {
                     if (mats[i] == null) continue;
-                    var t = new Material(lit) { name = mats[i].name };
-                    temps.Add(t); mats[i] = t;
+                    if (!byName.TryGetValue(mats[i].name, out var t)) { t = new Material(lit) { name = mats[i].name }; byName[mats[i].name] = t; temps.Add(t); }
+                    mats[i] = t;
                 }
                 r.sharedMaterials = mats;
             }
             return temps;
+        }
+
+        /// <summary>glb의 materials 배열 이름(= 재질 슬롯 순서). 이관 도구가 슬롯 → 팩 재질을 잇는 데 쓴다.</summary>
+        public static List<string> MaterialNamesOf(string glbPath)
+        {
+            var bytes = File.ReadAllBytes(glbPath);
+            int len = System.BitConverter.ToInt32(bytes, 12);
+            var json = Newtonsoft.Json.Linq.JObject.Parse(System.Text.Encoding.UTF8.GetString(bytes, 20, len));
+            var names = new List<string>();
+            if (json["materials"] is Newtonsoft.Json.Linq.JArray mats) foreach (var m in mats) names.Add((string)m["name"]);
+            return names;
         }
 
         /// <summary>LODGroup이 있으면 LOD0 렌더러만 남기고 나머지 LOD의 오브젝트를 지운다.</summary>

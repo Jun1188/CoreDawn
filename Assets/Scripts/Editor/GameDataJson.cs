@@ -235,6 +235,7 @@ namespace CoreDawn.EditorTools
             // 종류별 전용 필드 — 해당 kind가 아니면 무시된다
             public float    speedMultiplier;      // Miner
             public float    speedTilesPerSec;     // Belt
+            public ModelDto[] modelsCurveL, modelsCurveR;   // 벨트 커브의 팩 모델(5a-4c) — 있으면 modelCurveL/R guid 대신
             public string   modelCurveL, modelCurveR;
             public string   modelCurveLGuid, modelCurveRGuid;
             public string[] availableRecipes;     // Assembler
