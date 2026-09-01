@@ -23,7 +23,8 @@ namespace CoreDawn.Data
         {
             public string id;                  // 팩 id (예: coredawn:item/iron_ore, coredawn:entity/miner)
             public Sprite icon;                // 아이템·건물(빌드 메뉴) 아이콘
-            public GameObject prefab;          // 건물·몬스터 본체 (벨트는 직선)
+            public GameObject prefab;          // 건물·몬스터 본체 (벨트는 직선) — 손 저작 프리팹, 5a-4 조립기가 대체해 간다
+            public GameObject model;           // 모델 에셋(fbx·모델 프리팹) — 조립기가 정의의 view.type으로 컴포넌트를 붙여 세운다
             public GameObject curveLPrefab;    // 벨트 커브 — 벨트만
             public GameObject curveRPrefab;
             public GameObject bulletPrefab;    // 탄약 아이템 — 탄 외형(Bullet 컴포넌트 필수)
@@ -63,6 +64,7 @@ namespace CoreDawn.Data
 
         public static Sprite IconOf(Def def) => Of(def)?.icon;
         public static GameObject PrefabOf(Def def) => Of(def)?.prefab;
+        public static GameObject ModelOf(Def def) => Of(def)?.model;
         /// <summary>소리 id의 클립 묶음. 없으면 null — 호출부(SoundManager)가 한 번 경고한다.</summary>
         public static AudioClip[] ClipsOf(string soundId) => Of(soundId)?.clips;
 

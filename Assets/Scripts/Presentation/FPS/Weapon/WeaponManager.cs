@@ -16,8 +16,12 @@ namespace CoreDawn.FPS
     /// </summary>
     public class WeaponManager : MonoBehaviour
     {
-        [Header("Weapon Ob List")]
-        [SerializeField] private Gun[] weapons; // 하위에 있는 Gun1, Gun2 등을 모두 드래그 앤 드롭
+        [Header("조립 — 총은 팩 정의(guns.view)에서 만든다")]
+        [Tooltip("총 오브젝트를 세울 부모. 비우면 이 오브젝트(Weapon_Holder).")]
+        [SerializeField] private Transform gunRoot;
+        [Tooltip("탄이 맞힐 레이어 — 모든 총이 같다(뷰 값).")]
+        [SerializeField] private LayerMask enemyLayer;
+        private Gun[] weapons = System.Array.Empty<Gun>();
 
         [Header("연출 모듈 (Weapon_Holder)")]
         [SerializeField] private WeaponMotionManager motionManager;
@@ -38,6 +42,8 @@ namespace CoreDawn.FPS
         static WeaponModule Weapon => PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.Entity?.Get<WeaponModule>() : null;
         static float Now => SimRunner.Players.Now;
 
+        private void Awake() => AssembleGuns();
+
         private void Start()
         {
             // 시작할 때 모든 무기를 꺼둔다 (맨손 상태로 시작)
@@ -46,6 +52,64 @@ namespace CoreDawn.FPS
                 weapon.gameObject.SetActive(false);
                 weapon.Fired += OnWeaponFired;
             }
+        }
+
+        /// <summary>
+        /// 팩의 총 정의마다 총 오브젝트 하나 — 정의의 view가 전부 정한다: model(카탈로그), pose(홀더 기준 자세),
+        /// muzzle·sight(모델 기준 앵커 — 모델 안에 MuzzlePoint/SightPos 노드가 있으면 그것), knockback, sfx(Gun이 읽는다).
+        /// 프리팹에 손으로 둔 총 오브젝트는 없다(5a-4b). view.type이 Gun이 아니거나 모델이 없으면 그 총은 소리 내고 건너뛴다.
+        /// </summary>
+        private void AssembleGuns()
+        {
+            var db = SimHost.Database;
+            if (db == null) { Debug.LogError("[WeaponManager] 팩 정의(SimHost.Database)가 없어 총을 조립하지 못했습니다.", this); return; }
+            var parent = gunRoot != null ? gunRoot : transform;
+            var list = new System.Collections.Generic.List<Gun>();
+            foreach (var def in db.Guns.Values)
+            {
+                var view = ViewSchema.Of(def);
+                if (view.Type != "Gun") { Debug.LogError($"[WeaponManager] {def.Id}: view.type이 Gun이 아닙니다('{view.Type}') — 조립하지 않습니다."); continue; }
+                var model = ViewCatalogSO.ModelOf(def);
+                if (model == null) { Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 조립하지 않습니다."); continue; }
+
+                var go = new GameObject(PascalKeyOf(def.Id));
+                go.transform.SetParent(parent, false);
+                var (pos, rot, scale) = view.Pose;
+                go.transform.localPosition = pos; go.transform.localRotation = rot; go.transform.localScale = Vector3.one * scale;
+
+                var body = Instantiate(model, go.transform);
+                body.name = model.name;
+                body.transform.localPosition = Vector3.zero; body.transform.localRotation = Quaternion.identity; body.transform.localScale = Vector3.one;
+
+                var gun = go.AddComponent<Gun>();
+                gun.gunId = def.Id;
+                gun.enemyLayer = enemyLayer;
+                gun.muzzlePoint = Anchor(body.transform, "MuzzlePoint", view.Vec3("muzzle"));
+                gun.sightPoint = Anchor(body.transform, "SightPos", view.Vec3("sight"));
+                var kb = view.Object("knockback");
+                if (kb != null) { gun.knockbackEffectId = (string)kb["effect"]; gun.knockbackPerDamage = (float?)kb["perDamage"] ?? gun.knockbackPerDamage; }
+                list.Add(gun);
+            }
+            weapons = list.ToArray();
+        }
+
+        /// <summary>모델 안의 이름 노드(리그 규약) 또는 view의 좌표(서드파티 모델)로 앵커를 만든다. 둘 다 없으면 null(근접 등).</summary>
+        static Transform Anchor(Transform model, string nodeName, Vector3? local)
+        {
+            foreach (var t in model.GetComponentsInChildren<Transform>(true)) if (t.name == nodeName) return t;
+            if (!local.HasValue) return null;
+            var a = new GameObject(nodeName).transform;
+            a.SetParent(model, false);
+            a.localPosition = local.Value;
+            return a;
+        }
+
+        static string PascalKeyOf(string id)
+        {
+            string key = id.Substring(id.LastIndexOf('/') + 1);
+            var sb = new System.Text.StringBuilder(key.Length); bool up = true;
+            foreach (char c in key) { if (c == '_') { up = true; continue; } sb.Append(up ? char.ToUpperInvariant(c) : c); up = false; }
+            return sb.ToString();
         }
 
         private void OnDestroy()
@@ -71,7 +135,7 @@ namespace CoreDawn.FPS
                 return;
             }
 
-            Debug.LogWarning($"[WeaponManager] 총 정의 '{target.Id}' 를 가진 무기 오브젝트가 WeaponHolder 하위에 없습니다!");
+            Debug.LogWarning($"[WeaponManager] 총 정의 '{target.Id}' 의 총이 조립되지 않았습니다 — 팩 guns.view(type·model)를 확인하세요.");
         }
 
         public void UnequipWeapon()

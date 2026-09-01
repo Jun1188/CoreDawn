@@ -455,6 +455,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "LaserPistol",
+        "modelGuid": "50847d0c89afcb04fbb94ea3d83fa02b",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            0.9
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0727,
+          0.3499
+        ],
+        "sight": [
+          0.0,
+          0.1549,
+          -0.0127
+        ],
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:Pistol",
@@ -500,6 +529,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "LowPowerRailGun",
+        "modelGuid": "2eab7d8cf189380478ebb3fad3935652",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0737,
+          0.3947
+        ],
+        "sight": [
+          0.0,
+          0.1541,
+          -0.0064
+        ],
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:Rifle",
@@ -545,6 +603,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "RegularShotgun",
+        "modelGuid": "3058199639e1a314dbab496b92c1cfaa",
+        "pose": {
+          "position": [
+            0.35,
+            -0.15,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0026,
+          0.5097
+        ],
+        "sight": [
+          0.0,
+          0.0391,
+          0.1016
+        ],
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:Shotgun",
@@ -590,6 +677,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "SilencedSniperRifle",
+        "modelGuid": "da100db5ca11ec24ca178e51bde2e730",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0618,
+          0.6786
+        ],
+        "sight": [
+          0.0,
+          0.1366,
+          -0.069
+        ],
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:Sniper",
@@ -636,6 +752,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "BombLauncher",
+        "modelGuid": "aaa699c05fa2cd74fad0f1bdaeeade4a",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.1345,
+          0.3045
+        ],
+        "sight": [
+          -0.0838,
+          0.1302,
+          0.037
+        ],
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:GrenadeLauncher",
@@ -681,6 +826,35 @@
             "volume": 0.7,
             "spatial": true
           }
+        },
+        "model": "HighPowerThermalRifle",
+        "modelGuid": "b4a1a184f2dfb834fa98f05e44867d04",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0674,
+          0.5178
+        ],
+        "sight": [
+          0.0,
+          0.1816,
+          0.1275
+        ],
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:EnergyRifle",
@@ -721,6 +895,25 @@
             "volume": 0.55,
             "spatial": true
           }
+        },
+        "model": "PlasmaCutter_Model",
+        "modelGuid": "a9128e96b6679e144b3f76ceace04326",
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            0.85
+          ],
+          "rotation": [
+            300.0,
+            334.0,
+            18.0
+          ],
+          "scale": 0.25
+        },
+        "knockback": {
+          "effect": "Effect:Knockback",
+          "perDamage": 0.2
         }
       },
       "id": "Gun:PlasmaCutter",

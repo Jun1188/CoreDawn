@@ -45,6 +45,28 @@ namespace CoreDawn.Data
         /// <summary>이름의 소리 자리. 정의에 없으면 null — 그 연출은 소리 없이 지나간다(빠진 이름은 이미 로드 때 검증됐다).</summary>
         public SoundUse SfxOf(string name) => sfx.TryGetValue(name, out var u) ? u : null;
 
+        /// <summary>view의 [x, y, z] 배열. 없거나 짧으면 null.</summary>
+        public Vector3? Vec3(string key)
+        {
+            if (Raw[key] is not JArray a || a.Count < 3) return null;
+            return new Vector3((float)a[0], (float)a[1], (float)a[2]);
+        }
+        public float Float(string key, float fallback) => (float?)Raw[key] ?? fallback;
+        public string String(string key) => (string)Raw[key];
+        /// <summary>하위 객체(예: pose·knockback). 없으면 null.</summary>
+        public JObject Object(string key) => Raw[key] as JObject;
+
+        /// <summary>view.pose{position, rotation(오일러), scale} — 부모(손·홀더) 기준 자세. 없으면 원점·단위.</summary>
+        public (Vector3 position, Quaternion rotation, float scale) Pose
+        {
+            get
+            {
+                if (Raw["pose"] is not JObject p) return (Vector3.zero, Quaternion.identity, 1f);
+                Vector3 V(string k) { if (p[k] is JArray a && a.Count >= 3) return new Vector3((float)a[0], (float)a[1], (float)a[2]); return Vector3.zero; }
+                return (V("position"), Quaternion.Euler(V("rotation")), (float?)p["scale"] ?? 1f);
+            }
+        }
+
         internal ViewSpec(Def def, JObject raw)
         {
             Def = def;
