@@ -2156,8 +2156,6 @@
       "category": "Production",
       "model": "Miner.fbx",
       "modelGuid": "38bc4162e9cc06c449ab7fa8686b5fcb",
-      "prefab": "Miner",
-      "prefabGuid": "687143ae40f3c5041a38fa275fc61709",
       "size": {
         "x": 1,
         "y": 1
@@ -2211,10 +2209,6 @@
       "displayName": "채굴기 Mk.2",
       "description": "두 배 빠르게 캔다. 광맥이 감당하는 만큼만 나온다.",
       "category": "Production",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "MinerMk2",
-      "prefabGuid": "9f10b408811a648468f9bc495fad6181",
       "size": {
         "x": 2,
         "y": 2
@@ -2274,8 +2268,6 @@
       "category": "Production",
       "model": "Smelter.fbx",
       "modelGuid": "ea46188c8bdb2b347a989f03493e6ccc",
-      "prefab": "Smelter",
-      "prefabGuid": "98954c35404031d44b6cf0b5bb769d42",
       "size": {
         "x": 1,
         "y": 1
@@ -2342,8 +2334,6 @@
       "category": "Production",
       "model": "Constructor.fbx",
       "modelGuid": "28cee9ec78d36094388f7fddb8b70132",
-      "prefab": "Constructor",
-      "prefabGuid": "f5a783afd8b2d6a48b02259b1cc25bcd",
       "size": {
         "x": 1,
         "y": 1
@@ -2410,10 +2400,6 @@
       "displayName": "조립기",
       "description": "부품 두 종을 합쳐 조립 부품을 만든다.",
       "category": "Production",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "Assembler",
-      "prefabGuid": "f21554090b8662041865fae8ac84acf4",
       "size": {
         "x": 2,
         "y": 2
@@ -2497,10 +2483,6 @@
       "displayName": "제조기",
       "description": "부품 네 종을 한 번에 조립한다. 동력 모듈 전용.",
       "category": "Production",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "Manufacturer",
-      "prefabGuid": "8e72872f52f7d26458e07e2f3105188e",
       "size": {
         "x": 2,
         "y": 2
@@ -2648,7 +2630,21 @@
     },
     {
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "poseCurveL": {
+          "rotation": [
+            0,
+            180,
+            0
+          ]
+        },
+        "poseCurveR": {
+          "rotation": [
+            0,
+            180,
+            0
+          ]
+        }
       },
       "id": "Building:Belt",
       "kind": "Belt",
@@ -2657,12 +2653,6 @@
       "category": "Logistics",
       "model": "Conveyor.prefab",
       "modelGuid": "19042ae8bf9e72943b1b3eec44bea3ce",
-      "prefab": "Belt",
-      "prefabGuid": "0bf1db28421cbd541a35566362273cfa",
-      "prefabCurveL": "BeltLCurve",
-      "prefabCurveLGuid": "7a9640f62bc6f404fa1b9ade84cf47f8",
-      "prefabCurveR": "BeltRCurve",
-      "prefabCurveRGuid": "6514f9f08f82db64e8d5ca4c2c8a0dfb",
       "size": {
         "x": 1,
         "y": 1
@@ -2704,10 +2694,10 @@
       ],
       "speedMultiplier": 0.0,
       "speedTilesPerSec": 1.0,
-      "modelCurveL": "Conveyor_L.fbx",
-      "modelCurveR": "Conveyor_R.fbx",
-      "modelCurveLGuid": "e4dd130d39a2f394ca180cbeada7fba2",
-      "modelCurveRGuid": "441ae0e8dfa059c4cbf87444217d14f3",
+      "modelCurveL": "Conveyor_L.prefab",
+      "modelCurveR": "Conveyor_R.prefab",
+      "modelCurveLGuid": "0512ad4aadb7b874e8526c18eeb11444",
+      "modelCurveRGuid": "7b06e6d2d63b86d43bd7b1804b184bfc",
       "damageMultiplier": 0.0,
       "range": 0.0,
       "fireRate": 0.0,
@@ -2726,10 +2716,6 @@
       "displayName": "컨베이어 벨트 Mk.2",
       "description": "두 배 빠른 벨트.",
       "category": "Logistics",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "BeltMk2",
-      "prefabGuid": "a28ebf27af00fde46833092b742b5913",
       "size": {
         "x": 1,
         "y": 1
@@ -2782,7 +2768,20 @@
     },
     {
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "pose": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ],
+          "scale": 1.0
+        }
       },
       "id": "Building:Splitter",
       "kind": "Splitter",
@@ -2791,8 +2790,6 @@
       "category": "Logistics",
       "model": "Splitter.fbx",
       "modelGuid": "00858b560d59d074180a59958b7d9e2d",
-      "prefab": "Splitter",
-      "prefabGuid": "ec8176281d9d0a540b8a96c88a550a42",
       "size": {
         "x": 1,
         "y": 1
@@ -2857,7 +2854,20 @@
     },
     {
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "pose": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ],
+          "scale": 1.0
+        }
       },
       "id": "Building:Merger",
       "kind": "Merger",
@@ -2866,8 +2876,6 @@
       "category": "Logistics",
       "model": "Merger.fbx",
       "modelGuid": "f9d1fa3ef5596374ca29e18fd2cdfd74",
-      "prefab": "Merger",
-      "prefabGuid": "326f8420de63f324fbe1a0df87f16c51",
       "size": {
         "x": 1,
         "y": 1
@@ -2939,10 +2947,8 @@
       "displayName": "보관소",
       "description": "아이템을 보관한다. 어느 면이든 왼쪽으로 받고 오른쪽으로 내보낸다.",
       "category": "Logistics",
-      "model": "Storage.prefab",
-      "modelGuid": "935e9bd1c205c7044b36b398d51ffa2e",
-      "prefab": "Storage",
-      "prefabGuid": "935e9bd1c205c7044b36b398d51ffa2e",
+      "model": "Storage.fbx",
+      "modelGuid": "c6ea25c29fb3ea442b634a0d909d2a52",
       "size": {
         "x": 2,
         "y": 2
@@ -3040,8 +3046,6 @@
       "category": "Production",
       "model": "SpaceShip.fbx",
       "modelGuid": "8e653362f0109004983636cf44f424dc",
-      "prefab": "Core",
-      "prefabGuid": "87ccd477b828f0c458048e4c6e68d8c2",
       "size": {
         "x": 3,
         "y": 3
@@ -3257,6 +3261,9 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "scale": 0.4918
         }
       },
       "id": "Building:Fence",
@@ -3264,10 +3271,8 @@
       "displayName": "울타리",
       "description": "몬스터의 진로를 막아 동선을 유도한다. 공격하지 않는다.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "Fence",
-      "prefabGuid": "e6214c0413d00174abf3040eab2d1aa1",
+      "model": "FenceRig.fbx",
+      "modelGuid": "3231ff7581e6d4e43951229dfb936aa9",
       "size": {
         "x": 1,
         "y": 1
@@ -3312,10 +3317,6 @@
       "displayName": "지뢰",
       "description": "밟으면 터진다. 건설 비용의 유탄이 그대로 폭약이며 한 번 쓰면 사라진다.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "Mine",
-      "prefabGuid": "10e8294c883dee04fa2a3882bef2b8e4",
       "size": {
         "x": 1,
         "y": 1
@@ -3380,6 +3381,9 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "scale": 0.6451
         }
       },
       "id": "Building:BasicTurret",
@@ -3387,10 +3391,8 @@
       "displayName": "기본 포탑",
       "description": "기본 탄약을 소비해 사격한다. 벨트로 보급할 수 있다.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "BasicTurret",
-      "prefabGuid": "f50c1af3e0d06944fabe0d34dc16aac3",
+      "model": "BasicTurretRig.fbx",
+      "modelGuid": "fea1300688d374841a4f23cfff8ffbae",
       "size": {
         "x": 1,
         "y": 1
@@ -3460,6 +3462,14 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            -0.0197,
+            0.0
+          ],
+          "scale": 1.0602
         }
       },
       "id": "Building:HeavyTurret",
@@ -3467,10 +3477,8 @@
       "displayName": "중기관 포탑",
       "description": "고밀도 탄약을 쓰는 연사 포탑.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "HeavyTurret",
-      "prefabGuid": "63049ff461071ed4596438f0ebbc617b",
+      "model": "HeavyTurretRig.fbx",
+      "modelGuid": "e6fa6663ce1c39045b845afc86480977",
       "size": {
         "x": 2,
         "y": 2
@@ -3543,6 +3551,14 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            -0.0022,
+            0.0
+          ],
+          "scale": 0.6075
         }
       },
       "id": "Building:MortarTower",
@@ -3550,10 +3566,8 @@
       "displayName": "박격포 타워",
       "description": "유탄을 곡사로 날려 범위 피해를 준다. 근접한 적은 때리지 못한다.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "MortarTower",
-      "prefabGuid": "8d23edf3e85cd3144859023827622c98",
+      "model": "MortarTowerRig.fbx",
+      "modelGuid": "da92ae0620899354083d536c7abe165c",
       "size": {
         "x": 2,
         "y": 2
@@ -3625,6 +3639,9 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "scale": 0.9925
         }
       },
       "id": "Building:LaserTower",
@@ -3632,10 +3649,8 @@
       "displayName": "레이저 타워",
       "description": "에너지 셀 탄을 소비해 관통 사격한다.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "LaserTower",
-      "prefabGuid": "c4018ffa10eb81a4bb750acf98ed7d5f",
+      "model": "LaserTowerRig.fbx",
+      "modelGuid": "a6be5a1031f4b534c81ee73224cab637",
       "size": {
         "x": 2,
         "y": 2
@@ -3707,6 +3722,14 @@
             "volume": 0.6,
             "spatial": true
           }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            0.9429,
+            0.0
+          ],
+          "scale": 0.4918
         }
       },
       "id": "Building:SlowFieldTower",
@@ -3714,10 +3737,8 @@
       "displayName": "감속 필드 타워",
       "description": "범위 안의 몬스터를 느리게 만든다. 5초마다 에너지 셀 1개를 태운다.",
       "category": "Defense",
-      "model": "",
-      "modelGuid": "",
-      "prefab": "SlowFieldTower",
-      "prefabGuid": "7d3b3cf4e96f16b468227f6f7b341b38",
+      "model": "SlowFieldTowerRig.fbx",
+      "modelGuid": "d807b040fed44fe4683d5550a1430798",
       "size": {
         "x": 1,
         "y": 1

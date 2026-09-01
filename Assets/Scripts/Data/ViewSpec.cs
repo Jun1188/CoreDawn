@@ -56,15 +56,20 @@ namespace CoreDawn.Data
         /// <summary>하위 객체(예: pose·knockback). 없으면 null.</summary>
         public JObject Object(string key) => Raw[key] as JObject;
 
-        /// <summary>view.pose{position, rotation(오일러), scale} — 부모(손·홀더) 기준 자세. 없으면 원점·단위.</summary>
-        public (Vector3 position, Quaternion rotation, float scale) Pose
+        /// <summary>view.pose{position, rotation(오일러), scale} — 부모(손·홀더·건물 루트) 기준 자세. 없으면 원점·단위.</summary>
+        public (Vector3 position, Quaternion rotation, float scale) Pose => PoseOf("pose");
+
+        /// <summary>벨트 모양별 자세 — 커브 모델은 view.poseCurveL/poseCurveR(없으면 pose).</summary>
+        public (Vector3 position, Quaternion rotation, float scale) PoseFor(BeltShape shape)
+            => shape == BeltShape.CurveL && Raw["poseCurveL"] != null ? PoseOf("poseCurveL")
+             : shape == BeltShape.CurveR && Raw["poseCurveR"] != null ? PoseOf("poseCurveR")
+             : Pose;
+
+        (Vector3 position, Quaternion rotation, float scale) PoseOf(string key)
         {
-            get
-            {
-                if (Raw["pose"] is not JObject p) return (Vector3.zero, Quaternion.identity, 1f);
-                Vector3 V(string k) { if (p[k] is JArray a && a.Count >= 3) return new Vector3((float)a[0], (float)a[1], (float)a[2]); return Vector3.zero; }
-                return (V("position"), Quaternion.Euler(V("rotation")), (float?)p["scale"] ?? 1f);
-            }
+            if (Raw[key] is not JObject p) return (Vector3.zero, Quaternion.identity, 1f);
+            Vector3 V(string k) { if (p[k] is JArray a && a.Count >= 3) return new Vector3((float)a[0], (float)a[1], (float)a[2]); return Vector3.zero; }
+            return (V("position"), Quaternion.Euler(V("rotation")), (float?)p["scale"] ?? 1f);
         }
 
         internal ViewSpec(Def def, JObject raw)

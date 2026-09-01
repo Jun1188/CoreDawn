@@ -197,9 +197,6 @@ namespace CoreDawn.EditorTools
             public string iconGuid;       // 스프라이트를 담은 에셋의 guid
             // 배치 프리팹 참조 — 임포터가 model에서 굽는 산출물(둥지·나무는 손 프리팹)의 주소.
             // 뷰 카탈로그가 이 guid를 굽는다. 값은 1회 유틸이 SO에서 채우고, 임포터가 프리팹을 다시 구워도 guid는 유지된다(경로 불변)
-            public string prefab, prefabGuid;
-            public string prefabCurveL, prefabCurveLGuid;   // 벨트 커브 프리팹 (벨트만)
-            public string prefabCurveR, prefabCurveRGuid;
             public Vec2Dto size;
             public PortDto[] ports;
             public int   inputSlots, outputSlots, bufferStackCap, requiredCoreTier, maxHp;

@@ -12,7 +12,7 @@ namespace CoreDawn.EditorTools
     /// 프리팹 조립(<see cref="MonsterRigBuilder"/>) 셋이 전부 이 표 하나를 읽는다.
     /// 종이 늘어도 그 세 도구의 코드는 바뀌지 않는다.
     ///
-    /// 타워 쪽 <see cref="TowerRigBuilder.Spec"/>와 같은 발상이되, 몬스터는 종마다 리그가 달라
+    /// 타워 쪽 구 TowerRigBuilder.Spec(타워는 5a-4b에서 팩 view로 대체됨)와 같은 발상이되, 몬스터는 종마다 리그가 달라
     /// 클립을 직접 공유할 수 없으므로 "슬롯 → 종별 클립" 매핑이 한 겹 더 있다.
     /// </summary>
     public static class MonsterCatalog

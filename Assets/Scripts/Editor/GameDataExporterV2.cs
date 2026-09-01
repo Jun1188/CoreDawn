@@ -292,8 +292,7 @@ namespace CoreDawn.EditorTools
                 }
                 o["modules"] = mods;
                 var view = View(b, "model", "modelGuid", "modelCurveL", "modelCurveLGuid", "modelCurveR", "modelCurveRGuid",
-                                "icon", "iconGuid", "prefab", "prefabGuid",
-                                "prefabCurveL", "prefabCurveLGuid", "prefabCurveR", "prefabCurveRGuid");
+                                "icon", "iconGuid");
                 MergeView(view, b);
                 if (view.Count > 0) o["view"] = view;
                 entities[KeyOf((string)b["id"])] = o;

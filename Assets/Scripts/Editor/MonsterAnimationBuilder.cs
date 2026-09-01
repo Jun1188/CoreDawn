@@ -10,7 +10,7 @@ namespace CoreDawn.EditorTools
     /// <summary>
     /// 몬스터 애니메이터 에셋을 코드로 찍어내는 도구 — 상태 그래프 하나 + 종별 클립 교체본.
     ///
-    /// 타워는 리그가 표준화돼 있어 클립까지 통째로 공유했지만(<see cref="TowerAnimationBuilder"/>),
+    /// 타워는 리그가 표준화돼 있어 클립까지 통째로 공유했지만(구 TowerAnimationBuilder(삭제됨 — 타워 처짐은 코드)),
     /// 몬스터는 종마다 스켈레톤이 달라 클립을 직접 공유할 수 없다. 대신 <b>상태 그래프를 공유</b>하고
     /// 클립만 갈아끼운다 — TowerVisualController 주석이 "개성이 필요하면 AnimatorOverrideController로"
     /// 라고 적어 둔 바로 그 방법이다.

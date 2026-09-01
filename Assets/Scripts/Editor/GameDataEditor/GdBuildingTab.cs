@@ -572,7 +572,7 @@ namespace CoreDawn.EditorTools
                 (n, g) => { b.model = n; b.modelGuid = g; })));
             propsBox.Add(Field2("", new Label(string.IsNullOrEmpty(b.model)
                 ? "모델이 없으면 풋프린트 크기의 큐브로 만들어진다"
-                : "프리팹(Assets/Prefabs/Buildings)은 5a-4 조립기가 이 모델로 대체한다")
+                : "조립기가 이 모델로 건물을 세운다(칸 단위 저작, 루트 = 칸 크기)")
             { style = { fontSize = 11, color = GdEnum.Faint, whiteSpace = WhiteSpace.Normal } }));
             propsBox.Add(GdViewUI.Build(b.view ??= new GameDataJson.ViewDto { type = b.kind == "Tower" ? "Tower" : b.kind == "Nest" ? "Nest" : "Building" }, PushHist, win.SoundIds));
 

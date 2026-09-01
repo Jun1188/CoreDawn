@@ -8,7 +8,7 @@ namespace CoreDawn.EditorTools
 {
     /// <summary>
     /// 몬스터 프리팹의 <b>View 서브트리</b>를 표준 계층으로 만들어 넣는 에디터 도구.
-    /// <see cref="TowerRigBuilder"/>의 몬스터판이고, 이유도 같다 — 손으로 조립하면 종마다
+    /// 구 TowerRigBuilder(타워 리그는 이제 팩 view.model의 fbx — 5a-4b)의 몬스터판이고, 이유도 같다 — 손으로 조립하면 종마다
     /// 축척·접지·머티리얼 짝짓기가 미묘하게 어긋나고, 그걸 눈으로 잡아내기 어렵다.
     ///
     /// 표준 계층:
