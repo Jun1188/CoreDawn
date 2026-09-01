@@ -134,7 +134,7 @@ namespace CoreDawn.EditorTools
                 items[KeyOf((string)it["id"])] = o;
 
                 // 광맥 — Ore 아이템마다 하나, entities/<item>_deposit. 맵은 칸과 자원만 적고 채굴 시간은 원광이 갖는다.
-                // 매장량 없음(바닥나지 않음), 부서지지 않으므로 Health 없음. 임포터가 Ore↔extractInterval 짝을 검사한다.
+                // 매장량 없음(바닥나지 않음), 부서지지 않으므로 Health 없음. Ore↔extractInterval 짝은 여기서 검사한다(구 임포터의 몫).
                 if ((string)it["type"] == "Ore")
                 {
                     float interval = (float?)it["extractInterval"] ?? -1f;
@@ -148,6 +148,8 @@ namespace CoreDawn.EditorTools
                         ["modules"] = new JArray { new JObject { ["type"] = "ResourceDeposit", ["resource"] = NewId((string)it["id"]), ["extractInterval"] = interval } },
                     };
                 }
+                else if (((float?)it["extractInterval"] ?? 0f) > 0f)
+                    throw new InvalidOperationException($"아이템 '{it["id"]}'은 Ore가 아닌데 extractInterval이 있습니다 — 채굴 시간은 원광(Ore)만 갖는다");
             }
 
             foreach (var r in Arr(d["recipes"]))
