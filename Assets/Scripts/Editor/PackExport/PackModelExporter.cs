@@ -56,10 +56,17 @@ namespace CoreDawn.EditorTools
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
             if (prefab == null) return $"FAIL {assetPath}: 없음";
             var inst = Object.Instantiate(prefab);
+            try { return await ExportObject(inst, outPath, 1f / SourceCellSize); }   // 칸 단위로 굽는다 — 조립기가 맵 cellSize를 곱해 되돌린다
+            finally { Object.DestroyImmediate(inst); }
+        }
+
+        /// <summary>씬 오브젝트(인스턴스)를 glb로 — 루트를 원점·<paramref name="scale"/>로 놓고 굽는다. 인스턴스는 호출자가 지운다.</summary>
+        static async Task<string> ExportObject(GameObject inst, string outPath, float scale)
+        {
             var temps = new List<Material>();
             inst.name = Path.GetFileNameWithoutExtension(outPath);
             inst.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            inst.transform.localScale = Vector3.one / SourceCellSize;   // 칸 단위로 굽는다 — 조립기가 맵 cellSize를 곱해 되돌린다
+            inst.transform.localScale = Vector3.one * scale;
             try
             {
                 StripToLod0(inst);
@@ -74,7 +81,7 @@ namespace CoreDawn.EditorTools
                 bool ok = await export.SaveToFileAndDispose(outPath);
                 return (ok ? "OK " : "FAIL ") + outPath + $" (renderers {renderers}, {new FileInfo(outPath).Length / 1024} KB)";
             }
-            finally { Object.DestroyImmediate(inst); foreach (var m in temps) Object.DestroyImmediate(m); }
+            finally { foreach (var m in temps) Object.DestroyImmediate(m); }
         }
 
         /// <summary>

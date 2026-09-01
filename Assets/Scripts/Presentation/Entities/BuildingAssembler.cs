@@ -8,7 +8,7 @@ namespace CoreDawn.Entities
     /// 건물 뷰 조립기 — 정의의 view 블록만으로 씬 오브젝트를 세운다(5a-4b, 구 GameDataImporter.EnsureContract의 후계).
     ///
     /// 규약: 건물 모델은 <b>칸 단위</b>로 저작된다 — 루트를 칸 크기(<c>cellSize</c>)로 키운다. 모델 인스턴스는 view.pose(루트 기준 자세)에,
-    /// 없으면 원점에. 모델이 없으면 풋프린트 크기의 자리표시 큐브(밑면이 지면). 콜라이더는 메시 렌더러마다 MeshCollider(비볼록),
+    /// 없으면 원점에. 모델이 없으면 풋프린트 크기의 내장 체커 상자(MissingAssets, 밑면이 지면). 콜라이더는 메시 렌더러마다 MeshCollider(비볼록),
     /// 레이어는 전부 Entity. 컴포넌트는 view.type이 정한다 — Tower: TowerView + TowerVisualController(리그 노드는 이름으로 찾는다),
     /// Building: BuildingView. 유령(배치 미리보기)은 그림만 — 컴포넌트·콜라이더 없음.
     /// </summary>
@@ -86,13 +86,10 @@ namespace CoreDawn.Entities
             }
             else
             {
-                // 모델이 없는 정의 — 자리표시 큐브(풋프린트 × 0.9칸, 높이 0.6칸, 밑면이 지면). 소리 내지 않는다: 아직 모델이 없는 건물이 정상 상태다.
+                // 모델 없음 — 내장 체커 상자(풋프린트 × 0.9칸, 높이 0.6칸, 밑면이 지면). 정의에 모델이 없는 건물은 아직 정상 상태라 여기서는 소리 내지 않고,
+                // 팩 파일을 못 읽은 경우는 PackAssets가 이미 오류를 냈다.
                 var size = def.Get<BuildingModuleDef>()?.Size ?? new Vec2i(1, 1);
-                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.name = "Mesh";
-                cube.transform.SetParent(go.transform, false);
-                cube.transform.localScale = new Vector3(size.x * PlaceholderFill, PlaceholderHeight, size.y * PlaceholderFill);
-                cube.transform.localPosition = new Vector3(0f, PlaceholderHeight * 0.5f, 0f);
+                var cube = Managers.MissingAssets.Box("Missing", new Vector3(size.x * PlaceholderFill, PlaceholderHeight, size.y * PlaceholderFill), go.transform);
                 if (ghost) Object.Destroy(cube.GetComponent<Collider>());
                 body = cube.transform;
             }

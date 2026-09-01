@@ -28,7 +28,6 @@ namespace CoreDawn.Managers
         static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         static Transform root;
         static Task preloading;
-        static Material missing;
 
         public static bool IsReady { get; private set; }
 
@@ -78,7 +77,7 @@ namespace CoreDawn.Managers
             int mats = 0;
             foreach (var id in materialIds)
             {
-                if (MaterialOf(id) != null) mats++;
+                if (MaterialOf(id) != MissingAssets.Material) mats++;
                 Progress = (++done, Progress.total);
             }
             IsReady = true;
@@ -103,7 +102,7 @@ namespace CoreDawn.Managers
             return holder;
         }
 
-        /// <summary>읽어 둔 템플릿. 없으면 오류 로그 + null — 호출부는 자리표시로 넘어간다.</summary>
+        /// <summary>읽어 둔 템플릿. 없으면 오류 로그 + null — 호출부가 MissingAssets.Box를 세운다.</summary>
         public static GameObject ModelOf(string relative)
         {
             if (models.TryGetValue(relative, out var m) && m != null) return m;
@@ -112,7 +111,7 @@ namespace CoreDawn.Managers
         }
 
         /// <summary>
-        /// 복제한 모델의 재질 슬롯(glb 재질 인덱스)에 팩 재질을 꽂는다 — <paramref name="materialIds"/>[슬롯]. 모자라면 오류 + 자홍 자리표시가 남는다.
+        /// 복제한 모델의 재질 슬롯(glb 재질 인덱스)에 팩 재질을 꽂는다 — <paramref name="materialIds"/>[슬롯]. 모자라면 오류 + MissingAssets.Material.
         /// 옛 카탈로그 모델(슬롯 자리표시가 없음)은 그대로 둔다.
         /// </summary>
         public static void BindSlots(GameObject inst, IReadOnlyList<string> materialIds, string owner)
@@ -124,37 +123,36 @@ namespace CoreDawn.Managers
                 for (int i = 0; i < mats.Length; i++)
                 {
                     if (mats[i] == null || !slotIndex.TryGetValue(mats[i], out int slot)) continue;
+                    Material m;
                     if (slot < 0 || slot >= materialIds.Count)
                     {
                         Debug.LogError($"[PackAssets] {owner}: 재질 슬롯 {slot}에 대응하는 view.model.materials 항목이 없습니다(항목 {materialIds.Count}개).", inst);
-                        continue;
+                        m = MissingAssets.Material;
                     }
-                    var m = MaterialOf(materialIds[slot]);
-                    if (m == null) continue;
+                    else m = MaterialOf(materialIds[slot]);
                     mats[i] = m; changed = true;
                 }
                 if (changed) r.sharedMaterials = mats;
             }
         }
 
-        /// <summary>팩 재질(materials 섹션) → Unity Material. 셰이더는 내장 이름으로 찾고, 텍스처는 팩 png. 없거나 틀리면 오류 + null.</summary>
+        /// <summary>팩 재질(materials 섹션) → Unity Material. 셰이더는 내장 이름으로 찾고, 텍스처는 팩 png. 없거나 틀리면 오류 + MissingAssets.Material(체커).</summary>
         public static Material MaterialOf(string id)
         {
             if (materials.TryGetValue(id, out var cached) && cached != null) return cached;
             var db = SimHost.Database;
             var def = db?.Material(id);
-            if (def == null) { Debug.LogError($"[PackAssets] 재질 '{id}'가 팩 materials에 없습니다."); return null; }
+            if (def == null) { Debug.LogError($"[PackAssets] 재질 '{id}'가 팩 materials에 없습니다."); return MissingAssets.Material; }
             var v = def.View;
             string shaderName = (string)v?["shader"];
             var shader = string.IsNullOrEmpty(shaderName) ? null : Shader.Find(shaderName);
-            if (shader == null) { Debug.LogError($"[PackAssets] 재질 '{id}': 셰이더 '{shaderName}'를 찾지 못했습니다(내장 셰이더 이름이어야 하고, 빌드에 포함돼 있어야 합니다)."); return null; }
+            if (shader == null) { Debug.LogError($"[PackAssets] 재질 '{id}': 셰이더 '{shaderName}'를 찾지 못했습니다(내장 셰이더 이름이어야 하고, 빌드에 포함돼 있어야 합니다)."); return MissingAssets.Material; }
 
             var m = new Material(shader) { name = id };
             if (v["textures"] is JObject texs)
                 foreach (var p in texs.Properties())
                 {
-                    var t = TextureOf(db.Pack, (string)p.Value["file"], (bool?)p.Value["linear"] ?? false);
-                    if (t != null) m.SetTexture(p.Name, t);
+                    m.SetTexture(p.Name, TextureOf(db.Pack, (string)p.Value["file"], (bool?)p.Value["linear"] ?? false));
                 }
             if (v["colors"] is JObject cols)
                 foreach (var p in cols.Properties()) { var a = (JArray)p.Value; m.SetColor(p.Name, new Color((float)a[0], (float)a[1], (float)a[2], (float)a[3])); }
@@ -171,16 +169,16 @@ namespace CoreDawn.Managers
             return m;
         }
 
-        /// <summary>팩 png → Texture2D(밉맵, 런타임 DXT 압축). 노멀맵·마스크는 linear.</summary>
+        /// <summary>팩 png → Texture2D(밉맵, 런타임 DXT 압축). 노멀맵·마스크는 linear. 없거나 못 읽으면 오류 + MissingAssets.Texture(체커).</summary>
         public static Texture2D TextureOf(string pack, string relative, bool linear)
         {
             string key = relative + (linear ? "|linear" : "|srgb");
             if (textures.TryGetValue(key, out var cached) && cached != null) return cached;
-            if (string.IsNullOrEmpty(relative)) { Debug.LogError("[PackAssets] 텍스처 경로가 비었습니다."); return null; }
+            if (string.IsNullOrEmpty(relative)) { Debug.LogError("[PackAssets] 텍스처 경로가 비었습니다."); return MissingAssets.Texture; }
             string full = FullPath(pack, relative);
-            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 텍스처 파일이 없습니다: {relative} ({full})"); return null; }
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 텍스처 파일이 없습니다: {relative} ({full})"); return MissingAssets.Texture; }
             var tex = new Texture2D(2, 2, TextureFormat.RGBA32, true, linear) { name = relative, wrapMode = TextureWrapMode.Repeat };
-            if (!tex.LoadImage(File.ReadAllBytes(full))) { Debug.LogError($"[PackAssets] 텍스처를 읽지 못했습니다: {relative}"); Destroy(tex); return null; }
+            if (!tex.LoadImage(File.ReadAllBytes(full))) { Debug.LogError($"[PackAssets] 텍스처를 읽지 못했습니다: {relative}"); Destroy(tex); return MissingAssets.Texture; }
             if (tex.width % 4 == 0 && tex.height % 4 == 0) tex.Compress(true);   // DXT는 4의 배수 크기만 — 아니면 비압축(RGBA32)으로 든다
             else Debug.LogWarning($"[PackAssets] 텍스처 '{relative}'({tex.width}x{tex.height})는 4의 배수 크기가 아니라 압축하지 못합니다 — 메모리를 4배 더 씁니다. 팩 텍스처는 4의 배수로 만드세요.");
             tex.Apply(false, true);
@@ -204,7 +202,7 @@ namespace CoreDawn.Managers
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); root = null; preloading = null; missing = null; IsReady = false; Progress = (0, 0); }
+        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); root = null; preloading = null; IsReady = false; Progress = (0, 0); }
 
         /// <summary>에디터 도구용 — 읽어 둔 것을 전부 버린다(팩이 바뀌었을 때).</summary>
         public static void Clear()
@@ -213,18 +211,11 @@ namespace CoreDawn.Managers
             foreach (var m in slotIndex.Keys) Destroy(m);
             foreach (var m in materials.Values) Destroy(m);
             foreach (var t in textures.Values) Destroy(t);
-            Destroy(missing);
             Reset();
         }
 
-        static Material Missing()
-        {
-            if (missing == null) { missing = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = "PackMaterialMissing" }; missing.SetColor("_BaseColor", Color.magenta); }
-            return missing;
-        }
-
         /// <summary>
-        /// glb 재질 슬롯 → 자리표시 머티리얼(자홍). 슬롯 인덱스(glb 재질 배열 순서)를 기억해 두면 <see cref="BindSlots"/>가 정의의 materials[슬롯]으로 바꿔 끼운다.
+        /// glb 재질 슬롯 → 자리표시 머티리얼(체커 사본). 슬롯 인덱스(glb 재질 배열 순서)를 기억해 두면 <see cref="BindSlots"/>가 정의의 materials[슬롯]으로 바꿔 끼운다.
         /// glb의 재질 이름·값은 보지 않는다 — 재질은 팩 데이터(materials 섹션)다.
         /// </summary>
         sealed class SlotGenerator : GLTFast.Materials.IMaterialGenerator
@@ -232,7 +223,7 @@ namespace CoreDawn.Managers
             public Material GetDefaultMaterial(bool pointsSupport = false)
             {
                 Debug.LogError("[PackAssets] 재질 슬롯이 없는 프리미티브 — glb의 프리미티브마다 재질 인덱스가 있어야 합니다.");
-                return Missing();
+                return MissingAssets.Material;
             }
 
             public Material GenerateMaterial(GLTFast.Schema.MaterialBase gltfMaterial, IGltfReadable gltf, bool pointsSupport = false)
@@ -240,7 +231,7 @@ namespace CoreDawn.Managers
                 int slot = -1;
                 for (int i = 0; i < gltf.MaterialCount; i++)
                     if (ReferenceEquals(gltf.GetSourceMaterial(i), gltfMaterial)) { slot = i; break; }
-                var placeholder = new Material(Missing()) { name = "slot:" + slot };
+                var placeholder = new Material(MissingAssets.Material) { name = "slot:" + slot };
                 slotIndex[placeholder] = slot;
                 return placeholder;
             }

@@ -41,7 +41,11 @@ namespace CoreDawn.Entities
                 body = inst.transform;
                 animator = inst.GetComponentInChildren<Animator>(true);
             }
-            else Debug.LogError($"[MonsterAssembler] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 몸 없이 섭니다.");
+            else
+            {
+                Debug.LogError($"[MonsterAssembler] {def.Id}: 모델(view.model)이 카탈로그에 없습니다 — 내장 체커 상자로 섭니다.");
+                body = Managers.MissingAssets.Box("Missing", new Vector3(1f, 1.8f, 1f), go.transform).transform;
+            }
 
             var visual = go.AddComponent<MonsterVisualController>();
             visual.Wire(body, animator,
