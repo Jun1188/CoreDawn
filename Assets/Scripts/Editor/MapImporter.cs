@@ -48,7 +48,11 @@ namespace CoreDawn.EditorTools
 
             /// <summary>나무가 선 칸들 — 맵 에디터의 나무 도구가 찍고, 런타임이 그 자리에 세운다.</summary>
             public CellDto[] trees;
+
+            /// <summary>시작 잔해 — 코어 주변에 흩뿌릴 아이템(v1 id)과 개수.</summary>
+            public StartItemDto[] startItems;
         }
+        [Serializable] internal class StartItemDto : GameDataJson.JsonDtoBase { public string item; public int amount; }
 
         [Serializable] internal class CellDto : GameDataJson.JsonDtoBase { public int x, y; }
 
@@ -169,17 +173,12 @@ namespace CoreDawn.EditorTools
                 errors++;
             }
             else map.cellSize = dto.cellSize;
-            if (!(dto.cellSize > 0f))
-            {
-                Debug.LogError($"[MapImporter] '{dto.id}': cellSize(칸 한 변, m)가 없거나 0 이하입니다 — 공장·배치·길찾기가 이 값으로 격자를 잡습니다.");
-                errors++;
-            }
-            else map.cellSize = dto.cellSize;
             map.core = dto.core != null ? new Vector2Int(dto.core.x, dto.core.y) : Vector2Int.zero;
             map.EditorSetTiles(BakeTiles(dto, ref errors));
             map.nodes = ResolveNodes(dto, pack, ref errors);
             map.nests = ResolveNests(dto, pack, ref errors);
             map.nightSpawnPoints = ResolveNightSpawns(dto);
+            map.startItems = ResolveStartItems(dto, pack, ref errors);
             map.trees = ResolveCells(dto.trees);
 
             EditorUtility.SetDirty(map);
@@ -216,6 +215,21 @@ namespace CoreDawn.EditorTools
                 }
             }
             return baked;
+        }
+
+        static StartItemSpec[] ResolveStartItems(MapDto dto, SimDatabase pack, ref int errors)
+        {
+            if (dto.startItems == null) return Array.Empty<StartItemSpec>();
+            var list = new List<StartItemSpec>(dto.startItems.Length);
+            foreach (var si in dto.startItems)
+            {
+                if (si == null) continue;
+                string itemId = string.IsNullOrEmpty(si.item) ? null : GameDataExporterV2.PackIdOf(si.item);
+                if (itemId == null || pack.Item(itemId) == null) { Debug.LogError($"[MapImporter] '{dto.id}' startItems: 아이템 '{si.item}'({itemId})이 팩에 없습니다."); errors++; continue; }
+                if (si.amount <= 0) { Debug.LogError($"[MapImporter] '{dto.id}' startItems: '{si.item}'의 amount가 0 이하입니다."); errors++; continue; }
+                list.Add(new StartItemSpec { itemId = itemId, amount = si.amount });
+            }
+            return list.ToArray();
         }
 
         static ResourceNodeSpec[] ResolveNodes(MapDto dto, SimDatabase pack, ref int errors)

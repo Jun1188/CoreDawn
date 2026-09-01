@@ -250,33 +250,25 @@ namespace CoreDawn.Worlds
         /// <summary>
         /// 시작 잔해를 코어 주변에 흩는다.
         ///
-        /// 씬의 <c>StartItem_*</c> DroppedItem은 이제 <b>배치가 아니라 사양</b>이다 — "무엇을 몇 개"만
-        /// 읽고 지운다. 씬에 실물로 두면 세이브를 불러올 때 이 함수가 다시 돌면서 저장된 드롭 위에
-        /// 시작 잔해가 겹쳐 생겨 아이템이 불어난다. 복원 중이면 아예 만들지 않는다 —
-        /// 저장된 바닥 아이템을 곧 되살릴 참이고, 그것이 이 잔해의 현재 상태다.
+        /// 사양은 맵 데이터(<c>MapDataSO.startItems</c> — "무엇을 몇 개")다. 위치는 여기서 코어 둘레에 정한다.
+        /// 복원 중이면 아예 만들지 않는다 — 저장된 바닥 아이템을 곧 되살릴 참이고, 그것이 이 잔해의 현재 상태다.
         ///
         /// 흩는 방식: 낱개로 쪼개 원주를 균등 분할하고 각도·반지름에 지터를 준다. 무작위지만
         /// 뭉치지 않는다 — 순수 난수는 반드시 몇 개가 붙고, 붙으면 스택으로 합쳐져 하나가 된다.
         /// </summary>
         static int PlaceStartingDrops(World world, Transform root)
         {
-            // 1) 사양 수집 — 씬 마커는 읽고 지운다(복원 중이라도 지운다: 실물로 남으면 안 된다)
-            ItemDef item = null;
-            int total = 0;
-
-            foreach (var marker in Object.FindObjectsByType<DroppedItem>(FindObjectsInactive.Include,
-                                                                        FindObjectsSortMode.None))
-            {
-                if (marker == null || marker.gameObject.scene != world.gameObject.scene ||
-                    !marker.name.StartsWith("StartItem_") || marker.item == null || marker.amount <= 0)
-                    continue;
-
-                item ??= marker.item;
-                if (marker.item == item) total += marker.amount;
-                Object.Destroy(marker.gameObject);
-            }
-
-            if (item == null || total <= 0) return 0;
+            // 1) 사양 — 맵 데이터(MapDataSO.startItems: 무엇을 몇 개). 씬 마커(DroppedItem 프리팹 인스턴스)는 퇴역(5a-4c).
+            var items = new List<ItemDef>();
+            if (world.Map.startItems != null)
+                foreach (var spec in world.Map.startItems)
+                {
+                    var def = SaveRefs.Item(spec.itemId);
+                    if (def == null) { Debug.LogError($"[WorldPopulator] 시작 잔해 '{spec.itemId}'이 팩에 없습니다.", world); continue; }
+                    for (int k = 0; k < spec.amount; k++) items.Add(def);
+                }
+            int total = items.Count;
+            if (total <= 0) return 0;
             if (SaveLoadContext.IsRestoring) return 0;
 
             // 2) 코어 중심 — 코어는 3×3이라 원점 칸에서 1.5칸이 한가운데다(World의 기즈모와 같은 식)
@@ -303,7 +295,7 @@ namespace CoreDawn.Worlds
                     if (TooClose(placedPoints, pos)) continue;
 
                     // 살짝 띄워 떨어뜨린다 — 지형이 칸마다 조금씩 높낮이가 있어 파묻히지 않게
-                    var drop = DroppedItem.Spawn(item, 1, pos + Vector3.up * 0.5f, Vector3.zero);
+                    var drop = DroppedItem.Spawn(items[i], 1, pos + Vector3.up * 0.5f, Vector3.zero);
                     if (drop == null) break;
 
                     drop.transform.SetParent(root, true);

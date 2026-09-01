@@ -1159,6 +1159,12 @@
           "x": 69,
           "y": 111
         }
+      ],
+      "startItems": [
+        {
+          "item": "Item:ShipDebris",
+          "amount": 15
+        }
       ]
     }
   ]

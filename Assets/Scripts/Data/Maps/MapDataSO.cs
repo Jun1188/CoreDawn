@@ -74,6 +74,9 @@ namespace CoreDawn.Data
         /// </summary>
         public Vector2Int[] trees;
 
+        [Tooltip("시작 잔해 — 코어 주변에 흩뿌릴 아이템과 개수(맵 json startItems). 위치는 런타임이 코어 둘레에 정한다.")]
+        public StartItemSpec[] startItems;
+
         // ── 타일 조회 ───────────────────────────────────────────────
 
         public bool InBounds(int x, int y) => x >= 0 && y >= 0 && x < width && y < height;
@@ -108,6 +111,14 @@ namespace CoreDawn.Data
     }
 
     /// <summary>맵에 놓인 자원 광맥 하나. 채굴 난이도(extractInterval)는 광맥의 성질이라 여기 있다.</summary>
+    /// <summary>시작 잔해 한 종 — 무엇을 몇 개. 씬 마커(DroppedItem 프리팹 인스턴스) 대신 맵이 적는다(5a-4c).</summary>
+    [Serializable]
+    public struct StartItemSpec
+    {
+        public string itemId;   // 팩 id(coredawn:item/ship_debris)
+        public int amount;
+    }
+
     [Serializable]
     public struct ResourceNodeSpec
     {
