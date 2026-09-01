@@ -40,6 +40,12 @@ namespace CoreDawn.FPS
         static WeaponModule Weapon => PlayerInventoryHolder.Instance != null ? PlayerInventoryHolder.Instance.Entity?.Get<WeaponModule>() : null;
         static float Now => SimRunner.Players.Now;
 
+        static void SetLayerRecursively(Transform t, int layer)
+        {
+            t.gameObject.layer = layer;
+            foreach (Transform c in t) SetLayerRecursively(c, layer);
+        }
+
         /// <summary>모델 안의 이름 노드(리그 규약) 또는 view의 좌표(서드파티 모델)로 앵커를 만든다. 둘 다 없으면 null(근접 등).</summary>
         static Transform Anchor(Transform model, string nodeName, Vector3? local)
         {
@@ -118,12 +124,15 @@ namespace CoreDawn.FPS
             var body = Instantiate(model, go.transform);
             body.name = model.name;
             body.transform.localPosition = Vector3.zero; body.transform.localRotation = Quaternion.identity; body.transform.localScale = Vector3.one;
+            // 뷰모델 레이어 — 홀더(Weapon_Holder, Weapon 레이어)의 것을 그대로 물려받는다. 오버레이 카메라가 이 레이어만 그리고 메인 카메라·조명은 뺀다
+            SetLayerRecursively(go.transform, parent.gameObject.layer);
 
             var gun = go.AddComponent<Gun>();
             gun.gunId = def.Id;
             gun.enemyLayer = enemyLayer;
             gun.muzzlePoint = Anchor(body.transform, "MuzzlePoint", view.Vec3("muzzle"));
             gun.sightPoint = Anchor(body.transform, "SightPos", view.Vec3("sight"));
+            SetLayerRecursively(go.transform, parent.gameObject.layer);   // 새로 만든 앵커까지
             var kb = view.Object("knockback");
             if (kb != null) { gun.knockbackEffectId = (string)kb["effect"]; gun.knockbackPerDamage = (float?)kb["perDamage"] ?? gun.knockbackPerDamage; }
             return gun;
