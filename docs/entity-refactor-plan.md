@@ -408,6 +408,7 @@ namespace CoreDawn.Sim
   - [ ] 5a-3e SO·v1 파이프라인 퇴역 + 편집기 v2 직접 편집: SO 클래스·데이터베이스·에셋과 GameDataImporter(v1→SO 생성) 삭제, GameData 편집기가 v2를 직접 편집, python 이관 도구 퇴역, `SaveRefs`의 죽은 SO Lookup 제거. **별도 PR 권장**(편집기 개편이 그 자체로 한 PR 크기).
   - 리스크: 씬 재저장 회귀(시작 상태 비교로 방어) · 아이콘 시트 서브스프라이트 해석(guid → 시트 → 이름으로 베이커가 해석; 이름 해시 fileID라 이름 유지 시 안전) · 몬스터는 5a-4에서도 내장 유지이므로 프리팹 참조는 카탈로그에 남는다(리소스팩 대상 아님).
 - [ ] 5a-4 리소스팩: `StreamingAssets/packs/`, 모델(glTFast)·텍스처(`LoadImage`)·팔레트·emission — 건물 → 아이콘 순. 몬스터(애니메이션)는 내장 유지
+  - 설계 결정(2026-09-01, 사용자와 문답): 프리팹의 몫을 셋으로 가른다 — ① 계약 컴포넌트·콜라이더·레이어는 **코드**(런타임 뷰 조립기, 모듈 조합 기준 — EnsureContract의 후계). ② **리그는 블렌더 규약으로 모델에 굽는다**(YawPivot→PitchPivot→Recoil 회전 사슬·총구 empty 포함 — 임포터·조립기를 무겁게 만들지 않는다는 사용자 결정; 현재 타워 프리팹의 리그는 전부 손 저작 빈 오브젝트라 타워 모델들 블렌더 수정 필요). 팩 view.rig는 노드 이름 매핑만. ③ 애니메이션은 glb 내장 클립 + view의 상태→클립 매핑(벨트 ConveyorRun이 이미 fbx 내장 메시 애니 — 모범 케이스). AnimatorController 에셋은 유니티 전용이라 팩에 못 싣고, 상태기는 심(TurretPhase)에 이미 있으므로 얇은 재생기(상태→클립 CrossFade)로 대체. 단순 회전(드릴 등)은 코드 절차 연출 허용. 별도 `anim` 팩 섹션은 공유 수요가 생길 때까지 보류. 등장(Deploy) 연출은 **삭제됨**(2026-09-01 사용자 지시, 아래). `TowerVisualController`는 조립기 도입 때 `TowerView`로 통합 검토(호출자가 TowerView 1:1, 리그가 이름 조회로 바뀌면 별도 컴포넌트일 이유가 소멸 — 소리 에셋 참조도 팩 view로). **프리팹 퇴역은 3e가 아니라 여기(5a-4)다.**
 
 ### 5. asmdef · 고정 틱 · 세이브
 - [ ] asmdef 분리(Sim / Data / Presentation / App / Editor / Tests)로 불변식 강제

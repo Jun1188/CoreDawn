@@ -19,7 +19,6 @@ namespace CoreDawn.Entities
     public class TowerView : BuildingView
     {
         /// <summary>등장 연출 길이 — 이 동안은 연출만(심은 이미 돌고 있다).</summary>
-        private const float DeployDuration = 0.45f;
 
         /// <summary>탄이 타워 모델 안에서 태어나지 않게 밀어내는 거리 — 진짜 총구가 있으면 필요 없다.</summary>
         private const float MuzzlePushout = 0.6f;
@@ -34,7 +33,6 @@ namespace CoreDawn.Entities
         private AuraEmitterModule aura;
         private TriggerModule trigger;
         private bool bound;
-        private float deployUntil;
 
         private TowerState state = (TowerState)(-1);
         /// <summary>지금 무엇을 하고 있는가 — 연출과 로직이 공유하는 단일 진실(심 상태에서 파생).</summary>
@@ -71,9 +69,6 @@ namespace CoreDawn.Entities
             if (aura    != null) aura.Pulsed          += OnPulsed;
             if (trigger != null) trigger.Triggered    += OnTriggered;
             bound = true;
-
-            deployUntil = Time.time + DeployDuration;
-            if (visual != null) visual.PlayDeploy();
         }
 
         protected override void OnDestroy()
@@ -101,9 +96,6 @@ namespace CoreDawn.Entities
 
             // 발사하지 않는 구조물(울타리) — 몸으로 막을 뿐이다
             if (turret == null && aura == null && trigger == null) { SetState(TowerState.Inert); return; }
-
-            // 등장 연출 중에는 연출만 — 심은 이미 돌고 있지만 땅에서 솟는 중에 포탑이 돌면 우스꽝스럽다
-            if (Time.time < deployUntil) { SetState(TowerState.Deploying); return; }
 
             if (turret != null) { DrawTurret(); return; }
             if (aura != null)

@@ -4,10 +4,9 @@ This repo is worked on by multiple AI agents. Shared conventions live here.
 
 ## Unity tooling
 
-- **Unity MCP가 미연결(unconnect)이면 Unity CLI로 작업한다.** 즉
-  `mcp__unity__*` 툴(Pipeline 패키지 기반)이 붙어 있지 않거나 `unity status`가
-  `STATUS_NO_INSTANCES`를 반환하면, Unity 관련 작업은 Unity CLI(`unity.exe`,
-  `unity-cli` skill / `mcp__unity__unity_run`)로 수행한다.
+- **에디터 조작은 Unity CLI(`unity` 명령)로 한다** — `unity status`로 연결 확인,
+  `unity command eval "<C#>"`이 주력(도메인 리로드 없이 즉시 실행), `unity command editor_play` 등.
+  구 Unity MCP 플러그인(unity-mcp-cli / `mcp__unity__*`)은 PR #56에서 제거됐다 — 그 경로는 더 이상 없다.
 - 이 규칙은 Claude Code / Antigravity / 기타 AI 툴 모두에 적용된다.
 
 ## Project notes
