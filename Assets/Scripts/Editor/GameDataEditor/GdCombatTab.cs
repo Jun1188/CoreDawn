@@ -40,6 +40,7 @@ namespace CoreDawn.EditorTools
         public List<string> ammoFilter = new();
         public float xRecoil = 3, yRecoil = 2, zRecoil = 1, visualKickbackZ = 1;
         public float baseSpread = 0.5f, maxSpread = 5, spreadIncreasePerShot = 1, spreadRecoveryRate = 5;
+        public GameDataJson.ViewDto view = new() { type = "Gun" };   // 뷰 종류 + 소리 자리(fire·reload)
         [JsonIgnore] public GameDataJson.GunDto src;
     }
 
@@ -71,6 +72,7 @@ namespace CoreDawn.EditorTools
         public List<GEff> attackEffects = new();
         public float maxPatience = 3, patienceRadius, outsidePatienceDrain = 2, rangedPokePatienceDrain = 3,
                      patienceRecoverRate = 2, absoluteLeashMultiplier = 1, returnRegenPerSecond = 0.12f, returnTimeout = 20;
+        public GameDataJson.ViewDto view = new() { type = "Monster" };
         [JsonIgnore] public GameDataJson.MonsterDto src;
     }
 
@@ -153,6 +155,7 @@ namespace CoreDawn.EditorTools
                     zoomMultiplier = g.zoomMultiplier > 0 ? g.zoomMultiplier : 1.3f,
                     ammoFilter = (g.ammoFilter ?? Array.Empty<string>()).ToList(),
                     ammo = g.ammoFilter is { Length: > 0 } af ? af[0] : "",   // 임포터 규약: 첫 항목이 기본
+                    view = g.view ?? new GameDataJson.ViewDto { type = "Gun" },
                     damageMultiplier = g.damageMultiplier >= 0 ? g.damageMultiplier : 1,
                     xRecoil = g.xRecoil >= 0 ? g.xRecoil : 3, yRecoil = g.yRecoil >= 0 ? g.yRecoil : 2,
                     zRecoil = g.zRecoil >= 0 ? g.zRecoil : 1,
@@ -193,6 +196,7 @@ namespace CoreDawn.EditorTools
                     outsidePatienceDrain = Mathf.Max(0, m.outsidePatienceDrain), rangedPokePatienceDrain = Mathf.Max(0, m.rangedPokePatienceDrain),
                     patienceRecoverRate = Mathf.Max(0, m.patienceRecoverRate), absoluteLeashMultiplier = Mathf.Max(1, m.absoluteLeashMultiplier),
                     returnRegenPerSecond = Mathf.Max(0, m.returnRegenPerSecond), returnTimeout = Mathf.Max(0, m.returnTimeout),
+                    view = m.view ?? new GameDataJson.ViewDto { type = "Monster" },
                     src = m,
                 });
             curE = 0; curG = 0;
@@ -242,6 +246,7 @@ namespace CoreDawn.EditorTools
             o.visualKickbackZ = g.visualKickbackZ;
             o.baseSpread = g.baseSpread; o.maxSpread = g.maxSpread;
             o.spreadIncreasePerShot = g.spreadIncreasePerShot; o.spreadRecoveryRate = g.spreadRecoveryRate;
+            o.view = g.view;
             return o;
         }
 
@@ -262,6 +267,7 @@ namespace CoreDawn.EditorTools
         GameDataJson.MonsterDto ExportMonster(GMonster m)
         {
             var o = m.src ?? new GameDataJson.MonsterDto();
+            o.view = m.view;
             o.id = m.id; o.displayName = m.displayName;
             o.description = string.IsNullOrEmpty(m.description) ? null : m.description;
             o.prefab = string.IsNullOrEmpty(m.prefab) ? null : m.prefab;
@@ -692,6 +698,7 @@ namespace CoreDawn.EditorTools
                 Cell("+/발", g.spreadIncreasePerShot, v => g.spreadIncreasePerShot = v),
                 Cell("회복", g.spreadRecoveryRate, v => g.spreadRecoveryRate = v)));
 
+            detailBox.Add(GdViewUI.Build(g.view ??= new GameDataJson.ViewDto { type = "Gun" }, PushHist, win.SoundIds));
             dpsBox = new VisualElement { style = { marginTop = 8 } };
             detailBox.Add(dpsBox);
             RefreshDps();

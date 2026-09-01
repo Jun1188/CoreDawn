@@ -389,7 +389,7 @@ namespace CoreDawn.Placement
             {
                 Debug.Log($"[Placement] 재료가 부족해 '{current.DisplayName}' 을 지을 수 없습니다.");
                 // 왜 아무 일도 안 일어났는지 소리로 알린다 — 로그는 플레이어가 못 본다
-                if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Warning);
+                if (SoundManager.Instance != null) SoundManager.Instance.PlayCommon("warning");
                 return;
             }
 
@@ -400,7 +400,7 @@ namespace CoreDawn.Placement
                 PlacementBridge.Place(current, origin, pos, rotation);
 
             // 벨트 한 칸까지 포함해 무엇을 짓든 같은 설치음이 난다 — 공장을 짓는 리듬이 손에 붙는다
-            if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Construct);
+            if (SoundManager.Instance != null) SoundManager.Instance.PlayCommon("construct");
 
             portFlow.NotifyGridChanged();   // 새 건물이 이웃 포트를 막았을 수 있다
         }
@@ -511,7 +511,7 @@ namespace CoreDawn.Placement
 
             // 자진 철거는 전투 파괴와 다른 소리여야 한다 — 파괴는 사고, 철거는 의도다.
             // 뷰가 이미 사라졌으므로 아까 잡아둔 좌표에서 낸다.
-            if (SoundManager.Instance != null) SoundManager.Instance.PlayCommonSFX(CommonSFX.Destroy, 0.7f);
+            if (SoundManager.Instance != null) SoundManager.Instance.PlayCommon("destroy", 0.7f);
 
             if (portFlow != null) portFlow.NotifyGridChanged();   // 막혀 있던 이웃 포트가 열린다
         }

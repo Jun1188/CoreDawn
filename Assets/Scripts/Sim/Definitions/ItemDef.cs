@@ -13,7 +13,6 @@ namespace CoreDawn.Sim
         [JsonProperty("hideFromMenu")] public bool HideFromMenu;
         [JsonProperty("modules")] public List<ItemModuleDef> Modules = new List<ItemModuleDef>();
 
-        [JsonProperty("view")] public JObject View;
 
         public T Get<T>() where T : ItemModuleDef
         {

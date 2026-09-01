@@ -128,7 +128,7 @@ namespace CoreDawn.ResourceNodes
             var holder = PlayerInventoryHolder.Instance;
             bool stored = holder != null && holder.AddItemToPlayer(deposit.Resource, taken, silent: true);
             if (!stored) DropAtHand(deposit.Resource, taken, player);
-            SoundManager.Instance?.PlayCommonSFX(CommonSFX.Mine);
+            SoundManager.Instance?.PlayCommon("mine");
         }
 
         void DropAtHand(ItemDef item, int amount, PlayerController player)

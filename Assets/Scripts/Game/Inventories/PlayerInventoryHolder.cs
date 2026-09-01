@@ -108,7 +108,7 @@ namespace CoreDawn.Inventories
             // 앞 칸(핫바)부터 채워진다 — 그릇 하나의 규칙이라 경로마다 순서를 따로 정하지 않는다
             if (!MainContainer.TryAdd(item, amount)) return false;
             if (!silent && !silentAdd && !SaveLoadContext.IsRestoring)
-                SoundManager.Instance?.PlayCommonSFX(CommonSFX.ItemPickup);
+                SoundManager.Instance?.PlayCommon("item_pickup");
             return true;
         }
     }

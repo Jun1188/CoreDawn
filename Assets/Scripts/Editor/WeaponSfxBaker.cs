@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using CoreDawn.FPS;
 
 namespace CoreDawn.EditorTools
 {
@@ -18,8 +17,7 @@ namespace CoreDawn.EditorTools
     public static class WeaponSfxBaker
     {
         const string OutPath = "Assets/Art/Audio/Weapon/PlasmaCutter_Swing.wav";
-        const string PlayerPrefabPath = "Assets/Prefabs/Player.prefab";
-        const string GunId = "coredawn:gun/plasma_cutter";
+        const string SoundId = "Sound:PlasmaCutterFire";
 
         const int   SampleRate = 44100;
         const float Duration   = 0.36f;
@@ -91,28 +89,29 @@ namespace CoreDawn.EditorTools
                 importer.SaveAndReimport();
             }
 
-            // 총 프리팹(Player.prefab 안의 Gun 컴포넌트)에 물려 준다 — 한 번의 메뉴 클릭으로 굽기+배선이 끝나야 재실행이 쉽다
-            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(OutPath);
+            // 팩 소리 항목에 물려 준다 — 소리의 정본은 v1 GameData.json의 sounds(Sound:PlasmaCutterFire). 한 번의 메뉴 클릭으로 굽기+배선이 끝나야 재실행이 쉽다.
             bool wired = false;
-            if (clip != null)
+            string guid = AssetDatabase.AssetPathToGUID(OutPath);
+            string jsonPath = $"{GameDataJson.ImportFolder}/GameData.json";
+            if (!string.IsNullOrEmpty(guid) && File.Exists(jsonPath))
             {
-                var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
-                try
+                var root = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(jsonPath));
+                if (root["sounds"] is Newtonsoft.Json.Linq.JArray sounds)
+                    foreach (var snd in sounds)
+                        if ((string)snd["id"] == SoundId)
+                        {
+                            snd["clips"] = new Newtonsoft.Json.Linq.JArray { new Newtonsoft.Json.Linq.JObject { ["clip"] = Path.GetFileNameWithoutExtension(OutPath), ["clipGuid"] = guid } };
+                            wired = true;
+                        }
+                if (wired)
                 {
-                    foreach (var gun in root.GetComponentsInChildren<Gun>(true))
-                    {
-                        if (gun.gunId != GunId) continue;
-                        gun.fireSound = clip;
-                        gun.fireVolume = 0.55f;
-                        wired = true;
-                    }
-                    if (wired) PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+                    File.WriteAllText(jsonPath, root.ToString(Newtonsoft.Json.Formatting.Indented) + "\n");
+                    AssetDatabase.ImportAsset(jsonPath);
                 }
-                finally { PrefabUtility.UnloadPrefabContents(root); }
             }
 
             Debug.Log($"[WeaponSfxBaker] {OutPath} 생성 ({Duration:F2}s) — " +
-                      (wired ? $"{GunId}의 발사음에 배선했습니다." : $"{PlayerPrefabPath}에서 gunId {GunId}인 Gun을 찾지 못해 배선은 생략."));
+                      (wired ? $"{SoundId}에 배선했습니다. GameData 편집기에서 저장(v2 내보내기 + 카탈로그 베이크)하세요." : $"{jsonPath}의 sounds에 {SoundId}가 없어 배선은 생략."));
         }
 
         /// <summary>float(-1~1) 샘플을 16bit PCM 모노 RIFF/WAVE 바이트로.</summary>

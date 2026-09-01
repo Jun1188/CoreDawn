@@ -9,7 +9,7 @@ namespace CoreDawn.Sim
     /// 정의의 정본 — 팩 json(data.json)에서 한 번 읽어 불변으로 든다. 심은 여기서만 정의를 얻는다(에셋·UnityEngine.Object 없음).
     ///
     /// id는 저장하지 않고 위치에서 파생한다: <c>팩:섹션/키</c>(소문자 snake, 예 <c>coredawn:item/iron_plate</c>).
-    /// 섹션 = items · recipes · effects · entities · guns · tutorial · wave(규칙 하나 — 밤 웨이브 점수식) · dayCycle(주야 시계 하나).
+    /// 섹션 = items · recipes · effects · entities · guns · tutorial · sounds · wave(규칙 하나 — 밤 웨이브 점수식) · dayCycle(주야 시계 하나) · sfx(공용 소리 자리 — 뷰가 Raw로 읽는다).
     /// 로드 뒤 Resolve 패스가 id 문자열을 정의 참조로 잇고, 모르는 id·잘못된 키는 오류로 모은다(strict면 예외).
     /// </summary>
     public sealed class SimDatabase
@@ -17,7 +17,7 @@ namespace CoreDawn.Sim
         static readonly Regex KeyRule = new Regex("^[a-z0-9_]+$");
         static readonly (string section, string singular)[] Sections =
         {
-            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("guns", "gun"), ("tutorial", "tutorial"),
+            ("items", "item"), ("recipes", "recipe"), ("effects", "effect"), ("entities", "entity"), ("guns", "gun"), ("tutorial", "tutorial"), ("sounds", "sound"),
         };
 
         public string Pack { get; }
@@ -30,6 +30,7 @@ namespace CoreDawn.Sim
         DayCycleDef dayCycle;
         readonly Dictionary<string, GunDef> guns = new Dictionary<string, GunDef>();
         readonly Dictionary<string, TutorialStepDef> tutorial = new Dictionary<string, TutorialStepDef>();
+        readonly Dictionary<string, SoundDef> sounds = new Dictionary<string, SoundDef>();
         List<TutorialStepDef> tutorialOrdered;
         readonly List<string> errors = new List<string>();
 
@@ -43,6 +44,8 @@ namespace CoreDawn.Sim
         public DayCycleDef DayCycle => dayCycle;
         public IReadOnlyDictionary<string, GunDef> Guns => guns;
         public IReadOnlyDictionary<string, TutorialStepDef> Tutorial => tutorial;
+        /// <summary>소리(표현 전용 정의) — 뷰의 sfx 자리가 id로 가리킨다. 심은 존재만 검증한다.</summary>
+        public IReadOnlyDictionary<string, SoundDef> Sounds => sounds;
         /// <summary>튜토리얼 스텝을 order → id 순으로. 게임(TutorialManager)이 이 순서대로 안내한다.</summary>
         public IReadOnlyList<TutorialStepDef> TutorialSteps
         {
@@ -69,7 +72,7 @@ namespace CoreDawn.Sim
         static readonly Dictionary<string, string> LegacySections = new Dictionary<string, string>
         {
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
-            ["Gun"] = "gun", ["Tutorial"] = "tutorial",
+            ["Gun"] = "gun", ["Tutorial"] = "tutorial", ["Sound"] = "sound",
         };
 
         /// <summary>
@@ -113,6 +116,7 @@ namespace CoreDawn.Sim
             }
             db.LoadSection(root, "guns", "gun", db.guns, serializer);
             db.LoadSection(root, "tutorial", "tutorial", db.tutorial, serializer);
+            db.LoadSection(root, "sounds", "sound", db.sounds, serializer);
             db.Raw = root;
 
             foreach (var d in db.guns.Values) d.Resolve(db, db.errors);     // 총 → 탄 아이템. 아이템의 Weapon 모듈은 총을 가리키므로 총이 먼저
@@ -174,5 +178,6 @@ namespace CoreDawn.Sim
         public EntityDef Entity(string id) => entities.TryGetValue(id, out var d) ? d : null;
         public GunDef Gun(string id) => guns.TryGetValue(id, out var d) ? d : null;
         public TutorialStepDef TutorialStep(string id) => tutorial.TryGetValue(id, out var d) ? d : null;
+        public SoundDef Sound(string id) => sounds.TryGetValue(id, out var d) ? d : null;
     }
 }

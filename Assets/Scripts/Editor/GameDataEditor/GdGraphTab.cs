@@ -92,6 +92,8 @@ namespace CoreDawn.EditorTools
         public string name = "", displayName = "", description = "", type = "Part", line = "None", icon = "", gun = "";
         // 아이콘 에셋의 guid — 이쪽이 파일을 특정하고 icon(이름)은 아틀라스 안에서 어느 스프라이트인지 고른다
         public string iconGuid = "";
+        // 탄약 전용 뷰 참조(탄 외형·총구 화염·착탄) — 이름 + guid 짝. 편집 UI는 없고 왕복만 보존한다(5a-3a 유틸이 채움)
+        public string bullet = "", bulletGuid = "", muzzleFlash = "", muzzleFlashGuid = "", hitEffect = "", hitEffectGuid = "";
         public List<GEff> attackEffects = new();
         public float speed = 50, gravity, explosionRadius, lifetime = 3;
         public int pierce;
@@ -184,6 +186,8 @@ namespace CoreDawn.EditorTools
                         type = string.IsNullOrEmpty(it.type) ? "Part" : it.type,
                         line = string.IsNullOrEmpty(it.line) ? "None" : it.line,
                         icon = it.icon ?? "", iconGuid = it.iconGuid ?? "",
+                        bullet = it.bullet ?? "", bulletGuid = it.bulletGuid ?? "", muzzleFlash = it.muzzleFlash ?? "", muzzleFlashGuid = it.muzzleFlashGuid ?? "",
+                        hitEffect = it.hitEffect ?? "", hitEffectGuid = it.hitEffectGuid ?? "",
                         maxStack = it.maxStack > 0 ? it.maxStack : 64,
                         hideFromMenu = it.hideFromMenu,
                         attackEffects = it.attackEffects != null
@@ -250,6 +254,7 @@ namespace CoreDawn.EditorTools
             if (win.root == null || nodes.Count == 0 && (win.root.items?.Length ?? 0) > 0) { }
             var items = new List<GameDataJson.ItemDto>();
             var recipes = new List<GameDataJson.RecipeDto>();
+            static string Or(string v) => string.IsNullOrEmpty(v) ? null : v;   // 빈 값은 생략(null → 파일에 안 쓴다)
 
             foreach (var n in nodes.Values.Where(n => n.kind == "item"))
             {
@@ -262,6 +267,8 @@ namespace CoreDawn.EditorTools
                     type = string.IsNullOrEmpty(d.type) ? "Part" : d.type,
                     line = string.IsNullOrEmpty(d.line) ? "None" : d.line,
                     icon = d.icon ?? "", iconGuid = d.iconGuid ?? "",
+                    bullet = Or(d.bullet), bulletGuid = Or(d.bulletGuid), muzzleFlash = Or(d.muzzleFlash), muzzleFlashGuid = Or(d.muzzleFlashGuid),
+                    hitEffect = Or(d.hitEffect), hitEffectGuid = Or(d.hitEffectGuid),
                     maxStack = Mathf.Max(1, d.maxStack),
                     hideFromMenu = d.hideFromMenu,
                 };

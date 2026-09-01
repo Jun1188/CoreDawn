@@ -68,10 +68,8 @@ namespace CoreDawn.EditorTools
             /// 발사음이 든 폴더 — 안의 클립을 전부 후보로 넣고 매 발 랜덤으로 고른다.
             /// 기관총처럼 초당 여러 발 나가는 타워는 후보가 많아야 귀가 덜 피곤하다.
             /// </summary>
-            public string FireClipFolder;
 
             /// <summary>폴더 대신 딱 집어 쓸 발사음.</summary>
-            public string[] FireClips;
 
             /// <summary>
             /// 칸에 맞춘 축척에 곱하는 연출용 보정. 1이면 받침이 칸에 정확히 들어간다.
@@ -90,9 +88,6 @@ namespace CoreDawn.EditorTools
         }
 
         // 모든 타워가 공유하는 소리·연출
-        private const string AudioRoot = TemplateRoot + "/Audio/SFX";
-        private const string DestroyClipFolder = AudioRoot + "/Tower Destruction";
-        private const string StarvedClip = "Assets/Art/Audio/Casual Game Sounds U6/CasualGameSounds/DM-CGS-04.wav";
         private const string DestroyVfx = TemplateRoot + "/Particles/Prefabs/TowerDeathExplosion.prefab";
 
         /// <summary>칸 하나당 월드 크기. PlacementSystem.cellSize와 맞춘다.</summary>
@@ -113,7 +108,6 @@ namespace CoreDawn.EditorTools
                 Cells = 1,
                 ScaleMultiplier = 1.3f,
                 TurretYOffset = -0.167f,   // L03 받침(0.97) → L01 받침(0.80) 높이차만큼 포탑을 내린다
-                FireClipFolder = AudioRoot + "/Towers/MachineGun",
             },
             new Spec {
                 TowerPrefab = BuildingRoot + "/HeavyTurret.prefab",
@@ -121,7 +115,6 @@ namespace CoreDawn.EditorTools
                 BaseName = "Base_RocketTower_L03", TurretName = "Turret_RocketTower_L03",
                 Material = TemplateRoot + "/Materials/Towers/Rocket/Rocket_Tower_L03_Texture_V003.mat",
                 Cells = 2,
-                FireClipFolder = AudioRoot + "/Towers/RocketLauncher",
             },
             new Spec {
                 TowerPrefab = BuildingRoot + "/MortarTower.prefab",
@@ -129,7 +122,6 @@ namespace CoreDawn.EditorTools
                 BaseName = "SuperTower_Base", TurretName = "SuperTower_Turret",
                 Material = TemplateRoot + "/Materials/Towers/SuperTower/SuperTower_Albedo_V001.mat",
                 Cells = 2,
-                FireClipFolder = AudioRoot + "/Towers/SuperTower",
             },
             new Spec {
                 TowerPrefab = BuildingRoot + "/LaserTower.prefab",
@@ -137,7 +129,6 @@ namespace CoreDawn.EditorTools
                 BaseName = "LaserTower_BASE_L03", TurretName = "LaserTower_TURRET_L03",
                 Material = TemplateRoot + "/Materials/Towers/Laser/LaserTower_L03_Albedo_V001.mat",
                 Cells = 2,
-                FireClipFolder = AudioRoot + "/Towers/Laser",
             },
             // 포탑 없는 타워 — TurretName을 비워 둔다
             new Spec {
@@ -146,7 +137,6 @@ namespace CoreDawn.EditorTools
                 BaseName = "EMP_Tower_level_3", TurretName = null,
                 Material = TemplateRoot + "/Materials/Towers/EMP Tower/EMP_Tower_level_3_tex_v001.mat",
                 Cells = 1,
-                FireClips = new[] { "Assets/Art/Audio/Casual Game Sounds U6/CasualGameSounds/DM-CGS-22.wav" },
             },
             new Spec {
                 TowerPrefab = BuildingRoot + "/Fence.prefab",
@@ -368,15 +358,7 @@ namespace CoreDawn.EditorTools
         {
             var so = new SerializedObject(visual);
 
-            // ── 소리·연출 ──
-            AudioClip[] fire = spec.FireClips != null
-                ? LoadClips(spec.FireClips)
-                : LoadClipFolder(spec.FireClipFolder);
-
-            SetObjectArray(so, "fireClips", fire);
-            SetObjectArray(so, "destroyClips", LoadClipFolder(DestroyClipFolder));
-            so.FindProperty("starvedClip").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<AudioClip>(StarvedClip);
+            // ── 연출 (소리는 팩 view.sfx — 프리팹에 배선하지 않는다) ──
             so.FindProperty("destroyVfx").objectReferenceValue =
                 AssetDatabase.LoadAssetAtPath<GameObject>(DestroyVfx);
 
@@ -393,33 +375,6 @@ namespace CoreDawn.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>폴더 안의 오디오 클립을 전부 이름순으로 — 후보가 많을수록 반복이 덜 지겹다.</summary>
-        private static AudioClip[] LoadClipFolder(string folder)
-        {
-            if (string.IsNullOrEmpty(folder) || !AssetDatabase.IsValidFolder(folder))
-                return new AudioClip[0];
-
-            string[] guids = AssetDatabase.FindAssets("t:AudioClip", new[] { folder });
-            var clips = new List<AudioClip>(guids.Length);
-            foreach (var g in guids)
-            {
-                var c = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(g));
-                if (c != null) clips.Add(c);
-            }
-            clips.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-            return clips.ToArray();
-        }
-
-        private static AudioClip[] LoadClips(string[] paths)
-        {
-            var clips = new List<AudioClip>();
-            foreach (var p in paths)
-            {
-                var c = AssetDatabase.LoadAssetAtPath<AudioClip>(p);
-                if (c != null) clips.Add(c);
-            }
-            return clips.ToArray();
-        }
 
         private static void SetObjectArray(SerializedObject so, string field, Object[] values)
         {

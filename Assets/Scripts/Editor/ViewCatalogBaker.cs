@@ -45,6 +45,7 @@ namespace CoreDawn.EditorTools
 
                 CollectSection(entries, d, pack, "items", "item", ref warnings);
                 CollectSection(entries, d, pack, "entities", "entity", ref warnings);
+                CollectSection(entries, d, pack, "sounds", "sound", ref warnings);
             }
 
             entries.Sort((a, b) => string.CompareOrdinal(a.id, b.id));   // 같은 팩 → 같은 에셋 (diff 안정)
@@ -85,12 +86,29 @@ namespace CoreDawn.EditorTools
                 e.bulletPrefab      = LoadPrefab(view, "bullet", "bulletGuid", id, ref warnings);
                 e.muzzleFlashPrefab = LoadPrefab(view, "muzzleFlash", "muzzleFlashGuid", id, ref warnings);
                 e.hitEffectPrefab   = LoadPrefab(view, "hitEffect", "hitEffectGuid", id, ref warnings);
+                e.clips             = LoadClips(view, id, ref warnings);
 
                 // 모델(fbx)만 있고 실을 게 없는 항목(예: 광맥 — 뷰는 씬에 굽는다)은 카탈로그에 안 담는다
                 if (e.icon != null || e.prefab != null || e.curveLPrefab != null || e.curveRPrefab != null ||
-                    e.bulletPrefab != null || e.muzzleFlashPrefab != null || e.hitEffectPrefab != null)
+                    e.bulletPrefab != null || e.muzzleFlashPrefab != null || e.hitEffectPrefab != null || e.clips != null)
                     entries.Add(e);
             }
+        }
+
+        /// <summary>소리의 변형 클립 묶음(view.clips[{clip, clipGuid}]). 하나라도 못 찾으면 경고하고 그것만 뺀다. 비면 null.</summary>
+        static AudioClip[] LoadClips(JObject view, string id, ref int warnings)
+        {
+            if (view["clips"] is not JArray arr || arr.Count == 0) return null;
+            var list = new List<AudioClip>();
+            foreach (var c in arr)
+            {
+                string name = (string)c["clip"], guid = (string)c["clipGuid"];
+                string path = string.IsNullOrEmpty(guid) ? null : AssetDatabase.GUIDToAssetPath(guid);
+                var clip = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                if (clip == null) { Debug.LogWarning($"[ViewCatalog] {id}: 클립 '{name}'({guid})을 찾지 못했습니다 — 묶음에서 뺍니다."); warnings++; continue; }
+                list.Add(clip);
+            }
+            return list.Count > 0 ? list.ToArray() : null;
         }
 
         static Sprite LoadSprite(JObject view, string nameKey, string guidKey, string id, ref int warnings)

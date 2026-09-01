@@ -16,7 +16,7 @@ namespace CoreDawn.FPS
     /// 풀어 <see cref="ProjectileSystem"/>에 넘기고, 소리·총구 화염을 낸다 — 포탑(TowerView)과 같은 "심 승인 → 뷰 발사" 틀.
     /// 상태 프로퍼티(CurrentAmmo·IsReloading·ReloadProgress…)는 HUD·입력이 읽는 심 상태의 창구다.
     ///
-    /// 수치의 정본은 팩 <see cref="GunDef"/>(<see cref="gunId"/>로 찾는다). 소리·피격 레이어 같은 뷰 값은 이 컴포넌트(총 프리팹)가 든다.
+    /// 수치의 정본은 팩 <see cref="GunDef"/>(<see cref="gunId"/>로 찾는다). 소리는 정의의 view.sfx(fire·reload — <see cref="ViewSchema"/>), 피격 레이어만 이 컴포넌트가 든다.
     /// 연출(반동·킥백·셰이크)은 모른다 — 발사하면 <see cref="Fired"/>만 알리고, 반응은 WeaponManager가 팬아웃한다.
     /// </summary>
     public class Gun : MonoBehaviour
@@ -26,11 +26,7 @@ namespace CoreDawn.FPS
         public string gunId;
         public Transform muzzlePoint;
 
-        [Header("뷰 값 — 소리·피격 레이어")]
-        public AudioClip fireSound;
-        public AudioClip reloadSound;
-        [Range(0f, 1f)] public float fireVolume = 0.8f;
-        [Range(0f, 1f)] public float reloadVolume = 0.7f;
+        [Header("뷰 값 — 피격 레이어")]
         [Tooltip("탄이 맞힐 레이어.")]
         public LayerMask enemyLayer;
 
@@ -61,6 +57,9 @@ namespace CoreDawn.FPS
                 return def;
             }
         }
+
+        /// <summary>정의의 표현 사양(뷰 종류·소리 자리).</summary>
+        public ViewSpec View => ViewSchema.Of(Def);
 
         private WeaponModule weapon;
         /// <summary>소지자(플레이어 엔티티)의 무기 모듈. 플레이어 엔티티가 아직 없으면 null.</summary>
@@ -183,12 +182,7 @@ namespace CoreDawn.FPS
         // 발사 — 심이 승인한 방아쇠를 조준축·탄퍼짐·펠릿으로 풀어 공용 전달 시스템에 넘긴다. 타워도 같은 경로로 쏜다.
         private void Fire(in WeaponShot shot)
         {
-            if (fireSound != null)
-            {
-                Vector3 soundPos = muzzlePoint != null ? muzzlePoint.position : transform.position;
-                if (SoundManager.Instance != null)
-                    SoundManager.Instance.Play3DSFX(fireSound, soundPos, fireVolume);
-            }
+            SoundManager.Instance?.Play(View.SfxOf("fire"), muzzlePoint != null ? muzzlePoint.position : transform.position);
 
             // 탄도(속도·중력·폭발·수명·외형)는 장전된 탄종의 성질 — 총은 각도(조준·탄퍼짐)만 정한다.
             // 프리팹·연출은 뷰 카탈로그(탄약 항목)가 든다.
@@ -247,7 +241,9 @@ namespace CoreDawn.FPS
         private void OnReloadStarted(GunDef gun)
         {
             if (!ReferenceEquals(gun, Def) || !isActiveAndEnabled) return;
-            if (reloadSound == null) return;
+            var use = View.SfxOf("reload");
+            var reloadClip = use != null ? SoundManager.ClipOf(use.Sound) : null;
+            if (reloadClip == null) return;
             if (reloadSource == null)
             {
                 reloadSource = gameObject.AddComponent<AudioSource>();
@@ -256,8 +252,8 @@ namespace CoreDawn.FPS
                 // 공용 3D 세팅 — 안 거치면 SFX 믹서 그룹 밖이라 볼륨 슬라이더가 이 소리만 못 잡는다
                 if (SoundManager.Instance != null) SoundManager.Instance.Setup3DSource(reloadSource);
             }
-            reloadSource.clip = reloadSound;
-            reloadSource.volume = reloadVolume;
+            reloadSource.clip = reloadClip;
+            reloadSource.volume = use.Volume;
             reloadSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
             reloadSource.Play();
         }

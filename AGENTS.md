@@ -29,7 +29,7 @@ namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Prese
 | Folder (`Assets/Scripts/…`) | Namespace | What lives there |
 |---|---|---|
 | `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces (incl. `ISteppable`·`ISaveableModule`), `Inventory/` = `ItemStack`/`ItemContainer` (item storage shared by player and buildings), `Factory/` = the factory sim (5a-2f: `FactorySystem`·`BuildingModule`·`BuildingGraph`·`BuildingPorts`·`BeltSystem`·`BeltSegment` + `Direction`/`Dir`/`PortDefinition`/`BeltShape`), `Modules/` = entity modules (`*Module`, incl. `InventoryModule`·`CrafterModule`·`RouterModule`·`ExtractorModule`·`CoreModule`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
-| `Data/**` | `CoreDawn.Data` | the few Unity assets that remain after 5a-3e (2026-09-01): `ViewCatalogSO` (pack id → icon/prefab, baked from the pack `view` blocks; also holds the shared `droppedItemPrefab`), `MapDataSO` (maps are not pack content), `BuildingCategory`. **All game definitions (items, recipes, effects, entities, guns, tutorial, wave, dayCycle) are pack json only** — no `*DataSO`/`*DatabaseSO` exist anymore. |
+| `Data/**` | `CoreDawn.Data` | the few Unity assets that remain after 5a-3e (2026-09-01): `ViewCatalogSO` (pack id → icon/prefab/sound clips, baked from the pack `view` blocks; also holds the shared `droppedItemPrefab`), `MapDataSO` (maps are not pack content), `BuildingCategory`, plus the view-block readers `ViewSpec`/`SoundUse`/`ViewSchema` (5a-4a). **All game definitions (items, recipes, effects, entities, guns, tutorial, wave, dayCycle) are pack json only** — no `*DataSO`/`*DatabaseSO` exist anymore. |
 | `Game/Factory` | `CoreDawn.Factory` | Unity-facing factory bridges only (since 5a-2f, 2026-09-01): `FactoryBootstrap` (driver + `WireGameRules`), `PlacementBridge`, `CoreBootstrap`, `BeltItemView`, `CoreSystem` (core tier/UI wiring), `RecipeRewardUnlockService`. The factory sim itself lives in `Sim/Factory`. The behavior layer (`*Behavior`, `IBuildingBehavior`, `BuildingBehaviors`) is gone — building tick is decided by what the entity *has* |
 | `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
 | `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
@@ -100,6 +100,16 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   logic is `Game/Tutorial/Conditions/*` plain classes registered in `TutorialConditions` (add a class + one table line — the
   editor's tutorial tab discovers kinds from `TutorialCondition` subclasses and draws their public fields). Save tutorial keys
   are pack ids (schema v5). Editing the editor to write v2 directly is 5a-3e-2 (pending).
+- View schema and sounds (5a-4a, 2026-09-01): **everything about how a definition looks and sounds is data → view; scenes only author
+  placement.** Every entity/gun `view` block carries `type` (explicit, `ViewSchema.Types`: Building · Tower · Deposit · Nest · Monster ·
+  Player · Gun — the 5a-4b assembler keys components/colliders off it) and `sfx{name: {sound, volume, spatial}}` (`SoundUse` — the
+  *use site* owns volume/spatiality, like `EffectUse` owns value/duration). Sounds are their own pack section `sounds/<key>` (`SoundDef`,
+  `view.clips[]` = variant clips, one picked at random per play); the pack root `sfx` holds common uses (`ui_click`, `construct`,
+  `destroy`, `warning`, `item_pickup`, `mine`…) replacing the old `CommonSFX` enum — play them with `SoundManager.PlayCommon("mine")`,
+  and definition sounds with `SoundManager.Instance.Play(ViewSchema.Of(def).SfxOf("fire"), position)`. Adding a sound slot = one name in
+  the `ViewSchema.Types` table; adding a sound = the editor's 사운드 tab (clips are guid refs baked into `ViewCatalog.Entry.clips`).
+  Nest boss/defender kinds come from the map (`NestSpec.spawnPoints[].boss`, `NestSpec.defender`), never from the MonsterNest prefab.
+  Prefab default values must be cleared *before* re-baking World (instance values equal to the prefab are not recorded as overrides).
 - Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,
   pellets, range in meters, ammo filter, damage multiplier + the view's feel values), and the player entity carries a `WeaponModule`
   (per-gun `Magazine`, equipped gun, fire cooldown, reload timer that really consumes rounds from the inventory, auto-reload, ammo

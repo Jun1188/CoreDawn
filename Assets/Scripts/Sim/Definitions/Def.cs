@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CoreDawn.Sim
 {
@@ -10,6 +11,9 @@ namespace CoreDawn.Sim
     public abstract class Def
     {
         [JsonIgnore] public string Id { get; internal set; }
+
+        /// <summary>표현 블록(모델·프리팹·아이콘·뷰 종류·소리 자리) — 심은 읽지 않는다. 에디터 베이커(ViewCatalog)와 뷰(ViewSchema)가 읽는다.</summary>
+        [JsonProperty("view")] public JObject View;
 
         [JsonProperty("displayName")] public string DisplayName;
         [JsonProperty("description")] public string Description;
