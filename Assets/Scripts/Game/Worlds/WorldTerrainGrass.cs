@@ -1,145 +1,143 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Worlds
 {
     /// <summary>
-    /// 풀·꽃 — Unity Terrain의 디테일 시스템 대체(5a-4e ④). 심는 규칙은 구 생성기(PaintDetails) 그대로:
-    /// 물가 위·완경사 지면에만, 절벽 타일은 경계 앞줄만, 풀은 빈 곳 없이 밀도만 흔들고 꽃은 흩뿌린다.
-    ///
-    /// 그리는 방식은 Terrain과 같은 원리다 — 카메라 근처 청크만, 행렬 배열로 <see cref="Graphics.DrawMeshInstanced"/>.
-    /// 배치는 좌표 해시로 결정적이라 저장물이 없고, 청크가 시야에 들어올 때 만들어 캐시하고 멀어지면 버린다.
-    /// 콜라이더 없음 — 길찾기·건설·사격 판정에 관여하지 않는다(구 시스템과 동일).
+    /// 풀·꽃 — GPU 구동(5a-4e, 사용자 설계). 심는 규칙은 구 Terrain 디테일(PaintDetails) 그대로지만
+    /// 파이프라인이 다르다:
+    ///   · 전 맵 인스턴스(포기당 16B)를 지형 생성 때 <b>한 번</b> GPU에 상주시킨다.
+    ///   · CPU는 매 프레임 카메라 위치·절두체 평면·절벽 오클루더 박스만 올린다.
+    ///   · 컴퓨트(GrassCull)가 거리 감쇠·절두체·절벽 오클루전을 걸러 AppendBuffer에 쓰고,
+    ///     프로토타입별 <see cref="Graphics.RenderMeshIndirect"/> 한 콜로 그린다 — 1023 제한 없음.
+    /// 셰이더는 CoreDawn/Vegetation Lit의 procedural 경로(GrassProcedural.hlsl)를 쓴다.
+    /// 콜라이더 없음 — 길찾기·건설·사격 판정에 관여하지 않는다.
     /// </summary>
-    [ExecuteAlways]   // 에디터에서 지형을 미리 세워 볼 때도 풀이 보이게
+    [ExecuteAlways]
     public sealed class WorldTerrainGrass : MonoBehaviour
     {
-        const int ChunkCells = 8;            // WorldTerrainBuilder와 같은 청크 격자
-        const int MaxCachedChunks = 64;
+        [StructLayout(LayoutKind.Sequential)]
+        struct Instance
+        {
+            public Vector3 pos;
+            public uint packed;   // 하위 16비트 배율(1/8192), 상위 16비트 yaw — GrassProcedural.hlsl과 동일
+        }
 
-        struct Proto { public Mesh mesh; public Material mat; public Vector2 size; }
+        [StructLayout(LayoutKind.Sequential)]
+        struct OccluderBox
+        {
+            public Vector3 min; public float pad0;
+            public Vector3 max; public float pad1;
+        }
 
-        World world;
-        MapDef map;
-        TerrainForm form;
+        sealed class Proto
+        {
+            public Mesh mesh;
+            public Material mat;               // 원본 복제 + _GrassInstances 바인딩
+            public GraphicsBuffer instances;   // 상주 전체
+            public GraphicsBuffer visible;     // 컬링 통과분(Append)
+            public GraphicsBuffer args;        // indirect args
+            public int count;
+        }
+
         TerrainGenSettings s;
-
-        Proto[] grass, flowers;
-        int chunksX, chunksY;
-        float chunkSize;
-
-        readonly Dictionary<int, List<Matrix4x4>[]> cache = new Dictionary<int, List<Matrix4x4>[]>();
-        readonly List<int> cacheOrder = new List<int>();
-        readonly Matrix4x4[] batch = new Matrix4x4[1023];
+        ComputeShader cull;
+        int kernel;
+        readonly List<Proto> protos = new List<Proto>();
+        GraphicsBuffer occluders;
+        int occluderCount;
+        Bounds worldBounds;
+        readonly Vector4[] planeVec = new Vector4[6];
+        readonly Plane[] planes = new Plane[6];
 
         public static WorldTerrainGrass Attach(GameObject root, World world, MapDef map, TerrainForm form, TerrainGenSettings s)
         {
             var g = root.AddComponent<WorldTerrainGrass>();
-            g.world = world; g.map = map; g.form = form; g.s = s;
-            g.grass = Protos(s.grassSet, s.grassSize);
-            g.flowers = Protos(s.flowerSet, s.flowerSize);
-            g.chunksX = Mathf.CeilToInt(map.width / (float)ChunkCells);
-            g.chunksY = Mathf.CeilToInt(map.height / (float)ChunkCells);
-            g.chunkSize = ChunkCells * world.CellSize;
-            if (g.grass.Length == 0)
-                Debug.LogWarning("[WorldTerrain] 풀 프리팹이 하나도 없습니다 — TerrainGenSettings의 Grass Set 확인.");
+            g.Init(world, map, form, s);
             return g;
         }
 
-        static Proto[] Protos(GameObject[] set, Vector2 size)
+        void Init(World world, MapDef map, TerrainForm form, TerrainGenSettings settings)
         {
-            var list = new List<Proto>();
-            if (set == null) return list.ToArray();
-            foreach (var p in set)
+            s = settings;
+            cull = Resources.Load<ComputeShader>("Builtin/GrassCull");
+            if (cull == null) { Debug.LogError("[WorldTerrain] Resources/Builtin/GrassCull.compute 가 없습니다 — 풀을 그릴 수 없습니다."); return; }
+            kernel = cull.FindKernel("Cull");
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var lists = Generate(world, map, form, out var protoSources);
+            for (int i = 0; i < lists.Length; i++)
             {
-                if (p == null) continue;
-                var mf = p.GetComponentInChildren<MeshFilter>();
-                var mr = p.GetComponentInChildren<MeshRenderer>();
-                if (mf == null || mr == null || mf.sharedMesh == null) continue;
-                var mat = mr.sharedMaterial;
-                if (mat != null && !mat.enableInstancing) mat.enableInstancing = true;   // 수만 포기 — 인스턴싱 필수
-                list.Add(new Proto { mesh = mf.sharedMesh, mat = mat, size = size });
-            }
-            return list.ToArray();
-        }
-
-        void LateUpdate()
-        {
-            if (grass.Length == 0) return;
-            var cam = Camera.main;
-#if UNITY_EDITOR
-            if (cam == null && UnityEditor.SceneView.lastActiveSceneView != null)
-                cam = UnityEditor.SceneView.lastActiveSceneView.camera;
-#endif
-            if (cam == null) return;
-
-            float range = s.detailDistance + chunkSize;
-            Vector3 eye = cam.transform.position;
-
-            int ci0 = Mathf.Max(0, Mathf.FloorToInt(((eye.x - world.Origin.x) - range) / chunkSize));
-            int ci1 = Mathf.Min(chunksX - 1, Mathf.FloorToInt(((eye.x - world.Origin.x) + range) / chunkSize));
-            int cj0 = Mathf.Max(0, Mathf.FloorToInt(((eye.z - world.Origin.z) - range) / chunkSize));
-            int cj1 = Mathf.Min(chunksY - 1, Mathf.FloorToInt(((eye.z - world.Origin.z) + range) / chunkSize));
-
-            for (int j = cj0; j <= cj1; j++)
-                for (int i = ci0; i <= ci1; i++)
+                if (lists[i].Count == 0) continue;
+                var (mesh, srcMat, _) = protoSources[i];
+                var p = new Proto
                 {
-                    Vector3 centre = world.Origin + new Vector3((i + 0.5f) * chunkSize, 0f, (j + 0.5f) * chunkSize);
-                    float dx = Mathf.Abs(centre.x - eye.x), dz = Mathf.Abs(centre.z - eye.z);
-                    if (dx > range || dz > range) continue;
+                    mesh = mesh,
+                    count = lists[i].Count,
+                    instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, lists[i].Count, 16),
+                    visible = new GraphicsBuffer(GraphicsBuffer.Target.Append | GraphicsBuffer.Target.Structured, lists[i].Count, 16),
+                    args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size),
+                };
+                p.instances.SetData(lists[i]);
+                var arg = new GraphicsBuffer.IndirectDrawIndexedArgs { indexCountPerInstance = mesh.GetIndexCount(0) };
+                p.args.SetData(new[] { arg });
+                p.mat = new Material(srcMat) { hideFlags = HideFlags.HideAndDontSave };
+                p.mat.SetBuffer("_GrassInstances", p.visible);
+                protos.Add(p);
+            }
 
-                    var lists = ChunkInstances(j * chunksX + i, i, j);
-                    for (int proto = 0; proto < lists.Length; proto++)
-                    {
-                        var pr = proto < grass.Length ? grass[proto] : flowers[proto - grass.Length];
-                        var l = lists[proto];
-                        for (int at = 0; at < l.Count; at += batch.Length)
-                        {
-                            int n = Mathf.Min(batch.Length, l.Count - at);
-                            l.CopyTo(at, batch, 0, n);
-                            Graphics.DrawMeshInstanced(pr.mesh, 0, pr.mat, batch, n,
-                                null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);
-                        }
-                    }
-                }
+            BuildOccluders(world, map, form);
+
+            float cell = world.CellSize;
+            worldBounds = new Bounds(
+                world.Origin + new Vector3(map.width * cell * 0.5f, 5f, map.height * cell * 0.5f),
+                new Vector3(map.width * cell, 30f, map.height * cell));
+
+            long total = 0;
+            foreach (var p in protos) total += p.count;
+            Debug.Log($"[WorldTerrain] 풀 {total:N0}포기 상주({total * 16 / 1048576}MB) · 오클루더 {occluderCount}박스 · 생성 {sw.ElapsedMilliseconds}ms");
         }
 
-        /// <summary>청크의 풀·꽃 행렬 — 좌표 해시로 결정적이라 언제 다시 만들어도 같은 배치가 나온다.</summary>
-        List<Matrix4x4>[] ChunkInstances(int key, int ci, int cj)
+        /// <summary>심기 — 구 PaintDetails 규칙(물가 위·완경사, 밀도만 흔들고 꽃은 흩뿌림). 좌표 해시라 결정적.</summary>
+        List<Instance>[] Generate(World world, MapDef map, TerrainForm form, out (Mesh, Material, Vector2)[] protoSources)
         {
-            if (cache.TryGetValue(key, out var cached)) return cached;
+            var grassSrc = Sources(s.grassSet, s.grassSize);
+            var flowerSrc = Sources(s.flowerSet, s.flowerSize);
+            protoSources = new (Mesh, Material, Vector2)[grassSrc.Count + flowerSrc.Count];
+            for (int i = 0; i < grassSrc.Count; i++) protoSources[i] = grassSrc[i];
+            for (int i = 0; i < flowerSrc.Count; i++) protoSources[grassSrc.Count + i] = flowerSrc[i];
 
-            var lists = new List<Matrix4x4>[grass.Length + flowers.Length];
-            for (int i = 0; i < lists.Length; i++) lists[i] = new List<Matrix4x4>();
+            var lists = new List<Instance>[protoSources.Length];
+            for (int i = 0; i < lists.Length; i++) lists[i] = new List<Instance>();
+            if (grassSrc.Count == 0)
+            {
+                Debug.LogWarning("[WorldTerrain] 풀 프리팹이 하나도 없습니다 — TerrainGenSettings의 Grass Set 확인.");
+                return lists;
+            }
 
             float cell = world.CellSize;
             float grassWaterLine = s.waterLevel + s.grassWaterLineOffset;
             float pointM = Mathf.Max(0.25f, s.detailPointM);
-            int points = Mathf.Max(1, Mathf.RoundToInt(chunkSize / pointM));
+            int pointsX = Mathf.Max(1, Mathf.RoundToInt(map.width * cell / pointM));
+            int pointsY = Mathf.Max(1, Mathf.RoundToInt(map.height * cell / pointM));
 
-            for (int pj = 0; pj < points; pj++)
-                for (int pi = 0; pi < points; pi++)
+            for (int pj = 0; pj < pointsY; pj++)
+                for (int pi = 0; pi < pointsX; pi++)
                 {
-                    // 심는 점(타일 좌표) + 지터 — 격자가 그대로 보이지 않게
-                    int hx = ci * points + pi, hy = cj * points + pj;
-                    float jx = WorldTerrainCliffs.Hash(hx, hy, 611) % 1000 / 1000f - 0.5f;
-                    float jy = WorldTerrainCliffs.Hash(hx, hy, 613) % 1000 / 1000f - 0.5f;
-                    float tx = ci * ChunkCells + (pi + 0.5f + jx * 0.9f) / points * ChunkCells;
-                    float ty = cj * ChunkCells + (pj + 0.5f + jy * 0.9f) / points * ChunkCells;
+                    float jx = WorldTerrainCliffs.Hash(pi, pj, 611) % 1000 / 1000f - 0.5f;
+                    float jy = WorldTerrainCliffs.Hash(pi, pj, 613) % 1000 / 1000f - 0.5f;
+                    float tx = (pi + 0.5f + jx * 0.9f) / pointsX * map.width;
+                    float ty = (pj + 0.5f + jy * 0.9f) / pointsY * map.height;
 
-                    int cxi = Mathf.FloorToInt(tx), cyi = Mathf.FloorToInt(ty);
-                    if (!map.InBounds(cxi, cyi)) continue;
-
-                    // 절벽 타일에도 그대로 심는다 — 바위 틈이라고 잔디가 안 자라는 게 아니다(사용자).
-                    // 구 생성기의 "경계 앞줄만" 규칙은 벽이 빈틈없다는 가정의 절약이었는데, 그 절약이
-                    // 마당 관리한 것처럼 잘린 선을 만들었다. 벽에 가린 포기는 어차피 안 보인다.
+                    // 절벽 타일에도 그대로 심는다 — 바위 틈에 잔디가 자라는 게 자연스럽다(사용자).
+                    // 벽에 가린 포기는 절벽 오클루더가 컬링한다.
 
                     float y = form.Height(tx, ty);
-                    if (y < grassWaterLine) continue;   // 물가 아래는 비운다 — 끊기는 선이 물가 곡선을 따라간다
+                    if (y < grassWaterLine) continue;   // 물가 아래는 비운다 — 끊기는 선이 물가 곡선을 따른다
 
-                    // 경사 — 내륙은 완전 평면이라 물가 근처에서만 실제로 걸린다
-                    if (y < -0.001f)
+                    if (y < -0.001f)   // 경사 — 내륙은 완전 평면이라 물가 근처에서만 걸린다
                     {
                         const float d = 0.25f;
                         float sx = form.Height(tx + d, ty) - form.Height(tx - d, ty);
@@ -154,39 +152,150 @@ namespace CoreDawn.Worlds
                     int amount = patch > 0.7f ? 3 : 2;
                     for (int a = 0; a < amount; a++)
                     {
-                        int gi = WorldTerrainCliffs.Hash(hx, hy, 17 + a) % grass.Length;
-                        float sc = Mathf.Lerp(grass[gi].size.x, grass[gi].size.y,
-                                              WorldTerrainCliffs.Hash(hx, hy, 41 + a) % 1000 / 1000f);
-                        float yaw = WorldTerrainCliffs.Hash(hx, hy, 59 + a) % 3600 / 10f;
-                        float ox = (WorldTerrainCliffs.Hash(hx, hy, 71 + a) % 1000 / 1000f - 0.5f) * pointM;
-                        float oz = (WorldTerrainCliffs.Hash(hx, hy, 73 + a) % 1000 / 1000f - 0.5f) * pointM;
-                        lists[gi].Add(Matrix4x4.TRS(pos + new Vector3(ox, 0f, oz),
-                                                    Quaternion.Euler(0f, yaw, 0f), Vector3.one * sc));
+                        int gi = WorldTerrainCliffs.Hash(pi, pj, 17 + a) % grassSrc.Count;
+                        float sc = Mathf.Lerp(grassSrc[gi].Item3.x, grassSrc[gi].Item3.y,
+                                              WorldTerrainCliffs.Hash(pi, pj, 41 + a) % 1000 / 1000f);
+                        float yaw01 = WorldTerrainCliffs.Hash(pi, pj, 59 + a) % 1000 / 1000f;
+                        float ox = (WorldTerrainCliffs.Hash(pi, pj, 71 + a) % 1000 / 1000f - 0.5f) * pointM;
+                        float oz = (WorldTerrainCliffs.Hash(pi, pj, 73 + a) % 1000 / 1000f - 0.5f) * pointM;
+                        lists[gi].Add(Pack(pos + new Vector3(ox, 0f, oz), sc, yaw01));
                     }
 
-                    // 꽃 — 셀 단위로 흩뿌린다(칸 단위로 고르면 줄무늬가 된다 — 구 생성기 교훈)
-                    if (flowers.Length > 0)
+                    // 꽃 — 셀 단위로 흩뿌린다(칸 단위 선택은 줄무늬가 된다 — 구 생성기 교훈)
+                    if (flowerSrc.Count > 0)
                     {
                         float bloom = Mathf.PerlinNoise(tx * 0.04f + 31.7f, ty * 0.04f + 12.9f);
-                        if (bloom > 0.58f && WorldTerrainCliffs.Hash(hx, hy, 91) % 8 == 0)
+                        if (bloom > 0.58f && WorldTerrainCliffs.Hash(pi, pj, 91) % 8 == 0)
                         {
-                            int fi = WorldTerrainCliffs.Hash(hx, hy, 53) % flowers.Length;
-                            float sc = Mathf.Lerp(flowers[fi].size.x, flowers[fi].size.y,
-                                                  WorldTerrainCliffs.Hash(hx, hy, 43) % 1000 / 1000f);
-                            float yaw = WorldTerrainCliffs.Hash(hx, hy, 61) % 3600 / 10f;
-                            lists[grass.Length + fi].Add(Matrix4x4.TRS(pos, Quaternion.Euler(0f, yaw, 0f), Vector3.one * sc));
+                            int fi = WorldTerrainCliffs.Hash(pi, pj, 53) % flowerSrc.Count;
+                            float sc = Mathf.Lerp(flowerSrc[fi].Item3.x, flowerSrc[fi].Item3.y,
+                                                  WorldTerrainCliffs.Hash(pi, pj, 43) % 1000 / 1000f);
+                            float yaw01 = WorldTerrainCliffs.Hash(pi, pj, 61) % 1000 / 1000f;
+                            lists[grassSrc.Count + fi].Add(Pack(pos, sc, yaw01));
                         }
                     }
                 }
-
-            cache[key] = lists;
-            cacheOrder.Add(key);
-            if (cacheOrder.Count > MaxCachedChunks)
-            {
-                cache.Remove(cacheOrder[0]);
-                cacheOrder.RemoveAt(0);
-            }
             return lists;
+        }
+
+        static Instance Pack(Vector3 pos, float scale, float yaw01)
+        {
+            uint sc = (uint)Mathf.Clamp(Mathf.RoundToInt(scale * 8192f), 1, 65535);
+            uint yaw = (uint)Mathf.Clamp(Mathf.RoundToInt(yaw01 * 65535f), 0, 65535);
+            return new Instance { pos = pos, packed = sc | (yaw << 16) };
+        }
+
+        static List<(Mesh, Material, Vector2)> Sources(GameObject[] set, Vector2 size)
+        {
+            var list = new List<(Mesh, Material, Vector2)>();
+            if (set == null) return list;
+            foreach (var p in set)
+            {
+                if (p == null) continue;
+                var mf = p.GetComponentInChildren<MeshFilter>();
+                var mr = p.GetComponentInChildren<MeshRenderer>();
+                if (mf == null || mr == null || mf.sharedMesh == null || mr.sharedMaterial == null) continue;
+                list.Add((mf.sharedMesh, mr.sharedMaterial, size));
+            }
+            return list;
+        }
+
+        /// <summary>절벽 오클루더 — 절벽 타일 행 연속 구간을 세로로 그리디 병합한 박스(0.1칸 인셋, 바닥 0.8m — 틈새 풀 보호).</summary>
+        void BuildOccluders(World world, MapDef map, TerrainForm form)
+        {
+            float cell = world.CellSize;
+            float wallH = 9f;
+            var boxes = new List<OccluderBox>();
+            var used = new bool[map.width, map.height];
+
+            for (int y = 0; y < map.height; y++)
+                for (int x = 0; x < map.width; x++)
+                {
+                    if (used[x, y] || map.TileAt(x, y) != MapTile.Cliff) continue;
+
+                    int w = 1;
+                    while (x + w < map.width && !used[x + w, y] && map.TileAt(x + w, y) == MapTile.Cliff) w++;
+                    int h = 1;
+                    bool CanGrow()
+                    {
+                        if (y + h >= map.height) return false;
+                        for (int i = 0; i < w; i++)
+                            if (used[x + i, y + h] || map.TileAt(x + i, y + h) != MapTile.Cliff) return false;
+                        return true;
+                    }
+                    while (CanGrow()) h++;
+                    for (int j = 0; j < h; j++)
+                        for (int i = 0; i < w; i++)
+                            used[x + i, y + j] = true;
+
+                    const float Inset = 0.1f;
+                    Vector3 a = world.CellToWorld(new Vector2Int(x, y)) + new Vector3(Inset * cell, 0f, Inset * cell);
+                    Vector3 b = world.CellToWorld(new Vector2Int(x + w, y + h)) - new Vector3(Inset * cell, 0f, Inset * cell);
+                    boxes.Add(new OccluderBox { min = new Vector3(a.x, 0.8f, a.z), max = new Vector3(b.x, wallH, b.z) });
+                }
+
+            occluderCount = boxes.Count;
+            if (occluderCount == 0) return;
+            occluders = new GraphicsBuffer(GraphicsBuffer.Target.Structured, occluderCount, 32);
+            occluders.SetData(boxes);
+        }
+
+        void LateUpdate()
+        {
+            if (protos.Count == 0 || cull == null) return;
+            var cam = Camera.main;
+#if UNITY_EDITOR
+            if (cam == null && UnityEditor.SceneView.lastActiveSceneView != null)
+                cam = UnityEditor.SceneView.lastActiveSceneView.camera;
+#endif
+            if (cam == null) return;
+
+            GeometryUtility.CalculateFrustumPlanes(cam, planes);
+            for (int i = 0; i < 6; i++)
+                planeVec[i] = new Vector4(planes[i].normal.x, planes[i].normal.y, planes[i].normal.z, planes[i].distance);
+
+            cull.SetVectorArray("_FrustumPlanes", planeVec);
+            cull.SetVector("_CameraPos", cam.transform.position);
+            cull.SetFloat("_MaxDist", s.detailDistance);
+            cull.SetFloat("_FadeStart", s.detailDistance * 0.45f);
+            cull.SetInt("_OccluderCount", occluderCount);
+            if (occluders != null) cull.SetBuffer(kernel, "_Occluders", occluders);
+
+            foreach (var p in protos)
+            {
+                p.visible.SetCounterValue(0);
+                cull.SetInt("_InstanceCount", p.count);
+                cull.SetBuffer(kernel, "_Instances", p.instances);
+                cull.SetBuffer(kernel, "_Visible", p.visible);
+                cull.Dispatch(kernel, (p.count + 63) / 64, 1, 1);
+                GraphicsBuffer.CopyCount(p.visible, p.args, 4);   // IndirectDrawIndexedArgs.instanceCount
+
+                var rp = new RenderParams(p.mat)
+                {
+                    worldBounds = worldBounds,
+                    shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                    receiveShadows = true,
+                    layer = gameObject.layer,
+                };
+                Graphics.RenderMeshIndirect(rp, p.mesh, p.args);
+            }
+        }
+
+        void OnDestroy() => Release();
+        void OnDisable() => Release();
+
+        void Release()
+        {
+            foreach (var p in protos)
+            {
+                p.instances?.Release();
+                p.visible?.Release();
+                p.args?.Release();
+                if (p.mat != null) DestroyImmediate(p.mat);
+            }
+            protos.Clear();
+            occluders?.Release();
+            occluders = null;
         }
     }
 }

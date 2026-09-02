@@ -1,0 +1,94 @@
+// 잔디 컬링(5a-4e) — CPU는 카메라·절두체·절벽 오클루더만 올리고, 판정은 전부 GPU가 한다.
+//   ① 거리 + 해시 감쇠(멀수록 확률적으로 솎음 — 무작위라 체커판·줄무늬 없음)
+//   ② 절두체(포기 반경 여유 1.2m)
+//   ③ 절벽 오클루전 — 카메라→포기 선분이 절벽 박스(0.1칸 인셋)를 지나면 가려진 것(사용자 설계)
+// 살아남은 포기를 AppendBuffer에 쓰고, C#이 카운터를 indirect args로 복사해 RenderMeshIndirect로 그린다.
+#pragma kernel Cull
+
+struct GrassInstance
+{
+    float3 pos;
+    uint packed;   // 하위 16비트 배율(1/8192), 상위 16비트 yaw
+};
+
+struct OccluderBox
+{
+    float3 boxMin;
+    float pad0;
+    float3 boxMax;
+    float pad1;
+};
+
+StructuredBuffer<GrassInstance> _Instances;
+AppendStructuredBuffer<GrassInstance> _Visible;
+StructuredBuffer<OccluderBox> _Occluders;
+
+uint _InstanceCount;
+uint _OccluderCount;
+float4 _FrustumPlanes[6];
+float3 _CameraPos;
+float _MaxDist;      // 이 밖은 그리지 않는다
+float _FadeStart;    // 여기부터 _MaxDist까지 선형으로 솎는다
+
+uint Hash(uint x)
+{
+    x ^= x >> 16; x *= 0x7feb352du;
+    x ^= x >> 15; x *= 0x846ca68bu;
+    x ^= x >> 16;
+    return x;
+}
+
+// 선분(카메라→포기)이 박스를 지나는가 — 슬랩 테스트, t를 (0,1)로 자른다
+bool SegmentHitsBox(float3 a, float3 b, float3 bmin, float3 bmax)
+{
+    float3 d = b - a;
+    float tmin = 0.0, tmax = 1.0;
+    [unroll]
+    for (int i = 0; i < 3; i++)
+    {
+        if (abs(d[i]) < 1e-6)
+        {
+            if (a[i] < bmin[i] || a[i] > bmax[i]) return false;
+        }
+        else
+        {
+            float inv = 1.0 / d[i];
+            float t0 = (bmin[i] - a[i]) * inv;
+            float t1 = (bmax[i] - a[i]) * inv;
+            if (t0 > t1) { float tmp = t0; t0 = t1; t1 = tmp; }
+            tmin = max(tmin, t0);
+            tmax = min(tmax, t1);
+            if (tmin > tmax) return false;
+        }
+    }
+    return true;
+}
+
+[numthreads(64, 1, 1)]
+void Cull(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _InstanceCount) return;
+    GrassInstance gi = _Instances[id.x];
+
+    // ① 거리 + 감쇠
+    float dist = distance(gi.pos, _CameraPos);
+    if (dist > _MaxDist) return;
+    if (dist > _FadeStart)
+    {
+        float keep = 1.0 - (dist - _FadeStart) / max(_MaxDist - _FadeStart, 0.01);
+        if (Hash(id.x) / 4294967295.0 > keep) return;
+    }
+
+    // ② 절두체 — 포기 크기 여유
+    const float Radius = 1.2;
+    [unroll]
+    for (int p = 0; p < 6; p++)
+        if (dot(_FrustumPlanes[p].xyz, gi.pos) + _FrustumPlanes[p].w < -Radius) return;
+
+    // ③ 절벽 오클루전 — 포기 끝높이(0.6m) 기준 한 점만 본다(심플 우선)
+    float3 tip = gi.pos + float3(0, 0.6, 0);
+    for (uint o = 0; o < _OccluderCount; o++)
+        if (SegmentHitsBox(_CameraPos, tip, _Occluders[o].boxMin, _Occluders[o].boxMax)) return;
+
+    _Visible.Append(gi);
+}
