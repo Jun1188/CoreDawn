@@ -41,6 +41,7 @@ namespace CoreDawn.EditorTools
         string loadError;
 
         GdTab[] tabs;
+        GdRawTab rawTab;
         int tabIndex;
         readonly List<Button> tabButtons = new();
         VisualElement paneHost;
@@ -69,6 +70,7 @@ namespace CoreDawn.EditorTools
                 new GdMonsterTab(this, combat),   // 몬스터 종류 — 정본은 전투 탭의 monsters
                 new GdTutorialTab(this),
                 new GdSoundTab(this),   // 소리(변형 클립 묶음)·공용 소리 자리 — 각 정의 패널의 뷰 조각이 이 id 목록을 쓴다
+                rawTab = new GdRawTab(this),   // 팩 data.json의 entities를 모듈 리스트 그대로 편집 — 3e-2의 첫 조각(v1과 독립)
             };
             LoadFile();
             BuildShell();
@@ -88,16 +90,34 @@ namespace CoreDawn.EditorTools
         internal void Save(bool import)
         {
             if (root == null) return;
+            // Raw 탭(팩 data.json 직접 편집)과의 충돌 — v1 내보내기가 data.json을 재생성해 Raw 편집을 지운다.
+            // 과도기(3e-2가 내보내기를 퇴역시키기 전)라 물어본다.
+            bool skipExport = false;
+            if (rawTab != null && rawTab.HasRawEdits)
+            {
+                int choice = EditorUtility.DisplayDialogComplex("Raw 편집과 충돌",
+                    "data.json에 Raw 탭 편집이 있습니다. v1 내보내기를 하면 그 편집이 사라집니다.\n\n" +
+                    "· 내보내기 건너뜀: v1은 저장하고 data.json은 Raw 편집을 그대로 둔다(Raw 미저장분도 저장)\n" +
+                    "· 덮어쓰기: Raw 편집을 버리고 v1에서 data.json을 다시 만든다",
+                    "내보내기 건너뜀 (Raw 유지)", "취소", "덮어쓰기");
+                if (choice == 1) return;
+                skipExport = choice == 0;
+            }
             foreach (var t in tabs) t.SyncToRoot();   // 그래프처럼 자체 모델을 가진 탭이 root 에 반영한다
             File.WriteAllText(JsonPath, JsonConvert.SerializeObject(root, JsonSettings) + "\n");
             AssetDatabase.ImportAsset(JsonPath);
-            // 심이 읽는 v2 팩 data.json은 여기서 생성된다 — v1은 편집 형식, v2는 게임·모드 형식(편집 정본 하나, 파생 산출물 하나)
-            try
+            if (skipExport) rawTab.SaveRaw();
+            else
             {
-                Debug.Log(GameDataExporterV2.Export());
-                SimHost.Database = null;   // 에디트 모드 도구(배치물 베이커 등)가 새 팩을 다시 읽게
+                // 심이 읽는 v2 팩 data.json은 여기서 생성된다 — v1은 편집 형식, v2는 게임·모드 형식(편집 정본 하나, 파생 산출물 하나)
+                try
+                {
+                    Debug.Log(GameDataExporterV2.Export());
+                    SimHost.Database = null;   // 에디트 모드 도구(배치물 베이커 등)가 새 팩을 다시 읽게
+                    rawTab?.ReloadFromDisk();  // Raw 탭이 재생성된 data.json을 본다
+                }
+                catch (System.Exception e) { Debug.LogError("[v2 export] 실패: " + e.Message); }
             }
-            catch (System.Exception e) { Debug.LogError("[v2 export] 실패: " + e.Message); }
             foreach (var t in tabs) t.SaveExtraFiles(import);
             hasUnsavedChanges = false;
             RefreshSharedStat();
@@ -167,7 +187,9 @@ namespace CoreDawn.EditorTools
             }
 
             bar.Add(new VisualElement { style = { flexGrow = 1 } });
-            sharedStat = new Label { style = { marginRight = 8, unityTextAlign = TextAnchor.MiddleRight } };
+            // 탭이 늘어 창이 좁으면 통계가 저장 버튼을 밀어낸다 — 통계 쪽이 줄어들고(말줄임) 버튼은 남긴다
+            sharedStat = new Label { style = { marginRight = 8, unityTextAlign = TextAnchor.MiddleRight,
+                flexShrink = 1, minWidth = 0, overflow = Overflow.Hidden, textOverflow = TextOverflow.Ellipsis } };
             sharedStat.AddToClassList("gd-stat");
             bar.Add(sharedStat);
 
@@ -182,7 +204,8 @@ namespace CoreDawn.EditorTools
             si.AddToClassList("gd-btn-primary");   // button.primary — 시안 테두리·글자
             bar.Add(si);
 
-            paneHost = new VisualElement { style = { flexGrow = 1 }, focusable = true };
+            // min-height 0 — 기본(auto)은 내용 높이라 긴 목록을 가진 탭(Raw)이 창보다 커져 아래 행이 창 밖으로 밀린다
+            paneHost = new VisualElement { style = { flexGrow = 1, minHeight = 0 }, focusable = true };
             rootVe.Add(paneHost);
 
             // 포커스를 항상 창 안에 둔다 — 패널 안에 포커스가 없으면 Ctrl+Z 가 우리 창을
@@ -251,7 +274,13 @@ namespace CoreDawn.EditorTools
         void OnGlobalKey(KeyDownEvent e)
         {
             bool ctrl = e.ctrlKey || e.commandKey;
-            if (ctrl && e.keyCode == KeyCode.S) { Save(false); e.StopPropagation(); return; }
+            if (ctrl && e.keyCode == KeyCode.S)
+            {
+                // Raw 탭에서는 Ctrl+S가 data.json 저장 — v1 저장(내보내기)이 아니다
+                if (CurrentTab is GdRawTab raw) raw.SaveRaw(); else Save(false);
+                e.StopPropagation();
+                return;
+            }
             if (InTextInput(e.target)) return;
             if (ctrl && e.keyCode == KeyCode.Z && !e.shiftKey) { CurrentTab.Undo(); e.StopPropagation(); }
             else if (ctrl && (e.keyCode == KeyCode.Y || (e.keyCode == KeyCode.Z && e.shiftKey))) { CurrentTab.Redo(); e.StopPropagation(); }
