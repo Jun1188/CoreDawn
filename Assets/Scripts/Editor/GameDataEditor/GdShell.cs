@@ -178,7 +178,7 @@ namespace CoreDawn.EditorTools
                 { LoadFile(); BuildShell(); }
             }) { text = "다시 불러오기" });
             bar.Add(new Button(() => Save(false)) { text = "저장" });
-            var si = new Button(() => Save(true)) { text = "저장 + 맵 임포트" };
+            var si = new Button(() => Save(true)) { text = "저장 + 맵 내보내기" };
             si.AddToClassList("gd-btn-primary");   // button.primary — 시안 테두리·글자
             bar.Add(si);
 

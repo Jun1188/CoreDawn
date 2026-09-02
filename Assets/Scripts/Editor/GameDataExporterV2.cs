@@ -29,7 +29,7 @@ namespace CoreDawn.EditorTools
         static readonly Dictionary<string, string> SectionOf = new()
         {
             ["Item"] = "item", ["Recipe"] = "recipe", ["Effect"] = "effect", ["Building"] = "entity", ["Monster"] = "entity",
-            ["Gun"] = "gun", ["Tutorial"] = "tutorial", ["Sound"] = "sound", ["Material"] = "material",
+            ["Gun"] = "gun", ["Tutorial"] = "tutorial", ["Sound"] = "sound", ["Material"] = "material", ["Map"] = "map",
         };
 
         /// <summary>임포트된 텍스처를 png 바이트로 — 원본이 LoadImage가 못 읽는 형식(tif·psd·tga)일 때. 노멀맵은 linear로 읽어 그대로 굽는다(런타임 UnpackNormal은 RG/AG 둘 다 푼다).</summary>

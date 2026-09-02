@@ -16,7 +16,7 @@ namespace CoreDawn.Worlds
     /// 맵 데이터를 씬의 실물로 세운다 — 광맥·둥지·밤 진입로.
     ///
     /// <b>왜 씬에 미리 놓지 않는가.</b> 이것들의 위치와 성질은 전부 맵이 정한다
-    /// (<see cref="MapDataSO"/>의 nodes·nests·nightSpawnPoints). 씬에 박아두면 맵을 갈아끼울 때
+    /// (<see cref="MapDef"/>의 nodes·nests·nightSpawnPoints). 씬에 박아두면 맵을 갈아끼울 때
     /// 배치가 따라오지 않아 "새 맵인데 옛 둥지가 서 있는" 상태가 된다. 맵이 곧 배치이므로,
     /// 배치도 맵에서 만들어져야 한다.
     ///
@@ -77,7 +77,7 @@ namespace CoreDawn.Worlds
         /// <summary>
         /// 시작 잔해를 코어 주변에 흩는다.
         ///
-        /// 사양은 맵 데이터(<c>MapDataSO.startItems</c> — "무엇을 몇 개")다. 위치는 여기서 코어 둘레에 정한다.
+        /// 사양은 맵 데이터(<c>MapDef.startItems</c> — "무엇을 몇 개")다. 위치는 여기서 코어 둘레에 정한다.
         /// 복원 중이면 아예 만들지 않는다 — 저장된 바닥 아이템을 곧 되살릴 참이고, 그것이 이 잔해의 현재 상태다.
         ///
         /// 흩는 방식: 낱개로 쪼개 원주를 균등 분할하고 각도·반지름에 지터를 준다. 무작위지만
@@ -85,7 +85,7 @@ namespace CoreDawn.Worlds
         /// </summary>
         static int PlaceStartingDrops(World world, Transform root)
         {
-            // 1) 사양 — 맵 데이터(MapDataSO.startItems: 무엇을 몇 개). 씬 마커(DroppedItem 프리팹 인스턴스)는 퇴역(5a-4c).
+            // 1) 사양 — 맵 데이터(MapDef.startItems: 무엇을 몇 개). 씬 마커(DroppedItem 프리팹 인스턴스)는 퇴역(5a-4c).
             var items = new List<ItemDef>();
             if (world.Map.startItems != null)
                 foreach (var spec in world.Map.startItems)

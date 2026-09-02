@@ -168,7 +168,7 @@ namespace CoreDawn.Placement
         }
 
         // 주입된 맵 — 강·절벽에는 짓지 못한다. 없으면 지형 높이·점유만으로 판정한다(구 동작).
-        private MapDataSO map;
+        private MapDef map;
 
         /// <summary>
         /// 조준 카메라 주입 — 별도 씬(Factory 부트스트랩)으로 얹힐 때는 인스펙터 참조가 씬 경계를
@@ -185,7 +185,7 @@ namespace CoreDawn.Placement
         /// 길찾기 격자(GridManager)와 <b>같은 원점·같은 칸 크기</b>를 쓰게 하는 것이 핵심이다:
         /// 둘이 어긋나면 건물이 점유한 칸과 몬스터가 막히는 칸이 달라진다.
         /// </summary>
-        public void Inject(MapDataSO worldMap, Vector3 origin, float tileSize)
+        public void Inject(MapDef worldMap, Vector3 origin, float tileSize)
         {
             if (worldMap == null) return;
 

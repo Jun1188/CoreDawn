@@ -9,7 +9,7 @@ namespace CoreDawn.Sim
     /// 예전에는 이 변환이 PlacementSystem(MonoBehaviour)에만 있어서 심 건물이 자기 풋프린트의 월드 사각형을
     /// 내려면 뷰에 물어봐야 했다 — 심이 뷰에 기대는 역참조의 한 원인이었다.
     ///
-    /// 값의 출처는 맵(MapDataSO) 하나다. PlacementSystem·GridManager도 같은 값을 따로 들고 있는데,
+    /// 값의 출처는 맵(MapDef) 하나다. PlacementSystem·GridManager도 같은 값을 따로 들고 있는데,
     /// 이는 5단계(심 루트로 통합)까지의 과도기다 — 출처가 하나라 어긋나지는 않는다.
     /// XZ 평면만 다룬다(지상전). y는 호출자가 안다.
     /// </summary>
