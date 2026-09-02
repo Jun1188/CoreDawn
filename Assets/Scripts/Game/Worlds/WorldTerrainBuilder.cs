@@ -23,7 +23,6 @@ namespace CoreDawn.Worlds
 
         const int ChunkCells = 8;      // 청크 한 변(칸)
         const int FineRes = 64;        // 강·가장자리 청크 격자(사용자: "1x1 쿼드 하나랑 64x64 하나면 될 듯")
-        const int CliffTintRes = 16;   // 절벽 경계 청크 — 높이는 평평하고 바위색 번짐만 필요해서 성기게
 
         /// <summary>지형을 세운다. 이미 있으면(런타임/구운 것) 그대로 두고 null.</summary>
         public static GameObject Build(World world)
@@ -80,39 +79,24 @@ namespace CoreDawn.Worlds
                     int x0 = i * ChunkCells, y0 = j * ChunkCells;
                     int w = Mathf.Min(ChunkCells, map.width - x0), h = Mathf.Min(ChunkCells, map.height - y0);
 
-                    // 분류 — 높이가 변하는 곳(강·맵 가장자리)만 고정밀, 절벽 <b>경계</b>는 색 번짐용
-                    // 저정밀, 나머지는 판 하나. 절벽 덩어리 안쪽도 평평하다(벽은 프리팹의 몫) —
-                    // 판을 바위색으로 칠해 벽 틈으로 잔디가 비치지 않게 한다.
+                    // 분류 — 높이가 변하는 곳(강·맵 가장자리)만 고정밀, 나머지는 판 하나.
+                    // 절벽도 평평하다(벽은 프리팹의 몫) — 바위색 정점색은 폐기(사용자: 정점색은 물가에만,
+                    // 바위 틈에 잔디가 자라는 게 오히려 자연스럽다).
                     bool nearEdge = x0 < edgeBand || y0 < edgeBand ||
                                     map.width - (x0 + w) < edgeBand || map.height - (y0 + h) < edgeBand;
-                    bool hasRiver = false, cliffBoundary = false;
-                    bool allCliff = true;
-                    for (int ty = y0 - 1; ty <= y0 + h; ty++)
+                    bool hasRiver = false;
+                    for (int ty = y0 - 1; ty <= y0 + h && !hasRiver; ty++)
                         for (int tx = x0 - 1; tx <= x0 + w; tx++)
-                        {
-                            bool inChunk = tx >= x0 && ty >= y0 && tx < x0 + w && ty < y0 + h;
-                            if (!map.InBounds(tx, ty)) { continue; }
-                            var t = map.TileAt(tx, ty);
-                            if (inChunk && t != MapTile.Cliff) allCliff = false;
-                            if (t == MapTile.River) hasRiver = true;
-                            else if (t == MapTile.Cliff && !cliffBoundary)
-                            {
-                                if (map.TileAt(tx + 1, ty) != MapTile.Cliff || map.TileAt(tx - 1, ty) != MapTile.Cliff ||
-                                    map.TileAt(tx, ty + 1) != MapTile.Cliff || map.TileAt(tx, ty - 1) != MapTile.Cliff)
-                                    cliffBoundary = true;
-                            }
-                        }
+                            if (map.InBounds(tx, ty) && map.TileAt(tx, ty) == MapTile.River) { hasRiver = true; break; }
 
                     var go = new GameObject($"Chunk_{i}_{j}");
                     go.transform.SetParent(parent, false);
                     go.transform.localPosition = world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin;
                     if (ground >= 0) go.layer = ground;
 
-                    bool needFine = nearEdge || hasRiver || cliffBoundary;
-                    int res = nearEdge || hasRiver ? FineRes : CliffTintRes;
-                    Mesh mesh = needFine ? FineChunk(map, form, x0, y0, w, h, world.CellSize, res)
-                                         : FlatChunk(w, h, world.CellSize, x0, y0, s,
-                                                     allCliff ? new Color32(0, 255, 0, 255) : default);
+                    bool needFine = nearEdge || hasRiver;
+                    Mesh mesh = needFine ? FineChunk(map, form, x0, y0, w, h, world.CellSize, FineRes)
+                                         : FlatChunk(w, h, world.CellSize, x0, y0, s, default);
                     go.AddComponent<MeshFilter>().sharedMesh = mesh;
                     go.AddComponent<MeshRenderer>().sharedMaterial = mat;
                     go.AddComponent<MeshCollider>().sharedMesh = mesh;
@@ -172,10 +156,9 @@ namespace CoreDawn.Worlds
                     float y = form.Height(tx, ty);
                     verts[v] = new Vector3((tx - x0) * cell, y, (ty - y0) * cell);
 
-                    // 표면 가중치(정점색) — 후속 셰이더가 쓴다: R = 강바닥(모래), G = 절벽 번짐
+                    // 표면 가중치(정점색) — 물가에만 쓴다: R = 강바닥(모래). 셰이더(CoreDawn/Ground)가 읽는다.
                     float bed = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.12f, -0.45f, y));
-                    float cliff = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.4f, -0.3f, form.CliffDistance(tx, ty)));
-                    cols[v] = new Color32((byte)(bed * 255f), (byte)(cliff * 255f), 0, 255);
+                    cols[v] = new Color32((byte)(bed * 255f), 0, 0, 255);
                 }
 
             var tris = new int[nx * ny * 6];
@@ -228,15 +211,22 @@ namespace CoreDawn.Worlds
 
         static Material groundMat;
 
-        /// <summary>지면 재질 — 우선은 지면 레이어 텍스처 한 장짜리 URP/Lit. 3층 블렌드 셰이더는 후속.</summary>
+        /// <summary>지면 재질 — CoreDawn/Ground(잔디 ↔ 강바닥을 정점색 R로 블렌드). 텍스처는 지형 레이어 0(잔디)·2(강바닥).</summary>
         static Material GroundMaterial(TerrainGenSettings s)
         {
             if (groundMat != null) return groundMat;
-            var shader = Managers.BuiltinShaders.Of("Universal Render Pipeline/Lit");
+            var shader = Managers.BuiltinShaders.Of("CoreDawn/Ground");
+            if (shader == null) shader = Managers.BuiltinShaders.Of("Universal Render Pipeline/Lit");
             groundMat = new Material(shader) { name = "Ground (Runtime)" };
-            var layer = s.terrainLayers != null && s.terrainLayers.Length > 0 ? s.terrainLayers[0] : null;
-            if (layer != null && layer.diffuseTexture != null) groundMat.mainTexture = layer.diffuseTexture;
-            groundMat.SetFloat("_Smoothness", 0f);
+            var grass = s.terrainLayers != null && s.terrainLayers.Length > 0 ? s.terrainLayers[0] : null;
+            var bed = s.terrainLayers != null && s.terrainLayers.Length > 2 ? s.terrainLayers[2] : null;
+            if (grass != null && grass.diffuseTexture != null) groundMat.mainTexture = grass.diffuseTexture;
+            if (bed != null && bed.diffuseTexture != null)
+            {
+                groundMat.SetTexture("_BedMap", bed.diffuseTexture);
+                if (bed.tileSize.x > 0f && grass != null && grass.tileSize.x > 0f)
+                    groundMat.SetFloat("_BedUvScale", grass.tileSize.x / bed.tileSize.x);
+            }
             return groundMat;
         }
 

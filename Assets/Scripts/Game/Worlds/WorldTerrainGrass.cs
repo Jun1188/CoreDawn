@@ -131,21 +131,9 @@ namespace CoreDawn.Worlds
                     int cxi = Mathf.FloorToInt(tx), cyi = Mathf.FloorToInt(ty);
                     if (!map.InBounds(cxi, cyi)) continue;
 
-                    // 절벽 타일은 경계 앞줄(0.1칸)만 — 벽 후퇴로 드러나는 앞부분용(구 생성기 규칙)
-                    if (map.TileAt(cxi, cyi) == MapTile.Cliff)
-                    {
-                        const float Fringe = 0.1f;
-                        bool nearOpen = false;
-                        for (int oy = -1; oy <= 1 && !nearOpen; oy++)
-                            for (int ox = -1; ox <= 1; ox++)
-                            {
-                                if (ox == 0 && oy == 0) continue;
-                                int nx = Mathf.FloorToInt(tx + ox * Fringe);
-                                int nz = Mathf.FloorToInt(ty + oy * Fringe);
-                                if (map.InBounds(nx, nz) && map.TileAt(nx, nz) != MapTile.Cliff) { nearOpen = true; break; }
-                            }
-                        if (!nearOpen) continue;
-                    }
+                    // 절벽 타일에도 그대로 심는다 — 바위 틈이라고 잔디가 안 자라는 게 아니다(사용자).
+                    // 구 생성기의 "경계 앞줄만" 규칙은 벽이 빈틈없다는 가정의 절약이었는데, 그 절약이
+                    // 마당 관리한 것처럼 잘린 선을 만들었다. 벽에 가린 포기는 어차피 안 보인다.
 
                     float y = form.Height(tx, ty);
                     if (y < grassWaterLine) continue;   // 물가 아래는 비운다 — 끊기는 선이 물가 곡선을 따라간다
