@@ -8,7 +8,8 @@
 #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
 
 // 16바이트 — WorldTerrainGrass.Instance와 레이아웃이 같아야 한다.
-// packed: 하위 16비트 = 배율(1/8192 단위, 최대 8), 상위 16비트 = yaw(0..2π를 0..65535로)
+// packed: 하위 16비트 = 배율(1/8192 단위), 16..30비트 = yaw(0..2π를 0..32767로),
+//         최상위 비트 = 절벽 타일 위(컴퓨트의 오클루전 면제용 — 여기선 무시)
 struct GrassInstance
 {
     float3 pos;
@@ -21,7 +22,7 @@ void GrassProceduralSetup()
 {
     GrassInstance gi = _GrassInstances[unity_InstanceID];
     float scale = (gi.packed & 0xFFFFu) / 8192.0;
-    float yaw = (gi.packed >> 16) / 65535.0 * 6.28318530718;
+    float yaw = ((gi.packed >> 16) & 0x7FFFu) / 32767.0 * 6.28318530718;
     float s, c;
     sincos(yaw, s, c);
 

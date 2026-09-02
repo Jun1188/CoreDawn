@@ -47,7 +47,8 @@ namespace CoreDawn.Worlds
         int kernel;
         readonly List<Proto> protos = new List<Proto>();
         GraphicsBuffer occluders;
-        int occluderCount;
+        OccluderBox[] allOccluders;                       // CPU 원본 — 매 프레임 프리컬링해서 일부만 올린다
+        readonly List<OccluderBox> visibleOccluders = new List<OccluderBox>();
         Bounds worldBounds;
         readonly Vector4[] planeVec = new Vector4[6];
         readonly Plane[] planes = new Plane[6];
@@ -97,7 +98,7 @@ namespace CoreDawn.Worlds
 
             long total = 0;
             foreach (var p in protos) total += p.count;
-            Debug.Log($"[WorldTerrain] 풀 {total:N0}포기 상주({total * 16 / 1048576}MB) · 오클루더 {occluderCount}박스 · 생성 {sw.ElapsedMilliseconds}ms");
+            Debug.Log($"[WorldTerrain] 풀 {total:N0}포기 상주({total * 16 / 1048576}MB) · 오클루더 {(allOccluders != null ? allOccluders.Length : 0)}박스 · 생성 {sw.ElapsedMilliseconds}ms");
         }
 
         /// <summary>심기 — 구 PaintDetails 규칙(물가 위·완경사, 밀도만 흔들고 꽃은 흩뿌림). 좌표 해시라 결정적.</summary>
@@ -132,7 +133,8 @@ namespace CoreDawn.Worlds
                     float ty = (pj + 0.5f + jy * 0.9f) / pointsY * map.height;
 
                     // 절벽 타일에도 그대로 심는다 — 바위 틈에 잔디가 자라는 게 자연스럽다(사용자).
-                    // 벽에 가린 포기는 절벽 오클루더가 컬링한다.
+                    // 이 포기들은 오클루전 면제(Pack의 플래그) — 벽 뒤를 거르는 건 지면 타일 몫이다.
+                    bool onCliff = map.TileAt(Mathf.FloorToInt(tx), Mathf.FloorToInt(ty)) == MapTile.Cliff;
 
                     float y = form.Height(tx, ty);
                     if (y < grassWaterLine) continue;   // 물가 아래는 비운다 — 끊기는 선이 물가 곡선을 따른다
@@ -158,7 +160,7 @@ namespace CoreDawn.Worlds
                         float yaw01 = WorldTerrainCliffs.Hash(pi, pj, 59 + a) % 1000 / 1000f;
                         float ox = (WorldTerrainCliffs.Hash(pi, pj, 71 + a) % 1000 / 1000f - 0.5f) * pointM;
                         float oz = (WorldTerrainCliffs.Hash(pi, pj, 73 + a) % 1000 / 1000f - 0.5f) * pointM;
-                        lists[gi].Add(Pack(pos + new Vector3(ox, 0f, oz), sc, yaw01));
+                        lists[gi].Add(Pack(pos + new Vector3(ox, 0f, oz), sc, yaw01, onCliff));
                     }
 
                     // 꽃 — 셀 단위로 흩뿌린다(칸 단위 선택은 줄무늬가 된다 — 구 생성기 교훈)
@@ -171,18 +173,20 @@ namespace CoreDawn.Worlds
                             float sc = Mathf.Lerp(flowerSrc[fi].Item3.x, flowerSrc[fi].Item3.y,
                                                   WorldTerrainCliffs.Hash(pi, pj, 43) % 1000 / 1000f);
                             float yaw01 = WorldTerrainCliffs.Hash(pi, pj, 61) % 1000 / 1000f;
-                            lists[grassSrc.Count + fi].Add(Pack(pos, sc, yaw01));
+                            lists[grassSrc.Count + fi].Add(Pack(pos, sc, yaw01, onCliff));
                         }
                     }
                 }
             return lists;
         }
 
-        static Instance Pack(Vector3 pos, float scale, float yaw01)
+        static Instance Pack(Vector3 pos, float scale, float yaw01, bool onCliff)
         {
+            // 최상위 비트 = 절벽 타일 위(틈새 풀) — 컴퓨트가 오클루전을 면제한다. 벽 파인 주머니의
+            // 풀이 박스 몸통 안이라 "벽 뒤"로 오판되던 것의 해법: 거를 것은 지면 타일의 벽 뒤뿐이다.
             uint sc = (uint)Mathf.Clamp(Mathf.RoundToInt(scale * 8192f), 1, 65535);
-            uint yaw = (uint)Mathf.Clamp(Mathf.RoundToInt(yaw01 * 65535f), 0, 65535);
-            return new Instance { pos = pos, packed = sc | (yaw << 16) };
+            uint yaw = (uint)Mathf.Clamp(Mathf.RoundToInt(yaw01 * 32767f), 0, 32767);
+            return new Instance { pos = pos, packed = sc | (yaw << 16) | (onCliff ? 0x80000000u : 0u) };
         }
 
         static List<(Mesh, Material, Vector2)> Sources(GameObject[] set, Vector2 size)
@@ -228,16 +232,16 @@ namespace CoreDawn.Worlds
                         for (int i = 0; i < w; i++)
                             used[x + i, y + j] = true;
 
-                    const float Inset = 0.1f;
+                    const float Inset = 0.45f;  // 0.1→0.2→0.4→0.45 상향(사용자) — 벽면 후퇴 최대(0.45칸)와 같은 값.
+                                                // 벽이 타일 밖으로 튀어나온 곳의 보이는 풀은 살리고, 벽 "뒤"만 거른다.
                     Vector3 a = world.CellToWorld(new Vector2Int(x, y)) + new Vector3(Inset * cell, 0f, Inset * cell);
                     Vector3 b = world.CellToWorld(new Vector2Int(x + w, y + h)) - new Vector3(Inset * cell, 0f, Inset * cell);
                     boxes.Add(new OccluderBox { min = new Vector3(a.x, 0.8f, a.z), max = new Vector3(b.x, wallH, b.z) });
                 }
 
-            occluderCount = boxes.Count;
-            if (occluderCount == 0) return;
-            occluders = new GraphicsBuffer(GraphicsBuffer.Target.Structured, occluderCount, 32);
-            occluders.SetData(boxes);
+            allOccluders = boxes.ToArray();
+            if (allOccluders.Length > 0)
+                occluders = new GraphicsBuffer(GraphicsBuffer.Target.Structured, allOccluders.Length, 32);
         }
 
         void LateUpdate()
@@ -254,11 +258,29 @@ namespace CoreDawn.Worlds
             for (int i = 0; i < 6; i++)
                 planeVec[i] = new Vector4(planes[i].normal.x, planes[i].normal.y, planes[i].normal.z, planes[i].distance);
 
+            // 오클루더 프리컬링(사용자 요청) — 절두체 밖·사거리 밖·카메라를 품은 박스는 올리지 않는다.
+            Vector3 eye = cam.transform.position;
+            visibleOccluders.Clear();
+            if (allOccluders != null)
+            {
+                float maxSq = (s.detailDistance + 2f) * (s.detailDistance + 2f);
+                for (int i = 0; i < allOccluders.Length; i++)
+                {
+                    var box = allOccluders[i];
+                    var b = new Bounds((box.min + box.max) * 0.5f, box.max - box.min);
+                    if (b.Contains(eye)) continue;
+                    if (b.SqrDistance(eye) > maxSq) continue;
+                    if (!GeometryUtility.TestPlanesAABB(planes, b)) continue;
+                    visibleOccluders.Add(box);
+                }
+                if (visibleOccluders.Count > 0) occluders.SetData(visibleOccluders, 0, 0, visibleOccluders.Count);
+            }
+
             cull.SetVectorArray("_FrustumPlanes", planeVec);
-            cull.SetVector("_CameraPos", cam.transform.position);
+            cull.SetVector("_CameraPos", eye);
             cull.SetFloat("_MaxDist", s.detailDistance);
             cull.SetFloat("_FadeStart", s.detailDistance * 0.45f);
-            cull.SetInt("_OccluderCount", occluderCount);
+            cull.SetInt("_OccluderCount", visibleOccluders.Count);
             if (occluders != null) cull.SetBuffer(kernel, "_Occluders", occluders);
 
             foreach (var p in protos)

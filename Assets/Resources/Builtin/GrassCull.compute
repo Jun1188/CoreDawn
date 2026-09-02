@@ -8,7 +8,7 @@
 struct GrassInstance
 {
     float3 pos;
-    uint packed;   // 하위 16비트 배율(1/8192), 상위 16비트 yaw
+    uint packed;   // 하위 16비트 배율(1/8192), 16..30비트 yaw, 최상위 비트 = 절벽 타일 위(오클루전 면제)
 };
 
 struct OccluderBox
@@ -38,7 +38,9 @@ uint Hash(uint x)
     return x;
 }
 
-// 선분(카메라→포기)이 박스를 지나는가 — 슬랩 테스트, t를 (0,1)로 자른다
+// 선분(카메라→포기)이 박스를 지나는가 — 슬랩 테스트, t를 (0,1)로 자른다.
+// 진입 t가 0 근처면(카메라가 박스 안) 가림으로 치지 않는다 — 벽 조각이 안쪽으로 물러난
+// 절벽 타일 앞까지 플레이어가 들어올 수 있는데, 그때 모든 잔디가 사라지던 버그의 수정.
 bool SegmentHitsBox(float3 a, float3 b, float3 bmin, float3 bmax)
 {
     float3 d = b - a;
@@ -61,7 +63,7 @@ bool SegmentHitsBox(float3 a, float3 b, float3 bmin, float3 bmax)
             if (tmin > tmax) return false;
         }
     }
-    return true;
+    return tmin > 0.02;
 }
 
 [numthreads(64, 1, 1)]
@@ -85,10 +87,14 @@ void Cull(uint3 id : SV_DispatchThreadID)
     for (int p = 0; p < 6; p++)
         if (dot(_FrustumPlanes[p].xyz, gi.pos) + _FrustumPlanes[p].w < -Radius) return;
 
-    // ③ 절벽 오클루전 — 포기 끝높이(0.6m) 기준 한 점만 본다(심플 우선)
-    float3 tip = gi.pos + float3(0, 0.6, 0);
-    for (uint o = 0; o < _OccluderCount; o++)
-        if (SegmentHitsBox(_CameraPos, tip, _Occluders[o].boxMin, _Occluders[o].boxMax)) return;
+    // ③ 절벽 오클루전 — 포기 끝높이(0.6m) 기준 한 점만 본다(심플 우선).
+    // 절벽 타일 위 틈새 풀은 면제 — 벽 파인 주머니의 풀이 박스 몸통 안이라 오판되던 것.
+    if ((gi.packed & 0x80000000u) == 0u)
+    {
+        float3 tip = gi.pos + float3(0, 0.6, 0);
+        for (uint o = 0; o < _OccluderCount; o++)
+            if (SegmentHitsBox(_CameraPos, tip, _Occluders[o].boxMin, _Occluders[o].boxMax)) return;
+    }
 
     _Visible.Append(gi);
 }

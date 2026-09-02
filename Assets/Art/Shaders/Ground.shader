@@ -52,6 +52,7 @@ Shader "CoreDawn/Ground"
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing   // 평지 133개가 공유 쿼드 하나를 DrawMeshInstanced로 그린다(미리보기)
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -71,6 +72,7 @@ Shader "CoreDawn/Ground"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 half4 color       : COLOR;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -86,6 +88,7 @@ Shader "CoreDawn/Ground"
             Varyings GroundVertex(Attributes input)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(input);   // 인스턴스 행렬이 정해진 뒤에 변환해야 한다
                 VertexPositionInputs pos = GetVertexPositionInputs(input.positionOS.xyz);
                 o.positionCS = pos.positionCS;
                 o.positionWS = pos.positionWS;
@@ -144,6 +147,7 @@ Shader "CoreDawn/Ground"
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
@@ -151,12 +155,13 @@ Shader "CoreDawn/Ground"
             float3 _LightDirection;
             float3 _LightPosition;
 
-            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
+            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings { float4 positionCS : SV_POSITION; };
 
             Varyings ShadowPassVertex(Attributes input)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(input);
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
                 #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
@@ -190,15 +195,17 @@ Shader "CoreDawn/Ground"
             #pragma target 2.0
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct Attributes { float4 positionOS : POSITION; };
+            struct Attributes { float4 positionOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings { float4 positionCS : SV_POSITION; };
 
             Varyings DepthOnlyVertex(Attributes input)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(input);
                 o.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 return o;
             }
@@ -219,15 +226,17 @@ Shader "CoreDawn/Ground"
             #pragma target 2.0
             #pragma vertex DepthNormalsVertex
             #pragma fragment DepthNormalsFragment
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
+            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings { float4 positionCS : SV_POSITION; half3 normalWS : TEXCOORD0; };
 
             Varyings DepthNormalsVertex(Attributes input)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(input);
                 o.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 return o;
