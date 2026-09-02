@@ -43,6 +43,12 @@ namespace CoreDawn.Worlds
 
         public Vector3 Origin => transform.position;
 
+        void Awake()
+        {
+            // 지형은 씬이 아니라 여기서 선다(5a-4e) — 씬에 구운 지형이 남아 있으면 빌더가 알아서 비켜 준다.
+            if (Application.isPlaying) WorldTerrainBuilder.Build(this);
+        }
+
         /// <summary>타일 좌표 → 월드 좌표(칸의 왼쪽 아래).</summary>
         public Vector3 CellToWorld(Vector2Int cell) =>
             Origin + new Vector3(cell.x * CellSize, 0f, cell.y * CellSize);
