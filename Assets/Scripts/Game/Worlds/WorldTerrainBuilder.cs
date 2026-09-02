@@ -27,7 +27,7 @@ namespace CoreDawn.Worlds
         /// <summary>미리보기 재료 — 씬을 전혀 건드리지 않는 순수 데이터(메시·위치·재질·절벽 배치 계획).</summary>
         public sealed class PreviewData
         {
-            public List<(Mesh mesh, Vector3 localPos)> ground;
+            public List<(Mesh mesh, Vector3 localPos, Vector3 scale)> ground;
             public Material groundMat;
             public Mesh water;                 // null이면 물 없음(재질 부재 등)
             public Vector3 waterPos;
@@ -62,6 +62,7 @@ namespace CoreDawn.Worlds
                 var go = new GameObject($"Chunk_{i}");
                 go.transform.SetParent(groundParent, false);
                 go.transform.localPosition = chunks[i].localPos;
+                go.transform.localScale = chunks[i].scale;
                 if (ground >= 0) go.layer = ground;
                 go.AddComponent<MeshFilter>().sharedMesh = chunks[i].mesh;
                 go.AddComponent<MeshRenderer>().sharedMaterial = mat;
@@ -111,10 +112,11 @@ namespace CoreDawn.Worlds
 
         // ── 지면 청크 ───────────────────────────────────────────────
 
-        /// <summary>지면 청크 메시들 — 씬을 건드리지 않는 순수 생성. 위치는 World 루트 기준 로컬.</summary>
-        static List<(Mesh mesh, Vector3 localPos)> GroundMeshes(World world, MapDef map, TerrainForm form, TerrainGenSettings s, out int fineCount)
+        /// <summary>지면 청크 메시들 — 씬을 건드리지 않는 순수 생성. 위치·스케일은 World 루트 기준 로컬.
+        /// 평지는 <b>공유 단위 쿼드 하나</b>(사용자 설계)를 스케일로 늘려 쓴다 — UV는 셰이더가 월드좌표에서 만든다.</summary>
+        static List<(Mesh mesh, Vector3 localPos, Vector3 scale)> GroundMeshes(World world, MapDef map, TerrainForm form, TerrainGenSettings s, out int fineCount)
         {
-            var result = new List<(Mesh, Vector3)>();
+            var result = new List<(Mesh, Vector3, Vector3)>();
 
             // 물가 띠(칸) — 파임이 미치는 폭 + 여유. 이 밖의 평지는 완전한 0이다.
             float edgeBand = s.shoreWidth + s.riverFalloffM / world.CellSize + 1f;
@@ -140,25 +142,33 @@ namespace CoreDawn.Worlds
                             if (map.InBounds(tx, ty) && map.TileAt(tx, ty) == MapTile.River) { hasRiver = true; break; }
 
                     bool needFine = nearEdge || hasRiver;
-                    Mesh mesh = needFine ? FineChunk(map, form, x0, y0, w, h, world.CellSize, FineRes)
-                                         : FlatChunk(w, h, world.CellSize, x0, y0, s, default);
-                    result.Add((mesh, world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin));
-                    if (needFine) fineCount++;
+                    Vector3 pos = world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin;
+                    if (needFine)
+                    {
+                        result.Add((FineChunk(map, form, x0, y0, w, h, world.CellSize, FineRes), pos, Vector3.one));
+                        fineCount++;
+                    }
+                    else
+                    {
+                        result.Add((SharedQuad(), pos, new Vector3(w * world.CellSize, 1f, h * world.CellSize)));
+                    }
                 }
             return result;
         }
 
-        /// <summary>평지 — 정점 4개, 높이 0. 절벽 덩어리 안쪽이면 바위색(정점색 G)을 준다.</summary>
-        static Mesh FlatChunk(int w, int h, float cell, int x0, int y0, TerrainGenSettings s, Color32 tint)
+        static Mesh sharedQuad;
+
+        /// <summary>평지가 공유하는 단위 쿼드(1×1, 높이 0) — 스케일은 트랜스폼이 준다.
+        /// 정점색을 검정으로 명시한다 — 색 채널이 없으면 Unity가 흰색을 넣어 모래(bed=1)로 칠해 버린다.</summary>
+        static Mesh SharedQuad()
         {
-            float sx = w * cell, sz = h * cell;
-            var mesh = new Mesh { name = "flat" };
-            mesh.vertices = new[] { new Vector3(0, 0, 0), new Vector3(sx, 0, 0), new Vector3(sx, 0, sz), new Vector3(0, 0, sz) };
-            mesh.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
-            mesh.uv = GroundUvs(mesh.vertices, x0, y0, cell, s);
-            mesh.colors32 = new[] { tint, tint, tint, tint };
-            mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
-            return mesh;
+            if (sharedQuad != null) return sharedQuad;
+            sharedQuad = new Mesh { name = "flat (shared)" };
+            sharedQuad.vertices = new[] { new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(1, 0, 1), new Vector3(0, 0, 1) };
+            sharedQuad.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+            sharedQuad.colors32 = new[] { new Color32(0, 0, 0, 255), new Color32(0, 0, 0, 255), new Color32(0, 0, 0, 255), new Color32(0, 0, 0, 255) };
+            sharedQuad.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            return sharedQuad;
         }
 
         /// <summary>정밀 청크 — 격자 + 물가 정점을 등수위선으로 스냅, 높이는 해석 함수.</summary>
@@ -168,7 +178,6 @@ namespace CoreDawn.Worlds
             int nx = Mathf.CeilToInt(w / step), ny = Mathf.CeilToInt(h / step);
             var verts = new Vector3[(nx + 1) * (ny + 1)];
             var cols = new Color32[verts.Length];
-            var uvs = new Vector2[verts.Length];
 
             float iso = form.WaterlineIso;
             float snapHalf = step * 0.75f;                  // 이 안이면 물가선으로 옮긴다
@@ -219,37 +228,9 @@ namespace CoreDawn.Worlds
             mesh.vertices = verts;
             mesh.colors32 = cols;
             mesh.triangles = tris;
-            mesh.uv = uvs;   // 지면 UV는 아래에서 월드 기준으로 다시 채운다
-            FillGroundUvs(mesh, x0, y0, cell);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
-        }
-
-        static void FillGroundUvs(Mesh mesh, int x0, int y0, float cell)
-        {
-            var s = TerrainGenSettings.LoadOrCreate();
-            var verts = mesh.vertices;
-            var uvs = new Vector2[verts.Length];
-            Vector2 tile = TileSize(s);
-            for (int i = 0; i < verts.Length; i++)
-                uvs[i] = new Vector2((x0 * cell + verts[i].x) / tile.x, (y0 * cell + verts[i].z) / tile.y);
-            mesh.uv = uvs;
-        }
-
-        static Vector2[] GroundUvs(Vector3[] verts, int x0, int y0, float cell, TerrainGenSettings s)
-        {
-            var uvs = new Vector2[verts.Length];
-            Vector2 tile = TileSize(s);
-            for (int i = 0; i < verts.Length; i++)
-                uvs[i] = new Vector2((x0 * cell + verts[i].x) / tile.x, (y0 * cell + verts[i].z) / tile.y);
-            return uvs;
-        }
-
-        static Vector2 TileSize(TerrainGenSettings s)
-        {
-            var layer = s.terrainLayers != null && s.terrainLayers.Length > 0 ? s.terrainLayers[0] : null;
-            return layer != null && layer.tileSize.x > 0f ? layer.tileSize : new Vector2(4f, 4f);
         }
 
         static Material groundMat;
@@ -264,6 +245,7 @@ namespace CoreDawn.Worlds
             var grass = s.terrainLayers != null && s.terrainLayers.Length > 0 ? s.terrainLayers[0] : null;
             var bed = s.terrainLayers != null && s.terrainLayers.Length > 2 ? s.terrainLayers[2] : null;
             if (grass != null && grass.diffuseTexture != null) groundMat.mainTexture = grass.diffuseTexture;
+            if (grass != null && grass.tileSize.x > 0f) groundMat.SetFloat("_GrassTileM", grass.tileSize.x);
             if (bed != null && bed.diffuseTexture != null)
             {
                 groundMat.SetTexture("_BedMap", bed.diffuseTexture);
@@ -285,51 +267,64 @@ namespace CoreDawn.Worlds
                 Debug.LogError("[WorldTerrain] Resources/Builtin/Water.mat 이 없습니다 — 물을 세우지 못했습니다.");
                 return null;
             }
+            // 2단 격자(사용자 결정): 맵 안(강가·거품)은 32×32, 바깥 바다는 성긴 조각 8개.
+            // 구 512×512(26만 정점)의 대부분이 빈 바다에 낭비되고 있었다. 바깥 조각의 경계 정점은
+            // 맵 안 격자와 간격을 맞춰 T-정션(파도 변위가 달라 갈라지는 이음매)을 피한다.
+            const int InnerRes = 32;
+            const int CoarseRes = 4;
+
             float w = map.width * world.CellSize, h = map.height * world.CellSize;
             float margin = Mathf.Max(w, h) * s.seaMargin;
-            float x0 = -margin, z0 = -margin;
-            float sizeX = w + margin * 2f, sizeZ = h + margin * 2f;
 
-            int cols = Mathf.Clamp(Mathf.CeilToInt(sizeX / s.waterVertexSpacing), 1, 512);
-            int rows = Mathf.Clamp(Mathf.CeilToInt(sizeZ / s.waterVertexSpacing), 1, 512);
+            var verts = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var norms = new List<Vector3>();
+            var colors = new List<Color>();
+            var tris = new List<int>();
 
-            var verts = new Vector3[(cols + 1) * (rows + 1)];
-            var uvs = new Vector2[verts.Length];
-            var norms = new Vector3[verts.Length];
-            var colors = new Color[verts.Length];
+            void Grid(float gx, float gz, float sizeX, float sizeZ, int cols, int rows)
+            {
+                int start = verts.Count;
+                for (int j = 0; j <= rows; j++)
+                    for (int i = 0; i <= cols; i++)
+                    {
+                        float wx = gx + (float)i / cols * sizeX, wz = gz + (float)j / rows * sizeZ;
+                        verts.Add(new Vector3(wx, 0f, wz));
+                        norms.Add(Vector3.up);
+                        uvs.Add(new Vector2(wx / world.CellSize, wz / world.CellSize));
 
-            for (int j = 0; j <= rows; j++)
-                for (int i = 0; i <= cols; i++)
-                {
-                    int v = j * (cols + 1) + i;
-                    float fx = (float)i / cols, fz = (float)j / rows;
-                    float wx = x0 + fx * sizeX, wz = z0 + fz * sizeZ;
+                        float ttx = wx / world.CellSize, ttz = wz / world.CellSize;
+                        bool overMap = ttx >= 0f && ttz >= 0f && ttx <= map.width && ttz <= map.height;
+                        float bed = overMap ? form.Height(ttx, ttz) : -99f;
+                        float depth = s.waterLevel - bed;
+                        float foam = Mathf.Clamp01(1f - depth / s.foamDepth) * Mathf.Clamp01(depth / 0.05f);
+                        colors.Add(new Color(foam, 0f, 0f, 1f));
+                    }
+                for (int j = 0; j < rows; j++)
+                    for (int i = 0; i < cols; i++)
+                    {
+                        int a = start + j * (cols + 1) + i, b = a + 1, c = a + cols + 1, d = c + 1;
+                        tris.Add(a); tris.Add(c); tris.Add(b);
+                        tris.Add(c); tris.Add(d); tris.Add(b);
+                    }
+            }
 
-                    verts[v] = new Vector3(wx, 0f, wz);
-                    norms[v] = Vector3.up;
-                    uvs[v] = new Vector2(fx * sizeX / world.CellSize, fz * sizeZ / world.CellSize);
-
-                    float ttx = wx / world.CellSize, ttz = wz / world.CellSize;
-                    bool overMap = ttx >= 0f && ttz >= 0f && ttx <= map.width && ttz <= map.height;
-                    float bed = overMap ? form.Height(ttx, ttz) : -99f;
-                    float depth = s.waterLevel - bed;
-                    float foam = Mathf.Clamp01(1f - depth / s.foamDepth) * Mathf.Clamp01(depth / 0.05f);
-                    colors[v] = new Color(foam, 0f, 0f, 1f);
-                }
-
-            var tris = new int[cols * rows * 6];
-            int ti = 0;
-            for (int j = 0; j < rows; j++)
-                for (int i = 0; i < cols; i++)
-                {
-                    int a = j * (cols + 1) + i, b = a + 1, c = a + cols + 1, d = c + 1;
-                    tris[ti++] = a; tris[ti++] = c; tris[ti++] = b;
-                    tris[ti++] = c; tris[ti++] = d; tris[ti++] = b;
-                }
+            Grid(0f, 0f, w, h, InnerRes, InnerRes);                               // 맵 안 — 거품·파도
+            Grid(0f, -margin, w, margin, InnerRes, CoarseRes);                    // 남
+            Grid(0f, h, w, margin, InnerRes, CoarseRes);                          // 북
+            Grid(-margin, 0f, margin, h, CoarseRes, InnerRes);                    // 서
+            Grid(w, 0f, margin, h, CoarseRes, InnerRes);                          // 동
+            Grid(-margin, -margin, margin, margin, CoarseRes, CoarseRes);         // 모서리 4
+            Grid(w, -margin, margin, margin, CoarseRes, CoarseRes);
+            Grid(-margin, h, margin, margin, CoarseRes, CoarseRes);
+            Grid(w, h, margin, margin, CoarseRes, CoarseRes);
 
             var mesh = new Mesh { name = "water" };
-            if (verts.Length > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            mesh.vertices = verts; mesh.triangles = tris; mesh.normals = norms; mesh.uv = uvs; mesh.colors = colors;
+            mesh.SetVertices(verts);
+            mesh.SetTriangles(tris, 0);
+            mesh.SetNormals(norms);
+            mesh.SetUVs(0, uvs);
+            mesh.SetColors(colors);
             mesh.RecalculateBounds();
             return mesh;
         }

@@ -17,6 +17,7 @@ Shader "CoreDawn/Ground"
     {
         [MainTexture] _BaseMap("잔디 텍스처", 2D) = "white" {}
         _BedMap("강바닥(모래) 텍스처", 2D) = "white" {}
+        _GrassTileM("잔디 타일 크기(m)", Float) = 4.0
         _BedUvScale("모래 UV 배율 (잔디 타일 / 모래 타일)", Float) = 1.0
         [MainColor] _BaseColor("전체 틴트", Color) = (1, 1, 1, 1)
     }
@@ -62,13 +63,13 @@ Shader "CoreDawn/Ground"
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
                 half _BedUvScale;
+                float _GrassTileM;
             CBUFFER_END
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
-                float2 uv         : TEXCOORD0;
                 half4 color       : COLOR;
             };
 
@@ -89,7 +90,9 @@ Shader "CoreDawn/Ground"
                 o.positionCS = pos.positionCS;
                 o.positionWS = pos.positionWS;
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
-                o.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                // UV는 월드좌표에서 만든다 — 청크가 정점 UV를 들 필요가 없어져 평지 청크가
+                // 단위 쿼드 하나를 공유한다(스케일은 트랜스폼). 지면은 평평해서 xz 투영이 곧 UV다.
+                o.uv = pos.positionWS.xz / max(_GrassTileM, 0.01);
                 o.fogFactor = ComputeFogFactor(pos.positionCS.z);
                 o.bed = input.color.r;
                 return o;

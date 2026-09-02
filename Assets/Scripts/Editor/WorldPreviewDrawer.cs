@@ -204,10 +204,10 @@ namespace CoreDawn.EditorTools
             if (data == null) return;
             Vector3 origin = world.Origin;
 
-            foreach (var (mesh, localPos) in data.ground)
+            foreach (var (mesh, localPos, scale) in data.ground)
             {
-                ownedMeshes.Add(mesh);
-                terrainParts.Add(new TerrainPart { mesh = mesh, mat = data.groundMat, m = Matrix4x4.Translate(origin + localPos), sub = 0 });
+                if (!ownedMeshes.Contains(mesh)) ownedMeshes.Add(mesh);   // 공유 쿼드는 한 번만
+                terrainParts.Add(new TerrainPart { mesh = mesh, mat = data.groundMat, m = Matrix4x4.TRS(origin + localPos, Quaternion.identity, scale), sub = 0 });
             }
             if (data.water != null)
             {
