@@ -46,10 +46,12 @@ namespace CoreDawn.Worlds
             int fine = BuildGroundChunks(root.transform, world, map, form, s);
             BuildWater(root.transform, world, map, form, s);
             BuildBounds(root.transform, world, map, s);
+            var (walls, feet) = WorldTerrainCliffs.Build(root.transform, world, map, form, s);
 
             StaticBatchingUtility.Combine(root);
             Debug.Log($"[WorldTerrain] '{map.Id}' 생성 {sw.ElapsedMilliseconds}ms (거리장 {formMs}ms) — " +
-                      $"정밀 청크 {fine}개 / 전체 {Mathf.CeilToInt(map.width / (float)ChunkCells) * Mathf.CeilToInt(map.height / (float)ChunkCells)}개");
+                      $"정밀 청크 {fine}개 / 전체 {Mathf.CeilToInt(map.width / (float)ChunkCells) * Mathf.CeilToInt(map.height / (float)ChunkCells)}개, " +
+                      $"절벽 벽 {walls} + 발치 {feet}");
             return root;
         }
 
