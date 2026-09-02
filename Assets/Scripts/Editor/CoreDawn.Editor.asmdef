@@ -4,7 +4,6 @@
     "references": [
         "CoreDawn.Sim",
         "CoreDawn.Game",
-        "CoreDawn.PackExport.Editor",
         "Unity.Nuget.Newtonsoft-Json",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.RenderPipelines.Core.Runtime",

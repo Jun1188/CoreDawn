@@ -79,7 +79,7 @@ namespace CoreDawn.EditorTools
 
         // ── 실행 ────────────────────────────────────────────────────
 
-        [MenuItem("Tools/Factory/Import Map Data (JSON)")]
+        [MenuItem("Tools/CoreDawn/Import Map Data (JSON)")]
         public static void ImportAll()
         {
             if (!File.Exists(JsonPath))

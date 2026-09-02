@@ -46,7 +46,7 @@ namespace CoreDawn.EditorTools
         VisualElement paneHost;
         Label sharedStat;
 
-        [MenuItem("Tools/Factory/GameData 에디터")]
+        [MenuItem("Tools/CoreDawn/GameData 에디터")]
         public static void Open()
         {
             var w = GetWindow<GameDataEditorWindow>();
