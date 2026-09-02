@@ -50,13 +50,16 @@ void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
     half4 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv);
     outSurfaceData.alpha = Alpha(tex.a, _BaseColor, _Cutoff);
 
-    // 위아래 그라데이션 — 잔디의 색은 텍스처가 아니라 이 두 색이 만든다(뿌리 어둡게, 끝 밝게).
-    // _Custom_Color가 "텍스처 색 ↔ 그라데이션" 사이의 손잡이다: 잔디는 1(그라데이션만),
-    // 꽃은 0(텍스처 그대로). 원본 셰이더의 켬/끔 토글을 연속값으로 편 것뿐이다.
+    // 위아래 그라데이션(뿌리 어둡게, 끝 밝게). 원본 Idyllic Vegetation.shadergraph의 식은
+    //   color = tex.rgb × (Custom_Color ? gradient : 1)
+    // 즉 <b>텍스처 RGB는 언제나 곱해지고</b>, _Custom_Color는 그 위에 그라데이션을 더 곱할지의
+    // 토글이다(잔디·나무 1, 꽃 0). 잎 텍스처는 평균 0.89의 회색 디테일 맵(잎맥·가장자리가 어둡다)이라
+    // 이 곱이 잎 한 장 한 장의 명암을 만든다. 이전 이식은 lerp(tex, gradient, custom)으로
+    // 텍스처를 통째로 버려 캐노피가 단색 덩어리가 됐고, 0.89배 감쇠까지 사라져 과노출됐다(2026-09-03).
     half t = saturate(uv.y / max(1e-4h, _Blend_Height));
     half3 gradient = lerp(_Bottom_Color.rgb, _Top_Color.rgb, t);
 
-    outSurfaceData.albedo     = lerp(tex.rgb, gradient, saturate(_Custom_Color)) * _BaseColor.rgb;
+    outSurfaceData.albedo     = tex.rgb * lerp(half3(1.0h, 1.0h, 1.0h), gradient, saturate(_Custom_Color)) * _BaseColor.rgb;
     outSurfaceData.metallic   = _Metallic;
     outSurfaceData.specular   = half3(0.0h, 0.0h, 0.0h);
     outSurfaceData.smoothness = _Smoothness;
