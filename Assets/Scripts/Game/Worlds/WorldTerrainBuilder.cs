@@ -47,6 +47,7 @@ namespace CoreDawn.Worlds
             BuildWater(root.transform, world, map, form, s);
             BuildBounds(root.transform, world, map, s);
             var (walls, feet) = WorldTerrainCliffs.Build(root.transform, world, map, form, s);
+            WorldTerrainGrass.Attach(root, world, map, form, s);
 
             StaticBatchingUtility.Combine(root);
             Debug.Log($"[WorldTerrain] '{map.Id}' 생성 {sw.ElapsedMilliseconds}ms (거리장 {formMs}ms) — " +
