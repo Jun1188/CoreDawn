@@ -38,7 +38,7 @@ namespace CoreDawn.Navigation
         // GridSystem 로직을 래핑할 변수
         private GridSystem gridSystem;
         // 주입된 맵 — 절벽 칸을 통행 불가로 굽는다. 없으면 물리 장애물만으로 판정한다.
-        private MapDataSO map;
+        private MapDef map;
         private bool baked;
 
         void Awake()
@@ -61,7 +61,7 @@ namespace CoreDawn.Navigation
         /// <see cref="GameBootstrap"/>이 월드 씬의 <see cref="World"/>에서 맵을 읽어 넘긴다.
         /// 이미 구웠으면(인스펙터 배선된 기존 씬) 무시한다.
         /// </summary>
-        public void Inject(MapDataSO worldMap, Vector3 origin, float tileSize)
+        public void Inject(MapDef worldMap, Vector3 origin, float tileSize)
         {
             if (baked || worldMap == null) return;
 

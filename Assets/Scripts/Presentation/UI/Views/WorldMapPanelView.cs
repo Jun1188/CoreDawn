@@ -23,7 +23,7 @@ namespace CoreDawn.UI
     /// 다른 UITK 패널과 달리 씬에 미리 실어 두지 않는다 — UXML 없이 코드로만 그리는 화면이라
     /// 처음 열릴 때 스스로 만든다. PanelSettings는 씬의 다른 UIDocument(GameUI)에서 빌린다.
     ///
-    /// 빌드 의존성 주의: MapDataSO의 타일은 TileAt으로만 읽는다 — EditorTiles는 에디터 전용이다.
+    /// 빌드 의존성 주의: MapDef의 타일은 TileAt으로만 읽는다 — EditorTiles는 에디터 전용이다.
     /// </summary>
     public class WorldMapPanelView : UITKPopup
     {
@@ -242,7 +242,7 @@ namespace CoreDawn.UI
         /// 1타일 = 1픽셀, 포인트 필터 — 에디터 맵 탭과 같은 방식이라 확대해도 칸이 또렷하다.
         /// 배치물(나무·광맥·둥지·밤 진입로)은 움직이지 않으므로 함께 굽는다.
         /// </summary>
-        static Texture2D BakeTexture(MapDataSO map)
+        static Texture2D BakeTexture(MapDef map)
         {
             int w = map.width, h = map.height;
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };

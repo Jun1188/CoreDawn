@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
+using CoreDawn.Sim;
 
 namespace CoreDawn.EditorTools
 {
@@ -17,7 +18,7 @@ namespace CoreDawn.EditorTools
     ///   · <b>도메인 워핑</b> — 샘플 좌표 자체를 노이즈로 흔들어 경계의 직선/직각을 깬다
     ///   · <b>미세 노이즈</b> — 지면의 "완벽한 평면"을 없앤다
     ///
-    /// 게임 규칙은 흐려지지 않는다: 통행·건설·비용 판정은 MapDataSO(타일)가 그대로 들고 있고,
+    /// 게임 규칙은 흐려지지 않는다: 통행·건설·비용 판정은 MapDef(타일)가 그대로 들고 있고,
     /// Terrain은 <b>보이는 것</b>만 담당한다. 절벽은 급경사로 표현되며 통행 차단은 EnterCost가,
     /// 플레이어의 등반 차단은 PlayerController의 경사 제한이 맡는다.
     ///
@@ -128,7 +129,7 @@ namespace CoreDawn.EditorTools
         /// 타일 → 높이맵. 거리장을 부드러운 곡선으로 매핑하고 워핑·노이즈로 격자 흔적을 지운다.
         /// Terrain 높이맵은 0~1 정규화 값이라 마지막에 전체 높이로 나눈다.
         /// </summary>
-        static float[,] BuildHeightmap(MapDataSO map)
+        static float[,] BuildHeightmap(MapDef map)
         {
             int res = HeightmapResolution(map);
 
@@ -225,7 +226,7 @@ namespace CoreDawn.EditorTools
         /// 되돌림 여부는 <b>거리장</b>으로 판정한다 — 칸 중심/경계로 재면 그 되돌림이 칸 주기로
         /// 반복돼 물가에 가리비 같은 물결이 새로 생긴다(격자를 지우려다 다시 그리는 꼴).
         /// </summary>
-        static void SmoothHeight(float[,] height, int res, MapDataSO map, float[,] cliffField, float[,] riverField)
+        static void SmoothHeight(float[,] height, int res, MapDef map, float[,] cliffField, float[,] riverField)
         {
             int r = HeightSmoothRadius;
             if (r <= 0) return;
@@ -267,7 +268,7 @@ namespace CoreDawn.EditorTools
                 }
         }
 
-        static int HeightmapResolution(MapDataSO map)
+        static int HeightmapResolution(MapDef map)
         {
             // Terrain 높이맵은 2ⁿ+1이어야 한다. 맵보다 촘촘하게 잡아 곡선이 뭉개지지 않게.
             int target = Mathf.Max(map.width, map.height) * SamplesPerCell;
@@ -288,7 +289,7 @@ namespace CoreDawn.EditorTools
         /// 그 자르기가 칸 격자에서 일어나 경계선을 도로 칸 모서리에 붙여놓기 때문이다 —
         /// 대신 형상 자체를 <see cref="ShapeInset"/>만큼 안쪽에서 시작해 지면을 침범하지 않게 한다.
         /// </summary>
-        static float[,] SignedDistance(MapDataSO map, MapTile tile)
+        static float[,] SignedDistance(MapDef map, MapTile tile)
         {
             int w = map.width * FieldSubDiv, h = map.height * FieldSubDiv;
             var inside = new float[w, h];
@@ -382,7 +383,7 @@ namespace CoreDawn.EditorTools
         /// 보간 계수에 smoothstep을 물려 격자 선에서 기울기가 끊기지 않게 한다 — 선형 보간만 쓰면
         /// 샘플 사이는 곧게 이어져 미세한 각이 남는다.
         /// </summary>
-        static float SampleField(float[,] field, MapDataSO map, float x, float y)
+        static float SampleField(float[,] field, MapDef map, float x, float y)
         {
             int w = field.GetLength(0), h = field.GetLength(1);
 
@@ -400,7 +401,7 @@ namespace CoreDawn.EditorTools
 
         // ── Terrain 생성 ────────────────────────────────────────────
 
-        static void CreateTerrain(MapDataSO map, World world, Transform root, float[,] height)
+        static void CreateTerrain(MapDef map, World world, Transform root, float[,] height)
         {
             int res = height.GetLength(0);
             var data = new TerrainData
@@ -466,7 +467,7 @@ namespace CoreDawn.EditorTools
         /// 절벽에 <b>닿은</b> 칸은 건설 가능한 멀쩡한 지면이므로 비우지 않는다.
         /// 디테일은 콜라이더가 없어 길찾기·건설·사격 판정에 전혀 관여하지 않는다.
         /// </summary>
-        static void PaintDetails(TerrainData data, MapDataSO map, float[,] height, float cellSize)
+        static void PaintDetails(TerrainData data, MapDef map, float[,] height, float cellSize)
         {
             // 크기는 프리팹 원본에 곱해지는 배율이다. 1인칭 게임이라 무릎 높이여야 시야가 열린다 —
             // Demo 값(0.5~1)을 그대로 쓰면 눈높이를 덮어 앞이 안 보인다.
@@ -591,7 +592,7 @@ namespace CoreDawn.EditorTools
         }
 
         /// <summary>정규화 높이맵을 타일 좌표에서 읽어 미터로 돌려준다 — 경사면 판정용.</summary>
-        static float SampleHeightAt(float[,] height, float tx, float ty, MapDataSO map)
+        static float SampleHeightAt(float[,] height, float tx, float ty, MapDef map)
         {
             int res = height.GetLength(0);
             int i = Mathf.Clamp(Mathf.RoundToInt(tx / map.width * (res - 1)), 0, res - 1);
@@ -603,7 +604,7 @@ namespace CoreDawn.EditorTools
         /// 그 지점의 지면 기울기(높이차 ÷ 수평거리). 45°가 1이다.
         /// 높이맵 한 칸 간격의 중앙 차분이라, 실제로 심는 해상도에서 느끼는 경사와 같다.
         /// </summary>
-        static float SlopeAt(float[,] height, float tx, float ty, MapDataSO map, float cellSize)
+        static float SlopeAt(float[,] height, float tx, float ty, MapDef map, float cellSize)
         {
             float d = 1f / SamplesPerCell;   // 높이맵 한 칸(타일 단위)
             float dx = SampleHeightAt(height, tx + d, ty, map) - SampleHeightAt(height, tx - d, ty, map);
@@ -694,7 +695,7 @@ namespace CoreDawn.EditorTools
         /// 위와 뒤는 보지 않는다 — 게임 카메라가 눈높이(y≈2.2, 부감 없음)다. 그래서 고원
         /// 위를 꾸미거나 지형을 융기시키지 않는다. 뒷면이 밋밋한 것도 상관없다.
         /// </summary>
-        static void PlaceCliffs(MapDataSO map, World world, Transform root, float[,] height)
+        static void PlaceCliffs(MapDef map, World world, Transform root, float[,] height)
         {
             var walls = MeasureSet(S.cliffWallSet);
             if (walls.Count == 0)
@@ -1171,7 +1172,7 @@ namespace CoreDawn.EditorTools
         /// 정확히 이 레이어를 빼고 있어, 총알은 없는 것처럼 지나간다.
         /// 반면 물리 충돌은 레이어 충돌 매트릭스가 따로 정하므로 플레이어는 그대로 막힌다.
         /// </summary>
-        static void CreateBounds(MapDataSO map, World world, Transform root)
+        static void CreateBounds(MapDef map, World world, Transform root)
         {
             int ignoreRaycast = LayerMask.NameToLayer("Ignore Raycast");
             if (ignoreRaycast < 0)
@@ -1270,7 +1271,7 @@ namespace CoreDawn.EditorTools
         /// 어긋나지 않는다. 절벽은 이제 지형이 아니라 프리팹이라 높이로 알 수 없으므로
         /// <b>타일</b>로 칠한다(프리팹 사이 틈으로 풀밭이 비치지 않게 하는 것이 목적).
         /// </summary>
-        static void PaintSplat(TerrainData data, MapDataSO map, float[,] height)
+        static void PaintSplat(TerrainData data, MapDef map, float[,] height)
         {
             int res = data.alphamapResolution;
             int hres = height.GetLength(0);
@@ -1311,7 +1312,7 @@ namespace CoreDawn.EditorTools
         // ── 물 ──────────────────────────────────────────────────────
 
         /// <summary>맵을 덮는 사각형 한 장 — 지형이 파인 곳(강)에서만 보이고 가장자리는 저절로 얕아진다.</summary>
-        static void CreateWater(MapDataSO map, World world, Transform root, float[,] height)
+        static void CreateWater(MapDef map, World world, Transform root, float[,] height)
         {
             float w = map.width * world.CellSize, h = map.height * world.CellSize;
 

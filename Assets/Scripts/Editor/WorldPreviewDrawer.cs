@@ -25,7 +25,7 @@ namespace CoreDawn.EditorTools
         static readonly Dictionary<string, List<Part>> parts = new Dictionary<string, List<Part>>();
         static List<(string key, Matrix4x4 m)> placements;
         static World cachedWorld;
-        static MapDataSO cachedMap;
+        static MapDef cachedMap;
         static bool loading;
         static bool enabled = true;
 

@@ -56,7 +56,7 @@ namespace CoreDawn.Factory
         [SerializeField] int _coreRotationSteps = 0;
 
         /// <summary>
-        /// 코어 자리 주입 — 코어가 어디 서는지는 맵이 정한다(MapDataSO.core).
+        /// 코어 자리 주입 — 코어가 어디 서는지는 맵이 정한다(MapDef.core).
         /// 공장 심은 별도 씬으로 오므로 GameBootstrap이 월드에서 읽어 넘긴다.
         /// 자동 설치는 Start에서 일어나고 주입은 그 전(씬 로드 직후)이라 제때 반영된다.
         /// </summary>
