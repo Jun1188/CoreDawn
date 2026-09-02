@@ -24,7 +24,18 @@ namespace CoreDawn.Worlds
         const int ChunkCells = 8;      // 청크 한 변(칸)
         const int FineRes = 64;        // 강·가장자리 청크 격자(사용자: "1x1 쿼드 하나랑 64x64 하나면 될 듯")
 
-        /// <summary>지형을 세운다. 이미 있으면(런타임/구운 것) 그대로 두고 null.</summary>
+        /// <summary>미리보기 재료 — 씬을 전혀 건드리지 않는 순수 데이터(메시·위치·재질·절벽 배치 계획).</summary>
+        public sealed class PreviewData
+        {
+            public List<(Mesh mesh, Vector3 localPos)> ground;
+            public Material groundMat;
+            public Mesh water;                 // null이면 물 없음(재질 부재 등)
+            public Vector3 waterPos;
+            public Material waterMat;
+            public List<WorldTerrainCliffs.Placement> cliffs;
+        }
+
+        /// <summary>지형을 세운다(런타임). 이미 있으면(런타임/구운 것) 그대로 두고 null.</summary>
         public static GameObject Build(World world)
         {
             if (world == null || world.Map == null) { Debug.LogError("[WorldTerrain] World/맵이 없어 지형을 세울 수 없습니다."); return null; }
@@ -35,43 +46,82 @@ namespace CoreDawn.Worlds
 
             var sw = Stopwatch.StartNew();
             var map = world.Map;
-            float cell = world.CellSize;
-            var form = TerrainForm.Build(map, s, cell);
+            var form = TerrainForm.Build(map, s, world.CellSize);
             long formMs = sw.ElapsedMilliseconds;
 
             var root = new GameObject(RootName);
             root.transform.SetParent(world.transform, false);
 
-            int fine = BuildGroundChunks(root.transform, world, map, form, s);
-            BuildWater(root.transform, world, map, form, s);
+            int ground = LayerMask.NameToLayer("Ground");
+            var groundParent = new GameObject("Ground").transform;
+            groundParent.SetParent(root.transform, false);
+            var chunks = GroundMeshes(world, map, form, s, out int fine);
+            var mat = GroundMaterial(s);
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                var go = new GameObject($"Chunk_{i}");
+                go.transform.SetParent(groundParent, false);
+                go.transform.localPosition = chunks[i].localPos;
+                if (ground >= 0) go.layer = ground;
+                go.AddComponent<MeshFilter>().sharedMesh = chunks[i].mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+                go.AddComponent<MeshCollider>().sharedMesh = chunks[i].mesh;
+            }
+
+            var water = WaterMesh(world, map, form, s, out Vector3 waterPos, out Material waterMat);
+            if (water != null)
+            {
+                var go = new GameObject("Water (Sea)");
+                go.transform.SetParent(root.transform, false);
+                go.transform.localPosition = waterPos;
+                go.AddComponent<MeshFilter>().sharedMesh = water;
+                go.AddComponent<MeshRenderer>().sharedMaterial = waterMat;
+            }
+
             BuildBounds(root.transform, world, map, s);
             var (walls, feet) = WorldTerrainCliffs.Build(root.transform, world, map, form, s);
             WorldTerrainGrass.Attach(root, world, map, form, s);
-
             StaticBatchingUtility.Combine(root);
             Debug.Log($"[WorldTerrain] '{map.Id}' 생성 {sw.ElapsedMilliseconds}ms (거리장 {formMs}ms) — " +
-                      $"정밀 청크 {fine}개 / 전체 {Mathf.CeilToInt(map.width / (float)ChunkCells) * Mathf.CeilToInt(map.height / (float)ChunkCells)}개, " +
-                      $"절벽 벽 {walls} + 발치 {feet}");
+                      $"정밀 청크 {fine}/{chunks.Count}개, 절벽 벽 {walls} + 발치 {feet}");
             return root;
+        }
+
+        /// <summary>미리보기 재료를 만든다 — GameObject를 하나도 만들지 않는다(에디터 DrawMesh 전용).</summary>
+        public static PreviewData BuildPreviewData(World world)
+        {
+            if (world == null || world.Map == null) return null;
+            var s = TerrainGenSettings.LoadOrCreate();
+            if (s == null) return null;
+
+            var map = world.Map;
+            var form = TerrainForm.Build(map, s, world.CellSize);
+            var data = new PreviewData
+            {
+                ground = GroundMeshes(world, map, form, s, out _),
+                groundMat = GroundMaterial(s),
+                cliffs = new List<WorldTerrainCliffs.Placement>(),
+            };
+            data.water = WaterMesh(world, map, form, s, out data.waterPos, out data.waterMat);
+            var (walls, feet) = WorldTerrainCliffs.Plan(world, map, form, s);
+            data.cliffs.AddRange(walls);
+            data.cliffs.AddRange(feet);
+            return data;
         }
 
         // ── 지면 청크 ───────────────────────────────────────────────
 
-        static int BuildGroundChunks(Transform root, World world, MapDef map, TerrainForm form, TerrainGenSettings s)
+        /// <summary>지면 청크 메시들 — 씬을 건드리지 않는 순수 생성. 위치는 World 루트 기준 로컬.</summary>
+        static List<(Mesh mesh, Vector3 localPos)> GroundMeshes(World world, MapDef map, TerrainForm form, TerrainGenSettings s, out int fineCount)
         {
-            var parent = new GameObject("Ground").transform;
-            parent.SetParent(root, false);
-
-            int ground = LayerMask.NameToLayer("Ground");
-            var mat = GroundMaterial(s);
+            var result = new List<(Mesh, Vector3)>();
 
             // 물가 띠(칸) — 파임이 미치는 폭 + 여유. 이 밖의 평지는 완전한 0이다.
-            float band = (s.shapeInsetM + s.shelfWidthM + s.riverFalloffM) / world.CellSize + 1f;
             float edgeBand = s.shoreWidth + s.riverFalloffM / world.CellSize + 1f;
 
             int cx = Mathf.CeilToInt(map.width / (float)ChunkCells);
             int cy = Mathf.CeilToInt(map.height / (float)ChunkCells);
-            int fineCount = 0;
+            fineCount = 0;
 
             for (int j = 0; j < cy; j++)
                 for (int i = 0; i < cx; i++)
@@ -89,20 +139,13 @@ namespace CoreDawn.Worlds
                         for (int tx = x0 - 1; tx <= x0 + w; tx++)
                             if (map.InBounds(tx, ty) && map.TileAt(tx, ty) == MapTile.River) { hasRiver = true; break; }
 
-                    var go = new GameObject($"Chunk_{i}_{j}");
-                    go.transform.SetParent(parent, false);
-                    go.transform.localPosition = world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin;
-                    if (ground >= 0) go.layer = ground;
-
                     bool needFine = nearEdge || hasRiver;
                     Mesh mesh = needFine ? FineChunk(map, form, x0, y0, w, h, world.CellSize, FineRes)
                                          : FlatChunk(w, h, world.CellSize, x0, y0, s, default);
-                    go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                    go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-                    go.AddComponent<MeshCollider>().sharedMesh = mesh;
+                    result.Add((mesh, world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin));
                     if (needFine) fineCount++;
                 }
-            return fineCount;
+            return result;
         }
 
         /// <summary>평지 — 정점 4개, 높이 0. 절벽 덩어리 안쪽이면 바위색(정점색 G)을 준다.</summary>
@@ -232,8 +275,16 @@ namespace CoreDawn.Worlds
 
         // ── 물 (구 생성기 CreateWater 포팅 — 에셋 없이 메모리 메시) ──
 
-        static void BuildWater(Transform root, World world, MapDef map, TerrainForm form, TerrainGenSettings s)
+        /// <summary>물 메시 — 순수 생성. 재질이 없으면 오류 로그 + null.</summary>
+        static Mesh WaterMesh(World world, MapDef map, TerrainForm form, TerrainGenSettings s, out Vector3 localPos, out Material mat)
         {
+            localPos = new Vector3(0f, s.waterLevel, 0f);
+            mat = Resources.Load<Material>("Builtin/Water");
+            if (mat == null)
+            {
+                Debug.LogError("[WorldTerrain] Resources/Builtin/Water.mat 이 없습니다 — 물을 세우지 못했습니다.");
+                return null;
+            }
             float w = map.width * world.CellSize, h = map.height * world.CellSize;
             float margin = Mathf.Max(w, h) * s.seaMargin;
             float x0 = -margin, z0 = -margin;
@@ -280,19 +331,7 @@ namespace CoreDawn.Worlds
             if (verts.Length > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             mesh.vertices = verts; mesh.triangles = tris; mesh.normals = norms; mesh.uv = uvs; mesh.colors = colors;
             mesh.RecalculateBounds();
-
-            var mat = Resources.Load<Material>("Builtin/Water");
-            if (mat == null)
-            {
-                Debug.LogError("[WorldTerrain] Resources/Builtin/Water.mat 이 없습니다 — 물을 세우지 못했습니다.");
-                return;
-            }
-
-            var go = new GameObject("Water (Sea)");
-            go.transform.SetParent(root, false);
-            go.transform.localPosition = new Vector3(0f, s.waterLevel, 0f);
-            go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            return mesh;
         }
 
         // ── 경계벽 (구 생성기 CreateBounds 포팅) ────────────────────

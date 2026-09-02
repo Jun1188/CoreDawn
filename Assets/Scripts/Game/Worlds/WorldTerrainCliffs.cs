@@ -34,15 +34,44 @@ namespace CoreDawn.Worlds
             { Prefab = p; Centre = c; Size = s; Cover = cover; }
         }
 
-        /// <summary>벽·발치를 세운다. 반환은 (벽, 발치) 개수.</summary>
+        /// <summary>배치 하나 — 어느 프리팹을 어디에. 계획(Plan)은 순수 데이터라 미리보기가 GameObject 없이 그대로 그린다.</summary>
+        public struct Placement
+        {
+            public GameObject prefab;
+            public Vector3 pos;
+            public Quaternion rot;
+            public float scale;
+        }
+
+        /// <summary>계획대로 세운다(런타임). 반환은 (벽, 발치) 개수.</summary>
         public static (int walls, int feet) Build(Transform root, World world, MapDef map, TerrainForm form, TerrainGenSettings s)
         {
+            var (walls, feet) = Plan(world, map, form, s);
+            var parent = new GameObject("Cliffs").transform;
+            parent.SetParent(root, false);
+            foreach (var p in walls) Spawn(p, parent);
+            foreach (var p in feet) Spawn(p, parent);
+            return (walls.Count, feet.Count);
+
+            static void Spawn(Placement p, Transform parent)
+            {
+                var go = Object.Instantiate(p.prefab, parent);
+                go.transform.SetPositionAndRotation(p.pos, p.rot);
+                go.transform.localScale = Vector3.one * p.scale;
+                AddConvexCollider(go);
+            }
+        }
+
+        /// <summary>벽·발치 배치 계획 — 씬을 건드리지 않는 순수 계산.</summary>
+        public static (List<Placement> walls, List<Placement> feet) Plan(World world, MapDef map, TerrainForm form, TerrainGenSettings s)
+        {
+            var wallsOut = new List<Placement>();
             float cell = world.CellSize;
             var walls = MeasureSet(s.cliffWallSet);
             if (walls.Count == 0)
             {
                 Debug.LogWarning("[WorldTerrain] 절벽 벽 조각이 없습니다 — Terrain Gen Settings의 Cliff Wall Set 확인.");
-                return (0, 0);
+                return (wallsOut, new List<Placement>());
             }
             walls.Sort((a, b) => b.Width.CompareTo(a.Width));
 
@@ -63,11 +92,7 @@ namespace CoreDawn.Worlds
             float GroundAt(Vector2 p) => world.Origin.y + form.Height((p.x - origin.x) / cell, (p.y - origin.z) / cell);
 
             var loops = TraceContours(field, fw, fh, px, origin);
-            var parent = new GameObject("Cliffs").transform;
-            parent.SetParent(root, false);
-
             float overlap = Mathf.Clamp01(s.cliffWallOverlap);
-            int placedCount = 0;
 
             float wSum = 0f;
             foreach (var w in walls) wSum += w.Width;
@@ -205,31 +230,26 @@ namespace CoreDawn.Worlds
 
                     pos.y = GroundAt(mid) - s.cliffWallSinkM - piece.Bottom * useScale;
 
-                    var go = Object.Instantiate(piece.Prefab, parent);
-                    go.transform.SetPositionAndRotation(pos, rot);
-                    go.transform.localScale = Vector3.one * useScale;
-                    AddConvexCollider(go);
-
-                    placedCount++;
+                    wallsOut.Add(new Placement { prefab = piece.Prefab, pos = pos, rot = rot, scale = useScale });
                     t += Mathf.Max(0.5f, piece.Cover * useScale * (1f - overlap));
                 }
             }
 
-            int foot = PlaceFoot(field, fw, fh, px, origin, GroundAt, parent, s);
-            return (placedCount, foot);
+            var feet = PlanFoot(field, fw, fh, px, origin, GroundAt, s);
+            return (wallsOut, feet);
         }
 
-        /// <summary>발치 — 반쯤 묻힌 납작한 판을 경계 바깥 띠에 흩는다.</summary>
-        static int PlaceFoot(float[,] field, int fw, int fh, float px, Vector3 origin,
-                             System.Func<Vector2, float> GroundAt, Transform parent, TerrainGenSettings s)
+        /// <summary>발치 계획 — 반쯤 묻힌 납작한 판을 경계 바깥 띠에 흩는다(순수 계산).</summary>
+        static List<Placement> PlanFoot(float[,] field, int fw, int fh, float px, Vector3 origin,
+                                        System.Func<Vector2, float> GroundAt, TerrainGenSettings s)
         {
+            var result = new List<Placement>();
             var rocks = MeasureSet(s.cliffFootSet);
-            if (rocks.Count == 0 || s.cliffFootDensity <= 0f) return 0;
+            if (rocks.Count == 0 || s.cliffFootDensity <= 0f) return result;
 
             float band = Mathf.Max(0.05f, s.cliffFootBandCells);
             int gate = Mathf.RoundToInt(Mathf.Clamp01(s.cliffFootDensity) * 1000f);
             var placed = new List<(Vector2 c, float r)>();
-            int count = 0;
 
             for (int fy = 0; fy < fh; fy++)
                 for (int fx = 0; fx < fw; fx++)
@@ -256,19 +276,24 @@ namespace CoreDawn.Worlds
                     placed.Add((p, r));
 
                     float yaw = Hash(fx, fy, 313) % 3600 / 10f;
-                    var go = Object.Instantiate(rock.Prefab, parent);
-                    go.transform.SetPositionAndRotation(
-                        new Vector3(p.x, GroundAt(p) - s.cliffFootSinkM - rock.Bottom * scale, p.y),
-                        Quaternion.Euler(0f, yaw, 0f));
-                    go.transform.localScale = Vector3.one * scale;
-                    count++;
+                    result.Add(new Placement
+                    {
+                        prefab = rock.Prefab,
+                        pos = new Vector3(p.x, GroundAt(p) - s.cliffFootSinkM - rock.Bottom * scale, p.y),
+                        rot = Quaternion.Euler(0f, yaw, 0f),
+                        scale = scale,
+                    });
                 }
 
-            return count;
+            return result;
         }
 
         // ── 실측·기하 (구 생성기 포팅) ──────────────────────────────
 
+        /// <summary>
+        /// 프리팹 묶음을 실측한다 — <b>인스턴스화 없이</b> 프리팹 에셋의 메시 정점을 루트 로컬 공간으로
+        /// 변환해 잰다(씬을 건드리지 않아 미리보기·hierarchyChanged와 무관).
+        /// </summary>
         static List<WallPiece> MeasureSet(GameObject[] set)
         {
             var list = new List<WallPiece>();
@@ -277,19 +302,28 @@ namespace CoreDawn.Worlds
             foreach (var pf in set)
             {
                 if (pf == null) continue;
-                var inst = Object.Instantiate(pf);
-                inst.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-                inst.transform.localScale = Vector3.one;
+                var rootInv = pf.transform.worldToLocalMatrix;
 
-                var rends = inst.GetComponentsInChildren<MeshRenderer>();
-                if (rends.Length == 0) { Object.DestroyImmediate(inst); continue; }
+                bool any = false;
+                var b = new Bounds();
+                foreach (var mf in pf.GetComponentsInChildren<MeshFilter>())
+                {
+                    if (mf.sharedMesh == null || mf.GetComponent<MeshRenderer>() == null) continue;
+                    var local = rootInv * mf.transform.localToWorldMatrix;
+                    var mb = mf.sharedMesh.bounds;
+                    for (int cx = 0; cx <= 1; cx++)
+                        for (int cy = 0; cy <= 1; cy++)
+                            for (int cz = 0; cz <= 1; cz++)
+                            {
+                                var corner = local.MultiplyPoint3x4(mb.min + Vector3.Scale(mb.size,
+                                    new Vector3(cx, cy, cz)));
+                                if (!any) { b = new Bounds(corner, Vector3.zero); any = true; }
+                                else b.Encapsulate(corner);
+                            }
+                }
+                if (!any) continue;
 
-                var b = rends[0].bounds;
-                for (int i = 1; i < rends.Length; i++) b.Encapsulate(rends[i].bounds);
-
-                float cover = CoverWidth(inst, b);
-                Object.DestroyImmediate(inst);
-
+                float cover = CoverWidth(pf, rootInv, b);
                 if (b.size.x < 0.01f || b.size.z < 0.01f) continue;
                 list.Add(new WallPiece(pf, b.center, b.size, cover));
             }
@@ -297,7 +331,7 @@ namespace CoreDawn.Worlds
         }
 
         /// <summary>높이를 겹으로 잘라 단면 폭의 최솟값 — 벽으로 쓸 수 있는 폭은 제일 좁은 데가 정한다.</summary>
-        static float CoverWidth(GameObject inst, Bounds b)
+        static float CoverWidth(GameObject prefab, Matrix4x4 rootInv, Bounds b)
         {
             const int Slices = 6;
             var lo = new float[Slices];
@@ -307,14 +341,14 @@ namespace CoreDawn.Worlds
             float y0 = b.min.y, h = Mathf.Max(0.01f, b.size.y);
             const float top = 0.7f;   // 위 30%는 스카이라인 몫
 
-            foreach (var mf in inst.GetComponentsInChildren<MeshFilter>())
+            foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>())
             {
                 if (mf.sharedMesh == null) continue;
                 var verts = mf.sharedMesh.vertices;
-                var xf = mf.transform;
+                var local = rootInv * mf.transform.localToWorldMatrix;
                 for (int i = 0; i < verts.Length; i++)
                 {
-                    var w = xf.TransformPoint(verts[i]);
+                    var w = local.MultiplyPoint3x4(verts[i]);
                     float f = (w.y - y0) / h;
                     if (f < 0f || f > top) continue;
                     int k = Mathf.Clamp((int)(f / top * Slices), 0, Slices - 1);
