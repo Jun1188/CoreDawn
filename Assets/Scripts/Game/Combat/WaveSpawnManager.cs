@@ -4,8 +4,6 @@ using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.Navigation;
 using CoreDawn.Sim;
-using CoreDawn.Data;
-
 namespace CoreDawn.Combat
 {
     /// <summary>

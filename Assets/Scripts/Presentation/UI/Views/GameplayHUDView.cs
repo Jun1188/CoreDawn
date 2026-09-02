@@ -6,10 +6,8 @@ using CoreDawn.DayTime;
 using CoreDawn.Entities;
 using CoreDawn.FPS;
 using CoreDawn.Factory;
-using CoreDawn.Inputs;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.UI

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
-using CoreDawn.Combat;
 using CoreDawn.Save;
 
 namespace CoreDawn.UI

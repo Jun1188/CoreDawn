@@ -29,7 +29,7 @@ namespace CoreDawn.EditorTools
         static bool loading;
         static bool enabled = true;
 
-        const string MenuToggle = "Tools/Factory/World preview (scene view)";
+        const string MenuToggle = "Tools/CoreDawn/World preview (scene view)";
 
         static WorldPreviewDrawer()
         {
@@ -49,7 +49,7 @@ namespace CoreDawn.EditorTools
         [MenuItem(MenuToggle, true)]
         static bool ToggleValidate() { Menu.SetChecked(MenuToggle, enabled); return true; }
 
-        [MenuItem("Tools/Factory/World preview — reload pack")]
+        [MenuItem("Tools/CoreDawn/World preview — reload pack")]
         public static void ReloadPack() { PackAssets.Clear(); SimHost.Database = null; Invalidate(); SceneView.RepaintAll(); }
 
         /// <summary>맵·팩이 바뀌었다 — 다음 그리기 때 다시 읽는다.</summary>

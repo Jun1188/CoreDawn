@@ -1,14 +1,10 @@
 {
-    "name": "CoreDawn.PackExport.Editor",
-    "rootNamespace": "CoreDawn.EditorTools",
+    "name": "CoreDawn.Sim",
+    "rootNamespace": "CoreDawn.Sim",
     "references": [
-        "glTFast",
-        "glTFast.Export",
         "Unity.Nuget.Newtonsoft-Json"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

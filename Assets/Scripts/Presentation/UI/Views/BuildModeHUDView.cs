@@ -1,9 +1,7 @@
 using UnityEngine;
 using CoreDawn.Managers;
 using UnityEngine.UIElements;
-using CoreDawn.Factory;
 using CoreDawn.Placement;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.UI

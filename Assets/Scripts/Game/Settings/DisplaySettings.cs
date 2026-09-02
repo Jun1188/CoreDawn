@@ -1,7 +1,4 @@
 using UnityEngine;
-using CoreDawn.Sound;
-using CoreDawn.UI;
-
 namespace CoreDawn.Settings
 {
     /// <summary>

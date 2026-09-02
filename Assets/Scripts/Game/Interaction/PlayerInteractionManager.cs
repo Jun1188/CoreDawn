@@ -1,7 +1,6 @@
 using UnityEngine;
 using CoreDawn.FPS;
 using CoreDawn.Factory;
-using CoreDawn.Inputs;
 using CoreDawn.Placement;
 using CoreDawn.UI;
 

@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Tutorial
 {
     [TutorialConditionMenu("기본/점프")]

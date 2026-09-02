@@ -1,7 +1,5 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using CoreDawn.Inputs;
-
 namespace CoreDawn.UI
 {
     /// <summary>

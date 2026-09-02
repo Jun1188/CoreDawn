@@ -64,7 +64,7 @@ namespace CoreDawn.EditorTools
             return $"{Pack}:{section}/{s.ToLowerInvariant()}";
         }
 
-        [MenuItem("Tools/Factory/Export pack data.json (v2)")]
+        [MenuItem("Tools/CoreDawn/Export pack data.json (v2)")]
         public static void ExportMenu()
         {
             var report = Export();

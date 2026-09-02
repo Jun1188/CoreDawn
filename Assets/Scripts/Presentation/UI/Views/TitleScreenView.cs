@@ -1,7 +1,5 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using CoreDawn.Inputs;
-using CoreDawn.Managers;
 using CoreDawn.Save;
 using CoreDawn.Sound;
 

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Combat;
 using CoreDawn.Pings;
 using CoreDawn.Sim;
 using SimEntity = CoreDawn.Sim.Entity;

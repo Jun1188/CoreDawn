@@ -1,7 +1,4 @@
 using UnityEngine;
-using CoreDawn.Managers;
-using CoreDawn.Navigation;
-using CoreDawn.Placement;
 using CoreDawn.Data;
 
 namespace CoreDawn.Worlds

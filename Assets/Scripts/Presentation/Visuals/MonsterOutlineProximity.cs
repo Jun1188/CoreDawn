@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using EPOOutline;
 using UnityEngine;
 using CoreDawn.Entities;
-using CoreDawn.Interaction;
-using CoreDawn.Pings;
-using CoreDawn.Placement;
 using CoreDawn.Combat;
 
 namespace CoreDawn.Visuals

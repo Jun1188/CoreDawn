@@ -1,10 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Entities;
-using CoreDawn.Factory;
-using CoreDawn.Inventories;
-using CoreDawn.UI;
-
 namespace CoreDawn.Save
 {
     /// <summary>

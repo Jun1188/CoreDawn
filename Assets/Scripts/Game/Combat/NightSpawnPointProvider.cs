@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Entities;
-
 namespace CoreDawn.Combat
 {
     /// <summary>

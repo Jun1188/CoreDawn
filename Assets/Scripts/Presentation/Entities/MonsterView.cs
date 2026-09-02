@@ -1,7 +1,6 @@
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Sim;
-using CoreDawn.Data;
 using CoreDawn.UI;
 using SimEntity = CoreDawn.Sim.Entity;
 

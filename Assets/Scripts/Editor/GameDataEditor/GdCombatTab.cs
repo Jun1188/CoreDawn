@@ -5,8 +5,6 @@ using System.Linq;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.UIElements;
-using CoreDawn.Combat;
-using CoreDawn.FPS;
 using CoreDawn.UI;
 
 namespace CoreDawn.EditorTools

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using CoreDawn.Combat;
 using CoreDawn.Worlds;
 using CoreDawn.Data;
 
@@ -67,7 +66,7 @@ namespace CoreDawn.EditorTools
         /// <summary>물가에서 풀이 멈추는 높이(m). 수면보다 조금 위여야 물속에 잠긴 풀이 없다.</summary>
         static float GrassWaterLine => S.waterLevel + S.grassWaterLineOffset;
 
-        [MenuItem("Tools/Factory/Build World Terrain")]
+        [MenuItem("Tools/CoreDawn/Build World Terrain")]
         public static void Build()
         {
             var world = Object.FindFirstObjectByType<World>();

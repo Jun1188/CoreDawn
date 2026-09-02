@@ -1,8 +1,4 @@
 using UnityEngine;
-using CoreDawn.Entities;
-using CoreDawn.Interaction;
-using CoreDawn.ResourceNodes;
-
 namespace CoreDawn.Pings
 {
     /// <summary>

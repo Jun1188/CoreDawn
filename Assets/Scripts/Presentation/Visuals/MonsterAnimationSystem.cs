@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Entities;
-using CoreDawn.UI;
-
 namespace CoreDawn.Visuals
 {
     /// <summary>

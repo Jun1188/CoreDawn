@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Combat;
-using CoreDawn.UI;
-
 namespace CoreDawn.Pings
 {
     /// <summary>

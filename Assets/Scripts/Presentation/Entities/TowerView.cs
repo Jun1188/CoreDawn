@@ -3,8 +3,6 @@ using UnityEngine;
 using CoreDawn.Managers;
 using CoreDawn.Combat;
 using CoreDawn.Sim;
-using CoreDawn.Data;
-
 namespace CoreDawn.Entities
 {
     // 사격·펄스·기폭 건물의 뷰 — 심이 내린 결정을 그린다. 판단은 하나도 없다.

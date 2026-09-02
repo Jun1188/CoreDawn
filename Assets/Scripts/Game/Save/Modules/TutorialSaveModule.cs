@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using CoreDawn.Factory;
 using CoreDawn.Tutorial;
 
 namespace CoreDawn.Save

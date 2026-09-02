@@ -6,7 +6,6 @@ using CoreDawn.Sim;
 using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Interaction;
-using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
 using CoreDawn.Save;
 using CoreDawn.Data;

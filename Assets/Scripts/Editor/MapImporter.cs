@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using CoreDawn.Factory;
-using CoreDawn.Worlds;
 using CoreDawn.Data;
 using CoreDawn.Managers;
 using CoreDawn.Sim;
@@ -81,7 +79,7 @@ namespace CoreDawn.EditorTools
 
         // ── 실행 ────────────────────────────────────────────────────
 
-        [MenuItem("Tools/Factory/Import Map Data (JSON)")]
+        [MenuItem("Tools/CoreDawn/Import Map Data (JSON)")]
         public static void ImportAll()
         {
             if (!File.Exists(JsonPath))

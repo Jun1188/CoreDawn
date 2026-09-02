@@ -1,9 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using CoreDawn.Entities;
 using CoreDawn.Inputs;
-using CoreDawn.Placement;
-
 namespace CoreDawn.FPS
 {
     /// <summary>

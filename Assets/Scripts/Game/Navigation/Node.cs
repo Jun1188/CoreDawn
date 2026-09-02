@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.Placement;
-
 namespace CoreDawn.Navigation
 {
     public class Node

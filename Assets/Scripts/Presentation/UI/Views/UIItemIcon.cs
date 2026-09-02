@@ -1,7 +1,6 @@
 using UnityEngine;
 using CoreDawn.Managers;
 using UnityEngine.UIElements;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.UI

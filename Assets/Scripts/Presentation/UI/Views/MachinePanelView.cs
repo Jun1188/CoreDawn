@@ -3,9 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 using CoreDawn.Factory;
-using CoreDawn.Inventories;
 using CoreDawn.Managers;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.UI

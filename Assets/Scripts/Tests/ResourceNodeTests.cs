@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Factory;
 using CoreDawn.Managers;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Tests

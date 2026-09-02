@@ -1,7 +1,5 @@
 using System;
 using UnityEngine;
-using CoreDawn.Entities;
-using CoreDawn.Factory;
 using CoreDawn.Worlds;
 
 namespace CoreDawn.Data

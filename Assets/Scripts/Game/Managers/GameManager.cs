@@ -1,10 +1,7 @@
 using System;
 using UnityEngine;
-using CoreDawn.Combat;
 using CoreDawn.DayTime;
 using CoreDawn.Save;
-using CoreDawn.UI;
-
 namespace CoreDawn.Managers
 {
     /// <summary>

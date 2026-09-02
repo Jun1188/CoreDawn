@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using CoreDawn.Factory;
-using CoreDawn.Inventories;
 using CoreDawn.Sim;
 using UnityEngine;
 

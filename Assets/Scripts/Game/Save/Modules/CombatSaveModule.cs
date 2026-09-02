@@ -5,8 +5,6 @@ using Newtonsoft.Json.Linq;
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Entities;
-using CoreDawn.Data;
-
 namespace CoreDawn.Save
 {
     /// <summary>

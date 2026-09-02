@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-using CoreDawn.Managers;
-
 namespace CoreDawn.Sound
 {
     /// <summary>

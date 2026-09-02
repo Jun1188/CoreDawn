@@ -1,7 +1,5 @@
 using DG.Tweening;
 using UnityEngine;
-using CoreDawn.Entities;
-
 namespace CoreDawn.FPS
 {
     /// <summary>

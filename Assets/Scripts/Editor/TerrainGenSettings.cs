@@ -1,7 +1,5 @@
 using UnityEditor;
 using UnityEngine;
-using CoreDawn.Worlds;
-
 namespace CoreDawn.EditorTools
 {
     /// <summary>

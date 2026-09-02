@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Tutorial
 {
     [TutorialConditionMenu("건설/컨베이어 설치")]

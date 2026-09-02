@@ -1,6 +1,4 @@
 using System;
-using CoreDawn.Managers;
-
 namespace CoreDawn.DayTime
 {
     public enum DayPhase { Day, Night }

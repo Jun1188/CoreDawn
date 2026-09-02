@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using CoreDawn.FPS;
-using CoreDawn.Factory;
 using CoreDawn.UI;
 using CoreDawn.Sim;
 

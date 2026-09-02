@@ -4,8 +4,6 @@ using CoreDawn.Entities;
 using CoreDawn.Placement;
 using CoreDawn.Save;
 using CoreDawn.Sim;
-using CoreDawn.Data;
-
 namespace CoreDawn.Factory
 {
     /// <summary>

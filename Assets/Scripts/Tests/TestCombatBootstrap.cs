@@ -2,9 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using CoreDawn.DayTime;
-using CoreDawn.Factory;
 using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Save;
 
 namespace CoreDawn.Tests
