@@ -1,6 +1,6 @@
-using UnityEditor;
 using UnityEngine;
-namespace CoreDawn.EditorTools
+
+namespace CoreDawn.Worlds
 {
     /// <summary>
     /// <see cref="WorldTerrainGenerator"/>가 읽는 수치 전부 — 지형을 굽는 "레시피".
@@ -9,9 +9,8 @@ namespace CoreDawn.EditorTools
     /// 한 번 보려고 스크립트를 고치면 도메인 리로드가 돌고, 되돌리려면 diff를 봐야 하고,
     /// 무엇보다 아트 쪽에서 만질 수가 없다. 에셋이면 인스펙터에서 바꾸고 바로 다시 구우면 된다.
     ///
-    /// 이 클래스는 <b>에디터 어셈블리</b>에 있다 — 지형 생성은 메뉴에서 도는 저작 도구지
-    /// 런타임 기능이 아니므로, 런타임 World 컴포넌트에 에디터 전용 설정을 달지 않는다.
-    /// 그래서 씬에 배선하지 않고 <see cref="LoadOrCreate"/>가 프로젝트에서 찾아 쓴다.
+    /// 5a-4e부터 <b>런타임 어셈블리</b>에 있다 — 지형을 부팅 때 생성하므로 게임도 이 레시피를 읽는다.
+    /// Resources/Builtin에 살고, 씬에 배선하지 않고 <see cref="LoadOrCreate"/>가 찾아 쓴다.
     ///
     /// <b>단위 규칙</b>(생성기 머리말과 같은 규칙):
     ///   · 물가·워핑·해상도는 <b>미터</b>다(이름 끝의 M). 계산은 칸 좌표계라 생성기가
@@ -22,7 +21,8 @@ namespace CoreDawn.EditorTools
     public class TerrainGenSettings : ScriptableObject
     {
         /// <summary>이 에셋이 사는 자리. 하나만 두고 생성기가 여기서 찾는다.</summary>
-        public const string AssetPath = "Assets/Data/Maps/TerrainGenSettings.asset";
+        public const string AssetPath = "Assets/Resources/Builtin/TerrainGenSettings.asset";
+        public const string ResourcePath = "Builtin/TerrainGenSettings";
 
         // ── 경로 ────────────────────────────────────────────────────
 
@@ -304,23 +304,24 @@ namespace CoreDawn.EditorTools
         /// </summary>
         public static TerrainGenSettings LoadOrCreate()
         {
-            var s = AssetDatabase.LoadAssetAtPath<TerrainGenSettings>(AssetPath);
+            var s = Resources.Load<TerrainGenSettings>(ResourcePath);
             if (s != null) return s;
-
+#if UNITY_EDITOR
             // 같은 타입의 에셋을 다른 자리에 만들어 뒀을 수 있다 — 경로보다 타입을 먼저 믿는다
-            var found = AssetDatabase.FindAssets("t:TerrainGenSettings");
+            var found = UnityEditor.AssetDatabase.FindAssets("t:TerrainGenSettings");
             if (found.Length > 0)
-                return AssetDatabase.LoadAssetAtPath<TerrainGenSettings>(AssetDatabase.GUIDToAssetPath(found[0]));
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<TerrainGenSettings>(
+                    UnityEditor.AssetDatabase.GUIDToAssetPath(found[0]));
 
             s = CreateInstance<TerrainGenSettings>();
-            var dir = System.IO.Path.GetDirectoryName(AssetPath).Replace('\\', '/');
-            if (!AssetDatabase.IsValidFolder(dir))
-                AssetDatabase.CreateFolder(System.IO.Path.GetDirectoryName(dir).Replace('\\', '/'),
-                                           System.IO.Path.GetFileName(dir));
-            AssetDatabase.CreateAsset(s, AssetPath);
-            AssetDatabase.SaveAssets();
+            UnityEditor.AssetDatabase.CreateAsset(s, AssetPath);
+            UnityEditor.AssetDatabase.SaveAssets();
             Debug.Log($"[TerrainGenSettings] 설정 에셋이 없어 기본값으로 만들었습니다: {AssetPath}", s);
             return s;
+#else
+            Debug.LogError("[TerrainGenSettings] Resources/" + ResourcePath + " 이 없습니다 — 지형을 생성할 수 없습니다.");
+            return null;
+#endif
         }
     }
 }
