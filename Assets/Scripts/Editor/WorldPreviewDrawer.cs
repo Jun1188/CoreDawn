@@ -12,10 +12,11 @@ using CoreDawn.Worlds;
 namespace CoreDawn.EditorTools
 {
     /// <summary>
-    /// 월드 미리보기(5a-4c) — 맵의 배치물(나무·광맥·둥지·코어)을 씬 뷰에 <b>GameObject 없이</b> 그린다(<see cref="Graphics.DrawMesh"/>).
-    /// 씬에는 배치물을 굳히지 않는다(굳히면 런타임 생성 메시가 씬 파일에 박히고, 어차피 런타임이 다시 세운다). 배치의 정본은 맵이고
-    /// 모양은 팩(PackAssets)이라, 여기서는 둘을 읽어 그리기만 한다. 재생 중엔 그리지 않는다(실물이 있다).
-    /// 팩 자원은 처음 필요할 때 에디트 모드에서 읽는다(비동기) — 읽는 동안은 아무것도 안 보인다. 맵을 다시 임포트하면 <see cref="Invalidate"/>.
+    /// 월드 미리보기(5a-4c) — 맵의 배치물(나무·광맥·둥지·코어)과 <b>타일(강·절벽)</b>을 씬 뷰에
+    /// GameObject 없이 그린다(<see cref="Graphics.DrawMesh"/>). 씬에는 아무것도 굳히지 않는다 —
+    /// 배치의 정본은 맵이고 모양은 팩(PackAssets)이라, 둘을 읽어 그리기만 한다. 재생 중엔 그리지 않는다(실물이 있다).
+    /// 팩 자원은 처음 필요할 때 에디트 모드에서 읽는다(비동기) — 진행은 에디터 우하단 백그라운드 태스크
+    /// (<see cref="Progress"/>)로 보인다. 맵을 다시 내보내면 <see cref="Invalidate"/>.
     /// </summary>
     [InitializeOnLoad]
     public static class WorldPreviewDrawer
@@ -27,7 +28,11 @@ namespace CoreDawn.EditorTools
         static World cachedWorld;
         static MapDef cachedMap;
         static bool loading;
+        static int progressId = -1;   // 에디터 우하단 백그라운드 태스크 표시(Progress API)
         static bool enabled = true;
+
+        static Mesh tileMesh;         // 강·절벽 칸을 덮는 반투명 판 — 맵에서 굽는다
+        static Material tileMat;      // Sprites/Default(정점색) — 에디터 전용이라 빌드 포함을 고민할 필요 없음
 
         const string MenuToggle = "Tools/CoreDawn/World preview (scene view)";
 
@@ -50,7 +55,7 @@ namespace CoreDawn.EditorTools
         static bool ToggleValidate() { Menu.SetChecked(MenuToggle, enabled); return true; }
 
         [MenuItem("Tools/CoreDawn/World preview — reload pack")]
-        public static void ReloadPack() { PackAssets.Clear(); SimHost.Database = null; Invalidate(); SceneView.RepaintAll(); }
+        public static void ReloadPack() { PackAssets.Clear(); PackMaps.Clear(); SimHost.Database = null; Invalidate(); SceneView.RepaintAll(); }
 
         /// <summary>맵·팩이 바뀌었다 — 다음 그리기 때 다시 읽는다.</summary>
         public static void Invalidate()
@@ -58,6 +63,7 @@ namespace CoreDawn.EditorTools
             placements = null; cachedWorld = null; cachedMap = null;
             foreach (var list in parts.Values) list.Clear();
             parts.Clear();
+            if (tileMesh != null) { Object.DestroyImmediate(tileMesh); tileMesh = null; }
         }
 
         static World foundWorld;
@@ -69,7 +75,8 @@ namespace CoreDawn.EditorTools
             var world = foundWorld;
             if (world == null || world.Map == null) return;
             if (SimHost.Database == null) SimHost.DatabaseLoader = () => PackLoader.Load();
-            if (!PackAssets.IsReady) { EnsureLoading(); return; }
+            if (!PackAssets.IsReady) { EnsureLoading(); ReportProgress(); return; }
+            FinishProgress();
             if (placements == null || cachedWorld != world || cachedMap != world.Map) { Rebuild(world); SceneView.RepaintAll(); }
         }
 
@@ -77,6 +84,8 @@ namespace CoreDawn.EditorTools
         {
             if (!enabled || Application.isPlaying || cam.cameraType != CameraType.SceneView) return;
             if (placements == null || cachedWorld == null || cachedWorld.Map != cachedMap) return;
+
+            if (tileMesh != null) Graphics.DrawMesh(tileMesh, Matrix4x4.identity, TileMat, 0, cam);
 
             foreach (var (key, m) in placements)
             {
@@ -93,9 +102,35 @@ namespace CoreDawn.EditorTools
             loading = true;
             var db = SimHost.Database;
             if (db == null) { loading = false; return; }
+            if (progressId < 0 || !Progress.Exists(progressId))
+                progressId = Progress.Start("CoreDawn 팩 로드", PackLoader.CurrentPack, Progress.Options.None);
             var ctx = SynchronizationContext.Current;
-            PackAssets.PreloadAsync(db).ContinueWith(_ => { loading = false; SceneView.RepaintAll(); },
+            PackAssets.PreloadAsync(db).ContinueWith(_ => { loading = false; FinishProgress(); SceneView.RepaintAll(); },
                 ctx != null ? TaskScheduler.FromCurrentSynchronizationContext() : TaskScheduler.Default);
+        }
+
+        static void ReportProgress()
+        {
+            if (progressId < 0 || !Progress.Exists(progressId)) return;
+            var (done, total) = PackAssets.Progress;
+            Progress.Report(progressId, total > 0 ? (float)done / total : 0f, $"{done}/{total}");
+        }
+
+        static void FinishProgress()
+        {
+            if (progressId < 0) return;
+            if (Progress.Exists(progressId)) Progress.Finish(progressId, Progress.Status.Succeeded);
+            progressId = -1;
+        }
+
+        static Material TileMat
+        {
+            get
+            {
+                if (tileMat == null)
+                    tileMat = new Material(Shader.Find("Sprites/Default")) { hideFlags = HideFlags.HideAndDontSave };
+                return tileMat;
+            }
         }
 
         static void Rebuild(World world)
@@ -104,6 +139,8 @@ namespace CoreDawn.EditorTools
             placements = new List<(string, Matrix4x4)>();
             var map = world.Map; float cell = world.CellSize;
             var db = SimHost.Database;
+
+            BuildTileMesh(world, map, cell);
 
             EntityDef Find(string key) => db.Entities.TryGetValue($"{db.Pack}:entity/{key}", out var d) ? d : null;
 
@@ -142,6 +179,50 @@ namespace CoreDawn.EditorTools
             if (nest != null && map.nests != null)
                 foreach (var spec in map.nests)
                     placements.Add((Key(nest, 0), Matrix4x4.TRS(world.CellToWorldCenter(spec.cell), Quaternion.identity, Vector3.one * cell)));
+        }
+
+        /// <summary>
+        /// 강·절벽 칸을 덮는 반투명 판 하나 — 맵(정본)이 씬의 지형과 맞는지 눈으로 대조하는 용도.
+        /// 지면 칸은 그리지 않는다(잡음). 높이는 칸 중앙의 지면 높이 + 0.15m.
+        /// </summary>
+        static void BuildTileMesh(World world, MapDef map, float cell)
+        {
+            if (tileMesh != null) { Object.DestroyImmediate(tileMesh); tileMesh = null; }
+            if (map.tiles == null) return;
+
+            var verts = new List<Vector3>();
+            var cols = new List<Color32>();
+            var tris = new List<int>();
+            Color32 river = new Color32(50, 130, 255, 90);
+            Color32 cliff = new Color32(255, 80, 50, 90);
+
+            for (int y = 0; y < map.height; y++)
+                for (int x = 0; x < map.width; x++)
+                {
+                    var tile = map.TileAt(x, y);
+                    if (tile == MapTile.Ground) continue;
+
+                    var c = new Vector2Int(x, y);
+                    Vector3 o = world.CellToWorld(c);
+                    o.y = WorldPopulator.GroundYAt(world, world.CellToWorldCenter(c)) + 0.15f;
+
+                    int i = verts.Count;
+                    verts.Add(o);
+                    verts.Add(o + new Vector3(cell, 0f, 0f));
+                    verts.Add(o + new Vector3(cell, 0f, cell));
+                    verts.Add(o + new Vector3(0f, 0f, cell));
+                    var col = tile == MapTile.River ? river : cliff;
+                    cols.Add(col); cols.Add(col); cols.Add(col); cols.Add(col);
+                    tris.Add(i); tris.Add(i + 2); tris.Add(i + 1);
+                    tris.Add(i); tris.Add(i + 3); tris.Add(i + 2);
+                }
+
+            if (verts.Count == 0) return;
+            tileMesh = new Mesh { hideFlags = HideFlags.HideAndDontSave, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            tileMesh.SetVertices(verts);
+            tileMesh.SetColors(cols);
+            tileMesh.SetTriangles(tris, 0);
+            tileMesh.RecalculateBounds();
         }
 
         /// <summary>정의(+변형)의 그릴 조각들 — 팩 템플릿을 잠시 세워 렌더러의 메시·재질·루트 기준 행렬을 뽑는다(칸 단위, 루트 배율 1).</summary>

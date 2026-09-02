@@ -1,0 +1,18 @@
+{
+    "name": "ThirdParty.Bitgem.Editor",
+    "rootNamespace": "",
+    "references": [
+        "ThirdParty"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
