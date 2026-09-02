@@ -12,13 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42f4f8ea49417ae4fba7465f48b17ea7, type: 3}
   m_Name: TerrainGenSettings
   m_EditorClassIdentifier: Assembly-CSharp-Editor::TerrainGenSettings
-  assetFolder: Assets/Data/Maps/Terrain
-  terrainLayers:
-  - {fileID: 8574412962073106934, guid: acd1f91ae4732f140ab38f18ebfaa16c, type: 2}
-  - {fileID: 8574412962073106934, guid: 410ebf160a46ed84083e2077ca8fc3d0, type: 2}
-  - {fileID: 8574412962073106934, guid: b447b7c760c116c43901f9ede86896f5, type: 2}
-  waterMaterialSource: {fileID: 2100000, guid: 16ca5feb16ef2d744852096378401523, type: 2}
-  terrainHeightRange: 2
+  grassTexture: {fileID: 2800000, guid: d54c91d3a53ff1b4088561fb2368d95d, type: 3}
+  grassTileM: 4
+  bedTexture: {fileID: 2800000, guid: a1a1c1f2aa25fd8429cad68a22c5c2d7, type: 3}
+  bedTileM: 8
+  waterMaterial: {fileID: 2100000, guid: 5e12baba82582064baa9c43e661322fa, type: 2}
   riverDepth: 0.85
   waterLevel: -0.15
   shoreWidth: 1.8
@@ -26,25 +24,14 @@ MonoBehaviour:
   boundsHeight: 40
   boundsThickness: 2
   boundsSink: 5
-  waterVertexSpacing: 1
   foamDepth: 0.1
   riverFalloffM: 0.6
   shelfWidthM: 0.9
   shelfDepth: 0.3
   shapeInsetM: 0.3
   fieldPixelM: 0.25
-  heightSampleM: 0.25
   smoothRadiusM: 0.75
   smoothPasses: 2
-  heightSmoothPasses: 2
-  warpStrengthM: 2.2
-  warpWavelengthM: 36
-  warpMidStrengthM: 1.2
-  warpMidWavelengthM: 10
-  warpFineStrengthM: 0.7
-  warpFineWavelengthM: 4.5
-  detailAmplitude: 0.14
-  detailWavelengthM: 22
   grassSet:
   - {fileID: 6881102727349999488, guid: 00740326024ab3d4599c37550c9c6667, type: 3}
   - {fileID: 8094190162121565675, guid: 1929177bd233d5f44b76684aae1f665e, type: 3}
@@ -58,10 +45,7 @@ MonoBehaviour:
   grassSize: {x: 0.56, y: 1}
   flowerSize: {x: 0.7, y: 1.2}
   detailPointM: 0.5
-  detailPatch: 64
   detailDistance: 70
-  healthyTint: {r: 0.263, g: 0.976, b: 0.165, a: 1}
-  dryTint: {r: 0.804, g: 0.737, b: 0.102, a: 1}
   grassWaterLineOffset: 0.08
   grassMaxSlope: 0.45
   cliffWallSet:
@@ -78,8 +62,6 @@ MonoBehaviour:
   - {fileID: 5093910391062508454, guid: a372b00bacebe454b96f89b53f5b1018, type: 3}
   - {fileID: 3162984673476236934, guid: c752f1f76036058469f8fd89eb917251, type: 3}
   cliffWallOverlap: 0.55
-  cliffWallRows: 2
-  cliffWallRowStepM: 4.5
   cliffWallScale: {x: 0.9, y: 1.35}
   cliffWallOverhangM: 0
   cliffWallSinkM: 0.4
@@ -87,7 +69,6 @@ MonoBehaviour:
   cliffWallCornerDeg: 45
   cliffWallCornerLookM: 3
   cliffWallMinShrink: 0.7
-  cliffWallSlackCells: 0.05
   cliffFootDensity: 0.1
   cliffFootBandCells: 0.7
   cliffFootScale: {x: 0.3, y: 0.7}

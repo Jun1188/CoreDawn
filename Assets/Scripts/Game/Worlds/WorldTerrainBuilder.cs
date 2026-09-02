@@ -235,22 +235,20 @@ namespace CoreDawn.Worlds
 
         static Material groundMat;
 
-        /// <summary>지면 재질 — CoreDawn/Ground(잔디 ↔ 강바닥을 정점색 R로 블렌드). 텍스처는 지형 레이어 0(잔디)·2(강바닥).</summary>
+        /// <summary>지면 재질 — CoreDawn/Ground(잔디 ↔ 강바닥을 정점색 R로 블렌드). 텍스처·타일 크기는 설정의 직접 참조.</summary>
         static Material GroundMaterial(TerrainGenSettings s)
         {
             if (groundMat != null) return groundMat;
             var shader = Managers.BuiltinShaders.Of("CoreDawn/Ground");
             if (shader == null) shader = Managers.BuiltinShaders.Of("Universal Render Pipeline/Lit");
             groundMat = new Material(shader) { name = "Ground (Runtime)" };
-            var grass = s.terrainLayers != null && s.terrainLayers.Length > 0 ? s.terrainLayers[0] : null;
-            var bed = s.terrainLayers != null && s.terrainLayers.Length > 2 ? s.terrainLayers[2] : null;
-            if (grass != null && grass.diffuseTexture != null) groundMat.mainTexture = grass.diffuseTexture;
-            if (grass != null && grass.tileSize.x > 0f) groundMat.SetFloat("_GrassTileM", grass.tileSize.x);
-            if (bed != null && bed.diffuseTexture != null)
+            if (s.grassTexture != null) groundMat.mainTexture = s.grassTexture;
+            if (s.grassTileM > 0f) groundMat.SetFloat("_GrassTileM", s.grassTileM);
+            if (s.bedTexture != null)
             {
-                groundMat.SetTexture("_BedMap", bed.diffuseTexture);
-                if (bed.tileSize.x > 0f && grass != null && grass.tileSize.x > 0f)
-                    groundMat.SetFloat("_BedUvScale", grass.tileSize.x / bed.tileSize.x);
+                groundMat.SetTexture("_BedMap", s.bedTexture);
+                if (s.bedTileM > 0f && s.grassTileM > 0f)
+                    groundMat.SetFloat("_BedUvScale", s.grassTileM / s.bedTileM);
             }
             return groundMat;
         }
@@ -261,10 +259,12 @@ namespace CoreDawn.Worlds
         static Mesh WaterMesh(World world, MapDef map, TerrainForm form, TerrainGenSettings s, out Vector3 localPos, out Material mat)
         {
             localPos = new Vector3(0f, s.waterLevel, 0f);
-            mat = Resources.Load<Material>("Builtin/Water");
+            // 다른 재료(텍스처·프리팹)와 같은 직접 참조 — 옛 Resources.Load("Builtin/Water") 경로 로드는
+            // 설정의 waterMaterialSource(죽은 필드)와 실제 쓰는 재질이 달라지는 혼선을 낳았다.
+            mat = s.waterMaterial;
             if (mat == null)
             {
-                Debug.LogError("[WorldTerrain] Resources/Builtin/Water.mat 이 없습니다 — 물을 세우지 못했습니다.");
+                Debug.LogError("[WorldTerrain] TerrainGenSettings.waterMaterial 이 비어 있습니다 — 물을 세우지 못했습니다.", s);
                 return null;
             }
             // 2단 격자(사용자 결정): 맵 안(강가·거품)은 32×32, 바깥 바다는 성긴 조각 8개.
