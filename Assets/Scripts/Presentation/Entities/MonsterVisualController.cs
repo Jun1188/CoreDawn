@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
-using CoreDawn.Combat;
 using CoreDawn.Visuals;
 
 namespace CoreDawn.Entities

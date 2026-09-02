@@ -1,11 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
-using CoreDawn.Factory;
 using CoreDawn.Inputs;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 using InputEvent = CoreDawn.Inputs.InputEvent;
 

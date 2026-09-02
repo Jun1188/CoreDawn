@@ -6,8 +6,6 @@ using UnityEngine;
 using CoreDawn.Interaction;
 using CoreDawn.Inventories;
 using CoreDawn.Factory;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Save
 {
     /// <summary>

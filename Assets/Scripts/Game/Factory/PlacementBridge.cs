@@ -1,8 +1,6 @@
 using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.Interaction;
-using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Factory

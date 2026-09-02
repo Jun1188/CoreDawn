@@ -3,8 +3,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using CoreDawn.Entities;
 using CoreDawn.Factory;
-using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Tests

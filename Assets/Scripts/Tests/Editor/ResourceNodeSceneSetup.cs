@@ -3,12 +3,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using CoreDawn.DayTime;
-using CoreDawn.Factory;
 using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
-using CoreDawn.Data;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Tests
 {
     /// <summary>

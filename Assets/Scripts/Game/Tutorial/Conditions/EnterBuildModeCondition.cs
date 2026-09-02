@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Tutorial
 {
     [TutorialConditionMenu("건설/건설 모드 진입")]

@@ -8,7 +8,6 @@ using CoreDawn.Inventories;
 using CoreDawn.Managers;
 using CoreDawn.Placement;
 using CoreDawn.UI;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 using CoreDawn.Combat;
 

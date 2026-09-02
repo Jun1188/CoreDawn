@@ -2,7 +2,6 @@ using UnityEngine;
 using CoreDawn.DayTime;
 using CoreDawn.Entities;
 using CoreDawn.FPS;
-using CoreDawn.Factory;
 using CoreDawn.Managers;
 using CoreDawn.Navigation;
 using CoreDawn.Worlds;

@@ -5,7 +5,6 @@ using UnityEngine.UIElements;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Managers;
-using CoreDawn.Data;
 using CoreDawn.Combat;
 using CoreDawn.Sim;
 

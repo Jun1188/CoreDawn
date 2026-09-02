@@ -3,7 +3,6 @@ using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
 using CoreDawn.Worlds;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Interaction

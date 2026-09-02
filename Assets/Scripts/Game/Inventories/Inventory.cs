@@ -1,8 +1,6 @@
 using System;
 using UnityEngine;
-using CoreDawn.Factory;
 using CoreDawn.Save;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Inventories

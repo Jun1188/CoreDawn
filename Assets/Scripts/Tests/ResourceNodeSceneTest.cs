@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using CoreDawn.DayTime;
-using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Placement;
 using CoreDawn.ResourceNodes;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Tests

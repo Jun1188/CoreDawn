@@ -1,7 +1,6 @@
 using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 using System.Collections.Generic;
 

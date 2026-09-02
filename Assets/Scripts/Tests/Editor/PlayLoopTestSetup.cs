@@ -2,14 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using CoreDawn.Combat;
-using CoreDawn.DayTime;
-using CoreDawn.Factory;
-using CoreDawn.Navigation;
 using CoreDawn.Placement;
-using CoreDawn.Data;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Tests
 {
     /// <summary>

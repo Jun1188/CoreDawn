@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Factory;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Placement

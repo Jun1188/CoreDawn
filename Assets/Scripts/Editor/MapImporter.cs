@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using CoreDawn.Factory;
-using CoreDawn.Worlds;
 using CoreDawn.Data;
 using CoreDawn.Managers;
 using CoreDawn.Sim;

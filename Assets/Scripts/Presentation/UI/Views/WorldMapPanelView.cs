@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using CoreDawn.FPS;
-using CoreDawn.Factory;
 using CoreDawn.Inputs;
 using CoreDawn.Worlds;
 using CoreDawn.Data;

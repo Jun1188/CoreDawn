@@ -5,8 +5,6 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using CoreDawn.Sim;
 using CoreDawn.Factory;
-using CoreDawn.Data;
-
 namespace CoreDawn.Tests
 {
     /// <summary>

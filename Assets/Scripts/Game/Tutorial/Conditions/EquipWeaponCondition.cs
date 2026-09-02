@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.Sim;
-
 namespace CoreDawn.Tutorial
 {
     [TutorialConditionMenu("전투/무기 장착 상태")]

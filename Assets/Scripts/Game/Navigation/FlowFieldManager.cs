@@ -1,11 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.DayTime;
-using CoreDawn.Entities;
 using CoreDawn.Factory;
 using CoreDawn.Sim;
-using CoreDawn.Data;
-
 namespace CoreDawn.Navigation
 {
     // 플로우필드 구동 매니저 — 갱신 스케줄만 담당하고 계산은 FlowField(순수 C#)에 위임한다.

@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CoreDawn.Factory;
 using CoreDawn.Sim;
-using CoreDawn.Data;
-
 namespace CoreDawn.Tests
 {
     /// <summary>

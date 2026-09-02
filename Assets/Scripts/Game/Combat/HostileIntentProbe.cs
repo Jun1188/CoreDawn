@@ -1,7 +1,5 @@
 using UnityEngine;
 using CoreDawn.Combat;
-using CoreDawn.FPS;
-using CoreDawn.UI;
 using CoreDawn.Entities;
 
 namespace CoreDawn.Combat

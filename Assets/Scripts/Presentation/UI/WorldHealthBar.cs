@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using CoreDawn.Entities;
-using CoreDawn.Sim;
-
 namespace CoreDawn.UI
 {
     // 대상 머리 위에 떠서 플레이어 카메라를 바라보는 월드스페이스 HP 바.

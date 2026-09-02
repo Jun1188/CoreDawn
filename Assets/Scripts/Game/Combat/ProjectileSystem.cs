@@ -4,9 +4,7 @@ using UnityEngine.Pool;
 using CoreDawn.Entities;
 using CoreDawn.Sim;
 using CoreDawn.FPS;
-using CoreDawn.Factory;
 using CoreDawn.UI;
-using CoreDawn.Data;
 using CoreDawn.Visuals;
 
 namespace CoreDawn.Combat

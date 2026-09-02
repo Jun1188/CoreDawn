@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using DG.Tweening;
 using System.Collections;
-using CoreDawn.FPS;
 using CoreDawn.Combat;
 
 namespace CoreDawn.UI

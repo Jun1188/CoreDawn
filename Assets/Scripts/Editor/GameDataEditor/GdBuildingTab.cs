@@ -7,8 +7,6 @@ using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using CoreDawn.Combat;
-using CoreDawn.Factory;
 using CoreDawn.UI;
 
 namespace CoreDawn.EditorTools

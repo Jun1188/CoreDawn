@@ -1,6 +1,4 @@
 using UnityEngine.InputSystem;
-using CoreDawn.Entities;
-using CoreDawn.FPS;
 using CoreDawn.Pings;
 using Ping = CoreDawn.Pings.Ping;   // UnityEngine.Ping과 충돌
 

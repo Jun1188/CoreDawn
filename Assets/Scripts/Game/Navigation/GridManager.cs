@@ -1,9 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using CoreDawn.Combat;
-using CoreDawn.Entities;
 using CoreDawn.Factory;
-using CoreDawn.Managers;
 using CoreDawn.Placement;
 using CoreDawn.Worlds;
 using CoreDawn.Data;

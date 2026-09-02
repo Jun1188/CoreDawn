@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
-using CoreDawn.Data;
-
 namespace CoreDawn.EditorTools
 {
     /// <summary>

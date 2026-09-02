@@ -5,7 +5,6 @@ using UnityEngine;
 using CoreDawn.Managers;
 using UnityEngine.Audio;
 using CoreDawn.Sound;
-using CoreDawn.UI;
 using CoreDawn.Data;
 
 namespace CoreDawn.Sound

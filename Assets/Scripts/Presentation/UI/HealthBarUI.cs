@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using CoreDawn.Entities;
-using CoreDawn.Sim;
-
 namespace CoreDawn.UI
 {
     public class HealthBarUI : MonoBehaviour

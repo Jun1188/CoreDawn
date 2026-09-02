@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
-using CoreDawn.Combat;
 using CoreDawn.DayTime;
 using CoreDawn.Inputs;
 using CoreDawn.Save;

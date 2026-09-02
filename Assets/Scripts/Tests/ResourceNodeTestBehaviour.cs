@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.ResourceNodes;
-
 namespace CoreDawn.Tests
 {
     /// <summary>

@@ -4,7 +4,6 @@ using UnityEngine;
 using CoreDawn.FPS;
 using CoreDawn.Factory;
 using CoreDawn.Interaction;
-using CoreDawn.Managers;
 using CoreDawn.Navigation;
 using CoreDawn.Sim;
 using CoreDawn.Data;

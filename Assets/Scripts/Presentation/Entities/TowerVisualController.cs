@@ -1,7 +1,5 @@
 using UnityEngine;
 using CoreDawn.Combat;
-using CoreDawn.Factory;
-using CoreDawn.Managers;
 using CoreDawn.Sound;
 using CoreDawn.Data;
 

@@ -1,9 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using CoreDawn.FPS;
-using CoreDawn.Factory;
 using CoreDawn.Inventories;
-using CoreDawn.Data;
 using CoreDawn.Sim;
 using CoreDawn.Save;
 using UnityEngine.Serialization;

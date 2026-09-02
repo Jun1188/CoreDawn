@@ -2,7 +2,6 @@ using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.FPS;
 using CoreDawn.Save;
-using CoreDawn.Data;
 using CoreDawn.Sound;
 using CoreDawn.Sim;
 

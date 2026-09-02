@@ -1,6 +1,4 @@
 using UnityEngine;
-using CoreDawn.Managers;
-
 namespace CoreDawn.Sound
 {
     public class SoundTester : MonoBehaviour

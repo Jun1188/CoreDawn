@@ -4,7 +4,6 @@ using CoreDawn.Combat;
 using CoreDawn.Navigation;
 using CoreDawn.Save;
 using CoreDawn.Sim;
-using CoreDawn.Data;
 using CoreDawn.UI;
 
 namespace CoreDawn.Entities
