@@ -1,0 +1,23 @@
+{
+    "name": "CoreDawn.Game",
+    "rootNamespace": "CoreDawn",
+    "references": [
+        "CoreDawn.Sim",
+        "Unity.Nuget.Newtonsoft-Json",
+        "Unity.InputSystem",
+        "glTFast",
+        "EPO",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
