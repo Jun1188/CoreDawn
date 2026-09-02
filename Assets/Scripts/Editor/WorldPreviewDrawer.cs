@@ -31,8 +31,8 @@ namespace CoreDawn.EditorTools
         static int progressId = -1;   // 에디터 우하단 백그라운드 태스크 표시(Progress API)
         static bool enabled = true;
 
-        static Mesh tileMesh;         // 강·절벽 칸을 덮는 반투명 판 — 맵에서 굽는다
-        static Material tileMat;      // Sprites/Default(정점색) — 에디터 전용이라 빌드 포함을 고민할 필요 없음
+        static Mesh tileMesh;         // 맵 오버레이 메시 — 지면 판 + 물 칸 + 수직 절벽 기둥(전부 반투명)
+        static Material tileMat;      // Sprites/Default(정점색 반투명) — 에디터 전용이라 빌드 포함을 고민할 필요 없음
 
         const string MenuToggle = "Tools/CoreDawn/World preview (scene view)";
 
@@ -133,6 +133,7 @@ namespace CoreDawn.EditorTools
             }
         }
 
+
         static void Rebuild(World world)
         {
             cachedWorld = world; cachedMap = world.Map;
@@ -182,8 +183,9 @@ namespace CoreDawn.EditorTools
         }
 
         /// <summary>
-        /// 강·절벽 칸을 덮는 반투명 판 하나 — 맵(정본)이 씬의 지형과 맞는지 눈으로 대조하는 용도.
-        /// 지면 칸은 그리지 않는다(잡음). 높이는 칸 중앙의 지면 높이 + 0.15m.
+        /// 맵 오버레이 메시(반투명 하나) — 지면 한 판(초록) + 물 칸(파랑) + <b>수직으로만 솟은</b> 절벽 기둥(회색,
+        /// 윗면과 노출된 옆면만). 맵(정본)의 땅 모양이 지형을 굽기 전에도 씬 뷰에서 그대로 읽힌다.
+        /// 높이는 평지 기준(y0 + 살짝) — 구운 지형이 있어도 그 위에 은은하게 얹힌다.
         /// </summary>
         static void BuildTileMesh(World world, MapDef map, float cell)
         {
@@ -193,28 +195,57 @@ namespace CoreDawn.EditorTools
             var verts = new List<Vector3>();
             var cols = new List<Color32>();
             var tris = new List<int>();
-            Color32 river = new Color32(50, 130, 255, 90);
-            Color32 cliff = new Color32(255, 80, 50, 90);
+
+            void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color32 col)
+            {
+                int i = verts.Count;
+                verts.Add(a); verts.Add(b); verts.Add(c); verts.Add(d);
+                cols.Add(col); cols.Add(col); cols.Add(col); cols.Add(col);
+                tris.Add(i); tris.Add(i + 2); tris.Add(i + 1);
+                tris.Add(i); tris.Add(i + 3); tris.Add(i + 2);
+            }
+
+            // 윗면(시계 방향이 위를 보게) — o는 칸의 왼쪽 아래, y는 높이
+            void Top(Vector3 o, float size, float y, Color32 col) =>
+                Quad(new Vector3(o.x, y, o.z), new Vector3(o.x + size, y, o.z),
+                     new Vector3(o.x + size, y, o.z + size), new Vector3(o.x, y, o.z + size), col);
+
+            Color32 ground = new Color32(110, 160, 88, 60);
+            Color32 water = new Color32(60, 130, 230, 120);
+            Color32 rock = new Color32(150, 140, 160, 120);
+            Color32 rockSide = new Color32(110, 100, 122, 120);
+            const float Lift = 0.15f;      // 구운 지형 표면과 겹치지 않게 살짝 띄운다
+            float wallH = cell * 2.25f;    // 실제 절벽 조각(~10m)과 비슷한 눈높이 벽
+
+            Vector3 origin = world.CellToWorld(Vector2Int.zero);
+            Quad(new Vector3(origin.x, Lift, origin.z),
+                 new Vector3(origin.x + map.width * cell, Lift, origin.z),
+                 new Vector3(origin.x + map.width * cell, Lift, origin.z + map.height * cell),
+                 new Vector3(origin.x, Lift, origin.z + map.height * cell), ground);
 
             for (int y = 0; y < map.height; y++)
                 for (int x = 0; x < map.width; x++)
                 {
                     var tile = map.TileAt(x, y);
                     if (tile == MapTile.Ground) continue;
+                    Vector3 o = world.CellToWorld(new Vector2Int(x, y));
 
-                    var c = new Vector2Int(x, y);
-                    Vector3 o = world.CellToWorld(c);
-                    o.y = WorldPopulator.GroundYAt(world, world.CellToWorldCenter(c)) + 0.15f;
+                    if (tile == MapTile.River) { Top(o, cell, Lift + 0.03f, water); continue; }
 
-                    int i = verts.Count;
-                    verts.Add(o);
-                    verts.Add(o + new Vector3(cell, 0f, 0f));
-                    verts.Add(o + new Vector3(cell, 0f, cell));
-                    verts.Add(o + new Vector3(0f, 0f, cell));
-                    var col = tile == MapTile.River ? river : cliff;
-                    cols.Add(col); cols.Add(col); cols.Add(col); cols.Add(col);
-                    tris.Add(i); tris.Add(i + 2); tris.Add(i + 1);
-                    tris.Add(i); tris.Add(i + 3); tris.Add(i + 2);
+                    // 절벽 — 윗면 + 이웃이 절벽이 아닌 쪽에만 수직 벽
+                    Top(o, cell, wallH, rock);
+                    if (map.TileAt(x, y - 1) != MapTile.Cliff)
+                        Quad(new Vector3(o.x, Lift, o.z), new Vector3(o.x + cell, Lift, o.z),
+                             new Vector3(o.x + cell, wallH, o.z), new Vector3(o.x, wallH, o.z), rockSide);
+                    if (map.TileAt(x, y + 1) != MapTile.Cliff)
+                        Quad(new Vector3(o.x + cell, Lift, o.z + cell), new Vector3(o.x, Lift, o.z + cell),
+                             new Vector3(o.x, wallH, o.z + cell), new Vector3(o.x + cell, wallH, o.z + cell), rockSide);
+                    if (map.TileAt(x - 1, y) != MapTile.Cliff)
+                        Quad(new Vector3(o.x, Lift, o.z + cell), new Vector3(o.x, Lift, o.z),
+                             new Vector3(o.x, wallH, o.z), new Vector3(o.x, wallH, o.z + cell), rockSide);
+                    if (map.TileAt(x + 1, y) != MapTile.Cliff)
+                        Quad(new Vector3(o.x + cell, Lift, o.z), new Vector3(o.x + cell, Lift, o.z + cell),
+                             new Vector3(o.x + cell, wallH, o.z + cell), new Vector3(o.x + cell, wallH, o.z), rockSide);
                 }
 
             if (verts.Count == 0) return;
@@ -222,6 +253,7 @@ namespace CoreDawn.EditorTools
             tileMesh.SetVertices(verts);
             tileMesh.SetColors(cols);
             tileMesh.SetTriangles(tris, 0);
+            tileMesh.RecalculateNormals();
             tileMesh.RecalculateBounds();
         }
 
