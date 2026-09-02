@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42f4f8ea49417ae4fba7465f48b17ea7, type: 3}
+  m_Name: TerrainGenSettings
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::TerrainGenSettings
+  grassTexture: {fileID: 2800000, guid: d54c91d3a53ff1b4088561fb2368d95d, type: 3}
+  grassTileM: 4
+  bedTexture: {fileID: 2800000, guid: a1a1c1f2aa25fd8429cad68a22c5c2d7, type: 3}
+  bedTileM: 8
+  waterMaterial: {fileID: 2100000, guid: 5e12baba82582064baa9c43e661322fa, type: 2}
+  riverDepth: 0.85
+  waterLevel: -0.15
+  shoreWidth: 1.8
+  seaMargin: 1.5
+  boundsHeight: 40
+  boundsThickness: 2
+  boundsSink: 5
+  foamDepth: 0.1
+  riverFalloffM: 0.6
+  shelfWidthM: 0.9
+  shelfDepth: 0.3
+  shapeInsetM: 0.3
+  fieldPixelM: 0.25
+  smoothRadiusM: 0.75
+  smoothPasses: 2
+  grassSet:
+  - {fileID: 6881102727349999488, guid: 00740326024ab3d4599c37550c9c6667, type: 3}
+  - {fileID: 8094190162121565675, guid: 1929177bd233d5f44b76684aae1f665e, type: 3}
+  - {fileID: 4504999685787635492, guid: a4312075d1411ba478af8362ef1d5883, type: 3}
+  flowerSet:
+  - {fileID: 7727420726551639470, guid: 1ee03ab7ac2971d478d048ccfbce5bad, type: 3}
+  - {fileID: 1382545689727023377, guid: 605f8ee4bc0f0d548ac832a268d52369, type: 3}
+  - {fileID: 8964455390626319223, guid: 0f257e8341891b443b3833e67e598be1, type: 3}
+  - {fileID: 3201195293181070412, guid: 9c04a5a41fe8f874da9d99c7f604cd22, type: 3}
+  - {fileID: 1793381877150410667, guid: 7e6b9314a0ced0b4a9980df42b95e4e3, type: 3}
+  grassSize: {x: 0.56, y: 1}
+  flowerSize: {x: 0.7, y: 1.2}
+  detailPointM: 0.5
+  detailDistance: 70
+  grassWaterLineOffset: 0.08
+  grassMaxSlope: 0.45
+  cliffWallSet:
+  - {fileID: 2045505259197497222, guid: f04317fa8d9d20c41a0d594e3e57f106, type: 3}
+  - {fileID: 2159689498588671327, guid: 4b2e765e3f2d50c40912b76bf74eca1c, type: 3}
+  - {fileID: 2119933664681854360, guid: d03b7c500456a0243b335cf6764e933f, type: 3}
+  - {fileID: 8891040756608081534, guid: eb9fc4c623889cc4aa9705a9b22ca48c, type: 3}
+  cliffFootSet:
+  - {fileID: 2388546947796318627, guid: f76293de431c7ab41887609096a160df, type: 3}
+  - {fileID: 4055369214339962822, guid: e6514169f31df5a4ba7b16fc14a0f710, type: 3}
+  - {fileID: 897352580202710529, guid: 257eee2da01d4b644b325abe3bb7f1e2, type: 3}
+  - {fileID: 8393741676881791990, guid: e9c9c81d1003e6e4f89c04e46d1fff55, type: 3}
+  - {fileID: 2835696414000762623, guid: 0d4246cb65005ac44b7edc3a562c1e61, type: 3}
+  - {fileID: 5093910391062508454, guid: a372b00bacebe454b96f89b53f5b1018, type: 3}
+  - {fileID: 3162984673476236934, guid: c752f1f76036058469f8fd89eb917251, type: 3}
+  cliffWallOverlap: 0.55
+  cliffWallScale: {x: 0.9, y: 1.35}
+  cliffWallOverhangM: 0
+  cliffWallSinkM: 0.4
+  cliffWallYawJitter: 8
+  cliffWallCornerDeg: 45
+  cliffWallCornerLookM: 3
+  cliffWallMinShrink: 0.7
+  cliffFootDensity: 0.1
+  cliffFootBandCells: 0.7
+  cliffFootScale: {x: 0.3, y: 0.7}
+  cliffFootSpacing: 2.2
+  cliffFootSinkM: 0.14

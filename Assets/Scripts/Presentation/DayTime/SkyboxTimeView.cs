@@ -60,13 +60,23 @@ namespace CoreDawn.DayTime
         [Tooltip("달빛 강도(달이 높이 떴을 때).")]
         [SerializeField] float moonIntensity = 0.18f;
 
-        [Tooltip("앰비언트도 함께 조절할지. 켜면 앰비언트 모드를 Flat으로 바꾼다 — " +
+        [Tooltip("앰비언트도 함께 조절할지. 켜면 앰비언트 모드를 Trilight(하늘·지평선·바닥 3색)로 바꾼다 — " +
                  "Skybox 모드는 GI 환경을 다시 굽기 전에는 하늘을 따라오지 않아서, " +
-                 "하늘만 밤이 되고 지면은 낮처럼 밝은 어색함이 생긴다.")]
+                 "하늘만 밤이 되고 지면은 낮처럼 밝은 어색함이 생긴다. " +
+                 "Flat(단색)은 절벽 벽면이 윗면과 같은 밝기로 떠서 덩어리감이 없었다(2026-09-03).")]
         [SerializeField] bool driveAmbient = true;
 
-        [Tooltip("시간(0~1)에 따른 앰비언트 색.")]
+        [Tooltip("시간(0~1)에 따른 앰비언트 <b>하늘</b>색. 위를 보는 면(지면·캐노피 위)이 받는 색이라 " +
+                 "바닥 밝기는 이 값이 정한다. 지평선·바닥은 여기서 틴트로 파생한다.")]
         [SerializeField] Gradient ambientColor;
+
+        [Tooltip("지평선색 = 하늘색 × 이 틴트(채널별). 수직 벽면이 주로 받는 색이라 절벽 어둡기를 정한다. " +
+                 "정오 하늘 (0.80, 0.82, 0.86) 기준 (0.50, 0.50, 0.48)이 되는 값.")]
+        [SerializeField] Color ambientEquatorTint = new(0.625f, 0.61f, 0.558f);
+
+        [Tooltip("바닥색 = 하늘색 × 이 틴트(채널별). 아래를 보는 면(바위 밑동·캐노피 아래)이 받는 색. " +
+                 "정오 하늘 기준 (0.25, 0.22, 0.17)이 되는, 살짝 따뜻한 값.")]
+        [SerializeField] Color ambientGroundTint = new(0.3125f, 0.268f, 0.198f);
 
         [Header("에디터 미리보기")]
         [Tooltip("에디트 모드에서 이 시간으로 하늘을 미리 본다(플레이 중에는 무시).")]
@@ -138,10 +148,16 @@ namespace CoreDawn.DayTime
                 moonLight.enabled = moonLight.intensity > 0.005f;
             }
 
+            // Trilight — 하늘 키 하나에서 세 색을 파생한다. 그라데이션 세 벌을 따로 칠하면 밤·일출·일몰
+            // 키를 전부 맞춰 관리해야 하는데, 틴트 배율이면 하늘만 고쳐도 셋이 같이 따라온다.
+            // 비용은 Flat과 같다(SH 계수만 바뀔 뿐, 스카이박스 재굽기 없음).
             if (driveAmbient && ambientColor != null)
             {
-                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-                RenderSettings.ambientLight = ambientColor.Evaluate(t);
+                var sky = ambientColor.Evaluate(t);
+                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+                RenderSettings.ambientSkyColor = sky;
+                RenderSettings.ambientEquatorColor = sky * ambientEquatorTint;
+                RenderSettings.ambientGroundColor = sky * ambientGroundTint;
             }
 
         }
@@ -272,7 +288,7 @@ namespace CoreDawn.DayTime
                 new[]
                 {
                     new GradientColorKey(new Color(0.72f, 0.62f, 0.55f), 0.00f), // 일출
-                    new GradientColorKey(new Color(0.82f, 0.84f, 0.88f), 0.25f), // 정오
+                    new GradientColorKey(new Color(0.80f, 0.82f, 0.86f), 0.25f), // 정오
                     new GradientColorKey(new Color(0.66f, 0.52f, 0.46f), 0.50f), // 일몰
                     new GradientColorKey(new Color(0.16f, 0.19f, 0.30f), 0.58f), // 밤
                     new GradientColorKey(new Color(0.16f, 0.19f, 0.30f), 0.92f),
