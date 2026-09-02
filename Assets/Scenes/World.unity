@@ -15,16 +15,16 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0, g: 0, b: 0, a: 1}
+  m_FogColor: {r: 0.18895604, g: 0.1981817, b: 0.21383637, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.013
   m_LinearFogStart: 30
   m_LinearFogEnd: 100
-  m_AmbientSkyColor: {r: 0.81999844, g: 0.83999664, b: 0.879995, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientSkyColor: {r: 0.79999876, g: 0.81999695, b: 0.85999525, a: 1}
+  m_AmbientEquatorColor: {r: 0.49999923, g: 0.5001981, b: 0.47987738, a: 1}
+  m_AmbientGroundColor: {r: 0.24999961, g: 0.2197592, b: 0.17027906, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 3
+  m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: 880463429f26d5343a88c8a4ed70677b, type: 2}
   m_HaloStrength: 0.324
@@ -33,7 +33,7 @@ RenderSettings:
   m_HaloTexture: {fileID: 0}
   m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
   m_DefaultReflectionMode: 0
-  m_DefaultReflectionResolution: 128
+  m_DefaultReflectionResolution: 16
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
@@ -514,6 +514,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sky
       objectReference: {fileID: 0}
+    - target: {fileID: 704575568719838009, guid: 036545facce72c1409578f24faec4033, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2197527016275162744, guid: 036545facce72c1409578f24faec4033, type: 3}
       propertyPath: m_TimeSlicingMode
       value: 1
@@ -748,7 +752,7 @@ MonoBehaviour:
   ambientColor:
     serializedVersion: 2
     key0: {r: 0.72, g: 0.62, b: 0.55, a: 1}
-    key1: {r: 0.82, g: 0.84, b: 0.88, a: 1}
+    key1: {r: 0.8, g: 0.82, b: 0.86, a: 1}
     key2: {r: 0.66, g: 0.52, b: 0.46, a: 0}
     key3: {r: 0.16, g: 0.19, b: 0.3, a: 0}
     key4: {r: 0.16, g: 0.19, b: 0.3, a: 0}
@@ -775,6 +779,8 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 6
     m_NumAlphaKeys: 2
+  ambientEquatorTint: {r: 0.625, g: 0.61, b: 0.558, a: 1}
+  ambientGroundTint: {r: 0.3125, g: 0.268, b: 0.198, a: 1}
   previewTime: 0.25
 --- !u!1 &1604464737 stripped
 GameObject:
