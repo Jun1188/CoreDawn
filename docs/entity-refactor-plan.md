@@ -705,7 +705,13 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 다음: B — fNbt dll 도입, `ISaveModule` NBT 화, 스키마 v6(구 세이브 거절), 왕복 테스트.
 
 ### 2026-09-04 — 벨트 두 가지 (`feature/belt-fix`, 사용자 스크린샷 "컨베이어 벨트에 보관소 열기가 뜨고 … 나오는 부분의 벨트가 색이 이상함")
-- **"[E] 보관함 열기"가 벨트에 뜸**: `BuildingInteractions`의 "그릇 + 포트 = 보관소" 규칙에 벨트(`Inventory input 1` 손잡이 버퍼 + `Ports`)가 걸렸다 → `ConveyorModuleDef` 제외.
+- **"[E] 보관함 열기"가 벨트에 뜸**: `BuildingInteractions`의 "그릇 + 포트 = 보관소" 규칙에 벨트(`Inventory input 1` 손잡이 버퍼 + `Ports`)가 걸렸다 → 처음엔 `ConveyorModuleDef` 제외로 막았다가, 같은 날 아래 "view.interact 지정"으로 규칙 자체를 걷어냈다.
 - **롤러를 돌아 나오는 벨트 구간이 연한 파란색**: 원인은 재질이 아니라(세 렌더러 전부 `factory_color` 정상) **모프 타깃에 법선 델타가 없음** — 팩 belt/belt_curve_l/r.glb 의 targets 가 `POSITION`뿐(`maxDeltaNormal=0`), `tools/blender/export_glb.py` 가 `export_morph_normal=False` 고정. 스트립 정점 전부가 순환하므로 롤러 끝 구간은 휴지 자세 법선으로 조명돼 하늘 앰비언트(Trilight) 색이 났다. → `export_glb.py` 에 cfg `morph_normal` 추가, Conveyor.blend 에서 셋 재출력(Blender 4.4.3 헤드리스, roots Conveyor/.L/.R, sk_action Belt*→Belt*_Action, clear_obj_anim). 구조 대조: 노드·경계·애니메이션·재질 동일, targets 에 `NORMAL` 추가만. 크기 belt 1.97→3.23MB, 커브 각 8.35→14.98MB.
 - 재현·검증 요령: 플레이에서 `PlacementBridge.Place` 로 벨트를 놓고, `Camera.main` 태그를 임시 카메라로 바꿔(`capture_game_view` 는 Camera.main 을 찍는다) 롤러 쪽을 여러 프레임 캡처. 수정 전 캡처엔 파란 끝 구간, 수정 후 세 프레임 모두 정상. 에디터에서 glTFast 비동기 로드를 eval 안에서 `Thread.Sleep` 으로 기다리면 메인 스레드가 막혀 타임아웃 — 두 번에 나눠(kick → 다음 eval 에서 조회).
 - 임시 카메라가 켜진 동안 에디터 전용 `WorldPreviewDrawer.OnBeginCamera` 가 null 재질로 `DrawMeshInstanced` 를 불러 `ArgumentNullException` — 재질 null 가드 추가.
+
+### 2026-09-04 — 건물 상호작용을 데이터 지정으로 (`feature/belt-fix`, 사용자 "그냥 gamedata의 view필드로 지정하면 안됨? 꼭 추론을 해야 함? 지정된 view가 요구하는 모듈이 없으면 오류 내면 안되나?")
+- 문제: `BuildingInteractions`가 모듈 조합으로 화면을 짐작했다(Crafter→설비, Router(split)→필터, Core, AmmoConsumer→탄약함, 마지막 폴백 "그릇+포트=보관소"). 폴백이 벨트·합류기의 손잡이 버퍼까지 "보관함 열기"로 잡았고, 제외 목록을 덧붙이는 식(Conveyor, Router…)은 스파게티라는 지적 → 술어(`IsPassThroughStore`) 제안도 사용자가 "추론 말고 지정"으로 되돌렸다.
+- 결정: **팩 `view.interact`가 고른다**(`InteractKinds`: machine·filters·core·ammo·fuel·storage, 없으면 상호작용 없음). 종류가 요구하는 모듈(machine→Crafter, filters→Router mode≠merge, core→Core, ammo→AmmoConsumer+Inventory.input>0, fuel→+AuraEmitter, storage→Ports+Inventory.input>0)은 로드(`ViewSchema.Entity`)와 편집기 저장(`GdPack.Validate`)에서 오류. `BuildingInteractions`는 이름을 화면에 잇기만 하고, 통과했을 리 없는 자리는 정의당 한 번 LogError.
+- 데이터: 설비 4 machine · 분배기 filters · 코어 core · 포탑 4 ammo · 감속 필드 타워 fuel · 보관소·드론 스테이션 storage. 벨트·합류기·채굴기·울타리·지뢰·둥지·나무는 없음. 편집기: Raw 탭 `view/interact` 드롭다운, UI 뷰 조각(`GdViewUI`) 드롭다운, v1 `ViewDto.interact`.
+- 검증: 헤드리스로 22종 건물 배치 후 `TryGet` 프롬프트 표 — 벨트·합류기만 "없음"으로 바뀌고 나머지는 이전과 동일 · 오검증 4건(벨트 machine, 합류기 filters, 채굴기 storage, 모르는 이름) 정확한 문장 · `GdPack.Validate` 0 · 플레이 로드 `[ViewSchema]` 오류 0.

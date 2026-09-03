@@ -32,7 +32,12 @@ namespace CoreDawn.Data
         static SimDatabase builtFrom;
         static readonly HashSet<string> missingCommon = new HashSet<string>();
 
-        public static EntityViewDef Entity(EntityDef def) => Read<EntityViewDef>(def, v => ValidateTyped(def, v.Type, v.Sfx));
+        public static EntityViewDef Entity(EntityDef def) => Read<EntityViewDef>(def, v =>
+        {
+            ValidateTyped(def, v.Type, v.Sfx);
+            var err = InteractKinds.Validate(def, v.Interact);   // 지정된 상호작용이 요구하는 모듈이 없으면 오류 — 추론 대신 데이터가 말한다
+            if (err != null) Debug.LogError("[ViewSchema] " + err);
+        });
         public static GunViewDef Gun(GunDef def) => Read<GunViewDef>(def, v => ValidateTyped(def, v.Type, v.Sfx));
         public static ItemViewDef Item(ItemDef def) => Read<ItemViewDef>(def, null);
         public static SoundViewDef Sound(SoundDef def) => Read<SoundViewDef>(def, null);

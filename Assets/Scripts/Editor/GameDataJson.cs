@@ -91,7 +91,7 @@ namespace CoreDawn.EditorTools
         /// <summary>소리를 쓰는 자리 — sound(소리 id) + 볼륨 + 공간감. EffectEntry가 효과 + 값이듯 소리 + 재생 값.</summary>
         [Serializable] internal class SfxUseDto : JsonDtoBase { public string sound; public float volume = 1f; public bool spatial = true; }
         /// <summary>정의의 표현 블록(v1) — 뷰 종류(ViewSchema 표의 키)와 소리 자리. 모델·프리팹·아이콘은 각 DTO의 평평한 필드로 남아 있다(exporter가 합친다).</summary>
-        [Serializable] internal class ViewDto : JsonDtoBase { public string type; public Dictionary<string, SfxUseDto> sfx; }
+        [Serializable] internal class ViewDto : JsonDtoBase { public string type; public string interact; public Dictionary<string, SfxUseDto> sfx; }
         /// <summary>소리 한 종 — 변형 클립 묶음(재생 때 무작위). id 관례 "Sound:이름".</summary>
         [Serializable] internal class SoundDto : JsonDtoBase { public string id; public string displayName; public ClipDto[] clips; }
         [Serializable] internal class ClipDto : JsonDtoBase { public string clip; }   // 팩 상대 경로 "sounds/x.wav"
