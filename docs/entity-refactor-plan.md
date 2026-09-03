@@ -715,3 +715,9 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 결정: **팩 `view.interact`가 고른다**(`InteractKinds`: machine·filters·core·ammo·fuel·storage, 없으면 상호작용 없음). 종류가 요구하는 모듈(machine→Crafter, filters→Router mode≠merge, core→Core, ammo→AmmoConsumer+Inventory.input>0, fuel→+AuraEmitter, storage→Ports+Inventory.input>0)은 로드(`ViewSchema.Entity`)와 편집기 저장(`GdPack.Validate`)에서 오류. `BuildingInteractions`는 이름을 화면에 잇기만 하고, 통과했을 리 없는 자리는 정의당 한 번 LogError.
 - 데이터: 설비 4 machine · 분배기 filters · 코어 core · 포탑 4 ammo · 감속 필드 타워 fuel · 보관소·드론 스테이션 storage. 벨트·합류기·채굴기·울타리·지뢰·둥지·나무는 없음. 편집기: Raw 탭 `view/interact` 드롭다운, UI 뷰 조각(`GdViewUI`) 드롭다운, v1 `ViewDto.interact`.
 - 검증: 헤드리스로 22종 건물 배치 후 `TryGet` 프롬프트 표 — 벨트·합류기만 "없음"으로 바뀌고 나머지는 이전과 동일 · 오검증 4건(벨트 machine, 합류기 filters, 채굴기 storage, 모르는 이름) 정확한 문장 · `GdPack.Validate` 0 · 플레이 로드 `[ViewSchema]` 오류 0.
+
+### 2026-09-04 — 벨트 모프 루프 경계 (`feature/belt-fix`, 사용자 "첫 프레임 마지막 프레임의 경계에서 선형보간되어서 벨트 메시가 쪼그라들었다가 돌아옴")
+- 데이터로 확인: glb weights 클립이 직선 42키(기본형 + 타깃 41), 커브 150키(기본형 + 타깃 148 + **타깃0으로 되돌아가는 닫는 키**). 타깃0은 기본형과 같은 자세(변위 0), 한 걸음 0.0104. 커브의 마지막 41ms는 타깃147↔타깃0 선형 보간 = 오그라듦; 직선은 시작에서 기본형→타깃0 41ms 멈칫.
+- 되돌기는 스냅이어야 한다는 근거: 마지막 자세와 첫 자세의 형태 거리(최근접 점)가 0.0103으로 정상 한 걸음과 같다 — 패턴이 한 주기 돌아 맞물린다.
+- 수정: `tools/blender/glb_trim_morph_loop.py`(accessor byteOffset/count 조정 + 시각 0 기준 재기록)로 중복 기본형 키·닫는 키 제거. 재출력 뒤에는 항상 이 도구를 거친다(export-report addendum). 검증: Unity 클립 400지점 샘플링 위반 0, 되돌기 직전/직후 캡처 연속.
+- 함정: 모프 타깃 POSITION 접근자는 sparse(bufferView 없음) — 파서가 sparse 를 풀어야 한다. `SkinnedMeshRenderer.GetBlendShapeWeight`는 glTFast 클립에서 0~1 스케일.
