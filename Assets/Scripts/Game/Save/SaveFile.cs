@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using fNbt;
 
 namespace CoreDawn.Save
 {
     /// <summary>
-    /// 세이브 파일의 루트. 모듈 데이터는 이름표 붙은 JToken으로만 들고 있다 —
+    /// 세이브 파일의 루트(NBT, SaveStorage.ToRoot/FromRoot). 모듈 데이터는 이름표 붙은 compound 로만 들고 있다 —
     /// SaveManager는 각 모듈이 안에 무엇을 넣었는지 알 필요가 없고,
     /// 모르는 모듈 키도 원본 그대로 보존했다가 다시 써준다.
     /// (팀원 A가 만든 세이브를 모듈이 덜 붙은 B 브랜치에서 열었다 저장해도 A의 데이터가 날아가지 않는다)
@@ -14,8 +14,8 @@ namespace CoreDawn.Save
     public class SaveFile
     {
         /// <summary>현재 스키마 버전. 구조를 바꿀 때마다 올리고 <see cref="SaveMigrations"/>에 단계를 추가한다.</summary>
-        // v1 최초 · v2 팩 id + 역할 키 그릇(containers) + 핫바 병합 — 단계는 SaveMigrations.Steps
-        public const int CurrentSchemaVersion = 5;
+        // v1~v5 JSON(팩 id·역할 키 그릇·행동→모듈·몬스터/튜토리얼 id) · v6 NBT(fNbt, 2026-09-03 5단계) — 옛 단계는 SaveMigrations 내력 참조
+        public const int CurrentSchemaVersion = 6;
 
         [JsonProperty("schemaVersion")]
         public int SchemaVersion = CurrentSchemaVersion;
@@ -24,7 +24,7 @@ namespace CoreDawn.Save
         public SaveMeta Meta = new();
 
         [JsonProperty("modules")]
-        public Dictionary<string, JToken> Modules = new();
+        public Dictionary<string, NbtCompound> Modules = new();
     }
 
     /// <summary>

@@ -66,8 +66,8 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   module → flush again if outputs grew → `NotifyUpstream` if inputs shrank → schedule the wake the modules asked for; container
   `Changed` wakes hand-fed buildings). Routing state (per-outlet filters/blocks + round-robin cursor) is `RouterModule`
   (mergers and splitters are the same module); pumping itself is the building's (`PumpRouted`/`PumpPassThrough`). Modules with
-  save state implement `ISaveableModule`, saved under `buildings[].modules{}` keyed by module type name (save schema v3
-  migrates old `behavior` blobs). Game rules the sim must not know (core tier delegates via `CoreSystem.Wire`, recipe unlock
+  save state implement `ISaveableModule`, saved under `buildings[].modules{}` keyed by module type name (the module
+  receives a JToken bridged from NBT by `SaveNbt.ToJson`; Sim does not reference fNbt). Game rules the sim must not know (core tier delegates via `CoreSystem.Wire`, recipe unlock
   vetting) are wired on the `FactorySystem.Placed` event by `FactoryBootstrap.WireGameRules`.
   Sim/game code holds definitions (`EntityDef`/`ItemDef`/`RecipeDef` from `SimHost.Database`); the SOs are view assets reached
   through `BuildingAssets.Of(def)` / `ItemAssets.Of(def)` / `RecipeAssets.Of(def)` (prefab, icon) until the 5a-3 view catalog replaces them.
@@ -109,7 +109,7 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   assets until the 5a-4 view assembler retires them. Tutorial steps are pack `tutorial` entries (`TutorialStepDef`); condition
   logic is `Game/Tutorial/Conditions/*` plain classes registered in `TutorialConditions` (add a class + one table line — the
   editor's tutorial tab discovers kinds from `TutorialCondition` subclasses and draws their public fields). Save tutorial keys
-  are pack ids (schema v5). Editing the editor to write v2 directly is 5a-3e-2 (pending).
+  are pack ids. The editor writes the pack directly (5a-3e-2 ③, 2026-09-03).
 - View schema and sounds (5a-4a, 2026-09-01): **everything about how a definition looks and sounds is data → view; scenes only author
   placement.** Every entity/gun `view` block carries `type` (explicit, `ViewSchema.Types`: Building · Tower · Deposit · Nest · Monster ·
   Player · Gun — the 5a-4b assembler keys components/colliders off it) and `sfx{name: {sound, volume, spatial}}` (`SoundUse` — the
@@ -197,10 +197,13 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   def + `LootSpawner` on `EntityWorld.Died`.
   `ItemStack` is a value (`readonly struct`): `PeekAt` returns a copy, so a slot changes only through `SetAt`/`TakeAt`/`TryPutAt`
   (which notify `Changed`); use `stack.With(n)` for a new amount and `IsEmpty` instead of null checks.
-- Save files: definitions are referenced by pack id only, containers are saved as a role-keyed dictionary (`containers{}`; the role names
-  come from `InventoryModule.Roles`/`ByRole`, nowhere else). **No read-side fallbacks for old ids or old keys** — every format change
-  bumps `SaveFile.CurrentSchemaVersion` and adds one step to `SaveMigrations` that rewrites the JSON, logs what it did, and fails the
-  load if it cannot. Silent "accept both" code is not allowed.
+- Save files (NBT since schema v6, 2026-09-03): body `saves/<slot>/save.nbt.gz` written with **fNbt** (`Assets/Plugins/fNbt`, BSD-3),
+  root `coredawn{schemaVersion, meta, modules{<moduleId>}}`; `meta.json` stays JSON for the slot list. `SaveNbt` maps DTOs ↔ compounds by
+  reflection (public fields, `[JsonProperty]` names, null omitted, Vector3 → float list, enum → string). `ISaveModule.Restore(NbtCompound)`;
+  definitions are referenced by pack id only, containers are a role-keyed dictionary (`containers{}`; role names come from
+  `InventoryModule.Roles`/`ByRole`, nowhere else). **No read-side fallbacks for old ids or old keys** — every format change bumps
+  `SaveFile.CurrentSchemaVersion` and adds one step to `SaveMigrations` that rewrites the NBT tree, logs what it did, and fails the
+  load if it cannot. Silent "accept both" code is not allowed. JSON saves (v1–v5) are no longer readable (`SaveMigrations.OldestReadable`).
 - Damage, effects and death end inside the sim. Effect *definitions* are `EffectSpec` (pack `effects` section, resolved by id —
   `SaveRefs.Effect` for view-authored ones such as `Gun.knockbackEffectId`), a hit is an `Effect[]` (spec + value) applied to the target's `EffectsModule` module; `EffectSystem` ticks
   duration effects. Melee: the sim `AttackModule` module applies directly. Projectiles/auras: PhysX detects the hit, then

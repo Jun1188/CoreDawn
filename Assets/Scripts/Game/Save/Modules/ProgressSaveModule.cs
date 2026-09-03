@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using fNbt;
 using CoreDawn.Combat;
 using CoreDawn.Managers;
 
@@ -33,9 +33,9 @@ namespace CoreDawn.Save
             };
         }
 
-        public void Restore(JToken data)
+        public void Restore(NbtCompound data)
         {
-            var dto = SaveJson.FromToken<Dto>(data);
+            var dto = SaveNbt.FromTag<Dto>(data);
             if (dto == null) return;
 
             if (GameManager.Instance != null) GameManager.Instance.RestoreTier(dto.CoreTier);
