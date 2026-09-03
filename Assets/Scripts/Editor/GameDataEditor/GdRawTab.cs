@@ -453,7 +453,8 @@ namespace CoreDawn.EditorTools
                 RenderMember(host, key, p.Value, memberType, path + "/" + key, key,
                     set: v => obj[key] = v, remove: () => obj.Remove(key), ghostDefault: null);
             }
-            if (fields == null || RawHints.NoGhost.Contains(schemaType)) return;
+            if (fields == null) { RenderAddKey(host, obj, parentKey); return; }
+            if (RawHints.NoGhost.Contains(schemaType)) { RenderAddHintField(host, obj, schemaType, fields); return; }
             foreach (var (name, f) in fields)
             {
                 if (obj[name] != null) continue;
@@ -465,6 +466,45 @@ namespace CoreDawn.EditorTools
                     set: v => obj[name] = v, remove: () => obj.Remove(name),
                     ghostDefault: () => RawSchema.DefaultOfField(schemaType, f));
             }
+        }
+
+        /// <summary>
+        /// 힌트 타입 블록(view)에 없는 키를 더하는 드롭다운 — 유령 행 대신(정의마다 안 쓰는 키가 잔뜩 뜨지 않게).
+        /// 사용자: "view에서 건물에 필드를 추가하는 기능이 없는데?"
+        /// </summary>
+        void RenderAddHintField(VisualElement host, JObject obj, Type schemaType, List<(string name, FieldInfo field)> fields)
+        {
+            var missing = fields.Where(f => obj[f.name] == null).ToList();
+            if (missing.Count == 0) return;
+            var choices = new List<string> { "+ 필드 추가…" };
+            choices.AddRange(missing.Select(f => f.name));
+            var add = new DropdownField(choices, 0) { style = { width = 200, marginTop = 2 } };
+            add.RegisterValueChangedCallback(e =>
+            {
+                int k = choices.IndexOf(e.newValue);
+                if (k <= 0) return;
+                var (name, f) = missing[k - 1];
+                Mutate(() => obj[name] = RawSchema.DefaultOfField(schemaType, f));
+            });
+            host.Add(add);
+        }
+
+        /// <summary>스키마 없는 사전형 블록(sfx·textures·colors·floats…)에 키를 더한다 — 값은 부모 키의 힌트 기본값.</summary>
+        void RenderAddKey(VisualElement host, JObject obj, string parentKey)
+        {
+            var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 2 } };
+            var name = new TextField { value = "", style = { width = 180, marginLeft = 0 } };
+            name.textEdition.placeholder = "키 이름";
+            Mono(name);
+            row.Add(name);
+            row.Add(Btn("+ 키", () =>
+            {
+                string key = (name.value ?? "").Trim();
+                if (key.Length == 0) return;
+                if (obj[key] != null) { EditorUtility.DisplayDialog("Raw", $"'{key}'는 이미 있습니다.", "확인"); return; }
+                Mutate(() => obj[key] = RawHints.DefaultChild(parentKey));
+            }, "이 블록에 키를 더한다 — 값은 블록 종류의 기본값"));
+            host.Add(row);
         }
 
         void RenderMember(VisualElement host, string key, JToken tok, Type schemaType, string path, string hintKey,
@@ -533,7 +573,44 @@ namespace CoreDawn.EditorTools
                 editor.AddToClassList("gd-raw-ghost");
                 row.Add(Btn("+ 추가", () => Mutate(() => set(ghostDefault())), "json에 없는 필드 — 누르면 기본값으로 생긴다"));
             }
-            else if (remove != null) row.Add(Btn("×", () => Mutate(remove), "키 삭제 — 스키마 필드면 기본값으로 돌아간다"));
+            else
+            {
+                var kind = FileKind(hintKey, path);
+                if (kind != null) row.Add(Btn("…", () => PickFile(kind, set), $"팩 폴더 {kind.folder}/ 안에서 파일 고르기 (*.{kind.ext})"));
+                if (remove != null) row.Add(Btn("×", () => Mutate(remove), "키 삭제 — 스키마 필드면 기본값으로 돌아간다"));
+            }
+        }
+
+        // ── 파일 고르기 — 팩 폴더 안의 파일을 팩 상대 경로로 ──────
+
+        sealed class FileSlot { public string folder, ext; }
+
+        /// <summary>팩 파일을 가리키는 키인가 — 어느 하위 폴더·확장자인지. 아니면 null.</summary>
+        static FileSlot FileKind(string hintKey, string path)
+        {
+            if (hintKey == "clips") return new FileSlot { folder = "sounds", ext = "wav,ogg" };
+            if (hintKey != "file") return null;
+            if (path.Contains("/model/")) return new FileSlot { folder = "models", ext = "glb" };
+            if (path.Contains("/textures/") || path.Contains("/icon/")) return new FileSlot { folder = "textures", ext = "png" };
+            return new FileSlot { folder = "", ext = "" };
+        }
+
+        void PickFile(FileSlot kind, Action<JToken> set)
+        {
+            string packDir = Path.GetFullPath(GameDataExporterV2.PackFolder);
+            string start = Path.Combine(packDir, kind.folder);
+            if (!Directory.Exists(start)) start = packDir;
+            string picked = EditorUtility.OpenFilePanel("팩 파일 고르기", start, kind.ext);
+            if (string.IsNullOrEmpty(picked)) return;
+            string full = Path.GetFullPath(picked);
+            if (!full.StartsWith(packDir, StringComparison.OrdinalIgnoreCase))
+            {
+                // 팩은 자기 폴더 안의 파일만 가리킨다 — 밖의 파일은 먼저 복사해 넣어야 한다(빌드·모드 배포 단위)
+                EditorUtility.DisplayDialog("Raw", $"팩 폴더 안의 파일만 쓸 수 있습니다.\n{GameDataExporterV2.PackFolder}", "확인");
+                return;
+            }
+            string rel = full.Substring(packDir.Length).TrimStart('\\', '/').Replace('\\', '/');
+            Mutate(() => set(rel));
         }
 
         /// <summary>값 편집기 — 값은 즉시 모델에, 언두 스냅샷은 포커스 단위(키 입력마다 본문을 다시 짓지 않는다).</summary>
@@ -782,8 +859,8 @@ namespace CoreDawn.EditorTools
             return l;
         }
 
-        /// <summary>접힘 상태 — view 블록은 기본 접힘(크고 본질이 아님), 나머지는 기본 펼침. 토글 집합이 기본값을 뒤집는다.</summary>
-        bool IsFolded(string path) => path.EndsWith("/view") ^ collapsed.Contains(path);
+        /// <summary>접힘 상태 — 전부 기본 펼침(사용자: "view 왜 다 기본으로 접혀 있음? 펼쳐놔"). 접은 것만 기억한다.</summary>
+        bool IsFolded(string path) => collapsed.Contains(path);
 
         Button Fold(bool folded, string path)
         {
@@ -878,6 +955,19 @@ namespace CoreDawn.EditorTools
             "textures" => typeof(TextureRef),
             _ => null,
         };
+
+        /// <summary>사전형 블록에 새 키를 더할 때의 값 — 힌트 타입이 있으면 그 기본, colors는 흰색 RGBA, floats는 0, 나머지는 빈 문자열.</summary>
+        public static JToken DefaultChild(string parentKey)
+        {
+            var t = ChildHint(parentKey);
+            if (t != null) return RawSchema.DefaultOf(t);
+            return parentKey switch
+            {
+                "colors" => new JArray(1f, 1f, 1f, 1f),
+                "floats" => 0f,
+                _ => "",
+            };
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
