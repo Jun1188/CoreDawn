@@ -721,3 +721,9 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 되돌기는 스냅이어야 한다는 근거: 마지막 자세와 첫 자세의 형태 거리(최근접 점)가 0.0103으로 정상 한 걸음과 같다 — 패턴이 한 주기 돌아 맞물린다.
 - 수정: `tools/blender/glb_trim_morph_loop.py`(accessor byteOffset/count 조정 + 시각 0 기준 재기록)로 중복 기본형 키·닫는 키 제거. 재출력 뒤에는 항상 이 도구를 거친다(export-report addendum). 검증: Unity 클립 400지점 샘플링 위반 0, 되돌기 직전/직후 캡처 연속.
 - 함정: 모프 타깃 POSITION 접근자는 sparse(bufferView 없음) — 파서가 sparse 를 풀어야 한다. `SkinnedMeshRenderer.GetBlendShapeWeight`는 glTFast 클립에서 0~1 스케일.
+
+### 2026-09-04 — 메모리 프로파일러 12.5GB 조사 (`feature/belt-fix`, 사용자 "이건 아무리 봐도 메모리 누수인데")
+- 플레이 중 90초 간격 두 표본: 네이티브 +253MB 였으나 Unity 오브젝트 수(메시·텍스처·RT·GameObject)는 불변 → **프로파일러 창 녹화**가 원인. `Profiler.enabled=false` 뒤 60초 3473→3470MB 로 멈춤. 게임 누수 아님.
+- 상주 2.5GB 의 정체: 이름 없는 249만 정점 메시 9개(HideAndDontSave, readable, 소유자 없음) = `WorldPreviewDrawer` 가 절벽 프리팹을 `CombineMeshes` 한 씬 뷰용 결합 메시. `ownedMeshes` 정적 목록은 도메인 리로드에서 사라지는데 메시는 살아남아 리로드마다 257MB 고아. → `AssemblyReloadEvents.beforeAssemblyReload += Invalidate`, 메시 이름 "preview cliffs (merged)", `UploadMeshData(true)`(CPU 사본 해제). 리컴파일 뒤 드로어 메시 1개·고아 0 확인.
+- RT 2.1GB: Easy Performant Outline 의 카메라별 2560×1440 타깃 세트(Info/Target/Finalization ×12) + 에디터 창 RT. 카메라 3개 생성·파괴 실험에서 증가 없음. 빌드에선 카메라 1~2개분.
+- Managed 1.98GB 는 에디터 프로세스(프로파일러·메모리 프로파일러 창의 스냅샷) 포함 값 — 게임 판단은 빌드 스냅샷으로.
