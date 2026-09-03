@@ -116,12 +116,87 @@ namespace CoreDawn.Navigation
             gridSystem = new GridSystem(cellSize, originPosition);
             CreateGrid();
             RefreshAllCosts();   // 길찾기가 볼 비용 한 벌 — 이후로는 바뀐 자리만 고친다
+            SubscribeFactory();  // 건물이 놓이거나 부서진 자리 — 비용 배열은 이벤트로만 갱신된다(아래 주석)
+        }
+
+        // ── 비용 배열 갱신 배선 ────────────────────────────────────
+        // 워커(플로우필드·A*)가 읽는 CostField 는 Bake 때 한 번 구워진 뒤 "바뀐 자리만" 고치는 설계인데, 고치는 호출(RefreshCostsIn)이
+        // 어디에도 배선돼 있지 않았다(2026-09-04 확인: 5a-2f 에서 BuildingEntity OnEnable/OnDisable 훅이 사라지며 끊김). 그래서 플로우필드는
+        // 시작 뒤에 놓인 건물·나무를 모른 채 직진했고, 몬스터는 걷다 막힌 것을 FindBreachTarget 으로 부쉈다(나무를 부수고 지나가던 증상).
+        // 공장의 Placed/Removed 가 정본 — 그 풋프린트만 다시 칠하고 플로우필드에 재계산을 건다.
+        FactorySystem subscribed;
+
+        void SubscribeFactory()
+        {
+            var boot = FactoryBootstrap.Instance;
+            var factory = boot != null ? boot.Factory : null;
+            if (factory == null || ReferenceEquals(subscribed, factory)) return;
+            UnsubscribeFactory();
+            subscribed = factory;
+            factory.Placed += OnBuildingChanged;
+            factory.Removed += OnBuildingChanged;
+            foreach (var b in factory.Buildings) HookHealth(b);   // 구독 전에 놓인 건물(나무·씬 코어)도 HP 변화를 받는다
+            // 구독보다 먼저 놓인 것(같은 프레임 Start 의 WorldPopulator 나무·씬 코어)은 이벤트로 못 받았다 — 한 번 전부 다시 굽는다
+            if (costs.IsReady && factory.Buildings.Count > 0)
+            {
+                RefreshAllCosts();
+                if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+            }
+        }
+
+        void UnsubscribeFactory()
+        {
+            foreach (var kv in healthHooks) { var h = kv.Key.Owner != null ? kv.Key.Owner.Health : null; if (h != null) h.OnHealthChanged -= kv.Value; }
+            healthHooks.Clear();
+            if (subscribed == null) return;
+            subscribed.Placed -= OnBuildingChanged;
+            subscribed.Removed -= OnBuildingChanged;
+            subscribed = null;
+        }
+
+        readonly Dictionary<BuildingModule, System.Action<float, float>> healthHooks = new();
+
+        void OnBuildingChanged(BuildingModule b)
+        {
+            if (b == null) return;
+            HookHealth(b);
+            if (!costs.IsReady) return;
+            RefreshBuilding(b);
+        }
+
+        void RefreshBuilding(BuildingModule b)
+        {
+            b.WorldRect(0f, out Vector3 lo, out Vector3 hi);
+            RefreshCostsIn(lo, hi);
+            if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+        }
+
+        // 뚫는 비용이 현재 HP 라 피격·수리마다 그 건물 칸을 다시 칠한다. 제거된 건물은 훅을 뗀다.
+        void HookHealth(BuildingModule b)
+        {
+            var health = b.Owner != null ? b.Owner.Health : null;
+            if (b.IsRemoved || health == null)
+            {
+                if (healthHooks.TryGetValue(b, out var old)) { if (health != null) health.OnHealthChanged -= old; healthHooks.Remove(b); }
+                return;
+            }
+            if (healthHooks.ContainsKey(b)) return;
+            System.Action<float, float> handler = (_, __) => { if (!b.IsRemoved && costs.IsReady) RefreshBuilding(b); };
+            health.OnHealthChanged += handler;
+            healthHooks[b] = handler;
+        }
+
+        void OnDestroy()
+        {
+            UnsubscribeFactory();
+            if (Instance == this) Instance = null;
         }
 
         /// <summary>주입도 바운즈 배선도 없었으면 수동 값으로라도 굽는다 — 격자 없이 남지 않게.</summary>
         void LateUpdate()
         {
             if (!baked) Bake();
+            if (subscribed == null) SubscribeFactory();   // 공장 부트스트랩이 나중에 깨어난 경우
         }
         void CreateGrid()
         {
@@ -154,6 +229,12 @@ namespace CoreDawn.Navigation
             if (placement != null)
             {
                 simGridSystem = new GridSystem(placement.CellSize, placement.GridOrigin);
+                // 이 변환이 생기기 전(Awake 의 Bake)에 구운 비용 배열은 건물을 못 찾았다(node.gridCoord 폴백) — 지금 한 번 다시 굽는다
+                if (costs.IsReady)
+                {
+                    RefreshAllCosts();
+                    if (FlowFieldManager.Instance != null) FlowFieldManager.Instance.MarkDirty();
+                }
                 if (!Mathf.Approximately(placement.CellSize, cellSize) || placement.GridOrigin != originPosition)
                     Debug.Log($"[GridManager] PlacementSystem과 그리드 설정이 달라 월드좌표 변환을 사용합니다. " +
                         $"GridManager(cellSize={cellSize}, origin={originPosition}) vs " +
@@ -199,9 +280,26 @@ namespace CoreDawn.Navigation
 
             if (!passBuildings) return TileRules.Blocked;
 
-            int hp = Mathf.RoundToInt(building.Def.Get<HealthModuleDef>()?.MaxHp ?? 100f);
-            return cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
+            int hp = CurrentHpOf(building);
+            return cost + BreachCost(building, hp);
         }
+
+        /// <summary>
+        /// 건물을 뚫는 비용 — HP 비례(상한) + 정의의 위협도 시드(threatSeedCost) 합산(사용자 결정). 시드는 데이터가 정하므로 나무처럼
+        /// "돌아가는 게 낫다"는 건물은 팩에서 시드를 올리면 된다(나무 1000). 플레이어 건물도 시드만큼 더 비싸진다(벽 +100·포탑 +10·코어 0).
+        /// 나무가 플레이어 벽과 같은 HP 비례 비용(120HP → +60)이라 숲을 뚫고 직진하던 문제(2026-09-04).
+        /// </summary>
+        /// <summary>뚫는 비용의 HP — 살아 있는 엔티티의 <b>현재</b> HP(사용자 결정: 약한 곳부터 뚫린다). Health 가 없으면 정의 maxHp, 그것도 없으면 100.
+        /// HP 가 바뀌면 OnHealthChanged 로 그 건물 칸만 다시 칠하고 플로우필드에 재계산을 건다(밤엔 주기 제한 안에서).</summary>
+        static int CurrentHpOf(BuildingModule building)
+        {
+            var live = building.Owner != null ? building.Owner.Health : null;
+            if (live != null) return Mathf.Max(0, Mathf.RoundToInt(live.CurrentHealth));
+            return Mathf.RoundToInt(building.Def.Get<HealthModuleDef>()?.MaxHp ?? 100f);
+        }
+
+        int BreachCost(BuildingModule building, int hp)
+            => Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap) + Mathf.Max(0, building.Building.ThreatSeedCost);
 
         // ── 비용 필드 — 플로우필드와 A*가 함께 보는 정본 ─────────────
 
@@ -285,8 +383,9 @@ namespace CoreDawn.Navigation
                         continue;
                     }
 
-                    int hp = Mathf.RoundToInt(building.Def.Get<HealthModuleDef>()?.MaxHp ?? 100f);
-                    costs.EnterCost[i] = cost + Mathf.Min(Mathf.RoundToInt(hp * buildingCostPerHp), buildingCostCap);
+
+                    int hp = CurrentHpOf(building);
+                    costs.EnterCost[i] = cost + BreachCost(building, hp);
                     costs.Walkable[i] = false;      // 뚫고는 가도 걸어서는 못 지나간다
                 }
             }

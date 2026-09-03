@@ -620,6 +620,7 @@ namespace CoreDawn.EditorTools
             walkT.RegisterValueChangedCallback(e => { b.walkable = e.newValue; PushHist(); RenderWarn(); });
             propsBox.Add(Field2("Walkable", walkT));
 
+
             // ── kind 별 추가 필드 (NUM_FIELDS 대응) ──
             foreach (var f in k.extra)
             {

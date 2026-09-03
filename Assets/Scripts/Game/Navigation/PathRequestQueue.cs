@@ -33,6 +33,7 @@ namespace CoreDawn.Navigation
         readonly Queue<Job> pending = new();
         readonly Queue<(Action<List<Vector2Int>> callback, List<Vector2Int> path)> finished = new();
         readonly PathFinder finder = new PathFinder();
+        readonly CostField costSnapshot = new CostField();   // 워커용 스냅샷 — FlowFieldManager와 같은 이유
 
         System.Threading.Tasks.Task worker;
 
@@ -114,7 +115,9 @@ namespace CoreDawn.Navigation
 
             lock (pending) { if (pending.Count == 0) return; }
 
-            var costs = grid.Costs;
+            // 워커가 없는 지금이 스냅샷을 갈아 끼울 유일한 때 — 위에서 worker 완료를 확인했다
+            if (costSnapshot.Version != grid.Costs.Version) costSnapshot.CopyFrom(grid.Costs);
+            var costs = costSnapshot;
             worker = System.Threading.Tasks.Task.Run(() => Drain(costs));
         }
 

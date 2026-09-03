@@ -70,7 +70,7 @@ namespace CoreDawn.EditorTools
         public float attackRange = 1.5f, attackCooldown = 2;
         public List<GEff> attackEffects = new();
         public float maxPatience = 3, patienceRadius, outsidePatienceDrain = 2, rangedPokePatienceDrain = 3,
-                     patienceRecoverRate = 2, absoluteLeashMultiplier = 1, returnRegenPerSecond = 0.12f, returnTimeout = 20;
+                     patienceRecoverRate = 2, absoluteLeashMultiplier = 1, returnRegenPerSecond = 0.12f, returnTimeout = 20, corpseSeconds = 2;
         public GameDataJson.ViewDto view = new() { type = "Monster" };
         [JsonIgnore] public GameDataJson.MonsterDto src;
     }
@@ -191,6 +191,7 @@ namespace CoreDawn.EditorTools
             var dc = win.root.dayCycle ?? new GameDataJson.DayCycleDto();
             dayCycle = new GDayCycle { dayDuration = dc.dayDuration > 0 ? dc.dayDuration : 360, nightDuration = dc.nightDuration > 0 ? dc.nightDuration : 10 };
             monsters.Clear();
+            WarnBrainFieldsMissingFromForm();
             foreach (var m in win.root.monsters ?? Array.Empty<GameDataJson.MonsterDto>())
                 monsters.Add(new GMonster
                 {
@@ -205,7 +206,7 @@ namespace CoreDawn.EditorTools
                     maxPatience = Mathf.Max(0, m.maxPatience), patienceRadius = Mathf.Max(0, m.patienceRadius),
                     outsidePatienceDrain = Mathf.Max(0, m.outsidePatienceDrain), rangedPokePatienceDrain = Mathf.Max(0, m.rangedPokePatienceDrain),
                     patienceRecoverRate = Mathf.Max(0, m.patienceRecoverRate), absoluteLeashMultiplier = Mathf.Max(1, m.absoluteLeashMultiplier),
-                    returnRegenPerSecond = Mathf.Max(0, m.returnRegenPerSecond), returnTimeout = Mathf.Max(0, m.returnTimeout),
+                    returnRegenPerSecond = Mathf.Max(0, m.returnRegenPerSecond), returnTimeout = Mathf.Max(0, m.returnTimeout), corpseSeconds = Mathf.Max(0, m.corpseSeconds),
                     view = m.view ?? new GameDataJson.ViewDto { type = "Monster" },
                     src = m,
                 });
@@ -273,6 +274,18 @@ namespace CoreDawn.EditorTools
                 : new GameDataJson.TrickleDto { monster = w.trickle.monster, group = w.trickle.group, interval = w.trickle.interval, untilKilledFraction = w.trickle.untilKilledFraction };
             return o;
         }
+
+        static bool warnedBrainFields;
+        /// <summary>정의(MonsterBrainModuleDef)에는 있는데 폼(MonsterDto)에 없는 키 — 값은 unknownJson 으로 왕복되지만 편집은 못 한다. 한 번만 알린다.</summary>
+        static void WarnBrainFieldsMissingFromForm()
+        {
+            if (warnedBrainFields) return;
+            warnedBrainFields = true;
+            var formFields = new HashSet<string>(typeof(GameDataJson.MonsterDto).GetFields().Select(f => f.Name));
+            var missing = GdPack.MonsterBrainKeys.Where(k => !formFields.Contains(k)).ToList();
+            if (missing.Count > 0)
+                Debug.LogWarning("[GameDataEditor] 몬스터 폼에 없는 MonsterBrain 필드: " + string.Join(", ", missing) + " — GameDataJson.MonsterDto·GMonster·GdMonsterTab 에 추가하세요(값은 보존됨).");
+        }
 
         GameDataJson.MonsterDto ExportMonster(GMonster m)
         {
@@ -290,7 +303,8 @@ namespace CoreDawn.EditorTools
             o.maxPatience = m.maxPatience; o.patienceRadius = m.patienceRadius;
             o.outsidePatienceDrain = m.outsidePatienceDrain; o.rangedPokePatienceDrain = m.rangedPokePatienceDrain;
             o.patienceRecoverRate = m.patienceRecoverRate; o.absoluteLeashMultiplier = m.absoluteLeashMultiplier;
-            o.returnRegenPerSecond = m.returnRegenPerSecond; o.returnTimeout = m.returnTimeout;
+            o.returnRegenPerSecond = m.returnRegenPerSecond; o.returnTimeout = m.returnTimeout; o.corpseSeconds = m.corpseSeconds;
+            o.unknownJson = m.src?.unknownJson;   // 폼이 모르는 필드(새 정의 키)는 그대로 되쓴다 — 편집이 값을 지우지 않게
             return o;
         }
 

@@ -16,8 +16,8 @@ namespace CoreDawn.Factory
     /// 시뮬레이션 로직은 전부 FactorySystem(plain C#)에 있다.
     ///
     /// 씬을 넘어 살아남지 않는다 — 심과 건물 뷰는 한 씬 안에서만 의미가 있고,
-    /// 씬이 바뀌면 새 심으로 시작한다. 엔티티 등록부(SimHost.World)는 공유하되, 이 씬의 건물 엔티티는
-    /// OnDestroy에서 전부 빼서 다음 씬에 유령을 남기지 않는다.
+    /// 씬이 바뀌면 새 심으로 시작한다. 엔티티는 심의 것이라 여기서 빼지 않는다 — 씬 전환 게이트(BootScene)가
+    /// SimRunner.Reset + SimHost.Reset 으로 옛 월드를 통째로 버린다(2026-09-04).
     /// </summary>
     /// <remarks>
     /// 실행 순서를 뒤로 민 이유: 코어 자동 설치가 씬에 미리 놓인
@@ -127,18 +127,10 @@ namespace CoreDawn.Factory
 
         // 씬이 내려갈 때 이 씬의 건물 엔티티를 등록부에서 뺀다 — 등록부는 씬을 넘어 살기 때문이다.
         // 종료 중에는 손대지 않는다(드롭 등 새 오브젝트 생성이 에러를 낸다).
-        static bool quitting;
-        void OnApplicationQuit() => quitting = true;
-
         void OnDestroy()
         {
             if (Instance == this) Instance = null;
-            Factory?.Dispose();
-            if (quitting || Factory == null) return;
-
-            var buildings = new List<BuildingModule>(Factory.Buildings);
-            foreach (var b in buildings)
-                if (b.OwnsEntity && b.Owner != null && !b.Owner.IsRemoved) Factory.World.Remove(b.Owner);
+            Factory?.Dispose();   // 심 스텝 등록만 푼다 — 엔티티는 심의 것, BootScene 이 월드째 버린다
         }
 
         /// <summary>

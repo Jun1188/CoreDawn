@@ -28,6 +28,8 @@ namespace CoreDawn.Navigation
 
         private readonly List<FlowField.Goal> goalBuffer = new List<FlowField.Goal>();
         private readonly List<FlowField.Goal> workerGoals = new List<FlowField.Goal>();
+        // 워커가 읽는 비용 스냅샷 — 메인이 그리드의 살아 있는 배열을 고치는 동안 워커가 옛/새 값을 섞어 읽지 않게.
+        private readonly CostField costSnapshot = new CostField();
 
         private System.Threading.Tasks.Task rebuildTask;
         private bool dirty;
@@ -126,8 +128,10 @@ namespace CoreDawn.Navigation
             workerGoals.Clear();
             workerGoals.AddRange(goalBuffer);
 
-            // 비용 필드는 그리드가 소유하고 항상 최신이다(건물이 바뀐 자리만 갱신됨)
-            var costs = grid.Costs;
+            // 비용 필드는 그리드가 소유하고 메인이 칸 단위로 고친다(설치·철거·피격). 워커에는 스냅샷을 준다 —
+            // 한 번의 재계산 안에서 옛/새 비용이 섞이지 않게. 바뀐 게 없으면(Version 같음) 복사도 건너뛴다.
+            if (costSnapshot.Version != grid.Costs.Version) costSnapshot.CopyFrom(grid.Costs);
+            var costs = costSnapshot;
             var target = back;
             rebuildTask = System.Threading.Tasks.Task.Run(() => target.Rebuild(costs, workerGoals));
         }

@@ -195,6 +195,7 @@ namespace CoreDawn.EditorTools
             detailBox.Add(Num("강제 귀환 배수", m.absoluteLeashMultiplier, v => m.absoluteLeashMultiplier = Mathf.Max(1, v)));
             detailBox.Add(Num("복귀 중 재생 (최대 체력 비율/초)", m.returnRegenPerSecond, v => m.returnRegenPerSecond = Mathf.Max(0, v)));
             detailBox.Add(Num("복귀 제한 시간 (초, 0 = 없음)", m.returnTimeout, v => m.returnTimeout = Mathf.Max(0, v)));
+            detailBox.Add(Num("시체 유지 (초, 사망 연출 시간)", m.corpseSeconds, v => m.corpseSeconds = Mathf.Max(0, v)));
 
             // 숫자 칸의 확정(FocusOut)마다 히스토리 — 상세 전체에 한 번만 건다
             detailBox.RegisterCallback<FocusOutEvent>(_ => combat.PushHist(), TrickleDown.TrickleDown);

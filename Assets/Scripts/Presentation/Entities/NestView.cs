@@ -293,8 +293,7 @@ namespace CoreDawn.Entities
                 m.Destroyed -= OnNestDestroyed;
                 subscribed = false;
             }
-            base.OnDestroy();
-            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimHost.World.Remove(e);
+            base.OnDestroy();   // 엔티티는 심의 것 — 씬 전환은 BootScene 이 월드째 버린다
         }
 
         // ── 심 → 뷰 ──────────────────────────────────────────────
@@ -340,33 +339,19 @@ namespace CoreDawn.Entities
             Module?.RequestMissingBosses();
         }
 
+        /// <summary>
+        /// 둥지가 세우는 몬스터의 부모. 건물 뷰 루트(this)는 칸 크기(4)로 스케일돼 있어(BuildingAssembler) 그 아래 붙이면
+        /// 몬스터 몸·캡슐이 4배로 커진다 — 보스가 16m 캡슐로 서던 원인(2026-09-04). 스케일 1인 상위 컨테이너(Spawned)에 붙인다.
+        /// </summary>
+        Transform MonsterParent => transform.parent;
+
         private void SpawnBossAtPoint(int index, NestSpawnPoint spawnPoint)
         {
-            var boss = MonsterSpawner.Spawn(spawnPoint.BossDef, spawnPoint.point.position, spawnPoint.point.rotation, transform);
-            SnapBossToGround(boss.gameObject);
+            var boss = MonsterSpawner.Spawn(spawnPoint.BossDef, spawnPoint.point.position, spawnPoint.point.rotation, MonsterParent);
             spawnPoint.linkedBoss = boss;
             boss.SetAsBoss(engagementZone);
             Module?.BindBoss(index, boss.Entity);
             Debug.Log($"[NestView] 보스를 지정 스폰 포인트에 배치했습니다: {spawnPoint.point.name}");
-        }
-
-        private void SnapBossToGround(GameObject boss)
-        {
-            if (GridManager.Instance == null) return;
-            float surfaceY = GridManager.Instance.SurfaceY;
-            var col = boss.GetComponentInChildren<Collider>();
-            if (col != null)
-            {
-                UnityEngine.Physics.SyncTransforms();
-                float bottom = col.bounds.min.y;
-                boss.transform.position += Vector3.up * (surfaceY - bottom + 0.02f);
-            }
-            else
-            {
-                var pos = boss.transform.position;
-                pos.y = surfaceY;
-                boss.transform.position = pos;
-            }
         }
 
         // ── 낮 방어 스폰 판정 (뷰: 플레이어 거리·화면 가림) ───────────
@@ -465,7 +450,7 @@ namespace CoreDawn.Entities
             if (bossDef == null) return null;
 
             if (sp.linkedBoss != null) Destroy(sp.linkedBoss.gameObject);
-            var restored = MonsterSpawner.Spawn(bossDef, position, rotation, transform);
+            var restored = MonsterSpawner.Spawn(bossDef, position, rotation, MonsterParent);
             sp.linkedBoss = restored;
             sp.linkedBoss?.SetAsBoss(engagementZone);
             Module?.BindBoss(index, restored?.Entity);

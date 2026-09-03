@@ -128,6 +128,9 @@ namespace CoreDawn.Entities
             if (h != null) OnHealthChanged?.Invoke(h.CurrentHealth, h.MaxHealth);
         }
 
+        /// <summary>심 엔티티를 뗀다 — 풀로 돌아가는 뷰(MonsterViewPool)가 부른다. 파괴 때는 OnDestroy 가 알아서 뗀다.</summary>
+        public void Detach() => DetachEntity();
+
         void DetachEntity()
         {
             if (Entity == null) return;
@@ -139,12 +142,15 @@ namespace CoreDawn.Entities
             }
             var a = Entity.Get<AttackModule>();
             if (a != null) a.Attacked -= RelayAttacked;
+            OnEntityDetached();
             EntityViewRegistry.Unregister(this, Entity);
             Entity = null;
         }
 
         /// <summary>심 엔티티가 붙은 직후 — 하위가 심 상태(풋프린트 등)에 의존하는 초기화를 여기서 한다.</summary>
         protected virtual void OnEntityAttached() { }
+        /// <summary>심 엔티티가 떨어지기 직전 — 하위가 심 모듈에 건 구독을 푼다(Entity 는 아직 유효).</summary>
+        protected virtual void OnEntityDetached() { }
 
         void RelayHealthChanged(float current, float max) => OnHealthChanged?.Invoke(current, max);
         void RelayAttacked(SimEntity target) => OnAttackAction?.Invoke();
@@ -234,7 +240,7 @@ namespace CoreDawn.Entities
         /// <summary>앱 종료 중인가 — 종료 시 파괴되는 뷰가 심을 건드리지 않게(정적 심이 먼저 사라질 수 있다). 하위 뷰(몬스터·플레이어)가 쓴다.</summary>
         protected static bool ApplicationQuitting => quitting;
 
-        // 엔티티의 제거는 만든 쪽의 몫(공장·몬스터 시스템·플레이어 시스템·둥지 뷰) — 여기서는 연결만 끊는다
+        // 엔티티의 제거는 심의 몫(죽음·소멸은 시스템이, 씬 전환은 BootScene 이 월드째) — 여기서는 붙임만 푼다
         protected virtual void OnDestroy()
         {
             if (Entity == null) return;

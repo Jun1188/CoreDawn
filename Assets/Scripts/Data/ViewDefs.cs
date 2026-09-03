@@ -131,7 +131,6 @@ namespace CoreDawn.Data
         /// <summary>몬스터 사망 연출 — MonsterVisualController.DeathStyle 이름.</summary>
         [JsonProperty("deathStyle")] public string DeathStyle;
         [JsonProperty("sinkDepth")] public float SinkDepth = 1.5f;
-        [JsonProperty("deathDelay")] public float DeathDelay = 2f;
         /// <summary>항상 도는 glb 클립(벨트 모프 애니) 이름.</summary>
         [JsonProperty("loop")] public string Loop;
         // 벨트 커브 — 모양별 모델·자세·루프

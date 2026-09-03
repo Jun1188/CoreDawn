@@ -50,14 +50,6 @@ namespace CoreDawn.Entities
             if (Entity.Health != null) Entity.Health.Damaged += OnDamaged;   // 피격 연출 — 피해가 뷰를 거치지 않으므로 심 이벤트로 듣는다
         }
 
-        // 뷰가 사라지면(씬 전환) 심의 플레이어도 내린다 — 죽음(부활 가능)과는 다르다. 종료 중엔 심을 건드리지 않는다
-        protected override void OnDestroy()
-        {
-            var e = Entity;
-            base.OnDestroy();
-            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimRunner.Players.Despawn();
-        }
-
         // 죽은 경우에는 일반 피격 연출을 실행하지 않는다 (사망 연출은 HandleDeath)
         void OnDamaged(float amount, SimEntity source)
         {

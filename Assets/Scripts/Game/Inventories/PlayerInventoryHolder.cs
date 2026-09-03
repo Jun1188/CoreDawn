@@ -44,6 +44,10 @@ namespace CoreDawn.Inventories
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
 
+            // 심 플레이어가 이미 살아 있으면(씬 재진입·부트 경유 재로드) PlayerSystem.Spawn 이 그것을 재사용한다 —
+            // 시작 아이템은 엔티티를 이번에 새로 만들었을 때만 넣는다(아래). 매 Awake 마다 넣으면 두 번 지급됐다(2026-09-04).
+            var existing = SimRunner.Players.Entity;
+            bool freshEntity = existing == null || existing.IsRemoved;
             Entity = SpawnEntity();
             Inventory = Entity.Get<InventoryModule>();
             MainContainer = Inventory?.Main;
@@ -51,8 +55,9 @@ namespace CoreDawn.Inventories
             if (MainContainer == null)
                 Debug.LogError("[PlayerInventoryHolder] 플레이어 정의에 Inventory(main)가 없습니다 — 소지품이 비어 있습니다.", this);
 
-            // 2. 인스펙터에 등록된 시작 아이템 주입
-            SeedStartingItems();
+            // 2. 인스펙터에 등록된 시작 아이템 주입 — 새 엔티티에만
+            if (freshEntity) SeedStartingItems();
+            else Debug.Log("[PlayerInventoryHolder] 살아 있는 심 플레이어를 재사용 — 시작 아이템은 다시 주지 않습니다.", this);
         }
 
         /// <summary>정의(coredawn:entity/player)로 조립. 팩이 없으면 인스펙터 칸 수로 폴백 — 그래도 같은 모듈 구조다.</summary>

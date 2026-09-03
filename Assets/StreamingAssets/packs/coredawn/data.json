@@ -3356,7 +3356,7 @@
           "category": "Production",
           "placeable": false,
           "isDemolishable": false,
-          "threatSeedCost": 80
+          "threatSeedCost": 1000
         },
         {
           "type": "Health",
@@ -3447,7 +3447,8 @@
           "patienceRecoverRate": 2.0,
           "absoluteLeashMultiplier": 1.0,
           "returnRegenPerSecond": 0.12,
-          "returnTimeout": 20.0
+          "returnTimeout": 20.0,
+          "corpseSeconds": 2.0
         }
       ],
       "view": {
@@ -3480,7 +3481,6 @@
         },
         "deathStyle": "SinkAway",
         "sinkDepth": 1.3,
-        "deathDelay": 2.0,
         "anim": {
           "idle": "ChomperIdle",
           "walk": "ChomperWalkForward",
@@ -3539,7 +3539,8 @@
           "patienceRecoverRate": 2.0,
           "absoluteLeashMultiplier": 1.0,
           "returnRegenPerSecond": 0.12,
-          "returnTimeout": 20.0
+          "returnTimeout": 20.0,
+          "corpseSeconds": 2.0
         }
       ],
       "view": {
@@ -3572,7 +3573,6 @@
         },
         "deathStyle": "SinkAway",
         "sinkDepth": 1.365,
-        "deathDelay": 2.0,
         "anim": {
           "idle": "ChomperIdle",
           "walk": "ChomperWalkForward",
@@ -3632,7 +3632,8 @@
           "patienceRecoverRate": 2.0,
           "absoluteLeashMultiplier": 1.0,
           "returnRegenPerSecond": 0.2,
-          "returnTimeout": 40.0
+          "returnTimeout": 40.0,
+          "corpseSeconds": 4.5
         }
       ],
       "view": {
@@ -3666,7 +3667,6 @@
         },
         "deathStyle": "AnimationClip",
         "sinkDepth": 4.42,
-        "deathDelay": 4.5,
         "anim": {
           "idle": "GrenadierIdle",
           "walk": "GrenadierWalk",

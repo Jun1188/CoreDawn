@@ -16,7 +16,7 @@ namespace CoreDawn.Factory
     ///  - 아이템 정체성 추적 없음 — 매 프레임 풀에서 꺼내 통째로 다시 배치 (동기화 버그 원천 차단)
     ///  - 규모가 수천 개로 커지면 같은 위치 계산 위에 Graphics.RenderMeshInstanced로 교체 (v2)
     ///
-    /// FBX 전환 예정: 비주얼 적용은 ApplyVisual() 한 곳 — 스프라이트 → 메시로 바꿀 때 여기만 수정.
+    /// 비주얼 적용은 ApplyVisual() 한 곳 — 기본은 눕힌 판(ItemSlabMesh, 2026-09-04), lieFlat 을 끄면 세운 스프라이트.
     /// </summary>
     public class BeltItemView : MonoBehaviour
     {
@@ -26,7 +26,24 @@ namespace CoreDawn.Factory
         [Tooltip("아이템 표시 크기 배율")]
         [SerializeField] private float itemScale = 0.5f;
 
-        private readonly List<SpriteRenderer> pool = new();
+        [Header("눕힌 판(슬랩)")]
+        [Tooltip("아이콘을 세운 스프라이트 대신 두께 있는 판으로 벨트 위에 눕힌다(ItemSlabMesh). 끄면 예전처럼 세운 스프라이트.")]
+        [SerializeField] private bool lieFlat = true;
+        [Tooltip("판 두께(m).")]
+        [SerializeField] private float slabThickness = 0.12f;
+        [Tooltip("눕힌 판의 벨트 표면 위 높이(m) — 벨트 상판(약 0.52m) + 두께 절반.")]
+        [SerializeField] private float flatHeight = 0.56f;
+
+        /// <summary>풀 슬롯 — 세운 스프라이트(sr) 또는 눕힌 판(mf/mr) 중 하나만 쓴다.</summary>
+        private sealed class Slot
+        {
+            public GameObject Go;
+            public SpriteRenderer Sr;
+            public MeshFilter Mf;
+            public MeshRenderer Mr;
+            public Sprite Icon;
+        }
+        private readonly List<Slot> pool = new();
         private int used;
 
         /// <summary>이번 프레임에 그린 아이템 하나 — 조준(BeltItemTarget)이 이 좌표에 맞춘다.</summary>
@@ -73,7 +90,7 @@ namespace CoreDawn.Factory
 
             // 이번 프레임에 안 쓴 슬롯은 끈다
             for (int i = used; i < pool.Count; i++)
-                if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
+                if (pool[i].Go.activeSelf) pool[i].Go.SetActive(false);
         }
 
         private void DrawSegment(BeltSegment seg, FactoryBootstrap boot)
@@ -99,13 +116,12 @@ namespace CoreDawn.Factory
                 vpos = Mathf.Max(vpos, pos);                                // 역주행 방지
                 prevVisual = vpos;
 
-                if (!TryGetWorldPos(seg, vpos, boot, out var world)) continue;
-
-                Vector3 at = world + Vector3.up * itemHeight;
-
+                if (!TryGetWorldPos(seg, vpos, boot, out var world, out var tangent)) continue;
+                Vector3 at = world + Vector3.up * (lieFlat ? flatHeight : itemHeight);
                 var slot = Rent();
                 ApplyVisual(slot, item);
-                slot.transform.position = at;
+                slot.Go.transform.position = at;
+                if (lieFlat && tangent.sqrMagnitude > 1e-6f) slot.Go.transform.rotation = Quaternion.LookRotation(tangent, Vector3.up);   // 아이콘 위쪽이 흐르는 방향
 
                 drawn.Add(new Drawn(seg, i, at, item));
             }
@@ -119,9 +135,9 @@ namespace CoreDawn.Factory
         ///   - 커브 벨트: 2차 베지어 → 부드러운 90° 호
         /// 이웃 타일 추정이 없으므로 싱글 벨트·세그먼트 양끝 커브에서도 정확하다.
         /// </summary>
-        private bool TryGetWorldPos(BeltSegment seg, float pos, FactoryBootstrap boot, out Vector3 world)
+        private bool TryGetWorldPos(BeltSegment seg, float pos, FactoryBootstrap boot, out Vector3 world, out Vector3 tangent)
         {
-            world = default;
+            world = default; tangent = default;
             int n = seg.BeltCount;
 
             float s = Mathf.Clamp(pos, 0f, n - 0.0001f);
@@ -145,37 +161,45 @@ namespace CoreDawn.Factory
 
             float u = 1f - t;
             world = u * u * entry + 2f * u * t * center + t * t * exit;
+            tangent = 2f * u * (center - entry) + 2f * t * (exit - center);   // 베지어 미분 — 흐르는 방향
+            tangent.y = 0f;
             return true;
         }
 
         // ───────────────────── 풀 / 비주얼 ─────────────────────
 
-        private SpriteRenderer Rent()
+        private Slot Rent()
         {
             if (used < pool.Count)
             {
                 var r = pool[used++];
-                if (!r.gameObject.activeSelf) r.gameObject.SetActive(true);
+                if (!r.Go.activeSelf) r.Go.SetActive(true);
                 return r;
             }
-
             var go = new GameObject("BeltItem(Pooled)");   // 물리·콜라이더 없음 — 순수 그리기용
             go.transform.SetParent(transform, false);
             go.transform.localScale = Vector3.one * itemScale;
-            var sr = go.AddComponent<SpriteRenderer>();
-            pool.Add(sr);
+            var slot = new Slot { Go = go };
+            if (lieFlat) { slot.Mf = go.AddComponent<MeshFilter>(); slot.Mr = go.AddComponent<MeshRenderer>(); slot.Mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; }
+            else slot.Sr = go.AddComponent<SpriteRenderer>();
+            pool.Add(slot);
             used++;
-            return sr;
+            return slot;
         }
 
         /// <summary>
         /// 아이템 → 비주얼 적용. 아이콘은 뷰 카탈로그에서. ★ FBX(메시) 전환(5a-4) 시 이 메서드만 수정:
         /// 팩 view 블록에 메시 참조를 추가하고, 슬롯을 MeshFilter/MeshRenderer로 바꾸면 된다.
         /// </summary>
-        private static void ApplyVisual(SpriteRenderer slot, ItemDef item)
+        private void ApplyVisual(Slot slot, ItemDef item)
         {
             var icon = PackAssets.IconOf(item);
-            if (slot.sprite != icon) slot.sprite = icon;
+            if (slot.Icon == icon) return;
+            slot.Icon = icon;
+            if (slot.Sr != null) { slot.Sr.sprite = icon; return; }
+            // 눕힌 판 — 두께는 월드 m 로 주므로 슬롯 스케일로 나눠 스프라이트 단위로
+            slot.Mf.sharedMesh = ItemSlabMesh.Of(icon, slabThickness / Mathf.Max(0.01f, itemScale));
+            slot.Mr.sharedMaterials = new[] { ItemSlabMesh.FaceMaterial(icon), ItemSlabMesh.SideMaterial() };
         }
     }
 }
