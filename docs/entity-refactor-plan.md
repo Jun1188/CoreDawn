@@ -703,3 +703,9 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 시계가 넷(SimRunnerBehaviour 프레임 dt, FactoryBootstrap.Update→Factory.Advance 10Hz 누적기, MonsterSystem/PlayerSystem/FactorySystem 각자 Now)이던 것을 `SimWorld` 하나로. 이름은 Game `World`와 겹쳐 `SimWorld`.
 - 함정: ① `editor_stop`이 "Exited play mode"를 찍고도 실제로는 안 멈춘 적이 있어 그 위에서 재컴파일 → 플레이 중 도메인 리로드 → `TimeManager.Cycle` null NRE 1693건·엔티티 0·`timeSinceLevelLoad` 5185초. 플레이 제어 뒤엔 `editor_status`의 playMode 로 확인할 것. ② 그 뒤 Unity 커밋 메모리 34GB(여유 200MB)로 bash fork 실패 — 씬 dirty 없음 확인 후 `EditorApplication.Exit(0)` eval 로 정상 종료·재기동(커밋 여유 30GB 회복). ③ `FindFirstObjectByType`은 `HideFlags.DontSave` 오브젝트(WorldRunner)를 못 찾는다 — 틱 수 증가로 확인.
 - 다음: B — fNbt dll 도입, `ISaveModule` NBT 화, 스키마 v6(구 세이브 거절), 왕복 테스트.
+
+### 2026-09-04 — 벨트 두 가지 (`feature/belt-fix`, 사용자 스크린샷 "컨베이어 벨트에 보관소 열기가 뜨고 … 나오는 부분의 벨트가 색이 이상함")
+- **"[E] 보관함 열기"가 벨트에 뜸**: `BuildingInteractions`의 "그릇 + 포트 = 보관소" 규칙에 벨트(`Inventory input 1` 손잡이 버퍼 + `Ports`)가 걸렸다 → `ConveyorModuleDef` 제외.
+- **롤러를 돌아 나오는 벨트 구간이 연한 파란색**: 원인은 재질이 아니라(세 렌더러 전부 `factory_color` 정상) **모프 타깃에 법선 델타가 없음** — 팩 belt/belt_curve_l/r.glb 의 targets 가 `POSITION`뿐(`maxDeltaNormal=0`), `tools/blender/export_glb.py` 가 `export_morph_normal=False` 고정. 스트립 정점 전부가 순환하므로 롤러 끝 구간은 휴지 자세 법선으로 조명돼 하늘 앰비언트(Trilight) 색이 났다. → `export_glb.py` 에 cfg `morph_normal` 추가, Conveyor.blend 에서 셋 재출력(Blender 4.4.3 헤드리스, roots Conveyor/.L/.R, sk_action Belt*→Belt*_Action, clear_obj_anim). 구조 대조: 노드·경계·애니메이션·재질 동일, targets 에 `NORMAL` 추가만. 크기 belt 1.97→3.23MB, 커브 각 8.35→14.98MB.
+- 재현·검증 요령: 플레이에서 `PlacementBridge.Place` 로 벨트를 놓고, `Camera.main` 태그를 임시 카메라로 바꿔(`capture_game_view` 는 Camera.main 을 찍는다) 롤러 쪽을 여러 프레임 캡처. 수정 전 캡처엔 파란 끝 구간, 수정 후 세 프레임 모두 정상. 에디터에서 glTFast 비동기 로드를 eval 안에서 `Thread.Sleep` 으로 기다리면 메인 스레드가 막혀 타임아웃 — 두 번에 나눠(kick → 다음 eval 에서 조회).
+- 임시 카메라가 켜진 동안 에디터 전용 `WorldPreviewDrawer.OnBeginCamera` 가 null 재질로 `DrawMeshInstanced` 를 불러 `ArgumentNullException` — 재질 null 가드 추가.

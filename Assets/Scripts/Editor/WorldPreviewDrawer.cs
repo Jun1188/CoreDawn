@@ -126,6 +126,7 @@ namespace CoreDawn.EditorTools
 
             foreach (var b in batches)
             {
+                if (b.mat == null) { placements = null; return; }   // 팩 재질이 파괴됐다(PackAssets.Clear) — 다음 갱신에서 다시 짓는다
                 if (b.ms.Length == 1)
                     Graphics.DrawMesh(b.mesh, b.ms[0], b.mat, 0, cam, b.sub);
                 else

@@ -48,7 +48,8 @@ namespace CoreDawn.Entities
                 return true;
             }
             // 그릇 + 포트 = 보관소. 보관함 = 입력 버퍼(벨트가 넣는 곳과 같아서 보이는 것이 곧 전부)
-            if (def.Has<InventoryModuleDef>() && def.Has<PortsModuleDef>() && b.Input != null && b.Input.SlotCount > 0)
+            // 컨베이어는 빼고 — 벨트의 그릇(input 1)은 물건이 심 세그먼트로 넘어가는 손잡이 버퍼라 플레이어가 열 것이 없다
+            if (def.Has<InventoryModuleDef>() && def.Has<PortsModuleDef>() && !def.Has<ConveyorModuleDef>() && b.Input != null && b.Input.SlotCount > 0)
             {
                 prompt = "보관함 열기";
                 open = _ => GameScreens.OpenContainer(b.Input);
