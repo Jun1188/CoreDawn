@@ -452,7 +452,7 @@ namespace CoreDawn.UI
             if (!has) { shownGun = null; return; }
 
             // 근접무기(무한 탄약)는 셀 탄이 없다 — 탄창 칸을 ∞로 접어 장전 수/최대치를 지운다.
-            bool unlimited = weapon.Def.UnlimitedAmmo;
+            bool unlimited = weapon.Def.Ammo.Unlimited;
 
             // 무기에 딸린 값은 무기가 바뀔 때만 다시 만든다 (ToUpperInvariant가 매번 새 문자열이었다)
             if (shownGun != weapon)
@@ -460,7 +460,7 @@ namespace CoreDawn.UI
                 shownGun = weapon;
                 shownAmmo = shownReserve = int.MinValue;
                 ammoName.text = (weapon.Def.DisplayName ?? "").ToUpperInvariant();
-                ammoCap.text = unlimited ? "" : $" / {weapon.Def.MagSize}";
+                ammoCap.text = unlimited ? "" : $" / {weapon.Def.Ammo.MagSize}";
             }
 
             int ammo = weapon.CurrentAmmo;

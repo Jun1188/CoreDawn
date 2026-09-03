@@ -87,7 +87,7 @@ namespace CoreDawn.FPS
         public ItemDef CurrentAmmoItem => Mag?.Round;
 
         /// <summary>소지품에 남은 현재 탄종 수 — HUD 예비탄 표시용. 무한 탄약(근접)·소지품 없는 씬은 -1(무한).</summary>
-        public int ReserveAmmo => Def.UnlimitedAmmo || Weapon == null ? -1 : Weapon.ReserveOf(Mag?.Round);
+        public int ReserveAmmo => Def.Ammo.Unlimited || Weapon == null ? -1 : Weapon.ReserveOf(Mag?.Round);
 
         /// <summary>재장전 중인가 — 이 총을 들고 있을 때만 참.</summary>
         public bool IsReloading => IsCurrent && Weapon.Reloading;
@@ -143,8 +143,8 @@ namespace CoreDawn.FPS
 
             // 안 쏠 때는 에임이 다시 모임 (이동 속도에 따라 기본 탄퍼짐 증가 — 달리면 2배)
             float speedFactor = (playerRb != null && playerRb.linearVelocity.magnitude > 1f) ? 2f : 1f;
-            float targetSpread = Def.BaseSpread * speedFactor;
-            currentSpread = Mathf.Lerp(currentSpread, targetSpread, Time.deltaTime * Def.SpreadRecoveryRate);
+            float targetSpread = Def.Spread.Base * speedFactor;
+            currentSpread = Mathf.Lerp(currentSpread, targetSpread, Time.deltaTime * Def.Spread.Recovery);
         }
 
         // ── 입력 → 심 ──────────────────────────────────────────
@@ -157,7 +157,7 @@ namespace CoreDawn.FPS
             if (w == null || !IsCurrent) return false;
             if (!w.TryFire(Now, out var shot)) return false;
 
-            currentSpread = Mathf.Min(currentSpread + Def.SpreadIncreasePerShot, Def.MaxSpread);
+            currentSpread = Mathf.Min(currentSpread + Def.Spread.PerShot, Def.Spread.Max);
             Fire(shot);
             Fired?.Invoke(this);
             return true;

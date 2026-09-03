@@ -53,6 +53,80 @@ namespace CoreDawn.EditorTools
         }
 
         /// <summary>옛 v1 id("Item:IronOre") → 팩 id("coredawn:item/iron_ore") — 에디터 도구(맵 임포터·이관)가 쓴다. 이미 팩 id면 그대로.</summary>
+        /// <summary>
+        /// v1의 평면 총 수치를 v2 <see cref="GunDef"/>의 용도별 묶음(fire·ammo·aim·recoil·spread·swing)으로 옮긴다.
+        /// 기본값과 같은 키·비어 있는 묶음은 적지 않는다 — 근접 무기(플라즈마 커터)에 탄창·줌·탄퍼짐 같은 무의미한 값이
+        /// 딸려 나오지 않게(사용자 지시 2026-09-03). 비는 값은 GunDef의 C# 기본값이 채우고 Raw 탭이 유령 행으로 보여 준다.
+        /// </summary>
+        static JObject GroupGun(JObject flat)
+        {
+            if (flat == null) return null;
+            var o = new JObject();
+            foreach (var p in flat.Properties())
+                if (p.Name is "displayName" or "description") o[p.Name] = p.Value;
+
+            static float F(JObject s, string k, float def) => (float?)s[k] ?? def;
+            static bool B(JObject s, string k) => (bool?)s[k] ?? false;
+            static bool Zero(JToken t) => t is JArray a ? a.All(x => (float?)x == 0f) : t == null;
+            static void Put(JObject g, string k, JToken v, JToken def) { if (v != null && !JToken.DeepEquals(v, def)) g[k] = v; }
+            static void Add(JObject o, string k, JObject g) { if (g.Count > 0) o[k] = g; }
+
+            var fire = new JObject();
+            Put(fire, "mode", flat["fireMode"], "Projectile");
+            Put(fire, "interval", flat["fireRate"], 0.2f);
+            Put(fire, "range", flat["range"], 100f);
+            int pellets = (int?)flat["pellets"] ?? 1;
+            if (pellets > 1) fire["pellets"] = pellets;   // 0·1 = 한 발(기본)
+            if (B(flat, "isAutomatic")) fire["automatic"] = true;
+            Put(fire, "damageMultiplier", flat["damageMultiplier"], 1f);
+            Add(o, "fire", fire);
+
+            var ammo = new JObject();
+            bool unlimited = B(flat, "unlimitedAmmo");
+            if (unlimited) ammo["unlimited"] = true;
+            else { Put(ammo, "magSize", flat["magSize"], 30); Put(ammo, "reloadTime", flat["reloadTime"], 1.5f); }   // 무한 탄이면 탄창·재장전은 무의미
+            if (flat["ammoFilter"] is JArray af && af.Count > 0) ammo["filter"] = af;
+            Add(o, "ammo", ammo);
+
+            var aim = new JObject();
+            bool block = B(flat, "blockAim");
+            if (block) aim["block"] = true;
+            else Put(aim, "zoom", flat["zoomMultiplier"], 1.3f);   // 조준 불가면 줌은 무의미
+            Add(o, "aim", aim);
+
+            var recoil = new JObject();
+            Put(recoil, "x", flat["xRecoil"], 0f);
+            Put(recoil, "y", flat["yRecoil"], 0f);
+            Put(recoil, "z", flat["zRecoil"], 0f);
+            Put(recoil, "kickbackZ", flat["visualKickbackZ"], 0f);
+            if (!Zero(flat["visualKickbackRot"])) recoil["kickbackRot"] = flat["visualKickbackRot"];
+            Add(o, "recoil", recoil);
+
+            // 탄퍼짐 — base·max가 둘 다 0이면 퍼짐이 없으니 회복률만 남길 이유가 없다
+            if (F(flat, "baseSpread", 0f) > 0f || F(flat, "maxSpread", 0f) > 0f)
+            {
+                var spread = new JObject();
+                Put(spread, "base", flat["baseSpread"], 0f);
+                Put(spread, "max", flat["maxSpread"], 0f);
+                Put(spread, "perShot", flat["spreadIncreasePerShot"], 0f);
+                Put(spread, "recovery", flat["spreadRecoveryRate"], 0f);
+                Add(o, "spread", spread);
+            }
+
+            if (F(flat, "swingTime", -1f) > 0f)
+            {
+                var swing = new JObject { ["time"] = flat["swingTime"] };
+                if (F(flat, "swingWindup", -1f) >= 0f) swing["windup"] = flat["swingWindup"];
+                if (B(flat, "swingAlternate")) swing["alternate"] = true;
+                if (flat["swingRotation"] != null) swing["rotation"] = flat["swingRotation"];
+                if (flat["swingPosition"] != null) swing["position"] = flat["swingPosition"];
+                o["swing"] = swing;
+            }
+
+            if (flat["view"] != null) o["view"] = flat["view"];
+            return o;
+        }
+
         public static string PackIdOf(string v1Id)
         {
             if (string.IsNullOrEmpty(v1Id) || v1Id.Contains("/")) return v1Id;
@@ -535,7 +609,7 @@ namespace CoreDawn.EditorTools
                 {
                     gv["model"] = PackModels(gm, (string)g["id"]); gv.Remove("models"); gv.Remove("modelGuid");
                 }
-                guns[KeyOf((string)g["id"])] = o;
+                guns[KeyOf((string)g["id"])] = GroupGun(o);
             }
             foreach (var t in Arr(d["tutorial"])) tutorial[KeyOf((string)t["id"])] = Remap(t);
             // 소리 — 변형 클립 묶음만(표현 전용). 볼륨·공간감은 쓰는 자리(view.sfx · sfx)의 값이다.

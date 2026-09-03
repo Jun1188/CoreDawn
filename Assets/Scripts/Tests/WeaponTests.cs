@@ -222,9 +222,9 @@ namespace CoreDawn.Tests
 
         static GunDef Gun(string name, int magSize, float fireInterval, float reload, ItemDef[] ammo, float damageMultiplier, int pellets, bool unlimited)
         {
-            var g = new GunDef { Id = "test:gun/" + name, DisplayName = name, MagSize = magSize, FireRate = fireInterval, ReloadTime = reload,
-                                 DamageMultiplier = damageMultiplier, Pellets = pellets, UnlimitedAmmo = unlimited, Range = 100f };
-            foreach (var a in ammo) { g.AmmoFilterIds.Add(a.Id); g.AmmoFilter.Add(a); }
+            var g = new GunDef { Id = "test:gun/" + name, DisplayName = name, Fire = new GunFire { Interval = fireInterval, DamageMultiplier = damageMultiplier, Pellets = pellets, Range = 100f },
+                                 Ammo = new GunAmmo { MagSize = magSize, ReloadTime = reload, Unlimited = unlimited } };
+            foreach (var a in ammo) { g.Ammo.Filter.Add(a.Id); g.AmmoFilter.Add(a); }
             return g;
         }
 

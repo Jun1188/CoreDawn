@@ -512,7 +512,8 @@ namespace CoreDawn.EditorTools
             }
             else if (t == typeof(float) || t == typeof(double) || (t == null && tok.Type == JTokenType.Float))
             {
-                var f = new DoubleField { value = tok.Type is JTokenType.Float or JTokenType.Integer ? (double)tok : 0 };
+                // float 기본값(1.3f)은 double로 읽으면 1.2999999523… — 표시용으로 6자리에서 반올림
+                var f = new DoubleField { value = tok.Type is JTokenType.Float or JTokenType.Integer ? Math.Round((double)tok, 6) : 0 };
                 f.AddToClassList("gd-raw-num");
                 Scalar(f, v => set(NumToken(v)));
                 editor = f;
@@ -686,7 +687,7 @@ namespace CoreDawn.EditorTools
                     if (path.Contains("/conditions/")) return Tutorial.TutorialConditions.Kinds.ToList();
                     return null;
                 case "item": return Ids("items");
-                case "ammoFilter": return Ids("items");
+                case "filter": return path.Contains("/ammo/") ? Ids("items") : null;   // GunDef.ammo.filter
                 case "effect": return Ids("effects");
                 case "gun": return Ids("guns");
                 case "sound": return Ids("sounds");

@@ -77,8 +77,8 @@ namespace CoreDawn.Sim
         {
             if (gun == null) return null;
             if (_mags.TryGetValue(gun, out var m)) return m;
-            bool full = gun.UnlimitedAmmo || Bag() == null;
-            m = new Magazine(gun, gun.DefaultAmmo, full ? gun.MagSize : 0);
+            bool full = gun.Ammo.Unlimited || Bag() == null;
+            m = new Magazine(gun, gun.DefaultAmmo, full ? gun.Ammo.MagSize : 0);
             _mags[gun] = m;
             return m;
         }
@@ -93,7 +93,7 @@ namespace CoreDawn.Sim
         }
 
         public bool CanFire(float now)
-            => Equipped != null && !Reloading && now >= ReadyAt && (Equipped.UnlimitedAmmo || Current.Loaded > 0);
+            => Equipped != null && !Reloading && now >= ReadyAt && (Equipped.Ammo.Unlimited || Current.Loaded > 0);
 
         /// <summary>
         /// 방아쇠 — 재장전·탄약·연사 간격을 통과하면 탄을 소비하고 <see cref="Fired"/>. 샷건은 방아쇠 한 번에 펠릿 수만큼 소비한다
@@ -105,20 +105,20 @@ namespace CoreDawn.Sim
             var gun = Equipped;
             if (gun == null || Reloading || now < ReadyAt) return false;
             var mag = Current;
-            if (!gun.UnlimitedAmmo && mag.Loaded <= 0) { TryStartReload(now); return false; }
+            if (!gun.Ammo.Unlimited && mag.Loaded <= 0) { TryStartReload(now); return false; }
             if (mag.Round == null) throw new InvalidOperationException($"{gun.Id}: 장전된 탄종이 없습니다 — ammoFilter가 비었습니다");
 
-            int rounds = gun.UnlimitedAmmo ? gun.RoundsPerTrigger : Math.Min(mag.Loaded, gun.RoundsPerTrigger);
-            if (!gun.UnlimitedAmmo) mag.Loaded -= rounds;
-            ReadyAt = now + gun.FireRate;
+            int rounds = gun.Ammo.Unlimited ? gun.RoundsPerTrigger : Math.Min(mag.Loaded, gun.RoundsPerTrigger);
+            if (!gun.Ammo.Unlimited) mag.Loaded -= rounds;
+            ReadyAt = now + gun.Fire.Interval;
 
             var ammo = mag.Round.Get<AmmoModuleDef>()
                        ?? throw new InvalidOperationException($"'{mag.Round.Id}'은(는) 탄약(Ammo 모듈)이 아닙니다 — {gun.Id}의 ammoFilter를 확인하세요");
-            shot = new WeaponShot(gun, mag.Round, ammo, rounds, Bake(gun, ammo), gun.IsHitscan, gun.Range);
+            shot = new WeaponShot(gun, mag.Round, ammo, rounds, Bake(gun, ammo), gun.IsHitscan, gun.Fire.Range);
             Fired?.Invoke(shot);
 
             // 마지막 탄을 쐈으면 방아쇠를 다시 당길 것 없이 알아서 채운다(소지품에 탄이 없으면 조용히 물러난다)
-            if (!gun.UnlimitedAmmo && mag.Loaded <= 0) TryStartReload(now);
+            if (!gun.Ammo.Unlimited && mag.Loaded <= 0) TryStartReload(now);
             return true;
         }
 
@@ -126,14 +126,14 @@ namespace CoreDawn.Sim
         public bool TryStartReload(float now)
         {
             var gun = Equipped;
-            if (gun == null || gun.UnlimitedAmmo || Reloading) return false;
+            if (gun == null || gun.Ammo.Unlimited || Reloading) return false;
             var mag = Current;
-            if (mag.Loaded >= gun.MagSize) return false;
+            if (mag.Loaded >= gun.Ammo.MagSize) return false;
             var bag = Bag();
             if (bag != null && (mag.Round == null || bag.CountOf(mag.Round) <= 0)) return false;   // 실소비 — 없는 탄으로는 못 채운다
             Reloading = true;
             ReloadStartedAt = now;
-            ReloadEndsAt = now + Math.Max(0f, gun.ReloadTime);
+            ReloadEndsAt = now + Math.Max(0f, gun.Ammo.ReloadTime);
             ReloadStarted?.Invoke(gun);
             return true;
         }
@@ -162,9 +162,9 @@ namespace CoreDawn.Sim
                 if (now < ReloadEndsAt) return;
                 Reloading = false;
                 var mag = Current;
-                int need = gun.MagSize - mag.Loaded;
+                int need = gun.Ammo.MagSize - mag.Loaded;
                 var bag = Bag();
-                if (bag == null) mag.Loaded = gun.MagSize;                         // 추상 탄창 — 소지품 없는 씬
+                if (bag == null) mag.Loaded = gun.Ammo.MagSize;                         // 추상 탄창 — 소지품 없는 씬
                 else
                 {
                     int take = Math.Min(need, bag.CountOf(mag.Round));
@@ -174,7 +174,7 @@ namespace CoreDawn.Sim
                 return;
             }
             // 빈 탄창은 알아서 채운다 — 무기를 들었을 때·쏘고 났을 때 한 번 거는 대신 매 틱 보는 이유는 상태를 잃는 경합(스왑 중 취소)이 없게
-            if (!gun.UnlimitedAmmo && Current.Loaded <= 0) TryStartReload(now);
+            if (!gun.Ammo.Unlimited && Current.Loaded <= 0) TryStartReload(now);
         }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace CoreDawn.Sim
             var gun = Equipped;
             if (gun == null || Reloading || gun.AmmoFilter.Count <= 1) return false;
             var mag = Current;
-            var bag = gun.UnlimitedAmmo ? null : Bag();   // 근접은 소지품을 아예 보지 않는다
+            var bag = gun.Ammo.Unlimited ? null : Bag();   // 근접은 소지품을 아예 보지 않는다
             int idx = gun.AmmoFilter.IndexOf(mag.Round);
             for (int step = 1; step <= gun.AmmoFilter.Count; step++)
             {
@@ -199,7 +199,7 @@ namespace CoreDawn.Sim
                     bag.TryAdd(mag.Round, mag.Loaded);
                 }
                 mag.Round = candidate;
-                mag.Loaded = gun.UnlimitedAmmo ? gun.MagSize : 0;
+                mag.Loaded = gun.Ammo.Unlimited ? gun.Ammo.MagSize : 0;
                 TryStartReload(now);
                 return true;
             }
@@ -212,7 +212,7 @@ namespace CoreDawn.Sim
         Effect[] Bake(GunDef gun, AmmoModuleDef ammo)
         {
             var effects = EffectUse.ToEffects(ammo.Effects);
-            float m = gun.DamageMultiplier;
+            float m = gun.Fire.DamageMultiplier;
             if (Math.Abs(m - 1f) > 0.0001f)
             {
                 var scaled = new Effect[effects.Length];
@@ -234,7 +234,7 @@ namespace CoreDawn.Sim
             if (gun == null) return;
             var m = MagazineOf(gun);
             m.Round = round ?? gun.DefaultAmmo;
-            m.Loaded = Math.Max(0, Math.Min(gun.MagSize, loaded));
+            m.Loaded = Math.Max(0, Math.Min(gun.Ammo.MagSize, loaded));
         }
     }
 }
