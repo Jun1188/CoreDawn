@@ -125,6 +125,12 @@ namespace CoreDawn.Managers
             return holder;
         }
 
+        /// <summary>읽어 둔 템플릿이 있으면 준다 — 오류 로그 없이. 편집기 미리보기처럼 부팅 preload 없이 묻는 곳용.</summary>
+        public static bool TryModelOf(string relative, out GameObject model) => models.TryGetValue(relative, out model) && model != null;
+
+        /// <summary>glb 하나를 읽어 템플릿으로 둔다(이미 있으면 그것). 편집기 도구가 preload 밖에서 부른다.</summary>
+        public static Task<GameObject> LoadModelAsync(string pack, string relative) => Load(pack, relative);
+
         /// <summary>읽어 둔 템플릿. 없으면 오류 로그 + null — 호출부가 MissingAssets.Box를 세운다.</summary>
         public static GameObject ModelOf(string relative)
         {

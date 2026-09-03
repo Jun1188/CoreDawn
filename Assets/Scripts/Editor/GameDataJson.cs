@@ -5,16 +5,14 @@ using System.Collections.Generic;
 namespace CoreDawn.EditorTools
 {
     // ================================================================
-    //  GameDataJson — 편집 형식(v1) GameData.json의 DTO.
+    //  GameDataJson — 폼 탭의 편집 모델(옛 v1 편집 형식의 DTO).
     //
-    //  정본은 하나(Assets/Data/Import/GameData.json)이고 GameData 편집기(GameDataEditorWindow)가 이 DTO로
-    //  읽고 쓴다. 저장할 때 GameDataExporterV2가 v2 팩(StreamingAssets/packs/<pack>/data.json)을 내고,
-    //  런타임은 v2 팩만 읽는다(에셋 참조는 내보내기가 팩 파일로 복사한다) — SO 에셋은 5a-3e에서 퇴역했다.
-    //  (구 GameDataImporter의 SO 생성부는 삭제. v2 직접 편집은 5a-3e-2에서.)
+    //  정본은 팩 data.json 하나다(3e-2 ③: v1 GameData.json·exporter 퇴역). 셸이 GdPack.ToV1로 팩을 이 꼴로
+    //  펼쳐 폼 탭이 편집하고, 저장은 GdPack.ToPack으로 되돌려 data.json에 쓴다. 에셋은 전부 팩 상대 경로다
+    //  (guid 없음). 프리셋(kind·fireMode)이 못 담는 모듈·view 키는 unknownJson(extraModules·view)으로 왕복한다.
     // ================================================================
     public static class GameDataJson
     {
-        internal const string ImportFolder = "Assets/Data/Import";   // GameDataEditorWindow도 이 경로를 쓴다
 
         // ── JSON DTO (스키마 문서는 Import 폴더의 샘플 참조) ──────────
 
@@ -96,9 +94,9 @@ namespace CoreDawn.EditorTools
         [Serializable] internal class ViewDto : JsonDtoBase { public string type; public Dictionary<string, SfxUseDto> sfx; }
         /// <summary>소리 한 종 — 변형 클립 묶음(재생 때 무작위). id 관례 "Sound:이름".</summary>
         [Serializable] internal class SoundDto : JsonDtoBase { public string id; public string displayName; public ClipDto[] clips; }
-        [Serializable] internal class ClipDto : JsonDtoBase { public string clip; public string clipGuid; }
+        [Serializable] internal class ClipDto : JsonDtoBase { public string clip; }   // 팩 상대 경로 "sounds/x.wav"
 
-        // 재질(5a-4c) — PackMaterialHarvester가 거두고 v2 내보내기가 textures를 팩 png로 복사한다. 값은 셰이더 기본값과 다른 것만
+        // 재질(5a-4c) — 팩 materials 섹션 그대로(textures 는 팩 상대 경로). 값은 셰이더 기본값과 다른 것만
         [Serializable] internal class MaterialDto : JsonDtoBase
         {
             public string id;              // "Material:TreeBark"
@@ -112,7 +110,7 @@ namespace CoreDawn.EditorTools
             public int renderQueue = -1;   // -1 = 셰이더 기본
             public TagDto[] tags;          // 태그 오버라이드(RenderType 등)
         }
-        [Serializable] internal class TextureRefDto : JsonDtoBase { public string name; public string texture; public string textureGuid; public bool linear; }
+        [Serializable] internal class TextureRefDto : JsonDtoBase { public string name; public string file; public bool linear; }   // file = 팩 상대 경로
         [Serializable] internal class ColorDto : JsonDtoBase { public string name; public float r, g, b, a; }
         [Serializable] internal class FloatDto : JsonDtoBase { public string name; public float value; }
         [Serializable] internal class TagDto : JsonDtoBase { public string name; public string value; }
@@ -171,13 +169,13 @@ namespace CoreDawn.EditorTools
             public string line;          // ItemLine 이름 — 계통 축 (Iron/Copper/Crystal/Beast). 생략 시 기존 값 유지
             public int    maxStack;      // 한 슬롯 최대 개수. 0 = 생략(기존 값 유지) — 무기·설치물은 1
             public bool   hideFromMenu;  // 아이템 고르는 목록(분배기 필터 등)에서 숨김 — 내부 탄약용
-            public string icon;          // 스프라이트 이름 — 아틀라스 안에서 어느 스프라이트인지 고르는 열쇠이기도 하다
-            public string iconGuid;      // 스프라이트를 담은 에셋의 guid — 이쪽이 파일을 특정한다
+            public string icon;          // 아이콘 프레임 이름(시트 좌표표의 키). 낱장이면 빈 값
+            public string iconFile;      // 아이콘 시트 png의 팩 상대 경로("textures/item_icon_sheet.png")
             // Ammo 전용 뷰 참조 — 탄 외형·연출 프리팹, 이름 + guid 짝(model/modelGuid 규약).
             // 값의 출처는 구 SO 배선에서 1회 유틸이 채움(5a-3a) — 뷰 카탈로그가 이 guid를 굽는다
-            public string bullet, bulletGuid;             // 탄 외형(Bullet 컴포넌트 필수)
-            public string muzzleFlash, muzzleFlashGuid;   // 총구 화염
-            public string hitEffect, hitEffectGuid;       // 착탄/폭발 이펙트
+            public string bullet;        // 탄 외형(Bullet 컴포넌트 필수) — 내장 연출 이름(Resources/Builtin/Effects)
+            public string muzzleFlash;   // 총구 화염
+            public string hitEffect;     // 착탄/폭발 이펙트
             public EffectEntryDto[] attackEffects;  // Ammo 전용 — 1발의 명중 효과. null = 유지
             public float  damage;        // Ammo 전용 구 숏컷 — attackEffects가 없을 때만 {Damage, damage}로 변환
             public string gun;           // Weapon 전용 — 연결할 GunData id (예: "Gun:Rifle")
@@ -215,10 +213,8 @@ namespace CoreDawn.EditorTools
             public string description;
             public string category;      // BuildingCategory 이름
             public ModelDto[] models;     // 팩 모델 배열 {file: "models/x.glb", materials: ["Material:…"(슬롯 순)]} — [0]이 기본, 나머지는 변형. 있으면 model/modelGuid 대신 이것이 v2 view.model이 된다(5a-4c)
-            public string model;          // 모델 파일명 — 사람이 읽는 표시이자 guid가 죽었을 때의 폴백
-            public string modelGuid;      // 모델 에셋 guid — 이쪽이 진실. 이름은 프로젝트에 둘 있으면 어느 쪽이 걸릴지 정해지지 않는다
-            public string icon;           // 빌드 메뉴 아이콘 — 스프라이트 이름(아이템 icon과 같은 규약)
-            public string iconGuid;       // 스프라이트를 담은 에셋의 guid
+            public string icon;           // 빌드 메뉴 아이콘 프레임 이름(아이템 icon과 같은 규약)
+            public string iconFile;       // 아이콘 시트 png의 팩 상대 경로
             // 배치 프리팹 참조 — 임포터가 model에서 굽는 산출물(둥지·나무는 손 프리팹)의 주소.
             // 뷰 카탈로그가 이 guid를 굽는다. 값은 1회 유틸이 SO에서 채우고, 임포터가 프리팹을 다시 구워도 guid는 유지된다(경로 불변)
             public Vec2Dto size;
@@ -238,8 +234,6 @@ namespace CoreDawn.EditorTools
             public float    speedMultiplier;      // Miner
             public float    speedTilesPerSec;     // Belt
             public ModelDto[] modelsCurveL, modelsCurveR;   // 벨트 커브의 팩 모델(5a-4c) — 있으면 modelCurveL/R guid 대신
-            public string   modelCurveL, modelCurveR;
-            public string   modelCurveLGuid, modelCurveRGuid;
             public string[] availableRecipes;     // Assembler
             public float    damageMultiplier, range, fireRate;   // Tower
             public float    minRange = -1f;                      // Tower — 최소 사거리(박격포 사각). 0 정당, 음수 = 생략(유지)
@@ -276,8 +270,6 @@ namespace CoreDawn.EditorTools
             public string displayName;   // 필수
             public string description;
             public ModelDto[] models;    // 팩 모델(glb: 스킨 + 클립) + 슬롯 재질 — 있으면 model/modelGuid 대신(5a-4c)
-            public string model;         // 모델 프리팹 이름(Art/Models/Monsters — 리그·Animator·머티리얼을 안에 든 모델) — 사람이 읽는 용도
-            public string modelGuid;     // 모델 에셋 guid — 이쪽이 파일을 특정한다
             public float  maxHp;
             public float  moveSpeed, rotateSpeed, crowdRadius, knockbackDamping;
             public bool   stickToGround = true;   // 주의: bool은 생략을 구분 못 한다 — 항상 명시할 것

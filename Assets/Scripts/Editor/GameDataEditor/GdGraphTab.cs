@@ -89,10 +89,10 @@ namespace CoreDawn.EditorTools
     class GNodeData
     {
         public string name = "", displayName = "", description = "", type = "Part", line = "None", icon = "", gun = "";
-        // 아이콘 에셋의 guid — 이쪽이 파일을 특정하고 icon(이름)은 아틀라스 안에서 어느 스프라이트인지 고른다
-        public string iconGuid = "";
-        // 탄약 전용 뷰 참조(탄 외형·총구 화염·착탄) — 이름 + guid 짝. 편집 UI는 없고 왕복만 보존한다(5a-3a 유틸이 채움)
-        public string bullet = "", bulletGuid = "", muzzleFlash = "", muzzleFlashGuid = "", hitEffect = "", hitEffectGuid = "";
+        // 아이콘 — 팩 시트 png(iconFile)와 프레임 이름(icon). 낱장이면 icon은 빈 값
+        public string iconFile = "";
+        // 탄약 전용 연출 이름(내장 Effects) — 편집 UI는 없고 왕복만 보존한다
+        public string bullet = "", muzzleFlash = "", hitEffect = "";
         public List<GEff> attackEffects = new();
         public float speed = 50, gravity, explosionRadius, lifetime = 3;
         public int pierce;
@@ -132,6 +132,22 @@ namespace CoreDawn.EditorTools
         readonly Dictionary<string, GEdge> edges = new();
         int seq = 1;
         (string type, string id)? selection;   // ("node"|"edge", id)
+
+        // [UI ⇄ Raw] — 노드의 팩 키는 Sanitize(name)(내보내기와 같은 규칙)
+        internal override (string section, string id) RawCursor
+        {
+            get
+            {
+                if (selection is not { type: "node" } s || !nodes.TryGetValue(s.id, out var n)) return ("items", null);
+                return (n.kind == "item" ? "items" : "recipes", Sanitize(n.data.name));
+            }
+        }
+        internal override void SelectRaw(string section, string id)
+        {
+            string kind = section == "recipes" ? "recipe" : "item";
+            var n = nodes.Values.FirstOrDefault(x => x.kind == kind && Sanitize(x.data.name) == id);
+            if (n != null && nodeEls.Count > 0) Select(("node", n.id));
+        }
         GBands bands;
         string hoverNode;
         Vector2 viewPos = new(60, 40);
@@ -174,7 +190,7 @@ namespace CoreDawn.EditorTools
 
             foreach (var it in win.root.items ?? Array.Empty<GameDataJson.ItemDto>())
             {
-                string name = (it.id ?? "").StartsWith("Item:") ? it.id.Substring(5) : (it.id ?? it.displayName ?? "");
+                string name = string.IsNullOrEmpty(it.id) ? (it.displayName ?? "") : GdPack.Bare(it.id);
                 var id = Uid();
                 nodes[id] = new GNode
                 {
@@ -184,14 +200,13 @@ namespace CoreDawn.EditorTools
                         name = name, displayName = it.displayName ?? name, description = it.description ?? "",
                         type = string.IsNullOrEmpty(it.type) ? "Part" : it.type,
                         line = string.IsNullOrEmpty(it.line) ? "None" : it.line,
-                        icon = it.icon ?? "", iconGuid = it.iconGuid ?? "",
-                        bullet = it.bullet ?? "", bulletGuid = it.bulletGuid ?? "", muzzleFlash = it.muzzleFlash ?? "", muzzleFlashGuid = it.muzzleFlashGuid ?? "",
-                        hitEffect = it.hitEffect ?? "", hitEffectGuid = it.hitEffectGuid ?? "",
+                        icon = it.icon ?? "", iconFile = it.iconFile ?? "",
+                        bullet = it.bullet ?? "", muzzleFlash = it.muzzleFlash ?? "", hitEffect = it.hitEffect ?? "",
                         maxStack = it.maxStack > 0 ? it.maxStack : 64,
                         hideFromMenu = it.hideFromMenu,
                         attackEffects = it.attackEffects != null
                             ? it.attackEffects.Select(e => new GEff { effect = e.effect, value = e.value }).ToList()
-                            : (it.damage > 0 ? new List<GEff> { new() { effect = "Effect:Damage", value = it.damage } } : new List<GEff>()),
+                            : (it.damage > 0 ? new List<GEff> { new() { effect = GdPack.Id("effect", "damage"), value = it.damage } } : new List<GEff>()),
                         speed = it.speed >= 0 ? it.speed : 50,
                         gravity = Mathf.Max(0, it.gravity),
                         explosionRadius = Mathf.Max(0, it.explosionRadius),
@@ -201,14 +216,14 @@ namespace CoreDawn.EditorTools
                         extractInterval = it.extractInterval > 0 ? it.extractInterval : 3f,
                     },
                 };
-                itemNode["Item:" + name] = id;
+                itemNode[GdPack.Id("item", name)] = id;
                 if (it.unknownJson is { Count: > 0 }) itemExtra[name] = it.unknownJson;
             }
 
             string EnsureGhost(string itemId)
             {
                 // 정의 안 된 재료 참조 → 자리 아이템 생성 (임포터의 미해석 스킵 방지용 시각화)
-                string name = itemId.StartsWith("Item:") ? itemId.Substring(5) : itemId;
+                string name = GdPack.Bare(itemId);
                 var id = Uid();
                 nodes[id] = new GNode { id = id, kind = "item",
                     data = new GNodeData { name = name, displayName = name + " (미정의)", type = "Part", line = "None" } };
@@ -218,7 +233,7 @@ namespace CoreDawn.EditorTools
 
             foreach (var r in win.root.recipes ?? Array.Empty<GameDataJson.RecipeDto>())
             {
-                string name = (r.id ?? "").StartsWith("Recipe:") ? r.id.Substring(7) : (r.id ?? r.displayName ?? "");
+                string name = string.IsNullOrEmpty(r.id) ? (r.displayName ?? "") : GdPack.Bare(r.id);
                 var id = Uid();
                 nodes[id] = new GNode
                 {
@@ -260,14 +275,13 @@ namespace CoreDawn.EditorTools
                 var d = n.data;
                 var it = new GameDataJson.ItemDto
                 {
-                    id = "Item:" + Sanitize(d.name),
+                    id = GdPack.Id("item", Sanitize(d.name)),
                     displayName = string.IsNullOrEmpty(d.displayName) ? d.name : d.displayName,
                     description = d.description ?? "",
                     type = string.IsNullOrEmpty(d.type) ? "Part" : d.type,
                     line = string.IsNullOrEmpty(d.line) ? "None" : d.line,
-                    icon = d.icon ?? "", iconGuid = d.iconGuid ?? "",
-                    bullet = Or(d.bullet), bulletGuid = Or(d.bulletGuid), muzzleFlash = Or(d.muzzleFlash), muzzleFlashGuid = Or(d.muzzleFlashGuid),
-                    hitEffect = Or(d.hitEffect), hitEffectGuid = Or(d.hitEffectGuid),
+                    icon = d.icon ?? "", iconFile = Or(d.iconFile),
+                    bullet = Or(d.bullet), muzzleFlash = Or(d.muzzleFlash), hitEffect = Or(d.hitEffect),
                     maxStack = Mathf.Max(1, d.maxStack),
                     hideFromMenu = d.hideFromMenu,
                 };
@@ -292,13 +306,13 @@ namespace CoreDawn.EditorTools
                 foreach (var e in edges.Values)
                 {
                     if (e.to == n.id && nodes.TryGetValue(e.from, out var src))
-                        inputs.Add(new GameDataJson.SlotDto { item = "Item:" + Sanitize(src.data.name), amount = e.amount });
+                        inputs.Add(new GameDataJson.SlotDto { item = GdPack.Id("item", Sanitize(src.data.name)), amount = e.amount });
                     if (e.from == n.id && nodes.TryGetValue(e.to, out var dst))
-                        outputs.Add(new GameDataJson.SlotDto { item = "Item:" + Sanitize(dst.data.name), amount = e.amount });
+                        outputs.Add(new GameDataJson.SlotDto { item = GdPack.Id("item", Sanitize(dst.data.name)), amount = e.amount });
                 }
                 var r = new GameDataJson.RecipeDto
                 {
-                    id = "Recipe:" + Sanitize(d.name),
+                    id = GdPack.Id("recipe", Sanitize(d.name)),
                     displayName = string.IsNullOrEmpty(d.displayName) ? d.name : d.displayName,
                     description = d.description ?? "",
                     tier = d.tier, craftTime = d.craftTime,
@@ -1062,7 +1076,7 @@ namespace CoreDawn.EditorTools
             }
 
             // idline + 경고
-            var idLbl = new Label((n.kind == "item" ? "Item:" : "Recipe:") + Sanitize(n.data.name)) { pickingMode = PickingMode.Ignore,
+            var idLbl = new Label(GdPack.Id(n.kind == "item" ? "item" : "recipe", Sanitize(n.data.name))) { pickingMode = PickingMode.Ignore,
                 style = { color = GdEnum.Faint, fontSize = 11, paddingLeft = 10, paddingRight = 10, paddingBottom = 8 } };
             Mono(idLbl);
             el.Add(idLbl);
@@ -1448,23 +1462,9 @@ namespace CoreDawn.EditorTools
                 hideT.RegisterValueChangedCallback(e => { d.hideFromMenu = e.newValue; Render(); });
                 sideBody.Add(hideT);
 
-                // icon — guid 가 파일을 특정하고 이름이 아틀라스 안의 스프라이트를 고른다
-                var iconRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
-                var iconPrev = new Image { style = { width = 34, height = 34, marginRight = 4 },
-                    sprite = FindSprite(d.iconGuid, d.icon) };
-                var iconPick = new UnityEditor.UIElements.ObjectField { objectType = typeof(Sprite),
-                    allowSceneObjects = false, tooltip = "JSON 에는 guid 와 스프라이트 이름이 함께 저장된다",
-                    value = FindSprite(d.iconGuid, d.icon), style = { flexGrow = 1 } };
-                iconPick.RegisterValueChangedCallback(ev =>
-                {
-                    (d.icon, d.iconGuid) = IconRefOf(ev.newValue as Sprite);
-                    iconPrev.sprite = ev.newValue as Sprite;
-                    Render();
-                });
-                iconRow.Add(iconPrev);
-                iconRow.Add(iconPick);
-                sideBody.Add(new Label("icon (guid + 이름으로 저장 — 비우면 기존 유지)") { style = { color = GdEnum.Faint, fontSize = 11, marginTop = 4 } });
-                sideBody.Add(iconRow);
+                // icon — 팩 시트 png + 프레임(좌표표 .json의 키)
+                sideBody.Add(new Label("icon (팩 textures/ 시트 + 프레임 — 비우면 아이콘 없음)") { style = { color = GdEnum.Faint, fontSize = 11, marginTop = 4 } });
+                sideBody.Add(GdPackAssets.IconRow(d.iconFile, d.icon, (f, fr) => { d.iconFile = f; d.icon = fr; Render(); }));
 
                 BuildModuleSection(d);
             }
@@ -1521,7 +1521,7 @@ namespace CoreDawn.EditorTools
                     var foot = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
                     foot.Add(new Button(() =>
                     {
-                        d.attackEffects.Add(new GEff { effect = effectIds.FirstOrDefault() ?? "Effect:Damage", value = 10 });
+                        d.attackEffects.Add(new GEff { effect = effectIds.FirstOrDefault() ?? GdPack.Id("effect", "damage"), value = 10 });
                         Rebuild(); Render();
                     }) { text = "+ 효과" });
                     if (dmg > 0) foot.Add(new Label($"1발 피해 {dmg}") { style = { color = GdEnum.Muted, fontSize = 11, marginLeft = 6 } });
@@ -1579,53 +1579,6 @@ namespace CoreDawn.EditorTools
                 sideBody.Add(preview);
                 RenderPreview();
             }
-        }
-
-        static readonly Dictionary<string, Sprite> spriteCache = new();
-
-        /// <summary>
-        /// guid 가 <b>파일</b>을, 이름이 그 안의 <b>어느 스프라이트</b>인지 고른다 — 스프라이트는
-        /// 아틀라스의 하위 에셋일 수 있어 guid 하나로는 특정되지 않는다.
-        /// 임포터의 FindSprite 와 같은 우선순위여야 에디터에 보이는 것과 임포트 결과가 어긋나지 않는다.
-        /// </summary>
-        static Sprite FindSprite(string guid, string name)
-        {
-            if (!string.IsNullOrEmpty(guid))
-            {
-                var key = guid + "|" + name;
-                if (spriteCache.TryGetValue(key, out var hit) && hit != null) return hit;
-
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (!string.IsNullOrEmpty(path))
-                {
-                    Sprite first = null;
-                    foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(path))
-                    {
-                        if (sub is not Sprite sp) continue;
-                        if (!string.IsNullOrEmpty(name) && sp.name == name) return spriteCache[key] = sp;
-                        first ??= sp;
-                    }
-                    if (first != null) return spriteCache[key] = first;
-                }
-            }
-            return FindSpriteByName(name);
-        }
-
-        static Sprite FindSpriteByName(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return null;
-            if (spriteCache.TryGetValue(name, out var c) && c != null) return c;
-            foreach (var guid in AssetDatabase.FindAssets($"{name} t:Sprite"))
-                foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(guid)))
-                    if (sub is Sprite sp && sp.name == name) return spriteCache[name] = sp;
-            return null;
-        }
-
-        /// <summary>픽커에서 고른 스프라이트 → (스프라이트 이름, 담긴 에셋의 guid).</summary>
-        static (string name, string guid) IconRefOf(Sprite sprite)
-        {
-            if (sprite == null) return ("", "");
-            return (sprite.name, AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(sprite)));
         }
 
         // ═════════════ 검증 (nodeWarning / renderWarnings) ═════════════

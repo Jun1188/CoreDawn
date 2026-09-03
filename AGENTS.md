@@ -91,10 +91,13 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   definition (`DroppedItem.authoredItemId`, `ResourceDepositView.resourceId`, `PlacedMapObject.dataId`, `CoreBootstrap.coreId`,
   `NestView.bossId/defenderId`, `Gun.gunId`, `NightWaveRecipeReward.unlockedRecipeId`, `MapDataSO.ResourceNodeSpec.itemId`): a pack id
   string resolved through `SaveRefs.Item/Entity/Recipe/Gun/Effect` (warns once, no fallback).
-- Data pipeline (5a-3e-1, 2026-09-01): **the v2 pack (`StreamingAssets/packs/coredawn/data.json`) is the only runtime source of definitions.**
-  The authoring format is still v1 `Assets/Data/Import/GameData.json` (DTOs in `Editor/GameDataJson.cs`), edited by the GameData
-  editor; its "저장" writes v1, exports v2 (`GameDataExporterV2`) and bakes `Resources/ViewCatalog.asset` (`ViewCatalogBaker`);
-  "저장 + 맵 임포트" additionally re-bakes the map SOs (`MapImporter`, validates deposit items against the pack). There is no
+- Data pipeline (5a-3e-2 ③, 2026-09-03): **the pack (`StreamingAssets/packs/coredawn/data.json` + `maps/*.json`) is the only source of
+  definitions, for runtime and editor alike.** The GameData editor shell (`Editor/GameDataEditor/GdShell`) reads it with `GdPack.ReadPack`,
+  converts to the legacy form-tab DTOs (`GdPack.ToV1` → `GameDataJson.Root`) and writes back with `GdPack.ToPack` (lossless round trip,
+  disk key order kept by `GdPack.OrderLike`, validated by `SimDatabase.Load` before `WritePack`). The **[UI ⇄ Raw]** bar button swaps
+  a form tab with the same section in the Raw tab (models synced both ways). Maps: `MapImporter.LoadAll/SaveAll`. v1 `GameData.json`,
+  `GameDataExporterV2`, `PackMaterialHarvester` and the python migration tools are gone; file references (models, icons, clips) are
+  pack-relative paths picked with `GdPackAssets`. There is no
   SO importer, no `Resources/*Database`, and no `EnsurePrefab` — building prefabs under `Assets/Prefabs/Buildings` are static
   assets until the 5a-4 view assembler retires them. Tutorial steps are pack `tutorial` entries (`TutorialStepDef`); condition
   logic is `Game/Tutorial/Conditions/*` plain classes registered in `TutorialConditions` (add a class + one table line — the
@@ -120,7 +123,7 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   all go through the assembler — never instantiate a building prefab. Guns are assembled **when equipped** (`WeaponManager.EquipWeapon`
   builds, unequip destroys — magazine state lives in the sim). Monsters are assembled too (`MonsterAssembler`: `view.collider`,
   `MonsterVisualController.Wire`, model prefabs under `Art/Models/Monsters` that carry the rig, Animator override controller and URP
-  materials). **The cell size is map data** (`MapDataSO.cellSize` ← `MapData.json`); `World.CellSize` returns it and `GameBootstrap`
+  materials). **The cell size is map data** (map `cellSize` ← pack `maps/<name>.json`); `World.CellSize` returns it and `GameBootstrap`
   injects it into the factory geometry, placement and the nav grid — there are no inspector copies. The nav grid subdivides a cell into
   `nodeSize` (1 m) nodes, never a hard-coded 4. Remaining prefabs: MonsterNest, ResourceNode, DroppedItem, vegetation trees.
 - Guns are sim-owned (5a-2e-2, 2026-08-31): the pack `guns` section loads as `GunDef` (magazine, reload, fire interval in seconds,

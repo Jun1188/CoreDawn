@@ -27,17 +27,14 @@ namespace CoreDawn.EditorTools
     //          type 드롭다운·model/icon/pose/sfx 꼴을 알려 준다(힌트는 유령 행을 만들지 않는다).
     //          id 참조(item·effect·gun·sound·materials)는 팩의 해당 섹션 키로 드롭다운.
     //  검증: 편집할 때마다 SimSchema 직렬화기(모르는 키 = 오류)로 정의를 역직렬화해 본다.
-    //  저장: data.json에 직접(파일의 개행 유지). v1 편집기의 "저장"은 내보내기로 data.json을 재생성하므로
-    //        셸(GameDataEditorWindow.Save)이 Raw 편집이 있으면 묻는다 — 과도기.
+    //  저장: 셸(GameDataEditorWindow.Save)이 한다 — 이 탭의 문서(JObject)가 곧 팩 문서라 Raw 편집이 있으면
+    //        PullFromRaw로 폼 모델을 갱신한 뒤 BuildPackDoc → WritePack(개행 유지). [UI ⇄ Raw] 전환은 GdShell.ToggleRaw.
     //  언두: 숫자·문자열은 키 입력마다 본문을 다시 짓지 않는다(포커스 끊김·Ctrl+Z 무효 지적 전례) —
     //        값은 즉시 모델에, 스냅샷은 포커스 단위. 구조 변경(추가·삭제·순서)은 한 스텝.
     // ═══════════════════════════════════════════════════════════
     sealed class GdRawTab : GdTab
     {
         public override string Title => "Raw";
-
-        internal static string PackPath => GameDataExporterV2.OutputPath;
-        const string HashPref = "CoreDawn.GdRaw.SavedHash";
 
         static readonly JsonSerializerSettings ParseSettings = new()
         {
@@ -120,7 +117,11 @@ namespace CoreDawn.EditorTools
         Section section = Sections[0];
         string selectedId;
         bool dirty;
-        bool crlf;
+
+        /// <summary>셸이 든 팩 문서(셸이 폼 탭 모델에서 만들어 준다). 편집은 이 객체를 제자리에서 바꾼다.</summary>
+        internal JObject Pack => pack;
+        /// <summary>Raw에서 고친 뒤 셸이 아직 폼 모델로 되가져가지 않았는가.</summary>
+        internal bool Dirty => dirty;
 
         readonly Stack<string> undo = new();
         readonly Stack<string> redo = new();
@@ -146,22 +147,34 @@ namespace CoreDawn.EditorTools
 
         // ── 파일 ────────────────────────────────────────────────
 
-        public override void OnDataLoaded() => LoadPack();
+        public override void OnDataLoaded() { }   // 셸이 LoadFrom으로 준다
 
-        void LoadPack()
+        /// <summary>셸이 폼 모델에서 만든 팩 문서를 받는다 — 선택은 유지(id가 남아 있으면), 언두는 비운다.</summary>
+        internal void LoadFrom(JObject doc, string error = null)
         {
-            loadError = null; pack = null;
-            try
-            {
-                var text = File.ReadAllText(PackPath);
-                crlf = text.Contains("\r\n");   // 내보내기는 LF로 쓰지만 git autocrlf가 체크아웃 때 CRLF로 바꾼다 — 파일의 것을 따른다
-                pack = JsonConvert.DeserializeObject<JObject>(text, ParseSettings);
-                if (pack["entities"] is not JObject) throw new Exception("entities 섹션이 없습니다");
-            }
-            catch (Exception e) { loadError = e.Message; }
+            pack = doc; loadError = error;
             dirty = false; undo.Clear(); redo.Clear();
             EnsureSelection();
+            if (listHost != null) { RenderList(); RenderTree(); }
         }
+
+        /// <summary>셸의 [UI|Raw] 전환 — 섹션(과 id)으로 이동.</summary>
+        internal void ShowSection(string sectionKey, string id = null)
+        {
+            var t = Tabs.FirstOrDefault(x => x.Sections.Any(s => s.Key == sectionKey));
+            if (t == null) return;
+            tab = t;
+            section = t.Sections.First(s => s.Key == sectionKey);
+            selectedId = id;
+            undo.Clear(); redo.Clear();
+            EnsureSelection();
+            if (listHost != null) { SyncTabButtons(); RenderList(); RenderTree(); }
+        }
+
+        /// <summary>셸이 폼 모델로 되가져간 뒤 부른다.</summary>
+        internal void ClearDirty() { dirty = false; RefreshStatus(); }
+
+        internal (string section, string id) Cursor => (section.Key, selectedId);
 
         void EnsureSelection()
         {
@@ -169,48 +182,6 @@ namespace CoreDawn.EditorTools
             var so = SectionObj;
             if (so == null) { selectedId = null; return; }
             if (selectedId == null || so[selectedId] == null) selectedId = so.Properties().FirstOrDefault()?.Name;
-        }
-
-        /// <summary>디스크의 data.json을 다시 읽는다(v1 내보내기가 덮어쓴 뒤 등).</summary>
-        internal void ReloadFromDisk()
-        {
-            LoadPack();
-            if (listHost != null) { RenderList(); RenderTree(); }
-        }
-
-        internal void SaveRaw()
-        {
-            if (pack == null) return;
-            // 내보내기와 같은 꼴(2칸 들여쓰기, 끝 개행) + 파일이 쓰던 개행 — 편집 없이 저장하면 바이트 동일
-            string nl = crlf ? "\r\n" : "\n";
-            var text = pack.ToString(Formatting.Indented).Replace("\r\n", "\n").Replace("\n", nl) + nl;
-            File.WriteAllText(PackPath, text);
-            AssetDatabase.ImportAsset(PackPath);
-            EditorPrefs.SetString(HashPref, Hash(text));
-            SimHost.Database = null;   // 에디트 모드 도구가 새 팩을 다시 읽게
-            dirty = false;
-            RefreshStatus();
-            Debug.Log($"[GdRaw] data.json 저장 — {section.Key} {(SectionObj?.Count ?? 0)}");
-        }
-
-        /// <summary>
-        /// Raw 편집이 살아 있는가 — 미저장 편집이 있거나, 디스크의 data.json이 마지막 Raw 저장 그대로인가.
-        /// 셸의 v1 저장(내보내기)이 이걸 보고 덮어쓸지 묻는다.
-        /// </summary>
-        internal bool HasRawEdits
-        {
-            get
-            {
-                if (dirty) return true;
-                try { return File.Exists(PackPath) && EditorPrefs.GetString(HashPref, "") == Hash(File.ReadAllText(PackPath)); }
-                catch { return false; }
-            }
-        }
-
-        static string Hash(string s)
-        {
-            using var sha = SHA1.Create();
-            return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(s))).Replace("-", "");
         }
 
         // ── 셸 ──────────────────────────────────────────────────
@@ -266,17 +237,14 @@ namespace CoreDawn.EditorTools
             status.style.flexGrow = 1;
             status.style.unityTextAlign = TextAnchor.MiddleLeft;
             bar.Add(status);
-            bar.Add(new Button(ReloadFromDisk) { text = "다시 읽기" });
             bar.Add(dupBtn = new Button(Duplicate) { text = "복제" });
             bar.Add(delBtn = new Button(DeleteSelected) { text = "삭제" });
-            bar.Add(new Button(SaveRaw) { text = "Raw 저장 (data.json)" });
             right.Add(bar);
             validation = new Label { style = { display = DisplayStyle.None } };
             right.Add(validation);
             treeHost = new ScrollView(ScrollViewMode.Vertical) { style = { flexGrow = 1, minHeight = 0 } };
             right.Add(treeHost);
 
-            if (pack == null && loadError == null) LoadPack();
             RenderList();
             RenderTree();
         }
@@ -491,7 +459,7 @@ namespace CoreDawn.EditorTools
             var so = SectionObj;
             status.text = so == null ? "" :
                 (section.IsMap ? $"{section.Key} {so.Count}" : section.Key) +
-                (dirty ? " · 미저장 (Raw 저장 또는 Ctrl+S)" : " · 저장됨") +
+                (dirty ? " · 편집됨 (저장: Ctrl+S)" : "") +
                 (undo.Count > 0 ? $" · 언두 {undo.Count}" : "");
         }
 
@@ -665,20 +633,8 @@ namespace CoreDawn.EditorTools
 
         void PickFile(FileSlot kind, Action<JToken> set)
         {
-            string packDir = Path.GetFullPath(GameDataExporterV2.PackFolder);
-            string start = Path.Combine(packDir, kind.folder);
-            if (!Directory.Exists(start)) start = packDir;
-            string picked = EditorUtility.OpenFilePanel("팩 파일 고르기", start, kind.ext);
-            if (string.IsNullOrEmpty(picked)) return;
-            string full = Path.GetFullPath(picked);
-            if (!full.StartsWith(packDir, StringComparison.OrdinalIgnoreCase))
-            {
-                // 팩은 자기 폴더 안의 파일만 가리킨다 — 밖의 파일은 먼저 복사해 넣어야 한다(빌드·모드 배포 단위)
-                EditorUtility.DisplayDialog("Raw", $"팩 폴더 안의 파일만 쓸 수 있습니다.\n{GameDataExporterV2.PackFolder}", "확인");
-                return;
-            }
-            string rel = full.Substring(packDir.Length).TrimStart('\\', '/').Replace('\\', '/');
-            Mutate(() => set(rel));
+            string rel = GdPackAssets.PickFile(kind.folder, kind.ext);
+            if (rel != null) Mutate(() => set(rel));
         }
 
         /// <summary>값 편집기 — 값은 즉시 모델에, 언두 스냅샷은 포커스 단위(키 입력마다 본문을 다시 짓지 않는다).</summary>

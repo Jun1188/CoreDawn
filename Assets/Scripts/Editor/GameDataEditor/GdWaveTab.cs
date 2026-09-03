@@ -65,7 +65,7 @@ namespace CoreDawn.EditorTools
         {
             body.Clear();
             var w = combat.wave;
-            if (w == null) { body.Add(new Label("웨이브 규칙이 없습니다 — GameData.json의 wave 블록") { style = { color = GdEnum.Warn } }); return; }
+            if (w == null) { body.Add(new Label("웨이브 규칙이 없습니다 — data.json의 wave 블록") { style = { color = GdEnum.Warn } }); return; }
 
             body.Add(GroupTitle("점수식"));
             var g1 = Grid();
