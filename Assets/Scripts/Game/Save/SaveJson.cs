@@ -6,7 +6,7 @@ using UnityEngine;
 namespace CoreDawn.Save
 {
     /// <summary>
-    /// 세이브 전용 JSON 설정 한 곳.
+    /// 세이브 요약(meta.json) 전용 JSON 설정 — 본체는 NBT(SaveNbt·SaveStorage).
     ///
     /// Unity의 Vector3/Quaternion을 그대로 직렬화하면 normalized·magnitude 같은 파생 프로퍼티까지
     /// 딸려 나와 파일이 부풀고 역직렬화가 깨진다. 그래서 좌표 타입은 전부 짧은 배열로 쓰는
@@ -35,20 +35,6 @@ namespace CoreDawn.Save
 
         public static T Deserialize<T>(string json) => JsonConvert.DeserializeObject<T>(json, Settings);
 
-        /// <summary>모듈이 돌려준 객체를 JToken으로. 변환기 설정이 동일하게 적용된다.</summary>
-        public static JToken ToToken(object o) => o == null ? null : JToken.FromObject(o, Serializer);
-
-        /// <summary>모듈이 받은 JToken을 DTO로. 토큰이 없거나 형태가 다르면 default.</summary>
-        public static T FromToken<T>(JToken t)
-        {
-            if (t == null || t.Type == JTokenType.Null) return default;
-            try { return t.ToObject<T>(Serializer); }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Save] '{typeof(T).Name}' 역직렬화 실패 — 이 부분은 건너뜁니다: {e.Message}");
-                return default;
-            }
-        }
 
         // ── 좌표 변환기 ───────────────────────────────────────────────
 

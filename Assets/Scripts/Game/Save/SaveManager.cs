@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
+using fNbt;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using CoreDawn.Combat;
@@ -36,7 +36,7 @@ namespace CoreDawn.Save
         /// 이번 빌드가 모르는 모듈 키를 여기 담아뒀다가 다음 저장 때 그대로 되돌려 쓴다 —
         /// 모듈이 덜 붙은 브랜치에서 열었다 저장해도 남의 데이터를 지우지 않기 위해서다.
         /// </summary>
-        Dictionary<string, JToken> _carriedModules = new();
+        Dictionary<string, NbtCompound> _carriedModules = new();
 
         double _playtime;
         string _currentSlotId;
@@ -233,7 +233,7 @@ namespace CoreDawn.Save
             var scene = SceneManager.GetActiveScene();
 
             // 모르는 모듈 키를 보존하기 위해 이전 데이터 위에 덮어쓴다
-            var modules = new Dictionary<string, JToken>(_carriedModules);
+            var modules = new Dictionary<string, NbtCompound>(_carriedModules);
 
             foreach (var m in _modules)
             {
@@ -247,7 +247,7 @@ namespace CoreDawn.Save
 
                 // null = 이 씬에 해당 시스템이 없음. 기존 값을 지우지 않고 그대로 둔다.
                 if (captured == null) continue;
-                modules[m.ModuleId] = SaveJson.ToToken(captured);
+                modules[m.ModuleId] = SaveNbt.ToTag(captured);
             }
 
             var cycle = TimeManager.Instance != null ? TimeManager.Instance.Cycle : null;
@@ -393,7 +393,7 @@ namespace CoreDawn.Save
 
             _playtime = 0;
             _currentSlotId = null;
-            _carriedModules = new Dictionary<string, JToken>();
+            _carriedModules = new Dictionary<string, NbtCompound>();
             SaveLoadContext.Finish();       // 복원 아님 — 시딩이 정상 동작해야 한다
             ResetPersistentSingletons();
 
@@ -559,7 +559,7 @@ namespace CoreDawn.Save
                 before.Modules.TryGetValue(key, out var a);
                 after.Modules.TryGetValue(key, out var b);
 
-                if (JToken.DeepEquals(a, b)) continue;
+                if (SaveNbt.DeepEquals(a, b)) continue;
 
                 mismatches++;
                 Debug.LogError($"[Save][왕복] 모듈 '{key}' 불일치\n" +
@@ -572,7 +572,7 @@ namespace CoreDawn.Save
             return mismatches == 0;
         }
 
-        static string Truncate(JToken t, int max = 2000)
+        static string Truncate(NbtTag t, int max = 2000)
         {
             string s = t?.ToString() ?? "(없음)";
             return s.Length <= max ? s : s[..max] + $"\n… (총 {s.Length}자)";

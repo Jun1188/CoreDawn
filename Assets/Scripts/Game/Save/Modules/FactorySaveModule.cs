@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using fNbt;
 using UnityEngine;
 using CoreDawn.Factory;
 using CoreDawn.Placement;
@@ -50,7 +51,7 @@ namespace CoreDawn.Save
             [JsonProperty("hpCur")] public float HpCurrent;
 
             /// <summary>모듈별 상태(ISaveableModule) — 키는 모듈 타입 이름(…Module 제외, 예: "Turret").</summary>
-            [JsonProperty("modules")] public Dictionary<string, JToken> Modules = new();
+            [JsonProperty("modules")] public Dictionary<string, NbtCompound> Modules = new();
         }
 
         public class BeltDto
@@ -111,12 +112,12 @@ namespace CoreDawn.Save
 
         // ── 복원 ──────────────────────────────────────────────────────
 
-        public void Restore(JToken data)
+        public void Restore(NbtCompound data)
         {
             var boot = FactoryBootstrap.Instance;
             if (boot == null || boot.Factory == null) return;
 
-            var dto = SaveJson.FromToken<Dto>(data);
+            var dto = SaveNbt.FromTag<Dto>(data);
             if (dto == null) return;
 
             // 시계가 먼저다 — 아래에서 되살릴 타이머들이 전부 이 값을 기준으로 다시 예약된다
@@ -202,20 +203,20 @@ namespace CoreDawn.Save
         /// 여기서는 출구 벨트를 열쇠로 세그먼트를 찾아 내용물만 얹는다.
         /// </summary>
         // ── 모듈 상태 — 엔티티의 ISaveableModule을 전부, 건물 종류를 모르고 ──
-        static Dictionary<string, JToken> CaptureModules(CoreDawn.Sim.Entity e)
+        static Dictionary<string, NbtCompound> CaptureModules(CoreDawn.Sim.Entity e)
         {
-            var d = new Dictionary<string, JToken>();
+            var d = new Dictionary<string, NbtCompound>();
             if (e == null) return d;
             foreach (var m in e.Modules)
-                if (m is ISaveableModule s) d[ModuleKey(m)] = SaveJson.ToToken(s.CaptureState());
+                if (m is ISaveableModule s) d[ModuleKey(m)] = SaveNbt.ToTag(s.CaptureState());
             return d;
         }
 
-        static void RestoreModules(CoreDawn.Sim.Entity e, Dictionary<string, JToken> saved)
+        static void RestoreModules(CoreDawn.Sim.Entity e, Dictionary<string, NbtCompound> saved)
         {
             if (e == null || saved == null || saved.Count == 0) return;
             foreach (var m in e.Modules)
-                if (m is ISaveableModule s && saved.TryGetValue(ModuleKey(m), out var tok) && tok != null) s.RestoreState(tok);
+                if (m is ISaveableModule s && saved.TryGetValue(ModuleKey(m), out var tok) && tok != null) s.RestoreState(SaveNbt.ToJson(tok));   // Sim 은 fNbt 를 모른다 — JToken 다리
         }
 
         static string ModuleKey(CoreDawn.Sim.EntityModule m)
