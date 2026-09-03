@@ -396,7 +396,7 @@ namespace CoreDawn.Worlds
                                  world);
                 return 0;
             }
-            int variants = Mathf.Max(1, ViewSchema.Of(treeDef).Models().Count);   // view.model 배열 = 변형 목록
+            int variants = Mathf.Max(1, ViewSchema.Entity(treeDef).Model.Count);   // view.model 배열 = 변형 목록
 
             // 심은 <b>런타임에만</b> 필요하다 — 에디터에서 씬에 굳힐 때는 그림만 만들고,
             // 칸을 잡는 것은 플레이가 시작될 때 Connect 가 한다.

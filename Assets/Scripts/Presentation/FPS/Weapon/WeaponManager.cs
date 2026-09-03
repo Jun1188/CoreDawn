@@ -110,25 +110,24 @@ namespace CoreDawn.FPS
         private Gun AssembleGun(GunDef def)
         {
             var parent = gunRoot != null ? gunRoot : transform;
-            var view = ViewSchema.Of(def);
+            var view = ViewSchema.Gun(def);
             if (view.Type != "Gun") { Debug.LogError($"[WeaponManager] {def.Id}: view.type이 Gun이 아닙니다('{view.Type}') — 조립하지 않습니다."); return null; }
             // 모델 — 팩 glb(view.model[0] {file, materials})
-            var refs = view.Models();
+            var refs = view.Model;
             var chosen = refs.Count > 0 ? refs[0] : null;
-            if (chosen != null && !chosen.IsPack) Debug.LogError($"[WeaponManager] {def.Id}: view.model '{chosen.File}'은 팩 모델이 아닙니다 — 카탈로그(guid) 참조는 퇴역했습니다.");
-            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : null;
+            var model = chosen != null ? Managers.PackAssets.ModelOf(chosen.File) : null;
             if (model == null) Debug.LogError($"[WeaponManager] {def.Id}: 모델(view.model)이 없습니다 — 내장 체커 상자로 조립합니다.");
 
             var go = new GameObject(PascalKeyOf(def.Id));
             go.SetActive(false);   // 자세·앵커를 다 잡은 뒤 켠다 — Gun.Awake가 카메라를 찾는다
             go.transform.SetParent(parent, false);
-            var (pos, rot, scale) = view.Pose;
+            var (pos, rot, scale) = view.PoseTRS;
             go.transform.localPosition = pos; go.transform.localRotation = rot; go.transform.localScale = Vector3.one * scale;
 
             var body = model != null ? Instantiate(model, go.transform) : Managers.MissingAssets.Box("Missing", new Vector3(0.1f, 0.1f, 0.4f), go.transform);
             body.name = model != null ? model.name : "Missing";
             body.SetActive(true);   // 팩 템플릿은 비활성으로 보관된다
-            if (chosen != null && chosen.IsPack) Managers.PackAssets.BindSlots(body, chosen.Materials, def.Id);
+            if (chosen != null) Managers.PackAssets.BindSlots(body, chosen.Materials, def.Id);
             body.transform.localPosition = Vector3.zero; body.transform.localRotation = Quaternion.identity; body.transform.localScale = Vector3.one;
             // 뷰모델 레이어 — 홀더(Weapon_Holder, Weapon 레이어)의 것을 그대로 물려받는다. 오버레이 카메라가 이 레이어만 그리고 메인 카메라·조명은 뺀다
             SetLayerRecursively(go.transform, parent.gameObject.layer);
@@ -136,11 +135,11 @@ namespace CoreDawn.FPS
             var gun = go.AddComponent<Gun>();
             gun.gunId = def.Id;
             gun.enemyLayer = enemyLayer;
-            gun.muzzlePoint = Anchor(body.transform, "MuzzlePoint", view.Vec3("muzzle"));
-            gun.sightPoint = Anchor(body.transform, "SightPos", view.Vec3("sight"));
+            gun.muzzlePoint = Anchor(body.transform, "MuzzlePoint", view.MuzzleOffset);
+            gun.sightPoint = Anchor(body.transform, "SightPos", view.SightOffset);
             SetLayerRecursively(go.transform, parent.gameObject.layer);   // 새로 만든 앵커까지
-            var kb = view.Object("knockback");
-            if (kb != null) { gun.knockbackEffectId = (string)kb["effect"]; gun.knockbackPerDamage = (float?)kb["perDamage"] ?? gun.knockbackPerDamage; }
+            var kb = view.Knockback;
+            if (kb != null) { gun.knockbackEffectId = kb.Effect; gun.knockbackPerDamage = kb.PerDamage; }
             return gun;
         }
 

@@ -199,7 +199,7 @@ namespace CoreDawn.Entities
             // 파괴음 — 타워는 TowerVisualController가 종류별 클립과 폭발 연출까지 함께 내므로
             // 여기서는 그 외 건물만 맡는다. 둘 다 내면 타워가 두 번 터지는 소리가 난다.
             if (GetComponent<TowerVisualController>() == null)
-                SoundManager.Instance?.Play(ViewSchema.Of(Def)?.SfxOf("destroy"), transform.position);
+                SoundManager.Instance?.Play(ViewSchema.Entity(Def)?.SfxOf("destroy"), transform.position);
 
             // 심에 붙지 않은 뷰(테스트 씬의 껍데기)만 스스로 정리한다 — 나머지는 Removed가 파괴한다
             if (building == null) Destroy(gameObject);

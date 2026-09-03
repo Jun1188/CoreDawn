@@ -33,13 +33,13 @@ namespace CoreDawn.Managers
 
         public static Ammo AmmoOf(ItemDef item)
         {
-            var v = item?.View;
+            var v = item != null ? Data.ViewSchema.Item(item) : null;
             if (v == null) return null;
             return new Ammo
             {
-                bulletPrefab = Of((string)v["bullet"]),
-                muzzleFlashPrefab = Of((string)v["muzzleFlash"]),
-                hitEffectPrefab = Of((string)v["hitEffect"]),
+                bulletPrefab = Of(v.Bullet),
+                muzzleFlashPrefab = Of(v.MuzzleFlash),
+                hitEffectPrefab = Of(v.HitEffect),
             };
         }
 

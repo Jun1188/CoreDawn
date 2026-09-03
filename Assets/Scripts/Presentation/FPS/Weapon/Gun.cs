@@ -60,7 +60,7 @@ namespace CoreDawn.FPS
         }
 
         /// <summary>정의의 표현 사양(뷰 종류·소리 자리).</summary>
-        public ViewSpec View => ViewSchema.Of(Def);
+        public GunViewDef View => ViewSchema.Gun(Def);
 
         private WeaponModule weapon;
         /// <summary>소지자(플레이어 엔티티)의 무기 모듈. 플레이어 엔티티가 아직 없으면 null.</summary>

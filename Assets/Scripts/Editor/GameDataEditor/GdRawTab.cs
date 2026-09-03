@@ -64,7 +64,7 @@ namespace CoreDawn.EditorTools
             new("tutorial", "tutorial", "tutorial — 튜토리얼", typeof(TutorialStepDef), true),
             new("sounds", "sound", "sounds — 소리", typeof(SoundDef), true),
             new("materials", "material", "materials — 재질", typeof(MaterialDef), true),
-            new("sfx", "sfx", "sfx — 공용 소리 자리", typeof(RawHints.SoundUse), true),
+            new("sfx", "sfx", "sfx — 공용 소리 자리", typeof(Data.SoundUse), true),
             new("wave", "wave", "wave — 웨이브 규칙", typeof(WaveRuleDef), false),
             new("dayCycle", "dayCycle", "dayCycle — 낮·밤 길이", typeof(DayCycleDef), false),
         };
@@ -436,10 +436,12 @@ namespace CoreDawn.EditorTools
         /// </summary>
         void RenderObject(VisualElement host, JObject obj, Type schemaType, string path, string parentKey)
         {
-            var fields = RawSchema.FieldsOf(schemaType);
+            // 사전형(Dictionary<string, T>) 블록은 키가 자유고 값이 T — 필드 목록 대신 값 타입으로 자식을 그린다
+            Type dictValue = RawHints.DictValueOf(schemaType);
+            var fields = dictValue != null ? null : RawSchema.FieldsOf(schemaType);
             var byName = new Dictionary<string, FieldInfo>();
             if (fields != null) foreach (var (name, f) in fields) byName[name] = f;
-            Type childHint = fields == null ? RawHints.ChildHint(parentKey) : null;
+            Type childHint = dictValue;
 
             foreach (var p in obj.Properties().ToList())
             {
@@ -449,11 +451,11 @@ namespace CoreDawn.EditorTools
                 var table = f != null ? RawSchema.ModuleTableFor(f.FieldType) : null;
                 if (table != null) { RenderModules(host, obj, key, path + "/" + key, table); continue; }
                 Type memberType = f?.FieldType ?? childHint;
-                if (f != null && f.FieldType == typeof(JObject)) memberType = RawHints.ForJObjectField(key) ?? typeof(JObject);
+                if (f != null && f.FieldType == typeof(JObject)) memberType = RawHints.ForJObjectField(key, section.Key) ?? typeof(JObject);
                 RenderMember(host, key, p.Value, memberType, path + "/" + key, key,
                     set: v => obj[key] = v, remove: () => obj.Remove(key), ghostDefault: null);
             }
-            if (fields == null) { RenderAddKey(host, obj, parentKey); return; }
+            if (fields == null) { RenderAddKey(host, obj, dictValue); return; }
             if (RawHints.NoGhost.Contains(schemaType)) { RenderAddHintField(host, obj, schemaType, fields); return; }
             foreach (var (name, f) in fields)
             {
@@ -461,7 +463,7 @@ namespace CoreDawn.EditorTools
                 if (name == "type" && RawSchema.IsModuleType(schemaType)) continue;
                 var table = RawSchema.ModuleTableFor(f.FieldType);
                 if (table != null) { RenderModules(host, obj, name, path + "/" + name, table); continue; }
-                Type memberType = f.FieldType == typeof(JObject) ? (RawHints.ForJObjectField(name) ?? typeof(JObject)) : f.FieldType;
+                Type memberType = f.FieldType == typeof(JObject) ? (RawHints.ForJObjectField(name, section.Key) ?? typeof(JObject)) : f.FieldType;
                 RenderMember(host, name, null, memberType, path + "/" + name, name,
                     set: v => obj[name] = v, remove: () => obj.Remove(name),
                     ghostDefault: () => RawSchema.DefaultOfField(schemaType, f));
@@ -489,8 +491,8 @@ namespace CoreDawn.EditorTools
             host.Add(add);
         }
 
-        /// <summary>스키마 없는 사전형 블록(sfx·textures·colors·floats…)에 키를 더한다 — 값은 부모 키의 힌트 기본값.</summary>
-        void RenderAddKey(VisualElement host, JObject obj, string parentKey)
+        /// <summary>사전형 블록(sfx·textures·colors·floats…)에 키를 더한다 — 값은 사전의 값 타입 기본값(타입을 모르면 빈 문자열).</summary>
+        void RenderAddKey(VisualElement host, JObject obj, Type valueType)
         {
             var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 2 } };
             var name = new TextField { value = "", style = { width = 180, marginLeft = 0 } };
@@ -502,7 +504,7 @@ namespace CoreDawn.EditorTools
                 string key = (name.value ?? "").Trim();
                 if (key.Length == 0) return;
                 if (obj[key] != null) { EditorUtility.DisplayDialog("Raw", $"'{key}'는 이미 있습니다.", "확인"); return; }
-                Mutate(() => obj[key] = RawHints.DefaultChild(parentKey));
+                Mutate(() => obj[key] = valueType != null ? RawSchema.DefaultOf(valueType) : "");
             }, "이 블록에 키를 더한다 — 값은 블록 종류의 기본값"));
             host.Add(row);
         }
@@ -892,82 +894,36 @@ namespace CoreDawn.EditorTools
     // ═══════════════════════════════════════════════════════════
     static class RawHints
     {
-        /// <summary>정의의 view 블록(Def.View). 키 이름은 ViewSpec이 읽는 것과 같다.</summary>
-        public sealed class View
+        // view 블록의 스키마는 런타임이 읽는 실제 클래스(CoreDawn.Data.ViewDefs: EntityViewDef·GunViewDef·ItemViewDef·
+        // SoundViewDef·MaterialViewDef)다 — 편집기가 따로 흉내 내지 않는다(사용자 지적 2026-09-03 "view도 class 있는 데이터인데
+        // 왜 추론으로 하는거야"). 심의 Def.View는 JObject라, 어느 섹션의 view가 어느 클래스인지만 여기서 잇는다.
+
+        /// <summary>view 클래스는 선택 필드가 많아 유령 행 대신 "+ 필드 추가" 드롭다운을 쓴다(정의마다 안 쓰는 키가 잔뜩 뜨지 않게).</summary>
+        public static readonly HashSet<Type> NoGhost = new()
         {
-            [JsonProperty("type")] public string Type;
-            [JsonProperty("model")] public List<ModelRef> Model;
-            [JsonProperty("icon")] public Icon Icon;
-            [JsonProperty("pose")] public Pose Pose;
-            [JsonProperty("poseCurveL")] public Pose PoseCurveL;
-            [JsonProperty("poseCurveR")] public Pose PoseCurveR;
-            [JsonProperty("sfx")] public JObject Sfx;
-            [JsonProperty("clips")] public List<string> Clips;
-            [JsonProperty("shader")] public string Shader;
-            [JsonProperty("textures")] public JObject Textures;
-            [JsonProperty("colors")] public JObject Colors;
-            [JsonProperty("floats")] public JObject Floats;
-            [JsonProperty("keywords")] public List<string> Keywords;
-        }
-
-        public sealed class ModelRef
-        {
-            [JsonProperty("file")] public string File = "";
-            [JsonProperty("materials")] public List<string> Materials = new();
-        }
-
-        public sealed class Icon
-        {
-            [JsonProperty("file")] public string File = "";
-            [JsonProperty("frame")] public string Frame = "";
-        }
-
-        public sealed class Pose
-        {
-            [JsonProperty("position")] public float[] Position = { 0f, 0f, 0f };
-            [JsonProperty("rotation")] public float[] Rotation = { 0f, 0f, 0f };
-            [JsonProperty("scale")] public float Scale = 1f;
-        }
-
-        /// <summary>소리 자리 하나 — view.sfx의 값이자 팩 최상위 sfx 섹션의 항목(Data.SoundUse와 같은 키).</summary>
-        public sealed class SoundUse
-        {
-            [JsonProperty("sound")] public string Sound = "";
-            [JsonProperty("volume")] public float Volume = 1f;
-            [JsonProperty("spatial")] public bool Spatial = true;
-        }
-
-        public sealed class TextureRef
-        {
-            [JsonProperty("file")] public string File = "";
-            [JsonProperty("linear")] public bool Linear;
-        }
-
-        public static readonly HashSet<Type> NoGhost = new() { typeof(View), typeof(Pose) };
-
-        /// <summary>JObject 타입 필드에 붙는 힌트 — 지금은 view뿐.</summary>
-        public static Type ForJObjectField(string fieldName) => fieldName == "view" ? typeof(View) : null;
-
-        /// <summary>사전형 블록의 자식 힌트 — sfx의 값은 소리 자리, textures의 값은 텍스처 참조.</summary>
-        public static Type ChildHint(string parentKey) => parentKey switch
-        {
-            "sfx" => typeof(SoundUse),
-            "textures" => typeof(TextureRef),
-            _ => null,
+            typeof(Data.EntityViewDef), typeof(Data.GunViewDef), typeof(Data.ItemViewDef), typeof(Data.SoundViewDef), typeof(Data.MaterialViewDef),
+            typeof(Data.PoseDef),
         };
 
-        /// <summary>사전형 블록에 새 키를 더할 때의 값 — 힌트 타입이 있으면 그 기본, colors는 흰색 RGBA, floats는 0, 나머지는 빈 문자열.</summary>
-        public static JToken DefaultChild(string parentKey)
+        /// <summary>JObject 타입 필드에 붙는 스키마 — view는 섹션마다 다른 클래스(ViewSchema가 읽는 것과 같은 표).</summary>
+        public static Type ForJObjectField(string fieldName, string sectionKey)
         {
-            var t = ChildHint(parentKey);
-            if (t != null) return RawSchema.DefaultOf(t);
-            return parentKey switch
+            if (fieldName != "view") return null;
+            return sectionKey switch
             {
-                "colors" => new JArray(1f, 1f, 1f, 1f),
-                "floats" => 0f,
-                _ => "",
+                "entities" => typeof(Data.EntityViewDef),
+                "guns" => typeof(Data.GunViewDef),
+                "items" => typeof(Data.ItemViewDef),
+                "sounds" => typeof(Data.SoundViewDef),
+                "materials" => typeof(Data.MaterialViewDef),
+                _ => null,
             };
         }
+
+        /// <summary>사전형(Dictionary&lt;string, T&gt;) 필드의 값 타입 — sfx의 값은 SoundUse, textures의 값은 TextureRef.</summary>
+        public static Type DictValueOf(Type t) =>
+            t != null && t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Dictionary<,>) && t.GetGenericArguments()[0] == typeof(string)
+                ? t.GetGenericArguments()[1] : null;
     }
 
     // ═══════════════════════════════════════════════════════════

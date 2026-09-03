@@ -88,15 +88,14 @@ namespace CoreDawn.Entities
         /// 리그 배선 — 모델 안에서 이름으로 찾는다(블렌더 규약: YawPivot → PitchPivot → Droop → Recoil, 총구 Muzzle_*).
         /// 이름은 정의의 view.rig{yaw, pitch, droop, recoil, muzzle}로 바꿀 수 있다(모델을 못 고치는 서드파티 리그).
         /// </summary>
-        public void WireRig(Transform model, ViewSpec view)
+        public void WireRig(Transform model, EntityViewDef view)
         {
-            var rig = view?.Object("rig");
-            string N(string key, string fallback) => (string)rig?[key] ?? fallback;
-            yawPivot   = Find(model, N("yaw", "YawPivot"));
-            pitchPivot = Find(model, N("pitch", "PitchPivot"));
-            droop      = Find(model, N("droop", "Droop"));
-            recoil     = Find(model, N("recoil", "Recoil"));
-            string muzzlePrefix = N("muzzle", "Muzzle_");
+            var rig = view?.Rig;
+            yawPivot   = Find(model, rig?.Yaw ?? "YawPivot");
+            pitchPivot = Find(model, rig?.Pitch ?? "PitchPivot");
+            droop      = Find(model, rig?.Droop ?? "Droop");
+            recoil     = Find(model, rig?.Recoil ?? "Recoil");
+            string muzzlePrefix = rig?.Muzzle ?? "Muzzle_";
             var list = new System.Collections.Generic.List<Transform>();
             foreach (var t in model.GetComponentsInChildren<Transform>(true))
                 if (t.name.StartsWith(muzzlePrefix, System.StringComparison.Ordinal)) list.Add(t);
@@ -290,7 +289,7 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>정의의 표현 사양 — 소리 자리(fire·destroy·starved)는 팩 view.sfx에 있다. 심에 붙기 전엔 null.</summary>
-        private ViewSpec View => ViewSchema.Of(GetComponent<BuildingView>()?.Def);
+        private EntityViewDef View => ViewSchema.Entity(GetComponent<BuildingView>()?.Def);
 
         /// <summary>SoundManager가 없는 씬(테스트 씬 등)에서도 게임은 돌아가야 한다.</summary>
         private static void Play(SoundUse use, Vector3 position) => SoundManager.Instance?.Play(use, position);

@@ -35,7 +35,7 @@ namespace CoreDawn.Entities
 
         static GameObject Assemble(EntityDef def, BeltShape shape, float cellSize, bool ghost, int variant)
         {
-            var view = ViewSchema.Of(def);
+            var view = ViewSchema.Entity(def);
             var go = new GameObject(ghost ? "Preview " + PascalKeyOf(def.Id) : PascalKeyOf(def.Id));
             go.SetActive(false);   // 컴포넌트를 다 붙인 뒤 켠다 — Awake에서 서로를 GetComponent로 찾는다(TowerView ↔ TowerVisualController)
             go.transform.localScale = Vector3.one * cellSize;
@@ -45,7 +45,7 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>모델 인스턴스(팩이면 슬롯 재질까지) 또는 자리표시 큐브를 루트 아래에 붙이고, 레이어·콜라이더를 맞춘다. 반환 = 몸체 트랜스폼.</summary>
-        static Transform AttachBody(GameObject go, EntityDef def, ViewSpec view, BeltShape shape, int variant, bool ghost)
+        static Transform AttachBody(GameObject go, EntityDef def, EntityViewDef view, BeltShape shape, int variant, bool ghost)
         {
             var model = ResolveModel(def, view, shape, variant, out var chosen);
             Transform body;
@@ -54,7 +54,7 @@ namespace CoreDawn.Entities
                 var inst = Object.Instantiate(model, go.transform);
                 inst.name = model.name;
                 inst.SetActive(true);   // 팩 템플릿(PackAssets)은 비활성으로 보관된다
-                if (chosen != null && chosen.IsPack) Managers.PackAssets.BindSlots(inst, chosen.Materials, def.Id);
+                if (chosen != null) Managers.PackAssets.BindSlots(inst, chosen.Materials, def.Id);
                 var (pos, rot, scale) = view.PoseFor(shape);
                 inst.transform.localPosition = pos;
                 inst.transform.localRotation = rot;
@@ -73,7 +73,7 @@ namespace CoreDawn.Entities
             }
 
             // 레이어 — 기본 Entity, view.layer로 바꿀 수 있다(광맥 몸은 Ground, 둥지는 Nest). 이름이 없는 레이어는 오류
-            string layerName = view.String("layer") ?? "Entity";
+            string layerName = view.Layer ?? "Entity";
             int layer = LayerMask.NameToLayer(layerName);
             if (layer < 0) Debug.LogError($"[BuildingAssembler] {def.Id}: view.layer '{layerName}'이 프로젝트 레이어에 없습니다.");
             else SetLayerRecursively(go.transform, layer);
@@ -85,7 +85,7 @@ namespace CoreDawn.Entities
             }
 
             // 렌더러마다 MeshCollider — view.meshCollider:false면 안 붙인다(광맥·둥지처럼 데이터 콜라이더만 쓰는 정의)
-            if (view.Raw["meshCollider"] == null || (bool)view.Raw["meshCollider"])
+            if (view.MeshCollider)
             {
                 foreach (var mr in body.GetComponentsInChildren<MeshRenderer>(true))
                     if (mr.GetComponent<Collider>() == null && mr.GetComponent<MeshFilter>() is { sharedMesh: not null } mf)
@@ -102,10 +102,10 @@ namespace CoreDawn.Entities
         /// 항상 도는 클립(벨트 모프 애니) — view.loop(모양별 loopCurveL/loopCurveR)에 적힌 glb 애니메이션 이름을 반복 재생한다.
         /// 상태에 따라 바뀌는 애니(타워·몬스터)는 각 뷰의 재생기 몫. 이름이 없으면 오류.
         /// </summary>
-        static void PlayLoop(GameObject inst, ViewSpec view, BeltShape shape, string owner)
+        static void PlayLoop(GameObject inst, EntityViewDef view, BeltShape shape, string owner)
         {
             string key = shape == BeltShape.CurveL ? "loopCurveL" : shape == BeltShape.CurveR ? "loopCurveR" : "loop";
-            string clipName = view.String(key);
+            string clipName = view.LoopFor(shape);
             if (string.IsNullOrEmpty(clipName)) return;
             var anim = inst.GetComponentInChildren<Animation>(true);
             var clip = anim != null ? anim.GetClip(clipName) : null;
@@ -119,29 +119,28 @@ namespace CoreDawn.Entities
         /// view.colliders — 데이터로 적은 콜라이더(칸 단위, 루트 기준): <c>[{name, layer, box:{center,size}} | {name, layer, capsule:{center,radius,height}}]</c>.
         /// 각각 자식 오브젝트(name)로 붙인다 — 광맥의 Obstacle 상자(상호작용·막힘), 둥지의 NestCore 캡슐(파괴 뒤에도 남는 핵).
         /// </summary>
-        static void AddDataColliders(GameObject go, EntityDef def, ViewSpec view)
+        static void AddDataColliders(GameObject go, EntityDef def, EntityViewDef view)
         {
-            if (!(view.Raw["colliders"] is Newtonsoft.Json.Linq.JArray arr)) return;
+            if (view.Colliders == null) return;
             int i = 0;
-            foreach (var t in arr)
+            foreach (var c in view.Colliders)
             {
-                if (!(t is Newtonsoft.Json.Linq.JObject c)) continue;
-                var child = new GameObject((string)c["name"] ?? $"Collider_{i}");
+                if (c == null) continue;
+                var child = new GameObject(c.Name ?? $"Collider_{i}");
                 child.transform.SetParent(go.transform, false);
-                string layerName = (string)c["layer"];
+                string layerName = c.Layer;
                 int layer = string.IsNullOrEmpty(layerName) ? go.layer : LayerMask.NameToLayer(layerName);
                 if (layer < 0) { Debug.LogError($"[BuildingAssembler] {def.Id}: colliders[{i}].layer '{layerName}'이 프로젝트 레이어에 없습니다."); layer = go.layer; }
                 child.layer = layer;
-                Vector3 V(Newtonsoft.Json.Linq.JToken a, Vector3 dflt) => a is Newtonsoft.Json.Linq.JArray v && v.Count >= 3 ? new Vector3((float)v[0], (float)v[1], (float)v[2]) : dflt;
-                if (c["box"] is Newtonsoft.Json.Linq.JObject box)
+                if (c.Box != null)
                 {
                     var bc = child.AddComponent<BoxCollider>();
-                    bc.center = V(box["center"], Vector3.zero); bc.size = V(box["size"], Vector3.one);
+                    bc.center = ViewDefs.Vec3(c.Box.Center, Vector3.zero); bc.size = ViewDefs.Vec3(c.Box.Size, Vector3.one);
                 }
-                else if (c["capsule"] is Newtonsoft.Json.Linq.JObject cap)
+                else if (c.Capsule != null)
                 {
                     var cc = child.AddComponent<CapsuleCollider>();
-                    cc.center = V(cap["center"], Vector3.zero); cc.radius = (float?)cap["radius"] ?? 0.5f; cc.height = (float?)cap["height"] ?? 1f;
+                    cc.center = ViewDefs.Vec3(c.Capsule.Center, Vector3.zero); cc.radius = c.Capsule.Radius; cc.height = c.Capsule.Height;
                 }
                 else Debug.LogError($"[BuildingAssembler] {def.Id}: colliders[{i}]에 box나 capsule이 없습니다.");
                 i++;
@@ -149,7 +148,7 @@ namespace CoreDawn.Entities
         }
 
         /// <summary>view.type별 뷰 컴포넌트 — 없을 때만 붙인다(마커에 이미 있을 수 있다). 타워 리그 배선은 몸체가 있을 때.</summary>
-        static void AddViewComponents(GameObject go, EntityDef def, ViewSpec view, Transform body)
+        static void AddViewComponents(GameObject go, EntityDef def, EntityViewDef view, Transform body)
         {
             switch (view.Type)
             {
@@ -187,13 +186,11 @@ namespace CoreDawn.Entities
         /// 모델 출처 — view.model(배열, [0]이 기본·나머지는 변형)의 팩 glb(PackAssets). 없으면 null(호출부가 체커 상자). 옛 guid 문자열은 오류.
         /// 변형은 <paramref name="variant"/> % 개수로 고른다(나무는 칸에서 결정적으로 뽑는다).
         /// </summary>
-        public static GameObject ResolveModel(EntityDef def, ViewSpec view, BeltShape shape, int variant, out ViewSpec.ModelRef chosen)
+        public static GameObject ResolveModel(EntityDef def, EntityViewDef view, BeltShape shape, int variant, out ModelRef chosen)
         {
-            string key = shape == BeltShape.CurveL ? "modelCurveL" : shape == BeltShape.CurveR ? "modelCurveR" : "model";
-            var list = view.Models(key);
-            chosen = list.Count > 0 ? list[((variant % list.Count) + list.Count) % list.Count] : null;
+            var list = view.ModelsFor(shape);
+            chosen = list != null && list.Count > 0 ? list[((variant % list.Count) + list.Count) % list.Count] : null;
             if (chosen == null) return null;
-            if (!chosen.IsPack) { Debug.LogError($"[BuildingAssembler] {def.Id}: view.{key} '{chosen.File}'은 팩 모델({{file, materials}})이 아닙니다 — 카탈로그(guid) 참조는 퇴역했습니다."); return null; }
             return Managers.PackAssets.ModelOf(chosen.File);
         }
 

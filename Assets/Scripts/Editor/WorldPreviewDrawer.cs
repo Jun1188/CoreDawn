@@ -211,7 +211,7 @@ namespace CoreDawn.EditorTools
             var tree = Find(WorldPopulator.TreeEntityKey);
             if (tree != null && map.trees != null)
             {
-                int variants = Mathf.Max(1, ViewSchema.Of(tree).Models().Count);
+                int variants = Mathf.Max(1, ViewSchema.Entity(tree).Model.Count);
                 foreach (var c in map.trees)
                 {
                     WorldPopulator.TreePose(world, c, variants, out int pi, out Vector3 pos, out float yaw, out float scale);
@@ -322,11 +322,10 @@ namespace CoreDawn.EditorTools
             if (parts.ContainsKey(key)) return key;
             var list = new List<Part>();
             parts[key] = list;
-            var view = ViewSchema.Of(def);
-            var refs = view.Models();
+            var view = ViewSchema.Entity(def);
+            var refs = view.Model;
             if (refs.Count == 0) return key;
             var chosen = refs[((variant % refs.Count) + refs.Count) % refs.Count];
-            if (!chosen.IsPack) return key;
             var tpl = PackAssets.ModelOf(chosen.File);
             if (tpl == null) return key;
 
