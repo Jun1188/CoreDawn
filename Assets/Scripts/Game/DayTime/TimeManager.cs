@@ -1,11 +1,14 @@
 using UnityEngine;
 using CoreDawn.Combat;
+using CoreDawn.Managers;
+using CoreDawn.Sim;
 
 namespace CoreDawn.DayTime
 {
     /// <summary>
     /// 낮/밤 주기 전용 매니저 — DayCycle(plain C# 심 코어)의 Unity 드라이버.
     /// 시간 로직은 전부 DayCycle에 있고, 여기는 구동·설정·이벤트 중계만 담당한다.
+    /// 구동은 심 고정 틱(ISimSystem, SimOrder.DayCycle — 20Hz, 프레임 dt 아님): 낮/밤이 심 시계와 같은 박자로 흐르고 일시정지·세이브와 일관된다.
     ///
     /// 다른 시스템 연동법:
     ///   TimeManager.Instance.Cycle.NightStarted += day => ...   // 웨이브 스포너
@@ -13,7 +16,7 @@ namespace CoreDawn.DayTime
     ///   TimeManager.Instance.Cycle.NormalizedTimeOfDay          // 조명 연출
     ///   TimeManager.Instance.EndNightEarly()                    // 웨이브 전멸 시 새벽 진행 시작
     /// </summary>
-    public class TimeManager : MonoBehaviour
+    public class TimeManager : MonoBehaviour, ISimSystem
     {
         public static TimeManager Instance { get; private set; }
 
@@ -82,22 +85,26 @@ namespace CoreDawn.DayTime
             Cycle = new DayCycle(clock.DayDuration, clock.NightDuration);
             Cycle.DayStarted   += OnDayStarted;
             Cycle.NightStarted += OnNightStarted;
+            SimHost.Sim.AddSystem(this, SimOrder.DayCycle);
+            WorldRunner.Ensure();
         }
 
         void Start() => Cycle.Begin();   // 다른 시스템의 구독(Awake/Start)이 끝난 뒤 1일차 시작 알림
 
         void OnDestroy()
         {
+            SimHost.Sim.RemoveSystem(this);
             if (Instance == this) Instance = null;
         }
 
-        void Update()
+        /// <summary>심 한 틱 — 주야를 dt 만큼. 물량제 밤은 자정(50%)에서 멈췄다가 전멸 뒤에만 새벽까지 간다.</summary>
+        public void Tick(float dt)
         {
             if (TryGetNightWaveStatus(out _, out _))
             {
                 // 기존 시간제 밤과 같은 속도로 진행한다. 웨이브가 남아 있으면 자정(밤 50%)에서
                 // 멈추고, 전멸 통지를 받은 뒤에만 같은 속도로 새벽(100%)까지 마저 진행한다.
-                Cycle.Advance(Time.deltaTime);
+                Cycle.Advance(dt);
 
                 if (!quantityNightCleared)
                 {
@@ -115,7 +122,7 @@ namespace CoreDawn.DayTime
             }
 
             quantityNightCleared = false;
-            Cycle.Advance(Time.deltaTime);
+            Cycle.Advance(dt);
         }
 
         /// <summary>웨이브 전멸 시 새벽까지 sky를 진행시킨 뒤 아침을 연다.</summary>

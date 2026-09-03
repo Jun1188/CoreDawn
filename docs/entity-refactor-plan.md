@@ -72,7 +72,7 @@ CoreDawn.Tests          Assets/Scripts/Tests
 - [x] 팀 프리즈 창 확보 (팀원 휴가 2026-08-28 ~ 30 — 충돌 나는 이동은 이 안에 main으로)
 - [x] gitflow: `feature/…`·`hotfix/…` 이름, PR은 gh CLI
 - [x] `develop` 브랜치 = 회귀 기준 — PR #111 머지(main `8fa89d35`) 직후 main에서 분기, origin에 푸시 (2026-08-28)
-- [ ] 회귀 체크리스트 문서화: 새 게임 → 채굴 → 건설 → 밤 → 세이브/로드 (`Tests/PlayLoopTestSetup` · `FactoryScenarioTests` 기준)
+- [x] 회귀 체크리스트 문서화(2026-09-04): `docs/regression-checklist.md` — 자동 스위트 6종(37+7) → 플레이 스모크 → 새 게임·채굴·건설·밤·세이브/로드 순서와 각 단계에서 보는 것(`PlayLoopTestSetup`은 이미 없어 현재 스위트 기준).
 
 ### 1a. 기계적 이동 (동작 변경 0) — 완료 2026-08-28
 - [x] `Scripts/Test/` → `Runtime/` (게임 코드) · `Tests/` (테스트) `git mv` — 119파일 전부 R100, meta 동반 → GUID 보존, 씬·프리팹 참조 무사
@@ -732,3 +732,8 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 상주 2.5GB 의 정체: 이름 없는 249만 정점 메시 9개(HideAndDontSave, readable, 소유자 없음) = `WorldPreviewDrawer` 가 절벽 프리팹을 `CombineMeshes` 한 씬 뷰용 결합 메시. `ownedMeshes` 정적 목록은 도메인 리로드에서 사라지는데 메시는 살아남아 리로드마다 257MB 고아. → `AssemblyReloadEvents.beforeAssemblyReload += Invalidate`, 메시 이름 "preview cliffs (merged)", `UploadMeshData(true)`(CPU 사본 해제). 리컴파일 뒤 드로어 메시 1개·고아 0 확인.
 - RT 2.1GB: Easy Performant Outline 의 카메라별 2560×1440 타깃 세트(Info/Target/Finalization ×12) + 에디터 창 RT. 카메라 3개 생성·파괴 실험에서 증가 없음. 빌드에선 카메라 1~2개분.
 - Managed 1.98GB 는 에디터 프로세스(프로파일러·메모리 프로파일러 창의 스냅샷) 포함 값 — 게임 판단은 빌드 스냅샷으로.
+
+### 2026-09-04 — 주야를 심 시계로 · 반사 프로브 Via Scripting · 잎 텍스처 (`feature/day-sim-clock`)
+- `TimeManager`가 `ISimSystem`(`SimOrder.DayCycle = -10`, 효과보다 먼저)으로 `SimHost.Sim`에 등록 — `Update(Time.deltaTime)` 대신 `Tick(dt)` 20Hz. 낮/밤이 심 시계·일시정지·세이브와 같은 박자. 물량제 밤의 자정 정지 로직은 그대로.
+- 사용자 질문 "reflection probe를 via scripting으로 바꾸는게 좋나?": Sky 프리팹의 `Skybox Reflection Probe`는 Realtime·Every frame(씬에서 면별 분할)·16px·컬링 Nothing(스카이만). Via Scripting + 시각 1/128 간격 갱신을 시도했으나 **반사색이 계단으로 끊겨 보여** 사용자 결정으로 Every frame 유지(면별 분할이라 프레임당 한 면, 16px 스카이만이라 비용 무시). 코드·씬 변경 되돌림.
+- `broadleaf_tree_leaves.png` 1366×1600 → 1368×1600 리샘플(Unity Blit, PIL 없음) — 4의 배수라 DXT 압축, 메모리 1/4.

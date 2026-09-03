@@ -10,9 +10,11 @@ namespace CoreDawn.Sim
         void Tick(float dt);
     }
 
-    /// <summary>시스템 실행 순서 — 효과(배율)가 먼저, 그 배율로 몬스터가 움직이고, 플레이어 무기, 웨이브 판정, 공장 순.</summary>
+    /// <summary>시스템 실행 순서 — 주야 시계, 효과(배율)가 먼저, 그 배율로 몬스터가 움직이고, 플레이어 무기, 웨이브 판정, 공장 순.</summary>
     public static class SimOrder
     {
+        /// <summary>주야 시계(TimeManager) — 이 틱의 낮/밤을 먼저 정한 뒤 나머지가 읽는다.</summary>
+        public const int DayCycle = -10;
         public const int Effects = 0;
         public const int Monsters = 10;
         public const int Players = 20;
