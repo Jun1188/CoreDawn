@@ -54,7 +54,7 @@ namespace CoreDawn.Tests
 
         static void Run(string name, Action scenario)
         {
-            _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
+            _sim = new FactorySystem(new SimWorld(), GridGeometry.Unit, tps: 10f);
             SimHost.LineOfSight = (shooter, target, from, to) => !_blocked.Contains(target);   // 헤드리스: 시나리오가 가린 표적만 안 보인다
             _blocked.Clear();
             _fails.Clear();
@@ -213,7 +213,7 @@ namespace CoreDawn.Tests
             Expect(inside1.Health.CurrentHealth < 1000f, "연료의 피해도 걸린다");
 
             // 연료 없는 오라 — 정의의 효과로 펄스한다
-            _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
+            _sim = new FactorySystem(new SimWorld(), GridGeometry.Unit, tps: 10f);
             var def = Aura(radius: 3f, interval: 0.5f, ammo: null);
             def.Modules.Add(Fixed(Use(slow, 0.5f)));   // 연료 없는 오라 — 자기 정의의 고정 탄
             var free = _sim.Place(def, new Vector2Int(0, 0));
@@ -266,8 +266,8 @@ namespace CoreDawn.Tests
 
         static void RunSim(float simSeconds)
         {
-            int ticks = Mathf.CeilToInt(simSeconds / 0.1f);
-            for (int i = 0; i < ticks; i++) _sim.Advance(0.1f);
+            int ticks = Mathf.CeilToInt(simSeconds / 0.1f);   // 공장 틱(10Hz) 수 — 월드 스텝(20Hz)은 그 두 배
+            _sim.Sim.Step(ticks * (SimWorld.TicksPerSecond / 10));
         }
 
         static void Load(BuildingModule b, ItemDef item, int n)

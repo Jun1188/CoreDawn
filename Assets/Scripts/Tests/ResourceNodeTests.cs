@@ -51,7 +51,7 @@ namespace CoreDawn.Tests
 
         static void Run(string name, Action scenario)
         {
-            _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
+            _sim = new FactorySystem(new SimWorld(), GridGeometry.Unit, tps: 10f);
             _fails.Clear();
             try { scenario(); }
             catch (Exception e) { _fails.Add("예외 발생:\n" + e); }
@@ -170,8 +170,8 @@ namespace CoreDawn.Tests
 
         static void RunSim(float simSeconds)
         {
-            int ticks = Mathf.CeilToInt(simSeconds / 0.1f);
-            for (int i = 0; i < ticks; i++) _sim.Advance(0.1f);
+            int ticks = Mathf.CeilToInt(simSeconds / 0.1f);   // 공장 틱(10Hz) 수 — 월드 스텝(20Hz)은 그 두 배
+            _sim.Sim.Step(ticks * (SimWorld.TicksPerSecond / 10));
         }
 
         static int Stored(BuildingModule store, ItemDef item)

@@ -19,6 +19,7 @@ namespace CoreDawn.Tests
     {
         static readonly List<(string name, bool pass, string detail)> _results = new();
         static readonly List<string> _fails = new();
+        static SimWorld _sim;
         static EntityWorld _world;
         static MonsterSystem _monsters;
         static WaveSystem _waves;
@@ -58,10 +59,10 @@ namespace CoreDawn.Tests
 
         static void Run(string name, Action scenario)
         {
-            _world = new EntityWorld();
-            _monsters = new MonsterSystem(_world, null);
+            _sim = new SimWorld(); _world = _sim.Entities;
+            _monsters = new MonsterSystem(_sim, null);
             _rule = Rule();
-            _waves = new WaveSystem(_world, _monsters, _rule);
+            _waves = new WaveSystem(_sim, _monsters, _rule);
             _fails.Clear();
             try { scenario(); }
             catch (Exception e) { _fails.Add("예외 발생:\n" + e); }
@@ -134,7 +135,7 @@ namespace CoreDawn.Tests
             Expect(_waves.BurstMonsters.Count == 4 && _waves.BurstMonsters.All(e => DefOf(e) == _basic), $"1일 40점 = basic 4 (실제 {_waves.BurstMonsters.Count})");
 
             // 5일·게이트 2: 셋 다 가능 — 가중치 70/25/5 비율로 섞인다(시드 고정, 표본 크게)
-            _monsters.Dispose(); _world = new EntityWorld(); _monsters = new MonsterSystem(_world, null); _waves = new WaveSystem(_world, _monsters, _rule);
+            _monsters.Dispose(); _sim = new SimWorld(); _world = _sim.Entities; _monsters = new MonsterSystem(_sim, null); _waves = new WaveSystem(_sim, _monsters, _rule);
             Nests(5, 1);
             _rule.DayPoints = 400f; _rule.GatePoints = 0f;   // 5일 → 2000점
             Night(5, 2, 30f, null, seed: 5);
@@ -243,7 +244,7 @@ namespace CoreDawn.Tests
             int spawned = _waves.SpawnedCount, remainingBursts = _waves.Bursts - _waves.BurstsDone; float remaining = _waves.Remaining;
             var alive = _waves.BurstMonsters.ToList();
 
-            var fresh = new WaveSystem(_world, _monsters, _rule);
+            var fresh = new WaveSystem(_sim, _monsters, _rule);
             fresh.Restore(state, id => _world.All.FirstOrDefault(e => e.Id.ToString() == id));
             foreach (var e in alive) fresh.Register(e, WaveSpawnKind.Burst);
             fresh.FinishRestore(state.Spawned, state.Killed);

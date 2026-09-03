@@ -11,7 +11,7 @@ namespace CoreDawn.Factory
     /// 씬에 이 컴포넌트 하나만 있으면 공장 시뮬레이션이 돌아간다.
     ///
     /// 역할:
-    ///   1. 심 생성·매 프레임 Advance() 호출
+    ///   1. 심 생성·SimWorld 등록(스텝은 WorldRunner)
     ///   2. 심 Building ↔ BuildingView(GameObject) 매핑 관리
     /// 시뮬레이션 로직은 전부 FactorySystem(plain C#)에 있다.
     ///
@@ -34,8 +34,6 @@ namespace CoreDawn.Factory
         [Tooltip("초당 틱 수. 10이면 0.1초마다 처리.")]
         [SerializeField] float _tps = 10f;
 
-        [Tooltip("프레임 드랍 후 한 프레임에 몰아서 따라잡을 수 있는 최대 틱 수.")]
-        [SerializeField] int _maxCatchUpTicks = 5;
 
         [Header("격자 (맵이 있으면 GameBootstrap이 덮는다)")]
         [Tooltip("칸 한 변의 길이(m). 맵 없는 테스트 씬용 기본값 — PlacementSystem 기본값과 같아야 한다.")]
@@ -84,7 +82,8 @@ namespace CoreDawn.Factory
         {
             if (Instance != null) { Destroy(gameObject); return; }
             Instance = this;
-            Factory = new FactorySystem(SimHost.World, new GridGeometry(_cellSize, _gridOrigin), _tps, _maxCatchUpTicks);
+            Factory = new FactorySystem(SimHost.Sim, new GridGeometry(_cellSize, _gridOrigin), _tps);   // 생성자가 SimWorld에 등록(SimOrder.Factory)
+            Managers.WorldRunner.Ensure();   // 고정 20Hz 스텝 — 공장은 스텝 2개마다 자기 10Hz 틱
 
             // 심이 몰라야 하는 게임 규칙의 배선 — 배치 직후 1회
             Factory.Placed += WireGameRules;
@@ -125,7 +124,6 @@ namespace CoreDawn.Factory
             if (_autoPlaceCore && !SaveLoadContext.IsRestoring) AutoPlaceCore();
         }
 
-        void Update() => Factory.Advance(Time.deltaTime);
 
         // 씬이 내려갈 때 이 씬의 건물 엔티티를 등록부에서 뺀다 — 등록부는 씬을 넘어 살기 때문이다.
         // 종료 중에는 손대지 않는다(드롭 등 새 오브젝트 생성이 에러를 낸다).

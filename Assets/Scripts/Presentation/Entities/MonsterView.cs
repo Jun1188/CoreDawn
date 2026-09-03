@@ -108,8 +108,9 @@ namespace CoreDawn.Entities
         void SyncTransform()
         {
             if (Entity == null) return;
-            transform.position = Entity.Position;
-            var facing = Entity.Facing;
+            float a = SimHost.Sim.FrameAlpha;   // 심은 20Hz, 그림은 매 프레임 — 직전 스텝과 이번 스텝 사이를 보간
+            transform.position = Vector3.Lerp(Entity.PrevPosition, Entity.Position, a);
+            var facing = Vector3.Slerp(Entity.PrevFacing, Entity.Facing, a);
             facing.y = 0f;
             if (facing.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(facing);
         }

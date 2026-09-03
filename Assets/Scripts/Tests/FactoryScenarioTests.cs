@@ -69,7 +69,7 @@ namespace CoreDawn.Tests
             count++;
 
             // 시나리오마다 새 심 — plain C#이라 싱글톤 정리·프레임 대기가 필요 없다
-            _sim = new FactorySystem(new EntityWorld(), GridGeometry.Unit, tps: 10f);
+            _sim = new FactorySystem(new SimWorld(), GridGeometry.Unit, tps: 10f);
             _beltDef = null;   // 벨트 정의도 시나리오별로 새로
             _fails.Clear();
 
@@ -429,9 +429,8 @@ namespace CoreDawn.Tests
         /// <summary>시뮬레이션을 simSeconds만큼 동기로 진행 (프레임 대기 없음).</summary>
         void RunSim(float simSeconds)
         {
-            int ticks = Mathf.CeilToInt(simSeconds / 0.1f);
-            for (int i = 0; i < ticks; i++)
-                _sim.Advance(0.1f);
+            int ticks = Mathf.CeilToInt(simSeconds / 0.1f);   // 공장 틱(10Hz) 수 — 월드 스텝(20Hz)은 그 두 배
+            _sim.Sim.Step(ticks * (SimWorld.TicksPerSecond / 10));
         }
 
         static int StoredCount(BuildingModule store, ItemDef item)

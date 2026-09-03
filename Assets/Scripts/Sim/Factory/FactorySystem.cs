@@ -13,7 +13,7 @@ namespace CoreDawn.Sim
     //    GridIndex     — 좌표 → BuildingModule O(1) 조회
     //
     //  Unity와의 접점은 FactoryBootstrap(드라이버)과 BuildingView(씬 표현)뿐.
-    //  씬 없이 생성해 Advance()를 직접 호출하면 헤드리스로 돌릴 수 있다 (테스트용).
+    //  씬 없이 SimWorld를 만들어 Step()을 직접 부르면 헤드리스로 돌릴 수 있다 (테스트용).
     // ================================================================
 
     /// <summary>좌표 → BuildingModule O(1) 조회. 배치 로직은 없다 — FactorySystem이 채운다.</summary>
@@ -41,7 +41,7 @@ namespace CoreDawn.Sim
     /// 건물은 심 엔티티(<see cref="Entity"/>)에 붙는 모듈(<see cref="BuildingModule"/>)이다. 배치가 엔티티를 먼저 만들고
     /// 체력(Data.maxHp)과 건물 모듈을 붙인다 — HP·편·번호는 엔티티의 것이고, 칸·포트·버퍼·행동은 모듈의 것.
     /// </summary>
-    public class FactorySystem
+    public class FactorySystem : ISimSystem
     {
         /// <summary>건물 엔티티가 사는 등록부. 여러 시스템이 같은 월드를 나눠 쓴다.</summary>
         public readonly EntityWorld World;
@@ -64,17 +64,12 @@ namespace CoreDawn.Sim
         public IReadOnlyList<BuildingModule> Buildings => _buildings;
         readonly List<BuildingModule> _buildings = new();
 
-        /// <summary>시뮬레이션 누적 시간(초). 틱마다 틱 간격씩 증가한다.</summary>
-        public float Now { get; private set; }
+        /// <summary>심 루트 — 시계·스텝의 주인. 공장은 그 스텝 _stepsPerTick 개마다 자기 틱(10Hz)을 돈다.</summary>
+        public SimWorld Sim { get; }
 
-        /// <summary>
-        /// 세이브 복원 전용 — 심 시계를 저장 시점으로 되돌린다. 건물을 배치하기 전에 호출할 것.
-        ///
-        /// 이게 없으면 채굴/조합 타이머가 전부 어긋난다. 각 행동은 완료 시각을 이 시계 기준
-        /// 절대값(_readyAt)으로 들고 있어서, 시계만 0으로 되돌아가면 예약이 아득한 미래가 되어
-        /// 공장 전체가 멈춘 것처럼 보인다.
-        /// </summary>
-        public void RestoreClock(float now) => Now = now;
+        /// <summary>심 시간(초, SimWorld.Now). 예약(_readyAt)·진행도의 절대 기준.</summary>
+        public float Now => Sim.Now;
+
 
         // ── 광맥 — 공장 격자를 차지하지 않는 별도 색인(채굴기가 그 위에 올라간다). 한 칸짜리, 매장량 없음.
         readonly Dictionary<Vector2Int, ResourceDepositModule> _deposits = new();
@@ -171,16 +166,18 @@ namespace CoreDawn.Sim
         // wake 예약 — (깨울 시각, 건물) 이진 min-heap. index 0 = 가장 이른 예약.
         readonly List<(float time, BuildingModule b)> _wake = new();
 
-        readonly float _interval;
-        readonly int   _maxCatchUpTicks;
-        float _timer;
+        readonly float _interval;      // 공장 틱 간격(초) = 월드 스텝 × _stepsPerTick
+        readonly int   _stepsPerTick;   // 공장 틱 하나에 드는 월드 스텝 수(10Hz면 2)
+        int _stepAccum;                 // 마지막 공장 틱 뒤 지난 월드 스텝 수
 
-        public FactorySystem(EntityWorld world, GridGeometry geometry, float tps = 10f, int maxCatchUpTicks = 5)
+        public FactorySystem(SimWorld sim, GridGeometry geometry, float tps = 10f)
         {
-            World            = world ?? throw new ArgumentNullException(nameof(world));
+            Sim              = sim ?? throw new ArgumentNullException(nameof(sim));
+            World            = sim.Entities;
             Geometry         = geometry;
-            _interval        = 1f / Mathf.Max(0.1f, tps);
-            _maxCatchUpTicks = Mathf.Max(1, maxCatchUpTicks);
+            _stepsPerTick    = Mathf.Max(1, Mathf.RoundToInt(SimWorld.TicksPerSecond / Mathf.Max(0.1f, tps)));
+            _interval        = _stepsPerTick * SimWorld.TickDt;
+            sim.AddSystem(this, SimOrder.Factory);
             Grid  = new GridIndex();
             Graph = new BuildingGraph(this);
             Belts = new BeltSystem(this);
@@ -192,7 +189,7 @@ namespace CoreDawn.Sim
         /// 월드 구독 해제 — 등록부는 씬을 넘어 살지만 이 시스템은 씬과 함께 죽는다. 드라이버(FactoryBootstrap)가 OnDestroy에서 부른다.
         /// 안 부르면 죽은 시스템이 다음 씬의 사망 통지를 받아 남의 건물을 지우려 든다.
         /// </summary>
-        public void Dispose() => World.Died -= OnEntityDied;
+        public void Dispose() { World.Died -= OnEntityDied; Sim.RemoveSystem(this); }
 
         /// <summary>
         /// 건물 엔티티의 사망 = 건물 제거. 파괴를 결정하는 것은 심이고 뷰는 Removed를 받아 따라온다 —
@@ -327,37 +324,21 @@ namespace CoreDawn.Sim
         // ── 구동
 
         /// <summary>
-        /// 마지막 틱 이후 흐른 시간(초) — 뷰가 틱 사이를 외삽해 부드럽게 그릴 때 사용.
-        /// 틱 지연(캐치업 한도 초과) 시에도 한 틱 분량을 넘지 않게 클램프.
+        /// 마지막 공장 틱 이후 흐른 시간(초) — 뷰가 틱 사이를 외삽해 부드럽게 그릴 때 사용.
+        /// 지난 월드 스텝 수 + 프레임 보간(SimWorld.FrameAlpha), 한 공장 틱을 넘지 않게 클램프.
         /// </summary>
-        public float TickLeftover => Mathf.Min(_timer, _interval);
+        public float TickLeftover => Mathf.Min((_stepAccum + Sim.FrameAlpha) * SimWorld.TickDt, _interval);
 
-        /// <summary>
-        /// 실시간 dt만큼 시뮬레이션을 진행한다 (고정 틱 + 따라잡기 상한).
-        /// 드라이버(FactoryBootstrap)가 매 프레임 호출하거나, 테스트가 직접 호출한다.
-        /// </summary>
-        public void Advance(float dt)
+        /// <summary>월드 스텝(ISimSystem, 20Hz) — _stepsPerTick 스텝마다 공장 틱 하나. 따라잡기 상한은 WorldRunner의 몫.</summary>
+        public void Tick(float dt)
         {
-            _timer += dt;
-
-            // 밀린 틱을 따라잡되, 프레임당 한도를 둬서 저사양에서
-            // "틱 몰아치기 → 프레임 더 느려짐 → 더 밀림" 나선을 방지한다.
-            int ticks = 0;
-            while (_timer >= _interval && ticks < _maxCatchUpTicks)
-            {
-                _timer -= _interval;
-                RunTick();
-                ticks++;
-            }
-
-            // 한도를 넘긴 빚은 버린다 (다음 프레임에 처리할 1틱분만 유지).
-            if (_timer > _interval) _timer = _interval;
+            if (++_stepAccum < _stepsPerTick) return;
+            _stepAccum = 0;
+            RunTick();
         }
 
         void RunTick()
         {
-            Now += _interval;
-
             // 예약 시각이 된 건물을 큐로 이동
             while (_wake.Count > 0 && _wake[0].time <= Now)
             {

@@ -120,7 +120,7 @@ namespace CoreDawn.Save
             if (dto == null) return;
 
             // 시계가 먼저다 — 아래에서 되살릴 타이머들이 전부 이 값을 기준으로 다시 예약된다
-            boot.Factory.RestoreClock(dto.Now);
+            SimHost.Sim.RestoreClock(dto.Now);
 
             var placement = Object.FindFirstObjectByType<PlacementSystem>();
 
