@@ -52,7 +52,13 @@ namespace CoreDawn.EditorTools
         public static List<string> Validate(JObject pack)
         {
             var db = Sim.SimDatabase.Load(pack.ToString(Formatting.None), Pack, strict: false);
-            return db.Errors.ToList();
+            var errors = db.Errors.ToList();
+            foreach (var d in db.Entities.Values)   // view.interact 가 요구하는 모듈 — 로드(ViewSchema)와 같은 검증을 저장 전에
+            {
+                var err = Data.InteractKinds.Validate(d, (string)(d.View as JObject)?["interact"]);
+                if (err != null) errors.Add(err);
+            }
+            return errors;
         }
 
         // ── v1 id 관례(옛 "Item:IronOre") — 팩 id를 그대로 쓰지만 탭이 옛 형식을 만들면 풀어 준다 ──

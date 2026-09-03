@@ -316,3 +316,20 @@ it is not in the file: `core.glb` has 29 nodes / 11 meshes and no Icosphere.)
 Nothing in the brief failed. The only two places where the literal instruction was not followed are documented
 above: `export_materials='PLACEHOLDER'` (would have dropped material names) and the manual restoration of the
 armature scale in `core.glb` (the exporter refuses to write it).
+
+## Addendum 2026-09-04 — belt morph normals
+
+`export_morph_normal=False` left the belt morph targets with `POSITION` deltas only. The whole strip cycles
+(every vertex moves), so the segment wrapping around the roller kept its rest-pose normal and was lit as if
+facing the sky (light blue). `export_glb.py` now takes cfg `morph_normal` (default False, kept for the
+other files); `belt.glb`, `belt_curve_l.glb`, `belt_curve_r.glb` were re-exported from `Conveyor.blend` with
+`{"roots":["Conveyor"],"sk_action":{"Belt":"Belt_Action"},"clear_obj_anim":["Belt"],"morph_normal":true}` (and
+the `.L`/`.R` equivalents). Structural diff against the previous files: identical nodes, bounds, animations and
+materials; targets gained `NORMAL`. Sizes: belt 1,969,380 → 3,228,164 B, each curve 8,352,2xx → 14,979,68x B.
+
+## Addendum 2026-09-04 — morph loop trimming
+
+Sampling the shape-key actions yields a leading basis key (all weights 0, same pose as target 0) and, for the curves,
+a trailing key back to target 0. Both must go: the loop has to *snap* from the last target to target 0 (the shapes
+coincide up to one step), never interpolate. After any re-export run `python tools/blender/glb_trim_morph_loop.py belt
+belt_curve_l belt_curve_r` — it edits only the animation accessors (belt 42 → 41 keys / 1.667 s, curves 150 → 148 keys / 6.125 s).

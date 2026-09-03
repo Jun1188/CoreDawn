@@ -118,6 +118,9 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
   `destroy`, `warning`, `item_pickup`, `mine`…) replacing the old `CommonSFX` enum — play them with `SoundManager.PlayCommon("mine")`,
   and definition sounds with `SoundManager.Instance.Play(ViewSchema.Of(def).SfxOf("fire"), position)`. Adding a sound slot = one name in
   the `ViewSchema.Types` table; adding a sound = the editor's 사운드 tab (clips are guid refs baked into `ViewCatalog.Entry.clips`).
+- Building interaction (E) is data (2026-09-04): `view.interact` ∈ `InteractKinds` (machine · filters · core · ammo · fuel · storage;
+  absent = no interaction). Each kind names the modules it requires and `ViewSchema.Entity` / `GdPack.Validate` reject a definition
+  that lacks them; `BuildingInteractions` only maps the name to a screen. **Do not infer the screen from module combinations.**
   Nest boss/defender kinds come from the map (`NestSpec.spawnPoints[].boss`, `NestSpec.defender`), never from the MonsterNest prefab.
   Prefab default values must be cleared *before* re-baking World (instance values equal to the prefab are not recorded as overrides).
 - View assembler (5a-4b, 2026-09-01): **guns and buildings have no prefabs.** `WeaponManager.AssembleGuns` builds every pack gun from

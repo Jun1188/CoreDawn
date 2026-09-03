@@ -709,3 +709,26 @@ GUID는 하나도 바뀌지 않았다(.cs와 .meta를 함께 git mv). `Ping`은 
 - 테스트 함정: `Quaternion ==` 는 내적 근사라 정규화 안 된 값끼리 false — 성분 비교. Sim 모듈 상태 다리 테스트는 실제 꼴(좌표 없음, 기본 Newtonsoft)로.
 - 사용자 슬롯 auto_01·auto_02·slot_01~03 은 JSON(v5)이라 이제 열리지 않는다(오류 로그, 새 게임 필요) — 베타 전 결정대로.
 - 5단계 완료. 남은 것(범위 밖): 명령 송신 + 스냅샷 수신(멀티), 행동 등록부(모딩), SoA/Burst.
+### 2026-09-04 — 벨트 두 가지 (`feature/belt-fix`, 사용자 스크린샷 "컨베이어 벨트에 보관소 열기가 뜨고 … 나오는 부분의 벨트가 색이 이상함")
+- **"[E] 보관함 열기"가 벨트에 뜸**: `BuildingInteractions`의 "그릇 + 포트 = 보관소" 규칙에 벨트(`Inventory input 1` 손잡이 버퍼 + `Ports`)가 걸렸다 → 처음엔 `ConveyorModuleDef` 제외로 막았다가, 같은 날 아래 "view.interact 지정"으로 규칙 자체를 걷어냈다.
+- **롤러를 돌아 나오는 벨트 구간이 연한 파란색**: 원인은 재질이 아니라(세 렌더러 전부 `factory_color` 정상) **모프 타깃에 법선 델타가 없음** — 팩 belt/belt_curve_l/r.glb 의 targets 가 `POSITION`뿐(`maxDeltaNormal=0`), `tools/blender/export_glb.py` 가 `export_morph_normal=False` 고정. 스트립 정점 전부가 순환하므로 롤러 끝 구간은 휴지 자세 법선으로 조명돼 하늘 앰비언트(Trilight) 색이 났다. → `export_glb.py` 에 cfg `morph_normal` 추가, Conveyor.blend 에서 셋 재출력(Blender 4.4.3 헤드리스, roots Conveyor/.L/.R, sk_action Belt*→Belt*_Action, clear_obj_anim). 구조 대조: 노드·경계·애니메이션·재질 동일, targets 에 `NORMAL` 추가만. 크기 belt 1.97→3.23MB, 커브 각 8.35→14.98MB.
+- 재현·검증 요령: 플레이에서 `PlacementBridge.Place` 로 벨트를 놓고, `Camera.main` 태그를 임시 카메라로 바꿔(`capture_game_view` 는 Camera.main 을 찍는다) 롤러 쪽을 여러 프레임 캡처. 수정 전 캡처엔 파란 끝 구간, 수정 후 세 프레임 모두 정상. 에디터에서 glTFast 비동기 로드를 eval 안에서 `Thread.Sleep` 으로 기다리면 메인 스레드가 막혀 타임아웃 — 두 번에 나눠(kick → 다음 eval 에서 조회).
+- 임시 카메라가 켜진 동안 에디터 전용 `WorldPreviewDrawer.OnBeginCamera` 가 null 재질로 `DrawMeshInstanced` 를 불러 `ArgumentNullException` — 재질 null 가드 추가.
+
+### 2026-09-04 — 건물 상호작용을 데이터 지정으로 (`feature/belt-fix`, 사용자 "그냥 gamedata의 view필드로 지정하면 안됨? 꼭 추론을 해야 함? 지정된 view가 요구하는 모듈이 없으면 오류 내면 안되나?")
+- 문제: `BuildingInteractions`가 모듈 조합으로 화면을 짐작했다(Crafter→설비, Router(split)→필터, Core, AmmoConsumer→탄약함, 마지막 폴백 "그릇+포트=보관소"). 폴백이 벨트·합류기의 손잡이 버퍼까지 "보관함 열기"로 잡았고, 제외 목록을 덧붙이는 식(Conveyor, Router…)은 스파게티라는 지적 → 술어(`IsPassThroughStore`) 제안도 사용자가 "추론 말고 지정"으로 되돌렸다.
+- 결정: **팩 `view.interact`가 고른다**(`InteractKinds`: machine·filters·core·ammo·fuel·storage, 없으면 상호작용 없음). 종류가 요구하는 모듈(machine→Crafter, filters→Router mode≠merge, core→Core, ammo→AmmoConsumer+Inventory.input>0, fuel→+AuraEmitter, storage→Ports+Inventory.input>0)은 로드(`ViewSchema.Entity`)와 편집기 저장(`GdPack.Validate`)에서 오류. `BuildingInteractions`는 이름을 화면에 잇기만 하고, 통과했을 리 없는 자리는 정의당 한 번 LogError.
+- 데이터: 설비 4 machine · 분배기 filters · 코어 core · 포탑 4 ammo · 감속 필드 타워 fuel · 보관소·드론 스테이션 storage. 벨트·합류기·채굴기·울타리·지뢰·둥지·나무는 없음. 편집기: Raw 탭 `view/interact` 드롭다운, UI 뷰 조각(`GdViewUI`) 드롭다운, v1 `ViewDto.interact`.
+- 검증: 헤드리스로 22종 건물 배치 후 `TryGet` 프롬프트 표 — 벨트·합류기만 "없음"으로 바뀌고 나머지는 이전과 동일 · 오검증 4건(벨트 machine, 합류기 filters, 채굴기 storage, 모르는 이름) 정확한 문장 · `GdPack.Validate` 0 · 플레이 로드 `[ViewSchema]` 오류 0.
+
+### 2026-09-04 — 벨트 모프 루프 경계 (`feature/belt-fix`, 사용자 "첫 프레임 마지막 프레임의 경계에서 선형보간되어서 벨트 메시가 쪼그라들었다가 돌아옴")
+- 데이터로 확인: glb weights 클립이 직선 42키(기본형 + 타깃 41), 커브 150키(기본형 + 타깃 148 + **타깃0으로 되돌아가는 닫는 키**). 타깃0은 기본형과 같은 자세(변위 0), 한 걸음 0.0104. 커브의 마지막 41ms는 타깃147↔타깃0 선형 보간 = 오그라듦; 직선은 시작에서 기본형→타깃0 41ms 멈칫.
+- 되돌기는 스냅이어야 한다는 근거: 마지막 자세와 첫 자세의 형태 거리(최근접 점)가 0.0103으로 정상 한 걸음과 같다 — 패턴이 한 주기 돌아 맞물린다.
+- 수정: `tools/blender/glb_trim_morph_loop.py`(accessor byteOffset/count 조정 + 시각 0 기준 재기록)로 중복 기본형 키·닫는 키 제거. 재출력 뒤에는 항상 이 도구를 거친다(export-report addendum). 검증: Unity 클립 400지점 샘플링 위반 0, 되돌기 직전/직후 캡처 연속.
+- 함정: 모프 타깃 POSITION 접근자는 sparse(bufferView 없음) — 파서가 sparse 를 풀어야 한다. `SkinnedMeshRenderer.GetBlendShapeWeight`는 glTFast 클립에서 0~1 스케일.
+
+### 2026-09-04 — 메모리 프로파일러 12.5GB 조사 (`feature/belt-fix`, 사용자 "이건 아무리 봐도 메모리 누수인데")
+- 플레이 중 90초 간격 두 표본: 네이티브 +253MB 였으나 Unity 오브젝트 수(메시·텍스처·RT·GameObject)는 불변 → **프로파일러 창 녹화**가 원인. `Profiler.enabled=false` 뒤 60초 3473→3470MB 로 멈춤. 게임 누수 아님.
+- 상주 2.5GB 의 정체: 이름 없는 249만 정점 메시 9개(HideAndDontSave, readable, 소유자 없음) = `WorldPreviewDrawer` 가 절벽 프리팹을 `CombineMeshes` 한 씬 뷰용 결합 메시. `ownedMeshes` 정적 목록은 도메인 리로드에서 사라지는데 메시는 살아남아 리로드마다 257MB 고아. → `AssemblyReloadEvents.beforeAssemblyReload += Invalidate`, 메시 이름 "preview cliffs (merged)", `UploadMeshData(true)`(CPU 사본 해제). 리컴파일 뒤 드로어 메시 1개·고아 0 확인.
+- RT 2.1GB: Easy Performant Outline 의 카메라별 2560×1440 타깃 세트(Info/Target/Finalization ×12) + 에디터 창 RT. 카메라 3개 생성·파괴 실험에서 증가 없음. 빌드에선 카메라 1~2개분.
+- Managed 1.98GB 는 에디터 프로세스(프로파일러·메모리 프로파일러 창의 스냅샷) 포함 값 — 게임 판단은 빌드 스냅샷으로.

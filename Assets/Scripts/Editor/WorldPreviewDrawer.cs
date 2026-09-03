@@ -53,6 +53,10 @@ namespace CoreDawn.EditorTools
             RenderPipelineManager.beginCameraRendering += OnBeginCamera;
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;   // 팩 로드·재빌드(템플릿 생성/파괴)는 렌더 콜백 밖에서
+            // 도메인 리로드 전에 우리 메시를 부순다 — ownedMeshes(정적)는 리로드에서 사라지지만 메시는 HideAndDontSave 라 살아남아
+            // 리컴파일마다 결합 절벽 메시(2.5M 정점, 250MB)가 고아로 쌓이던 누수(2026-09-04 메모리 프로파일러에서 9개 발견).
+            AssemblyReloadEvents.beforeAssemblyReload -= Invalidate;
+            AssemblyReloadEvents.beforeAssemblyReload += Invalidate;
             EditorApplication.playModeStateChanged += change =>
             {
                 Invalidate();
@@ -126,6 +130,7 @@ namespace CoreDawn.EditorTools
 
             foreach (var b in batches)
             {
+                if (b.mat == null) { placements = null; return; }   // 팩 재질이 파괴됐다(PackAssets.Clear) — 다음 갱신에서 다시 짓는다
                 if (b.ms.Length == 1)
                     Graphics.DrawMesh(b.mesh, b.ms[0], b.mat, 0, cam, b.sub);
                 else
@@ -308,8 +313,9 @@ namespace CoreDawn.EditorTools
             }
             foreach (var kv in combine)
             {
-                var merged = new Mesh { hideFlags = HideFlags.HideAndDontSave, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                var merged = new Mesh { name = "preview cliffs (merged)", hideFlags = HideFlags.HideAndDontSave, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
                 merged.CombineMeshes(kv.Value.ToArray(), true, true);
+                merged.UploadMeshData(true);   // DrawMesh 만 하므로 CPU 사본은 버린다 — 메모리 절반
                 ownedMeshes.Add(merged);
                 terrainParts.Add(new TerrainPart { mesh = merged, mat = kv.Key, m = Matrix4x4.identity, sub = 0 });
             }

@@ -42,6 +42,14 @@ namespace CoreDawn.EditorTools
             });
             box.Add(Field("type — 뷰 종류", typeD));
 
+            // E 상호작용 — 데이터가 고른다(InteractKinds). 요구 모듈이 없으면 저장 검증(GdPack.Validate)이 막는다
+            var kinds = InteractKinds.Names.ToList();
+            var kindChoices = new List<string> { None }; kindChoices.AddRange(kinds);
+            int kindIdx = string.IsNullOrEmpty(view.interact) ? 0 : Mathf.Max(0, kinds.IndexOf(view.interact) + 1);
+            var kindD = new DropdownField(kindChoices, kindIdx) { tooltip = "E 상호작용 화면 — machine(설비)·filters(분배기)·core·ammo(탄약함)·fuel(연료함)·storage(보관함). 없음이면 상호작용 없음" };
+            kindD.RegisterValueChangedCallback(e => { view.interact = e.newValue == None ? null : e.newValue; pushHist(); });
+            box.Add(Field("interact — E 상호작용", kindD));
+
             if (string.IsNullOrEmpty(view.type) || !ViewSchema.Types.TryGetValue(view.type, out var allowed)) return;
             if (allowed.Length == 0)
             {

@@ -1535,7 +1535,8 @@
             ]
           }
         ],
-        "type": "Building"
+        "type": "Building",
+        "interact": "machine"
       }
     },
     "constructor": {
@@ -1620,7 +1621,8 @@
             ]
           }
         ],
-        "type": "Building"
+        "type": "Building",
+        "interact": "machine"
       }
     },
     "assembler": {
@@ -1714,7 +1716,8 @@
         }
       ],
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "interact": "machine"
       }
     },
     "manufacturer": {
@@ -1815,7 +1818,8 @@
         }
       ],
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "interact": "machine"
       }
     },
     "drone_port": {
@@ -1886,7 +1890,8 @@
         }
       ],
       "view": {
-        "type": "Building"
+        "type": "Building",
+        "interact": "storage"
       }
     },
     "belt": {
@@ -2150,6 +2155,7 @@
           }
         ],
         "type": "Building",
+        "interact": "filters",
         "pose": {
           "position": [
             0.0,
@@ -2374,7 +2380,8 @@
             ]
           }
         ],
-        "type": "Building"
+        "type": "Building",
+        "interact": "storage"
       }
     },
     "core": {
@@ -2598,7 +2605,8 @@
             ]
           }
         ],
-        "type": "Building"
+        "type": "Building",
+        "interact": "core"
       }
     },
     "fence": {
@@ -2801,6 +2809,7 @@
           }
         ],
         "type": "Tower",
+        "interact": "ammo",
         "sfx": {
           "fire": {
             "sound": "coredawn:sound/basic_turret_fire",
@@ -2911,6 +2920,7 @@
           }
         ],
         "type": "Tower",
+        "interact": "ammo",
         "sfx": {
           "fire": {
             "sound": "coredawn:sound/heavy_turret_fire",
@@ -3025,6 +3035,7 @@
           }
         ],
         "type": "Tower",
+        "interact": "ammo",
         "sfx": {
           "fire": {
             "sound": "coredawn:sound/mortar_tower_fire",
@@ -3139,6 +3150,7 @@
           }
         ],
         "type": "Tower",
+        "interact": "ammo",
         "sfx": {
           "fire": {
             "sound": "coredawn:sound/laser_tower_fire",
@@ -3237,6 +3249,7 @@
           }
         ],
         "type": "Tower",
+        "interact": "fuel",
         "sfx": {
           "fire": {
             "sound": "coredawn:sound/slow_field_tower_fire",

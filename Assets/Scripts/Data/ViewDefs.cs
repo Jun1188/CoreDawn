@@ -114,6 +114,8 @@ namespace CoreDawn.Data
     public sealed class EntityViewDef
     {
         [JsonProperty("type")] public string Type;
+        /// <summary>E 상호작용 종류(InteractKinds: machine·filters·core·ammo·fuel·storage). 없으면 상호작용 없음. 요구 모듈은 로드 때 검증.</summary>
+        [JsonProperty("interact")] public string Interact;
         [JsonProperty("model")] public List<ModelRef> Model = new List<ModelRef>();
         [JsonProperty("pose")] public PoseDef Pose;
         [JsonProperty("sfx")] public Dictionary<string, SoundUse> Sfx = new Dictionary<string, SoundUse>();

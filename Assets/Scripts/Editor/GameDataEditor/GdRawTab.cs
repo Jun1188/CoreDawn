@@ -785,6 +785,7 @@ namespace CoreDawn.EditorTools
             {
                 case "type":
                     if (path.EndsWith("/view/type")) return Data.ViewSchema.Types.Keys.ToList();
+                    if (path.EndsWith("/view/interact")) return Data.InteractKinds.Names.ToList();
                     if (path.Contains("/conditions/")) return Tutorial.TutorialConditions.Kinds.ToList();
                     return null;
                 case "item": return Ids("items");
