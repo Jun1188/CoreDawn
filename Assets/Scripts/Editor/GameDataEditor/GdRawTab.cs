@@ -64,7 +64,7 @@ namespace CoreDawn.EditorTools
             new("tutorial", "tutorial", "tutorial — 튜토리얼", typeof(TutorialStepDef), true),
             new("sounds", "sound", "sounds — 소리", typeof(SoundDef), true),
             new("materials", "material", "materials — 재질", typeof(MaterialDef), true),
-            new("sfx", "sfx", "sfx — 공용 소리 자리", typeof(RawHints.SoundUse), true),
+            new("sfx", "sfx", "sfx — 공용 소리 자리", typeof(Data.SoundUse), true),
             new("wave", "wave", "wave — 웨이브 규칙", typeof(WaveRuleDef), false),
             new("dayCycle", "dayCycle", "dayCycle — 낮·밤 길이", typeof(DayCycleDef), false),
         };
@@ -436,10 +436,12 @@ namespace CoreDawn.EditorTools
         /// </summary>
         void RenderObject(VisualElement host, JObject obj, Type schemaType, string path, string parentKey)
         {
-            var fields = RawSchema.FieldsOf(schemaType);
+            // 사전형(Dictionary<string, T>) 블록은 키가 자유고 값이 T — 필드 목록 대신 값 타입으로 자식을 그린다
+            Type dictValue = RawHints.DictValueOf(schemaType);
+            var fields = dictValue != null ? null : RawSchema.FieldsOf(schemaType);
             var byName = new Dictionary<string, FieldInfo>();
             if (fields != null) foreach (var (name, f) in fields) byName[name] = f;
-            Type childHint = fields == null ? RawHints.ChildHint(parentKey) : null;
+            Type childHint = dictValue;
 
             foreach (var p in obj.Properties().ToList())
             {
@@ -449,22 +451,62 @@ namespace CoreDawn.EditorTools
                 var table = f != null ? RawSchema.ModuleTableFor(f.FieldType) : null;
                 if (table != null) { RenderModules(host, obj, key, path + "/" + key, table); continue; }
                 Type memberType = f?.FieldType ?? childHint;
-                if (f != null && f.FieldType == typeof(JObject)) memberType = RawHints.ForJObjectField(key) ?? typeof(JObject);
+                if (f != null && f.FieldType == typeof(JObject)) memberType = RawHints.ForJObjectField(key, section.Key) ?? typeof(JObject);
                 RenderMember(host, key, p.Value, memberType, path + "/" + key, key,
                     set: v => obj[key] = v, remove: () => obj.Remove(key), ghostDefault: null);
             }
-            if (fields == null || RawHints.NoGhost.Contains(schemaType)) return;
+            if (fields == null) { RenderAddKey(host, obj, dictValue); return; }
+            if (RawHints.NoGhost.Contains(schemaType)) { RenderAddHintField(host, obj, schemaType, fields); return; }
             foreach (var (name, f) in fields)
             {
                 if (obj[name] != null) continue;
                 if (name == "type" && RawSchema.IsModuleType(schemaType)) continue;
                 var table = RawSchema.ModuleTableFor(f.FieldType);
                 if (table != null) { RenderModules(host, obj, name, path + "/" + name, table); continue; }
-                Type memberType = f.FieldType == typeof(JObject) ? (RawHints.ForJObjectField(name) ?? typeof(JObject)) : f.FieldType;
+                Type memberType = f.FieldType == typeof(JObject) ? (RawHints.ForJObjectField(name, section.Key) ?? typeof(JObject)) : f.FieldType;
                 RenderMember(host, name, null, memberType, path + "/" + name, name,
                     set: v => obj[name] = v, remove: () => obj.Remove(name),
                     ghostDefault: () => RawSchema.DefaultOfField(schemaType, f));
             }
+        }
+
+        /// <summary>
+        /// 힌트 타입 블록(view)에 없는 키를 더하는 드롭다운 — 유령 행 대신(정의마다 안 쓰는 키가 잔뜩 뜨지 않게).
+        /// 사용자: "view에서 건물에 필드를 추가하는 기능이 없는데?"
+        /// </summary>
+        void RenderAddHintField(VisualElement host, JObject obj, Type schemaType, List<(string name, FieldInfo field)> fields)
+        {
+            var missing = fields.Where(f => obj[f.name] == null).ToList();
+            if (missing.Count == 0) return;
+            var choices = new List<string> { "+ 필드 추가…" };
+            choices.AddRange(missing.Select(f => f.name));
+            var add = new DropdownField(choices, 0) { style = { width = 200, marginTop = 2 } };
+            add.RegisterValueChangedCallback(e =>
+            {
+                int k = choices.IndexOf(e.newValue);
+                if (k <= 0) return;
+                var (name, f) = missing[k - 1];
+                Mutate(() => obj[name] = RawSchema.DefaultOfField(schemaType, f));
+            });
+            host.Add(add);
+        }
+
+        /// <summary>사전형 블록(sfx·textures·colors·floats…)에 키를 더한다 — 값은 사전의 값 타입 기본값(타입을 모르면 빈 문자열).</summary>
+        void RenderAddKey(VisualElement host, JObject obj, Type valueType)
+        {
+            var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 2 } };
+            var name = new TextField { value = "", style = { width = 180, marginLeft = 0 } };
+            name.textEdition.placeholder = "키 이름";
+            Mono(name);
+            row.Add(name);
+            row.Add(Btn("+ 키", () =>
+            {
+                string key = (name.value ?? "").Trim();
+                if (key.Length == 0) return;
+                if (obj[key] != null) { EditorUtility.DisplayDialog("Raw", $"'{key}'는 이미 있습니다.", "확인"); return; }
+                Mutate(() => obj[key] = valueType != null ? RawSchema.DefaultOf(valueType) : "");
+            }, "이 블록에 키를 더한다 — 값은 블록 종류의 기본값"));
+            host.Add(row);
         }
 
         void RenderMember(VisualElement host, string key, JToken tok, Type schemaType, string path, string hintKey,
@@ -533,7 +575,44 @@ namespace CoreDawn.EditorTools
                 editor.AddToClassList("gd-raw-ghost");
                 row.Add(Btn("+ 추가", () => Mutate(() => set(ghostDefault())), "json에 없는 필드 — 누르면 기본값으로 생긴다"));
             }
-            else if (remove != null) row.Add(Btn("×", () => Mutate(remove), "키 삭제 — 스키마 필드면 기본값으로 돌아간다"));
+            else
+            {
+                var kind = FileKind(hintKey, path);
+                if (kind != null) row.Add(Btn("…", () => PickFile(kind, set), $"팩 폴더 {kind.folder}/ 안에서 파일 고르기 (*.{kind.ext})"));
+                if (remove != null) row.Add(Btn("×", () => Mutate(remove), "키 삭제 — 스키마 필드면 기본값으로 돌아간다"));
+            }
+        }
+
+        // ── 파일 고르기 — 팩 폴더 안의 파일을 팩 상대 경로로 ──────
+
+        sealed class FileSlot { public string folder, ext; }
+
+        /// <summary>팩 파일을 가리키는 키인가 — 어느 하위 폴더·확장자인지. 아니면 null.</summary>
+        static FileSlot FileKind(string hintKey, string path)
+        {
+            if (hintKey == "clips") return new FileSlot { folder = "sounds", ext = "wav,ogg" };
+            if (hintKey != "file") return null;
+            if (path.Contains("/model/")) return new FileSlot { folder = "models", ext = "glb" };
+            if (path.Contains("/textures/") || path.Contains("/icon/")) return new FileSlot { folder = "textures", ext = "png" };
+            return new FileSlot { folder = "", ext = "" };
+        }
+
+        void PickFile(FileSlot kind, Action<JToken> set)
+        {
+            string packDir = Path.GetFullPath(GameDataExporterV2.PackFolder);
+            string start = Path.Combine(packDir, kind.folder);
+            if (!Directory.Exists(start)) start = packDir;
+            string picked = EditorUtility.OpenFilePanel("팩 파일 고르기", start, kind.ext);
+            if (string.IsNullOrEmpty(picked)) return;
+            string full = Path.GetFullPath(picked);
+            if (!full.StartsWith(packDir, StringComparison.OrdinalIgnoreCase))
+            {
+                // 팩은 자기 폴더 안의 파일만 가리킨다 — 밖의 파일은 먼저 복사해 넣어야 한다(빌드·모드 배포 단위)
+                EditorUtility.DisplayDialog("Raw", $"팩 폴더 안의 파일만 쓸 수 있습니다.\n{GameDataExporterV2.PackFolder}", "확인");
+                return;
+            }
+            string rel = full.Substring(packDir.Length).TrimStart('\\', '/').Replace('\\', '/');
+            Mutate(() => set(rel));
         }
 
         /// <summary>값 편집기 — 값은 즉시 모델에, 언두 스냅샷은 포커스 단위(키 입력마다 본문을 다시 짓지 않는다).</summary>
@@ -782,8 +861,8 @@ namespace CoreDawn.EditorTools
             return l;
         }
 
-        /// <summary>접힘 상태 — view 블록은 기본 접힘(크고 본질이 아님), 나머지는 기본 펼침. 토글 집합이 기본값을 뒤집는다.</summary>
-        bool IsFolded(string path) => path.EndsWith("/view") ^ collapsed.Contains(path);
+        /// <summary>접힘 상태 — 전부 기본 펼침(사용자: "view 왜 다 기본으로 접혀 있음? 펼쳐놔"). 접은 것만 기억한다.</summary>
+        bool IsFolded(string path) => collapsed.Contains(path);
 
         Button Fold(bool folded, string path)
         {
@@ -815,69 +894,36 @@ namespace CoreDawn.EditorTools
     // ═══════════════════════════════════════════════════════════
     static class RawHints
     {
-        /// <summary>정의의 view 블록(Def.View). 키 이름은 ViewSpec이 읽는 것과 같다.</summary>
-        public sealed class View
+        // view 블록의 스키마는 런타임이 읽는 실제 클래스(CoreDawn.Data.ViewDefs: EntityViewDef·GunViewDef·ItemViewDef·
+        // SoundViewDef·MaterialViewDef)다 — 편집기가 따로 흉내 내지 않는다(사용자 지적 2026-09-03 "view도 class 있는 데이터인데
+        // 왜 추론으로 하는거야"). 심의 Def.View는 JObject라, 어느 섹션의 view가 어느 클래스인지만 여기서 잇는다.
+
+        /// <summary>view 클래스는 선택 필드가 많아 유령 행 대신 "+ 필드 추가" 드롭다운을 쓴다(정의마다 안 쓰는 키가 잔뜩 뜨지 않게).</summary>
+        public static readonly HashSet<Type> NoGhost = new()
         {
-            [JsonProperty("type")] public string Type;
-            [JsonProperty("model")] public List<ModelRef> Model;
-            [JsonProperty("icon")] public Icon Icon;
-            [JsonProperty("pose")] public Pose Pose;
-            [JsonProperty("poseCurveL")] public Pose PoseCurveL;
-            [JsonProperty("poseCurveR")] public Pose PoseCurveR;
-            [JsonProperty("sfx")] public JObject Sfx;
-            [JsonProperty("clips")] public List<string> Clips;
-            [JsonProperty("shader")] public string Shader;
-            [JsonProperty("textures")] public JObject Textures;
-            [JsonProperty("colors")] public JObject Colors;
-            [JsonProperty("floats")] public JObject Floats;
-            [JsonProperty("keywords")] public List<string> Keywords;
-        }
-
-        public sealed class ModelRef
-        {
-            [JsonProperty("file")] public string File = "";
-            [JsonProperty("materials")] public List<string> Materials = new();
-        }
-
-        public sealed class Icon
-        {
-            [JsonProperty("file")] public string File = "";
-            [JsonProperty("frame")] public string Frame = "";
-        }
-
-        public sealed class Pose
-        {
-            [JsonProperty("position")] public float[] Position = { 0f, 0f, 0f };
-            [JsonProperty("rotation")] public float[] Rotation = { 0f, 0f, 0f };
-            [JsonProperty("scale")] public float Scale = 1f;
-        }
-
-        /// <summary>소리 자리 하나 — view.sfx의 값이자 팩 최상위 sfx 섹션의 항목(Data.SoundUse와 같은 키).</summary>
-        public sealed class SoundUse
-        {
-            [JsonProperty("sound")] public string Sound = "";
-            [JsonProperty("volume")] public float Volume = 1f;
-            [JsonProperty("spatial")] public bool Spatial = true;
-        }
-
-        public sealed class TextureRef
-        {
-            [JsonProperty("file")] public string File = "";
-            [JsonProperty("linear")] public bool Linear;
-        }
-
-        public static readonly HashSet<Type> NoGhost = new() { typeof(View), typeof(Pose) };
-
-        /// <summary>JObject 타입 필드에 붙는 힌트 — 지금은 view뿐.</summary>
-        public static Type ForJObjectField(string fieldName) => fieldName == "view" ? typeof(View) : null;
-
-        /// <summary>사전형 블록의 자식 힌트 — sfx의 값은 소리 자리, textures의 값은 텍스처 참조.</summary>
-        public static Type ChildHint(string parentKey) => parentKey switch
-        {
-            "sfx" => typeof(SoundUse),
-            "textures" => typeof(TextureRef),
-            _ => null,
+            typeof(Data.EntityViewDef), typeof(Data.GunViewDef), typeof(Data.ItemViewDef), typeof(Data.SoundViewDef), typeof(Data.MaterialViewDef),
+            typeof(Data.PoseDef),
         };
+
+        /// <summary>JObject 타입 필드에 붙는 스키마 — view는 섹션마다 다른 클래스(ViewSchema가 읽는 것과 같은 표).</summary>
+        public static Type ForJObjectField(string fieldName, string sectionKey)
+        {
+            if (fieldName != "view") return null;
+            return sectionKey switch
+            {
+                "entities" => typeof(Data.EntityViewDef),
+                "guns" => typeof(Data.GunViewDef),
+                "items" => typeof(Data.ItemViewDef),
+                "sounds" => typeof(Data.SoundViewDef),
+                "materials" => typeof(Data.MaterialViewDef),
+                _ => null,
+            };
+        }
+
+        /// <summary>사전형(Dictionary&lt;string, T&gt;) 필드의 값 타입 — sfx의 값은 SoundUse, textures의 값은 TextureRef.</summary>
+        public static Type DictValueOf(Type t) =>
+            t != null && t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Dictionary<,>) && t.GetGenericArguments()[0] == typeof(string)
+                ? t.GetGenericArguments()[1] : null;
     }
 
     // ═══════════════════════════════════════════════════════════

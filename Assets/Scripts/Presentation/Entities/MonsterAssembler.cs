@@ -14,7 +14,7 @@ namespace CoreDawn.Entities
     {
         public static GameObject Build(EntityDef def, Vector3 position, Quaternion rotation, Transform parent)
         {
-            var view = ViewSchema.Of(def);
+            var view = ViewSchema.Entity(def);
             var go = new GameObject(BuildingAssembler.PascalKeyOf(def.Id));
             go.SetActive(false);   // 컴포넌트를 다 붙인 뒤 켠다
             go.transform.SetParent(parent, false);
@@ -23,26 +23,25 @@ namespace CoreDawn.Entities
             if (layer >= 0) go.layer = layer;
 
             var col = go.AddComponent<CapsuleCollider>();
-            var c = view.Object("collider");
-            col.radius = (float?)c?["radius"] ?? 0.3f;
-            col.height = (float?)c?["height"] ?? 1.2f;
-            col.center = c?["center"] is Newtonsoft.Json.Linq.JArray ca && ca.Count >= 3 ? new Vector3((float)ca[0], (float)ca[1], (float)ca[2]) : Vector3.zero;
+            var c = view.Collider;
+            col.radius = c?.Radius ?? 0.3f;
+            col.height = c?.Height ?? 1.2f;
+            col.center = ViewDefs.Vec3(c?.Center, Vector3.zero);
             var rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = true; rb.useGravity = false;
 
             // 모델 — 팩 glb(view.model[0] {file, materials}: 스킨 + 클립)
             Transform body = null; Animation animation = null;
-            var refs = view.Models();
-            var chosen = refs.Count > 0 ? refs[0] : null;
-            if (chosen != null && !chosen.IsPack) Debug.LogError($"[MonsterAssembler] {def.Id}: view.model '{chosen.File}'은 팩 모델이 아닙니다 — 카탈로그(guid) 참조는 퇴역했습니다.");
-            var model = chosen != null && chosen.IsPack ? Managers.PackAssets.ModelOf(chosen.File) : null;
+            var refs = view.Model;
+            var chosen = refs != null && refs.Count > 0 ? refs[0] : null;
+            var model = chosen != null ? Managers.PackAssets.ModelOf(chosen.File) : null;
             if (model != null)
             {
                 var inst = Object.Instantiate(model, go.transform);
                 inst.name = model.name;
                 inst.SetActive(true);   // 팩 템플릿은 비활성으로 보관된다
-                if (chosen != null && chosen.IsPack) Managers.PackAssets.BindSlots(inst, chosen.Materials, def.Id);
-                var (pos, rot, scale) = view.Pose;
+                Managers.PackAssets.BindSlots(inst, chosen.Materials, def.Id);
+                var (pos, rot, scale) = view.PoseFor(BeltShape.Straight);
                 inst.transform.localPosition = pos; inst.transform.localRotation = rot; inst.transform.localScale = Vector3.one * scale;
                 body = inst.transform;
                 animation = inst.GetComponentInChildren<Animation>(true);
@@ -55,11 +54,11 @@ namespace CoreDawn.Entities
             }
 
             var visual = go.AddComponent<MonsterVisualController>();
-            visual.Wire(body, animation, MonsterVisualController.ClipMap.From(view.Object("anim")),
-                System.Enum.TryParse((string)view.Raw["deathStyle"], out MonsterVisualController.DeathStyle style) ? style : MonsterVisualController.DeathStyle.AnimationClip,
-                view.Float("sinkDepth", 1.5f));
+            visual.Wire(body, animation, MonsterVisualController.ClipMap.From(view.Anim),
+                System.Enum.TryParse(view.DeathStyle, out MonsterVisualController.DeathStyle style) ? style : MonsterVisualController.DeathStyle.AnimationClip,
+                view.SinkDepth);
             var mv = go.AddComponent<MonsterView>();
-            mv.SetDeathBehavior(true, view.Float("deathDelay", 2f));
+            mv.SetDeathBehavior(true, view.DeathDelay);
             go.SetActive(true);
             return go;
         }

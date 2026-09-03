@@ -59,24 +59,22 @@ namespace CoreDawn.Managers
             var materialIds = new HashSet<string>(StringComparer.Ordinal);
             var iconDefs = new List<Def>();
             var clipPaths = new HashSet<string>(StringComparer.Ordinal);
-            void Collect(Def def)
+            void Models(IEnumerable<ModelRef> list)
             {
-                // 검증(ViewSchema.Of)은 쓰는 쪽 몫 — 여기서는 경로만 모은다(아이템 view는 type이 없어 검증이 소리 낸다)
-                if (def.View == null) return;
-                foreach (var key in new[] { "model", "modelCurveL", "modelCurveR" })
-                    foreach (var m in ViewSpec.ModelsOf(def.View, key))
-                    {
-                        if (!m.IsPack) continue;
-                        paths.Add(m.File);
-                        foreach (var id in m.Materials) materialIds.Add(id);
-                    }
-                if (def.View["icon"] is JObject) iconDefs.Add(def);
+                if (list == null) return;
+                foreach (var m in list)
+                {
+                    if (m == null || string.IsNullOrEmpty(m.File)) continue;
+                    paths.Add(m.File);
+                    foreach (var id in m.Materials) materialIds.Add(id);
+                }
             }
-            foreach (var d in db.Entities.Values) Collect(d);
-            foreach (var d in db.Guns.Values) Collect(d);
-            foreach (var d in db.Items.Values) Collect(d);
+            // view는 섹션별 타입으로 읽는다(ViewSchema) — 꼴이 틀린 정의는 여기서 한 번 오류를 낸다
+            foreach (var d in db.Entities.Values) { var v = ViewSchema.Entity(d); Models(v.Model); Models(v.ModelCurveL); Models(v.ModelCurveR); }
+            foreach (var d in db.Guns.Values) Models(ViewSchema.Gun(d).Model);
+            foreach (var d in db.Items.Values) if (ViewSchema.Item(d).Icon != null) iconDefs.Add(d);
             foreach (var d in db.Sounds.Values)
-                if (d.View?["clips"] is JArray arr) foreach (var c in arr) if (c.Type == JTokenType.String) clipPaths.Add((string)c);
+                foreach (var c in ViewSchema.Sound(d).Clips) if (!string.IsNullOrEmpty(c)) clipPaths.Add(c);
 
             int ok = 0, done = 0;
             Progress = (0, paths.Count + materialIds.Count + iconDefs.Count + clipPaths.Count);
@@ -168,28 +166,20 @@ namespace CoreDawn.Managers
             var db = SimHost.Database;
             var def = db?.Material(id);
             if (def == null) { Debug.LogError($"[PackAssets] 재질 '{id}'가 팩 materials에 없습니다."); return MissingAssets.Material; }
-            var v = def.View;
-            string shaderName = (string)v?["shader"];
+            var v = ViewSchema.Material(def);
+            string shaderName = v.Shader;
             var shader = BuiltinShaders.Of(shaderName);
             if (shader == null) { Debug.LogError($"[PackAssets] 재질 '{id}': 셰이더 '{shaderName}' 없음 → 체커 재질."); return MissingAssets.Material; }
 
             var m = new Material(shader) { name = id };
-            if (v["textures"] is JObject texs)
-                foreach (var p in texs.Properties())
-                {
-                    m.SetTexture(p.Name, TextureOf(db.Pack, (string)p.Value["file"], (bool?)p.Value["linear"] ?? false));
-                }
-            if (v["colors"] is JObject cols)
-                foreach (var p in cols.Properties()) { var a = (JArray)p.Value; m.SetColor(p.Name, new Color((float)a[0], (float)a[1], (float)a[2], (float)a[3])); }
-            if (v["vectors"] is JObject vecs)
-                foreach (var p in vecs.Properties()) { var a = (JArray)p.Value; m.SetVector(p.Name, new Vector4((float)a[0], (float)a[1], (float)a[2], (float)a[3])); }
-            if (v["floats"] is JObject fls)
-                foreach (var p in fls.Properties()) m.SetFloat(p.Name, (float)p.Value);
-            if (v["keywords"] is JArray kws)
-                foreach (var k in kws) m.EnableKeyword((string)k);
-            if (v["renderQueue"] != null) m.renderQueue = (int)v["renderQueue"];
-            if (v["tags"] is JObject tags)
-                foreach (var p in tags.Properties()) m.SetOverrideTag(p.Name, (string)p.Value);
+            foreach (var p in v.Textures)
+                if (p.Value != null) m.SetTexture(p.Key, TextureOf(db.Pack, p.Value.File, p.Value.Linear));
+            foreach (var p in v.Colors) m.SetColor(p.Key, ViewDefs.Vec4(p.Value, Color.white));
+            foreach (var p in v.Vectors) m.SetVector(p.Key, ViewDefs.Vec4(p.Value, Vector4.zero));
+            foreach (var p in v.Floats) m.SetFloat(p.Key, p.Value);
+            foreach (var k in v.Keywords) m.EnableKeyword(k);
+            if (v.RenderQueue != 0) m.renderQueue = v.RenderQueue;
+            foreach (var p in v.Tags) m.SetOverrideTag(p.Key, p.Value);
             materials[id] = m;
             return m;
         }
@@ -216,8 +206,9 @@ namespace CoreDawn.Managers
         /// <summary>정의의 아이콘 — view.icon {file, frame}: 팩 png + 좌표표(같은 이름의 .json 사이드카: pixelsPerUnit, frames{이름: x,y,w,h,px,py}). 없으면 오류 + 체커.</summary>
         public static Sprite IconOf(Def def)
         {
-            if (!(def?.View?["icon"] is JObject icon)) return null;   // 아이콘 없는 정의 — 정상(호출부가 판단)
-            string file = (string)icon["file"], frame = (string)icon["frame"];
+            var icon = def is ItemDef item ? ViewSchema.Item(item)?.Icon : null;   // 아이콘은 아이템 view에만 있다
+            if (icon == null) return null;   // 아이콘 없는 정의 — 정상(호출부가 판단)
+            string file = icon.File, frame = icon.Frame;
             string key = file + "|" + frame;
             if (sprites.TryGetValue(key, out var cached) && cached != null) return cached;
             var db = SimHost.Database;
@@ -268,9 +259,9 @@ namespace CoreDawn.Managers
         static AudioClip[] ClipsFromView(Def def)
         {
             var list = new List<AudioClip>();
-            if (def.View?["clips"] is JArray arr)
-                foreach (var c in arr)
-                    if (c.Type == JTokenType.String && clips.TryGetValue((string)c, out var clip) && clip != null) list.Add(clip);
+            if (def is SoundDef sound)
+                foreach (var c in ViewSchema.Sound(sound).Clips)
+                    if (c != null && clips.TryGetValue(c, out var clip) && clip != null) list.Add(clip);
                     else Debug.LogError($"[PackAssets] {def.Id}: 클립 '{c}'이 로드돼 있지 않습니다.");
             return list.ToArray();
         }

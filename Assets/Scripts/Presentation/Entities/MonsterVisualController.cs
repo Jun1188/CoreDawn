@@ -27,20 +27,15 @@ namespace CoreDawn.Entities
             public string Idle, Walk, Run, Alert, Death;
             public string[] Attack = System.Array.Empty<string>(), Hit = System.Array.Empty<string>();
 
-            public static ClipMap From(JObject anim)
+            public static ClipMap From(CoreDawn.Data.AnimDef anim)
             {
                 var m = new ClipMap();
                 if (anim == null) return m;
-                m.Idle = (string)anim["idle"]; m.Walk = (string)anim["walk"]; m.Run = (string)anim["run"];
-                m.Alert = (string)anim["alert"]; m.Death = (string)anim["death"];
-                m.Attack = Names(anim["attack"]); m.Hit = Names(anim["hit"]);
+                m.Idle = anim.Idle; m.Walk = anim.Walk; m.Run = anim.Run;
+                m.Alert = anim.Alert; m.Death = anim.Death;
+                m.Attack = anim.Attack?.ToArray() ?? System.Array.Empty<string>();
+                m.Hit = anim.Hit?.ToArray() ?? System.Array.Empty<string>();
                 return m;
-            }
-
-            static string[] Names(JToken t)
-            {
-                if (t is JArray a) { var l = new List<string>(); foreach (var x in a) if (x.Type == JTokenType.String) l.Add((string)x); return l.ToArray(); }
-                return t != null && t.Type == JTokenType.String ? new[] { (string)t } : System.Array.Empty<string>();
             }
         }
 
