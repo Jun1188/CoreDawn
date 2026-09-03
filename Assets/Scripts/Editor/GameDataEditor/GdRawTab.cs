@@ -54,20 +54,66 @@ namespace CoreDawn.EditorTools
             { Key = key; Singular = singular; Title = title; DefType = defType; IsMap = isMap; }
         }
 
+        /// <summary>탭 하나 = 섹션 하나 이상. 소리 탭은 sounds(소리 자체)와 sfx(주인 없는 소리 자리)를 한 목록에 묶는다 — 데이터는 그대로 둘.</summary>
+        sealed class Tab
+        {
+            public readonly string Label;
+            public readonly Section[] Sections;
+            public Tab(string label, params Section[] sections) { Label = label; Sections = sections; }
+        }
+
         static readonly Section[] Sections =
         {
-            new("entities", "entity", "entities — 엔티티", typeof(EntityDef), true),
-            new("items", "item", "items — 아이템", typeof(ItemDef), true),
-            new("recipes", "recipe", "recipes — 레시피", typeof(RecipeDef), true),
-            new("effects", "effect", "effects — 효과", typeof(EffectSpec), true),
-            new("guns", "gun", "guns — 총", typeof(GunDef), true),
-            new("tutorial", "tutorial", "tutorial — 튜토리얼", typeof(TutorialStepDef), true),
-            new("sounds", "sound", "sounds — 소리", typeof(SoundDef), true),
-            new("materials", "material", "materials — 재질", typeof(MaterialDef), true),
-            new("sfx", "sfx", "sfx — 공용 소리 자리", typeof(Data.SoundUse), true),
-            new("wave", "wave", "wave — 웨이브 규칙", typeof(WaveRuleDef), false),
-            new("dayCycle", "dayCycle", "dayCycle — 낮·밤 길이", typeof(DayCycleDef), false),
+            new("entities", "entity", "엔티티", typeof(EntityDef), true),
+            new("items", "item", "아이템", typeof(ItemDef), true),
+            new("recipes", "recipe", "레시피", typeof(RecipeDef), true),
+            new("effects", "effect", "효과", typeof(EffectSpec), true),
+            new("guns", "gun", "총", typeof(GunDef), true),
+            new("tutorial", "tutorial", "튜토리얼", typeof(TutorialStepDef), true),
+            new("sounds", "sound", "소리 — 클립 묶음", typeof(SoundDef), true),
+            new("sfx", "sfx", "공용 소리 자리 — 주인 없는 자리(UI·플레이어 행동)", typeof(Data.SoundUse), true),
+            new("materials", "material", "재질", typeof(MaterialDef), true),
+            new("wave", "wave", "웨이브", typeof(WaveRuleDef), false),
+            new("dayCycle", "dayCycle", "낮·밤", typeof(DayCycleDef), false),
         };
+
+        static Section Sec(string key) => Sections.First(s => s.Key == key);
+
+        static readonly Tab[] Tabs =
+        {
+            new("엔티티", Sec("entities")),
+            new("아이템", Sec("items")),
+            new("레시피", Sec("recipes")),
+            new("효과", Sec("effects")),
+            new("총", Sec("guns")),
+            new("튜토리얼", Sec("tutorial")),
+            new("소리", Sec("sounds"), Sec("sfx")),
+            new("재질", Sec("materials")),
+            new("웨이브", Sec("wave")),
+            new("낮·밤", Sec("dayCycle")),
+        };
+
+        Tab tab = Tabs[0];
+        readonly List<Button> tabButtons = new();
+
+        void SelectTab(Tab t)
+        {
+            if (t == tab) return;
+            tab = t;
+            section = t.Sections[0];
+            selectedId = null;
+            undo.Clear(); redo.Clear();
+            EnsureSelection();
+            SyncTabButtons();
+            RenderList();
+            RenderTree();
+        }
+
+        void SyncTabButtons()
+        {
+            for (int i = 0; i < tabButtons.Count; i++)
+                tabButtons[i].EnableInClassList("gd-subtab--on", Tabs[i] == tab);
+        }
 
         JObject pack;
         string loadError;
@@ -171,28 +217,31 @@ namespace CoreDawn.EditorTools
 
         public override void Build(VisualElement host)
         {
-            host.style.flexDirection = FlexDirection.Row;
+            host.style.flexDirection = FlexDirection.Column;
+
+            // 섹션 탭 줄 — 어느 섹션이든 같은 트리·같은 규칙으로 편집한다(사용자: 드롭다운 대신 탭).
+            // 셸이 "섹션 탭 + [UI|Raw]" 구조로 갈 때 이 줄이 그대로 상단 탭이 된다.
+            var tabRow = new VisualElement { style = { marginLeft = 14, marginRight = 14, marginTop = 8, marginBottom = 0, flexShrink = 0 } };
+            tabRow.AddToClassList("gd-subtabs");
+            tabButtons.Clear();
+            foreach (var t in Tabs)
+            {
+                var tt = t;
+                var b = new Button(() => SelectTab(tt)) { text = tt.Label, tooltip = string.Join(" + ", tt.Sections.Select(s => s.Key)) };
+                b.AddToClassList("gd-subtab");
+                tabRow.Add(b);
+                tabButtons.Add(b);
+            }
+            host.Add(tabRow);
+            SyncTabButtons();
+
+            var body = new VisualElement { style = { flexDirection = FlexDirection.Row, flexGrow = 1, minHeight = 0 } };
+            host.Add(body);
 
             var left = new VisualElement { style = { width = 290, flexShrink = 0, minHeight = 0 } };
             left.AddToClassList("gd-leftcol");
-            host.Add(left);
+            body.Add(left);
             var h = new Label("packs/coredawn/data.json"); h.AddToClassList("gd-h3"); left.Add(h);
-
-            // 섹션 선택 — 어느 섹션이든 같은 트리·같은 규칙으로 편집한다
-            var titles = Sections.Select(s => s.Title).ToList();
-            var secDrop = new DropdownField(titles, Array.IndexOf(Sections, section)) { style = { marginLeft = 0, marginRight = 0, marginBottom = 6 } };
-            secDrop.RegisterValueChangedCallback(e =>
-            {
-                int i = titles.IndexOf(e.newValue);
-                if (i < 0 || Sections[i] == section) return;
-                section = Sections[i];
-                selectedId = null;
-                undo.Clear(); redo.Clear();
-                EnsureSelection();
-                RenderList();
-                RenderTree();
-            });
-            left.Add(secDrop);
 
             filter = new TextField { value = "" };
             filter.AddToClassList("gd-field-input");
@@ -210,7 +259,7 @@ namespace CoreDawn.EditorTools
             left.Add(listTools);
 
             var right = new VisualElement { style = { flexGrow = 1, minWidth = 0, minHeight = 0, paddingLeft = 14, paddingRight = 14, paddingTop = 10 } };
-            host.Add(right);
+            body.Add(right);
             var bar = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginBottom = 6 } };
             status = new Label();
             status.AddToClassList("gd-stat");
@@ -242,43 +291,60 @@ namespace CoreDawn.EditorTools
             listTools.style.display = map ? DisplayStyle.Flex : DisplayStyle.None;
             dupBtn.style.display = map ? DisplayStyle.Flex : DisplayStyle.None;
             delBtn.style.display = map ? DisplayStyle.Flex : DisplayStyle.None;
-            var so = SectionObj;
-            if (so == null) return;
-            if (!map)
-            {
-                var row = new VisualElement();
-                row.AddToClassList("gd-bitem");
-                row.AddToClassList("gd-bitem--sel");
-                var nm = new Label(section.Key); nm.AddToClassList("gd-bitem-nm"); Mono(nm); row.Add(nm);
-                listHost.Add(row);
-                return;
-            }
             string q = (filter?.value ?? "").Trim().ToLowerInvariant();
-            foreach (var p in so.Properties())
+            bool grouped = tab.Sections.Length > 1;
+            foreach (var sec in tab.Sections)
             {
-                string id = p.Name;
-                string name = (p.Value as JObject)?["displayName"]?.ToString() ?? (p.Value as JObject)?["sound"]?.ToString() ?? "";
-                if (q.Length > 0 && !id.ToLowerInvariant().Contains(q) && !name.ToLowerInvariant().Contains(q)) continue;
-                var row = new VisualElement();
-                row.AddToClassList("gd-bitem");
-                if (id == selectedId) row.AddToClassList("gd-bitem--sel");
-                var nm = new Label(id); nm.AddToClassList("gd-bitem-nm"); Mono(nm); row.Add(nm);
-                var kd = new Label(name) { style = { flexShrink = 1, overflow = Overflow.Hidden, textOverflow = TextOverflow.Ellipsis, maxWidth = 140 } };
-                kd.AddToClassList("gd-bitem-kd");   // 긴 표시명이 목록을 가로로 넓혀 스크롤바를 만들지 않게 말줄임
-                row.Add(kd);
-                row.RegisterCallback<ClickEvent>(_ => Select(id));
-                listHost.Add(row);
+                var so = pack?[sec.Key] as JObject;
+                if (so == null) continue;
+                if (grouped)
+                {
+                    var ttl = new Label($"{sec.Title}  [{sec.Key} {so.Count}]");
+                    ttl.AddToClassList("gd-groupttl");
+                    if (listHost.childCount == 0) ttl.style.marginTop = 0;
+                    listHost.Add(ttl);
+                }
+                if (!sec.IsMap)
+                {
+                    var row = new VisualElement();
+                    row.AddToClassList("gd-bitem");
+                    if (sec == section) row.AddToClassList("gd-bitem--sel");
+                    var nm = new Label(sec.Key); nm.AddToClassList("gd-bitem-nm"); Mono(nm); row.Add(nm);
+                    var s1 = sec;
+                    row.RegisterCallback<ClickEvent>(_ => Select(s1, null));
+                    listHost.Add(row);
+                    continue;
+                }
+                foreach (var p in so.Properties())
+                {
+                    string id = p.Name;
+                    string name = (p.Value as JObject)?["displayName"]?.ToString() ?? (p.Value as JObject)?["sound"]?.ToString() ?? "";
+                    if (q.Length > 0 && !id.ToLowerInvariant().Contains(q) && !name.ToLowerInvariant().Contains(q)) continue;
+                    var row = new VisualElement();
+                    row.AddToClassList("gd-bitem");
+                    if (sec == section && id == selectedId) row.AddToClassList("gd-bitem--sel");
+                    var nm = new Label(id); nm.AddToClassList("gd-bitem-nm"); Mono(nm); row.Add(nm);
+                    var kd = new Label(name) { style = { flexShrink = 1, overflow = Overflow.Hidden, textOverflow = TextOverflow.Ellipsis, maxWidth = 140 } };
+                    kd.AddToClassList("gd-bitem-kd");   // 긴 표시명이 목록을 가로로 넓혀 스크롤바를 만들지 않게 말줄임
+                    row.Add(kd);
+                    var s2 = sec;
+                    row.RegisterCallback<ClickEvent>(_ => Select(s2, id));
+                    listHost.Add(row);
+                }
             }
         }
 
-        void Select(string id)
+        void Select(Section sec, string id)
         {
-            if (id == selectedId) return;
+            if (sec == section && id == selectedId) return;
+            section = sec;
             selectedId = id;
             undo.Clear(); redo.Clear();
             RenderList();
             RenderTree();
         }
+
+        void Select(string id) => Select(section, id);
 
         void AddDef()
         {
