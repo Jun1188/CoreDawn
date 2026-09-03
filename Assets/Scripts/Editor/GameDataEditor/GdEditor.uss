@@ -571,3 +571,100 @@
     border-width: 0;
     -unity-background-image-tint-color: #5C6E8C;
 }
+
+/* ── Raw 탭 — yaml 꼴 트리 ───────────────────────────────── */
+.gd-raw-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 22px;
+    margin-bottom: 1px;
+    min-width: 0;
+    flex-shrink: 1;
+    background-color: rgba(255, 255, 255, 0.055);
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+.gd-raw-key {
+    color: #9CC4F0;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+.gd-raw-key--ghost {
+    color: #6B7A93;
+}
+.gd-raw-block {
+    margin-left: 4px;
+    padding-left: 8px;
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.08);
+    margin-bottom: 4px;
+    min-width: 0;
+}
+.gd-raw-modttl {
+    color: #4FD8E0;
+    -unity-font-style: bold;
+    margin-right: 8px;
+}
+.gd-raw-dash {
+    color: #5C6E8C;
+    margin-right: 4px;
+}
+.gd-raw-count {
+    font-size: 11px;
+    color: #5C6E8C;
+    margin-left: 2px;
+    margin-right: 6px;
+}
+.gd-raw-num {
+    width: 120px;
+    margin-left: 0;
+}
+.gd-raw-text {
+    flex-grow: 1;
+    margin-left: 0;
+    min-width: 0;
+    flex-shrink: 1;
+}
+.gd-raw-btn {
+    min-width: 22px;
+    height: 20px;
+    padding: 0 5px;
+    margin-left: 4px;
+    font-size: 11px;
+}
+.gd-raw-fold {
+    width: 16px;
+    height: 18px;
+    padding: 0;
+    margin: 0 2px 0 0;
+    font-size: 10px;
+    color: #5C6E8C;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+.gd-raw-idttl {
+    font-size: 15px;
+    color: #E8F1FF;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+.gd-raw-ghost {
+    opacity: 0.4;
+}
+.gd-raw-row--head {
+    background-color: rgba(0, 0, 0, 0);
+    padding-left: 2px;
+}
+.gd-raw-group {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 6px;
+    padding: 4px 6px 4px 4px;
+    margin-bottom: 4px;
+    min-width: 0;
+}
+.gd-raw-group--module {
+    background-color: rgba(79, 216, 224, 0.05);
+    border-color: rgba(79, 216, 224, 0.35);
+}

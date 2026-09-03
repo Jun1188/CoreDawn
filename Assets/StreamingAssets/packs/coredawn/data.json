@@ -3706,6 +3706,34 @@
   },
   "guns": {
     "pistol": {
+      "displayName": "기본 권총",
+      "description": "시작 화기. 느리지만 탄약이 싸다.",
+      "fire": {
+        "interval": 0.33,
+        "range": 50.0
+      },
+      "ammo": {
+        "magSize": 12,
+        "reloadTime": 1.2,
+        "filter": [
+          "coredawn:item/basic_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 3.0,
+        "y": 1.5,
+        "z": 1.0,
+        "kickbackZ": 0.5
+      },
+      "spread": {
+        "base": 0.6,
+        "max": 4.0,
+        "perShot": 0.8,
+        "recovery": 5.0
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -3757,36 +3785,37 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "기본 권총",
-      "description": "시작 화기. 느리지만 탄약이 싸다.",
-      "isAutomatic": false,
-      "unlimitedAmmo": false,
-      "blockAim": false,
-      "fireMode": "Projectile",
-      "fireRate": 0.33,
-      "range": 50.0,
-      "reloadTime": 1.2,
-      "zoomMultiplier": 1.5,
-      "magSize": 12,
-      "pellets": 0,
-      "ammoFilter": [
-        "coredawn:item/basic_ammo"
-      ],
-      "damageMultiplier": 1.0,
-      "xRecoil": 3.0,
-      "yRecoil": 1.5,
-      "zRecoil": 1.0,
-      "visualKickbackZ": 0.5,
-      "baseSpread": 0.6,
-      "maxSpread": 4.0,
-      "spreadIncreasePerShot": 0.8,
-      "spreadRecoveryRate": 5.0,
-      "swingTime": -1.0,
-      "swingWindup": -1.0,
-      "swingAlternate": false
+      }
     },
     "rifle": {
+      "displayName": "라이플",
+      "description": "주력 화기. 탄약 소모가 빠르다.",
+      "fire": {
+        "interval": 0.1,
+        "automatic": true,
+        "damageMultiplier": 1.4
+      },
+      "ammo": {
+        "reloadTime": 2.0,
+        "filter": [
+          "coredawn:item/basic_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 5.0,
+        "y": 2.0,
+        "z": 1.0,
+        "kickbackZ": 0.6
+      },
+      "spread": {
+        "base": 0.5,
+        "max": 5.0,
+        "perShot": 1.0,
+        "recovery": 5.0
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -3838,36 +3867,40 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "라이플",
-      "description": "주력 화기. 탄약 소모가 빠르다.",
-      "isAutomatic": true,
-      "unlimitedAmmo": false,
-      "blockAim": false,
-      "fireMode": "Projectile",
-      "fireRate": 0.1,
-      "range": 100.0,
-      "reloadTime": 2.0,
-      "zoomMultiplier": 1.5,
-      "magSize": 30,
-      "pellets": 0,
-      "ammoFilter": [
-        "coredawn:item/basic_ammo"
-      ],
-      "damageMultiplier": 1.4,
-      "xRecoil": 5.0,
-      "yRecoil": 2.0,
-      "zRecoil": 1.0,
-      "visualKickbackZ": 0.6,
-      "baseSpread": 0.5,
-      "maxSpread": 5.0,
-      "spreadIncreasePerShot": 1.0,
-      "spreadRecoveryRate": 5.0,
-      "swingTime": -1.0,
-      "swingWindup": -1.0,
-      "swingAlternate": false
+      }
     },
     "shotgun": {
+      "displayName": "샷건",
+      "description": "근접 다수. 한 번에 8발을 소비한다.",
+      "fire": {
+        "mode": "Hitscan",
+        "interval": 0.83,
+        "range": 25.0,
+        "pellets": 8,
+        "damageMultiplier": 0.5
+      },
+      "ammo": {
+        "magSize": 8,
+        "reloadTime": 2.5,
+        "filter": [
+          "coredawn:item/dense_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 10.0,
+        "y": 5.0,
+        "z": 2.0,
+        "kickbackZ": 2.4
+      },
+      "spread": {
+        "base": 4.0,
+        "max": 8.0,
+        "perShot": 1.5,
+        "recovery": 4.0
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -3918,36 +3951,40 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "샷건",
-      "description": "근접 다수. 한 번에 8발을 소비한다.",
-      "isAutomatic": false,
-      "unlimitedAmmo": false,
-      "blockAim": false,
-      "fireMode": "Hitscan",
-      "fireRate": 0.83,
-      "range": 25.0,
-      "reloadTime": 2.5,
-      "zoomMultiplier": 1.5,
-      "magSize": 8,
-      "pellets": 8,
-      "ammoFilter": [
-        "coredawn:item/dense_ammo"
-      ],
-      "damageMultiplier": 0.5,
-      "xRecoil": 10.0,
-      "yRecoil": 5.0,
-      "zRecoil": 2.0,
-      "visualKickbackZ": 2.4,
-      "baseSpread": 4.0,
-      "maxSpread": 8.0,
-      "spreadIncreasePerShot": 1.5,
-      "spreadRecoveryRate": 4.0,
-      "swingTime": -1.0,
-      "swingWindup": -1.0,
-      "swingAlternate": false
+      }
     },
     "sniper": {
+      "displayName": "스나이퍼",
+      "description": "원거리 단일 대상. 한 발의 무게가 크다.",
+      "fire": {
+        "mode": "Hitscan",
+        "interval": 1.25,
+        "range": 200.0,
+        "damageMultiplier": 4.0
+      },
+      "ammo": {
+        "magSize": 5,
+        "reloadTime": 3.0,
+        "filter": [
+          "coredawn:item/dense_ammo",
+          "coredawn:item/crystal_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 2.0
+      },
+      "recoil": {
+        "x": 10.0,
+        "y": 6.0,
+        "z": 3.0,
+        "kickbackZ": 2.0
+      },
+      "spread": {
+        "base": 0.05,
+        "max": 3.0,
+        "perShot": 2.0,
+        "recovery": 3.0
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -3998,37 +4035,37 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "스나이퍼",
-      "description": "원거리 단일 대상. 한 발의 무게가 크다.",
-      "isAutomatic": false,
-      "unlimitedAmmo": false,
-      "blockAim": false,
-      "fireMode": "Hitscan",
-      "fireRate": 1.25,
-      "range": 200.0,
-      "reloadTime": 3.0,
-      "zoomMultiplier": 2.0,
-      "magSize": 5,
-      "pellets": 0,
-      "ammoFilter": [
-        "coredawn:item/dense_ammo",
-        "coredawn:item/crystal_ammo"
-      ],
-      "damageMultiplier": 4.0,
-      "xRecoil": 10.0,
-      "yRecoil": 6.0,
-      "zRecoil": 3.0,
-      "visualKickbackZ": 2.0,
-      "baseSpread": 0.05,
-      "maxSpread": 3.0,
-      "spreadIncreasePerShot": 2.0,
-      "spreadRecoveryRate": 3.0,
-      "swingTime": -1.0,
-      "swingWindup": -1.0,
-      "swingAlternate": false
+      }
     },
     "grenade_launcher": {
+      "displayName": "유탄 발사기",
+      "description": "범위. 박격포 타워와 탄약을 공유한다.",
+      "fire": {
+        "interval": 2.0,
+        "range": 50.0
+      },
+      "ammo": {
+        "magSize": 4,
+        "reloadTime": 2.5,
+        "filter": [
+          "coredawn:item/grenade"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 6.0,
+        "y": 4.0,
+        "z": 2.0,
+        "kickbackZ": 1.0
+      },
+      "spread": {
+        "base": 1.0,
+        "max": 4.0,
+        "perShot": 1.0,
+        "recovery": 4.0
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -4080,36 +4117,39 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "유탄 발사기",
-      "description": "범위. 박격포 타워와 탄약을 공유한다.",
-      "isAutomatic": false,
-      "unlimitedAmmo": false,
-      "blockAim": false,
-      "fireMode": "Projectile",
-      "fireRate": 2.0,
-      "range": 50.0,
-      "reloadTime": 2.5,
-      "zoomMultiplier": 1.5,
-      "magSize": 4,
-      "pellets": 0,
-      "ammoFilter": [
-        "coredawn:item/grenade"
-      ],
-      "damageMultiplier": 1.0,
-      "xRecoil": 6.0,
-      "yRecoil": 4.0,
-      "zRecoil": 2.0,
-      "visualKickbackZ": 1.0,
-      "baseSpread": 1.0,
-      "maxSpread": 4.0,
-      "spreadIncreasePerShot": 1.0,
-      "spreadRecoveryRate": 4.0,
-      "swingTime": -1.0,
-      "swingWindup": -1.0,
-      "swingAlternate": false
+      }
     },
     "energy_rifle": {
+      "displayName": "에너지 소총",
+      "description": "관통. 좁은 길목에서 최강.",
+      "fire": {
+        "mode": "Hitscan",
+        "interval": 0.25,
+        "automatic": true,
+        "damageMultiplier": 1.2
+      },
+      "ammo": {
+        "magSize": 20,
+        "reloadTime": 2.0,
+        "filter": [
+          "coredawn:item/energy_cell_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 1.0,
+        "y": 0.8,
+        "z": 0.5,
+        "kickbackZ": 0.15
+      },
+      "spread": {
+        "base": 0.2,
+        "max": 2.0,
+        "perShot": 0.4,
+        "recovery": 6.0
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -4161,36 +4201,46 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "에너지 소총",
-      "description": "관통. 좁은 길목에서 최강.",
-      "isAutomatic": true,
-      "unlimitedAmmo": false,
-      "blockAim": false,
-      "fireMode": "Hitscan",
-      "fireRate": 0.25,
-      "range": 100.0,
-      "reloadTime": 2.0,
-      "zoomMultiplier": 1.5,
-      "magSize": 20,
-      "pellets": 0,
-      "ammoFilter": [
-        "coredawn:item/energy_cell_ammo"
-      ],
-      "damageMultiplier": 1.2,
-      "xRecoil": 1.0,
-      "yRecoil": 0.8,
-      "zRecoil": 0.5,
-      "visualKickbackZ": 0.15,
-      "baseSpread": 0.2,
-      "maxSpread": 2.0,
-      "spreadIncreasePerShot": 0.4,
-      "spreadRecoveryRate": 6.0,
-      "swingTime": -1.0,
-      "swingWindup": -1.0,
-      "swingAlternate": false
+      }
     },
     "plasma_cutter": {
+      "displayName": "플라즈마 커터",
+      "description": "잔해 해체용 절단기. 사거리는 코앞뿐이지만 탄약이 필요 없고, 한 번 휘두르면 주변까지 함께 갈린다.",
+      "fire": {
+        "interval": 0.55,
+        "range": 0.35,
+        "automatic": true,
+        "damageMultiplier": 0.6
+      },
+      "ammo": {
+        "unlimited": true,
+        "filter": [
+          "coredawn:item/plasma_arc"
+        ]
+      },
+      "aim": {
+        "block": true
+      },
+      "recoil": {
+        "x": 1.5,
+        "y": 1.0,
+        "z": 0.5
+      },
+      "swing": {
+        "time": 0.42,
+        "windup": 0.18,
+        "alternate": true,
+        "rotation": [
+          22.0,
+          -30.0,
+          26.0
+        ],
+        "position": [
+          -0.06,
+          0.025,
+          0.06
+        ]
+      },
       "view": {
         "type": "Gun",
         "sfx": {
@@ -4226,49 +4276,7 @@
           "effect": "coredawn:effect/knockback",
           "perDamage": 0.2
         }
-      },
-      "displayName": "플라즈마 커터",
-      "description": "잔해 해체용 절단기. 사거리는 코앞뿐이지만 탄약이 필요 없고, 한 번 휘두르면 주변까지 함께 갈린다.",
-      "isAutomatic": true,
-      "unlimitedAmmo": true,
-      "blockAim": true,
-      "fireMode": "Projectile",
-      "fireRate": 0.55,
-      "range": 0.35,
-      "reloadTime": 0.1,
-      "zoomMultiplier": 1.0,
-      "magSize": 1,
-      "pellets": 0,
-      "ammoFilter": [
-        "coredawn:item/plasma_arc"
-      ],
-      "damageMultiplier": 0.6,
-      "xRecoil": 1.5,
-      "yRecoil": 1.0,
-      "zRecoil": 0.5,
-      "visualKickbackZ": 0.0,
-      "visualKickbackRot": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "baseSpread": 0.0,
-      "maxSpread": 0.0,
-      "spreadIncreasePerShot": 0.0,
-      "spreadRecoveryRate": 8.0,
-      "swingTime": 0.42,
-      "swingWindup": 0.18,
-      "swingRotation": [
-        22.0,
-        -30.0,
-        26.0
-      ],
-      "swingPosition": [
-        -0.06,
-        0.025,
-        0.06
-      ],
-      "swingAlternate": true
+      }
     }
   },
   "tutorial": {

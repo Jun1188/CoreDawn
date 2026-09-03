@@ -71,7 +71,7 @@ namespace CoreDawn.FPS
             if (weapon == null) return;
 
             // 자동화기는 눌림 동안 버퍼를 계속 갱신 → 아래 판정이 연사로 이어짐
-            if (isFiringHeld && weapon.Def.IsAutomatic)
+            if (isFiringHeld && weapon.Def.Fire.Automatic)
                 lastFireInputTime = Time.time;
 
             // 버퍼 시간 내라면 사격 시도, 성공하면 버퍼 소비 (발사 간격은 무기가 관리)

@@ -154,7 +154,7 @@ namespace CoreDawn.FPS
                 motionManager.transform.localPosition = Vector3.zero;
                 motionManager.transform.localRotation = Quaternion.identity;
 
-                adsModule.SetupWeapon(weapon.sightPoint, weapon.Def.ZoomMultiplier);
+                adsModule.SetupWeapon(weapon.sightPoint, weapon.Def.Aim.Zoom);
 
                 motionManager.transform.localPosition = tempPos;
                 motionManager.transform.localRotation = tempRot;
@@ -166,7 +166,7 @@ namespace CoreDawn.FPS
         /// 지금 든 무기로 조준할 수 있는가 — 가늠자가 없는 무기(근접)는 false.
         /// 입력(WeaponController)은 이 값이 false면 조준 입력을 소비하지 않고 흘려보낸다.
         /// </summary>
-        public bool CanAim => CurrentWeapon != null && !CurrentWeapon.Def.BlockAim;
+        public bool CanAim => CurrentWeapon != null && !CurrentWeapon.Def.Aim.Block;
 
         /// <summary>
         /// 조준 시작/해제 — 입력(WeaponController)이 호출한다. 연출 반영은 여기서 전파.
@@ -190,14 +190,14 @@ namespace CoreDawn.FPS
             if (CameraShakeManager.Instance != null)
                 CameraShakeManager.Instance.ShakeOnPlayerShoot(data.BaseDamage);
             if (recoilManager != null)
-                recoilManager.FireRecoil(data.XRecoil, data.YRecoil, data.ZRecoil);
+                recoilManager.FireRecoil(data.Recoil.X, data.Recoil.Y, data.Recoil.Z);
             if (kickbackModule != null)
-                kickbackModule.Fire(data.VisualKickbackZ, Vec3(data.VisualKickbackRot, Vector3.one), IsAiming);
+                kickbackModule.Fire(data.Recoil.KickbackZ, Vec3(data.Recoil.KickbackRot, Vector3.one), IsAiming);
             // 근접무기는 킥백(뒤로 밀림) 대신 호를 그린다 — 어느 쪽인지는 무기 수치가 정한다
             // (swingTime 0 = 스윙 없음, 킥백 0 = 반동 없음). 코드에는 총/근접 분기가 없다.
-            if (swingModule != null && data.SwingTime > 0f)
-                swingModule.Swing(data.SwingTime, Vec3(data.SwingRotation, new Vector3(35f, -55f, 40f)), Vec3(data.SwingPosition, new Vector3(-0.1f, 0.04f, 0.1f)),
-                                  Mathf.Max(0f, data.SwingWindup), data.SwingAlternate);
+            if (swingModule != null && data.Swing.Time > 0f)
+                swingModule.Swing(data.Swing.Time, Vec3(data.Swing.Rotation, new Vector3(35f, -55f, 40f)), Vec3(data.Swing.Position, new Vector3(-0.1f, 0.04f, 0.1f)),
+                                  Mathf.Max(0f, data.Swing.Windup), data.Swing.Alternate);
         }
 
         /// <summary>팩의 float[3] → Vector3. 정의가 값을 안 실었으면(옛 SO 기본값이던 자리) 기본값.</summary>
