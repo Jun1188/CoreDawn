@@ -45,6 +45,13 @@ namespace CoreDawn.Sim
         /// <summary>바라보는 수평 방향(단위 벡터). 이동이 돌리고 뷰가 그대로 그린다. 기본은 +Z.</summary>
         public Vector3 Facing { get; set; } = Vector3.forward;
 
+        /// <summary>직전 스텝 시작 시점의 위치·방향 — 뷰가 <see cref="SimWorld.FrameAlpha"/>로 보간해 그린다. 생성 시엔 현재 값.</summary>
+        public Vector3 PrevPosition { get; private set; }
+        public Vector3 PrevFacing { get; private set; } = Vector3.forward;
+
+        /// <summary>스텝 시작 — 보간 기준점을 옮긴다. SimWorld.Step 이 부른다.</summary>
+        internal void BeginStep() { PrevPosition = _position; PrevFacing = Facing; }
+
         /// <summary>월드에서 빠졌는가. 빠진 엔티티를 쥔 참조는 이 플래그로 걸러낸다(큐·캐시에 남은 것들).</summary>
         public bool IsRemoved { get; private set; }
 
@@ -72,6 +79,7 @@ namespace CoreDawn.Sim
             Id = id;
             Faction = faction;
             _position = position;
+            PrevPosition = position;
         }
 
         /// <summary>

@@ -19,6 +19,7 @@ namespace CoreDawn.Tests
     {
         static readonly List<(string name, bool pass, string detail)> _results = new();
         static readonly List<string> _fails = new();
+        static SimWorld _sim;
         static EntityWorld _world;
         static PlayerSystem _players;
         static Entity _player;
@@ -55,8 +56,8 @@ namespace CoreDawn.Tests
 
         static void Run(string name, Action scenario)
         {
-            _world = new EntityWorld();
-            _players = new PlayerSystem(_world);
+            _sim = new SimWorld(); _world = _sim.Entities;
+            _players = new PlayerSystem(_sim);
             var def = new EntityDef { Id = "test:entity/player", DisplayName = "Player", Faction = Faction.Player };
             def.Modules.Add(new HealthModuleDef { MaxHp = 300f });
             def.Modules.Add(new EffectsModuleDef());
@@ -206,7 +207,7 @@ namespace CoreDawn.Tests
         static void Tick(float seconds)
         {
             int n = Mathf.CeilToInt(seconds / 0.05f);
-            for (int i = 0; i < n; i++) _players.Tick(0.05f);
+            _sim.Step(n);   // 월드 스텝(20Hz) — 플레이어 시스템은 등록돼 있다
         }
 
         static void Load(ItemDef item, int n)

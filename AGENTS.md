@@ -30,7 +30,7 @@ namespace**. `Data/**` is all `CoreDawn.Data`. The layer prefix (`Game/`, `Prese
 |---|---|---|
 | `Sim/**` | `CoreDawn.Sim` | plain C# simulation. Root = entity/world/geometry/interfaces (incl. `ISteppable`·`ISaveableModule`), `Inventory/` = `ItemStack`/`ItemContainer` (item storage shared by player and buildings), `Factory/` = the factory sim (5a-2f: `FactorySystem`·`BuildingModule`·`BuildingGraph`·`BuildingPorts`·`BeltSystem`·`BeltSegment` + `Direction`/`Dir`/`PortDefinition`/`BeltShape`), `Modules/` = entity modules (`*Module`, incl. `InventoryModule`·`CrafterModule`·`RouterModule`·`ExtractorModule`·`CoreModule`; `Modules/MonsterBrain/` holds the brain and its states), `Systems/` = systems, `Definitions/` = specs the sim reads (`EffectSpec`, `MonsterSpec`), `SimHost` = transitional static world access. All one namespace |
 | `Data/**` | `CoreDawn.Data` | the few Unity assets that remain after 5a-3e (2026-09-01): `ViewCatalogSO` (pack id → icon/prefab/sound clips, baked from the pack `view` blocks; also holds the shared `droppedItemPrefab`), `MapDataSO` (maps are not pack content), `BuildingCategory`, plus the view-block readers `ViewSpec`/`SoundUse`/`ViewSchema` (5a-4a). **All game definitions (items, recipes, effects, entities, guns, tutorial, wave, dayCycle) are pack json only** — no `*DataSO`/`*DatabaseSO` exist anymore. |
-| `Game/Factory` | `CoreDawn.Factory` | Unity-facing factory bridges only (since 5a-2f, 2026-09-01): `FactoryBootstrap` (driver + `WireGameRules`), `PlacementBridge`, `CoreBootstrap`, `BeltItemView`, `CoreSystem` (core tier/UI wiring), `RecipeRewardUnlockService`. The factory sim itself lives in `Sim/Factory`. The behavior layer (`*Behavior`, `IBuildingBehavior`, `BuildingBehaviors`) is gone — building tick is decided by what the entity *has* |
+| `Game/Factory` | `CoreDawn.Factory` | Unity-facing factory bridges only (since 5a-2f, 2026-09-01): `FactoryBootstrap` (creates `FactorySystem` into `SimHost.Sim` + `WireGameRules`), `PlacementBridge`, `CoreBootstrap`, `BeltItemView`, `CoreSystem` (core tier/UI wiring), `RecipeRewardUnlockService`. The factory sim itself lives in `Sim/Factory`. The behavior layer (`*Behavior`, `IBuildingBehavior`, `BuildingBehaviors`) is gone — building tick is decided by what the entity *has* |
 | `Game/Combat` | `CoreDawn.Combat` | SimRunner, BattleManager, wave/nest spawning, projectiles (`ProjectileSystem`·`ProjectileShot`·`FireMode`·`Bullet`), HostileIntentProbe, CombatEvents |
 | `Game/Navigation` | `CoreDawn.Navigation` | grid, flow fields, pathfinding, `SceneNavigation` adapter |
 | `Game/Placement` | `CoreDawn.Placement` | build mode, placement, port overlay |
@@ -75,7 +75,14 @@ The bulk-namespace commit is listed in `.git-blame-ignore-revs` — run
 - A monster is an `Entity` with `HealthModule` · `MovementModule` · `AttackModule` · `MonsterBrainModule` modules, built by
   `MonsterSystem.Spawn(MonsterSpec, …)` (phase 3, 2026-08-29). `MonsterSpawner.Spawn(data, pos, rot, parent)` is the
   single gate (waves, nest bosses, save restore): sim entity first, prefab view attached after. `SimRunner`
-  is the transitional static access point + runner (like `SimHost.World`).
+  is the transitional static access point (like `SimHost.World`); systems self-register into `SimHost.Sim`.
+- Fixed tick (stage 5, 2026-09-03): **`SimWorld` (`Sim/SimWorld.cs`) is the sim root** — `Entities` + clock (`TickCount`, `Now` = ticks × 0.05 s)
+  + ordered systems (`ISimSystem`, `SimOrder`: Effects → Monsters → Players → Waves → Factory). `WorldRunner` (`Game/Managers`) accumulates
+  frame dt and calls `Step()` an integer number of times (catch-up cap 5) and writes `SimWorld.FrameAlpha` for view interpolation
+  (`Entity.PrevPosition/PrevFacing` → `MonsterView`). Every system takes a `SimWorld` in its constructor and registers itself;
+  all `Now` properties read `SimWorld.Now` (only `WaveSystem.Now` is its own "time since this night started"). `FactorySystem` keeps
+  its 10 Hz building tick by running every 2nd world step (`_stepsPerTick`); `Advance`/`RestoreClock` are gone (`SimWorld.RestoreClock`).
+  Headless tests: `new SimWorld()` + `Step(n)`. Day/night (`TimeManager`) is still frame-driven (game layer).
 - Views (`EntityView`, `BuildingView`, `MonsterView`, `PlayerView`, `NestView`, …) hold `Entity` and relay its events;
   `MonsterView` draws the sim position/facing in `LateUpdate`, `PlayerView` pushes the physics-driven position back into
   the sim (`PushesPositionToSim`). Creation owners (phase 4, 2026-08-29): buildings = `FactorySystem`, monsters =

@@ -8,18 +8,19 @@ namespace CoreDawn.Sim
     /// 몬스터 시스템 — 몬스터 엔티티의 생성·소멸과 틱 순서(두뇌 → 이동 → 군중 겹침 해소)를 소유한다.
     /// FactorySystem이 건물에 대해 하는 역할을 몬스터에 대해 한다. 구동은 뷰 쪽 러너(SimRunner)가 매 프레임 Tick.
     ///
-    /// 시계(<see cref="Now"/>)는 dt 누적 — 두뇌의 쿨다운·타임아웃이 Time.time 대신 이것을 본다.
+    /// 시계(<see cref="Now"/>)는 SimWorld 것 — 두뇌의 쿨다운·타임아웃이 Time.time 대신 이것을 본다.
     /// 고정 틱·월드 시계 통합은 5단계.
     /// </summary>
-    public sealed class MonsterSystem
+    public sealed class MonsterSystem : ISimSystem
     {
+        public readonly SimWorld Sim;
         public readonly EntityWorld World;
 
         /// <summary>길찾기 창구 — 이동·두뇌가 이것만 본다. 뷰 쪽 어댑터(SceneNavigation)를 러너가 꽂는다.</summary>
         public INavigation Nav { get; private set; }
 
-        /// <summary>시스템 시계(초). 두뇌·전투의 쿨다운·타임아웃 기준.</summary>
-        public float Now { get; private set; }
+        /// <summary>심 시계(초, SimWorld.Now). 두뇌·전투의 쿨다운·타임아웃 기준.</summary>
+        public float Now => Sim.Now;
 
         /// <summary>플레이어 엔티티 — 보스가 "누가 때렸는지 모를 때" 찾는 대상. 플레이어 뷰가 심 엔티티를 붙일 때 넣는다.</summary>
         public Entity PlayerEntity { get; set; }
@@ -35,15 +36,17 @@ namespace CoreDawn.Sim
 
         public event Action<Entity> Spawned;
 
-        public MonsterSystem(EntityWorld world, INavigation nav)
+        public MonsterSystem(SimWorld sim, INavigation nav)
         {
-            World = world ?? throw new ArgumentNullException(nameof(world));
+            Sim = sim ?? throw new ArgumentNullException(nameof(sim));
+            World = sim.Entities;
             Nav = nav;
             World.Removed += OnEntityRemoved;
+            Sim.AddSystem(this, SimOrder.Monsters);
         }
 
         /// <summary>월드 구독 해제 — 러너가 사라질 때. 안 부르면 죽은 시스템이 다음 씬의 제거 통지를 받는다.</summary>
-        public void Dispose() => World.Removed -= OnEntityRemoved;
+        public void Dispose() { World.Removed -= OnEntityRemoved; Sim.RemoveSystem(this); }
 
         public void SetNavigation(INavigation nav)
         {
@@ -88,8 +91,6 @@ namespace CoreDawn.Sim
         public void Tick(float dt)
         {
             if (dt <= 0f) return;
-            Now += dt;
-
             _tickBuffer.Clear();
             _tickBuffer.AddRange(_monsters);
             for (int i = 0; i < _tickBuffer.Count; i++)

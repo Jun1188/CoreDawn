@@ -13,11 +13,12 @@ namespace CoreDawn.Sim
     /// 진입로(entrances)에서는 점수 몬스터가 정해진 비율만큼 잡힐 때까지 기본 몹 무리가 주기마다 나온다(점수·자극과 무관).
     /// 더 나올 것도(점수) 나온 것도(살아 있는 점수 몬스터) 없으면 밤이 끝난다(<see cref="NightCleared"/>).
     /// 둥지는 리스폰하지 않는다 — 파괴된 둥지에서는 다시 웨이브가 나오지 않고, 자극만 남긴다.
-    /// 난수는 자기 시드(xorshift)라 세이브·재현이 된다. 시계는 자기 것(Now) — 러너가 Tick으로 올린다.
+    /// 난수는 자기 시드(xorshift)라 세이브·재현이 된다. 시계는 자기 것(Now = 이 밤이 시작된 뒤 흐른 시간, 세이브 대상) — 월드 스텝이 Tick으로 올린다.
     /// 뷰(프리팹)는 <see cref="Spawned"/>를 듣고 붙인다 — 이 시스템은 프리팹을 모른다.
     /// </summary>
-    public sealed class WaveSystem
+    public sealed class WaveSystem : ISimSystem, IDisposable
     {
+        readonly SimWorld sim;
         readonly EntityWorld world;
         readonly MonsterSystem monsters;
         readonly WaveRuleDef rule;
@@ -71,13 +72,18 @@ namespace CoreDawn.Sim
 
         uint rngState = 0x9E3779B9u;
 
-        public WaveSystem(EntityWorld world, MonsterSystem monsters, WaveRuleDef rule)
+        public WaveSystem(SimWorld sim, MonsterSystem monsters, WaveRuleDef rule)
         {
-            this.world = world ?? throw new ArgumentNullException(nameof(world));
+            this.sim = sim ?? throw new ArgumentNullException(nameof(sim));
+            world = sim.Entities;
             this.monsters = monsters ?? throw new ArgumentNullException(nameof(monsters));
             this.rule = rule ?? throw new ArgumentNullException(nameof(rule));
+            sim.AddSystem(this, SimOrder.Waves);
             monsters.Spawned += OnMonsterSpawned;   // 자극은 이 세계의 모든 몬스터(둥지 보스·낮 방어자·버스트)에 — 진입로 무리만 예외
         }
+
+        /// <summary>월드 구독 해제 — 러너가 사라질 때.</summary>
+        public void Dispose() { monsters.Spawned -= OnMonsterSpawned; sim.RemoveSystem(this); }
 
         // ── 난수 (xorshift32 — 세이브 가능한 한 정수) ──
         public uint RngState { get => rngState; set => rngState = value == 0 ? 0x9E3779B9u : value; }

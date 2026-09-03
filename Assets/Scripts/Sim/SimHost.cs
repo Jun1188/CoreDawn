@@ -13,9 +13,11 @@ namespace CoreDawn.Sim
     /// </summary>
     public static class SimHost
     {
-        static EntityWorld _world;
-
-        public static EntityWorld World => _world ??= new EntityWorld();
+        static SimWorld _sim;
+        /// <summary>심 루트 — 엔티티 등록부 + 20Hz 시계 + 시스템 순서. WorldRunner가 프레임마다 Step 한다.</summary>
+        public static SimWorld Sim => _sim ??= new SimWorld();
+        /// <summary>엔티티 등록부 — Sim.Entities 의 줄임.</summary>
+        public static EntityWorld World => Sim.Entities;
 
         static SimDatabase _database;
 
@@ -46,11 +48,11 @@ namespace CoreDawn.Sim
         /// <summary>새 월드로 교체 — 새 게임 시작 등. 옛 월드의 엔티티는 Removed를 받는다.</summary>
         public static void Reset()
         {
-            _world?.Clear();
-            _world = null;
+            _sim?.Clear();
+            _sim = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { _world = null; _database = null; }
+        static void ResetStatics() { _sim = null; _database = null; }
     }
 }
