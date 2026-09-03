@@ -47,27 +47,47 @@ namespace CoreDawn.EditorTools
         /// <summary>팩 섹션 — 키, 팩 id의 단수형(coredawn:item/…), 표시 이름, 정의 타입, 사전형인지.</summary>
         sealed class Section
         {
-            public readonly string Key, Singular, Title;
+            public readonly string Key, Singular, Tab;
             public readonly Type DefType;
             public readonly bool IsMap;
-            public Section(string key, string singular, string title, Type defType, bool isMap)
-            { Key = key; Singular = singular; Title = title; DefType = defType; IsMap = isMap; }
+            public Section(string key, string singular, string tab, Type defType, bool isMap)
+            { Key = key; Singular = singular; Tab = tab; DefType = defType; IsMap = isMap; }
         }
 
         static readonly Section[] Sections =
         {
-            new("entities", "entity", "entities — 엔티티", typeof(EntityDef), true),
-            new("items", "item", "items — 아이템", typeof(ItemDef), true),
-            new("recipes", "recipe", "recipes — 레시피", typeof(RecipeDef), true),
-            new("effects", "effect", "effects — 효과", typeof(EffectSpec), true),
-            new("guns", "gun", "guns — 총", typeof(GunDef), true),
-            new("tutorial", "tutorial", "tutorial — 튜토리얼", typeof(TutorialStepDef), true),
-            new("sounds", "sound", "sounds — 소리", typeof(SoundDef), true),
-            new("materials", "material", "materials — 재질", typeof(MaterialDef), true),
-            new("sfx", "sfx", "sfx — 공용 소리 자리", typeof(Data.SoundUse), true),
-            new("wave", "wave", "wave — 웨이브 규칙", typeof(WaveRuleDef), false),
-            new("dayCycle", "dayCycle", "dayCycle — 낮·밤 길이", typeof(DayCycleDef), false),
+            new("entities", "entity", "엔티티", typeof(EntityDef), true),
+            new("items", "item", "아이템", typeof(ItemDef), true),
+            new("recipes", "recipe", "레시피", typeof(RecipeDef), true),
+            new("effects", "effect", "효과", typeof(EffectSpec), true),
+            new("guns", "gun", "총", typeof(GunDef), true),
+            new("tutorial", "tutorial", "튜토리얼", typeof(TutorialStepDef), true),
+            new("sounds", "sound", "소리", typeof(SoundDef), true),
+            new("materials", "material", "재질", typeof(MaterialDef), true),
+            new("sfx", "sfx", "공용 소리", typeof(Data.SoundUse), true),
+            new("wave", "wave", "웨이브", typeof(WaveRuleDef), false),
+            new("dayCycle", "dayCycle", "낮·밤", typeof(DayCycleDef), false),
         };
+
+        readonly List<Button> sectionButtons = new();
+
+        void SelectSection(Section sec)
+        {
+            if (sec == section) return;
+            section = sec;
+            selectedId = null;
+            undo.Clear(); redo.Clear();
+            EnsureSelection();
+            SyncSectionButtons();
+            RenderList();
+            RenderTree();
+        }
+
+        void SyncSectionButtons()
+        {
+            for (int i = 0; i < sectionButtons.Count; i++)
+                sectionButtons[i].EnableInClassList("gd-subtab--on", Sections[i] == section);
+        }
 
         JObject pack;
         string loadError;
@@ -171,28 +191,31 @@ namespace CoreDawn.EditorTools
 
         public override void Build(VisualElement host)
         {
-            host.style.flexDirection = FlexDirection.Row;
+            host.style.flexDirection = FlexDirection.Column;
+
+            // 섹션 탭 줄 — 어느 섹션이든 같은 트리·같은 규칙으로 편집한다(사용자: 드롭다운 대신 탭).
+            // 셸이 "섹션 탭 + [UI|Raw]" 구조로 갈 때 이 줄이 그대로 상단 탭이 된다.
+            var tabRow = new VisualElement { style = { marginLeft = 14, marginRight = 14, marginTop = 8, marginBottom = 0, flexShrink = 0 } };
+            tabRow.AddToClassList("gd-subtabs");
+            sectionButtons.Clear();
+            foreach (var s in Sections)
+            {
+                var sec = s;
+                var b = new Button(() => SelectSection(sec)) { text = sec.Tab, tooltip = sec.Key };
+                b.AddToClassList("gd-subtab");
+                tabRow.Add(b);
+                sectionButtons.Add(b);
+            }
+            host.Add(tabRow);
+            SyncSectionButtons();
+
+            var body = new VisualElement { style = { flexDirection = FlexDirection.Row, flexGrow = 1, minHeight = 0 } };
+            host.Add(body);
 
             var left = new VisualElement { style = { width = 290, flexShrink = 0, minHeight = 0 } };
             left.AddToClassList("gd-leftcol");
-            host.Add(left);
+            body.Add(left);
             var h = new Label("packs/coredawn/data.json"); h.AddToClassList("gd-h3"); left.Add(h);
-
-            // 섹션 선택 — 어느 섹션이든 같은 트리·같은 규칙으로 편집한다
-            var titles = Sections.Select(s => s.Title).ToList();
-            var secDrop = new DropdownField(titles, Array.IndexOf(Sections, section)) { style = { marginLeft = 0, marginRight = 0, marginBottom = 6 } };
-            secDrop.RegisterValueChangedCallback(e =>
-            {
-                int i = titles.IndexOf(e.newValue);
-                if (i < 0 || Sections[i] == section) return;
-                section = Sections[i];
-                selectedId = null;
-                undo.Clear(); redo.Clear();
-                EnsureSelection();
-                RenderList();
-                RenderTree();
-            });
-            left.Add(secDrop);
 
             filter = new TextField { value = "" };
             filter.AddToClassList("gd-field-input");
@@ -210,7 +233,7 @@ namespace CoreDawn.EditorTools
             left.Add(listTools);
 
             var right = new VisualElement { style = { flexGrow = 1, minWidth = 0, minHeight = 0, paddingLeft = 14, paddingRight = 14, paddingTop = 10 } };
-            host.Add(right);
+            body.Add(right);
             var bar = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginBottom = 6 } };
             status = new Label();
             status.AddToClassList("gd-stat");
