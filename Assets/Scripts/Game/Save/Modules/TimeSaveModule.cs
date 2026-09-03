@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using fNbt;
 using CoreDawn.DayTime;
 
 namespace CoreDawn.Save
@@ -35,12 +35,12 @@ namespace CoreDawn.Save
             };
         }
 
-        public void Restore(JToken data)
+        public void Restore(NbtCompound data)
         {
             var cycle = TimeManager.Instance?.Cycle;
             if (cycle == null) return;
 
-            var dto = SaveJson.FromToken<Dto>(data);
+            var dto = SaveNbt.FromTag<Dto>(data);
             if (dto == null) return;
 
             cycle.RestoreState(dto.Phase, dto.DayNumber, dto.PhaseRemaining);

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using fNbt;
 using CoreDawn.Tutorial;
 
 namespace CoreDawn.Save
@@ -39,12 +39,12 @@ namespace CoreDawn.Save
             };
         }
 
-        public void Restore(JToken data)
+        public void Restore(NbtCompound data)
         {
             var t = TutorialManager.Instance;
             if (t == null) return;
 
-            var dto = SaveJson.FromToken<Dto>(data);
+            var dto = SaveNbt.FromTag<Dto>(data);
             if (dto == null) return;
 
             t.RestoreProgress(dto.CompletedIds, dto.Skipped);

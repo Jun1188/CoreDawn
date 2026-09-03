@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using fNbt;
 using UnityEngine;
 using CoreDawn.Combat;
 using CoreDawn.Entities;
@@ -203,9 +203,9 @@ namespace CoreDawn.Save
 
         // ── 복원 ──────────────────────────────────────────────────────
 
-        public void Restore(JToken data)
+        public void Restore(NbtCompound data)
         {
-            var dto = SaveJson.FromToken<Dto>(data);
+            var dto = SaveNbt.FromTag<Dto>(data);
             if (dto == null) return;
 
             RestoreNests(dto);

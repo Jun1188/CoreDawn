@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using fNbt;
 using UnityEngine;
 using CoreDawn.Entities;
 using CoreDawn.FPS;
@@ -93,9 +93,9 @@ namespace CoreDawn.Save
 
         // ── 복원 ──────────────────────────────────────────────────────
 
-        public void Restore(JToken data)
+        public void Restore(NbtCompound data)
         {
-            var dto = SaveJson.FromToken<Dto>(data);
+            var dto = SaveNbt.FromTag<Dto>(data);
             if (dto == null) return;
 
             var controller = Object.FindFirstObjectByType<PlayerController>();
