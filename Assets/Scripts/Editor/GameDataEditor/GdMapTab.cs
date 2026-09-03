@@ -15,7 +15,7 @@ namespace CoreDawn.EditorTools
     //  맵 탭 — 고정 맵. 타일(지면·강·절벽) + 코어 · 자원 노드 · 둥지
     //  (Web/js/map-editor.js 대응)
     //
-    //  GameData 와 달리 맵은 MapData.json 으로 따로 나간다 — 저장은 셸의
+    //  맵은 팩 maps/<이름>.json 으로 파일마다 따로 나간다 — 저장은 셸의
     //  저장 버튼이 SaveExtraFiles 로 함께 처리한다(웹판의 모달 입출력 대체).
     //
     //  캔버스: 타일은 1타일=1픽셀 텍스처(포인트 필터)를 확대해 깔고,
@@ -25,7 +25,7 @@ namespace CoreDawn.EditorTools
 
     class GMapNode
     {
-        public string item = "Item:IronOre";
+        public string item = GdPack.Id("item", "iron_ore");
         public int x, y;   // 광맥은 한 칸짜리 — 수치는 팩의 광맥 정의가 갖는다
         [JsonIgnore] public MapImporter.NodeDto src;
     }
@@ -83,9 +83,9 @@ namespace CoreDawn.EditorTools
 
         static readonly (string item, string ko, Color color)[] NodeKinds =
         {
-            ("Item:IronOre", "철광석", GdEnum.FromHex("#E8A54B")),
-            ("Item:CopperOre", "구리광석", GdEnum.FromHex("#4FD8E0")),
-            ("Item:CrystalOre", "크리스탈 광석", GdEnum.FromHex("#B48CFF")),
+            (GdPack.Id("item", "iron_ore"), "철광석", GdEnum.FromHex("#E8A54B")),
+            (GdPack.Id("item", "copper_ore"), "구리광석", GdEnum.FromHex("#4FD8E0")),
+            (GdPack.Id("item", "crystal_ore"), "크리스탈 광석", GdEnum.FromHex("#B48CFF")),
         };
 
         // ── 배치물 레이어 ──
@@ -144,22 +144,21 @@ namespace CoreDawn.EditorTools
             const int w = 121, h = 121;   // 홀수 — 코어 3×3 이 정확히 중앙에 온다
             return new GMap
             {
-                id = "Map:New" + n, displayName = "새 맵",
+                id = GdPack.Id("map", "new" + n), displayName = "새 맵",
                 width = w, height = h, cellSize = 4f,
                 coreX = (w >> 1) - 1, coreY = (h >> 1) - 1,
                 tiles = new byte[w * h],
             };
         }
 
-        // ═════════ 파일 입출력 — MapData.json (셸 저장에 통합) ═════════
+        // ═════════ 파일 입출력 — 팩 maps/*.json (셸 저장에 통합, MapImporter.LoadAll/SaveAll) ═════════
 
         public override void OnDataLoaded()
         {
             maps.Clear();
             try
             {
-                var root = JsonConvert.DeserializeObject<MapImporter.Root>(File.ReadAllText(MapImporter.JsonPath));
-                foreach (var m in root?.maps ?? Array.Empty<MapImporter.MapDto>())
+                foreach (var m in MapImporter.LoadAll())   // 팩 maps/*.json — 파일 하나가 맵 하나
                 {
                     int w = Odd(m.width > 0 ? m.width : 121), h = Odd(m.height > 0 ? m.height : 121);
                     var g = new GMap
@@ -170,7 +169,7 @@ namespace CoreDawn.EditorTools
                         tiles = DecodeTiles(m.tiles, w, h),
                         nodes = (m.nodes ?? Array.Empty<MapImporter.NodeDto>()).Select(n => new GMapNode
                         {
-                            item = string.IsNullOrEmpty(n.item) ? "Item:IronOre" : n.item,
+                            item = string.IsNullOrEmpty(n.item) ? GdPack.Id("item", "iron_ore") : n.item,
                             x = n.x, y = n.y,
                             src = n,
                         }).ToList(),
@@ -198,7 +197,7 @@ namespace CoreDawn.EditorTools
                     maps.Add(g);
                 }
             }
-            catch (Exception e) { Debug.LogWarning($"[GdMapTab] {MapImporter.JsonPath} 읽기 실패 — {e.Message}"); }
+            catch (Exception e) { Debug.LogWarning($"[GdMapTab] {GdPack.MapsFolder} 읽기 실패 — {e.Message}"); }
             if (maps.Count == 0) maps.Add(BlankMap());
             curMap = 0; sel = null; fitted = false;
             hist = new GdHistory(Snapshot, Restore, 60);
@@ -208,11 +207,8 @@ namespace CoreDawn.EditorTools
         public override void SaveExtraFiles(bool import)
         {
             if (hist == null) return;
-            var root = new MapImporter.Root { maps = maps.Select(Export).ToArray() };
-            File.WriteAllText(MapImporter.JsonPath,
-                JsonConvert.SerializeObject(root, GameDataEditorWindow.JsonSettings) + "\n");
-            AssetDatabase.ImportAsset(MapImporter.JsonPath);
-            if (import) MapImporter.ImportAll();
+            // 팩 maps/*.json에 직접 — 셸이 data.json을 먼저 썼으므로 참조 검증은 그 팩으로 한다
+            MapImporter.SaveAll(maps.Select(Export));
         }
 
         static byte[] DecodeTiles(string[] src, int w, int h)
@@ -790,15 +786,15 @@ namespace CoreDawn.EditorTools
 
             var idRow = new VisualElement();
             idRow.AddToClassList("gd-idrow");
-            var pfx = Mono(new Label("Map:"));
+            var pfx = Mono(new Label(GdPack.Id("map", "")));
             pfx.AddToClassList("gd-idrow-pfx");
             idRow.Add(pfx);
-            string bare = (m.id ?? "").StartsWith("Map:") ? m.id.Substring(4) : m.id ?? "";
+            string bare = GdPack.Bare(m.id);
             var idF = Mono(new TextField { value = bare });
             idF.RegisterValueChangedCallback(e =>
             {
                 var clean = new string(e.newValue.Where(c => char.IsLetterOrDigit(c) || c == '_' || (c >= '가' && c <= '힣')).ToArray());
-                m.id = string.IsNullOrEmpty(clean) ? "" : "Map:" + clean;
+                m.id = string.IsNullOrEmpty(clean) ? "" : GdPack.Id("map", clean);
                 RenderWarn();
             });
             HookHist(idF);
@@ -1124,7 +1120,7 @@ namespace CoreDawn.EditorTools
             if (m == null) return outp;
 
             // identity
-            if (string.IsNullOrEmpty((m.id ?? "").Replace("Map:", "")))
+            if (string.IsNullOrEmpty(GdPack.Bare(m.id)))
                 outp.Add("id 가 비어 있습니다 — 임포트의 기본 키입니다");
             else if (maps.Count(x => x.id == m.id) > 1) outp.Add($"id 중복 — {m.id}");
             if (string.IsNullOrWhiteSpace(m.displayName)) outp.Add("displayName 이 비어 있습니다 — 임포터가 거부합니다");
@@ -1238,8 +1234,8 @@ namespace CoreDawn.EditorTools
             if (m.nodes.Count == 0) outp.Add("자원 노드가 없습니다");
 
             // 계통별 Ring 분포 — 철은 안쪽, 크리스탈은 바깥이어야 테크트리가 성립한다
-            var iron = m.nodes.Where(n => n.item == "Item:IronOre").ToList();
-            var crys = m.nodes.Where(n => n.item == "Item:CrystalOre").ToList();
+            var iron = m.nodes.Where(n => n.item == GdPack.Id("item", "iron_ore")).ToList();
+            var crys = m.nodes.Where(n => n.item == GdPack.Id("item", "crystal_ore")).ToList();
             if (iron.Count > 0 && iron.Min(n => Dist(n.x, n.y)) > R / 3)
                 outp.Add("코어 근처에 철광석이 없습니다 — 초반에 아무것도 못 만듭니다");
             if (crys.Count > 0 && crys.Max(n => Dist(n.x, n.y)) < R / 3)

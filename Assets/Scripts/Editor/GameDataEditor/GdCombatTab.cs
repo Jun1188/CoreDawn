@@ -63,7 +63,8 @@ namespace CoreDawn.EditorTools
     // 몬스터 종류 — 편집 모델. 모델 프리팹은 guid로 든다(아이콘 규약과 같다)
     class GMonster
     {
-        public string id = "", displayName = "", description = "", model = "", modelGuid = "";
+        public string id = "", displayName = "", description = "";
+        public List<GameDataJson.ModelDto> models = new();   // 팩 glb(스킨 + 클립) + 슬롯 재질
         public float maxHp = 30, moveSpeed = 4, rotateSpeed = 720, crowdRadius = 0.4f, knockbackDamping = 8;
         public bool stickToGround = true;
         public float attackRange = 1.5f, attackCooldown = 2;
@@ -117,6 +118,17 @@ namespace CoreDawn.EditorTools
         string curTab = "effects";
         int curE, curG;
 
+        internal override (string section, string id) RawCursor => curTab == "effects"
+            ? ("effects", GdPack.Bare(effects.ElementAtOrDefault(curE)?.id))
+            : ("guns", GdPack.Bare(guns.ElementAtOrDefault(curG)?.id));
+        internal override void SelectRaw(string section, string id)
+        {
+            if (section == "guns") { int i = guns.FindIndex(g => GdPack.Bare(g.id) == id); if (i < 0) return; curTab = "guns"; curG = i; }
+            else if (section == "effects") { int i = effects.FindIndex(e => GdPack.Bare(e.id) == id); if (i < 0) return; curTab = "effects"; curE = i; }
+            else return;
+            if (listBox != null) { SyncSubButtons(); Render(); }
+        }
+
         GdHistory hist;
 
         Label statLabel;
@@ -155,12 +167,12 @@ namespace CoreDawn.EditorTools
                     ammo = g.ammoFilter is { Length: > 0 } af ? af[0] : "",   // 임포터 규약: 첫 항목이 기본
                     view = g.view ?? new GameDataJson.ViewDto { type = "Gun" },
                     damageMultiplier = g.damageMultiplier >= 0 ? g.damageMultiplier : 1,
-                    xRecoil = g.xRecoil >= 0 ? g.xRecoil : 3, yRecoil = g.yRecoil >= 0 ? g.yRecoil : 2,
-                    zRecoil = g.zRecoil >= 0 ? g.zRecoil : 1,
-                    visualKickbackZ = g.visualKickbackZ >= 0 ? g.visualKickbackZ : 1,
-                    baseSpread = g.baseSpread >= 0 ? g.baseSpread : 0.5f, maxSpread = g.maxSpread >= 0 ? g.maxSpread : 5,
-                    spreadIncreasePerShot = g.spreadIncreasePerShot >= 0 ? g.spreadIncreasePerShot : 1,
-                    spreadRecoveryRate = g.spreadRecoveryRate >= 0 ? g.spreadRecoveryRate : 5,
+                    xRecoil = g.xRecoil >= 0 ? g.xRecoil : 0, yRecoil = g.yRecoil >= 0 ? g.yRecoil : 0,
+                    zRecoil = g.zRecoil >= 0 ? g.zRecoil : 0,
+                    visualKickbackZ = g.visualKickbackZ >= 0 ? g.visualKickbackZ : 0,
+                    baseSpread = g.baseSpread >= 0 ? g.baseSpread : 0f, maxSpread = g.maxSpread >= 0 ? g.maxSpread : 0,
+                    spreadIncreasePerShot = g.spreadIncreasePerShot >= 0 ? g.spreadIncreasePerShot : 0,
+                    spreadRecoveryRate = g.spreadRecoveryRate >= 0 ? g.spreadRecoveryRate : 0,
                     src = g,
                 });
             var wr = win.root.wave ?? new GameDataJson.WaveRuleDto();
@@ -183,7 +195,7 @@ namespace CoreDawn.EditorTools
                 monsters.Add(new GMonster
                 {
                     id = m.id ?? "", displayName = m.displayName ?? "", description = m.description ?? "",
-                    model = m.model ?? "", modelGuid = m.modelGuid ?? "",
+                    models = (m.models ?? Array.Empty<GameDataJson.ModelDto>()).ToList(),
                     maxHp = m.maxHp > 0 ? m.maxHp : 30, moveSpeed = m.moveSpeed > 0 ? m.moveSpeed : 4,
                     rotateSpeed = m.rotateSpeed > 0 ? m.rotateSpeed : 720, crowdRadius = Mathf.Max(0, m.crowdRadius),
                     knockbackDamping = m.knockbackDamping > 0 ? m.knockbackDamping : 8, stickToGround = m.stickToGround,
@@ -268,8 +280,7 @@ namespace CoreDawn.EditorTools
             o.view = m.view;
             o.id = m.id; o.displayName = m.displayName;
             o.description = string.IsNullOrEmpty(m.description) ? null : m.description;
-            o.model = string.IsNullOrEmpty(m.model) ? null : m.model;
-            o.modelGuid = string.IsNullOrEmpty(m.modelGuid) ? null : m.modelGuid;
+            o.models = m.models.Count > 0 ? m.models.ToArray() : null;
             o.maxHp = m.maxHp; o.moveSpeed = m.moveSpeed; o.rotateSpeed = m.rotateSpeed;
             o.crowdRadius = m.crowdRadius; o.knockbackDamping = m.knockbackDamping; o.stickToGround = m.stickToGround;
             o.attackRange = m.attackRange; o.attackCooldown = m.attackCooldown;
@@ -577,7 +588,7 @@ namespace CoreDawn.EditorTools
             detailBox.Add(Field2("Kind", kindD));
             detailBox.Add(new Label(k.desc) { style = { color = GdEnum.Faint, fontSize = 11, marginBottom = 6, marginLeft = 118 } });
 
-            detailBox.Add(IdField("Effect:", e.id, v => e.id = v));
+            detailBox.Add(IdField(GdPack.Id("effect", ""), e.id, v => e.id = v));
             detailBox.Add(TextRow("Display Name", e.displayName, v => { e.displayName = v; RenderList(); }));
             detailBox.Add(TextRow("Description", e.description, v => e.description = v, multiline: true));
 
@@ -660,7 +671,7 @@ namespace CoreDawn.EditorTools
             var g = guns.ElementAtOrDefault(curG);
             if (g == null) return;
 
-            detailBox.Add(IdField("Gun:", g.id, v => g.id = v));
+            detailBox.Add(IdField(GdPack.Id("gun", ""), g.id, v => g.id = v));
             detailBox.Add(TextRow("Display Name", g.displayName, v => { g.displayName = v; RenderList(); }));
             detailBox.Add(TextRow("Description", g.description, v => g.description = v, multiline: true));
 

@@ -14,7 +14,6 @@ namespace CoreDawn.EditorTools
     // ═══════════════════════════════════════════════════════════
     //  튜토리얼 탭 — 안내 카드의 순서·문구·완료 조건을 편집한다.
     //
-    //  데이터는 GameData.json 의 tutorial 배열. 저장+임포트하면 GameDataJson 가
     //  저장하면 v2 팩 data.json의 tutorial 섹션으로 나간다 — 런타임(TutorialManager)이 그것을 읽는다.
     //
     //  조건 종류는 런타임 클래스(TutorialCondition 파생)에서 긁는다 — 프로그래머가
@@ -28,6 +27,15 @@ namespace CoreDawn.EditorTools
 
         List<GameDataJson.TutorialStepDto> steps = new();
         int sel = -1;
+
+        internal override (string section, string id) RawCursor => ("tutorial", GdPack.Bare(steps.ElementAtOrDefault(sel)?.id));
+        internal override void SelectRaw(string section, string id)
+        {
+            int i = steps.FindIndex(x => GdPack.Bare(x.id) == id);
+            if (i < 0) return;
+            sel = i;
+            Render();
+        }
         GdHistory hist;
 
         VisualElement listHost, detailHost;
@@ -246,8 +254,8 @@ namespace CoreDawn.EditorTools
 
             detailHost.Add(GroupTitle("스텝"));
 
-            var idF = Text("id 이름 (\"Tutorial:\" 자동 접두 — 세이브 키, 배포 뒤 변경 금지)", Bare(s.id),
-                v => s.id = string.IsNullOrEmpty(Sanitize(v)) ? "" : "Tutorial:" + Sanitize(v));
+            var idF = Text("id 이름 (\"coredawn:tutorial/\" 자동 접두 — 세이브 키, 배포 뒤 변경 금지)", Bare(s.id),
+                v => s.id = string.IsNullOrEmpty(Sanitize(v)) ? "" : GdPack.Id("tutorial", Sanitize(v)));
             Commit(idF, () => { RenderList(); RefreshMeta(); });
             detailHost.Add(idF);
 
@@ -464,7 +472,7 @@ namespace CoreDawn.EditorTools
 
         // ── 유틸 ──
 
-        static string Bare(string id) => (id ?? "").StartsWith("Tutorial:") ? id.Substring(9) : id ?? "";
+        static string Bare(string id) => GdPack.Bare(id);
 
         static string Sanitize(string s)
             => new string((s ?? "").Where(ch => char.IsLetterOrDigit(ch) || ch == '_' || (ch >= '가' && ch <= '힣')).ToArray());

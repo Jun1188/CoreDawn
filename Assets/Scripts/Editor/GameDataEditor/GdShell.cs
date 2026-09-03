@@ -1,8 +1,10 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using CoreDawn.Sim;
@@ -33,7 +35,11 @@ namespace CoreDawn.EditorTools
             Formatting = Formatting.Indented,
         };
 
-        static string JsonPath => $"{GameDataJson.ImportFolder}/GameData.json";
+        // 정본은 팩 data.json 하나(3e-2 ③). 폼 탭은 v1 꼴 DTO(root)로 편집하고, GdPack이 양방향으로 변환한다.
+        // Raw 탭은 팩 문서(JObject)를 직접 편집한다 — 탭을 오갈 때 두 모델을 동기화한다(아래 SelectTab).
+        JObject packDoc;          // Raw 탭이 보는 팩 문서(root에서 만든 것)
+        bool packCrlf;            // 파일이 쓰던 개행
+        bool uiDirtySinceRaw;     // 폼 탭에서 고친 뒤 Raw 문서를 다시 만들지 않았다
 
         internal GameDataJson.Root root;
         /// <summary>팩 소리 id 목록(편집 중인 값) — 사운드 탭이 꽂는다. 뷰 조각(GdViewUI)의 드롭다운이 읽는다.</summary>
@@ -57,7 +63,7 @@ namespace CoreDawn.EditorTools
 
         void CreateGUI()
         {
-            saveChangesMessage = "GameData.json에 저장하지 않은 변경이 있습니다. 저장할까요?";
+            saveChangesMessage = "data.json에 저장하지 않은 변경이 있습니다. 저장할까요?";
             var combat = new GdCombatTab(this);
             var map = new GdMapTab(this, combat);   // 둥지의 보스·방어자 종류 드롭다운이 전투 탭의 몬스터 목록을 본다
             tabs = new GdTab[]
@@ -81,42 +87,65 @@ namespace CoreDawn.EditorTools
         void LoadFile()
         {
             loadError = null;
-            try { root = JsonConvert.DeserializeObject<GameDataJson.Root>(File.ReadAllText(JsonPath)); }
-            catch (Exception e) { root = null; loadError = e.Message; }
-            hasUnsavedChanges = false;
+            try
+            {
+                packDoc = GdPack.ReadPack(out packCrlf);
+                root = GdPack.ToV1(packDoc).ToObject<GameDataJson.Root>(JsonSerializer.Create(JsonSettings));
+            }
+            catch (Exception e) { root = null; packDoc = null; loadError = e.Message; }
+            hasUnsavedChanges = false; uiDirtySinceRaw = false;
+            GdPackAssets.ClearCache();
             foreach (var t in tabs) t.OnDataLoaded();
+            rawTab?.LoadFrom(packDoc, loadError);
+        }
+
+        /// <summary>폼 모델(root) → 팩 문서. 탭들의 자체 모델을 root에 먼저 반영한다.</summary>
+        JObject BuildPackDoc()
+        {
+            foreach (var t in tabs) if (t != rawTab) t.SyncToRoot();
+            var v1 = JObject.Parse(JsonConvert.SerializeObject(root, JsonSettings));   // 텍스트 경유 — FromObject 는 float 를 double 로 풀어 1.2 가 1.2000000476837158 이 된다
+            return (JObject)GdPack.OrderLike(GdPack.ToPack(v1), packDoc);   // 디스크 키 순서 유지 — diff 에 값 변화만 남는다
+        }
+
+        /// <summary>Raw 탭에서 고친 팩 문서 → 폼 모델(root). 폼 탭들이 다시 읽는다.</summary>
+        void PullFromRaw()
+        {
+            if (rawTab == null || rawTab.Pack == null) return;
+            packDoc = rawTab.Pack;
+            root = GdPack.ToV1(packDoc).ToObject<GameDataJson.Root>(JsonSerializer.Create(JsonSettings));
+            foreach (var t in tabs) if (t != rawTab) t.OnDataLoaded();
+            rawTab.ClearDirty();
+            uiDirtySinceRaw = false;
+        }
+
+        /// <summary>폼 모델이 바뀌었으면 Raw 탭에 새 팩 문서를 준다(Raw로 들어갈 때).</summary>
+        void PushToRaw()
+        {
+            if (rawTab == null || root == null || !uiDirtySinceRaw) return;
+            try { packDoc = BuildPackDoc(); rawTab.LoadFrom(packDoc); uiDirtySinceRaw = false; }
+            catch (Exception e) { rawTab.LoadFrom(packDoc, "폼 모델을 팩으로 바꾸지 못했습니다 — " + e.Message); }
         }
 
         internal void Save(bool import)
         {
             if (root == null) return;
-            // Raw 탭(팩 data.json 직접 편집)과의 충돌 — v1 내보내기가 data.json을 재생성해 Raw 편집을 지운다.
-            // 과도기(3e-2가 내보내기를 퇴역시키기 전)라 물어본다.
-            bool skipExport = false;
-            if (rawTab != null && rawTab.HasRawEdits)
+            try
             {
-                int choice = EditorUtility.DisplayDialogComplex("Raw 편집과 충돌",
-                    "data.json에 Raw 탭 편집이 있습니다. v1 내보내기를 하면 그 편집이 사라집니다.\n\n" +
-                    "· 내보내기 건너뜀: v1은 저장하고 data.json은 Raw 편집을 그대로 둔다(Raw 미저장분도 저장)\n" +
-                    "· 덮어쓰기: Raw 편집을 버리고 v1에서 data.json을 다시 만든다",
-                    "내보내기 건너뜀 (Raw 유지)", "취소", "덮어쓰기");
-                if (choice == 1) return;
-                skipExport = choice == 0;
+                // 어느 쪽이 최신인가 — Raw에서 고쳤으면 그쪽이 정본, 아니면 폼 모델에서 만든다
+                if (rawTab != null && rawTab.Dirty) PullFromRaw();
+                packDoc = BuildPackDoc();
+                var errors = GdPack.Validate(packDoc);
+                GdPack.WritePack(packDoc, packCrlf);
+                SimHost.Database = null;   // 에디트 모드 도구(미리보기 등)가 새 팩을 다시 읽게
+                rawTab?.LoadFrom(packDoc);
+                uiDirtySinceRaw = false;
+                if (errors.Count > 0) Debug.LogError($"[GameData] {GdPack.DataPath} 저장 — 로드 오류 {errors.Count}건:\n  " + string.Join("\n  ", errors));
+                else Debug.Log($"[GameData] {GdPack.DataPath} 저장 — entities {(packDoc["entities"] as JObject)?.Count ?? 0} · items {(packDoc["items"] as JObject)?.Count ?? 0}");
             }
-            foreach (var t in tabs) t.SyncToRoot();   // 그래프처럼 자체 모델을 가진 탭이 root 에 반영한다
-            File.WriteAllText(JsonPath, JsonConvert.SerializeObject(root, JsonSettings) + "\n");
-            AssetDatabase.ImportAsset(JsonPath);
-            if (skipExport) rawTab.SaveRaw();
-            else
+            catch (Exception e)
             {
-                // 심이 읽는 v2 팩 data.json은 여기서 생성된다 — v1은 편집 형식, v2는 게임·모드 형식(편집 정본 하나, 파생 산출물 하나)
-                try
-                {
-                    Debug.Log(GameDataExporterV2.Export());
-                    SimHost.Database = null;   // 에디트 모드 도구(배치물 베이커 등)가 새 팩을 다시 읽게
-                    rawTab?.ReloadFromDisk();  // Raw 탭이 재생성된 data.json을 본다
-                }
-                catch (System.Exception e) { Debug.LogError("[v2 export] 실패: " + e.Message); }
+                Debug.LogError("[GameData] 저장 실패(팩으로 변환하지 못함): " + e.Message);
+                return;
             }
             foreach (var t in tabs) t.SaveExtraFiles(import);
             hasUnsavedChanges = false;
@@ -132,7 +161,51 @@ namespace CoreDawn.EditorTools
         internal void MarkDirty()
         {
             hasUnsavedChanges = true;
+            if (CurrentTab != rawTab) uiDirtySinceRaw = true;
             RefreshSharedStat();
+        }
+
+        // ── [UI | Raw] 전환 — 같은 데이터를 폼으로 볼지 트리로 볼지 ──
+
+        /// <summary>폼 탭 → 그 탭이 담당하는 팩 섹션. 재질은 폼이 없어 Raw뿐.</summary>
+        static readonly Dictionary<Type, string> SectionOfTab = new()
+        {
+            [typeof(GdGraphTab)] = "items", [typeof(GdBuildingTab)] = "entities", [typeof(GdCombatTab)] = "effects",
+            [typeof(GdWaveTab)] = "wave", [typeof(GdMonsterTab)] = "entities", [typeof(GdTutorialTab)] = "tutorial",
+            [typeof(GdSoundTab)] = "sounds",
+        };
+
+        static readonly Dictionary<string, Type> TabOfSection = new()
+        {
+            ["items"] = typeof(GdGraphTab), ["recipes"] = typeof(GdGraphTab), ["entities"] = typeof(GdBuildingTab),
+            ["effects"] = typeof(GdCombatTab), ["guns"] = typeof(GdCombatTab), ["wave"] = typeof(GdWaveTab), ["dayCycle"] = typeof(GdWaveTab),
+            ["tutorial"] = typeof(GdTutorialTab), ["sounds"] = typeof(GdSoundTab), ["sfx"] = typeof(GdSoundTab),
+        };
+
+        void ToggleRaw()
+        {
+            if (rawTab == null) return;
+            int rawIdx = Array.IndexOf(tabs, rawTab);
+            if (CurrentTab == rawTab)
+            {
+                var (sec, id) = rawTab.Cursor;
+                // 몬스터는 entities 안에 있지만 폼은 몬스터 탭 — 고른 정의에 MonsterBrain이 있으면 그쪽으로
+                Type target = TabOfSection.TryGetValue(sec, out var t) ? t : null;
+                if (sec == "entities" && id != null && rawTab.Pack?["entities"]?[id]?["modules"] is JArray mods
+                    && mods.Any(m => (string)m["type"] == "MonsterBrain")) target = typeof(GdMonsterTab);
+                if (target == null) { Debug.Log($"[GameData] '{sec}' 섹션은 폼이 없습니다 — Raw에서 편집하세요."); return; }
+                int idx = Array.FindIndex(tabs, x => x.GetType() == target);
+                if (idx < 0) return;
+                SelectTab(idx);
+                if (id != null) tabs[idx].SelectRaw(sec, id);
+            }
+            else
+            {
+                var (sec, id) = CurrentTab.RawCursor;
+                if (sec == null) sec = SectionOfTab.TryGetValue(CurrentTab.GetType(), out var s) ? s : "entities";
+                SelectTab(rawIdx);
+                rawTab.ShowSection(sec, string.IsNullOrEmpty(id) ? null : id);
+            }
         }
 
         // ── 셸 UI — 원본 #tabs 줄: 브랜드 · 탭 · 공용 통계 · 입출력 ──
@@ -199,8 +272,9 @@ namespace CoreDawn.EditorTools
                     "저장하지 않은 변경을 버리고 파일을 다시 읽습니다.", "버린다", "취소"))
                 { LoadFile(); BuildShell(); }
             }) { text = "다시 불러오기" });
-            bar.Add(new Button(() => Save(false)) { text = "저장" });
-            var si = new Button(() => Save(true)) { text = "저장 + 맵 내보내기" };
+            var toggle = new Button(ToggleRaw) { text = "UI ⇄ Raw", tooltip = "같은 데이터를 폼으로/트리로 — 현재 탭의 섹션으로 오간다" };
+            bar.Add(toggle);
+            var si = new Button(() => Save(true)) { text = "저장 (data.json + 맵)" };
             si.AddToClassList("gd-btn-primary");   // button.primary — 시안 테두리·글자
             bar.Add(si);
 
@@ -238,13 +312,19 @@ namespace CoreDawn.EditorTools
 
         void SelectTab(int idx)
         {
+            // 두 모델 동기화 — Raw에서 나오면 폼으로 되가져오고, Raw로 들어가면 폼에서 새로 만든다
+            if (tabs != null && rawTab != null && tabIndex != idx)
+            {
+                if (tabs[tabIndex] == rawTab && rawTab.Dirty) PullFromRaw();
+                if (tabs[idx] == rawTab) PushToRaw();
+            }
             tabIndex = idx;
             for (int i = 0; i < tabButtons.Count; i++)
                 tabButtons[i].EnableInClassList("gd-tabbtn--on", i == idx);
             paneHost.Clear();
             if (root == null)
             {
-                paneHost.Add(new HelpBox($"{JsonPath} 를 읽지 못했습니다.\n{loadError}", HelpBoxMessageType.Error));
+                paneHost.Add(new HelpBox($"{GdPack.DataPath} 를 읽지 못했습니다.\n{loadError}", HelpBoxMessageType.Error));
                 return;
             }
             tabs[idx].Build(paneHost);
@@ -274,13 +354,7 @@ namespace CoreDawn.EditorTools
         void OnGlobalKey(KeyDownEvent e)
         {
             bool ctrl = e.ctrlKey || e.commandKey;
-            if (ctrl && e.keyCode == KeyCode.S)
-            {
-                // Raw 탭에서는 Ctrl+S가 data.json 저장 — v1 저장(내보내기)이 아니다
-                if (CurrentTab is GdRawTab raw) raw.SaveRaw(); else Save(false);
-                e.StopPropagation();
-                return;
-            }
+            if (ctrl && e.keyCode == KeyCode.S) { Save(false); e.StopPropagation(); return; }
             if (InTextInput(e.target)) return;
             if (ctrl && e.keyCode == KeyCode.Z && !e.shiftKey) { CurrentTab.Undo(); e.StopPropagation(); }
             else if (ctrl && (e.keyCode == KeyCode.Y || (e.keyCode == KeyCode.Z && e.shiftKey))) { CurrentTab.Redo(); e.StopPropagation(); }
@@ -304,6 +378,10 @@ namespace CoreDawn.EditorTools
         public virtual void Undo() { }
         public virtual void Redo() { }
         public virtual bool DeleteSelection() => false;
+        /// <summary>[UI ⇄ Raw] 전환용 — 지금 고른 항목의 (팩 섹션, 섹션 안 키). 항목 개념이 없는 탭은 (null, null).</summary>
+        internal virtual (string section, string id) RawCursor => (null, null);
+        /// <summary>Raw에서 돌아올 때 같은 항목을 고른다(id는 섹션 안 키, 접두 없음). 없으면 그대로.</summary>
+        internal virtual void SelectRaw(string section, string id) { }
 
         // ── 공용 폼 조각 — 원본 EdUtil.field 와 동일한 구조: 라벨이 위, 입력칸이 전체 폭 ──
 

@@ -32,6 +32,15 @@ namespace CoreDawn.EditorTools
         Label statLabel, warnLabel;
         int cur;
 
+        internal override (string section, string id) RawCursor => ("entities", GdPack.Bare(combat.monsters.ElementAtOrDefault(cur)?.id));
+        internal override void SelectRaw(string section, string id)
+        {
+            int i = combat.monsters.FindIndex(m => GdPack.Bare(m.id) == id);
+            if (i < 0) return;
+            cur = i;
+            if (listBox != null) Render();
+        }
+
         public override void Build(VisualElement host)
         {
             host.style.backgroundColor = GdEnum.Bg;
@@ -141,12 +150,12 @@ namespace CoreDawn.EditorTools
 
             // ── 식별 ──
             detailBox.Add(H3("식별"));
-            string bare = (m.id ?? "").StartsWith("Monster:") ? m.id.Substring(8) : m.id ?? "";
-            var idF = Mono(new TextField { value = bare, tooltip = "Monster: 접두는 자동으로 붙는다. 세이브가 이 id로 종류를 되살린다 — 바꾸면 옛 세이브의 몬스터가 기본 종류로 돌아온다" });
+            string bare = GdPack.Bare(m.id);
+            var idF = Mono(new TextField { value = bare, tooltip = "coredawn:entity/ 접두는 자동으로 붙는다. 세이브가 이 id로 종류를 되살린다 — 바꾸면 옛 세이브의 몬스터가 기본 종류로 돌아온다" });
             idF.RegisterValueChangedCallback(e =>
             {
                 var clean = new string(e.newValue.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
-                m.id = string.IsNullOrEmpty(clean) ? "" : "Monster:" + clean;
+                m.id = string.IsNullOrEmpty(clean) ? "" : GdPack.Id("entity", clean);
                 RefreshMeta();
             });
             idF.RegisterCallback<FocusOutEvent>(_ => { combat.PushHist(); RenderList(); });
@@ -154,22 +163,9 @@ namespace CoreDawn.EditorTools
             detailBox.Add(Text("이름", m.displayName, v => { m.displayName = v; RenderList(); RefreshMeta(); }));
             detailBox.Add(Text("설명", m.description, v => m.description = v, multiline: true));
 
-            // ── 모델 — 리그·Animator·머티리얼을 안에 든 모델 프리팹(Art/Models/Monsters). 에셋 참조라 guid로 적는다
+            // ── 모델 — 팩 glb(스킨 + 클립) + 슬롯 재질. 조립기가 콜라이더·컴포넌트를 붙여 세운다
             detailBox.Add(H3("뷰"));
-            GameObject current = null;
-            if (!string.IsNullOrEmpty(m.modelGuid))
-                current = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(m.modelGuid));
-            var modelF = new ObjectField { objectType = typeof(GameObject), allowSceneObjects = false, value = current,
-                tooltip = "모델 프리팹(리그·Animator·머티리얼 포함). 조립기가 콜라이더·컴포넌트를 붙여 세운다 — 수치는 위·아래 필드가 정한다" };
-            modelF.RegisterValueChangedCallback(e =>
-            {
-                var go = e.newValue as GameObject;
-                string path = go != null ? AssetDatabase.GetAssetPath(go) : null;
-                m.modelGuid = string.IsNullOrEmpty(path) ? "" : AssetDatabase.AssetPathToGUID(path);
-                m.model = go != null ? go.name : "";
-                combat.PushHist(); RefreshMeta();
-            });
-            detailBox.Add(Field2("모델", modelF));
+            detailBox.Add(Field2("모델", GdPackAssets.ModelList(m.models, () => (win.root?.materials ?? Array.Empty<GameDataJson.MaterialDto>()).Select(x => x.id).ToList(), () => { combat.PushHist(); RefreshMeta(); })));
             detailBox.Add(GdViewUI.Build(m.view ??= new GameDataJson.ViewDto { type = "Monster" }, combat.PushHist, win.SoundIds));
 
             // ── 수치 ──
@@ -188,7 +184,7 @@ namespace CoreDawn.EditorTools
             detailBox.Add(H3("공격"));
             detailBox.Add(Num("사거리 (m)", m.attackRange, v => m.attackRange = Mathf.Max(0, v)));
             detailBox.Add(Num("공격 간격 (초)", m.attackCooldown, v => m.attackCooldown = Mathf.Max(0.01f, v)));
-            detailBox.Add(EffectRows("명중 효과", m.attackEffects, "Effect:Damage", 10));
+            detailBox.Add(EffectRows("명중 효과", m.attackEffects, GdPack.Id("effect", "damage"), 10));
 
             detailBox.Add(H3("보스 리쉬·인내심 (보스로 배치될 때만)"));
             detailBox.Add(Num("최대 인내심 (초)", m.maxPatience, v => m.maxPatience = Mathf.Max(0, v)));
@@ -257,7 +253,7 @@ namespace CoreDawn.EditorTools
                 string nm = string.IsNullOrEmpty(m.displayName) ? "(이름 없음)" : m.displayName;
                 if (string.IsNullOrEmpty(m.id)) warn.Add($"{nm}: id가 비어 있습니다 — 임포트에서 스킵됩니다");
                 else if (!ids.Add(m.id)) warn.Add($"{nm}: id \"{m.id}\" 가 중복입니다");
-                if (string.IsNullOrEmpty(m.modelGuid)) warn.Add($"{nm}: 모델이 없습니다 — 코드 조립 캡슐로 나옵니다");
+                if (m.models.Count == 0 || string.IsNullOrEmpty(m.models[0].file)) warn.Add($"{nm}: 모델이 없습니다 — 코드 조립 캡슐로 나옵니다");
                 if (!(m.maxHp > 0)) warn.Add($"{nm}: 최대 체력은 0보다 커야 합니다");
                 if (m.attackEffects.Count == 0) warn.Add($"{nm}: 명중 효과가 없어 때려도 아무 일도 없습니다");
                 foreach (var e in m.attackEffects)

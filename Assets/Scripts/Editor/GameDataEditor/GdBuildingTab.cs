@@ -44,9 +44,8 @@ namespace CoreDawn.EditorTools
         public string id = "";
         public bool idLocked;
         public string kind = "Miner", displayName = "새 건물", description = "", category = "Production";
-        public string model = "", modelCurveL = "", modelCurveR = "";
-        // guid 가 정본 — 이름은 표시·폴백용 (임포터의 ModelRef 규약과 같다)
-        public string modelGuid = "", modelCurveLGuid = "", modelCurveRGuid = "";
+        // 팩 모델 {file, materials[슬롯]} — [0]이 기본, 나머지는 변형. 벨트 커브는 모양별 목록
+        public List<GameDataJson.ModelDto> models = new(), modelsCurveL = new(), modelsCurveR = new();
         public int sizeX = 1, sizeY = 1;
         public List<GPort> ports = new();
         public List<GCost> buildCost = new();
@@ -117,13 +116,33 @@ namespace CoreDawn.EditorTools
         int selPort = -1;
         GBuilding Cur => buildings.ElementAtOrDefault(curIdx);
 
+        // ── [UI ⇄ Raw] 전환 — 고른 건물을 Raw entities 섹션의 같은 항목으로 ──
+        internal override (string section, string id) RawCursor => ("entities", Cur != null ? GdPack.Bare(Cur.id) : null);
+        internal override void SelectRaw(string section, string id)
+        {
+            int i = buildings.FindIndex(b => GdPack.Bare(b.id) == id);
+            if (i < 0) return;
+            curIdx = i; selPort = -1;
+            if (listBox != null) RenderAll();
+        }
+
+        // 미리보기용 glb 읽기 — 팩 템플릿은 플레이 부팅이 preload 하지만 편집 모드엔 그런 단계가 없다
+        readonly HashSet<string> loadingModels = new();
+        async void KickModelLoad(string file)
+        {
+            if (!loadingModels.Add(file)) return;
+            try { await Managers.PackAssets.LoadModelAsync(GdPack.Pack, file); }
+            finally { loadingModels.Remove(file); }
+            if (pr != null) { Refresh3D(); win.Repaint(); }
+        }
+
         GdHistory hist;
         void PushHist() { hist?.Push(); win.MarkDirty(); }
 
         static string Slug(string s) =>
             new(( s ?? "").Where(c => char.IsLetterOrDigit(c) || c == '_' || (c >= '가' && c <= '힣')).ToArray());
-        const string IdPrefix = "Building:";
-        static string IdSuffix(GBuilding b) => (b.id ?? "").StartsWith(IdPrefix) ? b.id.Substring(IdPrefix.Length) : b.id ?? "";
+        static readonly string IdPrefix = GdPack.Id("entity", "");
+        static string IdSuffix(GBuilding b) => GdPack.Bare(b.id);
         static string Bid(GBuilding b)
         {
             var suf = Slug(IdSuffix(b));
@@ -175,10 +194,9 @@ namespace CoreDawn.EditorTools
                     displayName = string.IsNullOrEmpty(o.displayName) ? (o.id ?? "").Replace(IdPrefix, "") : o.displayName,
                     description = o.description ?? "",
                     category = string.IsNullOrEmpty(o.category) ? k.cat : o.category,
-                    model = o.model ?? "",
-                    modelCurveL = o.modelCurveL ?? "", modelCurveR = o.modelCurveR ?? "",
-                    modelGuid = o.modelGuid ?? "",
-                    modelCurveLGuid = o.modelCurveLGuid ?? "", modelCurveRGuid = o.modelCurveRGuid ?? "",
+                    models = (o.models ?? Array.Empty<GameDataJson.ModelDto>()).ToList(),
+                    modelsCurveL = (o.modelsCurveL ?? Array.Empty<GameDataJson.ModelDto>()).ToList(),
+                    modelsCurveR = (o.modelsCurveR ?? Array.Empty<GameDataJson.ModelDto>()).ToList(),
                     sizeX = Mathf.Max(1, o.size?.x ?? 1), sizeY = Mathf.Max(1, o.size?.y ?? 1),
                     ports = (o.ports ?? Array.Empty<GameDataJson.PortDto>())
                         .Select(p => new GPort { x = p.x, y = p.y,
@@ -226,8 +244,10 @@ namespace CoreDawn.EditorTools
         {
             var o = b.src ?? (b.src = new GameDataJson.BuildingDto());
             o.id = Bid(b); o.kind = b.kind; o.displayName = b.displayName; o.description = b.description ?? "";
-            o.category = b.category; o.model = b.model ?? "";
-            o.modelGuid = b.modelGuid ?? "";
+            o.category = b.category;
+            o.models = b.models.Count > 0 ? b.models.ToArray() : null;
+            o.modelsCurveL = b.modelsCurveL.Count > 0 ? b.modelsCurveL.ToArray() : null;
+            o.modelsCurveR = b.modelsCurveR.Count > 0 ? b.modelsCurveR.ToArray() : null;
             o.view = b.view;
             o.size ??= new GameDataJson.Vec2Dto();
             o.size.x = b.sizeX; o.size.y = b.sizeY;
@@ -248,10 +268,6 @@ namespace CoreDawn.EditorTools
             {
                 o.speedTilesPerSec = b.speedTilesPerSec;
                 // 이름·guid 는 한 쌍으로 움직인다 — 한쪽만 남으면 폴백이 엉뚱한 것을 집는다
-                if (!string.IsNullOrEmpty(b.modelCurveL) || !string.IsNullOrEmpty(b.modelCurveLGuid))
-                { o.modelCurveL = b.modelCurveL; o.modelCurveLGuid = b.modelCurveLGuid; }
-                if (!string.IsNullOrEmpty(b.modelCurveR) || !string.IsNullOrEmpty(b.modelCurveRGuid))
-                { o.modelCurveR = b.modelCurveR; o.modelCurveRGuid = b.modelCurveRGuid; }
             }
             if (b.kind == "Assembler") o.availableRecipes = b.availableRecipes.ToArray();
             if (b.kind == "DronePort")
@@ -306,7 +322,6 @@ namespace CoreDawn.EditorTools
         VisualElement listBox, warnBox, propsBox, portsBox;
         IMGUIContainer viewGui;
         Label hintOverlay;
-        UnityEditor.UIElements.ObjectField topModelField;
 
         public override void Build(VisualElement host)
         {
@@ -323,28 +338,6 @@ namespace CoreDawn.EditorTools
             small.AddToClassList("gd-topbar-small");
             top.Add(small);
 
-            // 웹판 "3D 모델 불러오기" — 유니티에서는 에셋 픽커. JSON 에는 파일 이름만 남는다.
-            topModelField = new UnityEditor.UIElements.ObjectField
-            { objectType = typeof(GameObject), allowSceneObjects = false,
-              tooltip = "본체 모델 — JSON 에는 guid 와 파일 이름이 함께 저장된다 (guid 가 진실)",
-              style = { width = 230, marginLeft = 8 } };
-            topModelField.RegisterValueChangedCallback(e =>
-            {
-                var b = Cur; if (b == null) return;
-                (b.model, b.modelGuid) = ModelRefOf(e.newValue);
-                PushHist();
-                RenderProps(); Refresh3D();
-            });
-            top.Add(topModelField);
-            var clearB = new Button(() =>
-            {
-                var b = Cur; if (b == null || (string.IsNullOrEmpty(b.model) && string.IsNullOrEmpty(b.modelGuid))) return;
-                b.model = ""; b.modelGuid = "";
-                PushHist();
-                RenderProps(); Refresh3D();
-            }) { text = "모델 제거" };
-            clearB.AddToClassList("gd-btn-mini");
-            top.Add(clearB);
 
             top.Add(new VisualElement { style = { flexGrow = 1 } });
             statLabel = new Label { style = { fontSize = 12, color = GdEnum.Faint } };   // #b-stat
@@ -565,10 +558,9 @@ namespace CoreDawn.EditorTools
             });
             propsBox.Add(Field2("Category", catD));
 
-            // Model — 이름(mono) + ✕
-            propsBox.Add(Field2("Model", ModelNameRow(() => (b.model, b.modelGuid),
-                (n, g) => { b.model = n; b.modelGuid = g; })));
-            propsBox.Add(Field2("", new Label(string.IsNullOrEmpty(b.model)
+            // Model — 팩 glb + 슬롯 재질([0]이 기본, 나머지는 변형)
+            propsBox.Add(Field2("Model", GdPackAssets.ModelList(b.models, MaterialIds, () => { PushHist(); RenderWarn(); Refresh3D(); })));
+            propsBox.Add(Field2("", new Label(b.models.Count == 0
                 ? "모델이 없으면 풋프린트 크기의 큐브로 만들어진다"
                 : "조립기가 이 모델로 건물을 세운다(칸 단위 저작, 루트 = 칸 크기)")
             { style = { fontSize = 11, color = GdEnum.Faint, whiteSpace = WhiteSpace.Normal } }));
@@ -643,12 +635,10 @@ namespace CoreDawn.EditorTools
                             v => { b.speedTilesPerSec = Mathf.Max(0, v); })));
                         break;
                     case "curveLPrefab":
-                        propsBox.Add(Field2("Curve L", ModelNameRow(() => (b.modelCurveL, b.modelCurveLGuid),
-                            (n, g) => { b.modelCurveL = n; b.modelCurveLGuid = g; })));
+                        propsBox.Add(Field2("Curve L", GdPackAssets.ModelList(b.modelsCurveL, MaterialIds, () => { PushHist(); RenderWarn(); }, "커브 L")));
                         break;
                     case "curveRPrefab":
-                        propsBox.Add(Field2("Curve R", ModelNameRow(() => (b.modelCurveR, b.modelCurveRGuid),
-                            (n, g) => { b.modelCurveR = n; b.modelCurveRGuid = g; })));
+                        propsBox.Add(Field2("Curve R", GdPackAssets.ModelList(b.modelsCurveR, MaterialIds, () => { PushHist(); RenderWarn(); }, "커브 R")));
                         break;
                     case "droneRange":
                         propsBox.Add(Field2("Range (타일)", NumField(b.droneRange,
@@ -696,73 +686,10 @@ namespace CoreDawn.EditorTools
             }
 
             // 모델 픽커(상단바)를 현재 건물과 동기화
-            SyncTopModelField(b);
+
         }
 
-        void SyncTopModelField(GBuilding b)
-        {
-            if (topModelField == null) return;
-            topModelField.SetValueWithoutNotify(FindModelAsset(b?.modelGuid, b?.model));
-        }
-
-        /// <summary>
-        /// guid 로 먼저 찾고 실패하면 이름으로 찾는다 — 임포터의 ResolveModel 과 같은 우선순위여야
-        /// 에디터에 보이는 모델과 임포트가 집는 모델이 어긋나지 않는다.
-        /// </summary>
-        static GameObject FindModelAsset(string guid, string fileName)
-        {
-            if (!string.IsNullOrEmpty(guid))
-            {
-                var byGuid = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
-                if (byGuid != null) return byGuid;
-            }
-            if (string.IsNullOrEmpty(fileName)) return null;
-            var stem = Path.GetFileNameWithoutExtension(fileName);
-            foreach (var g in AssetDatabase.FindAssets($"t:GameObject {stem}"))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(g);
-                if (string.Equals(Path.GetFileName(path), fileName, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(Path.GetFileNameWithoutExtension(path), stem, StringComparison.OrdinalIgnoreCase))
-                    return AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            }
-            return null;
-        }
-
-        /// <summary>픽커에서 고른 에셋 → (파일 이름, guid). 비우면 둘 다 빈 문자열.</summary>
-        static (string name, string guid) ModelRefOf(UnityEngine.Object asset)
-        {
-            if (asset == null) return ("", "");
-            var path = AssetDatabase.GetAssetPath(asset);
-            return (Path.GetFileName(path), AssetDatabase.AssetPathToGUID(path));
-        }
-
-        // 모델 행 — 픽커 + ✕ (웹의 "지정/✕" 대응). 이름과 guid 를 한 쌍으로 읽고 쓴다.
-        VisualElement ModelNameRow(Func<(string name, string guid)> get, Action<string, string> set)
-        {
-            var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
-            var cur = get();
-            var pick = new UnityEditor.UIElements.ObjectField
-            { objectType = typeof(GameObject), allowSceneObjects = false,
-              tooltip = "JSON 에는 guid 와 파일 이름이 함께 저장된다 — guid 가 진실",
-              value = FindModelAsset(cur.guid, cur.name), style = { flexGrow = 1 } };
-            pick.RegisterValueChangedCallback(e =>
-            {
-                var (n, g) = ModelRefOf(e.newValue);
-                set(n, g);
-                PushHist();
-                RenderProps(); Refresh3D();
-            });
-            row.Add(pick);
-            var x = new Label("✕") { tooltip = "지우기", style = { color = GdEnum.Faint, paddingLeft = 3, paddingRight = 3 } };
-            x.RegisterCallback<PointerDownEvent>(_ =>
-            {
-                set("", "");
-                PushHist();
-                RenderProps(); Refresh3D();
-            });
-            row.Add(x);
-            return row;
-        }
+        List<string> MaterialIds() => (win.root?.materials ?? Array.Empty<GameDataJson.MaterialDto>()).Select(m => m.id).Where(id => !string.IsNullOrEmpty(id)).ToList();
 
         // ── 숫자칸 헬퍼 ──
         FloatField NumField(float value, Action<float> set, string tooltip = null)
@@ -1651,19 +1578,22 @@ namespace CoreDawn.EditorTools
 
         void BuildModel(GBuilding b, (int x, int y) size)
         {
-            var asset = FindModelAsset(b.modelGuid, b.model);
+            var modelRef = b.models.FirstOrDefault();
+            GameObject asset = null;
+            if (modelRef != null && !string.IsNullOrEmpty(modelRef.file) && !Managers.PackAssets.TryModelOf(modelRef.file, out asset))
+                KickModelLoad(modelRef.file);   // 편집 모드엔 부팅 preload가 없다 — 읽히면 다시 그린다
             if (asset != null)
             {
                 // 부품 수집 — 웹 툴은 텍스처가 없어 회색으로 통일했지만, 유니티에는
                 // 실제 에셋 머티리얼이 있으니 그대로 그린다. 서브메시(다중 재질)까지 전부.
                 var parts = new List<(Mesh mesh, Matrix4x4 l2w, Material[] mats)>();
-                foreach (var f in asset.GetComponentsInChildren<MeshFilter>())
+                foreach (var f in asset.GetComponentsInChildren<MeshFilter>(true))
                 {
                     if (f.sharedMesh == null) continue;
                     var r = f.GetComponent<MeshRenderer>();
                     parts.Add((f.sharedMesh, f.transform.localToWorldMatrix, r != null ? r.sharedMaterials : null));
                 }
-                foreach (var sk in asset.GetComponentsInChildren<SkinnedMeshRenderer>())
+                foreach (var sk in asset.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                 {
                     if (sk.sharedMesh == null) continue;
                     parts.Add((sk.sharedMesh, sk.transform.localToWorldMatrix, sk.sharedMaterials));
@@ -1683,7 +1613,10 @@ namespace CoreDawn.EditorTools
                     // DrawMesh 직접 호출은 URP(SRP 배처)에서 셰이더 그래프의 텍스처
                     // 프로퍼티가 바인딩되지 않는다(팔레트가 흰색으로 뜸) — 진짜
                     // 게임오브젝트로 프리뷰 씬에 인스턴스해 정식 렌더 경로를 태운다.
-                    modelInstance = pr.InstantiatePrefabInScene(asset);
+                    modelInstance = UnityEngine.Object.Instantiate(asset);   // 팩 템플릿은 프리팹이 아니라 InstantiatePrefabInScene이 null을 준다
+                    pr.AddSingleGO(modelInstance);
+                    modelInstance.SetActive(true);   // 팩 템플릿은 비활성으로 보관된다
+                    Managers.PackAssets.BindSlots(modelInstance, modelRef.materials ?? Array.Empty<string>(), b.id);
                     modelInstance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                     modelInstance.transform.localScale = asset.transform.localScale * scale;
                     return;

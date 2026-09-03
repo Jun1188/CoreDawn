@@ -14,9 +14,9 @@ namespace CoreDawn.EditorTools
     // ═══════════════════════════════════════════════════════════
     //  사운드 탭 — 팩 sounds(소리 = 변형 클립 묶음)와 최상위 sfx(공용 소리 자리) 편집.
     //  소리 자체는 클립 파일만 가리키고, 볼륨·공간감은 쓰는 자리(여기의 공용 자리, 각 정의 패널의 뷰 조각)가 적는다.
-    //  클립은 에셋 참조라 guid로 적는다(아이콘·모델과 같은 규약). 저장하면 v2 sounds 섹션 + ViewCatalog(clips)로 나간다.
+    //  클립은 팩 상대 경로("sounds/x.wav")다 — 팩 폴더 안의 파일만.
     // ═══════════════════════════════════════════════════════════
-    class GClip { public string clip = "", clipGuid = ""; }
+    class GClip { public string clip = ""; }
     class GSound { public string id = "", displayName = ""; public List<GClip> clips = new(); }
     class GSfx { public string name = "", sound = ""; public float volume = 1f; public bool spatial; }
 
@@ -28,6 +28,16 @@ namespace CoreDawn.EditorTools
         List<GSound> sounds = new();
         List<GSfx> common = new();
         int cur;
+
+        internal override (string section, string id) RawCursor => ("sounds", GdPack.Bare(sounds.ElementAtOrDefault(cur)?.id));
+        internal override void SelectRaw(string section, string id)
+        {
+            if (section != "sounds") return;
+            int i = sounds.FindIndex(x => GdPack.Bare(x.id) == id);
+            if (i < 0) return;
+            cur = i;
+            if (listBox != null) Render();
+        }
         GdHistory hist;
         VisualElement listBox, detailBox, commonBox;
         Label statLabel;
@@ -38,7 +48,7 @@ namespace CoreDawn.EditorTools
             sounds = (win.root?.sounds ?? Array.Empty<GameDataJson.SoundDto>()).Select(s => new GSound
             {
                 id = s.id ?? "", displayName = s.displayName ?? "",
-                clips = (s.clips ?? Array.Empty<GameDataJson.ClipDto>()).Select(c => new GClip { clip = c.clip ?? "", clipGuid = c.clipGuid ?? "" }).ToList(),
+                clips = (s.clips ?? Array.Empty<GameDataJson.ClipDto>()).Select(c => new GClip { clip = c.clip ?? "" }).ToList(),
             }).ToList();
             common = (win.root?.sfx ?? new Dictionary<string, GameDataJson.SfxUseDto>())
                 .Select(kv => new GSfx { name = kv.Key, sound = kv.Value?.sound ?? "", volume = kv.Value?.volume ?? 1f, spatial = kv.Value?.spatial ?? false }).ToList();
@@ -53,7 +63,7 @@ namespace CoreDawn.EditorTools
             win.root.sounds = sounds.Select(s => new GameDataJson.SoundDto
             {
                 id = s.id, displayName = string.IsNullOrEmpty(s.displayName) ? null : s.displayName,
-                clips = s.clips.Where(c => !string.IsNullOrEmpty(c.clipGuid)).Select(c => new GameDataJson.ClipDto { clip = c.clip, clipGuid = c.clipGuid }).ToArray(),
+                clips = s.clips.Where(c => !string.IsNullOrEmpty(c.clip)).Select(c => new GameDataJson.ClipDto { clip = c.clip }).ToArray(),
             }).ToArray();
             win.root.sfx = common.Where(c => !string.IsNullOrEmpty(c.name))
                 .ToDictionary(c => c.name, c => new GameDataJson.SfxUseDto { sound = c.sound, volume = c.volume, spatial = c.spatial });
@@ -122,7 +132,7 @@ namespace CoreDawn.EditorTools
                 row.AddToClassList("gd-bitem");
                 if (i == cur) row.AddToClassList("gd-bitem--sel");
                 row.RegisterCallback<ClickEvent>(_ => { cur = idx; Render(); });
-                row.Add(new Label(string.IsNullOrEmpty(s.id) ? "(id 없음)" : s.id.Replace("Sound:", "")) { style = { flexGrow = 1 } });
+                row.Add(new Label(string.IsNullOrEmpty(s.id) ? "(id 없음)" : GdPack.Bare(s.id)) { style = { flexGrow = 1 } });
                 var meta = new Label($"×{s.clips.Count}") { style = { color = GdEnum.Muted, fontSize = 11 } };
                 Mono(meta); row.Add(meta);
                 listBox.Add(row);
@@ -135,12 +145,12 @@ namespace CoreDawn.EditorTools
             var s = sounds.ElementAtOrDefault(cur);
             if (s == null) return;
             detailBox.Add(H3("소리"));
-            string bare = (s.id ?? "").StartsWith("Sound:") ? s.id.Substring(6) : s.id ?? "";
-            var idF = Mono(new TextField { value = bare, tooltip = "Sound: 접두는 자동으로 붙는다. 뷰의 자리들이 이 id로 가리킨다 — 바꾸면 그 자리들도 바꿔야 한다" });
+            string bare = GdPack.Bare(s.id);
+            var idF = Mono(new TextField { value = bare, tooltip = "coredawn:sound/ 접두는 자동으로 붙는다. 뷰의 자리들이 이 id로 가리킨다 — 바꾸면 그 자리들도 바꿔야 한다" });
             idF.RegisterValueChangedCallback(e =>
             {
                 var clean = new string(e.newValue.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
-                s.id = string.IsNullOrEmpty(clean) ? "" : "Sound:" + clean;
+                s.id = string.IsNullOrEmpty(clean) ? "" : GdPack.Id("sound", clean);
                 RefreshMeta();
             });
             idF.RegisterCallback<FocusOutEvent>(_ => { PushHist(); RenderList(); });
@@ -152,16 +162,8 @@ namespace CoreDawn.EditorTools
             {
                 var c = s.clips[i]; int ci = i;
                 var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginBottom = 3 } };
-                AudioClip current = string.IsNullOrEmpty(c.clipGuid) ? null : AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(c.clipGuid));
-                var f = new ObjectField { objectType = typeof(AudioClip), allowSceneObjects = false, value = current, style = { flexGrow = 1 } };
-                f.RegisterValueChangedCallback(e =>
-                {
-                    var clip = e.newValue as AudioClip;
-                    string path = clip != null ? AssetDatabase.GetAssetPath(clip) : null;
-                    c.clipGuid = string.IsNullOrEmpty(path) ? "" : AssetDatabase.AssetPathToGUID(path);
-                    c.clip = clip != null ? clip.name : "";
-                    PushHist(); RenderList(); RefreshMeta();
-                });
+                var f = GdPackAssets.FileRow(c.clip, "sounds", "wav,ogg", v => { c.clip = v; PushHist(); RenderList(); RefreshMeta(); });
+                f.style.flexGrow = 1;
                 row.Add(f);
                 var x = new Label("✕") { style = { color = GdEnum.Faint, fontSize = 12, paddingLeft = 6 } };
                 x.RegisterCallback<PointerDownEvent>(_ => { s.clips.RemoveAt(ci); PushHist(); Render(); });
@@ -211,7 +213,7 @@ namespace CoreDawn.EditorTools
 
         void RefreshMeta()
         {
-            int clips = sounds.Sum(s => s.clips.Count(c => !string.IsNullOrEmpty(c.clipGuid)));
+            int clips = sounds.Sum(s => s.clips.Count(c => !string.IsNullOrEmpty(c.clip)));
             var dup = sounds.Where(s => !string.IsNullOrEmpty(s.id)).GroupBy(s => s.id).Count(g => g.Count() > 1);
             statLabel.text = $"소리 {sounds.Count} · 클립 {clips} · 공용 자리 {common.Count}" + (dup > 0 ? $" · id 중복 {dup}" : "");
         }
