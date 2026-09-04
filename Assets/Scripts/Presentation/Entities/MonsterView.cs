@@ -25,6 +25,8 @@ namespace CoreDawn.Entities
         public MovementModule SimMovement => movement;
 
         public MonsterBrainModule Brain => brain;
+        /// <summary>풀 열쇠(정의 id) — MonsterViewPool.Rent 가 적는다. 비어 있으면 풀 없이 만들어진 뷰라 반납 대신 부순다.</summary>
+        public string PoolKey { get; set; }
 
         // ── 옛 표면 (둥지·스포너·프로브·세이브가 쓴다) — 두뇌 위임
         public bool IsBoss => brain != null && brain.IsBoss;
@@ -49,8 +51,16 @@ namespace CoreDawn.Entities
             if (movement != null) movement.PivotToBottom = MeasurePivotToBottom(transform);
             if (brain != null) brain.Alerted += OnAlerted;
             Entity.Removed += OnEntityRemoved;
-
             SyncTransform();
+        }
+
+        protected override void OnEntityDetached()
+        {
+            if (brain != null) brain.Alerted -= OnAlerted;
+            Entity.Removed -= OnEntityRemoved;
+            brain = null;
+            movement = null;
+            base.OnEntityDetached();
         }
 
         protected override void OnDestroy()
@@ -58,16 +68,20 @@ namespace CoreDawn.Entities
             if (brain != null) brain.Alerted -= OnAlerted;
             var e = Entity;
             if (e != null) e.Removed -= OnEntityRemoved;
-            base.OnDestroy();
-            // 뷰가 먼저 사라지면(사망 연출 끝·씬 언로드) 심 엔티티도 치운다 — 심이 지운 경우(복귀 소멸)는 이미 제거돼 있다
-            if (e != null && !e.IsRemoved && !ApplicationQuitting) SimRunner.Monsters.Despawn(e);
+            base.OnDestroy();   // 엔티티는 심의 것 — 사망은 DeadState 가, 씬 전환은 BootScene 이 지운다
         }
 
+        // 사망 연출은 MonsterVisualController(OnDeath)가 틀고, 소멸 시점은 심(DeadState.corpseSeconds)이 정한다 —
+        // 기본 HandleDeath(deathDelay 뒤 Destroy)를 쓰면 뷰가 먼저 사라진다.
+        protected override void HandleDeath() { }
 
-        // 심이 먼저 지웠다(복귀 도착 소멸 등) — 껍데기도 사라진다
-        void OnEntityRemoved(SimEntity _)
+
+        // 심이 지웠다(시체 시간 만료·복귀 도착 소멸·둥지 파괴) — 껍데기는 풀로 돌아간다(같은 정의의 다음 스폰이 재사용)
+        internal void OnEntityRemoved(SimEntity _)
         {
-            if (this != null && gameObject != null) Destroy(gameObject);
+            if (this == null || gameObject == null) return;
+            Detach();
+            MonsterViewPool.Return(this);
         }
 
         /// <summary>

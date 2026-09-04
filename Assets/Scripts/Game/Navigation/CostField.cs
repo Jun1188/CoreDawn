@@ -42,6 +42,20 @@ namespace CoreDawn.Navigation
 
         public void Touch() => Version++;
 
+        /// <summary>
+        /// 다른 필드의 내용을 통째로 복사한다 — 워커가 읽을 스냅샷용. 메인은 살아 있는 배열을 칸 단위로 고치므로
+        /// (설치·철거·피격마다) 워커에 그대로 주면 한 번의 탐색 안에서 옛/새 값이 섞인다. 복사 뒤 Version은 원본과
+        /// 같아지므로 호출자는 <c>snapshot.Version != src.Version</c>일 때만 부르면 된다
+        /// (121×121 맵 4등분 234k칸 int+bool = 1.2MB, Array.Copy 0.05ms 실측 — 2026-09-04).
+        /// </summary>
+        public void CopyFrom(CostField src)
+        {
+            Resize(src.Size);
+            System.Array.Copy(src.EnterCost, EnterCost, EnterCost.Length);
+            System.Array.Copy(src.Walkable, Walkable, Walkable.Length);
+            Version = src.Version;
+        }
+
         public int Index(Vector2Int cell) => cell.y * Size.x + cell.x;
 
         public bool InBounds(Vector2Int cell) =>

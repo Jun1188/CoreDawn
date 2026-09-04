@@ -17,6 +17,11 @@ namespace CoreDawn.Sim
         [JsonProperty("walkable")] public bool Walkable;
         [JsonProperty("category")] public string Category;
         [JsonProperty("requiredCoreTier")] public int RequiredCoreTier;
+        /// <summary>
+        /// 위협도 시드 — 두 곳에서 읽는다. ① 플레이어 건물: 진격 목표의 시작 비용(작을수록 먼저 노린다, 코어 0·포탑 10·벽 100).
+        /// ② 모든 못 걷는 건물: 진격 경로가 이 건물을 뚫는 비용에 합산(칸당 HP×0.5(상한 200) + 시드). 나무는 1000 —
+        /// 숲을 돌아가는 것이 나무를 부수는 것보다 싸게. 뚫는 것이 여전히 가능해(유한) 갇히지는 않는다(2026-09-04).
+        /// </summary>
         [JsonProperty("threatSeedCost")] public int ThreatSeedCost;
         [JsonProperty("menuOrder")] public int MenuOrder;
         [JsonProperty("cost")] public List<ItemAmount> Cost = new List<ItemAmount>();

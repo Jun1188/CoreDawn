@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using CoreDawn.Entities;
 namespace CoreDawn.UI
 {
-    // 대상 머리 위에 떠서 플레이어 카메라를 바라보는 월드스페이스 HP 바.
+    // 대상 머리 위에 떠서 플레이어 카메라를 바라보는 월드스페이스 HP 바. 깊이 검사 없이 항상 위에 그린다(OverlayMaterial).
     // 체력 반영은 기존 HealthBarUI(Entity.OnHealthChanged → fillImage.fillAmount)를 그대로 쓰고,
     // 이 클래스는 캔버스 생성·높이 배치·빌보드·표시 여부만 맡는다.
     // 프리팹 없이 코드로 세우는 이유: 몬스터·둥지 프리팹을 건드리지 않고
@@ -179,6 +179,24 @@ namespace CoreDawn.UI
             gameObject.AddComponent<HealthBarUI>().Bind(entity, fill);
         }
 
+        // 월드 캔버스의 기본 UI 재질은 깊이 검사(LEqual)를 하므로 바가 몬스터 자기 몸통·머리에 가려졌다(2026-09-04 사용자 지적).
+        // UI/Default 를 복제해 ZTest 를 Always 로 — 캔버스가 쓰는 같은 재질 속성(unity_GUIZTestMode)이라 셰이더 추가 없이 된다.
+        private static Material overlayMaterial;
+        private static Material OverlayMaterial
+        {
+            get
+            {
+                if (overlayMaterial == null)
+                {
+                    var shader = Shader.Find("UI/Default");
+                    if (shader == null) return null;   // 없으면 기본 재질 — 가려지긴 해도 그려진다
+                    overlayMaterial = new Material(shader) { name = "WorldHealthBar (ZTest Always)", hideFlags = HideFlags.DontSave };
+                    overlayMaterial.SetInt("unity_GUIZTestMode", (int)UnityEngine.Rendering.CompareFunction.Always);
+                }
+                return overlayMaterial;
+            }
+        }
+
         private static Image CreateImage(Transform parent, string name, Color color)
         {
             var go = new GameObject(name);
@@ -187,6 +205,8 @@ namespace CoreDawn.UI
             img.sprite = WhiteSprite;
             img.color = color;
             img.raycastTarget = false;
+            var mat = OverlayMaterial;
+            if (mat != null) img.material = mat;   // 항상 위에 — 대상 자신에게도 가려지지 않는다
             return img;
         }
 

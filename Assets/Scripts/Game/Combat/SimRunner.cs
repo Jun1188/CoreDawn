@@ -78,9 +78,11 @@ namespace CoreDawn.Combat
             }
         }
 
-        // 도메인 리로드를 끈 환경(Enter Play Mode Options)에서 static이 플레이를 넘어 살아남는 것 방지
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics()
+        /// <summary>
+        /// 전투 시스템을 전부 버린다 — 심은 씬 하나의 것이라 씬 전환 게이트(BootScene)가 <see cref="SimHost.Reset"/> 앞에 부른다.
+        /// 다음 접근에서 새 SimWorld 에 다시 만들어진다.
+        /// </summary>
+        public static void Reset()
         {
             waves?.Dispose();
             waves = null;
@@ -91,5 +93,9 @@ namespace CoreDawn.Combat
             players?.Dispose();
             players = null;
         }
+
+        // 도메인 리로드를 끈 환경(Enter Play Mode Options)에서 static이 플레이를 넘어 살아남는 것 방지
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => Reset();
     }
 }

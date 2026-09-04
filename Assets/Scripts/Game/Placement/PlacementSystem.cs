@@ -56,6 +56,19 @@ namespace CoreDawn.Placement
 
         [Header("Preview Materials")]
         [SerializeField] private Material validMat;
+
+        [Header("자동 방향 · 설치 칸 표시")]
+        [Tooltip("칸을 옮길 때 인접 칸의 포트와 이어지는 회전을 고른다(이어지는 포트가 많은 쪽, 같으면 보는 방향 칸에 이어지는 쪽). " +
+                 "손으로 돌리면 그 칸에 있는 동안은 손 회전이 이긴다.")]
+        [SerializeField] private bool autoOrient = true;
+        [Tooltip("풋프린트 칸마다 지형·점유를 따로 판정해 초록/빨강 사각형을 지면에 깐다(스타크래프트식).")]
+        [SerializeField] private bool showCellOverlay = true;
+        [Tooltip("칸 표시를 지면에서 띄우는 높이(m) — z-fighting 방지.")]
+        [SerializeField] private float cellOverlayLift = 0.03f;
+        private static readonly Vector2Int NoCell = new Vector2Int(int.MinValue, int.MinValue);
+        private Vector2Int manualRotationCell = NoCell;   // 손으로 돌린 칸 — 여기서는 자동 방향을 쓰지 않는다
+        private Vector2Int lastAutoCell = NoCell;         // 자동 방향을 마지막으로 판단한 칸
+        private static Mesh cellQuad;
         [SerializeField] private Material invalidMat;
         [Tooltip("철거 모드에서 대상 건물에 입힐 하이라이트 머티리얼 (빨강 반투명 추천).")]
         [SerializeField] private Material demolishHighlightMat;
@@ -241,6 +254,7 @@ namespace CoreDawn.Placement
         {
             if (mode != BuildMode.Placing) return false;
             rotation = (rotation + 1) % 4;
+            manualRotationCell = lastOrigin;   // 이 칸에서는 손 회전 유지 — 칸을 옮기면 다시 자동
             return true;
         }
 
@@ -291,6 +305,7 @@ namespace CoreDawn.Placement
             current = data;
             rotation = 0;
             beltShape = BeltShape.Straight;
+            manualRotationCell = NoCell; lastAutoCell = NoCell;
             lastCanPlace = false;   // 첫 Update가 판정을 채우기 전 Attack 방지
             SpawnPreview();
             portFlow.EnterPlacement();
@@ -342,6 +357,11 @@ namespace CoreDawn.Placement
             if (preview != null && !preview.activeSelf) preview.SetActive(true);
 
             Vector2Int origin = grid.WorldToGrid(cursorPoint);
+            if (autoOrient && origin != lastAutoCell)
+            {
+                lastAutoCell = origin;
+                if (origin != manualRotationCell && TryAutoRotation(origin, out int auto)) rotation = auto;
+            }
             Vector2Int size = BuildingPorts.RotatedSize(current, rotation);
 
             bool heightOk = TryGetFootprintHeight(origin, size, out float groundY);
@@ -361,11 +381,116 @@ namespace CoreDawn.Placement
             lastOrigin   = origin;
             lastPos      = pos;
             SetPreviewColor(lastCanPlace);
+            if (showCellOverlay) DrawCellOverlay(origin, size);
 
             // 포트 흐름은 지면에 눕는 표시라 건물을 들어올린 만큼(SurfaceLift)은 빼고 지면 높이에 둔다
             bool shapeChanged = flowSo != current || flowRot != rotation || flowShape != beltShape;
             flowSo = current; flowRot = rotation; flowShape = beltShape;
             portFlow.UpdatePreview(PreviewPorts(), origin, groundY, shapeChanged);
+        }
+
+        /// <summary>
+        /// 인접 칸의 포트와 맞물리는 회전 — 후보 4개 중 이어지는 포트가 가장 많은 것. 보는 방향의 이웃에 이어지면 크게 가산해
+        /// 이웃이 여럿일 때 그쪽이 이긴다. 동점이면 현재 회전 유지(후보를 현재 회전부터 돈다). 이어지는 곳이 없으면 false(회전 유지).
+        /// 연결 성립 규칙(입↔출 짝, 마주 보는 방향)은 BuildingGraph 와 같다 — HasPortAt 로 기하만 묻는다.
+        /// </summary>
+        private bool TryAutoRotation(Vector2Int origin, out int best)
+        {
+            best = rotation;
+            var factory = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
+            if (factory == null || current == null) return false;
+            Vector2Int look = LookDir();
+            int bestScore = 0;
+            for (int k = 0; k < 4; k++)
+            {
+                int r = (rotation + k) % 4;
+                var ports = IsBelt ? BeltGeometry.BuildPorts(beltShape, r) : BuildingPorts.Rotated(current, r);
+                if (ports == null) continue;
+                int score = 0;
+                foreach (var p in ports)
+                {
+                    if (p == null) continue;
+                    var v = Dir.ToVec(p.Direction);
+                    var neighborCell = origin + p.LocalOffset + v;
+                    var nb = factory.Grid.GetAt(neighborCell);
+                    if (nb == null || nb.IsRemoved || !nb.HasPortAt(neighborCell, Dir.Opposite(p.Direction), !p.IsInput)) continue;
+                    score += 1;
+                    if (v == look) score += 10;   // 보는 방향의 이웃이 우선
+                }
+                if (score > bestScore) { bestScore = score; best = r; }
+            }
+            return bestScore > 0;
+        }
+
+        /// <summary>카메라가 보는 수평 방향을 격자 축(그리드 y = 월드 z)으로 — 자동 방향의 우선 이웃.</summary>
+        private Vector2Int LookDir()
+        {
+            if (cam == null) return Vector2Int.zero;
+            var f = cam.transform.forward; f.y = 0f;
+            if (f.sqrMagnitude < 1e-4f) return Vector2Int.zero;
+            return Mathf.Abs(f.x) >= Mathf.Abs(f.z) ? new Vector2Int(f.x > 0f ? 1 : -1, 0) : new Vector2Int(0, f.z > 0f ? 1 : -1);
+        }
+
+        /// <summary>
+        /// 스타크래프트식 설치 칸 표시 — 풋프린트 칸마다 지형(맵 타일)·점유·높이를 따로 판정해 초록/빨강 사각형을 지면에 깐다.
+        /// 프리뷰 색은 전체 판정 하나라 "어느 칸이 문제인지"를 못 보여 주던 것. 재질은 깊이 검사 없는 반투명(CellOverlayMaterial) — 풀 위에 보인다.
+        /// </summary>
+        private void DrawCellOverlay(Vector2Int origin, Vector2Int size)
+        {
+            var okMat = CellOverlayMaterial(true); var badMat = CellOverlayMaterial(false);
+            if (okMat == null || badMat == null) return;
+            var factory = FactoryBootstrap.Instance != null ? FactoryBootstrap.Instance.Factory : null;
+            var mesh = CellQuad();
+            float side = cellSize * 0.96f;
+            foreach (var cell in GetCells(origin, size))
+            {
+                bool ok = (map == null || map.CanBuildFootprint(cell, Vector2Int.one)) && (factory == null || !factory.Grid.IsOccupied(cell));
+                if (!SampleCellHeight(cell, out float h)) { ok = false; h = gridOrigin.y; }
+                Vector3 c = grid.GetFootprintCenter(cell, Vector2Int.one);
+                c.y = h + cellOverlayLift;
+                Graphics.DrawMesh(mesh, Matrix4x4.TRS(c, Quaternion.identity, new Vector3(side, 1f, side)), ok ? okMat : badMat, 0);   // 레이어 0 — 이 오브젝트의 레이어를 카메라가 안 그릴 수 있다
+            }
+        }
+
+        // 칸 표시 재질 — 풀·지형 요철에 가려지지 않게 깊이 검사 없이(UI/Default + unity_GUIZTestMode Always, 체력바와 같은 수법). 반투명 초록/빨강.
+        private static Material cellOkMat, cellBadMat;
+        private static Material CellOverlayMaterial(bool ok)
+        {
+            var m = ok ? cellOkMat : cellBadMat;
+            if (m != null) return m;
+            var shader = Shader.Find("UI/Default");
+            if (shader == null) return null;
+            m = new Material(shader) { name = ok ? "PlacementCell (ok)" : "PlacementCell (blocked)", hideFlags = HideFlags.DontSave };
+            m.color = ok ? new Color(0.2f, 1f, 0.45f, 1f) : new Color(1f, 0.25f, 0.2f, 1f);   // 투명도는 정점색(채움 옅게·테두리 진하게)
+            m.SetInt("unity_GUIZTestMode", (int)UnityEngine.Rendering.CompareFunction.Always);
+            if (ok) cellOkMat = m; else cellBadMat = m;
+            return m;
+        }
+
+        /// <summary>칸 표시 메시 — 옅은 채움 + 진한 테두리(스타크래프트식). 투명도는 정점색에 실려 재질은 색만 준다.</summary>
+        private static Mesh CellQuad()
+        {
+            if (cellQuad != null) return cellQuad;
+            const float o = 0.5f, w = 0.09f, i = o - w;
+            const float fillA = 0.25f, ringA = 0.95f;
+            var v = new List<Vector3>(); var col = new List<Color>(); var tri = new List<int>();
+            void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float alpha)
+            {
+                int k = v.Count; v.Add(a); v.Add(b); v.Add(c); v.Add(d);
+                for (int n = 0; n < 4; n++) col.Add(new Color(1f, 1f, 1f, alpha));
+                tri.Add(k); tri.Add(k + 1); tri.Add(k + 2); tri.Add(k); tri.Add(k + 2); tri.Add(k + 3);
+            }
+            Vector3 P(float x, float z) => new(x, 0f, z);
+            Quad(P(-i, -i), P(-i, i), P(i, i), P(i, -i), fillA);            // 채움
+            Quad(P(-o, -o), P(-o, o), P(-i, o), P(-i, -o), ringA);          // 왼쪽 띠
+            Quad(P(i, -o), P(i, o), P(o, o), P(o, -o), ringA);              // 오른쪽 띠
+            Quad(P(-i, i), P(-i, o), P(i, o), P(i, i), ringA);              // 위 띠
+            Quad(P(-i, -o), P(-i, -i), P(i, -i), P(i, -o), ringA);          // 아래 띠
+            cellQuad = new Mesh { name = "PlacementCell" };
+            cellQuad.SetVertices(v); cellQuad.SetColors(col); cellQuad.SetTriangles(tri, 0);
+            var nrm = new Vector3[v.Count]; for (int n = 0; n < nrm.Length; n++) nrm[n] = Vector3.up; cellQuad.normals = nrm;
+            cellQuad.RecalculateBounds();
+            return cellQuad;
         }
 
         /// <summary>프리뷰 건물의 회전 반영 포트 — 벨트는 모양(직선/L/R)에 따라 달라진다.</summary>

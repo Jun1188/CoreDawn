@@ -29,6 +29,8 @@ namespace CoreDawn.Sim
         public MovementModule Movement => movement;
         public AttackModule Attack => attack;
         public IEntityState CurrentState => currentState;
+        /// <summary>사망 뒤 제거까지(초) — DeadState 가 센다.</summary>
+        public float CorpseSeconds => def.CorpseSeconds;
 
         /// <summary>플레이어를 발견했거나 각성했다 — 뷰가 경계 모션을 튼다. 추적 시작을 지연시키지 않는다.</summary>
         public event Action Alerted;
@@ -259,7 +261,8 @@ namespace CoreDawn.Sim
 
         public void Tick(float dt)
         {
-            if (!Owner.IsAlive) return;
+            // 죽은 뒤에는 시체 상태만 돈다 — corpseSeconds 를 세어 심이 제거한다(DeadState). 다른 상태·어그로는 멈춘다.
+            if (!Owner.IsAlive) { if (currentState is DeadState) currentState.Update(this, dt); return; }
 
             // 비선공 보스는 복귀 중일 때만 이동하고, 그 외에는 제자리에서 대기한다.
             if (isBoss && !hasBeenAttacked)

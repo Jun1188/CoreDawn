@@ -40,6 +40,11 @@ namespace CoreDawn.Interaction
 
         [Tooltip("아이템 아이콘을 표시할 렌더러 — 공용 프리팹에서 연결 (폴백 조립 시 런타임 주입)")]
         [SerializeField] private SpriteRenderer visual;
+        // 눕힌 판(ItemSlabMesh) — 스프라이트 대신 두께 있는 아이콘 판을 바닥에 눕혀 돌린다(2026-09-04)
+        [SerializeField] private MeshFilter slabFilter;
+        [SerializeField] private MeshRenderer slabRenderer;
+        const float VisualScale = 0.25f;     // 아이콘(256px, 100ppu = 2.56m)을 0.64m로 — 구 프리팹 값
+        const float SlabThickness = 0.1f;    // m
 
         // ── 풀 ──────────────────────────────────────────────────────
         // 드롭은 채굴·철거 환급·루팅으로 끊임없이 나고 사라진다. 매번 Instantiate/Destroy를 하면
@@ -48,6 +53,31 @@ namespace CoreDawn.Interaction
         const string PooledName = "DroppedItem (Pooled)";
         static ObjectPool<DroppedItem> pool;
         static Transform poolRoot;
+
+        GameObject modelVisual;   // 총 모델 — 슬랩 대신 세운 팩 glb 인스턴스
+
+        void TryUseGunModel(GunDef gun, ItemDef owner)
+        {
+            var view = Data.ViewSchema.Gun(gun);
+            var model = view != null && view.Model != null && view.Model.Count > 0 ? view.Model[0] : null;
+            if (model == null || string.IsNullOrEmpty(model.File) || !Managers.PackAssets.TryModelOf(model.File, out var tpl)) return;
+            if (modelVisual != null) Destroy(modelVisual);
+            var parent = slabRenderer != null ? slabRenderer.transform : transform;
+            modelVisual = Instantiate(tpl, parent);
+            modelVisual.name = "Model";
+            modelVisual.transform.localPosition = Vector3.zero;
+            modelVisual.transform.localRotation = Quaternion.identity;
+            float scale = view.Pose != null ? view.Pose.Scale : 1f;
+            modelVisual.transform.localScale = Vector3.one * (scale / VisualScale);   // 부모(Visual)의 축소를 상쇄 — 손에 든 크기와 같게
+            modelVisual.SetActive(true);
+            System.Collections.Generic.IReadOnlyList<string> mats = model.Materials;
+            Managers.PackAssets.BindSlots(modelVisual, mats ?? System.Array.Empty<string>(), owner.Id);
+            foreach (var t in modelVisual.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = gameObject.layer;
+            if (slabRenderer != null) slabRenderer.enabled = false;
+            var outline = GetComponentInChildren<EPOOutline.Outlinable>();
+            if (outline != null)
+                foreach (var r in modelVisual.GetComponentsInChildren<Renderer>()) outline.TryAddTarget(new EPOOutline.OutlineTarget(r));
+        }
 
         /// <summary>
         /// 풀 — 루트가 없으면(첫 사용, 또는 씬 전환으로 파괴됨) 함께 새로 만든다.
@@ -102,6 +132,17 @@ namespace CoreDawn.Interaction
 
             // 마크식 정형화 — 모든 아이템이 같은 프리팹, 아이콘만 교체
             if (visual != null) visual.sprite = Managers.PackAssets.IconOf(itemData);
+            if (slabFilter != null && slabRenderer != null)
+            {
+                var icon = Managers.PackAssets.IconOf(itemData);
+                slabFilter.sharedMesh = Factory.ItemSlabMesh.Of(icon, SlabThickness / VisualScale);
+                slabRenderer.sharedMaterials = new[] { Factory.ItemSlabMesh.FaceMaterial(icon), Factory.ItemSlabMesh.SideMaterial() };
+                slabRenderer.enabled = true;
+            }
+            // 총처럼 모델이 있는 아이템은 아이콘 판 대신 그 모델을 떨어뜨린다(2026-09-04 사용자 요청)
+            var gun = itemData.Get<WeaponItemModuleDef>()?.Gun;
+            if (gun != null) TryUseGunModel(gun, itemData);
+            else if (modelVisual != null) { Destroy(modelVisual); modelVisual = null; }
         }
 
         /// <summary>
@@ -198,24 +239,26 @@ namespace CoreDawn.Interaction
             // 4. 비주얼 자식 (둥둥 떠서 도는 아이콘)
             GameObject visualObj = new("Visual");
             visualObj.transform.SetParent(dropObj.transform);
-            visualObj.transform.localPosition = new Vector3(0f, 0.5f, 0f);
-            visualObj.transform.localScale = Vector3.one * 0.25f;   // 아이콘(256px, 100ppu = 2.56m)을 0.64m로 — 구 프리팹 값
+            visualObj.transform.localPosition = new Vector3(0f, 0.25f, 0f);   // 눕힌 판이라 낮게 — 바닥 위에서 돈다
+            visualObj.transform.localScale = Vector3.one * VisualScale;
             visualObj.layer = dropObj.layer;
-
-            var sr = visualObj.AddComponent<SpriteRenderer>();
+            var mf = visualObj.AddComponent<MeshFilter>();
+            var mr = visualObj.AddComponent<MeshRenderer>();
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             visualObj.AddComponent<ItemRotator>();
             // 항상 켜진 아웃라인(바닥 아이템이 눈에 띄게) — 구 프리팹의 Outlinable 값. 대상 렌더러를 넣어야 그려진다
             var outline = visualObj.AddComponent<EPOOutline.Outlinable>();
             outline.RenderStyle = EPOOutline.RenderStyle.Single;
             outline.DrawingMode = EPOOutline.OutlinableDrawingMode.Normal;
-            outline.TryAddTarget(new EPOOutline.OutlineTarget(sr));
+            outline.TryAddTarget(new EPOOutline.OutlineTarget(mr));
             outline.OutlineParameters.Enabled = true;
             outline.OutlineParameters.Color = new Color(0.9539399f, 0.9996342f, 1.498039f, 1f);
             outline.OutlineParameters.DilateShift = 0.5f;
             outline.OutlineParameters.BlurShift = 0f;
 
             var dropped = dropObj.AddComponent<DroppedItem>();
-            dropped.visual = sr;
+            dropped.slabFilter = mf;
+            dropped.slabRenderer = mr;
             return dropped;
         }
 

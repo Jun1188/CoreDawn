@@ -106,6 +106,12 @@ namespace CoreDawn.EditorTools
         //  v1 → pack
         // ═════════════════════════════════════════════════════════
 
+        /// <summary>MonsterBrain 모듈 정의의 json 키(JsonProperty 이름) — 편집기 v1 평면 몬스터 ↔ 팩 모듈 변환이 공유한다.</summary>
+        public static readonly string[] MonsterBrainKeys = typeof(CoreDawn.Sim.MonsterBrainModuleDef)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Select(f => f.GetCustomAttributes(typeof(JsonPropertyAttribute), true).OfType<JsonPropertyAttribute>().FirstOrDefault()?.PropertyName)
+            .Where(n => !string.IsNullOrEmpty(n)).ToArray();
+
         public static JObject ToPack(JObject d)
         {
             string NewId(string old) => PackIdOf(old);
@@ -405,7 +411,9 @@ namespace CoreDawn.EditorTools
                 var o = Head(m);
                 o["faction"] = (string)m["faction"] ?? "Monster";
                 var brain = new JObject { ["type"] = "MonsterBrain" };
-                foreach (var k in new[] { "maxPatience", "patienceRadius", "outsidePatienceDrain", "rangedPokePatienceDrain", "patienceRecoverRate", "absoluteLeashMultiplier", "returnRegenPerSecond", "returnTimeout" })
+                // 두뇌 키는 정의 클래스(MonsterBrainModuleDef)의 JsonProperty 이름에서 — 손으로 적은 목록은 필드를 더할 때마다
+                // 빠뜨려 편집기 저장에서 값이 조용히 사라졌다(corpseSeconds, 2026-09-04)
+                foreach (var k in MonsterBrainKeys)
                     if (m[k] != null) brain[k] = m[k];
                 var mods = new JArray
                 {

@@ -18,6 +18,8 @@ namespace CoreDawn.Entities
             var go = new GameObject(BuildingAssembler.PascalKeyOf(def.Id));
             go.SetActive(false);   // 컴포넌트를 다 붙인 뒤 켠다
             go.transform.SetParent(parent, false);
+            if (parent != null && (parent.lossyScale - Vector3.one).sqrMagnitude > 1e-6f)
+                Debug.LogError($"[MonsterAssembler] {def.Id}: 부모 '{parent.name}'의 스케일이 {parent.lossyScale.y:F2}라 몬스터 몸·콜라이더가 함께 커집니다 — 스케일 1인 부모에 붙이세요.");
             go.transform.SetPositionAndRotation(position, rotation);
             int layer = LayerMask.NameToLayer("Monster");
             if (layer >= 0) go.layer = layer;
@@ -58,7 +60,6 @@ namespace CoreDawn.Entities
                 System.Enum.TryParse(view.DeathStyle, out MonsterVisualController.DeathStyle style) ? style : MonsterVisualController.DeathStyle.AnimationClip,
                 view.SinkDepth);
             var mv = go.AddComponent<MonsterView>();
-            mv.SetDeathBehavior(true, view.DeathDelay);
             go.SetActive(true);
             return go;
         }

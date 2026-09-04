@@ -29,7 +29,7 @@ namespace CoreDawn.UI
             if (isActiveAndEnabled && entity != null)
             {
                 entity.OnHealthChanged += UpdateHealthBar;
-                UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+                if (entity.Health != null) UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);   // 풀에서 켠 뷰는 아직 심이 안 붙었다 — 붙을 때 OnHealthChanged 릴레이가 채운다
             }
         }
 
@@ -39,7 +39,7 @@ namespace CoreDawn.UI
             {
                 entity.OnHealthChanged += UpdateHealthBar;
                 // 활성화 시점의 현재 체력 즉시 반영
-                UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);
+                if (entity.Health != null) UpdateHealthBar(entity.Health.CurrentHealth, entity.Health.MaxHealth);   // 풀에서 켠 뷰는 아직 심이 안 붙었다 — 붙을 때 OnHealthChanged 릴레이가 채운다
             }
         }
 

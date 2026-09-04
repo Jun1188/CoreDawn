@@ -64,7 +64,7 @@ namespace CoreDawn.Entities
         [SerializeField] private DeathStyle deathStyle = DeathStyle.AnimationClip;
         [Tooltip("가라앉기 시작까지의 뜸(초). 피격 모션이 한 번 보일 시간을 준다.")]
         [SerializeField] private float sinkDelay = 0.4f;
-        [Tooltip("가라앉는 데 걸리는 시간(초). Entity.deathDelay보다 짧아야 소멸 전에 다 묻힌다.")]
+        [Tooltip("가라앉는 데 걸리는 시간(초). MonsterBrain.corpseSeconds(심의 제거 시점)보다 짧아야 소멸 전에 다 묻힌다.")]
         [SerializeField] private float sinkDuration = 1.2f;
         [Tooltip("가라앉는 깊이(월드 단위).")]
         [SerializeField] private float sinkDepth = 1.5f;

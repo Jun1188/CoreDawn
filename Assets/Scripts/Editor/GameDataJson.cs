@@ -277,6 +277,7 @@ namespace CoreDawn.EditorTools
             public EffectEntryDto[] attackEffects;
             public float  maxPatience, patienceRadius, outsidePatienceDrain, rangedPokePatienceDrain,
                           patienceRecoverRate, absoluteLeashMultiplier, returnRegenPerSecond, returnTimeout;
+            public float  corpseSeconds = 2f;    // 사망 뒤 심에서 제거까지(초) — 사망 연출 시간
         }
 
         /// <summary>주야 시계 — 낮 길이·밤(달이 뜨고 지는) 길이. TimeManager가 팩에서 읽는다.</summary>

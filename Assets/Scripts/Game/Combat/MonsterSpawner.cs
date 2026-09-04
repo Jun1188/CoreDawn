@@ -31,8 +31,7 @@ namespace CoreDawn.Combat
             Quaternion rotation = entity.Facing.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(entity.Facing) : Quaternion.identity;
 
             // 뷰는 정의(view.type·model·collider…)에서 조립한다 — 프리팹은 없다(5a-4b)
-            var go = MonsterAssembler.Build(entity.Def, position, rotation, parent);
-            var view = go.GetComponent<MonsterView>();
+            var view = MonsterViewPool.Rent(entity.Def, position, rotation, parent);   // 같은 정의의 반납된 뷰가 있으면 재사용
             view.AttachEntity(entity);
             return view;
         }

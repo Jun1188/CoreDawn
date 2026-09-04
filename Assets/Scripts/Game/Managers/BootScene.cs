@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using CoreDawn.Combat;
 using CoreDawn.Sim;
 
 namespace CoreDawn.Managers
@@ -42,6 +43,12 @@ namespace CoreDawn.Managers
             string pack = pendingPack ?? PackLoader.CurrentPack;
             bool reload = pendingReload || SimHost.Database == null;
             pendingScene = null; pendingPack = null; pendingReload = false;
+
+            // 심은 씬 하나의 것 — 이 게이트를 지나면 옛 월드(엔티티 등록부 + 전투 시스템)는 통째로 버린다.
+            // 뷰·부트스트랩이 OnDestroy 에서 자기 엔티티를 빼던 방식은 소유가 뒤집힌 데다(정본은 심) 하나만 빠져도
+            // 유령이 남았다 — 광맥이 재로드마다 두 배, 플레이어 재사용으로 시작 아이템 이중 지급(2026-09-04).
+            SimRunner.Reset();
+            SimHost.Reset();
 
             if (reload)
             {
