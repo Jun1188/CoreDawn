@@ -5,7 +5,7 @@
 // 그래야 드로우콜이 하나로 끝난다.
 //
 // 깊이를 무시하는 이유는 PortFlow와 같다: 잔디·건물에 묻히면 디버그 표시의 값이 없다.
-Shader "LevelUp/DebugVertexColor"
+Shader "CoreDawn/DebugVertexColor"
 {
     Properties
     {

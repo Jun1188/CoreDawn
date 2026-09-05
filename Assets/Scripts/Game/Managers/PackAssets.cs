@@ -1,0 +1,351 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using GLTFast;
+using Newtonsoft.Json.Linq;
+using UnityEngine;
+using UnityEngine.Networking;
+using CoreDawn.Data;
+using CoreDawn.Sim;
+
+namespace CoreDawn.Managers
+{
+    /// <summary>
+    /// 팩 파일 자원(5a-4c) — <c>StreamingAssets/packs/&lt;pack&gt;/</c>의 모델(glb)·텍스처(png)를 런타임에 읽는다.
+    /// <list type="bullet">
+    /// <item>모델: glb를 glTFast로 읽어 비활성 템플릿으로 들고, 조립기가 복제한다. glb에는 형상과 재질 <b>슬롯</b>(프리미티브가 가리키는 재질 인덱스)만 있다 —
+    /// 로드 때 슬롯마다 자리표시 머티리얼을 만들어 인덱스를 기억하고(<see cref="BindSlots"/>), 정의의 <c>view.model[i].materials[슬롯]</c>이 가리키는 팩 재질을 꽂는다.</item>
+    /// <item>재질: 팩 <c>materials</c> 섹션(<see cref="MaterialDef"/>) — 셰이더는 내장(이름으로 찾음), 값(색·float·키워드)과 텍스처(팩 png, <c>LoadImage</c>)는 데이터.</item>
+    /// </list>
+    /// 로드는 비동기다. 게임 부팅(GameBootstrap)이 <see cref="PreloadAsync"/>를 시작하고, 굳은 씬의 마커는 preload가 끝난 뒤 뷰를 입는다(WorldPopulator.DressWhenReady).
+    /// 굳지 않은 경로(런타임 나무 조립·건물 설치)는 <see cref="IsReady"/>를 보고 준비 전이면 소리 낸다(폴백 없음) — 로딩 화면 게이트는 4c 후속.
+    /// </summary>
+    public static class PackAssets
+    {
+        static readonly Dictionary<string, GameObject> models = new Dictionary<string, GameObject>(StringComparer.Ordinal);
+        static readonly Dictionary<Material, int> slotIndex = new Dictionary<Material, int>();
+        static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>(StringComparer.Ordinal);
+        static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        static readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>(StringComparer.Ordinal);
+        static readonly Dictionary<string, JObject> sidecars = new Dictionary<string, JObject>(StringComparer.Ordinal);
+        static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(StringComparer.Ordinal);
+        static readonly Dictionary<string, AudioClip[]> soundClips = new Dictionary<string, AudioClip[]>(StringComparer.Ordinal);
+        static Sprite missingSprite;
+        static Transform root;
+        static Task preloading;
+
+        public static bool IsReady { get; private set; }
+
+        /// <summary>preload 진행도(읽은 파일 수 / 전체) — 로딩 화면용.</summary>
+        public static (int done, int total) Progress { get; private set; }
+
+        /// <summary>팩 상대 경로("models/tree_broadleaf_01.glb")인가 — 아니면 옛 guid 참조.</summary>
+        public static bool IsPackPath(string s) => !string.IsNullOrEmpty(s) && s.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
+
+        public static string FullPath(string pack, string relative) => Path.Combine(Application.streamingAssetsPath, "packs", pack, relative.Replace('/', Path.DirectorySeparatorChar));
+
+        /// <summary>정의들의 view.model에 적힌 glb와 그 재질을 전부 읽어 둔다. 두 번 불러도 한 번만.</summary>
+        public static Task PreloadAsync(SimDatabase db)
+        {
+            if (preloading == null) preloading = PreloadCore(db);
+            return preloading;
+        }
+
+        static async Task PreloadCore(SimDatabase db)
+        {
+            if (db == null) { Debug.LogError("[PackAssets] 팩 정의가 없어 자원을 읽을 수 없습니다."); IsReady = true; return; }
+            var paths = new HashSet<string>(StringComparer.Ordinal);
+            var materialIds = new HashSet<string>(StringComparer.Ordinal);
+            var iconDefs = new List<Def>();
+            var clipPaths = new HashSet<string>(StringComparer.Ordinal);
+            void Models(IEnumerable<ModelRef> list)
+            {
+                if (list == null) return;
+                foreach (var m in list)
+                {
+                    if (m == null || string.IsNullOrEmpty(m.File)) continue;
+                    paths.Add(m.File);
+                    foreach (var id in m.Materials) materialIds.Add(id);
+                }
+            }
+            // view는 섹션별 타입으로 읽는다(ViewSchema) — 꼴이 틀린 정의는 여기서 한 번 오류를 낸다
+            foreach (var d in db.Entities.Values) { var v = ViewSchema.Entity(d); Models(v.Model); Models(v.ModelCurveL); Models(v.ModelCurveR); }
+            foreach (var d in db.Guns.Values) Models(ViewSchema.Gun(d).Model);
+            foreach (var d in db.Items.Values) if (ViewSchema.Item(d).Icon != null) iconDefs.Add(d);
+            foreach (var d in db.Sounds.Values)
+                foreach (var c in ViewSchema.Sound(d).Clips) if (!string.IsNullOrEmpty(c)) clipPaths.Add(c);
+
+            int ok = 0, done = 0;
+            Progress = (0, paths.Count + materialIds.Count + iconDefs.Count + clipPaths.Count);
+            foreach (var rel in paths)
+            {
+                if (await Load(db.Pack, rel) != null) ok++;
+                Progress = (++done, Progress.total);
+            }
+            int mats = 0;
+            foreach (var id in materialIds)
+            {
+                if (MaterialOf(id) != MissingAssets.Material) mats++;
+                Progress = (++done, Progress.total);
+            }
+            int icons = 0;
+            foreach (var d in iconDefs)
+            {
+                if (IconOf(d) != MissingSprite()) icons++;
+                Progress = (++done, Progress.total);
+            }
+            int sounds = 0;
+            foreach (var rel in clipPaths)
+            {
+                if (await LoadClip(db.Pack, rel) != null) sounds++;
+                Progress = (++done, Progress.total);
+            }
+            foreach (var d in db.Sounds.Values) soundClips[d.Id] = ClipsFromView(d);
+            IsReady = true;
+            Debug.Log($"[PackAssets] {db.Pack}: glb {ok}/{paths.Count} · 재질 {mats}/{materialIds.Count} · 아이콘 {icons}/{iconDefs.Count} · 소리 {sounds}/{clipPaths.Count} 로드");
+        }
+
+        static async Task<GameObject> Load(string pack, string relative)
+        {
+            if (models.TryGetValue(relative, out var cached)) return cached;
+            string full = FullPath(pack, relative);
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 팩 파일이 없습니다: {relative} ({full})"); return null; }
+            var gltf = new GltfImport(deferAgent: new UninterruptedDeferAgent(), materialGenerator: new SlotGenerator());
+            bool loaded = await gltf.LoadFile(full);
+            if (!loaded) { Debug.LogError($"[PackAssets] glb를 읽지 못했습니다: {relative}"); return null; }
+            EnsureRoot();
+            var holder = new GameObject(Path.GetFileNameWithoutExtension(relative));
+            holder.transform.SetParent(root, false);
+            bool inst = await gltf.InstantiateMainSceneAsync(holder.transform);
+            if (!inst) { Debug.LogError($"[PackAssets] glb 장면을 세우지 못했습니다: {relative}"); Destroy(holder); return null; }
+            foreach (var anim in holder.GetComponentsInChildren<Animation>(true)) { anim.playAutomatically = false; anim.Stop(); }   // 클립은 뷰가 상태에 따라 튼다(view.loop 등)
+            holder.SetActive(false);   // 템플릿 — 조립기가 Instantiate로 복제한다
+            models[relative] = holder;
+            return holder;
+        }
+
+        /// <summary>읽어 둔 템플릿이 있으면 준다 — 오류 로그 없이. 편집기 미리보기처럼 부팅 preload 없이 묻는 곳용.</summary>
+        public static bool TryModelOf(string relative, out GameObject model) => models.TryGetValue(relative, out model) && model != null;
+
+        /// <summary>glb 하나를 읽어 템플릿으로 둔다(이미 있으면 그것). 편집기 도구가 preload 밖에서 부른다.</summary>
+        public static Task<GameObject> LoadModelAsync(string pack, string relative) => Load(pack, relative);
+
+        /// <summary>읽어 둔 템플릿. 없으면 오류 로그 + null — 호출부가 MissingAssets.Box를 세운다.</summary>
+        public static GameObject ModelOf(string relative)
+        {
+            if (models.TryGetValue(relative, out var m) && m != null) return m;
+            Debug.LogError($"[PackAssets] 모델 '{relative}'이 로드돼 있지 않습니다 — 부팅 preload 목록(view.model)에 있는지, 파일이 있는지 확인하세요.");
+            return null;
+        }
+
+        /// <summary>
+        /// 복제한 모델의 재질 슬롯(glb 재질 인덱스)에 팩 재질을 꽂는다 — <paramref name="materialIds"/>[슬롯]. 모자라면 오류 + MissingAssets.Material.
+        /// 옛 카탈로그 모델(슬롯 자리표시가 없음)은 그대로 둔다.
+        /// </summary>
+        public static void BindSlots(GameObject inst, IReadOnlyList<string> materialIds, string owner)
+        {
+            foreach (var r in inst.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !slotIndex.TryGetValue(mats[i], out int slot)) continue;
+                    Material m;
+                    if (slot < 0 || slot >= materialIds.Count)
+                    {
+                        Debug.LogError($"[PackAssets] {owner}: 재질 슬롯 {slot}에 대응하는 view.model.materials 항목이 없습니다(항목 {materialIds.Count}개).", inst);
+                        m = MissingAssets.Material;
+                    }
+                    else m = MaterialOf(materialIds[slot]);
+                    mats[i] = m; changed = true;
+                }
+                if (changed) r.sharedMaterials = mats;
+            }
+        }
+
+        /// <summary>팩 재질(materials 섹션) → Unity Material. 셰이더는 내장 목록(BuiltinShaders)에서 이름으로 찾고, 텍스처는 팩 png. 없거나 틀리면 오류 + MissingAssets.Material(체커).</summary>
+        public static Material MaterialOf(string id)
+        {
+            if (materials.TryGetValue(id, out var cached) && cached != null) return cached;
+            var db = SimHost.Database;
+            var def = db?.Material(id);
+            if (def == null) { Debug.LogError($"[PackAssets] 재질 '{id}'가 팩 materials에 없습니다."); return MissingAssets.Material; }
+            var v = ViewSchema.Material(def);
+            string shaderName = v.Shader;
+            var shader = BuiltinShaders.Of(shaderName);
+            if (shader == null) { Debug.LogError($"[PackAssets] 재질 '{id}': 셰이더 '{shaderName}' 없음 → 체커 재질."); return MissingAssets.Material; }
+
+            var m = new Material(shader) { name = id };
+            foreach (var p in v.Textures)
+                if (p.Value != null) m.SetTexture(p.Key, TextureOf(db.Pack, p.Value.File, p.Value.Linear));
+            foreach (var p in v.Colors) m.SetColor(p.Key, ViewDefs.Vec4(p.Value, Color.white));
+            foreach (var p in v.Vectors) m.SetVector(p.Key, ViewDefs.Vec4(p.Value, Vector4.zero));
+            foreach (var p in v.Floats) m.SetFloat(p.Key, p.Value);
+            foreach (var k in v.Keywords) m.EnableKeyword(k);
+            if (v.RenderQueue != 0) m.renderQueue = v.RenderQueue;
+            foreach (var p in v.Tags) m.SetOverrideTag(p.Key, p.Value);
+            materials[id] = m;
+            return m;
+        }
+
+        /// <summary>팩 png → Texture2D(밉맵, 런타임 DXT 압축). 노멀맵·마스크는 linear. 없거나 못 읽으면 오류 + MissingAssets.Texture(체커).</summary>
+        public static Texture2D TextureOf(string pack, string relative, bool linear)
+        {
+            string key = relative + (linear ? "|linear" : "|srgb");
+            if (textures.TryGetValue(key, out var cached) && cached != null) return cached;
+            if (string.IsNullOrEmpty(relative)) { Debug.LogError("[PackAssets] 텍스처 경로가 비었습니다."); return MissingAssets.Texture; }
+            string full = FullPath(pack, relative);
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 텍스처 파일이 없습니다: {relative} ({full})"); return MissingAssets.Texture; }
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, true, linear) { name = relative, wrapMode = TextureWrapMode.Repeat };
+            if (!tex.LoadImage(File.ReadAllBytes(full))) { Debug.LogError($"[PackAssets] 텍스처를 읽지 못했습니다: {relative}"); Destroy(tex); return MissingAssets.Texture; }
+            if (tex.width % 4 == 0 && tex.height % 4 == 0) tex.Compress(true);   // DXT는 4의 배수 크기만 — 아니면 비압축(RGBA32)으로 든다
+            else Debug.LogWarning($"[PackAssets] 텍스처 '{relative}'({tex.width}x{tex.height})는 4의 배수 크기가 아니라 압축하지 못합니다 — 메모리를 4배 더 씁니다. 팩 텍스처는 4의 배수로 만드세요.");
+            tex.Apply(false, true);
+            textures[key] = tex;
+            return tex;
+        }
+
+        // ── 아이콘 ──────────────────────────────────────────────
+
+        /// <summary>정의의 아이콘 — view.icon {file, frame}: 팩 png + 좌표표(같은 이름의 .json 사이드카: pixelsPerUnit, frames{이름: x,y,w,h,px,py}). 없으면 오류 + 체커.</summary>
+        public static Sprite IconOf(Def def)
+        {
+            var icon = def is ItemDef item ? ViewSchema.Item(item)?.Icon : null;   // 아이콘은 아이템 view에만 있다
+            if (icon == null) return null;   // 아이콘 없는 정의 — 정상(호출부가 판단)
+            string file = icon.File, frame = icon.Frame;
+            string key = file + "|" + frame;
+            if (sprites.TryGetValue(key, out var cached) && cached != null) return cached;
+            var db = SimHost.Database;
+            var sidecar = SidecarOf(db.Pack, file);
+            var tex = TextureOf(db.Pack, file, false);
+            if (sidecar == null || tex == MissingAssets.Texture) { Debug.LogError($"[PackAssets] {def.Id}: 아이콘 '{file}'을 읽지 못했습니다."); return MissingSprite(); }
+            if (!(sidecar["frames"] is JObject frames) || !(frames[frame] is JObject f))
+            {
+                Debug.LogError($"[PackAssets] {def.Id}: 아이콘 '{file}'의 좌표표에 프레임 '{frame}'이 없습니다.");
+                return MissingSprite();
+            }
+            float w = (float)f["w"], h = (float)f["h"];
+            var sprite = Sprite.Create(tex, new Rect((float)f["x"], (float)f["y"], w, h), new Vector2((float)f["px"] / w, (float)f["py"] / h), (float?)sidecar["pixelsPerUnit"] ?? 100f);
+            sprite.name = frame;
+            sprites[key] = sprite;
+            return sprite;
+        }
+
+        static JObject SidecarOf(string pack, string file)
+        {
+            if (sidecars.TryGetValue(file, out var j)) return j;
+            string full = FullPath(pack, file) + ".json";
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 아이콘 좌표표가 없습니다: {file}.json"); sidecars[file] = null; return null; }
+            j = JObject.Parse(File.ReadAllText(full));
+            sidecars[file] = j;
+            return j;
+        }
+
+        static Sprite MissingSprite()
+        {
+            if (missingSprite == null) { var t = MissingAssets.Texture; missingSprite = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f), 100f); missingSprite.name = "Missing"; }
+            return missingSprite;
+        }
+
+        // ── 소리 ────────────────────────────────────────────────
+
+        /// <summary>소리 id의 변형 클립 묶음(view.clips) — 부팅 preload가 읽어 둔 것. 없으면 빈 배열(호출부가 소리 낸다).</summary>
+        public static AudioClip[] ClipsOf(string soundId)
+        {
+            if (soundClips.TryGetValue(soundId, out var arr)) return arr;
+            var def = SimHost.Database?.Sound(soundId);
+            if (def == null) return Array.Empty<AudioClip>();
+            arr = ClipsFromView(def);
+            soundClips[soundId] = arr;
+            return arr;
+        }
+
+        static AudioClip[] ClipsFromView(Def def)
+        {
+            var list = new List<AudioClip>();
+            if (def is SoundDef sound)
+                foreach (var c in ViewSchema.Sound(sound).Clips)
+                    if (c != null && clips.TryGetValue(c, out var clip) && clip != null) list.Add(clip);
+                    else Debug.LogError($"[PackAssets] {def.Id}: 클립 '{c}'이 로드돼 있지 않습니다.");
+            return list.ToArray();
+        }
+
+        static async Task<AudioClip> LoadClip(string pack, string relative)
+        {
+            if (clips.TryGetValue(relative, out var cached) && cached != null) return cached;
+            string full = FullPath(pack, relative);
+            if (!File.Exists(full)) { Debug.LogError($"[PackAssets] 소리 파일이 없습니다: {relative} ({full})"); return null; }
+            string ext = Path.GetExtension(relative).ToLowerInvariant();
+            var type = ext == ".ogg" ? AudioType.OGGVORBIS : ext == ".mp3" ? AudioType.MPEG : ext == ".wav" ? AudioType.WAV : AudioType.UNKNOWN;
+            if (type == AudioType.UNKNOWN) { Debug.LogError($"[PackAssets] 소리 형식을 모릅니다: {relative} (wav·ogg·mp3)"); return null; }
+            using var req = UnityWebRequestMultimedia.GetAudioClip(new Uri(full).AbsoluteUri, type);
+            var tcs = new TaskCompletionSource<bool>();
+            req.SendWebRequest().completed += _ => tcs.TrySetResult(true);
+            await tcs.Task;
+            if (req.result != UnityWebRequest.Result.Success) { Debug.LogError($"[PackAssets] 소리를 읽지 못했습니다: {relative} — {req.error}"); return null; }
+            var clip = DownloadHandlerAudioClip.GetContent(req);
+            if (clip == null) { Debug.LogError($"[PackAssets] 소리를 읽지 못했습니다: {relative}"); return null; }
+            clip.name = relative;
+            clips[relative] = clip;
+            return clip;
+        }
+
+        static void EnsureRoot()
+        {
+            if (root != null) return;
+            var go = new GameObject("[PackAssets]");
+            if (Application.isPlaying) UnityEngine.Object.DontDestroyOnLoad(go);
+            else go.hideFlags = HideFlags.HideAndDontSave;   // 에디터 도구가 읽을 때 — 씬에 저장되지 않는다
+            root = go.transform;
+        }
+
+        static void Destroy(UnityEngine.Object o)
+        {
+            if (o == null) return;
+            if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o);
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); sprites.Clear(); sidecars.Clear(); clips.Clear(); soundClips.Clear(); missingSprite = null; root = null; preloading = null; IsReady = false; Progress = (0, 0); }
+
+        /// <summary>에디터 도구용 — 읽어 둔 것을 전부 버린다(팩이 바뀌었을 때).</summary>
+        public static void Clear()
+        {
+            if (root != null) Destroy(root.gameObject);
+            foreach (var m in slotIndex.Keys) Destroy(m);
+            foreach (var m in materials.Values) Destroy(m);
+            foreach (var t in textures.Values) Destroy(t);
+            foreach (var sp in sprites.Values) Destroy(sp);
+            foreach (var c in clips.Values) Destroy(c);
+            Destroy(missingSprite);
+            Reset();
+        }
+
+        /// <summary>
+        /// glb 재질 슬롯 → 자리표시 머티리얼(체커 사본). 슬롯 인덱스(glb 재질 배열 순서)를 기억해 두면 <see cref="BindSlots"/>가 정의의 materials[슬롯]으로 바꿔 끼운다.
+        /// glb의 재질 이름·값은 보지 않는다 — 재질은 팩 데이터(materials 섹션)다.
+        /// </summary>
+        sealed class SlotGenerator : GLTFast.Materials.IMaterialGenerator
+        {
+            public Material GetDefaultMaterial(bool pointsSupport = false)
+            {
+                Debug.LogError("[PackAssets] 재질 슬롯이 없는 프리미티브 — glb의 프리미티브마다 재질 인덱스가 있어야 합니다.");
+                return MissingAssets.Material;
+            }
+
+            public Material GenerateMaterial(GLTFast.Schema.MaterialBase gltfMaterial, IGltfReadable gltf, bool pointsSupport = false)
+            {
+                int slot = -1;
+                for (int i = 0; i < gltf.MaterialCount; i++)
+                    if (ReferenceEquals(gltf.GetSourceMaterial(i), gltfMaterial)) { slot = i; break; }
+                var placeholder = new Material(MissingAssets.Material) { name = "slot:" + slot };
+                slotIndex[placeholder] = slot;
+                return placeholder;
+            }
+
+            public void SetLogger(GLTFast.Logging.ICodeLogger logger) { }
+        }
+    }
+}

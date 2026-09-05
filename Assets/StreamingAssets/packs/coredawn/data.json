@@ -1,0 +1,5916 @@
+{
+  "format": 2,
+  "pack": "coredawn",
+  "items": {
+    "ship_debris": {
+      "displayName": "우주선 잔해",
+      "description": "추락하며 흩어진 파편. 게이트 ⓪ 납품 및 초반 수동 제작 재료.",
+      "type": "Salvage",
+      "line": "None",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "ShipDebris"
+        }
+      }
+    },
+    "iron_ore": {
+      "displayName": "철광석",
+      "description": "구조재의 원광. Ring 1 광맥에서 채굴.",
+      "type": "Ore",
+      "line": "Iron",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronOre"
+        }
+      }
+    },
+    "iron_ingot": {
+      "displayName": "철 주괴",
+      "description": "철광석을 제련한 기본 소재.",
+      "type": "Ingot",
+      "line": "Iron",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronIngot"
+        }
+      }
+    },
+    "iron_plate": {
+      "displayName": "철판",
+      "description": "선체 봉합과 회로 함체에 쓰이는 판재.",
+      "type": "Part",
+      "line": "Iron",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronPlate"
+        }
+      }
+    },
+    "iron_gear": {
+      "displayName": "철 기어",
+      "description": "체결용 부품. 선체 패널 조립에 사용.",
+      "type": "Part",
+      "line": "Iron",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "IronGear"
+        }
+      }
+    },
+    "basic_ammo": {
+      "displayName": "기본 탄약",
+      "description": "권총·라이플·기본 포탑 공용 탄약.",
+      "type": "Ammo",
+      "line": "Iron",
+      "maxStack": 100,
+      "modules": [
+        {
+          "type": "Ammo",
+          "speed": 70.0,
+          "gravity": 0.0,
+          "explosionRadius": 0.0,
+          "lifetime": 3.0,
+          "pierce": 0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 10.0
+            }
+          ]
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "BasicAmmo"
+        },
+        "bullet": "Bullet",
+        "muzzleFlash": "BaseAmmoMuzzle",
+        "hitEffect": "BaseAmmoExplosion"
+      }
+    },
+    "copper_ore": {
+      "displayName": "구리광석",
+      "description": "전자 계통의 원광. Ring 1 외곽~Ring 2.",
+      "type": "Ore",
+      "line": "Copper",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CopperOre"
+        }
+      }
+    },
+    "copper_ingot": {
+      "displayName": "구리 주괴",
+      "description": "구리광석을 제련한 소재.",
+      "type": "Ingot",
+      "line": "Copper",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CopperIngot"
+        }
+      }
+    },
+    "copper_wire": {
+      "displayName": "구리 전선",
+      "description": "배선과 회로의 기초 부품.",
+      "type": "Part",
+      "line": "Copper",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CopperWire"
+        }
+      }
+    },
+    "crystal_ore": {
+      "displayName": "크리스탈 광석",
+      "description": "동력 계통의 원광. Ring 2~3 위험 지역.",
+      "type": "Ore",
+      "line": "Crystal",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CrystalOre"
+        }
+      }
+    },
+    "refined_crystal": {
+      "displayName": "정제 크리스탈",
+      "description": "에너지를 담는 매질.",
+      "type": "Ingot",
+      "line": "Crystal",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "RefinedCrystal"
+        }
+      }
+    },
+    "hull_panel": {
+      "displayName": "선체 패널",
+      "description": "게이트 ① 납품 부품. 동체를 물리적으로 봉합한다.",
+      "type": "RepairPart",
+      "line": "Iron",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "HullPanel"
+        }
+      }
+    },
+    "circuit_board": {
+      "displayName": "회로 기판",
+      "description": "배전반·제어 유닛의 기초 회로.",
+      "type": "Part",
+      "line": "Copper",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CircuitBoard"
+        }
+      }
+    },
+    "grenade": {
+      "displayName": "유탄",
+      "description": "유탄 발사기와 박격포 타워가 공유하는 폭발물.",
+      "type": "Ammo",
+      "line": "Iron",
+      "maxStack": 100,
+      "modules": [
+        {
+          "type": "Ammo",
+          "speed": 25.0,
+          "gravity": 9.8,
+          "explosionRadius": 3.0,
+          "lifetime": 6.0,
+          "pierce": 0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 70.0
+            },
+            {
+              "effect": "coredawn:effect/knockback_radial",
+              "value": 2.0
+            }
+          ]
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "Grenade"
+        },
+        "bullet": "GrenadeBullet",
+        "muzzleFlash": "GrenadeMuzzle",
+        "hitEffect": "GrenadeExplosion"
+      }
+    },
+    "dense_ammo": {
+      "displayName": "고밀도 탄약",
+      "description": "구리 코팅 강화 탄약. 상위 총기·중기관 포탑용.",
+      "type": "Ammo",
+      "line": "Iron",
+      "maxStack": 100,
+      "modules": [
+        {
+          "type": "Ammo",
+          "speed": 100.0,
+          "gravity": 0.0,
+          "explosionRadius": 0.0,
+          "lifetime": 3.0,
+          "pierce": 0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 24.0
+            }
+          ]
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "DenseAmmo"
+        },
+        "bullet": "Bullet",
+        "muzzleFlash": "DenseAmmoMuzzle",
+        "hitEffect": "DenseAmmoExplosion"
+      }
+    },
+    "energy_cell": {
+      "displayName": "에너지 셀",
+      "description": "에너지 그릇. 동력 모듈과 T3 방어 시설이 소비.",
+      "type": "Part",
+      "line": "Crystal",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "EnergyCell"
+        }
+      }
+    },
+    "energy_cell_ammo": {
+      "displayName": "에너지 셀 탄",
+      "description": "에너지 소총·레이저 타워용 탄.",
+      "type": "Ammo",
+      "line": "Crystal",
+      "maxStack": 100,
+      "modules": [
+        {
+          "type": "Ammo",
+          "speed": 60.0,
+          "gravity": 0.0,
+          "explosionRadius": 0.0,
+          "lifetime": 3.0,
+          "pierce": 4,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 30.0
+            },
+            {
+              "effect": "coredawn:effect/slow_field",
+              "value": 0.5
+            }
+          ]
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "EnergyCellAmmo"
+        },
+        "bullet": "CrystalAmmoBullet",
+        "muzzleFlash": "EnergeCellAmmoMuzzle",
+        "hitEffect": "EnergeCellAmmoExplosion"
+      }
+    },
+    "nav_control_unit": {
+      "displayName": "항법 제어 유닛",
+      "description": "게이트 ② 납품 부품. 패널로 차폐된 함체에 장착된 제어 모듈.",
+      "type": "RepairPart",
+      "line": "Copper",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "NavControlUnit"
+        }
+      }
+    },
+    "beast_core": {
+      "displayName": "괴수 핵",
+      "description": "코어와 동일 계열의 응축 에너지. 낮 둥지 레이드로 획득, 게이트 납품 전용.",
+      "type": "Salvage",
+      "line": "Beast",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "BeastCore"
+        }
+      }
+    },
+    "control_module": {
+      "displayName": "제어 모듈",
+      "description": "연산·배선·전원을 한 덩어리로 묶은 복합 부품. 제조기에서만 만들 수 있고, 티어 3 설비의 뼈대가 된다.",
+      "type": "Part",
+      "line": "Copper",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "ControlModule"
+        }
+      }
+    },
+    "power_module": {
+      "displayName": "동력 모듈",
+      "description": "게이트 ③ 납품 부품. 엔진에 꽂는 완성형 연료·제어 통합 모듈.",
+      "type": "RepairPart",
+      "line": "Crystal",
+      "maxStack": 50,
+      "modules": [],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "PowerModule"
+        }
+      }
+    },
+    "crystal_ammo": {
+      "displayName": "크리스탈 탄약",
+      "description": "크리스탈 첨두 관통탄. T3 물리 계열 최상위 탄약 — 저격소총·중기관 포탑 상위 호환.",
+      "type": "Ammo",
+      "line": "Crystal",
+      "maxStack": 100,
+      "modules": [
+        {
+          "type": "Ammo",
+          "speed": 90.0,
+          "gravity": 0.0,
+          "explosionRadius": 0.0,
+          "lifetime": 3.0,
+          "pierce": 0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 30.0
+            },
+            {
+              "effect": "coredawn:effect/burn",
+              "value": 4.0
+            }
+          ]
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/item_icon_sheet.png",
+          "frame": "CrystalAmmo"
+        },
+        "bullet": "CrystalAmmoBullet",
+        "muzzleFlash": "CrystalAmmoMuzzle",
+        "hitEffect": "CrystalAmmoExplosion"
+      }
+    },
+    "pistol": {
+      "displayName": "기본 권총",
+      "description": "잔해로 만든 호신용 권총.",
+      "type": "Weapon",
+      "line": "Iron",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/pistol"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/pistol.png",
+          "frame": "Pistol"
+        }
+      }
+    },
+    "rifle": {
+      "displayName": "라이플",
+      "description": "연사가 가능한 주력 화기.",
+      "type": "Weapon",
+      "line": "Iron",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/rifle"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/rifle.png",
+          "frame": "Rifle"
+        }
+      }
+    },
+    "shotgun": {
+      "displayName": "샷건",
+      "description": "근접에서 한 번에 쓸어낸다.",
+      "type": "Weapon",
+      "line": "Iron",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/shotgun"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/shotgun.png",
+          "frame": "Shotgun"
+        }
+      }
+    },
+    "sniper": {
+      "displayName": "스나이퍼",
+      "description": "먼 거리의 단일 대상을 정확히 노린다.",
+      "type": "Weapon",
+      "line": "Copper",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/sniper"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/sniper.png",
+          "frame": "Sniper"
+        }
+      }
+    },
+    "grenade_launcher": {
+      "displayName": "유탄 발사기",
+      "description": "유탄을 곡사로 날린다.",
+      "type": "Weapon",
+      "line": "Iron",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/grenade_launcher"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/grenade_launcher.png",
+          "frame": "GrenadeLauncher"
+        }
+      }
+    },
+    "energy_rifle": {
+      "displayName": "에너지 소총",
+      "description": "일직선의 적을 관통한다.",
+      "type": "Weapon",
+      "line": "Crystal",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/energy_rifle"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/energy_rifle.png",
+          "frame": "EnergyRifle"
+        }
+      }
+    },
+    "plasma_arc": {
+      "displayName": "플라즈마 아크",
+      "description": "플라즈마 커터가 휘둘릴 때 칼끝에 서는 아크. 손에 쥘 수 없는 탄 — 인벤토리를 거치지 않고 휘두름 그 자체로 소모된다.",
+      "type": "Ammo",
+      "line": "Iron",
+      "maxStack": 100,
+      "hideFromMenu": true,
+      "modules": [
+        {
+          "type": "Ammo",
+          "speed": 6.0,
+          "gravity": 0.0,
+          "explosionRadius": 2.2,
+          "lifetime": 0.4,
+          "pierce": 0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 10.0
+            },
+            {
+              "effect": "coredawn:effect/knockback_radial",
+              "value": 1.5
+            }
+          ]
+        }
+      ],
+      "view": {
+        "bullet": "MeleeStrike",
+        "muzzleFlash": "SlashWideBlue",
+        "hitEffect": "SwordImpactBlue"
+      }
+    },
+    "plasma_cutter": {
+      "displayName": "플라즈마 커터",
+      "description": "탄약이 필요 없는 근접 절단기. 코앞의 여러 마리를 한 번에 벤다.",
+      "type": "Weapon",
+      "line": "Iron",
+      "maxStack": 1,
+      "modules": [
+        {
+          "type": "Weapon",
+          "gun": "coredawn:gun/plasma_cutter"
+        }
+      ],
+      "view": {
+        "icon": {
+          "file": "textures/plasma_cutter.png",
+          "frame": "PlasmaCutter"
+        }
+      }
+    }
+  },
+  "recipes": {
+    "iron_ingot": {
+      "displayName": "철 주괴 제련",
+      "description": "제련로 1입력.",
+      "tier": 1,
+      "seconds": 2.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_ore",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/iron_ingot",
+          "amount": 1
+        }
+      ]
+    },
+    "iron_plate": {
+      "displayName": "철판 제작",
+      "description": "제작기 1입력.",
+      "tier": 1,
+      "seconds": 3.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_ingot",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 1
+        }
+      ]
+    },
+    "iron_gear": {
+      "displayName": "철 기어 제작",
+      "description": "제작기 1입력.",
+      "tier": 1,
+      "seconds": 3.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_ingot",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/iron_gear",
+          "amount": 1
+        }
+      ]
+    },
+    "basic_ammo": {
+      "displayName": "기본 탄약 제작",
+      "description": "제작기 1입력. 총기·기본 포탑 공용.",
+      "tier": 1,
+      "seconds": 2.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_ingot",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/basic_ammo",
+          "amount": 10
+        }
+      ]
+    },
+    "hull_panel": {
+      "displayName": "선체 패널 조립",
+      "description": "게이트 ① 납품 부품. 티어 1에서는 작업대 수동 조립.",
+      "tier": 1,
+      "seconds": 4.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 2
+        },
+        {
+          "item": "coredawn:item/iron_gear",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/hull_panel",
+          "amount": 1
+        }
+      ]
+    },
+    "copper_ingot": {
+      "displayName": "구리 주괴 제련",
+      "description": "제련로 1입력. 구리 라인 개방.",
+      "tier": 2,
+      "seconds": 2.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/copper_ore",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/copper_ingot",
+          "amount": 1
+        }
+      ]
+    },
+    "copper_wire": {
+      "displayName": "구리 전선 제작",
+      "description": "제작기 1입력.",
+      "tier": 2,
+      "seconds": 2.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/copper_ingot",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/copper_wire",
+          "amount": 2
+        }
+      ]
+    },
+    "circuit_board": {
+      "displayName": "회로 기판 조립",
+      "description": "조립기 2입력.",
+      "tier": 2,
+      "seconds": 4.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/copper_wire",
+          "amount": 3
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/circuit_board",
+          "amount": 1
+        }
+      ]
+    },
+    "grenade": {
+      "displayName": "유탄 조립",
+      "description": "조립기 2입력. 유탄 발사기·박격포 타워 공용.",
+      "tier": 2,
+      "seconds": 3.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/basic_ammo",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/grenade",
+          "amount": 1
+        }
+      ]
+    },
+    "nav_control_unit": {
+      "displayName": "항법 제어 유닛 조립",
+      "description": "게이트 ② 납품 부품. 조립기 2입력 — 게이트① 부품(선체 패널) 재소비.",
+      "tier": 2,
+      "seconds": 6.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/circuit_board",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/hull_panel",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/nav_control_unit",
+          "amount": 1
+        }
+      ]
+    },
+    "refined_crystal": {
+      "displayName": "크리스탈 정제",
+      "description": "제련로 1입력. Ring 2~3 원정 자원.",
+      "tier": 3,
+      "seconds": 3.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/crystal_ore",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/refined_crystal",
+          "amount": 1
+        }
+      ]
+    },
+    "dense_ammo": {
+      "displayName": "고밀도 탄약 조립",
+      "description": "조립기 2입력. 구리 코팅 강화 탄약.",
+      "tier": 2,
+      "seconds": 2.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/basic_ammo",
+          "amount": 10
+        },
+        {
+          "item": "coredawn:item/copper_ingot",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/dense_ammo",
+          "amount": 10
+        }
+      ]
+    },
+    "energy_cell": {
+      "displayName": "에너지 셀 조립",
+      "description": "조립기 2입력.",
+      "tier": 3,
+      "seconds": 4.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/refined_crystal",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/copper_wire",
+          "amount": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/energy_cell",
+          "amount": 1
+        }
+      ]
+    },
+    "energy_cell_ammo": {
+      "displayName": "에너지 셀 탄 제작",
+      "description": "제작기 1입력.",
+      "tier": 3,
+      "seconds": 2.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/energy_cell",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/energy_cell_ammo",
+          "amount": 2
+        }
+      ]
+    },
+    "power_module": {
+      "displayName": "동력 모듈 제조",
+      "description": "게이트 ③ 납품 부품. 제조기 4입력 — 괴수 핵이 공장 라인에 합류하는 유일한 지점.",
+      "tier": 3,
+      "seconds": 10.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/nav_control_unit",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/hull_panel",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/energy_cell",
+          "amount": 2
+        },
+        {
+          "item": "coredawn:item/beast_core",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/power_module",
+          "amount": 1
+        }
+      ]
+    },
+    "crystal_ammo": {
+      "displayName": "크리스탈 탄약 조립",
+      "description": "조립기 2입력. 고밀도 탄약에 크리스탈 첨두를 결합.",
+      "tier": 3,
+      "seconds": 3.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/dense_ammo",
+          "amount": 10
+        },
+        {
+          "item": "coredawn:item/refined_crystal",
+          "amount": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/crystal_ammo",
+          "amount": 10
+        }
+      ]
+    },
+    "plasma_cutter": {
+      "displayName": "플라즈마 커터 제작",
+      "description": "잔해를 자르던 절단기를 무기로 고쳤다. 탄약이 떨어져도 남는 최후의 수단.",
+      "tier": 1,
+      "seconds": 6.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/ship_debris",
+          "amount": 3
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/plasma_cutter",
+          "amount": 1
+        }
+      ]
+    },
+    "pistol": {
+      "displayName": "기본 권총 제작",
+      "description": "잔해를 깎아 만든 호신용 권총.",
+      "tier": 1,
+      "seconds": 6.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_ingot",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/pistol",
+          "amount": 1
+        }
+      ]
+    },
+    "rifle": {
+      "displayName": "라이플 제작",
+      "description": "연사가 가능한 주력 화기.",
+      "tier": 2,
+      "seconds": 10.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 10
+        },
+        {
+          "item": "coredawn:item/iron_gear",
+          "amount": 8
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/rifle",
+          "amount": 1
+        }
+      ]
+    },
+    "shotgun": {
+      "displayName": "샷건 제작",
+      "description": "근접에서 한 번에 쓸어낸다.",
+      "tier": 2,
+      "seconds": 10.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 10
+        },
+        {
+          "item": "coredawn:item/iron_gear",
+          "amount": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/shotgun",
+          "amount": 1
+        }
+      ]
+    },
+    "sniper": {
+      "displayName": "스나이퍼 제작",
+      "description": "먼 거리의 단일 대상을 정확히 노린다.",
+      "tier": 2,
+      "seconds": 12.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/circuit_board",
+          "amount": 4
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 8
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/sniper",
+          "amount": 1
+        }
+      ]
+    },
+    "grenade_launcher": {
+      "displayName": "유탄 발사기 제작",
+      "description": "유탄을 곡사로 날린다.",
+      "tier": 2,
+      "seconds": 12.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 12
+        },
+        {
+          "item": "coredawn:item/iron_gear",
+          "amount": 8
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/grenade_launcher",
+          "amount": 1
+        }
+      ]
+    },
+    "energy_rifle": {
+      "displayName": "에너지 소총 제작",
+      "description": "제어 모듈에 크리스탈 광학계를 얹는다. 제조기 전용.",
+      "tier": 3,
+      "seconds": 20.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/control_module",
+          "amount": 2
+        },
+        {
+          "item": "coredawn:item/refined_crystal",
+          "amount": 6
+        },
+        {
+          "item": "coredawn:item/copper_wire",
+          "amount": 12
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 8
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/energy_rifle",
+          "amount": 1
+        }
+      ]
+    },
+    "control_module": {
+      "displayName": "제어 모듈 제조",
+      "description": "기판·셀·배선·판을 한 번에 압착한다. 제조기 전용.",
+      "tier": 3,
+      "seconds": 8.0,
+      "inputs": [
+        {
+          "item": "coredawn:item/circuit_board",
+          "amount": 2
+        },
+        {
+          "item": "coredawn:item/energy_cell",
+          "amount": 1
+        },
+        {
+          "item": "coredawn:item/copper_wire",
+          "amount": 4
+        },
+        {
+          "item": "coredawn:item/iron_plate",
+          "amount": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "coredawn:item/control_module",
+          "amount": 1
+        }
+      ]
+    }
+  },
+  "effects": {
+    "damage": {
+      "displayName": "피해",
+      "description": "value 만큼 체력을 깎는다. 모든 공격의 기본 항목.",
+      "type": "Damage"
+    },
+    "knockback": {
+      "displayName": "넉백",
+      "description": "value = 밀어내는 거리(m). 공격이 날아온 방향으로 민다 — 총알·히트스캔·근접용.",
+      "type": "Knockback"
+    },
+    "knockback_radial": {
+      "displayName": "넉백(폭발)",
+      "description": "value = 밀어내는 거리(m). 착탄점에서 바깥으로 민다 — 유탄·플라즈마 아크 같은 폭발용.",
+      "type": "Knockback",
+      "knockbackMode": "Radial"
+    },
+    "burn": {
+      "displayName": "발화",
+      "description": "value = 틱당 피해. 크리스탈 탄약의 잔여 피해.",
+      "type": "DamageOverTime",
+      "duration": 4.0,
+      "tickInterval": 0.5
+    },
+    "slow_field": {
+      "displayName": "감속 필드",
+      "description": "value = 이동속도 배율 (0.5 = 절반). 감속 필드 타워의 오라.",
+      "type": "MoveSpeed",
+      "duration": 6.0
+    },
+    "attack_up": {
+      "displayName": "공격 강화",
+      "description": "value = 주는 피해 배율 (1.2 = +20%). 웨이브 버프용 — duration 0 = 영구.",
+      "type": "AttackModifier",
+      "affects": [
+        "coredawn:effect/damage"
+      ]
+    },
+    "damage_taken": {
+      "displayName": "받는 피해 배율",
+      "description": "value = 받는 피해 배율 (0.75 = 25% 감소, 1.5 = 50% 증가). 웨이브 버프용 — duration 0 = 영구.",
+      "type": "IncomingDamage"
+    }
+  },
+  "entities": {
+    "iron_ore_deposit": {
+      "displayName": "철광석 광맥",
+      "faction": "Neutral",
+      "view": {
+        "type": "Deposit",
+        "model": [
+          {
+            "file": "models/deposit_ground.glb",
+            "materials": [
+              "coredawn:material/resource_node_ground"
+            ]
+          }
+        ],
+        "layer": "Ground",
+        "meshCollider": false,
+        "colliders": [
+          {
+            "name": "Obstacle",
+            "layer": "Obstacle",
+            "box": {
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "size": [
+                0.75,
+                0.3,
+                0.75
+              ]
+            }
+          },
+          {
+            "name": "Visual",
+            "layer": "Ground",
+            "box": {
+              "center": [
+                0,
+                0.025,
+                0
+              ],
+              "size": [
+                0.7125,
+                0.05,
+                0.7125
+              ]
+            }
+          }
+        ]
+      },
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/iron_ore",
+          "extractInterval": 2.0
+        }
+      ]
+    },
+    "copper_ore_deposit": {
+      "displayName": "구리광석 광맥",
+      "faction": "Neutral",
+      "view": {
+        "type": "Deposit",
+        "model": [
+          {
+            "file": "models/deposit_ground.glb",
+            "materials": [
+              "coredawn:material/resource_node_ground"
+            ]
+          }
+        ],
+        "layer": "Ground",
+        "meshCollider": false,
+        "colliders": [
+          {
+            "name": "Obstacle",
+            "layer": "Obstacle",
+            "box": {
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "size": [
+                0.75,
+                0.3,
+                0.75
+              ]
+            }
+          },
+          {
+            "name": "Visual",
+            "layer": "Ground",
+            "box": {
+              "center": [
+                0,
+                0.025,
+                0
+              ],
+              "size": [
+                0.7125,
+                0.05,
+                0.7125
+              ]
+            }
+          }
+        ]
+      },
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/copper_ore",
+          "extractInterval": 5.0
+        }
+      ]
+    },
+    "crystal_ore_deposit": {
+      "displayName": "크리스탈 광석 광맥",
+      "faction": "Neutral",
+      "view": {
+        "type": "Deposit",
+        "model": [
+          {
+            "file": "models/deposit_ground.glb",
+            "materials": [
+              "coredawn:material/resource_node_ground"
+            ]
+          }
+        ],
+        "layer": "Ground",
+        "meshCollider": false,
+        "colliders": [
+          {
+            "name": "Obstacle",
+            "layer": "Obstacle",
+            "box": {
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "size": [
+                0.75,
+                0.3,
+                0.75
+              ]
+            }
+          },
+          {
+            "name": "Visual",
+            "layer": "Ground",
+            "box": {
+              "center": [
+                0,
+                0.025,
+                0
+              ],
+              "size": [
+                0.7125,
+                0.05,
+                0.7125
+              ]
+            }
+          }
+        ]
+      },
+      "modules": [
+        {
+          "type": "ResourceDeposit",
+          "resource": "coredawn:item/crystal_ore",
+          "extractInterval": 10.0
+        }
+      ]
+    },
+    "miner": {
+      "displayName": "채굴기",
+      "description": "광맥 위에 놓아 자원을 캔다. 광맥이 어려울수록 느리다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Production",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 6
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 4
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 150
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "output": 1,
+          "stackCap": 10
+        },
+        {
+          "type": "Extractor",
+          "speedMultiplier": 2.0
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/miner.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "type": "Building"
+      }
+    },
+    "miner_mk2": {
+      "displayName": "채굴기 Mk.2",
+      "description": "두 배 빠르게 캔다. 광맥이 감당하는 만큼만 나온다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Production",
+          "isAttackable": false,
+          "requiredCoreTier": 2,
+          "threatSeedCost": 100,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 12
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 8
+            },
+            {
+              "item": "coredawn:item/circuit_board",
+              "amount": 4
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 220
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 1,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "output": 1,
+          "stackCap": 20
+        },
+        {
+          "type": "Extractor",
+          "speedMultiplier": 10.0
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "type": "Building"
+      }
+    },
+    "smelter": {
+      "displayName": "제련로",
+      "description": "원광을 녹여 소재로 만든다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Production",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "menuOrder": 1,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 5
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 3
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 180
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "output": 1,
+          "stackCap": 10
+        },
+        {
+          "type": "Crafter",
+          "manual": false,
+          "speed": 1.0,
+          "recipes": [
+            "coredawn:recipe/iron_ingot",
+            "coredawn:recipe/copper_ingot",
+            "coredawn:recipe/refined_crystal"
+          ]
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/smelter.glb",
+            "materials": [
+              "coredawn:material/factory_color",
+              "coredawn:material/molten_color"
+            ]
+          }
+        ],
+        "type": "Building",
+        "interact": "machine"
+      }
+    },
+    "constructor": {
+      "displayName": "제작기",
+      "description": "소재 한 종을 가공해 기본 부품을 만든다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Production",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "menuOrder": 2,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 6
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 4
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 180
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "output": 1,
+          "stackCap": 10
+        },
+        {
+          "type": "Crafter",
+          "manual": false,
+          "speed": 1.0,
+          "recipes": [
+            "coredawn:recipe/iron_plate",
+            "coredawn:recipe/iron_gear",
+            "coredawn:recipe/basic_ammo",
+            "coredawn:recipe/copper_wire",
+            "coredawn:recipe/energy_cell_ammo"
+          ]
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/constructor.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "type": "Building",
+        "interact": "machine"
+      }
+    },
+    "assembler": {
+      "displayName": "조립기",
+      "description": "부품 두 종을 합쳐 조립 부품을 만든다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Production",
+          "isAttackable": false,
+          "requiredCoreTier": 2,
+          "threatSeedCost": 100,
+          "menuOrder": 3,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 10
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 6
+            },
+            {
+              "item": "coredawn:item/copper_wire",
+              "amount": 8
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 250
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 1,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 2,
+          "output": 1,
+          "stackCap": 10
+        },
+        {
+          "type": "Crafter",
+          "manual": false,
+          "speed": 1.0,
+          "recipes": [
+            "coredawn:recipe/circuit_board",
+            "coredawn:recipe/crystal_ammo",
+            "coredawn:recipe/dense_ammo",
+            "coredawn:recipe/energy_cell",
+            "coredawn:recipe/grenade",
+            "coredawn:recipe/grenade_launcher",
+            "coredawn:recipe/hull_panel",
+            "coredawn:recipe/nav_control_unit",
+            "coredawn:recipe/pistol",
+            "coredawn:recipe/rifle",
+            "coredawn:recipe/shotgun",
+            "coredawn:recipe/sniper"
+          ]
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "type": "Building",
+        "interact": "machine"
+      }
+    },
+    "manufacturer": {
+      "displayName": "제조기",
+      "description": "부품 네 종을 한 번에 조립한다. 동력 모듈 전용.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Production",
+          "isAttackable": false,
+          "requiredCoreTier": 3,
+          "threatSeedCost": 100,
+          "menuOrder": 4,
+          "cost": [
+            {
+              "item": "coredawn:item/hull_panel",
+              "amount": 6
+            },
+            {
+              "item": "coredawn:item/circuit_board",
+              "amount": 8
+            },
+            {
+              "item": "coredawn:item/copper_wire",
+              "amount": 20
+            },
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 320
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 1,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 1,
+              "dir": "North",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "South",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 4,
+          "output": 1,
+          "stackCap": 10
+        },
+        {
+          "type": "Crafter",
+          "manual": false,
+          "speed": 1.0,
+          "recipes": [
+            "coredawn:recipe/power_module",
+            "coredawn:recipe/control_module",
+            "coredawn:recipe/energy_rifle"
+          ]
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "type": "Building",
+        "interact": "machine"
+      }
+    },
+    "drone_port": {
+      "displayName": "드론 스테이션",
+      "description": "벨트 없이 다른 스테이션으로 물건을 실어 나른다. 멀리 떨어진 광맥을 잇는 용도.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Logistics",
+          "isAttackable": false,
+          "requiredCoreTier": 3,
+          "threatSeedCost": 100,
+          "menuOrder": 3,
+          "cost": [
+            {
+              "item": "coredawn:item/control_module",
+              "amount": 3
+            },
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 16
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 260
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 1,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "output": 1,
+          "stackCap": 30
+        },
+        {
+          "type": "DronePort",
+          "carryCapacity": 20,
+          "droneRange": 60,
+          "travelSpeed": 8
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "type": "Building",
+        "interact": "storage"
+      }
+    },
+    "belt": {
+      "displayName": "컨베이어 벨트",
+      "description": "설비 사이로 아이템을 옮긴다. 배치 중 T로 모양을 바꾼다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Logistics",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 2
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 1
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 60
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 1
+        },
+        {
+          "type": "Conveyor",
+          "speedTilesPerSec": 1.0
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/belt.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "modelCurveL": [
+          {
+            "file": "models/belt_curve_l.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "modelCurveR": [
+          {
+            "file": "models/belt_curve_r.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "type": "Building",
+        "poseCurveL": {
+          "rotation": [
+            0,
+            180,
+            0
+          ]
+        },
+        "poseCurveR": {
+          "rotation": [
+            0,
+            180,
+            0
+          ]
+        },
+        "loop": "Belt_Action",
+        "loopCurveL": "Belt.L_Action",
+        "loopCurveR": "Belt.R_Action"
+      }
+    },
+    "belt_mk2": {
+      "displayName": "컨베이어 벨트 Mk.2",
+      "description": "두 배 빠른 벨트.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Logistics",
+          "isAttackable": false,
+          "requiredCoreTier": 2,
+          "threatSeedCost": 100,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 3
+            },
+            {
+              "item": "coredawn:item/copper_wire",
+              "amount": 2
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 60
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 1
+        },
+        {
+          "type": "Conveyor",
+          "speedTilesPerSec": 2.0
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "type": "Building"
+      }
+    },
+    "splitter": {
+      "displayName": "분배기",
+      "description": "입력 하나를 여러 출구로 나눈다. 출구별 필터를 걸 수 있다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Logistics",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "menuOrder": 1,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 3
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 2
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 80
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "North",
+              "isInput": false
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "South",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 1
+        },
+        {
+          "type": "Router",
+          "mode": "split"
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/splitter.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "type": "Building",
+        "interact": "filters",
+        "pose": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "merger": {
+      "displayName": "합류기",
+      "description": "여러 입력을 하나로 모은다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Logistics",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "menuOrder": 2,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 3
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 2
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 80
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "North",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "South",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "East",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 1
+        },
+        {
+          "type": "Router",
+          "mode": "merge"
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/merger.glb",
+            "materials": [
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "type": "Building",
+        "pose": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            180.0,
+            0.0
+          ],
+          "scale": 1.0
+        }
+      }
+    },
+    "storage": {
+      "displayName": "보관소",
+      "description": "아이템을 보관한다. 어느 면이든 왼쪽으로 받고 오른쪽으로 내보낸다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Logistics",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 10
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 4
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 300
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 1,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": false
+            },
+            {
+              "x": 1,
+              "y": 1,
+              "dir": "North",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 1,
+              "dir": "North",
+              "isInput": false
+            },
+            {
+              "x": 1,
+              "y": 0,
+              "dir": "East",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 1,
+              "dir": "East",
+              "isInput": false
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "South",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 0,
+              "dir": "South",
+              "isInput": false
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 12,
+          "output": 1
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/storage.glb",
+            "materials": [
+              "coredawn:material/yellow_light",
+              "coredawn:material/building_base",
+              "coredawn:material/black",
+              "coredawn:material/white",
+              "coredawn:material/factory_color"
+            ]
+          }
+        ],
+        "type": "Building",
+        "interact": "storage"
+      }
+    },
+    "core": {
+      "displayName": "코어",
+      "description": "불시착한 우주선. 어느 면으로든 부품을 받아 수리한다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 3,
+            "y": 3
+          },
+          "category": "Production",
+          "placeable": false,
+          "isDemolishable": false,
+          "isAttackable": false
+        },
+        {
+          "type": "Health",
+          "maxHp": 1000
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 2,
+              "dir": "North",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "South",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 2,
+              "dir": "North",
+              "isInput": true
+            },
+            {
+              "x": 1,
+              "y": 0,
+              "dir": "South",
+              "isInput": true
+            },
+            {
+              "x": 2,
+              "y": 2,
+              "dir": "North",
+              "isInput": true
+            },
+            {
+              "x": 2,
+              "y": 0,
+              "dir": "South",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 2,
+              "y": 0,
+              "dir": "East",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 1,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 2,
+              "y": 1,
+              "dir": "East",
+              "isInput": true
+            },
+            {
+              "x": 0,
+              "y": 2,
+              "dir": "West",
+              "isInput": true
+            },
+            {
+              "x": 2,
+              "y": 2,
+              "dir": "East",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 4
+        },
+        {
+          "type": "Core",
+          "tiers": [
+            {
+              "name": "잔해 회수",
+              "description": "흩어진 파편을 모아 코어를 깨운다.",
+              "requirements": [
+                {
+                  "item": "coredawn:item/ship_debris",
+                  "amount": 12
+                }
+              ],
+              "unlocks": [
+                "작업대 — 손으로 제련·제작",
+                "채굴기 · 제련로 · 컨베이어 벨트"
+              ],
+              "maxHpBonus": 1000,
+              "isFinal": false
+            },
+            {
+              "name": "선체 봉합",
+              "description": "찢어진 동체를 덮어 내부 정비 구역을 연다.",
+              "requirements": [
+                {
+                  "item": "coredawn:item/hull_panel",
+                  "amount": 8
+                },
+                {
+                  "item": "coredawn:item/iron_plate",
+                  "amount": 40
+                },
+                {
+                  "item": "coredawn:item/iron_gear",
+                  "amount": 30
+                }
+              ],
+              "unlocks": [
+                "조립기 — 부품 2종을 합쳐 조립",
+                "채굴기 Mk.2 · 벨트 Mk.2",
+                "중기관 포탑 · 박격포 타워"
+              ],
+              "maxHpBonus": 500,
+              "isFinal": false
+            },
+            {
+              "name": "항법·제어 복구",
+              "description": "조종 콘솔과 선내 배선을 되살린다.",
+              "requirements": [
+                {
+                  "item": "coredawn:item/nav_control_unit",
+                  "amount": 8
+                },
+                {
+                  "item": "coredawn:item/circuit_board",
+                  "amount": 20
+                },
+                {
+                  "item": "coredawn:item/copper_wire",
+                  "amount": 50
+                },
+                {
+                  "item": "coredawn:item/hull_panel",
+                  "amount": 30
+                }
+              ],
+              "unlocks": [
+                "레이더 — 다음 웨이브의 진입 방위와 규모",
+                "제조기 — 부품 4종을 한 번에 조립",
+                "레이저 타워 · 감속 필드 타워"
+              ],
+              "maxHpBonus": 500,
+              "isFinal": false
+            },
+            {
+              "name": "동력 재점화",
+              "description": "엔진에 동력 모듈을 장착한다.",
+              "requirements": [
+                {
+                  "item": "coredawn:item/power_module",
+                  "amount": 3
+                },
+                {
+                  "item": "coredawn:item/energy_cell",
+                  "amount": 15
+                },
+                {
+                  "item": "coredawn:item/copper_wire",
+                  "amount": 100
+                },
+                {
+                  "item": "coredawn:item/hull_panel",
+                  "amount": 100
+                }
+              ],
+              "unlocks": [
+                "엔진 예열 개시",
+                "이륙 시퀀스"
+              ],
+              "maxHpBonus": 1000,
+              "isFinal": true
+            }
+          ]
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/core.glb",
+            "materials": [
+              "coredawn:material/factory_color",
+              "coredawn:material/glass"
+            ]
+          }
+        ],
+        "type": "Building",
+        "interact": "core"
+      }
+    },
+    "fence": {
+      "displayName": "울타리",
+      "description": "몬스터의 진로를 막아 동선을 유도한다. 공격하지 않는다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 100,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 2
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 250
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Blocker"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/fence.glb",
+            "materials": [
+              "coredawn:material/energy_pylon_l03_albedo_v001"
+            ]
+          }
+        ],
+        "type": "Tower",
+        "sfx": {
+          "destroy": {
+            "sound": "coredawn:sound/tower_destroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "coredawn:sound/tower_starved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        },
+        "pose": {
+          "scale": 0.4918
+        }
+      }
+    },
+    "mine": {
+      "displayName": "지뢰",
+      "description": "밟으면 터진다. 건설 비용의 유탄이 그대로 폭약이며 한 번 쓰면 사라진다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "walkable": true,
+          "requiredCoreTier": 2,
+          "threatSeedCost": 100,
+          "menuOrder": 2,
+          "cost": [
+            {
+              "item": "coredawn:item/grenade",
+              "amount": 1
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 10
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Trigger",
+          "radius": 2.0,
+          "once": true,
+          "cooldown": 1.0
+        },
+        {
+          "type": "FixedAmmo",
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 420.0
+            },
+            {
+              "effect": "coredawn:effect/knockback_radial",
+              "value": 2.0
+            }
+          ]
+        }
+      ],
+      "view": {
+        "type": "Tower"
+      }
+    },
+    "basic_turret": {
+      "displayName": "기본 포탑",
+      "description": "기본 탄약을 소비해 사격한다. 벨트로 보급할 수 있다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "requiredCoreTier": 1,
+          "threatSeedCost": 10,
+          "menuOrder": 1,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 8
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 6
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 200
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 100
+        },
+        {
+          "type": "Turret",
+          "range": 36.0,
+          "minRange": 0.0,
+          "fireRate": 2.0,
+          "turnSpeed": 360.0,
+          "aimTolerance": 3.0,
+          "preferHighArc": false,
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.0,
+          "hitscan": false
+        },
+        {
+          "type": "AmmoConsumer",
+          "ammoFilter": [
+            "coredawn:item/basic_ammo",
+            "coredawn:item/dense_ammo",
+            "coredawn:item/crystal_ammo"
+          ],
+          "damageMultiplier": 1.0
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/basic_turret.glb",
+            "materials": [
+              "coredawn:material/machine_gun_level3_tex_v003"
+            ]
+          }
+        ],
+        "type": "Tower",
+        "interact": "ammo",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/basic_turret_fire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "coredawn:sound/tower_destroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "coredawn:sound/tower_starved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        },
+        "pose": {
+          "scale": 0.6451
+        }
+      }
+    },
+    "heavy_turret": {
+      "displayName": "중기관 포탑",
+      "description": "고밀도 탄약을 쓰는 연사 포탑.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "requiredCoreTier": 2,
+          "threatSeedCost": 10,
+          "menuOrder": 1,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 14
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 10
+            },
+            {
+              "item": "coredawn:item/circuit_board",
+              "amount": 4
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 320
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 100
+        },
+        {
+          "type": "Turret",
+          "range": 44.0,
+          "minRange": 0.0,
+          "fireRate": 4.0,
+          "turnSpeed": 120.0,
+          "aimTolerance": 3.0,
+          "preferHighArc": false,
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.0,
+          "hitscan": false
+        },
+        {
+          "type": "AmmoConsumer",
+          "ammoFilter": [
+            "coredawn:item/dense_ammo",
+            "coredawn:item/crystal_ammo"
+          ],
+          "damageMultiplier": 2.2
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/heavy_turret.glb",
+            "materials": [
+              "coredawn:material/rocket_tower_l03_texture_v003"
+            ]
+          }
+        ],
+        "type": "Tower",
+        "interact": "ammo",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/heavy_turret_fire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "coredawn:sound/tower_destroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "coredawn:sound/tower_starved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            -0.0197,
+            0.0
+          ],
+          "scale": 1.0602
+        }
+      }
+    },
+    "mortar_tower": {
+      "displayName": "박격포 타워",
+      "description": "유탄을 곡사로 날려 범위 피해를 준다. 근접한 적은 때리지 못한다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "requiredCoreTier": 2,
+          "threatSeedCost": 10,
+          "menuOrder": 2,
+          "cost": [
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 16
+            },
+            {
+              "item": "coredawn:item/iron_gear",
+              "amount": 12
+            },
+            {
+              "item": "coredawn:item/circuit_board",
+              "amount": 6
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 300
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 100
+        },
+        {
+          "type": "Turret",
+          "range": 72.0,
+          "minRange": 0.0,
+          "fireRate": 0.5,
+          "turnSpeed": 60.0,
+          "aimTolerance": 3.0,
+          "preferHighArc": false,
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.0,
+          "hitscan": false
+        },
+        {
+          "type": "AmmoConsumer",
+          "ammoFilter": [
+            "coredawn:item/grenade"
+          ],
+          "damageMultiplier": 3.5
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/mortar_tower.glb",
+            "materials": [
+              "coredawn:material/super_tower_albedo_v001"
+            ]
+          }
+        ],
+        "type": "Tower",
+        "interact": "ammo",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/mortar_tower_fire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "coredawn:sound/tower_destroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "coredawn:sound/tower_starved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            -0.0022,
+            0.0
+          ],
+          "scale": 0.6075
+        }
+      }
+    },
+    "laser_tower": {
+      "displayName": "레이저 타워",
+      "description": "에너지 셀 탄을 소비해 관통 사격한다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 2,
+            "y": 2
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "requiredCoreTier": 3,
+          "threatSeedCost": 10,
+          "menuOrder": 1,
+          "cost": [
+            {
+              "item": "coredawn:item/control_module",
+              "amount": 2
+            },
+            {
+              "item": "coredawn:item/refined_crystal",
+              "amount": 4
+            },
+            {
+              "item": "coredawn:item/iron_plate",
+              "amount": 12
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 280
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 100
+        },
+        {
+          "type": "Turret",
+          "range": 56.0,
+          "minRange": 0.0,
+          "fireRate": 3.0,
+          "turnSpeed": 200.0,
+          "aimTolerance": 3.0,
+          "preferHighArc": false,
+          "muzzleHeight": 1.2,
+          "aimHeight": 0.0,
+          "hitscan": true
+        },
+        {
+          "type": "AmmoConsumer",
+          "ammoFilter": [
+            "coredawn:item/energy_cell_ammo"
+          ],
+          "damageMultiplier": 2.8
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/laser_tower.glb",
+            "materials": [
+              "coredawn:material/laser_tower_l03_albedo_v001"
+            ]
+          }
+        ],
+        "type": "Tower",
+        "interact": "ammo",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/laser_tower_fire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "coredawn:sound/tower_destroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "coredawn:sound/tower_starved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        },
+        "pose": {
+          "scale": 0.9925
+        }
+      }
+    },
+    "slow_field_tower": {
+      "displayName": "감속 필드 타워",
+      "description": "범위 안의 몬스터를 느리게 만든다. 5초마다 에너지 셀 1개를 태운다.",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Defense",
+          "isAttackable": false,
+          "requiredCoreTier": 3,
+          "threatSeedCost": 10,
+          "menuOrder": 3,
+          "cost": [
+            {
+              "item": "coredawn:item/control_module",
+              "amount": 2
+            },
+            {
+              "item": "coredawn:item/copper_wire",
+              "amount": 10
+            }
+          ]
+        },
+        {
+          "type": "Health",
+          "maxHp": 180
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Ports",
+          "ports": [
+            {
+              "x": 0,
+              "y": 0,
+              "dir": "West",
+              "isInput": true
+            }
+          ]
+        },
+        {
+          "type": "Inventory",
+          "input": 1,
+          "stackCap": 100
+        },
+        {
+          "type": "AuraEmitter",
+          "radius": 28.0,
+          "interval": 4.9999999254941949
+        },
+        {
+          "type": "AmmoConsumer",
+          "ammoFilter": [
+            "coredawn:item/energy_cell_ammo"
+          ],
+          "damageMultiplier": 0.0
+        },
+        {
+          "type": "Loot"
+        }
+      ],
+      "view": {
+        "model": [
+          {
+            "file": "models/slow_field_tower.glb",
+            "materials": [
+              "coredawn:material/emp_tower_level3_tex_v001"
+            ]
+          }
+        ],
+        "type": "Tower",
+        "interact": "fuel",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/slow_field_tower_fire",
+            "volume": 0.7,
+            "spatial": true
+          },
+          "destroy": {
+            "sound": "coredawn:sound/tower_destroy",
+            "volume": 1.0,
+            "spatial": true
+          },
+          "starved": {
+            "sound": "coredawn:sound/tower_starved",
+            "volume": 0.6,
+            "spatial": true
+          }
+        },
+        "pose": {
+          "position": [
+            0.0,
+            0.9429,
+            0.0
+          ],
+          "scale": 0.4918
+        }
+      }
+    },
+    "nest": {
+      "displayName": "괴수 둥지",
+      "description": "맵이 세우는 괴수의 둥지. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형·전투·스폰은 World의 둥지 프리픥(MonsterNest)이 담당한다.",
+      "faction": "Monster",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Defense",
+          "placeable": false,
+          "isDemolishable": false,
+          "threatSeedCost": 80
+        },
+        {
+          "type": "Health",
+          "maxHp": 500
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Nest"
+        },
+        {
+          "type": "Loot",
+          "drops": [
+            {
+              "item": "coredawn:item/beast_core",
+              "amount": 1
+            }
+          ]
+        }
+      ],
+      "view": {
+        "type": "Nest",
+        "layer": "Nest",
+        "meshCollider": false,
+        "colliders": [
+          {
+            "name": "NestCore",
+            "layer": "Nest",
+            "capsule": {
+              "center": [
+                0,
+                0.125,
+                0
+              ],
+              "radius": 0.1875,
+              "height": 0.5
+            }
+          }
+        ],
+        "model": [
+          {
+            "file": "models/nest_rocks.glb",
+            "materials": [
+              "coredawn:material/nest_core_rocks"
+            ]
+          }
+        ]
+      }
+    },
+    "tree": {
+      "displayName": "나무",
+      "description": "지형이 놓아둔 나무. 플레이어가 짓는 건물이 아니고, 그 칸을 막아 위에 못 짓게 하는 것이 이 항목의 원인이다. 모형은 TreeGenSettings 의 Tree Set 이 정하고, 자리는 WorldTreePlanter 가 흔릿는다.",
+      "faction": "Neutral",
+      "modules": [
+        {
+          "type": "Building",
+          "size": {
+            "x": 1,
+            "y": 1
+          },
+          "category": "Production",
+          "placeable": false,
+          "isDemolishable": false,
+          "threatSeedCost": 1000
+        },
+        {
+          "type": "Health",
+          "maxHp": 120
+        },
+        {
+          "type": "Effects"
+        }
+      ],
+      "view": {
+        "type": "Building",
+        "model": [
+          {
+            "file": "models/tree_broadleaf_01.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_02.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_03.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_04.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          },
+          {
+            "file": "models/tree_broadleaf_05.glb",
+            "materials": [
+              "coredawn:material/tree_bark",
+              "coredawn:material/broadleaf_green"
+            ]
+          }
+        ]
+      }
+    },
+    "basic": {
+      "displayName": "기본 몬스터",
+      "description": "밤 웨이브의 기본 개체. Monster.prefab.",
+      "faction": "Monster",
+      "modules": [
+        {
+          "type": "Health",
+          "maxHp": 30.0
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Movement",
+          "moveSpeed": 6.0,
+          "rotateSpeed": 720.0,
+          "crowdRadius": 0.4,
+          "knockbackDamping": 8.0,
+          "stickToGround": true
+        },
+        {
+          "type": "Attack",
+          "range": 1.5,
+          "cooldown": 2.0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 10.0
+            }
+          ]
+        },
+        {
+          "type": "MonsterBrain",
+          "maxPatience": 3.0,
+          "patienceRadius": 0.0,
+          "outsidePatienceDrain": 2.0,
+          "rangedPokePatienceDrain": 3.0,
+          "patienceRecoverRate": 2.0,
+          "absoluteLeashMultiplier": 1.0,
+          "returnRegenPerSecond": 0.12,
+          "returnTimeout": 20.0,
+          "corpseSeconds": 2.0
+        }
+      ],
+      "view": {
+        "type": "Monster",
+        "model": [
+          {
+            "file": "models/basic.glb",
+            "materials": [
+              "coredawn:material/chomper_body_mat",
+              "coredawn:material/chomper_internals_mat"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.0,
+            -0.5742,
+            0.0
+          ],
+          "scale": 0.8811
+        },
+        "collider": {
+          "radius": 0.3,
+          "height": 1.2,
+          "center": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "deathStyle": "SinkAway",
+        "sinkDepth": 1.3,
+        "anim": {
+          "idle": "ChomperIdle",
+          "walk": "ChomperWalkForward",
+          "run": "ChomperRunForward",
+          "alert": "ChomperCutsceneTOIdle",
+          "attack": [
+            "ChomperAttack"
+          ],
+          "hit": [
+            "ChomperHit1",
+            "ChomperHit2",
+            "ChomperHit3",
+            "ChomperHit4"
+          ],
+          "death": "ChomperHit1"
+        }
+      }
+    },
+    "spitter": {
+      "displayName": "스피터",
+      "description": "원거리형 변종. Monster_Spitter.prefab.",
+      "faction": "Monster",
+      "modules": [
+        {
+          "type": "Health",
+          "maxHp": 60.0
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Movement",
+          "moveSpeed": 6.0,
+          "rotateSpeed": 720.0,
+          "crowdRadius": 0.4,
+          "knockbackDamping": 10.0,
+          "stickToGround": true
+        },
+        {
+          "type": "Attack",
+          "range": 1.5,
+          "cooldown": 2.0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 10.0
+            }
+          ]
+        },
+        {
+          "type": "MonsterBrain",
+          "maxPatience": 3.0,
+          "patienceRadius": 0.0,
+          "outsidePatienceDrain": 2.0,
+          "rangedPokePatienceDrain": 3.0,
+          "patienceRecoverRate": 2.0,
+          "absoluteLeashMultiplier": 1.0,
+          "returnRegenPerSecond": 0.12,
+          "returnTimeout": 20.0,
+          "corpseSeconds": 2.0
+        }
+      ],
+      "view": {
+        "type": "Monster",
+        "model": [
+          {
+            "file": "models/spitter.glb",
+            "materials": [
+              "coredawn:material/spitter_body_mat",
+              "coredawn:material/spitter_internals_mat"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.0,
+            -0.5752,
+            0.0
+          ],
+          "scale": 0.8212
+        },
+        "collider": {
+          "radius": 0.3,
+          "height": 1.2,
+          "center": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "deathStyle": "SinkAway",
+        "sinkDepth": 1.365,
+        "anim": {
+          "idle": "ChomperIdle",
+          "walk": "ChomperWalkForward",
+          "run": "ChomperRunForward",
+          "alert": "Spotted",
+          "attack": [
+            "ChomperAttack",
+            "SpitterSpit"
+          ],
+          "hit": [
+            "ChomperHit1",
+            "ChomperHit2",
+            "ChomperHit3",
+            "ChomperHit4"
+          ],
+          "death": "ChomperHit2"
+        }
+      }
+    },
+    "boss": {
+      "displayName": "보스",
+      "description": "둥지를 지키는 비선공 보스. BossMonster.prefab.",
+      "faction": "Monster",
+      "modules": [
+        {
+          "type": "Health",
+          "maxHp": 500.0
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Movement",
+          "moveSpeed": 5.0,
+          "rotateSpeed": 720.0,
+          "crowdRadius": 0.4,
+          "knockbackDamping": 8.0,
+          "stickToGround": true
+        },
+        {
+          "type": "Attack",
+          "range": 1.5,
+          "cooldown": 2.0,
+          "effects": [
+            {
+              "effect": "coredawn:effect/damage",
+              "value": 10.0
+            }
+          ]
+        },
+        {
+          "type": "MonsterBrain",
+          "maxPatience": 3.0,
+          "patienceRadius": 25.0,
+          "outsidePatienceDrain": 2.0,
+          "rangedPokePatienceDrain": 1.0,
+          "patienceRecoverRate": 2.0,
+          "absoluteLeashMultiplier": 1.0,
+          "returnRegenPerSecond": 0.2,
+          "returnTimeout": 40.0,
+          "corpseSeconds": 4.5
+        }
+      ],
+      "view": {
+        "type": "Monster",
+        "model": [
+          {
+            "file": "models/boss.glb",
+            "materials": [
+              "coredawn:material/grenadier_mat",
+              "coredawn:material/grenadier_core_mat",
+              "coredawn:material/grenadier_eye_mat"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.0,
+            -1.793,
+            0.0
+          ],
+          "scale": 0.6022
+        },
+        "collider": {
+          "radius": 1.0,
+          "height": 4.0,
+          "center": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "deathStyle": "AnimationClip",
+        "sinkDepth": 4.42,
+        "anim": {
+          "idle": "GrenadierIdle",
+          "walk": "GrenadierWalk",
+          "run": "GrenadierWalkFast",
+          "alert": "GrenadierIdle",
+          "attack": [
+            "GrenadierMeleeAttack",
+            "GrenadierCloseRangeAttack"
+          ],
+          "hit": [
+            "GrenadierHit1",
+            "GrenadierHit2",
+            "GrenadierHit3",
+            "GrenadierHit4"
+          ],
+          "death": "GrenadierDeath"
+        }
+      }
+    },
+    "player": {
+      "displayName": "플레이어",
+      "faction": "Player",
+      "modules": [
+        {
+          "type": "Health",
+          "maxHp": 300.0
+        },
+        {
+          "type": "Effects"
+        },
+        {
+          "type": "Inventory",
+          "main": 25,
+          "hotbar": 7
+        },
+        {
+          "type": "Crafter",
+          "manual": true,
+          "speed": 1.0,
+          "recipes": []
+        },
+        {
+          "type": "Weapon"
+        }
+      ],
+      "view": {
+        "type": "Player"
+      }
+    }
+  },
+  "guns": {
+    "pistol": {
+      "displayName": "기본 권총",
+      "description": "시작 화기. 느리지만 탄약이 싸다.",
+      "fire": {
+        "interval": 0.33,
+        "range": 50.0
+      },
+      "ammo": {
+        "magSize": 12,
+        "reloadTime": 1.2,
+        "filter": [
+          "coredawn:item/basic_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 3.0,
+        "y": 1.5,
+        "z": 1.0,
+        "kickbackZ": 0.5
+      },
+      "spread": {
+        "base": 0.6,
+        "max": 4.0,
+        "perShot": 0.8,
+        "recovery": 5.0
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/pistol_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/pistol_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/pistol.glb",
+            "materials": [
+              "coredawn:material/hell_red",
+              "coredawn:material/dawn_white",
+              "coredawn:material/scope"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            0.9
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0727,
+          0.3499
+        ],
+        "sight": [
+          0.0,
+          0.1549,
+          -0.0127
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    },
+    "rifle": {
+      "displayName": "라이플",
+      "description": "주력 화기. 탄약 소모가 빠르다.",
+      "fire": {
+        "interval": 0.1,
+        "automatic": true,
+        "damageMultiplier": 1.4
+      },
+      "ammo": {
+        "reloadTime": 2.0,
+        "filter": [
+          "coredawn:item/basic_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 5.0,
+        "y": 2.0,
+        "z": 1.0,
+        "kickbackZ": 0.6
+      },
+      "spread": {
+        "base": 0.5,
+        "max": 5.0,
+        "perShot": 1.0,
+        "recovery": 5.0
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/rifle_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/rifle_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/rifle.glb",
+            "materials": [
+              "coredawn:material/deep_blue",
+              "coredawn:material/dawn_white",
+              "coredawn:material/scope"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0737,
+          0.3947
+        ],
+        "sight": [
+          0.0,
+          0.1541,
+          -0.0064
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    },
+    "shotgun": {
+      "displayName": "샷건",
+      "description": "근접 다수. 한 번에 8발을 소비한다.",
+      "fire": {
+        "mode": "Hitscan",
+        "interval": 0.83,
+        "range": 25.0,
+        "pellets": 8,
+        "damageMultiplier": 0.5
+      },
+      "ammo": {
+        "magSize": 8,
+        "reloadTime": 2.5,
+        "filter": [
+          "coredawn:item/dense_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 10.0,
+        "y": 5.0,
+        "z": 2.0,
+        "kickbackZ": 2.4
+      },
+      "spread": {
+        "base": 4.0,
+        "max": 8.0,
+        "perShot": 1.5,
+        "recovery": 4.0
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/shotgun_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/shotgun_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/shotgun.glb",
+            "materials": [
+              "coredawn:material/deep_blue",
+              "coredawn:material/dawn_white"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.15,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0026,
+          0.5097
+        ],
+        "sight": [
+          0.0,
+          0.0391,
+          0.1016
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    },
+    "sniper": {
+      "displayName": "스나이퍼",
+      "description": "원거리 단일 대상. 한 발의 무게가 크다.",
+      "fire": {
+        "mode": "Hitscan",
+        "interval": 1.25,
+        "range": 200.0,
+        "damageMultiplier": 4.0
+      },
+      "ammo": {
+        "magSize": 5,
+        "reloadTime": 3.0,
+        "filter": [
+          "coredawn:item/dense_ammo",
+          "coredawn:item/crystal_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 2.0
+      },
+      "recoil": {
+        "x": 10.0,
+        "y": 6.0,
+        "z": 3.0,
+        "kickbackZ": 2.0
+      },
+      "spread": {
+        "base": 0.05,
+        "max": 3.0,
+        "perShot": 2.0,
+        "recovery": 3.0
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/sniper_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/sniper_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/sniper.glb",
+            "materials": [
+              "coredawn:material/dawn_white",
+              "coredawn:material/scope"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0618,
+          0.6786
+        ],
+        "sight": [
+          0.0,
+          0.1366,
+          -0.069
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    },
+    "grenade_launcher": {
+      "displayName": "유탄 발사기",
+      "description": "범위. 박격포 타워와 탄약을 공유한다.",
+      "fire": {
+        "interval": 2.0,
+        "range": 50.0
+      },
+      "ammo": {
+        "magSize": 4,
+        "reloadTime": 2.5,
+        "filter": [
+          "coredawn:item/grenade"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 6.0,
+        "y": 4.0,
+        "z": 2.0,
+        "kickbackZ": 1.0
+      },
+      "spread": {
+        "base": 1.0,
+        "max": 4.0,
+        "perShot": 1.0,
+        "recovery": 4.0
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/grenade_launcher_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/grenade_launcher_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/grenade_launcher.glb",
+            "materials": [
+              "coredawn:material/deep_blue",
+              "coredawn:material/dawn_white",
+              "coredawn:material/scope"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.1345,
+          0.3045
+        ],
+        "sight": [
+          -0.0838,
+          0.1302,
+          0.037
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    },
+    "energy_rifle": {
+      "displayName": "에너지 소총",
+      "description": "관통. 좁은 길목에서 최강.",
+      "fire": {
+        "mode": "Hitscan",
+        "interval": 0.25,
+        "automatic": true,
+        "damageMultiplier": 1.2
+      },
+      "ammo": {
+        "magSize": 20,
+        "reloadTime": 2.0,
+        "filter": [
+          "coredawn:item/energy_cell_ammo"
+        ]
+      },
+      "aim": {
+        "zoom": 1.5
+      },
+      "recoil": {
+        "x": 1.0,
+        "y": 0.8,
+        "z": 0.5,
+        "kickbackZ": 0.15
+      },
+      "spread": {
+        "base": 0.2,
+        "max": 2.0,
+        "perShot": 0.4,
+        "recovery": 6.0
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/energy_rifle_fire",
+            "volume": 0.8,
+            "spatial": true
+          },
+          "reload": {
+            "sound": "coredawn:sound/energy_rifle_reload",
+            "volume": 0.7,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/energy_rifle.glb",
+            "materials": [
+              "coredawn:material/black_and_green",
+              "coredawn:material/dawn_white",
+              "coredawn:material/scope"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            1.0
+          ],
+          "rotation": [
+            359.4,
+            0.0,
+            0.0
+          ],
+          "scale": 0.5
+        },
+        "muzzle": [
+          0.0,
+          0.0674,
+          0.5178
+        ],
+        "sight": [
+          0.0,
+          0.1816,
+          0.1275
+        ],
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    },
+    "plasma_cutter": {
+      "displayName": "플라즈마 커터",
+      "description": "잔해 해체용 절단기. 사거리는 코앞뿐이지만 탄약이 필요 없고, 한 번 휘두르면 주변까지 함께 갈린다.",
+      "fire": {
+        "interval": 0.55,
+        "range": 0.35,
+        "automatic": true,
+        "damageMultiplier": 0.6
+      },
+      "ammo": {
+        "unlimited": true,
+        "filter": [
+          "coredawn:item/plasma_arc"
+        ]
+      },
+      "aim": {
+        "block": true
+      },
+      "recoil": {
+        "x": 1.5,
+        "y": 1.0,
+        "z": 0.5
+      },
+      "swing": {
+        "time": 0.42,
+        "windup": 0.18,
+        "alternate": true,
+        "rotation": [
+          22.0,
+          -30.0,
+          26.0
+        ],
+        "position": [
+          -0.06,
+          0.025,
+          0.06
+        ]
+      },
+      "view": {
+        "type": "Gun",
+        "sfx": {
+          "fire": {
+            "sound": "coredawn:sound/plasma_cutter_fire",
+            "volume": 0.55,
+            "spatial": true
+          }
+        },
+        "model": [
+          {
+            "file": "models/plasma_cutter.glb",
+            "materials": [
+              "coredawn:material/plasma_cutter_grip",
+              "coredawn:material/plasma_cutter_edge"
+            ]
+          }
+        ],
+        "pose": {
+          "position": [
+            0.35,
+            -0.2,
+            0.85
+          ],
+          "rotation": [
+            300.0,
+            334.0,
+            18.0
+          ],
+          "scale": 0.25
+        },
+        "knockback": {
+          "effect": "coredawn:effect/knockback",
+          "perDamage": 0.2
+        }
+      }
+    }
+  },
+  "tutorial": {
+    "move1": {
+      "displayName": "MOVE 1",
+      "description": "",
+      "order": 10,
+      "tag": "MOVE 1",
+      "body": "WASD로 움직이고, 마우스를 돌려 주위를 둘러보세요.",
+      "keyHints": [
+        "W",
+        "A",
+        "S",
+        "D"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "MoveAndLook",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "move2": {
+      "displayName": "MOVE 2",
+      "description": "",
+      "order": 13,
+      "tag": "MOVE 2",
+      "body": "Space로 점프하고, Shift를 누른 채 앞으로 달려 보세요.",
+      "keyHints": [
+        "Space",
+        "Shift"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "Jump",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        },
+        {
+          "type": "Sprint",
+          "count": 1,
+          "seconds": 1.0,
+          "tier": 1
+        }
+      ]
+    },
+    "move3": {
+      "displayName": "MOVE 3",
+      "description": "",
+      "order": 16,
+      "tag": "MOVE 3",
+      "body": "달리는 중에 C를 누르면 슬라이딩합니다.\n빠를수록 멀리 미끄러집니다.",
+      "keyHints": [
+        "C"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "Slide",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "salvage": {
+      "displayName": "SALVAGE",
+      "description": "",
+      "order": 20,
+      "tag": "SALVAGE",
+      "body": "흩어진 우주선 잔해를 주우세요.\n코어를 되살릴 첫 재료입니다.",
+      "keyHints": [
+        "E"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "AcquireItemType",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1,
+          "itemType": "Salvage"
+        }
+      ]
+    },
+    "core": {
+      "displayName": "CORE",
+      "description": "",
+      "order": 30,
+      "tag": "CORE",
+      "body": "코어에 수리 자원을 넣고 상호작용하여 수리를 시작하세요.",
+      "keyHints": [
+        "E"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "CoreTier",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "mine": {
+      "displayName": "MINING",
+      "description": "",
+      "order": 40,
+      "tag": "MINING",
+      "body": "광맥을 찾고 바라본뒤 상호작용하여 수동으로 자원을 캐세요",
+      "keyHints": [
+        "E"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "MineResource",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "inventory": {
+      "displayName": "ITEMS",
+      "description": "",
+      "order": 50,
+      "tag": "ITEMS",
+      "body": "E 키로 인벤토리를 열어 가진 것을 확인하세요.\n제작도 이 화면에서 합니다.",
+      "keyHints": [
+        "TAB"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "OpenInventory",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "craft": {
+      "displayName": "CRAFT",
+      "description": "",
+      "order": 60,
+      "tag": "CRAFT",
+      "body": "인벤토리의 제작 목록에서 무기를 직접 만드세요.\n재료가 모자라면 광맥을 더 캐야 합니다.",
+      "keyHints": [
+        "TAB"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "CraftItemType",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1,
+          "itemType": "Weapon"
+        }
+      ]
+    },
+    "equip": {
+      "displayName": "EQUIP",
+      "description": "",
+      "order": 80,
+      "tag": "EQUIP",
+      "body": "만든 무기를 핫바 칸에 넣고 숫자키로 고르면 손에 들립니다.",
+      "keyHints": [
+        "1",
+        "2",
+        "3"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "SwitchHotbarSlot",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "build_menu": {
+      "displayName": "BUILD",
+      "description": "",
+      "order": 90,
+      "tag": "BUILD",
+      "body": "B 키로 건설 메뉴를 엽니다.\n밤에는 건설할 수 없으니 낮에 지으세요.",
+      "keyHints": [
+        "B"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "EnterBuildMode",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "ports": {
+      "displayName": "PORTS",
+      "description": "",
+      "order": 90,
+      "tag": "PORTS",
+      "body": "미리보기의 청록 포트는 들어오는 입구, 주황 포트는 나가는 출구입니다.\nR로 돌리고 좌클릭으로 설치하세요.",
+      "keyHints": [
+        "R"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "PlaceBuilding",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "belt": {
+      "displayName": "LOGISTICS",
+      "description": "",
+      "order": 110,
+      "tag": "LOGISTICS",
+      "body": "벨트를 이어 깔아 출구와 입구를 연결하면 자원이 저절로 흐릅니다.",
+      "keyHints": [],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "PlaceBelt",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "belt_shape": {
+      "displayName": "CORNER",
+      "description": "",
+      "order": 120,
+      "tag": "CORNER",
+      "body": "벨트를 든 채 T를 누르면 직선 · 좌커브 · 우커브로 바뀝니다.\n모퉁이를 돌 때 씁니다.",
+      "keyHints": [
+        "T"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "CycleBeltShape",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "demolish": {
+      "displayName": "REMOVE",
+      "description": "",
+      "order": 130,
+      "tag": "REMOVE",
+      "body": "X로 철거 모드에 들어가 건물을 바라본뒤 마우스를 홀드하면 철거합니다.",
+      "keyHints": [
+        "X"
+      ],
+      "minSeconds": 2.5,
+      "requireInOrder": false,
+      "conditions": [
+        {
+          "type": "DemolishBuilding",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "night": {
+      "displayName": "NIGHT",
+      "description": "",
+      "order": 140,
+      "tag": "NIGHT",
+      "body": "밤이 오면 괴수가 코어로 몰려옵니다.\n낮 동안 타워를 세워 두세요. 코어가 부서지면 끝입니다.",
+      "keyHints": [],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "NightReached",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    },
+    "survive": {
+      "displayName": "SURVIVE",
+      "description": "",
+      "order": 150,
+      "tag": "SURVIVE",
+      "body": "첫 밤을 넘겼습니다.\n이제 라인을 넓히고 코어를 더 키우세요.",
+      "keyHints": [],
+      "minSeconds": 2.5,
+      "requireInOrder": true,
+      "conditions": [
+        {
+          "type": "SurviveNight",
+          "count": 1,
+          "seconds": 2.0,
+          "tier": 1
+        }
+      ]
+    }
+  },
+  "sounds": {
+    "pistol_fire": {
+      "view": {
+        "clips": [
+          "sounds/zapper_1p_03.wav"
+        ]
+      }
+    },
+    "pistol_reload": {
+      "view": {
+        "clips": [
+          "sounds/pistol_clip_in_05.wav"
+        ]
+      }
+    },
+    "rifle_fire": {
+      "view": {
+        "clips": [
+          "sounds/auto_gun_1p_01.wav"
+        ]
+      }
+    },
+    "rifle_reload": {
+      "view": {
+        "clips": [
+          "sounds/minigun_reload_04.wav"
+        ]
+      }
+    },
+    "shotgun_fire": {
+      "view": {
+        "clips": [
+          "sounds/jack_hammer_1p_03.wav"
+        ]
+      }
+    },
+    "shotgun_reload": {
+      "view": {
+        "clips": [
+          "sounds/jack_hammer_reload.wav"
+        ]
+      }
+    },
+    "sniper_fire": {
+      "view": {
+        "clips": [
+          "sounds/anti_material_rifle_1p_01.wav"
+        ]
+      }
+    },
+    "sniper_reload": {
+      "view": {
+        "clips": [
+          "sounds/weapon-reload-and-pump.ogg"
+        ]
+      }
+    },
+    "grenade_launcher_fire": {
+      "view": {
+        "clips": [
+          "sounds/grenade-launcher.wav"
+        ]
+      }
+    },
+    "grenade_launcher_reload": {
+      "view": {
+        "clips": [
+          "sounds/launcher-full-sequence.wav"
+        ]
+      }
+    },
+    "energy_rifle_fire": {
+      "view": {
+        "clips": [
+          "sounds/assault_canon_3p.wav"
+        ]
+      }
+    },
+    "energy_rifle_reload": {
+      "view": {
+        "clips": [
+          "sounds/minigun_reload_04.wav"
+        ]
+      }
+    },
+    "plasma_cutter_fire": {
+      "view": {
+        "clips": [
+          "sounds/plasma_cutter_swing.wav"
+        ]
+      }
+    },
+    "tower_destroy": {
+      "view": {
+        "clips": [
+          "sounds/destruction 1.wav",
+          "sounds/destruction 2.wav",
+          "sounds/destruction 3.wav",
+          "sounds/destruction 4.wav",
+          "sounds/destruction 5.wav"
+        ]
+      }
+    },
+    "tower_starved": {
+      "view": {
+        "clips": [
+          "sounds/dm-cgs-04.wav"
+        ]
+      }
+    },
+    "basic_turret_fire": {
+      "view": {
+        "clips": [
+          "sounds/mg 1.wav",
+          "sounds/mg 10.wav",
+          "sounds/mg 11.wav",
+          "sounds/mg 12.wav",
+          "sounds/mg 13.wav",
+          "sounds/mg 14.wav",
+          "sounds/mg 2.wav",
+          "sounds/mg 3.wav",
+          "sounds/mg 4.wav",
+          "sounds/mg 5.wav",
+          "sounds/mg 6.wav",
+          "sounds/mg 7.wav",
+          "sounds/mg 8.wav",
+          "sounds/mg 9.wav"
+        ]
+      }
+    },
+    "heavy_turret_fire": {
+      "view": {
+        "clips": [
+          "sounds/rocket tower shoot.wav"
+        ]
+      }
+    },
+    "mortar_tower_fire": {
+      "view": {
+        "clips": [
+          "sounds/super tower shot 1.wav",
+          "sounds/super tower shot 2.wav",
+          "sounds/super tower shot 3.wav",
+          "sounds/super tower shot 4.wav",
+          "sounds/super tower shot 5.wav",
+          "sounds/super tower shot 6.wav",
+          "sounds/super tower shot 7.wav"
+        ]
+      }
+    },
+    "laser_tower_fire": {
+      "view": {
+        "clips": [
+          "sounds/laser_fire.wav"
+        ]
+      }
+    },
+    "slow_field_tower_fire": {
+      "view": {
+        "clips": [
+          "sounds/dm-cgs-22.wav"
+        ]
+      }
+    },
+    "ui_click": {
+      "view": {
+        "clips": [
+          "sounds/dm-cgs-03.wav"
+        ]
+      }
+    },
+    "ui_hover": {
+      "view": {
+        "clips": [
+          "sounds/footsteps_tile_jump_land_02.wav"
+        ]
+      }
+    },
+    "construct": {
+      "view": {
+        "clips": [
+          "sounds/macross placement.wav"
+        ]
+      }
+    },
+    "destroy": {
+      "view": {
+        "clips": [
+          "sounds/부수는소리.wav"
+        ]
+      }
+    },
+    "warning": {
+      "view": {
+        "clips": [
+          "sounds/dm-cgs-04.wav"
+        ]
+      }
+    },
+    "item_pickup": {
+      "view": {
+        "clips": [
+          "sounds/dm-cgs-22.wav"
+        ]
+      }
+    },
+    "mine": {
+      "view": {
+        "clips": [
+          "sounds/poly_explosion_bullet.wav"
+        ]
+      }
+    }
+  },
+  "materials": {
+    "tree_bark": {
+      "displayName": "Tree_Bark_Lit",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/bark_albedo.png",
+            "linear": false
+          },
+          "_BumpMap": {
+            "file": "textures/bark_normal.png",
+            "linear": true
+          },
+          "_MainTex": {
+            "file": "textures/bark_albedo.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            1.0,
+            0.7108003,
+            0.4009434,
+            1.0
+          ],
+          "_Color": [
+            1.0,
+            0.7108003,
+            0.4009434,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.0
+        },
+        "keywords": [
+          "_NORMALMAP"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "broadleaf_green": {
+      "displayName": "Broadleaf_Green_Lit",
+      "view": {
+        "shader": "CoreDawn/Vegetation Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/broadleaf_tree_leaves.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_Top_Color": [
+            0.668223,
+            0.8,
+            0.0,
+            0.0
+          ],
+          "_Bottom_Color": [
+            0.6182256,
+            0.754717,
+            0.0,
+            0.0
+          ]
+        },
+        "floats": {
+          "_Custom_Color": 1.0,
+          "_Blend_Height": 0.13,
+          "_Normal_Up": 0.15,
+          "_Wind_Strength": 0.22,
+          "_Wind_Speed": 0.16,
+          "_Bend_Start": 2.0,
+          "_Bend_Height": 8.5
+        },
+        "keywords": [
+          "_ALPHATEST_ON"
+        ]
+      }
+    },
+    "machine_gun_level3_tex_v003": {
+      "displayName": "MachineGun_Level3_tex_v003",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/machine_gun_level3_tex_v003.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/machine_gun_level3_tex_v003.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_SpecColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 0.891,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "factory_color": {
+      "displayName": "FactoryColor",
+      "view": {
+        "shader": "CoreDawn/FactoryColor",
+        "textures": {
+          "_SampleTexture2D_32b88678b18a440daef85734904b9e30_Texture_1_Texture2D": {
+            "file": "textures/palette.png",
+            "linear": false
+          }
+        },
+        "floats": {
+          "_QueueControl": 0.0
+        }
+      }
+    },
+    "glass": {
+      "displayName": "Glass",
+      "view": {
+        "shader": "CoreDawn/Glass",
+        "floats": {
+          "_QueueControl": 0.0
+        }
+      }
+    },
+    "energy_pylon_l03_albedo_v001": {
+      "displayName": "EnergyPylon_L03_Albedo_V001",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/energy_pylon_l03_albedo_v001.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/energy_pylon_l03_albedo_v001.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_SpecColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "rocket_tower_l03_texture_v003": {
+      "displayName": "Rocket_Tower_L03_Texture_V003",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/rocket_tower_l03_texture_v003.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/rocket_tower_l03_texture_v003.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_SpecColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "laser_tower_l03_albedo_v001": {
+      "displayName": "LaserTower_L03_Albedo_V001",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/laser_tower_l03_albedo_v001.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/laser_tower_l03_albedo_v001.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_SpecColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "super_tower_albedo_v001": {
+      "displayName": "SuperTower_Albedo_V001",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/super_tower_albedo_v001.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/super_tower_albedo_v001.png",
+            "linear": false
+          }
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "emp_tower_level3_tex_v001": {
+      "displayName": "EMP_Tower_level_3_tex_v001",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/emp_tower_level_3_tex_v001.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/emp_tower_level_3_tex_v001.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_SpecColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "molten_color": {
+      "displayName": "MoltenColor",
+      "view": {
+        "shader": "CoreDawn/MoltenColor",
+        "floats": {
+          "_QueueControl": 0.0
+        }
+      }
+    },
+    "yellow_light": {
+      "displayName": "YellowLight",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            1.0,
+            0.3904782,
+            0.0,
+            1.0
+          ],
+          "_EmissionColor": [
+            4.237095,
+            0.4806516,
+            0.0,
+            1.0
+          ],
+          "_Color": [
+            1.0,
+            0.3904782,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.0
+        },
+        "keywords": [
+          "_EMISSION"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "building_base": {
+      "displayName": "BuildingBase",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.482352972,
+            0.435294151,
+            0.396078467,
+            1.0
+          ],
+          "_EmissionColor": [
+            0.0301880836,
+            0.0301880836,
+            0.0301880836,
+            1.0
+          ],
+          "_Color": [
+            0.482352972,
+            0.435294151,
+            0.396078467,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.43
+        },
+        "keywords": [
+          "_EMISSION"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "black": {
+      "displayName": "Black",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "_Color": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.274,
+          "_Metallic": 0.075
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "white": {
+      "displayName": "White",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "floats": {
+          "_Smoothness": 0.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "black_and_green": {
+      "displayName": "BlackAndGreen",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/black_and_green_basecolor.png",
+            "linear": false
+          },
+          "_MetallicGlossMap": {
+            "file": "textures/black_and_green_roughness_metal.png",
+            "linear": false
+          },
+          "_EmissionMap": {
+            "file": "textures/black_and_green_emission.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/black_and_green_basecolor.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_EmissionColor": [
+            2.0,
+            2.0,
+            2.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "keywords": [
+          "_EMISSION",
+          "_METALLICSPECGLOSSMAP"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "dawn_white": {
+      "displayName": "DawnWhite",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/dawn_white_basecolor.png",
+            "linear": false
+          },
+          "_MetallicGlossMap": {
+            "file": "textures/dawn_white_roughness_metal.png",
+            "linear": false
+          },
+          "_EmissionMap": {
+            "file": "textures/dawn_white_emission.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/dawn_white_basecolor.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_EmissionColor": [
+            3.0,
+            3.0,
+            3.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "keywords": [
+          "_EMISSION",
+          "_METALLICSPECGLOSSMAP"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "scope": {
+      "displayName": "Scope",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.0392156877,
+            0.0392156877,
+            0.0784313753,
+            0.0784313753
+          ],
+          "_Color": [
+            0.0392156877,
+            0.0392156877,
+            0.0784313753,
+            0.0784313753
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.98,
+          "_Metallic": 1.0,
+          "_Parallax": 0.02,
+          "_Surface": 1.0,
+          "_Blend": 1.0,
+          "_DstBlend": 10.0,
+          "_DstBlendAlpha": 10.0,
+          "_ZWrite": 0.0,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.98,
+          "_GlossyReflections": 1.0
+        },
+        "keywords": [
+          "_SURFACE_TYPE_TRANSPARENT"
+        ],
+        "renderQueue": 3000,
+        "tags": {
+          "RenderType": "Transparent"
+        }
+      }
+    },
+    "deep_blue": {
+      "displayName": "DeepBlue",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/deep_blue_basecolor.png",
+            "linear": false
+          },
+          "_MetallicGlossMap": {
+            "file": "textures/deep_blue_roughness_metal.png",
+            "linear": false
+          },
+          "_EmissionMap": {
+            "file": "textures/deep_blue_emission.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/deep_blue_basecolor.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_EmissionColor": [
+            3.0,
+            3.0,
+            3.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "keywords": [
+          "_EMISSION",
+          "_METALLICSPECGLOSSMAP"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "hell_red": {
+      "displayName": "HellRed",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/hell_red_basecolor.png",
+            "linear": false
+          },
+          "_MetallicGlossMap": {
+            "file": "textures/hell_red_roughness_metal.png",
+            "linear": false
+          },
+          "_EmissionMap": {
+            "file": "textures/hell_red_emission.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/hell_red_basecolor.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_EmissionColor": [
+            3.0,
+            3.0,
+            3.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Parallax": 0.02,
+          "_GlossMapScale": 1.0,
+          "_Glossiness": 0.5,
+          "_GlossyReflections": 1.0
+        },
+        "keywords": [
+          "_EMISSION",
+          "_METALLICSPECGLOSSMAP"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "plasma_cutter_grip": {
+      "displayName": "PlasmaCutterGrip",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.16,
+            0.17,
+            0.19,
+            1.0
+          ],
+          "_Color": [
+            0.16,
+            0.17,
+            0.19,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.35,
+          "_Metallic": 0.8
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "plasma_cutter_edge": {
+      "displayName": "PlasmaCutterEdge",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.3,
+            0.85,
+            1.0,
+            1.0
+          ],
+          "_EmissionColor": [
+            0.35,
+            2.2,
+            3.0,
+            1.0
+          ],
+          "_Color": [
+            0.3,
+            0.85,
+            1.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 0.7
+        },
+        "keywords": [
+          "_EMISSION"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "chomper_body_mat": {
+      "displayName": "Chomper_Body_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/chomper_albedo.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/chomper_albedo.png",
+            "linear": false
+          }
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "chomper_internals_mat": {
+      "displayName": "Chomper_Internals_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ],
+          "_Color": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "spitter_body_mat": {
+      "displayName": "Spitter_Body_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/spitter_albedo.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/spitter_albedo.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            0.6062656,
+            0.8806524,
+            0.9811321,
+            1.0
+          ],
+          "_Color": [
+            0.6062656,
+            0.8806524,
+            0.9811321,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "spitter_internals_mat": {
+      "displayName": "Spitter_Internals_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ],
+          "_Color": [
+            0.2794118,
+            0.06985295,
+            0.06985295,
+            0.903
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "grenadier_mat": {
+      "displayName": "Grenadier_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BaseMap": {
+            "file": "textures/grenadier_albedo.png",
+            "linear": false
+          },
+          "_MainTex": {
+            "file": "textures/grenadier_albedo.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            0.6093209,
+            0.7869288,
+            0.8455882,
+            1.0
+          ],
+          "_Color": [
+            0.6093209,
+            0.7869288,
+            0.8455882,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "grenadier_core_mat": {
+      "displayName": "Grenadier_Core_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.0,
+            6.49086952,
+            10.5560637,
+            1.0
+          ],
+          "_Color": [
+            0.0,
+            6.49086952,
+            10.5560637,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "grenadier_eye_mat": {
+      "displayName": "Grenadier_Eye_Mat_URP",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "textures": {
+          "_BumpMap": {
+            "file": "textures/grenadier_eye_normal.png",
+            "linear": true
+          },
+          "_EmissionMap": {
+            "file": "textures/grenadier_eye_emission.png",
+            "linear": false
+          }
+        },
+        "colors": {
+          "_BaseColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "_EmissionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "_Color": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "floats": {
+          "_Smoothness": 1.0,
+          "_Metallic": 1.0
+        },
+        "keywords": [
+          "_NORMALMAP",
+          "_EMISSION"
+        ],
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "resource_node_ground": {
+      "displayName": "M_ResourceNode_Ground",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.1,
+            0.1,
+            0.11,
+            1.0
+          ],
+          "_Color": [
+            0.1,
+            0.1,
+            0.11,
+            1.0
+          ]
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    },
+    "nest_core_rocks": {
+      "displayName": "M_NestCore_Rocks",
+      "view": {
+        "shader": "Universal Render Pipeline/Lit",
+        "colors": {
+          "_BaseColor": [
+            0.85,
+            0.12,
+            0.1,
+            1.0
+          ],
+          "_Color": [
+            0.85,
+            0.12,
+            0.1,
+            1.0
+          ]
+        },
+        "tags": {
+          "RenderType": "Opaque"
+        }
+      }
+    }
+  },
+  "wave": {
+    "basePoints": 100.0,
+    "dayPoints": 50.0,
+    "gatePoints": 100.0,
+    "stimulusAmplitude": 3.0,
+    "stimulusExponent": 6.0,
+    "stimulusLinear": 0.1,
+    "stimulusBuffs": [
+      {
+        "effect": "coredawn:effect/attack_up",
+        "base": 1.0,
+        "perStimulus": 0.1,
+        "min": 0.1,
+        "max": 10.0
+      },
+      {
+        "effect": "coredawn:effect/damage_taken",
+        "base": 1.0,
+        "perStimulus": -0.1,
+        "min": 0.25,
+        "max": 1.0
+      }
+    ],
+    "nestsPerNightMin": 1,
+    "nestsPerNightMax": 3,
+    "targetNightLength": 100.0,
+    "burstsPerNight": 5,
+    "burstSpread": 2.0,
+    "roster": [
+      {
+        "monster": "coredawn:entity/basic",
+        "cost": 10.0,
+        "weight": 70.0,
+        "minDay": 1,
+        "minGate": 0
+      },
+      {
+        "monster": "coredawn:entity/spitter",
+        "cost": 20.0,
+        "weight": 25.0,
+        "minDay": 3,
+        "minGate": 0
+      },
+      {
+        "monster": "coredawn:entity/boss",
+        "cost": 60.0,
+        "weight": 5.0,
+        "minDay": 4,
+        "minGate": 1
+      }
+    ],
+    "trickle": {
+      "monster": "coredawn:entity/basic",
+      "group": 3,
+      "interval": 10.0,
+      "untilKilledFraction": 0.9
+    }
+  },
+  "sfx": {
+    "ui_click": {
+      "sound": "coredawn:sound/ui_click",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "ui_hover": {
+      "sound": "coredawn:sound/ui_hover",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "construct": {
+      "sound": "coredawn:sound/construct",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "destroy": {
+      "sound": "coredawn:sound/destroy",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "warning": {
+      "sound": "coredawn:sound/warning",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "item_pickup": {
+      "sound": "coredawn:sound/item_pickup",
+      "volume": 1.0,
+      "spatial": false
+    },
+    "mine": {
+      "sound": "coredawn:sound/mine",
+      "volume": 1.0,
+      "spatial": false
+    }
+  },
+  "dayCycle": {
+    "dayDuration": 300.0,
+    "nightDuration": 10.0
+  }
+}

@@ -1,303 +1,285 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using CoreDawn.Managers;
+using CoreDawn.Sim;
 
-/// <summary>
-/// MapData.json → MapDataSO 임포터.
-///
-/// GameDataImporter와 같은 규율을 따른다:
-///   · json이 정본 — 에셋을 손으로 고치지 말고 json을 고쳐 다시 임포트한다
-///   · id("Map:이름")로 기존 에셋을 찾아 <b>제자리 갱신</b> — 참조(씬·프리팹)가 끊기지 않는다
-///   · 파싱 실패는 에러다 — 조용한 기본값 폴백은 만들지 않는다 (잘못된 맵으로 게임이 돌면 더 나쁘다)
-///
-/// 파일을 나눈 이유: 맵은 여러 개고 한 장이 수십~수백 KB라, 규칙 데이터(GameData.json)와
-/// 수명 주기가 다르다. 맵 편집이 규칙 파일의 diff를 뒤덮지 않는다.
-/// </summary>
-public static class MapImporter
+namespace CoreDawn.EditorTools
 {
-    internal const string JsonPath = "Assets/Data/Import/MapData.json";   // GameDataEditorWindow도 이 경로를 쓴다
-    const string MapFolder = "Assets/Data/Maps";
-
-    // ── DTO (JsonUtility가 채운다) ──────────────────────────────
-
-    [Serializable] internal class Root : GameDataImporter.JsonDtoBase { public MapDto[] maps; }
-
-    [Serializable] internal class MapDto : GameDataImporter.JsonDtoBase
-    {
-        public string id;            // 필수. 예: "Map:Plains01"
-        public string displayName;   // 필수
-        public string description;
-        public int width, height;
-        public CellDto core;
-        public string[] tiles;       // 행마다 한 줄, 한 글자가 한 칸
-        public NodeDto[] nodes;
-        public NestDto[] nests;
-
-        /// <summary>밤 웨이브 진입로 — 둥지의 스폰 지점과 별개다(낮의 보스 자리가 밤의 대문이 되면 안 된다).</summary>
-        public CellDto[] nightSpawnPoints;
-
-        /// <summary>나무가 선 칸들 — 맵 에디터의 나무 도구가 찍고, 런타임이 그 자리에 세운다.</summary>
-        public CellDto[] trees;
-    }
-
-    [Serializable] internal class CellDto : GameDataImporter.JsonDtoBase { public int x, y; }
-
-    [Serializable] internal class NodeDto : GameDataImporter.JsonDtoBase
-    {
-        public string item;          // GameData의 아이템 id
-        public int x, y;
-        public int size;
-        public float extractInterval;
-        public int maxStock;
-    }
-
-    [Serializable] internal class NestDto : GameDataImporter.JsonDtoBase
-    {
-        public int x, y;
-        public float warningRange, triggerRange;
-        public int defenseSpawnAmount;
-        public float defenseSpawnCooldown;
-        public SpawnDto[] spawnPoints;
-
-        // 교전 규칙 — 생략하면 0이라 "교전 구역 없음"(둥지 기본 동작)이 된다
-        public float engageMinRange, engageMaxRange, chaseRange, leashRange;
-        public bool engageDayOnly;
-
-        public int bossRecoveryDays, nestRecoveryDays;
-    }
-
-    [Serializable] internal class SpawnDto : GameDataImporter.JsonDtoBase { public int x, y; public bool hasBoss; }
-
-    // ── 실행 ────────────────────────────────────────────────────
-
-    [MenuItem("Tools/Factory/Import Map Data (JSON)")]
-    public static void ImportAll()
-    {
-        if (!File.Exists(JsonPath))
-        {
-            Debug.LogError($"[MapImporter] {JsonPath} 가 없습니다.");
-            return;
-        }
-
-        var root = JsonUtility.FromJson<Root>(File.ReadAllText(JsonPath));
-        if (root?.maps == null)
-        {
-            Debug.LogError($"[MapImporter] {JsonPath} 파싱 실패 — maps 배열을 찾지 못했습니다.");
-            return;
-        }
-
-        // 아이템 참조 해석용 색인 (광맥이 GameData의 아이템을 가리킨다)
-        var byId = new Dictionary<string, GameDataSO>();
-        foreach (var guid in AssetDatabase.FindAssets("t:GameDataSO"))
-        {
-            var so = AssetDatabase.LoadAssetAtPath<GameDataSO>(AssetDatabase.GUIDToAssetPath(guid));
-            if (so != null && !string.IsNullOrEmpty(so.Id)) byId[so.Id] = so;
-        }
-
-        int created = 0, updated = 0, errors = 0;
-        foreach (var dto in root.maps)
-            ImportMap(dto, byId, ref created, ref updated, ref errors);
-
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-
-        // 열려 있는 씬이 이 맵을 쓰고 있으면 배치물을 다시 세운다 — 배치의 정본은 맵이므로
-        // 맵이 바뀌는 순간이 곧 씬이 따라가야 할 순간이다. 별도 버튼을 두면 누르는 것을 잊는다.
-        foreach (var dto in root.maps)
-        {
-            if (dto == null || string.IsNullOrEmpty(dto.id)) continue;
-            if (byId.TryGetValue(dto.id, out var imported))
-                WorldPlaceableBaker.BakeIfOpen(imported as MapDataSO);
-        }
-
-        string msg = $"[MapImporter] 맵 {created}개 생성, {updated}개 갱신";
-        if (errors > 0) Debug.LogError($"{msg} — 오류 {errors}건 (위 로그 확인)");
-        else Debug.Log(msg);
-    }
-
-    static void ImportMap(MapDto dto, Dictionary<string, GameDataSO> byId,
-        ref int created, ref int updated, ref int errors)
-    {
-        if (dto == null || string.IsNullOrEmpty(dto.id) || string.IsNullOrEmpty(dto.displayName))
-        {
-            Debug.LogError($"[MapImporter] id 또는 displayName이 비어 있는 맵이 있습니다.");
-            errors++;
-            return;
-        }
-        if (dto.width <= 0 || dto.height <= 0)
-        {
-            Debug.LogError($"[MapImporter] '{dto.id}': width/height가 유효하지 않습니다 ({dto.width}×{dto.height}).");
-            errors++;
-            return;
-        }
-
-        // 기존 에셋 제자리 갱신 (참조 보존)
-        MapDataSO map = byId.TryGetValue(dto.id, out var found) ? found as MapDataSO : null;
-        bool isNew = map == null;
-        if (isNew)
-        {
-            if (!AssetDatabase.IsValidFolder(MapFolder))
-                AssetDatabase.CreateFolder("Assets/Data", "Maps");
-
-            map = ScriptableObject.CreateInstance<MapDataSO>();
-            var so = new SerializedObject(map);
-            so.FindProperty("id").stringValue = dto.id;   // id는 private — 직렬화로만 설정한다
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            string file = $"{MapFolder}/{dto.id.Replace(':', '_')}.asset";
-            AssetDatabase.CreateAsset(map, AssetDatabase.GenerateUniqueAssetPath(file));
-            byId[dto.id] = map;
-        }
-
-        map.displayName = dto.displayName;
-        map.description = dto.description ?? "";
-        map.width = dto.width;
-        map.height = dto.height;
-        map.core = dto.core != null ? new Vector2Int(dto.core.x, dto.core.y) : Vector2Int.zero;
-        map.EditorSetTiles(BakeTiles(dto, ref errors));
-        map.nodes = ResolveNodes(dto, byId, ref errors);
-        map.nests = ResolveNests(dto);
-        map.nightSpawnPoints = ResolveNightSpawns(dto);
-        map.trees = ResolveCells(dto.trees);
-
-        EditorUtility.SetDirty(map);
-        if (isNew) created++; else updated++;
-    }
-
     /// <summary>
-    /// 문자열 타일을 바이트 격자로 굽는다 — 런타임은 매 칸을 조회하므로 문자열로 두지 않는다.
-    /// 줄이 모자라거나 짧으면 지면(0)으로 채운다(명세). 알 수 없는 글자는 에러로 알리고 지면 처리.
+    /// 팩 <c>maps/&lt;이름&gt;.json</c> 읽기·쓰기 — 맵 편집 탭(GdMapTab)의 파일 계층(3e-2 ③: v1 MapData.json 퇴역).
+    ///
+    /// 팩 맵 파일은 이 DTO를 그대로 직렬화한 것이라(런타임 PackMaps가 같은 키로 읽는다) 변환이 없다. 규율:
+    ///   · id는 팩 id("coredawn:map/이름")만 — 런타임은 해석하지 않는다
+    ///   · 참조(아이템·몬스터)는 저장 시점의 팩 data.json으로 검증한다 — 조용한 폴백 없음
+    /// 클래스 이름은 유지한다(GdMapTab이 DTO를 공유).
     /// </summary>
-    static byte[] BakeTiles(MapDto dto, ref int errors)
+    public static class MapImporter
     {
-        var baked = new byte[dto.width * dto.height];   // 기본값 0 = 지면
-        if (dto.tiles == null) return baked;
+        // ── DTO (GdMapTab이 공유) ──────────────────────────────────
 
-        int rows = Mathf.Min(dto.tiles.Length, dto.height);
-        for (int y = 0; y < rows; y++)
+        /// <summary>맵 묶음 — 편집 탭의 언두 스냅샷 그릇(파일 형식이 아니다).</summary>
+        [Serializable] internal class Root : GameDataJson.JsonDtoBase { public MapDto[] maps; }
+
+        [Serializable] internal class MapDto : GameDataJson.JsonDtoBase
         {
-            string row = dto.tiles[y];
-            if (string.IsNullOrEmpty(row)) continue;
+            public string id;            // 팩 id "coredawn:map/이름"
+            public string displayName;   // 필수
+            public string description;
+            public int width, height;
+            public float cellSize;        // 칸 한 변(m). 필수(>0)
+            public CellDto core;
+            public string[] tiles;       // 행마다 한 줄, 한 글자가 한 칸 (0=지면 1=강 2=절벽)
+            public NodeDto[] nodes;
+            public NestDto[] nests;
 
-            int cols = Mathf.Min(row.Length, dto.width);
-            for (int x = 0; x < cols; x++)
+            /// <summary>밤 웨이브 진입로 — 둥지의 스폰 지점과 별개다(낮의 보스 자리가 밤의 대문이 되면 안 된다).</summary>
+            public CellDto[] nightSpawnPoints;
+
+            /// <summary>나무가 선 칸들 — 맵 에디터의 나무 도구가 찍고, 런타임이 그 자리에 세운다.</summary>
+            public CellDto[] trees;
+
+            /// <summary>시작 잔해 — 코어 주변에 흩뿌릴 아이템과 개수.</summary>
+            public StartItemDto[] startItems;
+        }
+        [Serializable] internal class StartItemDto : GameDataJson.JsonDtoBase { public string item; public int amount; }
+
+        [Serializable] internal class CellDto : GameDataJson.JsonDtoBase { public int x, y; }
+
+        [Serializable] internal class NodeDto : GameDataJson.JsonDtoBase
+        {
+            public string item;          // 아이템 id — 수치(재생·상한·난이도)는 팩의 광맥 정의가 갖는다
+            public int x, y;             // 광맥은 한 칸짜리
+        }
+
+        [Serializable] internal class NestDto : GameDataJson.JsonDtoBase
+        {
+            public int x, y;
+            public float warningRange, triggerRange;
+            public int defenseSpawnAmount;
+            public float defenseSpawnCooldown;
+            public SpawnDto[] spawnPoints;
+
+            // 교전 규칙 — 생략하면 0이라 "교전 구역 없음"(둥지 기본 동작)이 된다
+            public float engageMinRange, engageMaxRange, chaseRange, leashRange;
+            public bool engageDayOnly;
+            public string defender;      // 낮 방어 몬스터 종류. 생략 = 스포너 기본
+        }
+
+        /// <summary>스폰 자리 — boss는 이 자리에 서는 보스의 몬스터 id, 없으면 보스 없음(자리는 웨이브 출구).</summary>
+        [Serializable] internal class SpawnDto : GameDataJson.JsonDtoBase { public int x, y; public string boss; }
+
+        static readonly JsonSerializerSettings Settings = new() { NullValueHandling = NullValueHandling.Ignore, DateParseHandling = DateParseHandling.None };
+
+        // ── 읽기 ────────────────────────────────────────────────────
+
+        /// <summary>팩 maps 폴더의 맵 전부(파일 이름 순).</summary>
+        internal static List<MapDto> LoadAll()
+        {
+            var list = new List<MapDto>();
+            if (!Directory.Exists(GdPack.MapsFolder)) return list;
+            foreach (var file in Directory.GetFiles(GdPack.MapsFolder, "*.json").OrderBy(f => f, StringComparer.Ordinal))
             {
-                char c = row[x];
-                if (c < '0' || c > '2')
+                try
                 {
-                    Debug.LogError($"[MapImporter] '{dto.id}' ({x},{y}): 알 수 없는 타일 '{c}' — 지면으로 처리합니다. " +
-                                   "0=지면 1=강 2=절벽");
-                    errors++;
-                    continue;
+                    var dto = JsonConvert.DeserializeObject<MapDto>(File.ReadAllText(file), Settings);
+                    if (dto != null) list.Add(dto);
                 }
-                baked[y * dto.width + x] = (byte)(c - '0');
+                catch (Exception e) { Debug.LogError($"[MapImporter] {file} 읽기 실패 — {e.Message}"); }
+            }
+            return list;
+        }
+
+        // ── 쓰기 ────────────────────────────────────────────────────
+
+        /// <summary>맵 전부를 팩 maps 폴더에 쓴다 — 목록에 없는 옛 맵 파일은 지운다(탭이 맵을 지웠다는 뜻).</summary>
+        internal static void SaveAll(IEnumerable<MapDto> maps)
+        {
+            SimDatabase pack;
+            try { pack = SimDatabase.Load(File.ReadAllText(GdPack.DataPath), GdPack.Pack); }
+            catch (Exception e) { Debug.LogError("[MapImporter] 팩 data.json을 읽지 못해 맵의 id를 검증할 수 없습니다 — " + e.Message); return; }
+
+            Directory.CreateDirectory(GdPack.MapsFolder);
+            var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            int count = 0, errors = 0;
+            foreach (var dto in maps)
+            {
+                var file = ExportMap(dto, pack, ref errors);
+                if (file != null) { written.Add(Path.GetFullPath(file)); count++; }
+            }
+            foreach (var stale in Directory.GetFiles(GdPack.MapsFolder, "*.json"))
+                if (!written.Contains(Path.GetFullPath(stale)))
+                {
+                    Debug.Log($"[MapImporter] 목록에 없는 맵 파일 삭제: {Path.GetFileName(stale)}");
+                    AssetDatabase.DeleteAsset(stale.Replace('\\', '/'));
+                }
+
+            AssetDatabase.Refresh();
+            PackMaps.Clear();                  // 다음 조회가 새 파일을 읽게
+            WorldPreviewDrawer.Invalidate();   // 미리보기가 맵을 다시 읽게만 한다 — 씬에 굳히지 않는다
+
+            string msg = $"[MapImporter] 맵 {count}개 → {GdPack.MapsFolder}";
+            if (errors > 0) Debug.LogError($"{msg} — 오류 {errors}건 (위 로그 확인)");
+            else Debug.Log(msg);
+        }
+
+        /// <summary>맵 하나를 검증하고 쓴다. 쓴 파일 경로, 실패면 null.</summary>
+        static string ExportMap(MapDto dto, SimDatabase pack, ref int errors)
+        {
+            if (dto == null || string.IsNullOrEmpty(dto.id) || string.IsNullOrEmpty(dto.displayName))
+            {
+                Debug.LogError("[MapImporter] id 또는 displayName이 비어 있는 맵이 있습니다.");
+                errors++;
+                return null;
+            }
+            if (dto.width <= 0 || dto.height <= 0)
+            {
+                Debug.LogError($"[MapImporter] '{dto.id}': width/height가 유효하지 않습니다 ({dto.width}×{dto.height}).");
+                errors++;
+                return null;
+            }
+            if (!(dto.cellSize > 0f))
+            {
+                Debug.LogError($"[MapImporter] '{dto.id}': cellSize(칸 한 변, m)가 없거나 0 이하입니다 — 공장·배치·길찾기가 이 값으로 격자를 잡습니다.");
+                errors++;
+                return null;
+            }
+            string packId = GdPack.PackIdOf(dto.id);
+            string prefix = GdPack.Id("map", "");
+            if (!packId.StartsWith(prefix) || packId.Length == prefix.Length)
+            {
+                Debug.LogError($"[MapImporter] '{dto.id}': 맵 id는 \"{prefix}이름\" 형식이어야 합니다.");
+                errors++;
+                return null;
+            }
+            dto.id = packId;
+            dto.description ??= "";
+            ValidateTiles(dto, ref errors);
+            dto.nodes = ResolveNodes(dto, pack, ref errors);
+            dto.nests = ResolveNests(dto, pack, ref errors);
+            dto.nightSpawnPoints = Compact(dto.nightSpawnPoints);
+            dto.trees = Compact(dto.trees);
+            dto.startItems = ResolveStartItems(dto, pack, ref errors);
+            string file = Path.Combine(GdPack.MapsFolder, GdPack.Bare(packId) + ".json");
+            File.WriteAllText(file, JsonConvert.SerializeObject(dto, Formatting.Indented, Settings));
+            return file;
+        }
+
+        /// <summary>타일 행을 검증만 한다(형식은 그대로 문자열 행 — 런타임 PackMaps가 바이트로 굽는다). 알 수 없는 글자는 지면으로 고친다.</summary>
+        static void ValidateTiles(MapDto dto, ref int errors)
+        {
+            if (dto.tiles == null) return;
+            for (int y = 0; y < dto.tiles.Length; y++)
+            {
+                string row = dto.tiles[y] ?? "";
+                char[] fixedRow = null;
+                for (int x = 0; x < row.Length; x++)
+                {
+                    if (row[x] >= '0' && row[x] <= '2') continue;
+                    Debug.LogError($"[MapImporter] '{dto.id}' ({x},{y}): 알 수 없는 타일 '{row[x]}' — 지면으로 처리합니다. 0=지면 1=강 2=절벽");
+                    errors++;
+                    fixedRow ??= row.ToCharArray();
+                    fixedRow[x] = '0';
+                }
+                if (fixedRow != null) dto.tiles[y] = new string(fixedRow);
             }
         }
-        return baked;
-    }
 
-    static ResourceNodeSpec[] ResolveNodes(MapDto dto, Dictionary<string, GameDataSO> byId, ref int errors)
-    {
-        if (dto.nodes == null) return Array.Empty<ResourceNodeSpec>();
-
-        var list = new List<ResourceNodeSpec>(dto.nodes.Length);
-        foreach (var n in dto.nodes)
+        static StartItemDto[] ResolveStartItems(MapDto dto, SimDatabase pack, ref int errors)
         {
-            if (n == null) continue;
-
-            ItemDataSO item = null;
-            if (!string.IsNullOrEmpty(n.item))
+            if (dto.startItems == null) return Array.Empty<StartItemDto>();
+            var list = new List<StartItemDto>(dto.startItems.Length);
+            foreach (var si in dto.startItems)
             {
-                if (byId.TryGetValue(n.item, out var so)) item = so as ItemDataSO;
-                if (item == null)
+                if (si == null) continue;
+                string itemId = string.IsNullOrEmpty(si.item) ? null : GdPack.PackIdOf(si.item);
+                if (itemId == null || pack.Item(itemId) == null) { Debug.LogError($"[MapImporter] '{dto.id}' startItems: 아이템 '{si.item}'이 팩에 없습니다."); errors++; continue; }
+                if (si.amount <= 0) { Debug.LogError($"[MapImporter] '{dto.id}' startItems: '{si.item}'의 amount가 0 이하입니다."); errors++; continue; }
+                si.item = itemId;
+                list.Add(si);
+            }
+            return list.ToArray();
+        }
+
+        static NodeDto[] ResolveNodes(MapDto dto, SimDatabase pack, ref int errors)
+        {
+            if (dto.nodes == null) return Array.Empty<NodeDto>();
+            var list = new List<NodeDto>(dto.nodes.Length);
+            foreach (var n in dto.nodes)
+            {
+                if (n == null) continue;
+                string itemId = string.IsNullOrEmpty(n.item) ? null : GdPack.PackIdOf(n.item);
+                if (itemId == null || pack.Item(itemId) == null)
                 {
-                    Debug.LogError($"[MapImporter] '{dto.id}' 광맥({n.x},{n.y}): 아이템 id '{n.item}' 를 찾을 수 없습니다.");
+                    Debug.LogError($"[MapImporter] '{dto.id}' 광맥({n.x},{n.y}): 아이템 '{n.item}'이 팩에 없습니다.");
                     errors++;
                     continue;   // 캘 것이 없는 광맥은 넣지 않는다
                 }
+                n.item = itemId;
+                list.Add(n);
             }
-
-            list.Add(new ResourceNodeSpec
-            {
-                item = item,
-                cell = new Vector2Int(n.x, n.y),
-                size = Mathf.Clamp(n.size <= 0 ? 1 : n.size, 1, 3),
-                extractInterval = n.extractInterval,
-                maxStock = n.maxStock,
-            });
+            return list.ToArray();
         }
-        return list.ToArray();
-    }
 
-    /// <summary>밤 웨이브 진입로. 맵 밖이나 통행 불가 칸은 버린다 — 거기서 나오면 즉시 갇힌다.</summary>
-    static Vector2Int[] ResolveNightSpawns(MapDto dto) => ResolveCells(dto.nightSpawnPoints);
-
-    /// <summary>칸 목록을 그대로 옮긴다. 빠진 항목(null)만 걸러낸다.</summary>
-    static Vector2Int[] ResolveCells(CellDto[] cells)
-    {
-        if (cells == null) return Array.Empty<Vector2Int>();
-
-        var list = new List<Vector2Int>(cells.Length);
-        foreach (var p in cells)
+        static CellDto[] Compact(CellDto[] cells)
         {
-            if (p == null) continue;
-            list.Add(new Vector2Int(p.x, p.y));
+            if (cells == null) return Array.Empty<CellDto>();
+            var list = new List<CellDto>(cells.Length);
+            foreach (var p in cells) if (p != null) list.Add(p);
+            return list.ToArray();
         }
-        return list.ToArray();
-    }
 
-    static NestSpec[] ResolveNests(MapDto dto)
-    {
-        if (dto.nests == null) return Array.Empty<NestSpec>();
-
-        var list = new List<NestSpec>(dto.nests.Length);
-        foreach (var nest in dto.nests)
+        /// <summary>몬스터 id → 팩 id. 비면 null, 팩에 없으면 오류(그 자리는 보스 없이).</summary>
+        static string ResolveMonster(string monsterId, SimDatabase pack, string where, ref int errors)
         {
-            if (nest == null) continue;
-
-            var points = new List<SpawnPointSpec>();
-            if (nest.spawnPoints != null)
-                foreach (var p in nest.spawnPoints)
-                    if (p != null) points.Add(new SpawnPointSpec { offset = new Vector2Int(p.x, p.y), hasBoss = p.hasBoss });
-
-            if (nest.triggerRange > nest.warningRange)
-                Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): triggerRange가 warningRange보다 큽니다 — " +
-                                 "경고 없이 습격당합니다.");
-
-            // 교전 구역은 안쪽부터 바깥으로 min ≤ max ≤ chase ≤ leash 여야 뜻이 통한다.
-            // 어긋나면 "쫓아오다 말고 되돌아가는" 식으로 조용히 이상해지므로 여기서 잡는다.
-            if (nest.engageMinRange > 0f || nest.engageMaxRange > 0f)
+            if (string.IsNullOrEmpty(monsterId)) return null;
+            string id = GdPack.PackIdOf(monsterId);
+            if (pack.Entity(id) == null)
             {
-                if (nest.engageMaxRange < nest.engageMinRange)
-                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): engageMaxRange가 engageMinRange보다 작습니다.");
-                if (nest.chaseRange > 0f && nest.chaseRange < nest.engageMaxRange)
-                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): chaseRange가 engageMaxRange보다 작습니다 — " +
-                                     "교전하자마자 추적을 포기합니다.");
-                if (nest.leashRange > 0f && nest.leashRange < nest.chaseRange)
-                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): leashRange가 chaseRange보다 작습니다.");
+                Debug.LogError($"[MapImporter] {where}: 몬스터 '{monsterId}'가 팩에 없습니다.");
+                errors++;
+                return null;
             }
-
-            list.Add(new NestSpec
-            {
-                cell = new Vector2Int(nest.x, nest.y),
-                warningRange = nest.warningRange,
-                triggerRange = nest.triggerRange,
-                defenseSpawnAmount = nest.defenseSpawnAmount,
-                defenseSpawnCooldown = nest.defenseSpawnCooldown,
-                spawnPoints = points.ToArray(),
-
-                engageMinRange = nest.engageMinRange,
-                engageMaxRange = nest.engageMaxRange,
-                chaseRange = nest.chaseRange,
-                leashRange = nest.leashRange,
-                engageDayOnly = nest.engageDayOnly,
-
-                bossRecoveryDays = nest.bossRecoveryDays,
-                nestRecoveryDays = nest.nestRecoveryDays,
-            });
+            return id;
         }
-        return list.ToArray();
+
+        static NestDto[] ResolveNests(MapDto dto, SimDatabase pack, ref int errors)
+        {
+            if (dto.nests == null) return Array.Empty<NestDto>();
+            var list = new List<NestDto>(dto.nests.Length);
+            foreach (var nest in dto.nests)
+            {
+                if (nest == null) continue;
+                if (nest.spawnPoints != null)
+                {
+                    var points = new List<SpawnDto>(nest.spawnPoints.Length);
+                    foreach (var p in nest.spawnPoints)
+                    {
+                        if (p == null) continue;
+                        p.boss = ResolveMonster(p.boss, pack, $"'{dto.id}' 둥지({nest.x},{nest.y}) 자리({p.x},{p.y})", ref errors);
+                        points.Add(p);
+                    }
+                    nest.spawnPoints = points.ToArray();
+                }
+                nest.defender = ResolveMonster(nest.defender, pack, $"'{dto.id}' 둥지({nest.x},{nest.y}) 방어자", ref errors);
+                if (nest.triggerRange > nest.warningRange)
+                    Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): triggerRange가 warningRange보다 큽니다 — 경고 없이 습격당합니다.");
+                if (nest.engageMinRange > 0f || nest.engageMaxRange > 0f)
+                {
+                    if (nest.engageMaxRange < nest.engageMinRange)
+                        Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): engageMaxRange가 engageMinRange보다 작습니다.");
+                    if (nest.chaseRange > 0f && nest.chaseRange < nest.engageMaxRange)
+                        Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): chaseRange가 engageMaxRange보다 작습니다 — 교전하자마자 추적을 포기합니다.");
+                    if (nest.leashRange > 0f && nest.leashRange < nest.chaseRange)
+                        Debug.LogWarning($"[MapImporter] '{dto.id}' 둥지({nest.x},{nest.y}): leashRange가 chaseRange보다 작습니다.");
+                }
+                list.Add(nest);
+            }
+            return list.ToArray();
+        }
     }
 }

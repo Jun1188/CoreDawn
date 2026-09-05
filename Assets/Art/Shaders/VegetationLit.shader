@@ -19,7 +19,7 @@
 //  같이 고친 것 — 정점 색 대신 높이로 굽힘 마스크를 만든다.
 //  자세한 이유는 VegetationLitInput.hlsl의 VegetationBendMask 주석 참고.
 // ─────────────────────────────────────────────────────────────────────────────
-Shader "TeamProj/Vegetation Lit"
+Shader "CoreDawn/Vegetation Lit"
 {
     Properties
     {
@@ -74,7 +74,7 @@ Shader "TeamProj/Vegetation Lit"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 2.0
+            #pragma target 4.5
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
 
@@ -121,8 +121,10 @@ Shader "TeamProj/Vegetation Lit"
             #pragma multi_compile_fog
             #pragma multi_compile_fragment _ DEBUG_DISPLAY
             #pragma multi_compile_instancing
+            #pragma instancing_options procedural:GrassProceduralSetup
 
             #include "VegetationLitInput.hlsl"
+            #include "GrassProcedural.hlsl"
 
             // URP 원본 정점 함수를 다른 이름으로 받아 두고, 그 앞에 바람을 얹는다
             #define LitPassVertex LitPassVertexBase
@@ -159,15 +161,17 @@ Shader "TeamProj/Vegetation Lit"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 2.0
+            #pragma target 4.5
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
 
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile_instancing
+            #pragma instancing_options procedural:GrassProceduralSetup
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
             #include "VegetationLitInput.hlsl"
+            #include "GrassProcedural.hlsl"
 
             #define ShadowPassVertex ShadowPassVertexBase
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
@@ -194,14 +198,16 @@ Shader "TeamProj/Vegetation Lit"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 2.0
+            #pragma target 4.5
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
 
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile_instancing
+            #pragma instancing_options procedural:GrassProceduralSetup
 
             #include "VegetationLitInput.hlsl"
+            #include "GrassProcedural.hlsl"
 
             #define DepthOnlyVertex DepthOnlyVertexBase
             #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
@@ -225,14 +231,16 @@ Shader "TeamProj/Vegetation Lit"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 2.0
+            #pragma target 4.5
             #pragma vertex DepthNormalsVertex
             #pragma fragment DepthNormalsFragment
 
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile_instancing
+            #pragma instancing_options procedural:GrassProceduralSetup
 
             #include "VegetationLitInput.hlsl"
+            #include "GrassProcedural.hlsl"
 
             #define DepthNormalsVertex DepthNormalsVertexBase
             #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
