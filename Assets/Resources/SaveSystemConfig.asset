@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SaveSystemConfig
   m_EditorClassIdentifier: Assembly-CSharp::SaveSystemConfig
   manualSlotCount: 3
-  autoSlotCount: 2
+  autoSlotCount: 1
   compress: 1
   titleScenePath: Assets/Scenes/Title.unity
   newGameScenePath: Assets/Scenes/World.unity

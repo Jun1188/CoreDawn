@@ -17,8 +17,8 @@ namespace CoreDawn.Save
         [Tooltip("플레이어가 직접 저장하는 슬롯 수.")]
         public int manualSlotCount = 3;
 
-        [Tooltip("자동 저장 슬롯 수. 오래된 것부터 순환하며 덮어쓴다.")]
-        public int autoSlotCount = 2;
+        [Tooltip("자동 저장 슬롯 수. 2 이상이면 오래된 것부터 순환하며 덮어쓴다. 1이면 아침·밤·종료 저장이 한 칸을 덮어쓴다(2026-09-07 사용자 결정).")]
+        public int autoSlotCount = 1;
 
         [Header("파일")]
         [Tooltip("끄면 세이브가 압축되지 않은 .json으로 저장돼 텍스트 에디터로 열어볼 수 있다 (디버깅용).")]

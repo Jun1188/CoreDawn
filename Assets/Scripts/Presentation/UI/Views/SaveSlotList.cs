@@ -76,7 +76,10 @@ namespace CoreDawn.UI
             var left = new VisualElement();
             left.AddToClassList("slot-row__left");
 
-            var name = new Label(manual ? $"슬롯 {Number(slotId)}" : $"자동 저장 {Number(slotId)}");
+            // 자동 슬롯이 하나뿐이면 번호 없이 "자동 저장"(2026-09-07 사용자 결정) — 둘 이상일 때만 번호를 붙인다
+            var config = SaveSystemConfig.Load();
+            bool numberedAuto = config != null && config.autoSlotCount > 1;
+            var name = new Label(manual ? $"슬롯 {Number(slotId)}" : numberedAuto ? $"자동 저장 {Number(slotId)}" : "자동 저장");
             name.AddToClassList("slot-row__name");
             left.Add(name);
 
