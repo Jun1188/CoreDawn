@@ -1,41 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/tokens.uss?fileID=7433441132597879392&amp;guid=9db750b513ab8d340b5033a21edc4083&amp;type=3#tokens"/>
-    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/components.uss?fileID=7433441132597879392&amp;guid=f1501a2a6100e3e4a982c5a6596ab3f9&amp;type=3#components"/>
-    <Style src="project://database/Assets/Scripts/Runtime/UI/Styles/saveload.uss?fileID=7433441132597879392&amp;guid=546228bd0c3589f4a8ea2edc8662dc64&amp;type=3#saveload"/>
+    <!-- 타이틀 — Ref/TitleScreen/title.html 이식(2026-09-07).
+         왼쪽 컬럼에 홀로그램 메뉴, 뒤에는 TitleBeltScene(3D 벨트), 사이를 TitleWires 가 잇는다.
+         .holo 요소는 TitleScreenView 가 HoloBox(Painter2D 배경)를 첫 자식으로 끼운다.
+         메뉴 컬럼(menu-*)은 같은 자리를 번갈아 쓴다 — C# 이 display 를 바꾸고 글리치로 전환한다. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/components.uss" />
+    <Style src="../Styles/saveload.uss" />
+    <Style src="../Styles/title.uss" />
+
     <ui:VisualElement name="title-root" class="title-root">
-        <ui:VisualElement name="menu-page" class="title-page">
-            <ui:VisualElement class="title-head">
-                <ui:Label text="TEAMPROJ 2606" class="title-head__tag"/>
-                <ui:Label name="game-title" text="Coredawn" class="title-head__name"/>
-                <ui:Label name="subtitle" text="불시착한 행성에서 살아남아라" class="title-head__sub" style="-unity-font-definition: url(&quot;project://database/Assets/Art/Fonts/IBMPlexSansKR-Regular.ttf?fileID=12800000&amp;guid=1e57cd717b9148d4392587aa6471ea00&amp;type=3#IBMPlexSansKR-Regular&quot;);"/>
-            </ui:VisualElement>
-            <ui:VisualElement class="title-menu">
-                <ui:Button name="btn-continue" text="이어하기" class="ui-btn ui-btn--primary title-btn"/>
-                <ui:Button name="btn-new" text="새 게임" class="ui-btn title-btn"/>
-                <ui:Button name="btn-load" text="불러오기" class="ui-btn title-btn"/>
-                <ui:Button name="btn-settings" text="설정" class="ui-btn ui-btn--disabled title-btn"/>
-                <ui:Button name="btn-quit" text="종료" class="ui-btn ui-btn--ghost title-btn"/>
-            </ui:VisualElement>
-            <ui:Label name="recent" text="" class="title-recent"/>
-        </ui:VisualElement>
-        <ui:VisualElement name="load-page" class="title-page">
-            <ui:VisualElement class="ui-panel slots-panel" style="display: flex; visibility: hidden;">
-                <ui:VisualElement class="ui-panel__title">
-                    <ui:Label text="LOAD" class="ui-panel__tag"/>
-                    <ui:Label text="불러오기"/>
-                    <ui:Button name="btn-back-x" text="✕" class="ui-panel__x"/>
-                </ui:VisualElement>
-                <ui:VisualElement class="ui-panel__body slots-panel__body">
-                    <ui:ScrollView name="slot-list" class="ui-scroll slots-list"/>
-                    <ui:Label name="empty-note" text="저장된 게임이 없습니다." class="slots-empty"/>
-                    <ui:VisualElement class="slots-footer">
-                        <ui:Button name="btn-delete" text="삭제" class="ui-btn ui-btn--ghost"/>
-                        <ui:VisualElement class="slots-footer__spacer"/>
-                        <ui:Button name="btn-back" text="뒤로" class="ui-btn ui-btn--ghost"/>
-                        <ui:Button name="btn-confirm" text="불러오기" class="ui-btn ui-btn--primary"/>
-                    </ui:VisualElement>
-                </ui:VisualElement>
+
+        <ui:VisualElement name="title-block" class="title-block">
+            <ui:Label name="game-title" text="COREDAWN" class="title-block__name" />
+            <ui:VisualElement class="title-block__sub-row">
+                <ui:VisualElement class="title-block__rule" />
+                <ui:Label text="FACTORY // BUILD 0.1" class="title-block__sub" />
             </ui:VisualElement>
         </ui:VisualElement>
+
+        <!-- 메인 메뉴 -->
+        <ui:VisualElement name="menu-main" class="title-menu">
+            <ui:Button name="btn-start" class="holo holo-btn">
+                <ui:Label text="게임 시작" class="holo-btn__label" />
+                <ui:Label text="START" class="holo-btn__tag" />
+            </ui:Button>
+            <ui:Button name="btn-settings" class="holo holo-btn">
+                <ui:Label text="설정" class="holo-btn__label" />
+                <ui:Label text="SETTINGS" class="holo-btn__tag" />
+            </ui:Button>
+            <ui:Button name="btn-quit" class="holo holo-btn holo-btn--quit">
+                <ui:Label text="게임 종료" class="holo-btn__label" />
+                <ui:Label text="QUIT" class="holo-btn__tag" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- 우주선 도킹 뒤 서브 메뉴 -->
+        <ui:VisualElement name="menu-sub" class="title-menu">
+            <ui:Button name="btn-new" class="holo holo-btn">
+                <ui:Label text="새 게임" class="holo-btn__label" />
+                <ui:Label text="NEW" class="holo-btn__tag" />
+            </ui:Button>
+            <ui:Button name="btn-load" class="holo holo-btn">
+                <ui:Label text="불러오기" class="holo-btn__label" />
+                <ui:Label text="LOAD" class="holo-btn__tag" />
+            </ui:Button>
+            <ui:Button name="btn-back" class="holo holo-btn holo-btn--quit">
+                <ui:Label text="뒤로가기" class="holo-btn__label" />
+                <ui:Label text="BACK" class="holo-btn__tag" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- 설정 — 조작부(바·캐러셀·세그먼트)는 TitleSettingsPanel 이 채운다 -->
+        <ui:VisualElement name="menu-settings" class="title-menu">
+            <ui:VisualElement name="settings-panel" class="holo holo-panel">
+                <ui:Label text="SETTINGS" class="holo-panel__h2" />
+                <ui:VisualElement class="holo-panel__sec"><ui:Label text="SOUND" class="holo-panel__sec-label" /><ui:VisualElement class="holo-panel__sec-rule" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="마스터" class="holo-row__label" /><ui:VisualElement name="bar-master" class="holo-bar" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="배경음악" class="holo-row__label" /><ui:VisualElement name="bar-bgm" class="holo-bar" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="효과음" class="holo-row__label" /><ui:VisualElement name="bar-sfx" class="holo-bar" /></ui:VisualElement>
+                <ui:VisualElement class="holo-panel__sec"><ui:Label text="GRAPHICS" class="holo-panel__sec-label" /><ui:VisualElement class="holo-panel__sec-rule" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="해상도" class="holo-row__label" /><ui:VisualElement name="car-res" class="holo-car" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="수직동기화" class="holo-row__label" /><ui:VisualElement name="seg-vsync" class="holo-seg" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="화면 모드" class="holo-row__label" /><ui:VisualElement name="seg-mode" class="holo-seg" /></ui:VisualElement>
+                <ui:VisualElement class="holo-row"><ui:Label text="품질" class="holo-row__label" /><ui:VisualElement name="car-quality" class="holo-car" /></ui:VisualElement>
+                <ui:Button name="btn-settings-back" class="holo holo-btn holo-btn--quit holo-panel__btn">
+                    <ui:Label text="뒤로가기" class="holo-btn__label" />
+                    <ui:Label text="BACK" class="holo-btn__tag" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 불러오기 — 도킹 서브 메뉴의 "불러오기" 에서. 슬롯 줄은 SaveSlotList(saveload.uss) 그대로 -->
+        <ui:VisualElement name="menu-load" class="title-menu">
+            <ui:VisualElement name="load-panel" class="holo holo-panel holo-panel--load">
+                <ui:Label text="LOAD" class="holo-panel__h2" />
+                <ui:VisualElement class="holo-panel__sec"><ui:Label text="SAVE SLOTS" class="holo-panel__sec-label" /><ui:VisualElement class="holo-panel__sec-rule" /></ui:VisualElement>
+                <ui:ScrollView name="slot-list" class="ui-scroll slots-list title-slots" />
+                <ui:Label name="empty-note" text="저장된 게임이 없습니다." class="slots-empty" />
+                <ui:VisualElement class="holo-panel__footer">
+                    <ui:Button name="btn-delete" class="holo holo-btn holo-btn--quit holo-btn--small">
+                        <ui:Label text="삭제" class="holo-btn__label" />
+                        <ui:Label text="DEL" class="holo-btn__tag" />
+                    </ui:Button>
+                    <ui:Button name="btn-load-confirm" class="holo holo-btn holo-btn--small">
+                        <ui:Label text="불러오기" class="holo-btn__label" />
+                        <ui:Label text="LOAD" class="holo-btn__tag" />
+                    </ui:Button>
+                </ui:VisualElement>
+                <ui:Button name="btn-load-back" class="holo holo-btn holo-btn--quit holo-panel__btn">
+                    <ui:Label text="뒤로가기" class="holo-btn__label" />
+                    <ui:Label text="BACK" class="holo-btn__tag" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Label name="version" text="v0.1 // prototype" class="title-version" />
+        <!-- 로딩 상자(레퍼런스 #load) — 빌드에서는 Boot 씬이 먼저라 거의 안 보이고, 에디터에서 Title 을 바로 재생할 때 모델 로드 동안 뜬다 -->
+        <ui:VisualElement name="loading" class="load-screen title-loading">
+            <ui:VisualElement class="load-box">
+                <ui:VisualElement class="load-row"><ui:Label text="LOADING" class="load-row__text" /><ui:Label name="load-pct" text="0%" class="load-row__text" /></ui:VisualElement>
+                <ui:VisualElement name="load-bar" class="load-bar" />
+                <ui:Label name="load-msg" text="INIT" class="load-msg" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="fade" class="title-fade" />
     </ui:VisualElement>
 </ui:UXML>

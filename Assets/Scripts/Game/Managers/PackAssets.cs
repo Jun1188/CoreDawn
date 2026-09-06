@@ -40,6 +40,9 @@ namespace CoreDawn.Managers
         /// <summary>preload 진행도(읽은 파일 수 / 전체) — 로딩 화면용.</summary>
         public static (int done, int total) Progress { get; private set; }
 
+        /// <summary>지금 읽는 항목(파일 이름·재질 id 등) — 로딩 화면이 "무엇을" 읽는지 보여준다. preload 밖에서는 null.</summary>
+        public static string Current { get; private set; }
+
         /// <summary>팩 상대 경로("models/tree_broadleaf_01.glb")인가 — 아니면 옛 guid 참조.</summary>
         public static bool IsPackPath(string s) => !string.IsNullOrEmpty(s) && s.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
 
@@ -80,28 +83,33 @@ namespace CoreDawn.Managers
             Progress = (0, paths.Count + materialIds.Count + iconDefs.Count + clipPaths.Count);
             foreach (var rel in paths)
             {
+                Current = Path.GetFileName(rel);
                 if (await Load(db.Pack, rel) != null) ok++;
                 Progress = (++done, Progress.total);
             }
             int mats = 0;
             foreach (var id in materialIds)
             {
+                Current = id;
                 if (MaterialOf(id) != MissingAssets.Material) mats++;
                 Progress = (++done, Progress.total);
             }
             int icons = 0;
             foreach (var d in iconDefs)
             {
+                Current = d.Id;
                 if (IconOf(d) != MissingSprite()) icons++;
                 Progress = (++done, Progress.total);
             }
             int sounds = 0;
             foreach (var rel in clipPaths)
             {
+                Current = Path.GetFileName(rel);
                 if (await LoadClip(db.Pack, rel) != null) sounds++;
                 Progress = (++done, Progress.total);
             }
             foreach (var d in db.Sounds.Values) soundClips[d.Id] = ClipsFromView(d);
+            Current = null;
             IsReady = true;
             Debug.Log($"[PackAssets] {db.Pack}: glb {ok}/{paths.Count} · 재질 {mats}/{materialIds.Count} · 아이콘 {icons}/{iconDefs.Count} · 소리 {sounds}/{clipPaths.Count} 로드");
         }
@@ -308,7 +316,7 @@ namespace CoreDawn.Managers
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); sprites.Clear(); sidecars.Clear(); clips.Clear(); soundClips.Clear(); missingSprite = null; root = null; preloading = null; IsReady = false; Progress = (0, 0); }
+        static void Reset() { models.Clear(); slotIndex.Clear(); materials.Clear(); textures.Clear(); sprites.Clear(); sidecars.Clear(); clips.Clear(); soundClips.Clear(); missingSprite = null; root = null; preloading = null; IsReady = false; Progress = (0, 0); Current = null; }
 
         /// <summary>에디터 도구용 — 읽어 둔 것을 전부 버린다(팩이 바뀌었을 때).</summary>
         public static void Clear()

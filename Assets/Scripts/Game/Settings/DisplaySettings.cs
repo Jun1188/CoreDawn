@@ -17,6 +17,7 @@ namespace CoreDawn.Settings
         const string KeyQuality = "gfx.quality";
         const string KeyFullscreen = "gfx.fullscreen";
         const string KeyVSync = "gfx.vsync";
+        const string KeyResW = "gfx.res.w", KeyResH = "gfx.res.h";
 
         /// <summary>품질 레벨 — QualitySettings.names의 인덱스.</summary>
         public static int QualityLevel
@@ -38,6 +39,24 @@ namespace CoreDawn.Settings
                 // 0, 나머지는 1) 레벨을 바꾸는 것만으로 사용자가 고른 수직동기가 조용히 뒤집힌다.
                 // 우리 설정이 항상 이기도록 여기서 다시 밀어 넣는다.
                 QualitySettings.vSyncCount = VSync ? 1 : 0;
+            }
+        }
+
+        /// <summary>
+        /// 해상도(가로, 세로). 저장된 값이 없으면 (0, 0) — 시스템이 준 크기 그대로. 타이틀 설정 패널이 쓴다(2026-09-07).
+        /// 에디터 Game 뷰는 SetResolution 을 무시하므로 빌드에서만 적용한다(화면 모드와 같은 이유).
+        /// </summary>
+        public static Vector2Int Resolution
+        {
+            get => new Vector2Int(PlayerPrefs.GetInt(KeyResW, 0), PlayerPrefs.GetInt(KeyResH, 0));
+            set
+            {
+                PlayerPrefs.SetInt(KeyResW, value.x);
+                PlayerPrefs.SetInt(KeyResH, value.y);
+                PlayerPrefs.Save();
+    #if !UNITY_EDITOR
+                if (value.x > 0 && value.y > 0) Screen.SetResolution(value.x, value.y, Screen.fullScreenMode);
+    #endif
             }
         }
 
@@ -76,7 +95,10 @@ namespace CoreDawn.Settings
             // 화면 모드는 에디터에서 건드리지 않는다 — Game 뷰가 전체화면으로 튀어나오면
             // 에디터 조작이 막힌다. 빌드에서만 적용한다.
     #if !UNITY_EDITOR
-            Screen.fullScreenMode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            var mode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            var res = Resolution;
+            if (res.x > 0 && res.y > 0) Screen.SetResolution(res.x, res.y, mode);
+            else Screen.fullScreenMode = mode;
     #endif
         }
 
@@ -86,6 +108,9 @@ namespace CoreDawn.Settings
             QualityLevel = Mathf.Clamp(QualitySettings.names.Length / 2, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
             Fullscreen = true;
             VSync = true;
+            PlayerPrefs.DeleteKey(KeyResW);
+            PlayerPrefs.DeleteKey(KeyResH);
+            PlayerPrefs.Save();
         }
     }
 }

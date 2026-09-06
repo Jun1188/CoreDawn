@@ -1,7 +1,7 @@
 # UI 작업 로그
 
 > UI Toolkit(UITK) 이관 기록. 최신 항목이 아래.
-> 디자인 근거는 `UI_디자인시스템_레퍼런스.html` — 수치·간격은 전부 여기서 온다.
+> 디자인 근거는 `Ref/UI_디자인시스템_레퍼런스.html` — 수치·간격은 전부 여기서 온다. 타이틀만 별도 레퍼런스(`Ref/TitleScreen/title.html`).
 
 ---
 
@@ -687,3 +687,72 @@ ESC 눌러도 안 닫히고 일시정지도 안 열림 / `Close()` 호출해도 
   GameplayHUDView.ShowLegacyHud, PlayerSaveModule의 마우스 캐리지(`carried`) 훅.
 - **남은 uGUI는 `WorldHealthBar`/`HealthBarUI`(런타임 생성 월드 캔버스)뿐** — 이건 잔재가 아니라 현역이라 두었다.
   UITK 월드 공간 UI로 옮기는 것은 별도 작업.
+
+---
+
+## 2026-09-07 — 타이틀 화면 재구성 (`Ref/TitleScreen/title.html` 이식)
+
+사용자가 three.js 로 만든 레퍼런스(`Ref/TitleScreen/`: title.html·title.css·js/*)를 유니티로 옮겼다. 범위는 전부(사용자 결정):
+3D 벨트 배경 + 홀로그램 메뉴 + 와이어·레티클 + 글리치 전환 + 발사·도킹·이륙 시퀀스 + 타이틀 전용 설정 패널.
+이어하기 버튼은 레퍼런스대로 없앴다(불러오기가 대신한다).
+
+### 구조
+
+| 파일 | 역할 |
+|---|---|
+| `Presentation/Title/TitleBeltPath.cs` | 랜덤 S자 벨트 경로(path.js). 헤딩 N=+Z·E=+X, 벨트 glb 는 +X 로 흐름, 곡선 L/R 은 서→북/남(실측) |
+| `Presentation/Title/TitleItems.cs` | 벨트 위 정육면체(items.js) — URP Lit, 연결되면 밝은 색 + 약한 발광 |
+| `Presentation/Title/TitleBeltScene.cs` | 카메라 돌리·링크·발사 시퀀스(main.js). 모델·재질은 팩의 belt/splitter/core 정의 view.model 에서 |
+| `UI/Views/Title/HoloBox.cs` | 잘린 모서리·그라디언트·글로우·왼쪽 강조선을 Painter2D 로(USS 에 clip-path·box-shadow 없음) |
+| `UI/Views/Title/TitleWires.cs` | 버튼 ↔ 3D 지점 점선·레티클(wires.js). `RuntimePanelUtils.CameraTransformWorldToPanel` |
+| `UI/Views/Title/TitleGlitch.cs` | glitchOut/In 키프레임을 스케줄러로. clip-path 띠는 배경색 마스크 띠로 근사 |
+| `UI/Views/Title/TitleSettingsPanel.cs` | 네온 바·캐러셀·세그먼트 → AudioSaveSystem/SoundManager·DisplaySettings(해상도 항목 추가) |
+| `Screens/TitleScreen.uxml` · `Styles/title.uss` | 구조·스타일. 색은 레퍼런스 값 그대로(--copper 계열과 다른 화면), 폰트만 tokens |
+
+씬: `Title.unity` 에 `TitleBeltScene`(+ 자식 Sun 방향광) 추가, Main Camera 태그 MainCamera(원래 Untagged 라 `Camera.main` 이 null 이었다), fov 38·배경 #070d1a.
+
+### 실측·함정
+
+- 타이틀 씬은 Boot 를 거치지 않는다 — 모델은 `PackAssets.LoadModelAsync` 로 직접 읽고(수 초), 그동안 LOADING 가림막. 로드 전에 "게임 시작"을 누르면 아무 일도 없다(`Ready` 가드).
+- 앰비언트 1.2 면 중립 정육면체까지 하얗게 떠 연결 표시가 안 보였다 → 0.45, 태양 1.3.
+- 글리치 "밝기"를 흰 오버레이로 올렸더니 요소가 회색 판이 됐다(CSS brightness 는 요소 픽셀만 밝힌다) → 마스크 아래 옅은 청록 판으로.
+- Painter2D `LineCap` 에는 Square 가 없다(Butt·Round). eval 안에서 `root.Q` 는 `UQueryExtensions.Q(root, name)` 로.
+- `capture_game_view` 는 UITK 층을 안 찍는다 — `ScreenCapture.CaptureScreenshot` 을 `root.schedule.Execute(...).StartingIn(ms)` 로 걸어 전환 중간 프레임까지 확인했다.
+- 캐러셀은 레퍼런스(순환)와 달리 양끝에서 멈춘다 — 게임 안 스테퍼와 같은 결정.
+- 불러오기 패널은 도킹 서브 메뉴에서만(`OpenLoad` 가드) — 리플렉션 호출 시험에서 메인 메뉴 위에 겹쳐 열렸다.
+
+### 2차 (같은 날, 사용자 피드백 "ui 배경이 잘못됐다·bloom 이 없다·CRT 가 앞에 있다·로딩 씬을 타이틀 앞으로")
+
+- **홀로 배경**: 레퍼런스는 `backdrop-filter: blur(6px)` 로 뒤(스캔라인·3D)를 뭉개는데 USS 에 없다 → `HoloBox` 가 잉크색 바탕을 **완전 불투명**으로
+  먼저 깔고 그 위에 색 채움(그라디언트 띠 32개). 글로우도 세 겹(22/12/5px)으로 키웠다.
+- **"CRT 패턴이 앞에 있다"의 진짜 원인은 선형 색공간**: 스캔 요소는 처음부터 3D 위·UI 아래였고 루트 배경으로 옮겨도 똑같이 보였다.
+  프로젝트가 Linear 라 어두운 바탕(#070d1a) 위 청록 α .045 줄은 sRGB 브라우저의 (10,23,36) 이 아니라 (17,55,60) 쯤으로 섞이고,
+  바탕 α .86 으로 덮어도 잔여 14% 가 (13,26,33) 으로 남아 줄이 보였다. 그래서 ① 바탕 α 1.0, ② 스캔라인 알파 3/255(선형에서 레퍼런스 밝기),
+  ③ 글리치 스캔 오버레이 .25 → .06, ④ 스캔은 별도 요소 대신 `title-root` 의 배경 이미지(요소 배경은 자식보다 먼저 그려져 확실히 맨 뒤).
+- **World 로 갈 때(새 게임·불러오기)**: Boot 화면 머리글이 "WORLD GENERATING", 바는 왕복하는 미정 조각(`HoloBar.Indeterminate`), 퍼센트 숨김,
+  문구 "SCENE WORLD". 월드 생성은 World 씬 로드 안에서 동기로 돌아 이 프레임이 그동안 남는다. `BootScene.Target/ToTitle`.
+- **Bloom**: `Assets/Data/Rendering/Title Volume Profile.asset`(Bloom threshold .9 · intensity .9 · scatter .7) + Title 씬 Global Volume,
+  카메라 `renderPostProcessing` 켬(원래 꺼져 있었다). UITK 층은 포스트프로세싱 밖이라 UI 글로우는 여전히 HoloBox 가 그린다.
+- **빌드 순서 Boot → Title**: `BootScene.DefaultTarget = "Title"`. 첫 부팅이 팩·자원을 전부 읽고 타이틀로 가므로 타이틀은 모델을
+  기다리지 않는다(에디터에서 Title 을 바로 재생할 때만 자기 로딩 상자가 뜬다). 새 게임·불러오기는 그대로 `Enter("World")` — 자원이
+  이미 있어 Boot 화면은 100%·READY 로 잠깐 지난다.
+- **로딩 화면**(레퍼런스가 같은 날 추가한 `#load`): `BootScreen.uxml` + `BootScreenView` + `HoloBar`(양끝 4px 기운 바, Painter2D).
+  문구는 `PackAssets.Current`(지금 읽는 glb·재질 id·아이콘 정의·클립 파일명) → 없으면 `BootScene.Status`(팩 정의 / READY / 여는 중).
+  READY 300ms 뒤 전환. OnGUI 임시 화면은 삭제. 스타일(`.load-*`)은 title.uss 에 있어 타이틀 오버레이와 공유.
+- 실측: Boot 0% "DEPOSIT_GROUND.GLB" → 3% "BELT.GLB" → … → Title, 오류·경고 0.
+### 3차 (같은 날, "우주선이 90도 돌아가 있고 앵커가 틀리다 · 아이템을 인게임 아이템으로")
+
+- **우주선 방향**: 레퍼런스 `yawOf(d)+π` 는 긴 축(X)이 분기 벨트와 직각·모델 -Z(문)가 벨트를 보는 것 — 유니티 `YawOf`(+X 가 d) 기준으로 +90°. 평행(+180°)으로 놓았던 게 오류.
+- **앵커**: 도착 시점엔 아직 착륙 중이라 "지금 자세"로 재면 공중을 가리킨다 → 배치 때 착륙 완료 자세를 Sample 해 긴 축(`ship.right`)×정한 길이(coreTiles)로
+  로컬 앵커를 계산해 두고 도착 때 월드로 변환. `SkinnedMeshRenderer.BakeMesh` 정점은 리그 공간 단위(길이 55)라 못 쓴다 — 렌더러 경계(길이 2.8)가 맞다(실측).
+- **와이어 가드**: 앵커가 엉뚱하면 점선 조각이 수천 개가 돼 Painter2D 정점 한도(65535)를 넘겨 예외 — 카메라 뒤·뷰포트 ±4 밖은 그리지 않는다.
+- **아이템 = 인게임 아이콘 판**(`ItemSlabMesh`, 게임 벨트와 같은 눕힌 판): 기본 `iron_plate`, 연결 시작·설정·종료 = `refined_crystal`·`iron_gear`·`beast_core`
+  (`TitleBeltScene.neutralItem/linkItems`, 팩 id). 흐림은 면 재질 tint(아이템별 복제).
+- **이동 중 종류가 바뀌던 것**: 발사 때 발사 아이템의 S 가 멈춰 정렬 순서가 바뀌며 다른 아이템에 링크(=종류)가 갈아끼워졌다 → 발사 중에는 재배정·재정렬 정지.
+- 실측: 도킹 시 우주선 스케일 1.06·경계 2.3×3.2칸·요 70°(분기 E + 그룹 -20°), 앵커 3개 뷰포트 안(0.63/0.81 · 0.69/0.65 · 0.77/0.47), 예외 0.
+
+
+### 검증 (플레이 실측, 2560×1440)
+
+메인 메뉴·와이어 3개·레티클, 발사 → 분배기·분기 벨트 4칸·우주선 착륙 → 도킹 서브 메뉴(앵커 3개), 뒤로가기 → 메인 복귀,
+설정 패널(바·해상도·수직동기·화면 모드·품질), 불러오기 패널(슬롯 4개), 새 게임 → 이륙 → 페이드 → World. 콘솔 오류·경고 0.

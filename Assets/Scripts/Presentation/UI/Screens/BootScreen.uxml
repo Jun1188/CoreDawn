@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <!-- 부팅(로딩) 화면 — 타이틀 레퍼런스 Ref/TitleScreen/title.html 의 #load. 스타일은 title.uss 의 .load-* 를 타이틀 오버레이와 공유한다.
+         바(load-bar)에는 BootScreenView 가 HoloBar(Painter2D)를 끼운다. -->
+    <Style src="../Styles/tokens.uss" />
+    <Style src="../Styles/title.uss" />
+    <ui:VisualElement name="load-screen" class="load-screen">
+        <ui:VisualElement class="load-box">
+            <ui:VisualElement class="load-row">
+                <ui:Label name="load-title" text="LOADING" class="load-row__text" />
+                <ui:Label name="load-pct" text="0%" class="load-row__text" />
+            </ui:VisualElement>
+            <ui:VisualElement name="load-bar" class="load-bar" />
+            <ui:Label name="load-msg" text="INIT" class="load-msg" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
