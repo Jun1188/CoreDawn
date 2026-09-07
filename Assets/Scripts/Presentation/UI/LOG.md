@@ -781,3 +781,12 @@ Bloom 이 청록 글자·점선·테두리를 번지게 한다. 레터박스가 
 **함정**: `PanelSettings.SetScreenToPanelSpaceFunction` 이 받는 화면 좌표는 이미 왼쪽 위 원점 — y 를 뒤집으면 이중 반전이 돼 와이어 끝점이
 세로로 뒤집힌다. 가운데 점 검사(960,540)로는 안 잡힌다; 아이템 셋의 `CameraTransformWorldToPanel` 결과를 `WorldToScreenPoint` 기대값과 비교해 잡았다.
 RT 가 화면과 같은 크기면 항등 함수. 공용 PanelSettings 에 targetTexture 를 두면 게임 UI 까지 RT 로 가므로 전용 에셋 필수(끌 때 null 로 되돌린다).
+
+### 색감·줄무늬 정정 (같은 날, 사용자 "색감이 많이 다르다", "버튼에 줄무늬")
+
+- 레퍼런스는 브라우저(sRGB)에서 잉크(#070d1a) 위에 청록 α .16→.04 를 섞은 결과(왼쪽 ≈ (18,48,60), 오른쪽 ≈ (10,22,35), 테두리 α .55 ≈ (47,133,144)).
+  Linear 프로젝트에서 같은 알파를 얹으면 훨씬 진한 청록이 된다 → `HoloBox.Over(색, α)` 가 sRGB 로 섞은 값을 계산해 **불투명**으로 칠한다.
+  글로우 알파는 절반, UI 합성 `_Boost` 1.6 → 1.2(글자·테두리가 과하게 번졌다).
+- 줄무늬: 그라디언트를 세로 띠 32장(Painter2D 폴리곤)으로 근사했더니 경계마다 안티에일리어싱 이음새가 남고 Bloom 이 드러냈다 →
+  `MeshGenerationContext.Allocate` 로 잘린 모서리 모양 메시 하나에 정점 색(x 선형)을 줘 GPU 보간. 이음새 없음.
+- 분기 벨트 위 아이템은 분기 방향을 보게(위치만 옮겨 북쪽을 본 채 동쪽으로 갔다). `TitleBeltScene.Update` 에 path/items null 가드(플레이 중 리로드).

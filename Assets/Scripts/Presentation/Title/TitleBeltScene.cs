@@ -247,7 +247,7 @@ namespace CoreDawn.Title
 
         void Update()
         {
-            if (!Ready || LoadFailed) return;
+            if (!Ready || LoadFailed || path == null || items == null) return;   // path/items 가 비면(플레이 중 도메인 리로드) 조용히 쉰다
             float dt = Mathf.Min(Time.deltaTime, 0.05f), time = Time.time;
             float speedK = lActive ? launchSpeed : 1f;
             float v = beltSpeed * tile * speedK;
@@ -264,7 +264,8 @@ namespace CoreDawn.Title
                 if (it.Branch)   // 분기 벨트 위(분배기 → 우주선)
                 {
                     it.BS = Mathf.Min(it.BS + v * dt, lLen);
-                    items.Place(it, path.ToWorld(lCenter + (Vector2)lDir * it.BS));
+                    // 분기 방향을 보게 — 위치만 옮기면 북쪽을 본 채 동쪽으로 간다(2026-09-07 사용자 지적)
+                    items.Place(it, path.ToWorld(lCenter + (Vector2)lDir * it.BS), path.ToWorld(lCenter + (Vector2)lDir * (it.BS + 0.02f)));
                     if (it.BS >= lLen && !lArrived) OnArrive();
                     continue;
                 }
