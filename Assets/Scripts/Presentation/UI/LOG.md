@@ -733,6 +733,9 @@ ESC 눌러도 안 닫히고 일시정지도 안 열림 / `Close()` 호출해도 
   문구 "SCENE WORLD". 월드 생성은 World 씬 로드 안에서 동기로 돌아 이 프레임이 그동안 남는다. `BootScene.Target/ToTitle`.
 - **Bloom**: `Assets/Data/Rendering/Title Volume Profile.asset`(Bloom threshold .9 · intensity .9 · scatter .7) + Title 씬 Global Volume,
   카메라 `renderPostProcessing` 켬(원래 꺼져 있었다). UITK 층은 포스트프로세싱 밖이라 UI 글로우는 여전히 HoloBox 가 그린다.
+  **정정(같은 날, 사용자 "volume 에 no override")**: 처음 eval 로 만들 때 `profile.Add<Bloom>()` 만 하고 `AssetDatabase.AddObjectToAsset` 을
+  안 해서 파일에는 `components: [{fileID: 0}]` 만 남았다 — 리로드 뒤 Bloom 이 없었고, 그때까지 "Bloom 켬"은 사실이 아니었다.
+  서브 에셋으로 붙여 저장한 뒤 플레이에서 `TryGet<Bloom>`=true·active·intensity .9 확인. 코드로 VolumeProfile 을 만들 땐 컴포넌트를 반드시 AddObjectToAsset.
 - **빌드 순서 Boot → Title**: `BootScene.DefaultTarget = "Title"`. 첫 부팅이 팩·자원을 전부 읽고 타이틀로 가므로 타이틀은 모델을
   기다리지 않는다(에디터에서 Title 을 바로 재생할 때만 자기 로딩 상자가 뜬다). 새 게임·불러오기는 그대로 `Enter("World")` — 자원이
   이미 있어 Boot 화면은 100%·READY 로 잠깐 지난다.
