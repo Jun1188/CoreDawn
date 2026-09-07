@@ -240,7 +240,7 @@ namespace CoreDawn.Entities
         /// <summary>앱 종료 중인가 — 종료 시 파괴되는 뷰가 심을 건드리지 않게(정적 심이 먼저 사라질 수 있다). 하위 뷰(몬스터·플레이어)가 쓴다.</summary>
         protected static bool ApplicationQuitting => quitting;
 
-        // 엔티티의 제거는 심의 몫(죽음·소멸은 시스템이, 씬 전환은 BootScene 이 월드째) — 여기서는 붙임만 푼다
+        // 엔티티의 제거는 심의 몫(죽음·소멸은 시스템이, 씬 전환은 TitleBootstrap 이 월드째) — 여기서는 붙임만 푼다
         protected virtual void OnDestroy()
         {
             if (Entity == null) return;

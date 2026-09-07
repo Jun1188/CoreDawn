@@ -12,7 +12,7 @@ namespace CoreDawn.Managers
     {
         public const string DefaultPack = "coredawn";
 
-        /// <summary>지금 게임이 쓰는 팩 — 부팅 씬(BootScene)이 바꾼다. 로더 등록·자원 경로가 이것을 본다.</summary>
+        /// <summary>지금 게임이 쓰는 팩 — 씬 게이트(TitleBootstrap)가 바꾼다. 로더 등록·자원 경로가 이것을 본다.</summary>
         public static string CurrentPack { get; set; } = DefaultPack;
 
         public static string PathOf(string pack) => Path.Combine(Application.streamingAssetsPath, "packs", pack, "data.json");

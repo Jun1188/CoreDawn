@@ -126,7 +126,12 @@ namespace CoreDawn.Title
             if (cam == null) cam = Camera.main;
             ApplyRenderSettings();
 
-            await Task.Delay(500);
+            // 타이틀이 로딩 게이트 역할일 때(새 게임·불러오기·직접 재생 라운드트립)는 배경을 세우지 않는다 — 곧 World 로 간다
+            var boot = TitleBootstrap.Instance;
+            if (boot != null && boot.IsGate) { Loading = "GATE"; return; }
+            // 메뉴 모드: 팩 자원 preload 가 끝난 뒤 — 같은 glb 를 두 번 읽지 않고, 로딩 상자는 그동안 팩 진행률을 보여준다
+            while (boot != null && !boot.Ready && !boot.Failed) { await Task.Yield(); if (this == null) return; }
+            if (boot != null && boot.Failed) { Fail("팩을 읽지 못했습니다."); return; }
 
             var db = SimHost.Database;
             if (db == null) { Fail("팩 정의가 없습니다."); return; }

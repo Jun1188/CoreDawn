@@ -790,3 +790,22 @@ RT 가 화면과 같은 크기면 항등 함수. 공용 PanelSettings 에 target
 - 줄무늬: 그라디언트를 세로 띠 32장(Painter2D 폴리곤)으로 근사했더니 경계마다 안티에일리어싱 이음새가 남고 Bloom 이 드러냈다 →
   `MeshGenerationContext.Allocate` 로 잘린 모서리 모양 메시 하나에 정점 색(x 선형)을 줘 GPU 보간. 이음새 없음.
 - 분기 벨트 위 아이템은 분기 방향을 보게(위치만 옮겨 북쪽을 본 채 동쪽으로 갔다). `TitleBeltScene.Update` 에 path/items null 가드(플레이 중 리로드).
+
+---
+
+## 2026-09-07 — Boot 씬을 타이틀에 합침 (사용자 "boot 랑 title 합쳐")
+
+Boot 경유로 시작해도 타이틀에서 로딩 상자가 한 번 더 떴다(타이틀 자체의 모델 5개 로딩) — 게이트 씬을 따로 두는 복잡함이 이유였다.
+- `SceneGate.Enter(scene, pack)`(정적) + `TitleBootstrap`(Title 씬): 심 리셋 → 팩 정의 → 팩 자원 preload(140 항목, 로딩 상자에 진행률·현재 파일) →
+  대기 목표가 없으면 `Ready`(메뉴), 있으면 "WORLD GENERATING" 을 띄운 채 목표 씬을 **동기**로 연다. 이미 타이틀 안이면(새 게임·불러오기) 씬을 다시 열지 않고 `Go()`.
+- `TitleBeltScene` 은 preload 가 끝난 뒤 세운다(같은 glb 를 두 번 읽지 않음). 게이트 모드에서는 세우지 않는다.
+- Boot.unity · BootScene · BootScreen.uxml · BootScreenView 삭제, 빌드 0번 = Title. SaveManager/GameBootstrap 은 SceneGate 로.
+- **비동기 로드는 안 된다(실측)**: `LoadSceneAsync` 로 World 를 활성화하면 GameBootstrap 이 sceneLoaded 안에서 동기로 얹는 기능 씬(Systems 등)이
+  다음 프레임으로 밀려, World 오브젝트의 Start 가 InputManager 를 못 찾는다(PlayerController/WeaponController 오류). 게이트 계약은 "기능 씬이 게임 씬 Start 앞에" 라
+  동기 로드를 유지한다. 그동안 프레임이 서는 구간은 World 활성화(Awake/Start 의 마커 입히기·심 등록)뿐이다.
+- 게이트 오버레이는 즉시 표시(USS 0.5s 페이드인이 300ms 대기보다 길어 상자가 다 뜨기 전에 동기 로드가 프레임을 세웠다).
+- **재진입 함정(실측)**: 팩 preload 가 느린 실행(캐시가 식은 뒤, ~20초)에서 메뉴 모드 `Go()` 가 아직 preload 를 기다리는 사이 새 게임의 `Go()` 가 들어오면
+  둘 다 같은 preload 완료에 깨어나고, 옛 Go 가 새로 바뀐 `Target` 을 보고 `LoadScene` 을 한 번 더 불러 World 가 두 번 열렸다(심 리셋 없이 → 광맥 46개 겹침,
+  'Spawned' 잔존 경고, 시작 아이템 재사용). 세대 카운터(`generation`)로 옛 Go 는 깨어난 뒤 물러나고, 목표는 지역 변수로 든다.
+- 이륙 페이드(검정, 2초 전환)가 게이트 오버레이 위에 남아 상자가 안 보였다 → 게이트 진입 때 페이드·오버레이 전환 0 으로 즉시.
+- 실측: 첫 부팅 로딩 1회(MINER.GLB 1% → …) → 메뉴, 새 게임 → WORLD GENERATING → World 1회 로드, 광맥 중복 0, 콘솔 오류 0.

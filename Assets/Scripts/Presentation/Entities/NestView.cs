@@ -293,7 +293,7 @@ namespace CoreDawn.Entities
                 m.Destroyed -= OnNestDestroyed;
                 subscribed = false;
             }
-            base.OnDestroy();   // 엔티티는 심의 것 — 씬 전환은 BootScene 이 월드째 버린다
+            base.OnDestroy();   // 엔티티는 심의 것 — 씬 전환은 TitleBootstrap 이 월드째 버린다
         }
 
         // ── 심 → 뷰 ──────────────────────────────────────────────

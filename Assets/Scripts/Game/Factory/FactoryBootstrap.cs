@@ -16,7 +16,7 @@ namespace CoreDawn.Factory
     /// 시뮬레이션 로직은 전부 FactorySystem(plain C#)에 있다.
     ///
     /// 씬을 넘어 살아남지 않는다 — 심과 건물 뷰는 한 씬 안에서만 의미가 있고,
-    /// 씬이 바뀌면 새 심으로 시작한다. 엔티티는 심의 것이라 여기서 빼지 않는다 — 씬 전환 게이트(BootScene)가
+    /// 씬이 바뀌면 새 심으로 시작한다. 엔티티는 심의 것이라 여기서 빼지 않는다 — 씬 전환 게이트(TitleBootstrap)가
     /// SimRunner.Reset + SimHost.Reset 으로 옛 월드를 통째로 버린다(2026-09-04).
     /// </summary>
     /// <remarks>
@@ -130,7 +130,7 @@ namespace CoreDawn.Factory
         void OnDestroy()
         {
             if (Instance == this) Instance = null;
-            Factory?.Dispose();   // 심 스텝 등록만 푼다 — 엔티티는 심의 것, BootScene 이 월드째 버린다
+            Factory?.Dispose();   // 심 스텝 등록만 푼다 — 엔티티는 심의 것, TitleBootstrap 이 월드째 버린다
         }
 
         /// <summary>
