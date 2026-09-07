@@ -25,7 +25,6 @@ namespace CoreDawn.UI
     {
         [SerializeField] UIDocument document;
         [SerializeField] TitleBeltScene scene;
-        [SerializeField] TitleBootstrap boot;
         [Tooltip("새 게임: 이륙 클립 시작 뒤 페이드가 시작되기까지(초)")]
         [SerializeField] float takeoffFadeDelay = 5f;
         [Tooltip("새 게임: 페이드 길이(초) — 끝나면 World 를 연다")]
@@ -53,7 +52,6 @@ namespace CoreDawn.UI
         {
             if (document == null) document = GetComponent<UIDocument>();
             if (scene == null) scene = FindFirstObjectByType<TitleBeltScene>();
-            if (boot == null) boot = FindFirstObjectByType<TitleBootstrap>();
         }
 
         void OnEnable()
@@ -179,7 +177,7 @@ namespace CoreDawn.UI
         {
             if (root == null) return;
             UpdateLoading();
-            if (boot != null && boot.IsGate) return;   // 게이트 모드(World 로 가는 중) — 메뉴는 쉰다
+            if (AppFlow.Instance != null && AppFlow.Instance.Busy) return;   // World 로 가는 중(AppFlow 오버레이가 덮는다) — 메뉴는 쉰다
             if (scene == null || !scene.Ready || scene.LoadFailed) return;
 
             scene.DimOthers = uiSettings || uiBusy || uiLoad;
@@ -239,62 +237,23 @@ namespace CoreDawn.UI
             }
         }
 
-        // 로딩 상자 — 옛 Boot 씬 화면(레퍼런스 #load)을 타이틀이 직접 그린다.
-        // 메뉴 모드: 팩 자원(TitleBootstrap) → 배경 모델(TitleBeltScene) 순으로 진행률, 둘 다 끝나면 걷는다.
-        // 게이트 모드(새 게임·불러오기): 다시 띄우고 "WORLD GENERATING" — 자원은 이미 있어 바는 흐르는 조각, 씬이 열릴 때까지 남는다.
+        // 로딩 상자(레퍼런스 #load) — 첫 부팅: 팩 자원(AppFlow) 진행률을 보여주고 배경(TitleBeltScene)까지 준비되면 걷는다.
+        // 새 게임·불러오기의 WORLD GENERATING 은 AppFlow 의 오버레이(씬을 넘어 살아남는다)가 맡는다.
         void UpdateLoading()
         {
-            if (loading == null) return;
-            bool gate = boot != null && boot.IsGate;
-            bool failed = boot != null && boot.Failed;
-            if (gate && loadingHidden) ShowLoading();
-            if (loadingHidden) return;
-
-            string title = gate && PackAssets.IsReady ? "WORLD GENERATING" : "LOADING";
-            float p; string msg; bool indeterminate = false;
-            if (failed) { p = 0f; msg = boot.Status; }
-            else if (!PackAssets.IsReady)
-            {
-                var (done, total) = PackAssets.Progress;
-                p = total > 0 ? (float)done / total : 0f;
-                msg = !string.IsNullOrEmpty(PackAssets.Current) ? PackAssets.Current : boot != null ? boot.Status : "";
-            }
-            else if (gate) { p = 1f; msg = boot.Status; indeterminate = true; }
-            else if (scene != null && !scene.Ready)
-            {
-                var (done, total) = scene.LoadProgress;
-                p = total > 0 ? (float)done / total : 0f;
-                msg = scene.Loading ?? "";
-            }
+            if (loading == null || loadingHidden) return;
+            var flow = AppFlow.Instance;
+            bool failed = flow != null && flow.Failed;
+            float p; string msg;
+            if (failed) { p = flow.Progress; msg = flow.Current; }
+            else if (flow != null && !flow.PackReady) { p = flow.Progress; msg = flow.Current; }
+            else if (scene != null && !scene.Ready) { p = 1f; msg = "READY"; }   // 팩은 다 읽었고 배경을 세우는 중(캐시라 순간)
             else { HideLoading(); return; }
 
-            if (loadTitle != null) loadTitle.text = title;
-            if (loadBar != null)
-            {
-                loadBar.Indeterminate = indeterminate;
-                if (indeterminate) loadBar.Tick(Time.unscaledTime); else loadBar.Progress = p;
-            }
-            if (loadPct != null)
-            {
-                loadPct.text = Mathf.RoundToInt(p * 100f) + "%";
-                loadPct.style.visibility = indeterminate ? Visibility.Hidden : Visibility.Visible;
-            }
-            if (loadMsg != null) { loadMsg.text = msg.ToUpperInvariant(); loadMsg.EnableInClassList("load-msg--error", failed); }
-        }
-
-        void ShowLoading()
-        {
-            loadingHidden = false;
-            loading.style.display = DisplayStyle.Flex;
-            // 즉시 — USS 의 0.5s 페이드인은 게이트의 300ms 대기보다 길어 상자가 다 뜨기 전에 World 로드(동기)가 프레임을 세운다(실측)
-            loading.style.transitionDuration = new List<TimeValue> { new TimeValue(0f, TimeUnit.Second) };
-            loading.RemoveFromClassList("title-loading--hide");
-            loading.pickingMode = PickingMode.Position;
-            if (fade != null)   // 이륙 페이드(검정, 2초 전환)가 로딩 상자 위에 남지 않게 즉시 걷는다 — 상자 배경이 같은 잉크색이라 끊김이 없다
-            {
-                fade.style.transitionDuration = new List<TimeValue> { new TimeValue(0f, TimeUnit.Second) };
-                fade.style.opacity = 0f;
-            }
+            if (loadTitle != null) loadTitle.text = "LOADING";
+            if (loadBar != null) { loadBar.Indeterminate = false; loadBar.Progress = p; }
+            if (loadPct != null) loadPct.text = Mathf.RoundToInt(p * 100f) + "%";
+            if (loadMsg != null) { loadMsg.text = (msg ?? "").ToUpperInvariant(); loadMsg.EnableInClassList("load-msg--error", failed); }
         }
 
         void HideLoading()
@@ -303,7 +262,6 @@ namespace CoreDawn.UI
             if (loading == null) return;
             if (loadBar != null) loadBar.Progress = 1f;
             if (loadPct != null) loadPct.text = "100%";
-            if (loadMsg != null) loadMsg.text = "READY";
             loading.style.transitionDuration = StyleKeyword.Null;   // 걷을 때는 USS 페이드(0.5s)
             loading.AddToClassList("title-loading--hide");
             loading.pickingMode = PickingMode.Ignore;

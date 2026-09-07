@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using CoreDawn.Sim;
@@ -52,14 +53,34 @@ namespace CoreDawn.Worlds
             foreach (var p in walls) Spawn(p, parent);
             foreach (var p in feet) Spawn(p, parent);
             return (walls.Count, feet.Count);
+        }
 
-            static void Spawn(Placement p, Transform parent)
-            {
-                var go = Object.Instantiate(p.prefab, parent);
-                go.transform.SetPositionAndRotation(p.pos, p.rot);
-                go.transform.localScale = Vector3.one * p.scale;
-                AddConvexCollider(go);
-            }
+        /// <summary>계획대로 세우되 Instantiate 를 프레임당 약 12ms 씩 나눈다(런타임, AppFlow). 끝나면 <paramref name="done"/>(벽, 발치).</summary>
+        public static IEnumerator BuildRoutine(Transform root, World world, MapDef map, TerrainForm form, TerrainGenSettings s,
+                                               System.Action<float> progress, System.Action<int, int> done)
+        {
+            var (walls, feet) = Plan(world, map, form, s);
+            yield return null;
+            var parent = new GameObject("Cliffs").transform;
+            parent.SetParent(root, false);
+            int total = walls.Count + feet.Count, i = 0;
+            var frame = System.Diagnostics.Stopwatch.StartNew();
+            foreach (var list in new[] { walls, feet })
+                foreach (var p in list)
+                {
+                    Spawn(p, parent);
+                    i++;
+                    if (frame.ElapsedMilliseconds > 12) { progress?.Invoke((float)i / total); yield return null; frame.Restart(); }
+                }
+            done?.Invoke(walls.Count, feet.Count);
+        }
+
+        static void Spawn(Placement p, Transform parent)
+        {
+            var go = Object.Instantiate(p.prefab, parent);
+            go.transform.SetPositionAndRotation(p.pos, p.rot);
+            go.transform.localScale = Vector3.one * p.scale;
+            AddConvexCollider(go);
         }
 
         /// <summary>벽·발치 배치 계획 — 씬을 건드리지 않는 순수 계산.</summary>

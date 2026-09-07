@@ -305,7 +305,8 @@ namespace CoreDawn.Save
             ResetPersistentSingletons();
 
             Time.timeScale = 1f;   // 일시정지 메뉴에서 불러오는 경로 대비
-            SceneGate.Enter(scene);   // 타이틀(로딩 게이트)을 거친다 — 팩 자원이 다 읽힌 뒤 월드가 뜬다
+            if (AppFlow.Instance == null) { Debug.LogError("[Save] AppFlow 가 없어 씬을 열 수 없습니다."); SaveLoadContext.Finish(); return false; }
+            AppFlow.Instance.LoadWorld(scene);   // 절차(팩 준비 → 씬 → 지형 → 기능 씬 → 복원)는 AppFlow 가 몬다
             return true;
         }
 
@@ -326,8 +327,14 @@ namespace CoreDawn.Save
             yield return null;   // Start 완료
             yield return null;   // Start에서 만들어진 것들(코어 연결 등)까지 정착
 
+            RestorePending();
+        }
+
+        /// <summary>대기 중인 세이브를 지금 복원한다 — 씬의 Start 가 끝난 뒤 AppFlow 가 부른다. 없으면 아무것도 안 한다.</summary>
+        public void RestorePending()
+        {
             var file = SaveLoadContext.Pending;
-            if (file == null) yield break;
+            if (file == null) return;
 
             ApplyModules(file);
 
@@ -398,7 +405,8 @@ namespace CoreDawn.Save
             ResetPersistentSingletons();
 
             Time.timeScale = 1f;
-            SceneGate.Enter(scene);   // 타이틀(로딩 게이트)을 거친다
+            if (AppFlow.Instance == null) { Debug.LogError("[Save] AppFlow 가 없어 씬을 열 수 없습니다."); return false; }
+            AppFlow.Instance.LoadWorld(scene);
             return true;
         }
 

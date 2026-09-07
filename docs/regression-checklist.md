@@ -87,4 +87,6 @@ return sb.ToString();
 3. **뒤로가기** — 서브 메뉴 소멸 뒤 카메라가 벨트로 돌아오고 메인 메뉴가 다시 뜬다(우주선·분기 벨트는 뒤로 흘러가며 정리).
 4. **설정** — 패널이 메인 자리에 뜨고 제목이 숨는다. 바를 끌면 볼륨 즉시 반영, 품질·화면 모드·수직동기·해상도는 DisplaySettings 값과 일치. 뒤로가기로 복귀.
 5. **불러오기(도킹 뒤)** — 슬롯 목록 패널, 고르면 불러오기·삭제 활성. 세이브가 없으면 버튼이 흐리고 안 열린다.
-6. **새 게임** — 이륙 클립 → 5초 뒤 2초 페이드 → 타이틀 안 "WORLD GENERATING" → World, `[게임 시작] 1일차 낮`. World 를 바로 재생해도 타이틀(게이트)을 거쳐 돌아온다.
+6. **새 게임** — 이륙 클립 → 5초 뒤 2초 페이드 → "WORLD GENERATING" 오버레이(AppFlow)가 PACK → UNLOAD → SCENE WORLD → TERRAIN FORM/TERRAIN(%가 움직인다)/WATER/CLIFFS/GRASS/BATCH → SYSTEMS → READY 를 거쳐 World, `[게임 시작] 1일차 낮`. 화면이 서지 않는다.
+7. **World 직접 재생** — 타이틀로 가지 않고 같은 오버레이가 제자리에서 돈다. Editor.log 에 `[GameBootstrap] 기능 씬 4개 요청`, "InputManager가 없습니다" 0건.
+8. **게임 안에서 불러오기** — 옛 World·기능 씬이 내려가고 새 씬 5개(World·Systems·Factory·Combat·GameUI), 플레이어 1, `[Save] 불러오기 완료`. "둥지 … 찾지 못했습니다" 0건.

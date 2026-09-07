@@ -58,10 +58,6 @@ namespace CoreDawn.Title
 
         public bool Ready { get; private set; }
         public bool LoadFailed { get; private set; }
-        /// <summary>모델 로드 진행(읽은 수, 전체) — 타이틀 씬을 바로 재생했을 때(Boot 를 안 거침) 로딩 상자가 보여준다.</summary>
-        public (int done, int total) LoadProgress { get; private set; }
-        /// <summary>지금 읽는 파일 이름. 다 읽으면 "READY".</summary>
-        public string Loading { get; private set; } = "INIT";
         public bool Launching => lActive;
         public bool Arrived => lArrived;
         public bool Docked => lDocked;
@@ -126,12 +122,10 @@ namespace CoreDawn.Title
             if (cam == null) cam = Camera.main;
             ApplyRenderSettings();
 
-            // 타이틀이 로딩 게이트 역할일 때(새 게임·불러오기·직접 재생 라운드트립)는 배경을 세우지 않는다 — 곧 World 로 간다
-            var boot = TitleBootstrap.Instance;
-            if (boot != null && boot.IsGate) { Loading = "GATE"; return; }
-            // 메뉴 모드: 팩 자원 preload 가 끝난 뒤 — 같은 glb 를 두 번 읽지 않고, 로딩 상자는 그동안 팩 진행률을 보여준다
-            while (boot != null && !boot.Ready && !boot.Failed) { await Task.Yield(); if (this == null) return; }
-            if (boot != null && boot.Failed) { Fail("팩을 읽지 못했습니다."); return; }
+            // 팩 자원 preload(AppFlow)가 끝난 뒤 — 같은 glb 를 두 번 읽지 않고, 로딩 상자는 그동안 팩 진행률을 보여준다
+            var flow = AppFlow.Instance;
+            while (flow != null && !flow.PackReady && !flow.Failed) { await Task.Yield(); if (this == null) return; }
+            if (flow != null && flow.Failed) { Fail("팩을 읽지 못했습니다."); return; }
 
             var db = SimHost.Database;
             if (db == null) { Fail("팩 정의가 없습니다."); return; }
@@ -143,21 +137,11 @@ namespace CoreDawn.Title
             var refs = new[] { belt, curveL, curveR, splitter, core };
             var tasks = new Task<GameObject>[refs.Length];
             for (int i = 0; i < refs.Length; i++) tasks[i] = PackAssets.LoadModelAsync(db.Pack, refs[i].File);
-            var m = new GameObject[refs.Length];
-            LoadProgress = (0, refs.Length);
-            try
-            {
-                for (int i = 0; i < tasks.Length; i++)   // 순서대로 기다리며 진행도만 센다(로드는 이미 전부 시작됨)
-                {
-                    Loading = System.IO.Path.GetFileName(refs[i].File);
-                    m[i] = await tasks[i];
-                    LoadProgress = (i + 1, refs.Length);
-                    await Task.Delay(1);   // 1프레임 쉬어야 로딩 상자 UI가 갱신된다
-                }
-            }
+            // preload 가 끝난 뒤라 전부 캐시 — 진행률을 따로 세지 않는다(옛 Boot 씬 시절의 5단계 표시는 2026-09-07 삭제)
+            GameObject[] m;
+            try { m = await Task.WhenAll(tasks); }
             catch (Exception e) { Debug.LogException(e, this); m = null; }
             if (this == null) return;
-            Loading = "READY";
             if (m == null || Array.Exists(m, x => x == null)) { Fail("glb 를 읽지 못했습니다."); return; }
 
             tiles = new TitleTiles

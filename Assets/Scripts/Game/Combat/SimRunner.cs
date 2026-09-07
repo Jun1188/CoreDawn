@@ -79,7 +79,7 @@ namespace CoreDawn.Combat
         }
 
         /// <summary>
-        /// 전투 시스템을 전부 버린다 — 심은 씬 하나의 것이라 씬 전환 게이트(TitleBootstrap)가 <see cref="SimHost.Reset"/> 앞에 부른다.
+        /// 전투 시스템을 전부 버린다 — 심은 씬 하나의 것이라 씬 전환(AppFlow.LoadWorld)이 <see cref="SimHost.Reset"/> 앞에 부른다.
         /// 다음 접근에서 새 SimWorld 에 다시 만들어진다.
         /// </summary>
         public static void Reset()

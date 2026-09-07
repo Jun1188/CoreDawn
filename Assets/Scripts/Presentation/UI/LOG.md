@@ -809,3 +809,24 @@ Boot 경유로 시작해도 타이틀에서 로딩 상자가 한 번 더 떴다(
   'Spawned' 잔존 경고, 시작 아이템 재사용). 세대 카운터(`generation`)로 옛 Go 는 깨어난 뒤 물러나고, 목표는 지역 변수로 든다.
 - 이륙 페이드(검정, 2초 전환)가 게이트 오버레이 위에 남아 상자가 안 보였다 → 게이트 진입 때 페이드·오버레이 전환 0 으로 즉시.
 - 실측: 첫 부팅 로딩 1회(MINER.GLB 1% → …) → 메뉴, 새 게임 → WORLD GENERATING → World 1회 로드, 광맥 중복 0, 콘솔 오류 0.
+
+## 2026-09-07 — 씬 전환을 AppFlow 하나로 (사용자 "뭔가 많이 꼬인 느낌", "good to go")
+
+TitleBootstrap/SceneGate 의 static 대기 목표, GameBootstrap 의 RuntimeInitialize 훅·sceneLoaded 안 동기 로드·타이틀 라운드트립, SaveManager 의 프레임 세기 복원이 각자 순서를 관례로 맞추던 것을 코루틴 하나로 몰았다.
+- `AppFlow`(Game/Managers, DontDestroyOnLoad, AfterSceneLoad 에서 스스로 생김): 타이틀 시작이면 팩 preload → `PackReady`. `LoadWorld(scene)`: 오버레이 → 심 리셋 → 팩 준비 →
+  빈 닻 씬을 활성으로 두고 옛 씬 **전부** 언로드 → World 를 Additive 로 비동기 로드(sceneLoaded 콜백에서 루트를 꺼 Start 를 붙든다) → 닻 언로드 → 지형 코루틴 →
+  기능 씬 요청(루트는 꺼진 채) → 첫 기능 씬 통합 때 루트 켜기 → 조립 → Start → `SaveManager.RestorePending()` → 오버레이 끔. 게임 씬을 바로 재생하면 제자리에서 같은 절차.
+- 오버레이는 `Resources/Builtin/LoadingOverlay.uxml`(title.uss 의 .load-* 공유) + `LoadingPanelSettings`(GameUI 것 복사, sortingOrder 500) — 씬을 넘어 살아남는다.
+  타이틀의 로딩 상자는 첫 부팅(팩 진행률)만 맡는다.
+- `WorldTerrainBuilder.BuildRoutine`: 거리장(`TerrainForm`, 순수 계산)은 `Task.Run`, 청크는 프레임당 ~12ms, 물·경계·절벽·풀·배칭은 단계마다 한 프레임. `World.Awake` 는 더 이상 지형을 세우지 않는다(동기 `Build` 는 에디터·테스트용으로 남김).
+  실측: 4.5초 한 프레임 → 3.2~4.3초 동안 바가 20→92% 로 움직인다(거리장 1.2~1.7초는 스레드).
+- `GameBootstrap`: `Init`/`BootAsync`/라운드트립 삭제. `Register()`(조립 구독) + `LoadFeatures(onFirstIntegrated)`; 조회는 비활성 포함(루트가 꺼진 채 불린다).
+- `SaveManager.NewGame/Load` → `AppFlow.Instance.LoadWorld`; `RestorePending()` 공개. `TitleBootstrap`·`SceneGate` 삭제, Title.unity 의 TitleBootstrap 오브젝트 제거.
+- **순서 함정 셋(실측)**: ① 루트를 켠 뒤 동기 `LoadScene(Additive)` 를 부르면 다음 프레임에 게임 씬 Start 가 통합보다 **앞서** 돈다(PlayerController/WeaponController "InputManager 없음") →
+  루트를 끈 채 요청하고 첫 기능 씬의 sceneLoaded(조립 앞)에서 켠다. ② 게임 안에서 불러올 때 옛 World 를 남긴 채 새 World 를 얹으면 중복 가드(GameManager·TimeManager)가
+  새 오브젝트를 지워 새 World 에 플레이어가 없고 기능 씬도 안 얹힌다 → 옛 씬 전부를 먼저 내린다(씬은 하나는 남아야 해서 빈 닻 씬). ③ 닻 씬 동안 서드파티
+  `SkyboxSettings.OnValidate`(에디터 전용)가 `RenderSettings.skybox` 를 null 검사 없이 읽어 NRE → 닻 씬에 옛 스카이박스를 물려준다.
+- 실측: 타이틀 로딩 1회 → 새 게임 → WORLD GENERATING(PACK → UNLOAD → SCENE → TERRAIN FORM/TERRAIN/WATER/CLIFFS/GRASS/BATCH → SYSTEMS → READY) → World 1회, 씬 5개,
+  InputManager 1, 광맥 중복 0. World 직접 재생 → 제자리 초기화 OK. World 안에서 저장→불러오기 → 옛 씬 5개 내려가고 새 5개, 플레이어 1, 건물 174/174 복원.
+- (후속, 사용자 "아직 분리 안함?") 절벽 Instantiate(`WorldTerrainCliffs.BuildRoutine`)·풀 심기(`WorldTerrainGrass.AttachRoutine`, 행 단위)도 프레임당 ~12ms 로 분할. 남은 한 프레임 정지는 절벽 계획(프리팹 측정, ~0.4s)·정적 배칭(~0.2s)뿐. 총 시간은 3.3s → 5.0s 로 늘지만 화면은 서지 않는다.
+- (사용자 "world 로딩 중에 no camera 뜨는데") 옛 씬을 내리고 새 루트를 켜기 전까지 카메라가 없어 에디터가 "No cameras rendering" 을 띄웠다(빌드에선 백버퍼가 안 지워져 찌꺼기 가능). AppFlow 오브젝트에 전환 중에만 켜지는 클리어 전용 카메라(컬링 0, .load-screen 바탕색, depth -100)를 둔다.

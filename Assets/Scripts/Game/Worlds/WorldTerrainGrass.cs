@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -60,15 +61,37 @@ namespace CoreDawn.Worlds
             return g;
         }
 
-        void Init(World world, MapDef map, TerrainForm form, TerrainGenSettings settings)
+        /// <summary>심기를 프레임당 약 12ms 씩 나눠 붙인다(런타임, AppFlow). 컴포넌트는 먼저 붙고 버퍼는 끝에 생긴다.</summary>
+        public static IEnumerator AttachRoutine(GameObject root, World world, MapDef map, TerrainForm form, TerrainGenSettings s, System.Action<float> progress)
+        {
+            var g = root.AddComponent<WorldTerrainGrass>();
+            if (!g.Prepare(s)) yield break;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            List<Instance>[] lists = null; (Mesh, Material, Vector2)[] protoSources = null;
+            yield return g.GenerateRoutine(world, map, form, progress, (l, ps) => { lists = l; protoSources = ps; });
+            g.Finish(world, map, form, lists, protoSources, sw);
+        }
+
+        bool Prepare(TerrainGenSettings settings)
         {
             s = settings;
             cull = Resources.Load<ComputeShader>("Builtin/GrassCull");
-            if (cull == null) { Debug.LogError("[WorldTerrain] Resources/Builtin/GrassCull.compute 가 없습니다 — 풀을 그릴 수 없습니다."); return; }
+            if (cull == null) { Debug.LogError("[WorldTerrain] Resources/Builtin/GrassCull.compute 가 없습니다 — 풀을 그릴 수 없습니다."); return false; }
             kernel = cull.FindKernel("Cull");
+            return true;
+        }
 
+        void Init(World world, MapDef map, TerrainForm form, TerrainGenSettings settings)
+        {
+            if (!Prepare(settings)) return;
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var lists = Generate(world, map, form, out var protoSources);
+            Finish(world, map, form, lists, protoSources, sw);
+        }
+
+        // 버퍼·오클루더·경계 — 심기가 끝난 뒤(동기·코루틴 공용)
+        void Finish(World world, MapDef map, TerrainForm form, List<Instance>[] lists, (Mesh, Material, Vector2)[] protoSources, System.Diagnostics.Stopwatch sw)
+        {
             for (int i = 0; i < lists.Length; i++)
             {
                 if (lists[i].Count == 0) continue;
@@ -104,6 +127,37 @@ namespace CoreDawn.Worlds
         /// <summary>심기 — 구 PaintDetails 규칙(물가 위·완경사, 밀도만 흔들고 꽃은 흩뿌림). 좌표 해시라 결정적.</summary>
         List<Instance>[] Generate(World world, MapDef map, TerrainForm form, out (Mesh, Material, Vector2)[] protoSources)
         {
+            var lists = Setup(world, map, out protoSources, out var ctx);
+            if (ctx.grassSrc.Count == 0) return lists;
+            for (int pj = 0; pj < ctx.pointsY; pj++) Row(pj, map, form, ctx, lists);
+            return lists;
+        }
+
+        /// <summary>같은 심기를 행 단위로 프레임당 약 12ms 씩 — 결과는 <paramref name="done"/>(lists, protoSources).</summary>
+        IEnumerator GenerateRoutine(World world, MapDef map, TerrainForm form, System.Action<float> progress,
+                                    System.Action<List<Instance>[], (Mesh, Material, Vector2)[]> done)
+        {
+            var lists = Setup(world, map, out var protoSources, out var ctx);
+            if (ctx.grassSrc.Count > 0)
+            {
+                var frame = System.Diagnostics.Stopwatch.StartNew();
+                for (int pj = 0; pj < ctx.pointsY; pj++)
+                {
+                    Row(pj, map, form, ctx, lists);
+                    if (frame.ElapsedMilliseconds > 12) { progress?.Invoke((float)(pj + 1) / ctx.pointsY); yield return null; frame.Restart(); }
+                }
+            }
+            done(lists, protoSources);
+        }
+
+        struct GenContext
+        {
+            public List<(Mesh, Material, Vector2)> grassSrc, flowerSrc;
+            public float cell, grassWaterLine, pointM; public int pointsX, pointsY; public Vector3 origin;
+        }
+
+        List<Instance>[] Setup(World world, MapDef map, out (Mesh, Material, Vector2)[] protoSources, out GenContext ctx)
+        {
             var grassSrc = Sources(s.grassSet, s.grassSize);
             var flowerSrc = Sources(s.flowerSet, s.flowerSize);
             protoSources = new (Mesh, Material, Vector2)[grassSrc.Count + flowerSrc.Count];
@@ -112,19 +166,28 @@ namespace CoreDawn.Worlds
 
             var lists = new List<Instance>[protoSources.Length];
             for (int i = 0; i < lists.Length; i++) lists[i] = new List<Instance>();
+            ctx = new GenContext { grassSrc = grassSrc, flowerSrc = flowerSrc, origin = world.Origin };
             if (grassSrc.Count == 0)
             {
                 Debug.LogWarning("[WorldTerrain] 풀 프리팹이 하나도 없습니다 — TerrainGenSettings의 Grass Set 확인.");
                 return lists;
             }
 
-            float cell = world.CellSize;
-            float grassWaterLine = s.waterLevel + s.grassWaterLineOffset;
-            float pointM = Mathf.Max(0.25f, s.detailPointM);
-            int pointsX = Mathf.Max(1, Mathf.RoundToInt(map.width * cell / pointM));
-            int pointsY = Mathf.Max(1, Mathf.RoundToInt(map.height * cell / pointM));
+            ctx.cell = world.CellSize;
+            ctx.grassWaterLine = s.waterLevel + s.grassWaterLineOffset;
+            ctx.pointM = Mathf.Max(0.25f, s.detailPointM);
+            ctx.pointsX = Mathf.Max(1, Mathf.RoundToInt(map.width * ctx.cell / ctx.pointM));
+            ctx.pointsY = Mathf.Max(1, Mathf.RoundToInt(map.height * ctx.cell / ctx.pointM));
+            return lists;
+        }
 
-            for (int pj = 0; pj < pointsY; pj++)
+        // 격자 한 행(pj)을 심는다
+        void Row(int pj, MapDef map, TerrainForm form, GenContext ctx, List<Instance>[] lists)
+        {
+            var grassSrc = ctx.grassSrc; var flowerSrc = ctx.flowerSrc;
+            float cell = ctx.cell, grassWaterLine = ctx.grassWaterLine, pointM = ctx.pointM;
+            int pointsX = ctx.pointsX, pointsY = ctx.pointsY;
+            {
                 for (int pi = 0; pi < pointsX; pi++)
                 {
                     float jx = WorldTerrainCliffs.Hash(pi, pj, 611) % 1000 / 1000f - 0.5f;
@@ -147,7 +210,7 @@ namespace CoreDawn.Worlds
                         if (Mathf.Sqrt(sx * sx + sz * sz) / (2f * d * cell) > s.grassMaxSlope) continue;
                     }
 
-                    Vector3 pos = world.Origin + new Vector3(tx * cell, y, ty * cell);
+                    Vector3 pos = ctx.origin + new Vector3(tx * cell, y, ty * cell);
 
                     // 풀 — 빈 곳 없이 깔되 밀도만 흔든다(임계값으로 자르면 얼룩이 된다)
                     float patch = Mathf.PerlinNoise(tx * 0.06f, ty * 0.06f);
@@ -177,7 +240,7 @@ namespace CoreDawn.Worlds
                         }
                     }
                 }
-            return lists;
+            }
         }
 
         static Instance Pack(Vector3 pos, float scale, float yaw01, bool onCliff)
