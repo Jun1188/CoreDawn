@@ -406,7 +406,7 @@ namespace CoreDawn.Save
 
             Time.timeScale = 1f;
             if (AppFlow.Instance == null) { Debug.LogError("[Save] AppFlow 가 없어 씬을 열 수 없습니다."); return false; }
-            AppFlow.Instance.LoadWorld(scene);
+            AppFlow.Instance.LoadWorld(scene, intro: true);   // 새 게임만 인트로 컷신
             return true;
         }
 

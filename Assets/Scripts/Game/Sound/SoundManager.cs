@@ -55,6 +55,8 @@ namespace CoreDawn.Sound
         [SerializeField] private AudioMixer audioMixer;
         [SerializeField] private AudioMixerGroup bgmMixerGroup;
         [SerializeField] private AudioMixerGroup sfxMixerGroup;
+        /// <summary>BGM 믹서 그룹 — 컷신 영상 소리(CutscenePlayer)가 BGM 볼륨을 따르게 여기로 보낸다.</summary>
+        public AudioMixerGroup BgmGroup => bgmMixerGroup;
 
         [Header("=== Audio Sources ===")]
         [SerializeField] private AudioSource bgmSourceA;

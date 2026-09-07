@@ -83,12 +83,15 @@ namespace CoreDawn.Managers
             PackReady = !Failed;
         }
 
-        /// <summary>목표 게임 씬(경로 또는 이름)을 절차대로 연다. 새 게임·불러오기가 부른다.</summary>
-        public void LoadWorld(string scene)
+        /// <summary>목표 게임 씬(경로 또는 이름)을 절차대로 연다. 새 게임·불러오기가 부른다. <paramref name="intro"/>: 워프 끝 검정 구간에서 인트로 컷신(<see cref="CutscenePlayer.IntroPath"/>)을 튼다 — 새 게임만.</summary>
+        public void LoadWorld(string scene, bool intro = false)
         {
             if (Busy) { Debug.LogWarning("[AppFlow] 이미 전환 중입니다 — 무시합니다."); return; }
+            pendingIntro = intro;
             StartCoroutine(LoadWorldRoutine(scene));
         }
+
+        bool pendingIntro;
 
         IEnumerator LoadWorldRoutine(string scenePath)
         {
@@ -210,7 +213,14 @@ namespace CoreDawn.Managers
                 if (clearCam != null) clearCam.backgroundColor = Color.black;
                 root.pickingMode = PickingMode.Ignore;
                 yield return Wait(FadeOutSeconds + 0.1f);
-                yield return Wait(BlackHoldSeconds);   // ← 컷신 자리
+                yield return Wait(BlackHoldSeconds);
+
+                if (pendingIntro)   // 인트로 컷신 — 검정 위에서 틀고 끝나면 다시 검정(새 게임만). 파일이 없으면 건너뛴다.
+                {
+                    pendingIntro = false;
+                    yield return CutscenePlayer.Play(this, root.Q("cutscene"), CutscenePlayer.IntroPath);
+                    yield return Wait(BlackHoldSeconds);
+                }
 
                 if (clearCam != null) clearCam.enabled = false;   // 이제 게임 카메라가 밑에서 그린다
                 root.style.transitionProperty = new System.Collections.Generic.List<StylePropertyName> { new StylePropertyName("opacity") };

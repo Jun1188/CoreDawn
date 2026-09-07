@@ -13,5 +13,12 @@
             <ui:VisualElement name="load-bar" class="load-bar" />
             <ui:Label name="load-msg" text="INIT" class="load-msg" />
         </ui:VisualElement>
+        <!-- 컷신(mp4 → RenderTexture) — CutscenePlayer 가 배경 이미지로 끼우고 켠다. 검정 위에 비율 유지로 맞춘다. -->
+        <ui:VisualElement name="cutscene" class="cutscene" style="display: none;">
+            <ui:VisualElement name="cutscene-skip" class="cutscene-skip">
+                <ui:Label text="HOLD ESC TO SKIP" class="cutscene-skip__text" />
+                <ui:VisualElement class="cutscene-skip__track"><ui:VisualElement name="cutscene-skip-fill" class="cutscene-skip__fill" /></ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
