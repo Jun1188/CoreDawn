@@ -836,3 +836,4 @@ TitleBootstrap/SceneGate 의 static 대기 목표, GameBootstrap 의 RuntimeInit
 - 타이틀 로딩 상자: "PREPARING LAUNCH SEQUENCE" → 끝나면 "LAUNCH SEQUENCE READY / ALL SYSTEMS GO" 를 700ms 보이고 걷는다(`TitleScreenView.ShowLaunchReady`). 배경 세우는 사이 문구는 STANDBY.
 - 월드 전환 오버레이: "WARPING TO STAR SYSTEM". 완료 문구 없이(컷신으로 이을 예정) 마지막 단계 글씨 그대로 100% 에서 0.6초 페이드 아웃(`AppFlow.FadeOutOverlay`, 클리어 카메라는 먼저 끔, `Busy` 는 페이드 끝까지 유지). 다시 켤 때는 즉시·불투명으로 되돌린다.
 - (사용자 "처음 로딩 30~70% 에서 화면이 멈춘다") 원인은 `PackAssets.PreloadCore` 의 재질·아이콘 단계 — 텍스처 png 를 파일 읽기 → 디코드 → CPU DXT 압축 → 밉맵까지 동기로, 2048² 9장을 포함해 약 60항목을 한 프레임에 돌았다(실측 3.3초 정지). 항목마다 `Task.Yield` 를 넣어 최대 정지 0.27초(2048² 한 장). 첫 로딩 시작에 0.5초 대기(`AppFlow.FirstLoadDelaySeconds`).
+- (사용자) 시작하기 아이템 → `coredawn:item/energy_cell`(스크립트 기본값 + Title.unity). 워프 끝은 게임으로 디졸브가 아니라 **검정으로 페이드 아웃**(상자 소멸 + 바탕 검정 0.6s) → 검정 0.3s(컷신 자리) → 검정 걷기 0.6s(컷신이 붙으면 컷신이 맡는다). `AppFlow.FadeOutOverlay`.

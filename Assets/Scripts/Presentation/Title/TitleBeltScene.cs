@@ -31,7 +31,7 @@ namespace CoreDawn.Title
 
         [Header("아이템(팩 id) — 기본은 벨트 위 모두, 나머지는 버튼에 연결된 것(시작·설정·종료 순)")]
         [SerializeField] string neutralItem = "coredawn:item/iron_plate";
-        [SerializeField] string[] linkItems = { "coredawn:item/refined_crystal", "coredawn:item/iron_gear", "coredawn:item/beast_core" };
+        [SerializeField] string[] linkItems = { "coredawn:item/energy_cell", "coredawn:item/iron_gear", "coredawn:item/beast_core" };
         [SerializeField] float beltYaw = -20f;        // 벨트 전체 기울기(왼쪽 20°)
 
         [Header("카메라")]
