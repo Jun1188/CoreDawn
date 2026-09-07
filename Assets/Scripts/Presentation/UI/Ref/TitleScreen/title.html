@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>CoreDawn — 타이틀</title>
+<link rel="stylesheet" href="title.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/loaders/GLTFLoader.js": "https://unpkg.com/three@0.184.0/examples/jsm/loaders/GLTFLoader.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<svg id="wires"></svg>
+<div id="scan"></div>
+
+<div id="title"><h1>CoreDawn</h1><p>FACTORY // BUILD 0.1</p></div>
+
+<!-- 메인 메뉴 -->
+<div id="ui" class="menu">
+  <button class="btn holo">게임 시작<small>START</small></button>
+  <button class="btn holo">설정<small>SETTINGS</small></button>
+  <button class="btn holo quit">게임 종료<small>QUIT</small></button>
+</div>
+
+<!-- 우주선 도킹 후 메뉴 -->
+<div id="ui2" class="menu">
+  <button class="btn holo">새 게임<small>NEW</small></button>
+  <button class="btn holo">불러오기<small>LOAD</small></button>
+  <button class="btn holo quit">뒤로가기<small>BACK</small></button>
+</div>
+
+<!-- 설정 -->
+<div id="settings" class="menu">
+  <div class="panel holo" id="panel">
+    <h2>SETTINGS</h2>
+    <div class="sec">SOUND</div>
+    <div class="row"><label>마스터</label><div class="bar" data-key="master"></div></div>
+    <div class="row"><label>배경음악</label><div class="bar" data-key="bgm"></div></div>
+    <div class="row"><label>효과음</label><div class="bar" data-key="sfx"></div></div>
+    <div class="sec">GRAPHICS</div>
+    <div class="row"><label>해상도</label><div class="car" data-key="res"><button class="ctl" aria-label="prev">◀</button><span></span><button class="ctl" aria-label="next">▶</button></div></div>
+    <div class="row"><label>수직동기화</label><div class="seg" data-key="vsync"><button class="ctl">OFF</button><button class="ctl">ON</button></div></div>
+    <div class="row"><label>화면 모드</label><div class="seg" data-key="mode"><button class="ctl">창 모드</button><button class="ctl">전체화면</button></div></div>
+    <div class="row"><label>품질</label><div class="car" data-key="quality"><button class="ctl" aria-label="prev">◀</button><span></span><button class="ctl" aria-label="next">▶</button></div></div>
+    <button class="btn holo quit" id="settingsBack">뒤로가기<small>BACK</small></button>
+  </div>
+</div>
+
+<div id="ver">v0.1 // prototype</div>
+<div id="load"><div class="load-box"><div class="load-row"><span>LOADING</span><span id="loadPct">0%</span></div><div class="load-bar"><i id="loadFill"></i></div><div id="loadMsg">INIT</div></div></div>
+<div id="fade"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
