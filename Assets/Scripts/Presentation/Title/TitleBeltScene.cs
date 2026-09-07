@@ -24,7 +24,7 @@ namespace CoreDawn.Title
 
         [Header("벨트 / 아이템 (칸 단위)")]
         [SerializeField] float beltSpeed = 1f;        // 아이템 속도(칸/초) — 벨트 애니와 동기
-        [SerializeField] float beltAnimSpeed = 2f;    // 벨트 모프 클립 배속
+        [SerializeField] float beltAnimSpeed = 4f;    // 벨트 모프 클립 배속 — 실측: 1루프(1.667초)에 윗면이 0.417칸 → 배속 1 은 0.25칸/초, 아이템 1칸/초와 맞추려면 4(레퍼런스 2 는 그쪽 로더 기준)
         [SerializeField] float itemSize = 0.32f;      // 아이콘 판 가로(칸 대비)
         [SerializeField] float itemThickness = 0.03f; // 판 두께(칸 대비)
         [SerializeField] float itemGap = 1.1f;
@@ -126,6 +126,8 @@ namespace CoreDawn.Title
             if (cam == null) cam = Camera.main;
             ApplyRenderSettings();
 
+            await Task.Delay(500);
+
             var db = SimHost.Database;
             if (db == null) { Fail("팩 정의가 없습니다."); return; }
             if (!TryModel(db, BeltId, v => v.Model, out var belt) | !TryModel(db, BeltId, v => v.ModelCurveL, out var curveL)
@@ -145,6 +147,7 @@ namespace CoreDawn.Title
                     Loading = System.IO.Path.GetFileName(refs[i].File);
                     m[i] = await tasks[i];
                     LoadProgress = (i + 1, refs.Length);
+                    await Task.Delay(1);   // 1프레임 쉬어야 로딩 상자 UI가 갱신된다
                 }
             }
             catch (Exception e) { Debug.LogException(e, this); m = null; }
@@ -256,7 +259,7 @@ namespace CoreDawn.Title
 
             path.Ensure(camS + tile * 22f);
             path.Prune(camS - tile * 6f, q => (lActive || lDocked) && (q.Type == TitlePieceType.Branch || q.Type == TitlePieceType.Ship || q.Type == TitlePieceType.Splitter));
-            path.SetAnimSpeed(paused ? 0f : beltAnimSpeed * speedK);
+            path.SetAnimSpeed(beltAnimSpeed * speedK);   // 도킹 중에도 벨트는 돈다 — 멈추는 건 아이템·카메라뿐(레퍼런스, 2026-09-07 사용자 지적)
 
             if (items.List.Count == 0) items.SeedRow(camS, itemGap);
             foreach (var it in items.List.ToArray())
