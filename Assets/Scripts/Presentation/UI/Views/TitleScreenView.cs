@@ -101,13 +101,15 @@ namespace CoreDawn.UI
             var barHost = root.Q("load-bar");
             if (barHost != null) { loadBar = new HoloBar(); barHost.Add(loadBar); }
 
-            // 홀로그램 배경 — .holo 요소마다 HoloBox 를 첫 자식으로, 호버·위험(종료) 색 배선
+            // 홀로그램 배경 — .holo 요소마다 HoloBox 를 첫 자식으로. 호버(밝아짐)·위험(종료) 색은 버튼(.holo-btn)에만 —
+            // 패널(설정·불러오기)까지 걸면 패널 배경이 마우스에 반응한다(레퍼런스는 .btn:hover 뿐, 2026-09-07 사용자 버그 보고)
             holos.Clear();
             root.Query(className: "holo").ForEach(el =>
             {
                 var box = new HoloBox { Danger = el.ClassListContains("holo-btn--quit") };
                 el.Insert(0, box);
                 holos.Add(box);
+                if (!el.ClassListContains("holo-btn")) return;
                 el.RegisterCallback<PointerEnterEvent>(_ => box.Hot = true);
                 el.RegisterCallback<PointerLeaveEvent>(_ => box.Hot = false);
             });
