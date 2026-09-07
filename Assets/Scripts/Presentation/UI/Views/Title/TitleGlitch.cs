@@ -68,6 +68,22 @@ namespace CoreDawn.UI
         }
 
         public static void Out(VisualElement el) => Out(new[] { el });
+
+        /// <summary>연출 없이 소멸 끝 상태로 둔다 — 씬이 열릴 때 메뉴가 처음부터 보이지 않고 <see cref="In"/> 으로 생겨나게(2026-09-07 사용자).</summary>
+        public static void Hide(IList<VisualElement> els)
+        {
+            foreach (var el in els)
+            {
+                if (el == null) continue;
+                if (running.TryGetValue(el, out var prev)) { prev.Pause(); running.Remove(el); }
+                outSet.Add(el);
+                var end = OutKeys[OutKeys.Length - 1];
+                el.style.opacity = end.Opacity;
+                el.style.translate = new Translate(new Length(end.Tx, LengthUnit.Pixel), new Length(0f, LengthUnit.Pixel));
+                el.style.scale = new Scale(new Vector2(end.Sx, 1f));
+                el.pickingMode = PickingMode.Ignore;
+            }
+        }
         public static void In(VisualElement el, int delayMs = 0, Action<VisualElement> onShown = null) => In(new[] { el }, 0, delayMs, onShown);
 
         static void Play(VisualElement el, Key[] keys, long durationMs, int delayMs, bool isOut, Action<VisualElement> done)

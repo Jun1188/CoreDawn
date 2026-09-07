@@ -24,7 +24,7 @@ namespace CoreDawn.Title
 
         [Header("벨트 / 아이템 (칸 단위)")]
         [SerializeField] float beltSpeed = 1f;        // 아이템 속도(칸/초) — 벨트 애니와 동기
-        [SerializeField] float beltAnimSpeed = 2f;    // 벨트 모프 클립 배속
+        [SerializeField] float beltAnimSpeed = 4f;    // 벨트 모프 클립 배속 — 실측: 1루프(1.667초)에 윗면이 0.417칸 → 배속 1 은 0.25칸/초, 아이템 1칸/초와 맞추려면 4(레퍼런스 2 는 그쪽 로더 기준)
         [SerializeField] float itemSize = 0.32f;      // 아이콘 판 가로(칸 대비)
         [SerializeField] float itemThickness = 0.03f; // 판 두께(칸 대비)
         [SerializeField] float itemGap = 1.1f;
@@ -58,10 +58,6 @@ namespace CoreDawn.Title
 
         public bool Ready { get; private set; }
         public bool LoadFailed { get; private set; }
-        /// <summary>모델 로드 진행(읽은 수, 전체) — 타이틀 씬을 바로 재생했을 때(Boot 를 안 거침) 로딩 상자가 보여준다.</summary>
-        public (int done, int total) LoadProgress { get; private set; }
-        /// <summary>지금 읽는 파일 이름. 다 읽으면 "READY".</summary>
-        public string Loading { get; private set; } = "INIT";
         public bool Launching => lActive;
         public bool Arrived => lArrived;
         public bool Docked => lDocked;
@@ -126,6 +122,11 @@ namespace CoreDawn.Title
             if (cam == null) cam = Camera.main;
             ApplyRenderSettings();
 
+            // 팩 자원 preload(AppFlow)가 끝난 뒤 — 같은 glb 를 두 번 읽지 않고, 로딩 상자는 그동안 팩 진행률을 보여준다
+            var flow = AppFlow.Instance;
+            while (flow != null && !flow.PackReady && !flow.Failed) { await Task.Yield(); if (this == null) return; }
+            if (flow != null && flow.Failed) { Fail("팩을 읽지 못했습니다."); return; }
+
             var db = SimHost.Database;
             if (db == null) { Fail("팩 정의가 없습니다."); return; }
             if (!TryModel(db, BeltId, v => v.Model, out var belt) | !TryModel(db, BeltId, v => v.ModelCurveL, out var curveL)
@@ -136,20 +137,11 @@ namespace CoreDawn.Title
             var refs = new[] { belt, curveL, curveR, splitter, core };
             var tasks = new Task<GameObject>[refs.Length];
             for (int i = 0; i < refs.Length; i++) tasks[i] = PackAssets.LoadModelAsync(db.Pack, refs[i].File);
-            var m = new GameObject[refs.Length];
-            LoadProgress = (0, refs.Length);
-            try
-            {
-                for (int i = 0; i < tasks.Length; i++)   // 순서대로 기다리며 진행도만 센다(로드는 이미 전부 시작됨)
-                {
-                    Loading = System.IO.Path.GetFileName(refs[i].File);
-                    m[i] = await tasks[i];
-                    LoadProgress = (i + 1, refs.Length);
-                }
-            }
+            // preload 가 끝난 뒤라 전부 캐시 — 진행률을 따로 세지 않는다(옛 Boot 씬 시절의 5단계 표시는 2026-09-07 삭제)
+            GameObject[] m;
+            try { m = await Task.WhenAll(tasks); }
             catch (Exception e) { Debug.LogException(e, this); m = null; }
             if (this == null) return;
-            Loading = "READY";
             if (m == null || Array.Exists(m, x => x == null)) { Fail("glb 를 읽지 못했습니다."); return; }
 
             tiles = new TitleTiles
@@ -247,7 +239,7 @@ namespace CoreDawn.Title
 
         void Update()
         {
-            if (!Ready || LoadFailed) return;
+            if (!Ready || LoadFailed || path == null || items == null) return;   // path/items 가 비면(플레이 중 도메인 리로드) 조용히 쉰다
             float dt = Mathf.Min(Time.deltaTime, 0.05f), time = Time.time;
             float speedK = lActive ? launchSpeed : 1f;
             float v = beltSpeed * tile * speedK;
@@ -256,7 +248,7 @@ namespace CoreDawn.Title
 
             path.Ensure(camS + tile * 22f);
             path.Prune(camS - tile * 6f, q => (lActive || lDocked) && (q.Type == TitlePieceType.Branch || q.Type == TitlePieceType.Ship || q.Type == TitlePieceType.Splitter));
-            path.SetAnimSpeed(paused ? 0f : beltAnimSpeed * speedK);
+            path.SetAnimSpeed(beltAnimSpeed * speedK);   // 도킹 중에도 벨트는 돈다 — 멈추는 건 아이템·카메라뿐(레퍼런스, 2026-09-07 사용자 지적)
 
             if (items.List.Count == 0) items.SeedRow(camS, itemGap);
             foreach (var it in items.List.ToArray())
@@ -264,7 +256,8 @@ namespace CoreDawn.Title
                 if (it.Branch)   // 분기 벨트 위(분배기 → 우주선)
                 {
                     it.BS = Mathf.Min(it.BS + v * dt, lLen);
-                    items.Place(it, path.ToWorld(lCenter + (Vector2)lDir * it.BS));
+                    // 분기 방향을 보게 — 위치만 옮기면 북쪽을 본 채 동쪽으로 간다(2026-09-07 사용자 지적)
+                    items.Place(it, path.ToWorld(lCenter + (Vector2)lDir * it.BS), path.ToWorld(lCenter + (Vector2)lDir * (it.BS + 0.02f)));
                     if (it.BS >= lLen && !lArrived) OnArrive();
                     continue;
                 }

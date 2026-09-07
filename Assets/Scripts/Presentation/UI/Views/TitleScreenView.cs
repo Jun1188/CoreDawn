@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using CoreDawn.Managers;
 using CoreDawn.Save;
 using CoreDawn.Sound;
 using CoreDawn.Title;
@@ -43,7 +44,7 @@ namespace CoreDawn.UI
         TitleSettingsPanel settings;
         Texture2D scanTex;
         HoloBar loadBar;
-        Label loadPct, loadMsg;
+        Label loadTitle, loadPct, loadMsg;
 
         bool uiSettings, uiBusy, uiLoad, returning, loadingHidden;
 
@@ -96,18 +97,21 @@ namespace CoreDawn.UI
             fade.pickingMode = PickingMode.Ignore;
 
             // 로딩 상자 — Boot 씬(BootScreenView)과 같은 부품
+            loadTitle = root.Q<Label>("load-title");
             loadPct = root.Q<Label>("load-pct");
             loadMsg = root.Q<Label>("load-msg");
             var barHost = root.Q("load-bar");
             if (barHost != null) { loadBar = new HoloBar(); barHost.Add(loadBar); }
 
-            // 홀로그램 배경 — .holo 요소마다 HoloBox 를 첫 자식으로, 호버·위험(종료) 색 배선
+            // 홀로그램 배경 — .holo 요소마다 HoloBox 를 첫 자식으로. 호버(밝아짐)·위험(종료) 색은 버튼(.holo-btn)에만 —
+            // 패널(설정·불러오기)까지 걸면 패널 배경이 마우스에 반응한다(레퍼런스는 .btn:hover 뿐, 2026-09-07 사용자 버그 보고)
             holos.Clear();
             root.Query(className: "holo").ForEach(el =>
             {
                 var box = new HoloBox { Danger = el.ClassListContains("holo-btn--quit") };
                 el.Insert(0, box);
                 holos.Add(box);
+                if (!el.ClassListContains("holo-btn")) return;
                 el.RegisterCallback<PointerEnterEvent>(_ => box.Hot = true);
                 el.RegisterCallback<PointerLeaveEvent>(_ => box.Hot = false);
             });
@@ -134,6 +138,7 @@ namespace CoreDawn.UI
 
             uiSettings = uiBusy = uiLoad = returning = false;
             loadingHidden = false;
+            TitleGlitch.Hide(mainBtns);   // 메인 메뉴는 로딩 상자가 걷힐 때 글리치로 생겨난다(HideLoading)
             menuSub.style.display = DisplayStyle.None;
             menuSettings.style.display = DisplayStyle.None;
             menuLoad.style.display = DisplayStyle.None;
@@ -172,18 +177,8 @@ namespace CoreDawn.UI
         void Update()
         {
             if (root == null) return;
-            if (!loadingHidden)
-            {
-                if (scene != null && !scene.Ready)
-                {
-                    var (done, total) = scene.LoadProgress;
-                    float p = total > 0 ? (float)done / total : 0f;
-                    if (loadBar != null) loadBar.Progress = p;
-                    if (loadPct != null) loadPct.text = Mathf.RoundToInt(p * 100f) + "%";
-                    if (loadMsg != null) loadMsg.text = (scene.Loading ?? "").ToUpperInvariant();
-                }
-                else HideLoading();
-            }
+            UpdateLoading();
+            if (AppFlow.Instance != null && AppFlow.Instance.Busy) return;   // World 로 가는 중(AppFlow 오버레이가 덮는다) — 메뉴는 쉰다
             if (scene == null || !scene.Ready || scene.LoadFailed) return;
 
             scene.DimOthers = uiSettings || uiBusy || uiLoad;
@@ -232,7 +227,7 @@ namespace CoreDawn.UI
                 else
                 {
                     if (i == 1 && w.AnchorEl == settingsPanel) wires.Rebind(w, mainBtns[1]);
-                    w.Target = scene.Arrived ? 0f : scene.Launching ? (i == 0 ? 1f : 0f) : (has && !TitleGlitch.IsAnimating(mainBtns[i])) ? 1f : 0f;
+                    w.Target = scene.Arrived ? 0f : scene.Launching ? (i == 0 ? 1f : 0f) : (has && !TitleGlitch.IsAnimating(mainBtns[i]) && !TitleGlitch.IsOut(mainBtns[i])) ? 1f : 0f;
                 }
                 if (!has && w.Draw < 0.01f) { wires.Hide(w); continue; }
                 Vector3 endPt;
@@ -243,16 +238,37 @@ namespace CoreDawn.UI
             }
         }
 
+        // 로딩 상자(레퍼런스 #load) — 첫 부팅: 팩 자원(AppFlow) 진행률을 보여주고 배경(TitleBeltScene)까지 준비되면 걷는다.
+        // 새 게임·불러오기의 WORLD GENERATING 은 AppFlow 의 오버레이(씬을 넘어 살아남는다)가 맡는다.
+        void UpdateLoading()
+        {
+            if (loading == null || loadingHidden) return;
+            var flow = AppFlow.Instance;
+            bool failed = flow != null && flow.Failed;
+            float p; string msg;
+            if (failed) { p = flow.Progress; msg = flow.Current; }
+            else if (flow != null && !flow.PackReady) { p = flow.Progress; msg = flow.Current; }
+            else if (scene != null && !scene.Ready) { p = 1f; msg = "READY"; }   // 팩은 다 읽었고 배경을 세우는 중(캐시라 순간)
+            else { HideLoading(); return; }
+
+            if (loadTitle != null) loadTitle.text = "LOADING";
+            if (loadBar != null) { loadBar.Indeterminate = false; loadBar.Progress = p; }
+            if (loadPct != null) loadPct.text = Mathf.RoundToInt(p * 100f) + "%";
+            if (loadMsg != null) { loadMsg.text = (msg ?? "").ToUpperInvariant(); loadMsg.EnableInClassList("load-msg--error", failed); }
+        }
+
         void HideLoading()
         {
             loadingHidden = true;
             if (loading == null) return;
             if (loadBar != null) loadBar.Progress = 1f;
             if (loadPct != null) loadPct.text = "100%";
-            if (loadMsg != null) loadMsg.text = "READY";
+            loading.style.transitionDuration = StyleKeyword.Null;   // 걷을 때는 USS 페이드(0.5s)
             loading.AddToClassList("title-loading--hide");
             loading.pickingMode = PickingMode.Ignore;
-            loading.schedule.Execute(() => loading.style.display = DisplayStyle.None).StartingIn(600);
+            loading.schedule.Execute(() => { if (loadingHidden) loading.style.display = DisplayStyle.None; }).StartingIn(600);
+            // 상자가 반쯤 걷힌 뒤 메인 메뉴가 순차 글리치로 생겨난다(뒤로가기 복귀와 같은 박자)
+            loading.schedule.Execute(() => { if (loadingHidden && !uiSettings && !uiBusy) TitleGlitch.In(new VisualElement[] { mainBtns[0], mainBtns[1], mainBtns[2] }, 140, 200); }).StartingIn(300);
         }
 
         // 제목 깜빡임 — 7초 주기 끝에 잠깐(레퍼런스 flicker)

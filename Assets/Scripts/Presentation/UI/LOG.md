@@ -733,6 +733,9 @@ ESC 눌러도 안 닫히고 일시정지도 안 열림 / `Close()` 호출해도 
   문구 "SCENE WORLD". 월드 생성은 World 씬 로드 안에서 동기로 돌아 이 프레임이 그동안 남는다. `BootScene.Target/ToTitle`.
 - **Bloom**: `Assets/Data/Rendering/Title Volume Profile.asset`(Bloom threshold .9 · intensity .9 · scatter .7) + Title 씬 Global Volume,
   카메라 `renderPostProcessing` 켬(원래 꺼져 있었다). UITK 층은 포스트프로세싱 밖이라 UI 글로우는 여전히 HoloBox 가 그린다.
+  **정정(같은 날, 사용자 "volume 에 no override")**: 처음 eval 로 만들 때 `profile.Add<Bloom>()` 만 하고 `AssetDatabase.AddObjectToAsset` 을
+  안 해서 파일에는 `components: [{fileID: 0}]` 만 남았다 — 리로드 뒤 Bloom 이 없었고, 그때까지 "Bloom 켬"은 사실이 아니었다.
+  서브 에셋으로 붙여 저장한 뒤 플레이에서 `TryGet<Bloom>`=true·active·intensity .9 확인. 코드로 VolumeProfile 을 만들 땐 컴포넌트를 반드시 AddObjectToAsset.
 - **빌드 순서 Boot → Title**: `BootScene.DefaultTarget = "Title"`. 첫 부팅이 팩·자원을 전부 읽고 타이틀로 가므로 타이틀은 모델을
   기다리지 않는다(에디터에서 Title 을 바로 재생할 때만 자기 로딩 상자가 뜬다). 새 게임·불러오기는 그대로 `Enter("World")` — 자원이
   이미 있어 Boot 화면은 100%·READY 로 잠깐 지난다.
@@ -764,3 +767,67 @@ ESC 눌러도 안 닫히고 일시정지도 안 열림 / `Close()` 호출해도 
 사용자 결정: 자동 저장 슬롯은 **1개**, 이름은 번호 없이 "자동 저장". `SaveSystemConfig.autoSlotCount` 기본값·Resources 에셋 모두 1.
 아침·밤·종료 저장이 같은 칸(`auto_01`)을 덮어쓴다 — 2026-08 의 "아침 1개 + 밤 1개" 순환은 이 결정으로 대체.
 `SaveSlotList` 는 autoSlotCount 가 2 이상일 때만 번호를 붙인다. 디스크에 남은 옛 `auto_02` 는 목록에 안 뜨고 그대로 둔다(삭제하지 않음).
+
+---
+
+## 2026-09-07 — 타이틀 UI 에 Bloom (사용자 "ui 에는 bloom 이 안 들어간다")
+
+UI Toolkit 은 포스트프로세싱 뒤에 화면에 직접 그려져 볼륨 효과 밖이다. `TitleUICompositor`(타이틀 카메라):
+타이틀 전용 `TitleUIPanelSettings`(GameUIPanelSettings 복사, clearColor 투명)의 `targetTexture` 를 화면 크기 RT 로 두고,
+그 RT 를 카메라 앞 전체 화면 쿼드(`CoreDawn/UI Composite`: 프리멀티플라이 알파 · `_Boost` 1.6 · ZTest Always · Queue Overlay)로 씬 컬러 버퍼에 얹는다 →
+Bloom 이 청록 글자·점선·테두리를 번지게 한다. 레터박스가 카메라 뷰포트를 줄이면 쿼드는 뷰포트만 채우므로 텍스처의 같은 영역만 샘플(오프셋·스케일).
+한 프레임 지연(UITK 는 카메라 뒤에 그린다)은 RT UI 의 통상 지연.
+
+**함정**: `PanelSettings.SetScreenToPanelSpaceFunction` 이 받는 화면 좌표는 이미 왼쪽 위 원점 — y 를 뒤집으면 이중 반전이 돼 와이어 끝점이
+세로로 뒤집힌다. 가운데 점 검사(960,540)로는 안 잡힌다; 아이템 셋의 `CameraTransformWorldToPanel` 결과를 `WorldToScreenPoint` 기대값과 비교해 잡았다.
+RT 가 화면과 같은 크기면 항등 함수. 공용 PanelSettings 에 targetTexture 를 두면 게임 UI 까지 RT 로 가므로 전용 에셋 필수(끌 때 null 로 되돌린다).
+
+### 색감·줄무늬 정정 (같은 날, 사용자 "색감이 많이 다르다", "버튼에 줄무늬")
+
+- 레퍼런스는 브라우저(sRGB)에서 잉크(#070d1a) 위에 청록 α .16→.04 를 섞은 결과(왼쪽 ≈ (18,48,60), 오른쪽 ≈ (10,22,35), 테두리 α .55 ≈ (47,133,144)).
+  Linear 프로젝트에서 같은 알파를 얹으면 훨씬 진한 청록이 된다 → `HoloBox.Over(색, α)` 가 sRGB 로 섞은 값을 계산해 **불투명**으로 칠한다.
+  글로우 알파는 절반, UI 합성 `_Boost` 1.6 → 1.2(글자·테두리가 과하게 번졌다).
+- 줄무늬: 그라디언트를 세로 띠 32장(Painter2D 폴리곤)으로 근사했더니 경계마다 안티에일리어싱 이음새가 남고 Bloom 이 드러냈다 →
+  `MeshGenerationContext.Allocate` 로 잘린 모서리 모양 메시 하나에 정점 색(x 선형)을 줘 GPU 보간. 이음새 없음.
+- 분기 벨트 위 아이템은 분기 방향을 보게(위치만 옮겨 북쪽을 본 채 동쪽으로 갔다). `TitleBeltScene.Update` 에 path/items null 가드(플레이 중 리로드).
+
+---
+
+## 2026-09-07 — Boot 씬을 타이틀에 합침 (사용자 "boot 랑 title 합쳐")
+
+Boot 경유로 시작해도 타이틀에서 로딩 상자가 한 번 더 떴다(타이틀 자체의 모델 5개 로딩) — 게이트 씬을 따로 두는 복잡함이 이유였다.
+- `SceneGate.Enter(scene, pack)`(정적) + `TitleBootstrap`(Title 씬): 심 리셋 → 팩 정의 → 팩 자원 preload(140 항목, 로딩 상자에 진행률·현재 파일) →
+  대기 목표가 없으면 `Ready`(메뉴), 있으면 "WORLD GENERATING" 을 띄운 채 목표 씬을 **동기**로 연다. 이미 타이틀 안이면(새 게임·불러오기) 씬을 다시 열지 않고 `Go()`.
+- `TitleBeltScene` 은 preload 가 끝난 뒤 세운다(같은 glb 를 두 번 읽지 않음). 게이트 모드에서는 세우지 않는다.
+- Boot.unity · BootScene · BootScreen.uxml · BootScreenView 삭제, 빌드 0번 = Title. SaveManager/GameBootstrap 은 SceneGate 로.
+- **비동기 로드는 안 된다(실측)**: `LoadSceneAsync` 로 World 를 활성화하면 GameBootstrap 이 sceneLoaded 안에서 동기로 얹는 기능 씬(Systems 등)이
+  다음 프레임으로 밀려, World 오브젝트의 Start 가 InputManager 를 못 찾는다(PlayerController/WeaponController 오류). 게이트 계약은 "기능 씬이 게임 씬 Start 앞에" 라
+  동기 로드를 유지한다. 그동안 프레임이 서는 구간은 World 활성화(Awake/Start 의 마커 입히기·심 등록)뿐이다.
+- 게이트 오버레이는 즉시 표시(USS 0.5s 페이드인이 300ms 대기보다 길어 상자가 다 뜨기 전에 동기 로드가 프레임을 세웠다).
+- **재진입 함정(실측)**: 팩 preload 가 느린 실행(캐시가 식은 뒤, ~20초)에서 메뉴 모드 `Go()` 가 아직 preload 를 기다리는 사이 새 게임의 `Go()` 가 들어오면
+  둘 다 같은 preload 완료에 깨어나고, 옛 Go 가 새로 바뀐 `Target` 을 보고 `LoadScene` 을 한 번 더 불러 World 가 두 번 열렸다(심 리셋 없이 → 광맥 46개 겹침,
+  'Spawned' 잔존 경고, 시작 아이템 재사용). 세대 카운터(`generation`)로 옛 Go 는 깨어난 뒤 물러나고, 목표는 지역 변수로 든다.
+- 이륙 페이드(검정, 2초 전환)가 게이트 오버레이 위에 남아 상자가 안 보였다 → 게이트 진입 때 페이드·오버레이 전환 0 으로 즉시.
+- 실측: 첫 부팅 로딩 1회(MINER.GLB 1% → …) → 메뉴, 새 게임 → WORLD GENERATING → World 1회 로드, 광맥 중복 0, 콘솔 오류 0.
+
+## 2026-09-07 — 씬 전환을 AppFlow 하나로 (사용자 "뭔가 많이 꼬인 느낌", "good to go")
+
+TitleBootstrap/SceneGate 의 static 대기 목표, GameBootstrap 의 RuntimeInitialize 훅·sceneLoaded 안 동기 로드·타이틀 라운드트립, SaveManager 의 프레임 세기 복원이 각자 순서를 관례로 맞추던 것을 코루틴 하나로 몰았다.
+- `AppFlow`(Game/Managers, DontDestroyOnLoad, AfterSceneLoad 에서 스스로 생김): 타이틀 시작이면 팩 preload → `PackReady`. `LoadWorld(scene)`: 오버레이 → 심 리셋 → 팩 준비 →
+  빈 닻 씬을 활성으로 두고 옛 씬 **전부** 언로드 → World 를 Additive 로 비동기 로드(sceneLoaded 콜백에서 루트를 꺼 Start 를 붙든다) → 닻 언로드 → 지형 코루틴 →
+  기능 씬 요청(루트는 꺼진 채) → 첫 기능 씬 통합 때 루트 켜기 → 조립 → Start → `SaveManager.RestorePending()` → 오버레이 끔. 게임 씬을 바로 재생하면 제자리에서 같은 절차.
+- 오버레이는 `Resources/Builtin/LoadingOverlay.uxml`(title.uss 의 .load-* 공유) + `LoadingPanelSettings`(GameUI 것 복사, sortingOrder 500) — 씬을 넘어 살아남는다.
+  타이틀의 로딩 상자는 첫 부팅(팩 진행률)만 맡는다.
+- `WorldTerrainBuilder.BuildRoutine`: 거리장(`TerrainForm`, 순수 계산)은 `Task.Run`, 청크는 프레임당 ~12ms, 물·경계·절벽·풀·배칭은 단계마다 한 프레임. `World.Awake` 는 더 이상 지형을 세우지 않는다(동기 `Build` 는 에디터·테스트용으로 남김).
+  실측: 4.5초 한 프레임 → 3.2~4.3초 동안 바가 20→92% 로 움직인다(거리장 1.2~1.7초는 스레드).
+- `GameBootstrap`: `Init`/`BootAsync`/라운드트립 삭제. `Register()`(조립 구독) + `LoadFeatures(onFirstIntegrated)`; 조회는 비활성 포함(루트가 꺼진 채 불린다).
+- `SaveManager.NewGame/Load` → `AppFlow.Instance.LoadWorld`; `RestorePending()` 공개. `TitleBootstrap`·`SceneGate` 삭제, Title.unity 의 TitleBootstrap 오브젝트 제거.
+- **순서 함정 셋(실측)**: ① 루트를 켠 뒤 동기 `LoadScene(Additive)` 를 부르면 다음 프레임에 게임 씬 Start 가 통합보다 **앞서** 돈다(PlayerController/WeaponController "InputManager 없음") →
+  루트를 끈 채 요청하고 첫 기능 씬의 sceneLoaded(조립 앞)에서 켠다. ② 게임 안에서 불러올 때 옛 World 를 남긴 채 새 World 를 얹으면 중복 가드(GameManager·TimeManager)가
+  새 오브젝트를 지워 새 World 에 플레이어가 없고 기능 씬도 안 얹힌다 → 옛 씬 전부를 먼저 내린다(씬은 하나는 남아야 해서 빈 닻 씬). ③ 닻 씬 동안 서드파티
+  `SkyboxSettings.OnValidate`(에디터 전용)가 `RenderSettings.skybox` 를 null 검사 없이 읽어 NRE → 닻 씬에 옛 스카이박스를 물려준다.
+- 실측: 타이틀 로딩 1회 → 새 게임 → WORLD GENERATING(PACK → UNLOAD → SCENE → TERRAIN FORM/TERRAIN/WATER/CLIFFS/GRASS/BATCH → SYSTEMS → READY) → World 1회, 씬 5개,
+  InputManager 1, 광맥 중복 0. World 직접 재생 → 제자리 초기화 OK. World 안에서 저장→불러오기 → 옛 씬 5개 내려가고 새 5개, 플레이어 1, 건물 174/174 복원.
+- (후속, 사용자 "아직 분리 안함?") 절벽 Instantiate(`WorldTerrainCliffs.BuildRoutine`)·풀 심기(`WorldTerrainGrass.AttachRoutine`, 행 단위)도 프레임당 ~12ms 로 분할. 남은 한 프레임 정지는 절벽 계획(프리팹 측정, ~0.4s)·정적 배칭(~0.2s)뿐. 총 시간은 3.3s → 5.0s 로 늘지만 화면은 서지 않는다.
+- (사용자 "world 로딩 중에 no camera 뜨는데") 옛 씬을 내리고 새 루트를 켜기 전까지 카메라가 없어 에디터가 "No cameras rendering" 을 띄웠다(빌드에선 백버퍼가 안 지워져 찌꺼기 가능). AppFlow 오브젝트에 전환 중에만 켜지는 클리어 전용 카메라(컬링 0, .load-screen 바탕색, depth -100)를 둔다.
+- (사용자 "씬 열릴 때도 버튼이 생겨나게") `TitleGlitch.Hide`(연출 없이 소멸 끝 상태) 로 OnEnable 때 메인 메뉴를 숨기고, 로딩 상자가 걷히기 시작한 300ms 뒤 `In(140, 200)` 으로 순차 등장. 와이어는 IsOut 인 버튼엔 안 붙는다. 레퍼런스는 즉시 표시였다.

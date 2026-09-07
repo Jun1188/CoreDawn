@@ -33,6 +33,10 @@ namespace CoreDawn.UI
 
         static Color A(Color c, float a) => new Color(c.r, c.g, c.b, a);
 
+        // 레퍼런스가 브라우저(sRGB)에서 "잉크 위에 색 α" 로 섞은 결과를 그대로 목표색으로 — 이 프로젝트는 Linear 라
+        // 같은 알파를 여기서 얹으면 훨씬 진한 청록이 된다(2026-09-07 사용자 "색감이 많이 다르다"). UITK 색은 sRGB 값이라 불투명으로 칠하면 정확히 나온다.
+        static Color Over(Color c, float a) => new Color(Ink.r + (c.r - Ink.r) * a, Ink.g + (c.g - Ink.g) * a, Ink.b + (c.b - Ink.b) * a, 1f);
+
         void Outline(Painter2D p, float w, float h)
         {
             float c = Cut;
@@ -46,20 +50,25 @@ namespace CoreDawn.UI
             p.ClosePath();
         }
 
-        // 잘린 모서리 모양 ∩ (x0 ≤ x ≤ x1) — 오른쪽 위·왼쪽 아래 컷의 꺾임점이 띠 안에 들면 꼭짓점으로 넣는다
-        void Strip(Painter2D p, float w, float h, float x0, float x1)
+        // 잘린 모서리 모양을 정점 6개·삼각형 4개로, 색은 x 에 따라 왼쪽→오른쪽 선형(삼각형 안 보간이 정확히 같은 직선이라 이음새가 없다)
+        void GradientFill(MeshGenerationContext ctx, float w, float h, Color left, Color right)
         {
             float c = Cut;
-            float Top(float x) => x <= w - c ? 0f : x - (w - c);
-            float Bot(float x) => x >= c ? h : h - (c - x);
-            p.BeginPath();
-            p.MoveTo(new Vector2(x0, Top(x0)));
-            if (x0 < w - c && x1 > w - c) p.LineTo(new Vector2(w - c, 0f));
-            p.LineTo(new Vector2(x1, Top(x1)));
-            p.LineTo(new Vector2(x1, Bot(x1)));
-            if (x0 < c && x1 > c) p.LineTo(new Vector2(c, h));
-            p.LineTo(new Vector2(x0, Bot(x0)));
-            p.ClosePath();
+            var pts = new[]
+            {
+                new Vector2(0, 0), new Vector2(w - c, 0), new Vector2(w, c),
+                new Vector2(w, h), new Vector2(c, h), new Vector2(0, h - c),
+            };
+            var mesh = ctx.Allocate(pts.Length, (pts.Length - 2) * 3);
+            for (int i = 0; i < pts.Length; i++)
+            {
+                var col = Color.Lerp(left, right, pts[i].x / w);
+                mesh.SetNextVertex(new Vertex { position = new Vector3(pts[i].x, pts[i].y, Vertex.nearZ), tint = col });
+            }
+            for (int i = 1; i + 1 < pts.Length; i++)
+            {
+                mesh.SetNextIndex(0); mesh.SetNextIndex((ushort)i); mesh.SetNextIndex((ushort)(i + 1));
+            }
         }
 
         void Draw(MeshGenerationContext ctx)
@@ -71,29 +80,19 @@ namespace CoreDawn.UI
             bool red = danger && hot;
             var c = red ? Red : Cyan;
 
-            // 글로우 — 바깥 세 겹의 굵고 옅은 선(box-shadow 0 0 12px/.25, 핫 24px/.55 근사)
+            // 글로우 — 바깥 세 겹의 굵고 옅은 선(box-shadow 0 0 12px/.25, 핫 24px/.55 근사). 알파는 Linear 에서 세게 보여 레퍼런스의 절반쯤
             p.lineJoin = LineJoin.Miter;
-            Outline(p, w, h); p.strokeColor = A(c, hot ? 0.08f : 0.04f); p.lineWidth = 22f; p.Stroke();
-            Outline(p, w, h); p.strokeColor = A(c, hot ? 0.18f : 0.09f); p.lineWidth = 12f; p.Stroke();
-            Outline(p, w, h); p.strokeColor = A(c, hot ? 0.34f : 0.18f); p.lineWidth = 5f; p.Stroke();
+            Outline(p, w, h); p.strokeColor = A(c, hot ? 0.05f : 0.02f); p.lineWidth = 22f; p.Stroke();
+            Outline(p, w, h); p.strokeColor = A(c, hot ? 0.11f : 0.05f); p.lineWidth = 12f; p.Stroke();
+            Outline(p, w, h); p.strokeColor = A(c, hot ? 0.22f : 0.10f); p.lineWidth = 5f; p.Stroke();
 
-            // 바탕 — 뒤(3D·스캔라인)가 비치지 않게 완전 불투명한 잉크색. 레퍼런스는 backdrop blur 로 같은 효과를 낸다.
-            // α .86 으로는 부족했다: 선형 색공간이라 어두운 바탕 위 청록 줄무늬가 밝게 섞여 잔여 14% 가 그대로 보였다(2026-09-07 실측)
-            Outline(p, w, h); p.fillColor = Ink; p.Fill();
+            // 채움 — 레퍼런스 그라디언트 rgba(색 .16 → .04), 핫 .34 → .1 을 sRGB 로 잉크 위에 섞은 불투명 색. 왼쪽이 밝다.
+            // 정점 색을 보간하는 메시 하나로 — 세로 띠 여러 장으로 근사하면 폴리곤 경계마다 이음새가 줄무늬로 보인다(2026-09-07 사용자 지적).
+            // 불투명이라 뒤(3D·스캔라인)가 비치지 않는다 — 레퍼런스는 backdrop blur 로 같은 효과를 낸다
+            GradientFill(ctx, w, h, Over(c, hot ? 0.34f : 0.16f), Over(c, hot ? 0.10f : 0.04f));
 
-            // 채움 — 가로 그라디언트 근사(왼쪽이 밝다). 띠는 잘린 모서리 모양에 맞춰 전체 높이를 채운다
-            // (예전엔 위아래 Cut 만큼 비워 가운데만 밝은 띠처럼 보였다 — 사용자 지적 2026-09-07)
-            float a0 = hot ? 0.40f : 0.22f, a1 = hot ? 0.12f : 0.05f;
-            const int strips = 32;
-            for (int i = 0; i < strips; i++)
-            {
-                float x0 = w * i / strips, x1 = w * (i + 1) / strips;
-                p.fillColor = A(c, Mathf.Lerp(a0, a1, (i + 0.5f) / strips));
-                Strip(p, w, h, x0, x1); p.Fill();
-            }
-
-            // 테두리
-            Outline(p, w, h); p.strokeColor = red ? A(Red, 0.8f) : A(Cyan, 0.55f); p.lineWidth = 1f; p.Stroke();
+            // 테두리 — 1px, rgba(색 .55 / 위험 .8) 를 sRGB 로 섞은 불투명 색
+            Outline(p, w, h); p.strokeColor = red ? Over(Red, 0.8f) : Over(Cyan, 0.55f); p.lineWidth = 1f; p.Stroke();
 
             // 왼쪽 강조선(3px) — 아래쪽은 잘린 모서리를 따라간다
             p.fillColor = c;

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <!-- 부팅(로딩) 화면 — 타이틀 레퍼런스 Ref/TitleScreen/title.html 의 #load. 스타일은 title.uss 의 .load-* 를 타이틀 오버레이와 공유한다.
-         바(load-bar)에는 BootScreenView 가 HoloBar(Painter2D)를 끼운다. -->
-    <Style src="../Styles/tokens.uss" />
-    <Style src="../Styles/title.uss" />
+    <!-- 씬 전환 오버레이(AppFlow) — 타이틀 레퍼런스 Ref/TitleScreen/title.html 의 #load 와 같은 상자. 스타일은 title.uss 의 .load-* 공유.
+         바(load-bar)에는 AppFlow 가 HoloBar(Painter2D)를 끼운다. Resources 에 두는 이유: AppFlow 는 씬 없이 코드로 생기기 때문. -->
+    <Style src="/Assets/Scripts/Presentation/UI/Styles/tokens.uss" />
+    <Style src="/Assets/Scripts/Presentation/UI/Styles/title.uss" />
     <ui:VisualElement name="load-screen" class="load-screen">
         <ui:VisualElement class="load-box">
             <ui:VisualElement class="load-row">

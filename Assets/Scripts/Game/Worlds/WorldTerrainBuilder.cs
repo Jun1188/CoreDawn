@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
@@ -35,57 +36,148 @@ namespace CoreDawn.Worlds
             public List<WorldTerrainCliffs.Placement> cliffs;
         }
 
-        /// <summary>지형을 세운다(런타임). 이미 있으면(런타임/구운 것) 그대로 두고 null.</summary>
+        /// <summary>지형을 세운다(동기, 에디터·테스트용). 이미 있으면(런타임/구운 것) 그대로 두고 null. 런타임은 <see cref="BuildRoutine"/>.</summary>
         public static GameObject Build(World world)
         {
-            if (world == null || world.Map == null) { Debug.LogError("[WorldTerrain] World/맵이 없어 지형을 세울 수 없습니다."); return null; }
-            if (world.transform.Find(RootName) != null || world.transform.Find(BakedRootName) != null) return null;
-
-            var s = TerrainGenSettings.LoadOrCreate();
-            if (s == null) return null;
-
+            if (!Prepare(world, out var s, out var map)) return null;
             var sw = Stopwatch.StartNew();
-            var map = world.Map;
             var form = TerrainForm.Build(map, s, world.CellSize);
             long formMs = sw.ElapsedMilliseconds;
-
-            var root = new GameObject(RootName);
-            root.transform.SetParent(world.transform, false);
-
-            int ground = LayerMask.NameToLayer("Ground");
-            var groundParent = new GameObject("Ground").transform;
-            groundParent.SetParent(root.transform, false);
-            var chunks = GroundMeshes(world, map, form, s, out int fine);
+            var root = CreateRoot(world, out var groundParent);
+            var plans = ChunkPlans(world, map, s);
             var mat = GroundMaterial(s);
-            for (int i = 0; i < chunks.Count; i++)
-            {
-                var go = new GameObject($"Chunk_{i}");
-                go.transform.SetParent(groundParent, false);
-                go.transform.localPosition = chunks[i].localPos;
-                go.transform.localScale = chunks[i].scale;
-                if (ground >= 0) go.layer = ground;
-                go.AddComponent<MeshFilter>().sharedMesh = chunks[i].mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-                go.AddComponent<MeshCollider>().sharedMesh = chunks[i].mesh;
-            }
-
-            var water = WaterMesh(world, map, form, s, out Vector3 waterPos, out Material waterMat);
-            if (water != null)
-            {
-                var go = new GameObject("Water (Sea)");
-                go.transform.SetParent(root.transform, false);
-                go.transform.localPosition = waterPos;
-                go.AddComponent<MeshFilter>().sharedMesh = water;
-                go.AddComponent<MeshRenderer>().sharedMaterial = waterMat;
-            }
-
+            int ground = LayerMask.NameToLayer("Ground"), fine = 0;
+            for (int i = 0; i < plans.Count; i++) if (AddChunk(groundParent, i, plans[i], map, form, world.CellSize, ground, mat)) fine++;
+            AddWater(root, world, map, form, s);
             BuildBounds(root.transform, world, map, s);
             var (walls, feet) = WorldTerrainCliffs.Build(root.transform, world, map, form, s);
             WorldTerrainGrass.Attach(root, world, map, form, s);
             StaticBatchingUtility.Combine(root);
             Debug.Log($"[WorldTerrain] '{map.Id}' 생성 {sw.ElapsedMilliseconds}ms (거리장 {formMs}ms) — " +
-                      $"정밀 청크 {fine}/{chunks.Count}개, 절벽 벽 {walls} + 발치 {feet}");
+                      $"정밀 청크 {fine}/{plans.Count}개, 절벽 벽 {walls} + 발치 {feet}");
             return root;
+        }
+
+        /// <summary>
+        /// 지형을 여러 프레임에 나눠 세운다(런타임, AppFlow). 거리장(<see cref="TerrainForm"/>, 순수 계산)은 스레드에서, 청크 메시는 프레임당 약 12ms 씩,
+        /// 물·경계는 한 프레임씩, 절벽 Instantiate·풀 심기도 프레임당 약 12ms 씩 — 그동안 로딩 바가 진행률(<paramref name="progress"/>: 0..1, 단계 이름)을 받는다.
+        /// 한 프레임에 4.5초 서던 것(2026-09-07 실측: 거리장 1.6s + 청크·절벽 1.9s + 풀 0.9s)을 나눈 것.
+        /// </summary>
+        public static IEnumerator BuildRoutine(World world, System.Action<float, string> progress)
+        {
+            if (!Prepare(world, out var s, out var map)) yield break;
+            var sw = Stopwatch.StartNew();
+            float cell = world.CellSize;
+            progress?.Invoke(0f, "TERRAIN FORM");
+            var formTask = System.Threading.Tasks.Task.Run(() => TerrainForm.Build(map, s, cell));
+            while (!formTask.IsCompleted) yield return null;
+            if (formTask.IsFaulted) { Debug.LogException(formTask.Exception); yield break; }
+            var form = formTask.Result;
+            long formMs = sw.ElapsedMilliseconds;
+
+            var root = CreateRoot(world, out var groundParent);
+            var plans = ChunkPlans(world, map, s);
+            var mat = GroundMaterial(s);
+            int ground = LayerMask.NameToLayer("Ground"), fine = 0;
+            var frame = Stopwatch.StartNew();
+            for (int i = 0; i < plans.Count; i++)
+            {
+                if (AddChunk(groundParent, i, plans[i], map, form, cell, ground, mat)) fine++;
+                if (frame.ElapsedMilliseconds > 12) { progress?.Invoke(0.3f + 0.35f * (i + 1) / plans.Count, "TERRAIN"); yield return null; frame.Restart(); }
+            }
+            progress?.Invoke(0.66f, "WATER"); yield return null;
+            AddWater(root, world, map, form, s);
+            BuildBounds(root.transform, world, map, s);
+            progress?.Invoke(0.72f, "CLIFFS"); yield return null;
+            int walls = 0, feet = 0;
+            yield return WorldTerrainCliffs.BuildRoutine(root.transform, world, map, form, s, p => progress?.Invoke(0.72f + 0.12f * p, "CLIFFS"), (w, f) => { walls = w; feet = f; });
+            progress?.Invoke(0.84f, "GRASS"); yield return null;
+            yield return WorldTerrainGrass.AttachRoutine(root, world, map, form, s, p => progress?.Invoke(0.84f + 0.11f * p, "GRASS"));
+            progress?.Invoke(0.95f, "BATCH"); yield return null;
+            StaticBatchingUtility.Combine(root);
+            progress?.Invoke(1f, "TERRAIN OK");
+            Debug.Log($"[WorldTerrain] '{map.Id}' 생성 {sw.ElapsedMilliseconds}ms(프레임 분할, 거리장 {formMs}ms) — " +
+                      $"정밀 청크 {fine}/{plans.Count}개, 절벽 벽 {walls} + 발치 {feet}");
+        }
+
+        static bool Prepare(World world, out TerrainGenSettings s, out MapDef map)
+        {
+            s = null; map = null;
+            if (world == null || world.Map == null) { Debug.LogError("[WorldTerrain] World/맵이 없어 지형을 세울 수 없습니다."); return false; }
+            if (world.transform.Find(RootName) != null || world.transform.Find(BakedRootName) != null) return false;
+            s = TerrainGenSettings.LoadOrCreate();
+            if (s == null) return false;
+            map = world.Map;
+            return true;
+        }
+
+        static GameObject CreateRoot(World world, out Transform groundParent)
+        {
+            var root = new GameObject(RootName);
+            root.transform.SetParent(world.transform, false);
+            groundParent = new GameObject("Ground").transform;
+            groundParent.SetParent(root.transform, false);
+            return root;
+        }
+
+        /// <summary>청크 하나의 계획 — 어디에, 정밀(강·가장자리)인지.</summary>
+        readonly struct ChunkPlan
+        {
+            public readonly int X0, Y0, W, H; public readonly bool Fine; public readonly Vector3 Pos;
+            public ChunkPlan(int x0, int y0, int w, int h, bool fine, Vector3 pos) { X0 = x0; Y0 = y0; W = w; H = h; Fine = fine; Pos = pos; }
+        }
+
+        // 물가 띠(칸) — 파임이 미치는 폭 + 여유. 이 밖의 평지는 완전한 0이다.
+        // 분류: 높이가 변하는 곳(강·맵 가장자리)만 고정밀, 나머지는 판 하나. 절벽도 평평하다(벽은 프리팹의 몫).
+        static List<ChunkPlan> ChunkPlans(World world, MapDef map, TerrainGenSettings s)
+        {
+            var plans = new List<ChunkPlan>();
+            float edgeBand = s.shoreWidth + s.riverFalloffM / world.CellSize + 1f;
+            int cx = Mathf.CeilToInt(map.width / (float)ChunkCells);
+            int cy = Mathf.CeilToInt(map.height / (float)ChunkCells);
+            for (int j = 0; j < cy; j++)
+                for (int i = 0; i < cx; i++)
+                {
+                    int x0 = i * ChunkCells, y0 = j * ChunkCells;
+                    int w = Mathf.Min(ChunkCells, map.width - x0), h = Mathf.Min(ChunkCells, map.height - y0);
+                    bool nearEdge = x0 < edgeBand || y0 < edgeBand ||
+                                    map.width - (x0 + w) < edgeBand || map.height - (y0 + h) < edgeBand;
+                    bool hasRiver = false;
+                    for (int ty = y0 - 1; ty <= y0 + h && !hasRiver; ty++)
+                        for (int tx = x0 - 1; tx <= x0 + w; tx++)
+                            if (map.InBounds(tx, ty) && map.TileAt(tx, ty) == MapTile.River) { hasRiver = true; break; }
+                    Vector3 pos = world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin;
+                    plans.Add(new ChunkPlan(x0, y0, w, h, nearEdge || hasRiver, pos));
+                }
+            return plans;
+        }
+
+        /// <summary>청크 오브젝트 하나를 세운다. 정밀 청크면 true.</summary>
+        static bool AddChunk(Transform groundParent, int index, ChunkPlan c, MapDef map, TerrainForm form, float cell, int groundLayer, Material mat)
+        {
+            Mesh mesh; Vector3 scale;
+            if (c.Fine) { mesh = FineChunk(map, form, c.X0, c.Y0, c.W, c.H, cell, FineRes); scale = Vector3.one; }
+            else { mesh = SharedQuad(); scale = new Vector3(c.W * cell, 1f, c.H * cell); }
+            var go = new GameObject($"Chunk_{index}");
+            go.transform.SetParent(groundParent, false);
+            go.transform.localPosition = c.Pos;
+            go.transform.localScale = scale;
+            if (groundLayer >= 0) go.layer = groundLayer;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            go.AddComponent<MeshCollider>().sharedMesh = mesh;
+            return c.Fine;
+        }
+
+        static void AddWater(GameObject root, World world, MapDef map, TerrainForm form, TerrainGenSettings s)
+        {
+            var water = WaterMesh(world, map, form, s, out Vector3 waterPos, out Material waterMat);
+            if (water == null) return;
+            var go = new GameObject("Water (Sea)");
+            go.transform.SetParent(root.transform, false);
+            go.transform.localPosition = waterPos;
+            go.AddComponent<MeshFilter>().sharedMesh = water;
+            go.AddComponent<MeshRenderer>().sharedMaterial = waterMat;
         }
 
         /// <summary>미리보기 재료를 만든다 — GameObject를 하나도 만들지 않는다(에디터 DrawMesh 전용).</summary>
@@ -112,47 +204,17 @@ namespace CoreDawn.Worlds
 
         // ── 지면 청크 ───────────────────────────────────────────────
 
-        /// <summary>지면 청크 메시들 — 씬을 건드리지 않는 순수 생성. 위치·스케일은 World 루트 기준 로컬.
+        /// <summary>지면 청크 메시들(미리보기용) — 씬을 건드리지 않는 순수 생성. 위치·스케일은 World 루트 기준 로컬.
         /// 평지는 <b>공유 단위 쿼드 하나</b>(사용자 설계)를 스케일로 늘려 쓴다 — UV는 셰이더가 월드좌표에서 만든다.</summary>
         static List<(Mesh mesh, Vector3 localPos, Vector3 scale)> GroundMeshes(World world, MapDef map, TerrainForm form, TerrainGenSettings s, out int fineCount)
         {
             var result = new List<(Mesh, Vector3, Vector3)>();
-
-            // 물가 띠(칸) — 파임이 미치는 폭 + 여유. 이 밖의 평지는 완전한 0이다.
-            float edgeBand = s.shoreWidth + s.riverFalloffM / world.CellSize + 1f;
-
-            int cx = Mathf.CeilToInt(map.width / (float)ChunkCells);
-            int cy = Mathf.CeilToInt(map.height / (float)ChunkCells);
             fineCount = 0;
-
-            for (int j = 0; j < cy; j++)
-                for (int i = 0; i < cx; i++)
-                {
-                    int x0 = i * ChunkCells, y0 = j * ChunkCells;
-                    int w = Mathf.Min(ChunkCells, map.width - x0), h = Mathf.Min(ChunkCells, map.height - y0);
-
-                    // 분류 — 높이가 변하는 곳(강·맵 가장자리)만 고정밀, 나머지는 판 하나.
-                    // 절벽도 평평하다(벽은 프리팹의 몫) — 바위색 정점색은 폐기(사용자: 정점색은 물가에만,
-                    // 바위 틈에 잔디가 자라는 게 오히려 자연스럽다).
-                    bool nearEdge = x0 < edgeBand || y0 < edgeBand ||
-                                    map.width - (x0 + w) < edgeBand || map.height - (y0 + h) < edgeBand;
-                    bool hasRiver = false;
-                    for (int ty = y0 - 1; ty <= y0 + h && !hasRiver; ty++)
-                        for (int tx = x0 - 1; tx <= x0 + w; tx++)
-                            if (map.InBounds(tx, ty) && map.TileAt(tx, ty) == MapTile.River) { hasRiver = true; break; }
-
-                    bool needFine = nearEdge || hasRiver;
-                    Vector3 pos = world.CellToWorld(new Vector2Int(x0, y0)) - world.Origin;
-                    if (needFine)
-                    {
-                        result.Add((FineChunk(map, form, x0, y0, w, h, world.CellSize, FineRes), pos, Vector3.one));
-                        fineCount++;
-                    }
-                    else
-                    {
-                        result.Add((SharedQuad(), pos, new Vector3(w * world.CellSize, 1f, h * world.CellSize)));
-                    }
-                }
+            foreach (var c in ChunkPlans(world, map, s))
+            {
+                if (c.Fine) { result.Add((FineChunk(map, form, c.X0, c.Y0, c.W, c.H, world.CellSize, FineRes), c.Pos, Vector3.one)); fineCount++; }
+                else result.Add((SharedQuad(), c.Pos, new Vector3(c.W * world.CellSize, 1f, c.H * world.CellSize)));
+            }
             return result;
         }
 

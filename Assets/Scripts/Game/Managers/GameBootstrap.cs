@@ -54,14 +54,14 @@ namespace CoreDawn.Managers
             new Entry
             {
                 scene = "Systems",
-                shouldLoad = () => Object.FindFirstObjectByType<InputManager>() == null,
+                shouldLoad = () => Object.FindFirstObjectByType<InputManager>(FindObjectsInactive.Include) == null,
             },
 
             // Factory — 공장 심 구동·건설(배치/철거)·벨트 아이템 렌더.
             new Entry
             {
                 scene = "Factory",
-                shouldLoad = () => Object.FindFirstObjectByType<FactoryBootstrap>() == null,
+                shouldLoad = () => Object.FindFirstObjectByType<FactoryBootstrap>(FindObjectsInactive.Include) == null,
                 assemble = AssembleFactory,
             },
 
@@ -69,7 +69,7 @@ namespace CoreDawn.Managers
             new Entry
             {
                 scene = "Combat",
-                shouldLoad = () => Object.FindFirstObjectByType<BattleManager>() == null,
+                shouldLoad = () => Object.FindFirstObjectByType<BattleManager>(FindObjectsInactive.Include) == null,
                 assemble = AssembleCombat,
             },
 
@@ -171,43 +171,34 @@ namespace CoreDawn.Managers
 
         // ── 로드 ────────────────────────────────────────────────────
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Init()
+        /// <summary>기능 씬 조립 구독 — AppFlow 가 플레이 시작 때 한 번 건다(도메인 리로드를 끈 환경 대비 빼고 다시 건다).</summary>
+        public static void Register()
         {
-            // 람다가 아니라 이름 있는 메서드 — 도메인 리로드를 끈 환경(Enter Play Mode Options)에서는
-            // static 구독이 플레이를 넘어 살아남으므로, 빼고 다시 걸어야 중복되지 않는다
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
-            BootAsync();
         }
 
+        // 첫 기능 씬이 통합되는 순간(조립 앞) 한 번 부를 것 — AppFlow 가 게임 씬 루트를 켜는 데 쓴다
+        static Action beforeAssemble;
+
         /// <summary>
-        /// 팩 파일 자원(glb…) 읽기를 시작하고 씬을 동기로 얹는다. 씬 로드는 프레임 1의 Start() 전에 끝나야 한다(InputManager·심 엔티티를 거기서 찾는다) —
-        /// 그래서 preload를 기다리지 않는다. 굳은 World 씬은 부팅 시 모델이 필요 없고, 굳지 않은 경로는 PackAssets.IsReady를 보고 소리 낸다.
+        /// 게임 씬의 기능 씬들을 동기로 얹는다 — AppFlow 가 게임 씬 루트를 <b>꺼 둔 채</b> 부른다. 동기 로드는 다음 프레임 첫머리의 통합 패스에서 한꺼번에 들어오고,
+        /// 첫 씬이 통합될 때 <paramref name="onFirstIntegrated"/>(루트 켜기)를 조립 앞에 부른다 — 같은 패스에서 나머지 기능 씬의 Awake·조립이 이어지고,
+        /// 그 뒤에야 게임 씬·기능 씬의 Start 가 돈다(옛 sceneLoaded 안 동기 로드와 같은 순서). 루트를 먼저 켜고 부르면 게임 씬 Start 가 통합보다
+        /// 앞서 InputManager 조회가 깨진다(2026-09-07 실측). 얹을 씬이 없으면 false — 부른 쪽이 루트를 직접 켠다.
         /// </summary>
-        static void BootAsync()
+        public static bool LoadFeatures(Action onFirstIntegrated)
         {
-            // 게임 씬을 부팅 씬 없이 열었으면(에디터에서 World를 바로 재생, 테스트) 부팅 씬으로 돌아가 자원을 다 읽고 다시 온다 —
-            // 조립기·배치는 동기라 팩 자원이 먼저 준비돼 있어야 한다. 부팅 씬 자신과 플레이어 없는 순수 테스트 씬은 제외.
-            var scene = SceneManager.GetActiveScene();
-            if (!PackAssets.IsReady && !BootScene.IsBootScene(scene) && Object.FindFirstObjectByType<PlayerController>() != null)
-            {
-                Debug.Log($"[GameBootstrap] '{scene.name}'을 부팅 씬 없이 열어 팩 자원이 없습니다 — Boot를 거쳐 다시 엽니다.");
-                BootScene.Enter(scene.name);
-                return;
-            }
-            _ = PackAssets.PreloadAsync(SimHost.Database);
-            TryLoadAll();
+            beforeAssemble = onFirstIntegrated;
+            if (TryLoadAll() > 0) return true;
+            beforeAssemble = null;
+            return false;
         }
 
         static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // Single 로드는 additive로 얹힌 기능 씬도 함께 내리므로 씬 전환마다 다시 검사한다
-            if (mode == LoadSceneMode.Single)
-            {
-                BootAsync();
-                return;
-            }
+            if (mode == LoadSceneMode.Single) return;   // 씬 전환은 AppFlow 가 몬다
+            if (beforeAssemble != null) { var a = beforeAssemble; beforeAssemble = null; a(); }
 
             // 방금 얹힌 것이 우리 기능 씬이면 조립한다 — 그 씬 오브젝트들의 Awake는 끝났고
             // Start는 아직이라, 주입된 참조를 Start에서 바로 쓸 수 있다.
@@ -219,11 +210,13 @@ namespace CoreDawn.Managers
             }
         }
 
-        static void TryLoadAll()
+        /// <summary>요청한 기능 씬 수. 게임 씬 루트가 꺼진 채 불리므로 조회는 비활성 포함.</summary>
+        static int TryLoadAll()
         {
             // 플레이어 없는 씬(순수 테스트 씬)에는 아무것도 얹지 않는다 — 테스트를 오염시키지 않기
-            if (Object.FindFirstObjectByType<PlayerController>() == null) return;
+            if (Object.FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include) == null) { Debug.Log("[GameBootstrap] 플레이어가 없는 씬 — 기능 씬을 얹지 않음"); return 0; }
 
+            int n = 0;
             foreach (var e in entries)
             {
                 if (!e.shouldLoad()) continue;
@@ -234,7 +227,10 @@ namespace CoreDawn.Managers
                     continue;
                 }
                 SceneManager.LoadScene(e.scene, LoadSceneMode.Additive);
+                n++;
             }
+            Debug.Log($"[GameBootstrap] 기능 씬 {n}개 요청");
+            return n;
         }
     }
 }

@@ -68,7 +68,7 @@ namespace CoreDawn.Entities
             if (brain != null) brain.Alerted -= OnAlerted;
             var e = Entity;
             if (e != null) e.Removed -= OnEntityRemoved;
-            base.OnDestroy();   // 엔티티는 심의 것 — 사망은 DeadState 가, 씬 전환은 BootScene 이 지운다
+            base.OnDestroy();   // 엔티티는 심의 것 — 사망은 DeadState 가, 씬 전환은 AppFlow 가 지운다
         }
 
         // 사망 연출은 MonsterVisualController(OnDeath)가 틀고, 소멸 시점은 심(DeadState.corpseSeconds)이 정한다 —
