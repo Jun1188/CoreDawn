@@ -138,6 +138,7 @@ namespace CoreDawn.UI
 
             uiSettings = uiBusy = uiLoad = returning = false;
             loadingHidden = false;
+            TitleGlitch.Hide(mainBtns);   // 메인 메뉴는 로딩 상자가 걷힐 때 글리치로 생겨난다(HideLoading)
             menuSub.style.display = DisplayStyle.None;
             menuSettings.style.display = DisplayStyle.None;
             menuLoad.style.display = DisplayStyle.None;
@@ -226,7 +227,7 @@ namespace CoreDawn.UI
                 else
                 {
                     if (i == 1 && w.AnchorEl == settingsPanel) wires.Rebind(w, mainBtns[1]);
-                    w.Target = scene.Arrived ? 0f : scene.Launching ? (i == 0 ? 1f : 0f) : (has && !TitleGlitch.IsAnimating(mainBtns[i])) ? 1f : 0f;
+                    w.Target = scene.Arrived ? 0f : scene.Launching ? (i == 0 ? 1f : 0f) : (has && !TitleGlitch.IsAnimating(mainBtns[i]) && !TitleGlitch.IsOut(mainBtns[i])) ? 1f : 0f;
                 }
                 if (!has && w.Draw < 0.01f) { wires.Hide(w); continue; }
                 Vector3 endPt;
@@ -266,6 +267,8 @@ namespace CoreDawn.UI
             loading.AddToClassList("title-loading--hide");
             loading.pickingMode = PickingMode.Ignore;
             loading.schedule.Execute(() => { if (loadingHidden) loading.style.display = DisplayStyle.None; }).StartingIn(600);
+            // 상자가 반쯤 걷힌 뒤 메인 메뉴가 순차 글리치로 생겨난다(뒤로가기 복귀와 같은 박자)
+            loading.schedule.Execute(() => { if (loadingHidden && !uiSettings && !uiBusy) TitleGlitch.In(new VisualElement[] { mainBtns[0], mainBtns[1], mainBtns[2] }, 140, 200); }).StartingIn(300);
         }
 
         // 제목 깜빡임 — 7초 주기 끝에 잠깐(레퍼런스 flicker)

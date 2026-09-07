@@ -830,3 +830,4 @@ TitleBootstrap/SceneGate 의 static 대기 목표, GameBootstrap 의 RuntimeInit
   InputManager 1, 광맥 중복 0. World 직접 재생 → 제자리 초기화 OK. World 안에서 저장→불러오기 → 옛 씬 5개 내려가고 새 5개, 플레이어 1, 건물 174/174 복원.
 - (후속, 사용자 "아직 분리 안함?") 절벽 Instantiate(`WorldTerrainCliffs.BuildRoutine`)·풀 심기(`WorldTerrainGrass.AttachRoutine`, 행 단위)도 프레임당 ~12ms 로 분할. 남은 한 프레임 정지는 절벽 계획(프리팹 측정, ~0.4s)·정적 배칭(~0.2s)뿐. 총 시간은 3.3s → 5.0s 로 늘지만 화면은 서지 않는다.
 - (사용자 "world 로딩 중에 no camera 뜨는데") 옛 씬을 내리고 새 루트를 켜기 전까지 카메라가 없어 에디터가 "No cameras rendering" 을 띄웠다(빌드에선 백버퍼가 안 지워져 찌꺼기 가능). AppFlow 오브젝트에 전환 중에만 켜지는 클리어 전용 카메라(컬링 0, .load-screen 바탕색, depth -100)를 둔다.
+- (사용자 "씬 열릴 때도 버튼이 생겨나게") `TitleGlitch.Hide`(연출 없이 소멸 끝 상태) 로 OnEnable 때 메인 메뉴를 숨기고, 로딩 상자가 걷히기 시작한 300ms 뒤 `In(140, 200)` 으로 순차 등장. 와이어는 IsOut 인 버튼엔 안 붙는다. 레퍼런스는 즉시 표시였다.
