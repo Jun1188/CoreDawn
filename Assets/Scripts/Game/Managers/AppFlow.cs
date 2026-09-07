@@ -40,6 +40,7 @@ namespace CoreDawn.Managers
         public string Phase { get; private set; } = WarpPhase;
         public const string WarpPhase = "WARPING TO STAR SYSTEM";
         const float FadeOutSeconds = 0.6f;
+        const float FirstLoadDelaySeconds = 0.5f;
         /// <summary>지금 하는 일(파일 이름·단계) — 오버레이 문구.</summary>
         public string Current { get; private set; } = "INIT";
         public float Progress { get; private set; }
@@ -77,6 +78,7 @@ namespace CoreDawn.Managers
                 yield return WorldInitRoutine(scene, roots);
                 yield break;
             }
+            yield return new WaitForSecondsRealtime(FirstLoadDelaySeconds);   // 로딩 상자가 0% 로 잠깐 서 있다가 흐른다(2026-09-08 사용자)
             yield return EnsurePackRoutine();
             PackReady = !Failed;
         }
