@@ -767,3 +767,17 @@ ESC 눌러도 안 닫히고 일시정지도 안 열림 / `Close()` 호출해도 
 사용자 결정: 자동 저장 슬롯은 **1개**, 이름은 번호 없이 "자동 저장". `SaveSystemConfig.autoSlotCount` 기본값·Resources 에셋 모두 1.
 아침·밤·종료 저장이 같은 칸(`auto_01`)을 덮어쓴다 — 2026-08 의 "아침 1개 + 밤 1개" 순환은 이 결정으로 대체.
 `SaveSlotList` 는 autoSlotCount 가 2 이상일 때만 번호를 붙인다. 디스크에 남은 옛 `auto_02` 는 목록에 안 뜨고 그대로 둔다(삭제하지 않음).
+
+---
+
+## 2026-09-07 — 타이틀 UI 에 Bloom (사용자 "ui 에는 bloom 이 안 들어간다")
+
+UI Toolkit 은 포스트프로세싱 뒤에 화면에 직접 그려져 볼륨 효과 밖이다. `TitleUICompositor`(타이틀 카메라):
+타이틀 전용 `TitleUIPanelSettings`(GameUIPanelSettings 복사, clearColor 투명)의 `targetTexture` 를 화면 크기 RT 로 두고,
+그 RT 를 카메라 앞 전체 화면 쿼드(`CoreDawn/UI Composite`: 프리멀티플라이 알파 · `_Boost` 1.6 · ZTest Always · Queue Overlay)로 씬 컬러 버퍼에 얹는다 →
+Bloom 이 청록 글자·점선·테두리를 번지게 한다. 레터박스가 카메라 뷰포트를 줄이면 쿼드는 뷰포트만 채우므로 텍스처의 같은 영역만 샘플(오프셋·스케일).
+한 프레임 지연(UITK 는 카메라 뒤에 그린다)은 RT UI 의 통상 지연.
+
+**함정**: `PanelSettings.SetScreenToPanelSpaceFunction` 이 받는 화면 좌표는 이미 왼쪽 위 원점 — y 를 뒤집으면 이중 반전이 돼 와이어 끝점이
+세로로 뒤집힌다. 가운데 점 검사(960,540)로는 안 잡힌다; 아이템 셋의 `CameraTransformWorldToPanel` 결과를 `WorldToScreenPoint` 기대값과 비교해 잡았다.
+RT 가 화면과 같은 크기면 항등 함수. 공용 PanelSettings 에 targetTexture 를 두면 게임 UI 까지 RT 로 가므로 전용 에셋 필수(끌 때 null 로 되돌린다).

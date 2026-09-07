@@ -230,7 +230,13 @@ MonoBehaviour:
   beltSpeed: 1
   beltAnimSpeed: 2
   itemSize: 0.2
+  itemThickness: 0.03
   itemGap: 1.1
+  neutralItem: coredawn:item/iron_plate
+  linkItems:
+  - coredawn:item/refined_crystal
+  - coredawn:item/iron_gear
+  - coredawn:item/beast_core
   beltYaw: -20
   cam: {fileID: 785142284}
   fieldOfView: 38
@@ -251,8 +257,6 @@ MonoBehaviour:
   ambientEquator: {r: 0.56078434, g: 0.72156864, b: 0.84705883, a: 1}
   ambientGround: {r: 0.16470589, g: 0.22745098, b: 0.36078432, a: 1}
   ambientIntensity: 1.2
-  neutral: {r: 0.42745098, g: 0.46666667, b: 0.56078434, a: 1}
-  linked: {r: 0.7254902, g: 0.7764706, b: 0.87058824, a: 1}
 --- !u!4 &313543980
 Transform:
   m_ObjectHideFlags: 0
@@ -281,6 +285,7 @@ GameObject:
   - component: {fileID: 785142284}
   - component: {fileID: 785142285}
   - component: {fileID: 785142286}
+  - component: {fileID: 785142287}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -406,6 +411,21 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &785142287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 785142282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0237fb7e6138f09469f3a78dd31a012d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CoreDawn.Game::CoreDawn.Title.TitleUICompositor
+  panel: {fileID: 11400000, guid: 424fe2effe5c84d438232ab465da35e7, type: 2}
+  material: {fileID: 2100000, guid: f8375e4e0ce500d4391770dca88636c2, type: 2}
+  distance: 0.05
 --- !u!1 &1075862288
 GameObject:
   m_ObjectHideFlags: 0
@@ -500,7 +520,7 @@ MonoBehaviour:
   m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: eac1279b6a693a1449991447ba9a2884, type: 2}
+  m_PanelSettings: {fileID: 11400000, guid: 424fe2effe5c84d438232ab465da35e7, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 9197481963319205126, guid: b11d4dc8ba2725a4685e87961804f437, type: 3}
   m_SortingOrder: 0
