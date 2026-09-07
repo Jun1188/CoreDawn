@@ -46,7 +46,8 @@ namespace CoreDawn.UI
         HoloBar loadBar;
         Label loadTitle, loadPct, loadMsg;
 
-        bool uiSettings, uiBusy, uiLoad, returning, loadingHidden;
+        bool uiSettings, uiBusy, uiLoad, returning, loadingHidden, launchReadyShown;
+        const int LaunchReadyHoldMs = 700;
 
         void Awake()
         {
@@ -137,7 +138,7 @@ namespace CoreDawn.UI
             if (scene != null) { scene.ArrivedEvent += OnArrived; scene.DockedEvent += OnDocked; }
 
             uiSettings = uiBusy = uiLoad = returning = false;
-            loadingHidden = false;
+            loadingHidden = false; launchReadyShown = false;
             TitleGlitch.Hide(mainBtns);   // 메인 메뉴는 로딩 상자가 걷힐 때 글리치로 생겨난다(HideLoading)
             menuSub.style.display = DisplayStyle.None;
             menuSettings.style.display = DisplayStyle.None;
@@ -248,13 +249,25 @@ namespace CoreDawn.UI
             float p; string msg;
             if (failed) { p = flow.Progress; msg = flow.Current; }
             else if (flow != null && !flow.PackReady) { p = flow.Progress; msg = flow.Current; }
-            else if (scene != null && !scene.Ready) { p = 1f; msg = "READY"; }   // 팩은 다 읽었고 배경을 세우는 중(캐시라 순간)
-            else { HideLoading(); return; }
+            else if (scene != null && !scene.Ready) { p = 1f; msg = "STANDBY"; }   // 팩은 다 읽었고 배경을 세우는 중(캐시라 순간)
+            else { ShowLaunchReady(); return; }
 
-            if (loadTitle != null) loadTitle.text = "LOADING";
+            if (loadTitle != null) loadTitle.text = "PREPARING LAUNCH SEQUENCE";   // 이륙 시퀀스 준비중(2026-09-08 사용자)
             if (loadBar != null) { loadBar.Indeterminate = false; loadBar.Progress = p; }
             if (loadPct != null) loadPct.text = Mathf.RoundToInt(p * 100f) + "%";
             if (loadMsg != null) { loadMsg.text = (msg ?? "").ToUpperInvariant(); loadMsg.EnableInClassList("load-msg--error", failed); }
+        }
+
+        // 이륙 준비 완료 — 문구를 잠깐 보여준 뒤 걷는다
+        void ShowLaunchReady()
+        {
+            if (launchReadyShown) return;
+            launchReadyShown = true;
+            if (loadTitle != null) loadTitle.text = "LAUNCH SEQUENCE READY";
+            if (loadBar != null) loadBar.Progress = 1f;
+            if (loadPct != null) loadPct.text = "100%";
+            if (loadMsg != null) loadMsg.text = "ALL SYSTEMS GO";
+            loading.schedule.Execute(HideLoading).StartingIn(LaunchReadyHoldMs);
         }
 
         void HideLoading()

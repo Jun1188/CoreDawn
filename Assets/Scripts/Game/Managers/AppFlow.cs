@@ -36,8 +36,10 @@ namespace CoreDawn.Managers
         /// <summary>월드 전환·초기화가 진행 중.</summary>
         public bool Busy { get; private set; }
         public bool Failed { get; private set; }
-        /// <summary>오버레이 머리글 — LOADING / WORLD GENERATING.</summary>
-        public string Phase { get; private set; } = "LOADING";
+        /// <summary>오버레이 머리글. 월드 전환은 "항성계 워프중" — 완료 문구 없이 페이드 아웃해 컷신으로 잇는다(2026-09-08 사용자).</summary>
+        public string Phase { get; private set; } = WarpPhase;
+        public const string WarpPhase = "WARPING TO STAR SYSTEM";
+        const float FadeOutSeconds = 0.6f;
         /// <summary>지금 하는 일(파일 이름·단계) — 오버레이 문구.</summary>
         public string Current { get; private set; } = "INIT";
         public float Progress { get; private set; }
@@ -89,7 +91,7 @@ namespace CoreDawn.Managers
         IEnumerator LoadWorldRoutine(string scenePath)
         {
             Busy = true; Failed = false;
-            ShowOverlay("WORLD GENERATING");
+            ShowOverlay(WarpPhase);
             Report(0f, "RESET");
             SimRunner.Reset();
             SimHost.Reset();
@@ -158,7 +160,7 @@ namespace CoreDawn.Managers
         IEnumerator WorldInitRoutine(Scene scene, GameObject[] roots)
         {
             Busy = true;
-            ShowOverlay("WORLD GENERATING");
+            ShowOverlay(WarpPhase);
             if (!PackReady)
             {
                 yield return EnsurePackRoutine();
@@ -185,10 +187,27 @@ namespace CoreDawn.Managers
                 if (SaveManager.Instance != null) SaveManager.Instance.RestorePending();
                 yield return null;
             }
-            Report(1f, "READY");
+            Report(1f, Current);   // 완료 문구 없음 — 마지막 단계 글씨 그대로 두고 페이드 아웃
             yield return null;
-            HideOverlay();
+            yield return FadeOutOverlay();
             Busy = false;
+        }
+
+        // 오버레이를 서서히 걷는다 — 그동안 게임 카메라가 밑에서 그린다(클리어 카메라는 먼저 끈다)
+        IEnumerator FadeOutOverlay()
+        {
+            if (clearCam != null) clearCam.enabled = false;
+            var root = overlay != null ? overlay.rootVisualElement : null;
+            if (root != null)
+            {
+                root.style.transitionProperty = new System.Collections.Generic.List<StylePropertyName> { new StylePropertyName("opacity") };
+                root.style.transitionDuration = new System.Collections.Generic.List<TimeValue> { new TimeValue(FadeOutSeconds, TimeUnit.Second) };
+                root.style.opacity = 0f;
+                root.pickingMode = PickingMode.Ignore;
+                float until = Time.unscaledTime + FadeOutSeconds + 0.1f;
+                while (Time.unscaledTime < until) yield return null;
+            }
+            HideOverlay();
         }
 
         // ── 팩 ───────────────────────────────────────────────────
@@ -233,6 +252,12 @@ namespace CoreDawn.Managers
                 overlay.sortingOrder = 500;
             }
             overlay.enabled = true;
+            if (overlay.rootVisualElement != null)   // 페이드 아웃 뒤 다시 켤 때 즉시·불투명
+            {
+                overlay.rootVisualElement.style.transitionDuration = new System.Collections.Generic.List<TimeValue> { new TimeValue(0f, TimeUnit.Second) };
+                overlay.rootVisualElement.style.opacity = 1f;
+                overlay.rootVisualElement.pickingMode = PickingMode.Position;
+            }
             if (clearCam == null)
             {
                 clearCam = gameObject.AddComponent<Camera>();

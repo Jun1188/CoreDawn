@@ -831,3 +831,7 @@ TitleBootstrap/SceneGate 의 static 대기 목표, GameBootstrap 의 RuntimeInit
 - (후속, 사용자 "아직 분리 안함?") 절벽 Instantiate(`WorldTerrainCliffs.BuildRoutine`)·풀 심기(`WorldTerrainGrass.AttachRoutine`, 행 단위)도 프레임당 ~12ms 로 분할. 남은 한 프레임 정지는 절벽 계획(프리팹 측정, ~0.4s)·정적 배칭(~0.2s)뿐. 총 시간은 3.3s → 5.0s 로 늘지만 화면은 서지 않는다.
 - (사용자 "world 로딩 중에 no camera 뜨는데") 옛 씬을 내리고 새 루트를 켜기 전까지 카메라가 없어 에디터가 "No cameras rendering" 을 띄웠다(빌드에선 백버퍼가 안 지워져 찌꺼기 가능). AppFlow 오브젝트에 전환 중에만 켜지는 클리어 전용 카메라(컬링 0, .load-screen 바탕색, depth -100)를 둔다.
 - (사용자 "씬 열릴 때도 버튼이 생겨나게") `TitleGlitch.Hide`(연출 없이 소멸 끝 상태) 로 OnEnable 때 메인 메뉴를 숨기고, 로딩 상자가 걷히기 시작한 300ms 뒤 `In(140, 200)` 으로 순차 등장. 와이어는 IsOut 인 버튼엔 안 붙는다. 레퍼런스는 즉시 표시였다.
+
+## 2026-09-08 — 로딩 문구·워프 페이드 아웃 (사용자)
+- 타이틀 로딩 상자: "PREPARING LAUNCH SEQUENCE" → 끝나면 "LAUNCH SEQUENCE READY / ALL SYSTEMS GO" 를 700ms 보이고 걷는다(`TitleScreenView.ShowLaunchReady`). 배경 세우는 사이 문구는 STANDBY.
+- 월드 전환 오버레이: "WARPING TO STAR SYSTEM". 완료 문구 없이(컷신으로 이을 예정) 마지막 단계 글씨 그대로 100% 에서 0.6초 페이드 아웃(`AppFlow.FadeOutOverlay`, 클리어 카메라는 먼저 끔, `Busy` 는 페이드 끝까지 유지). 다시 켤 때는 즉시·불투명으로 되돌린다.

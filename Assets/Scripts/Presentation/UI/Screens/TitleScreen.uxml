@@ -99,7 +99,7 @@
         <!-- 로딩 상자(레퍼런스 #load) — 첫 부팅의 팩 자원 로딩과 배경 모델 로딩, 그리고 새 게임·불러오기의 WORLD GENERATING 을 한 상자가 맡는다 -->
         <ui:VisualElement name="loading" class="load-screen title-loading">
             <ui:VisualElement class="load-box">
-                <ui:VisualElement class="load-row"><ui:Label name="load-title" text="LOADING" class="load-row__text" /><ui:Label name="load-pct" text="0%" class="load-row__text" /></ui:VisualElement>
+                <ui:VisualElement class="load-row"><ui:Label name="load-title" text="PREPARING LAUNCH SEQUENCE" class="load-row__text" /><ui:Label name="load-pct" text="0%" class="load-row__text" /></ui:VisualElement>
                 <ui:VisualElement name="load-bar" class="load-bar" />
                 <ui:Label name="load-msg" text="INIT" class="load-msg" />
             </ui:VisualElement>

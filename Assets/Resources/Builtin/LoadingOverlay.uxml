@@ -7,7 +7,7 @@
     <ui:VisualElement name="load-screen" class="load-screen">
         <ui:VisualElement class="load-box">
             <ui:VisualElement class="load-row">
-                <ui:Label name="load-title" text="LOADING" class="load-row__text" />
+                <ui:Label name="load-title" text="WARPING TO STAR SYSTEM" class="load-row__text" />
                 <ui:Label name="load-pct" text="0%" class="load-row__text" />
             </ui:VisualElement>
             <ui:VisualElement name="load-bar" class="load-bar" />
