@@ -182,6 +182,7 @@ namespace CoreDawn.Managers
             bool activated = false;
             Action activate = () => { if (activated) return; activated = true; SetActive(roots, true); };
             if (!GameBootstrap.LoadFeatures(activate)) activate();   // 얹을 기능 씬이 없는 씬(테스트)은 바로 켠다
+            Tutorial.TutorialManager.EnsureSpawned();                // 튜토리얼도 여기서 — 세이브 복원(tutorial 모듈)보다 먼저 있어야 한다
             yield return null;               // 기능 씬 통합·Awake·조립 → 루트 켜짐 → 게임 씬·기능 씬 Start
             activate();                      // 안전망 — 통합 콜백이 오지 않았어도 켠다
             yield return null;               // Start 에서 만들어진 것들(코어 연결 등) 정착
