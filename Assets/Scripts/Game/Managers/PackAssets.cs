@@ -91,6 +91,7 @@ namespace CoreDawn.Managers
             foreach (var id in materialIds)
             {
                 Current = id;
+                await Task.Yield();   // 재질(텍스처 png 디코드·DXT 압축, 2048² 여럿)은 동기 — 항목마다 한 프레임 넘겨 로딩 바가 서지 않게(2026-09-08 실측: 30~70% 구간 3초 정지)
                 if (MaterialOf(id) != MissingAssets.Material) mats++;
                 Progress = (++done, Progress.total);
             }
@@ -98,6 +99,7 @@ namespace CoreDawn.Managers
             foreach (var d in iconDefs)
             {
                 Current = d.Id;
+                await Task.Yield();
                 if (IconOf(d) != MissingSprite()) icons++;
                 Progress = (++done, Progress.total);
             }

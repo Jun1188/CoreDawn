@@ -234,7 +234,7 @@ MonoBehaviour:
   itemGap: 1.1
   neutralItem: coredawn:item/iron_plate
   linkItems:
-  - coredawn:item/refined_crystal
+  - coredawn:item/energy_cell
   - coredawn:item/iron_gear
   - coredawn:item/beast_core
   beltYaw: -20

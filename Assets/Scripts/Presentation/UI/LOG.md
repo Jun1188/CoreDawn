@@ -831,3 +831,12 @@ TitleBootstrap/SceneGate 의 static 대기 목표, GameBootstrap 의 RuntimeInit
 - (후속, 사용자 "아직 분리 안함?") 절벽 Instantiate(`WorldTerrainCliffs.BuildRoutine`)·풀 심기(`WorldTerrainGrass.AttachRoutine`, 행 단위)도 프레임당 ~12ms 로 분할. 남은 한 프레임 정지는 절벽 계획(프리팹 측정, ~0.4s)·정적 배칭(~0.2s)뿐. 총 시간은 3.3s → 5.0s 로 늘지만 화면은 서지 않는다.
 - (사용자 "world 로딩 중에 no camera 뜨는데") 옛 씬을 내리고 새 루트를 켜기 전까지 카메라가 없어 에디터가 "No cameras rendering" 을 띄웠다(빌드에선 백버퍼가 안 지워져 찌꺼기 가능). AppFlow 오브젝트에 전환 중에만 켜지는 클리어 전용 카메라(컬링 0, .load-screen 바탕색, depth -100)를 둔다.
 - (사용자 "씬 열릴 때도 버튼이 생겨나게") `TitleGlitch.Hide`(연출 없이 소멸 끝 상태) 로 OnEnable 때 메인 메뉴를 숨기고, 로딩 상자가 걷히기 시작한 300ms 뒤 `In(140, 200)` 으로 순차 등장. 와이어는 IsOut 인 버튼엔 안 붙는다. 레퍼런스는 즉시 표시였다.
+
+## 2026-09-08 — 로딩 문구·워프 페이드 아웃 (사용자)
+- 타이틀 로딩 상자: "PREPARING LAUNCH SEQUENCE" → 끝나면 "LAUNCH SEQUENCE READY / ALL SYSTEMS GO" 를 700ms 보이고 걷는다(`TitleScreenView.ShowLaunchReady`). 배경 세우는 사이 문구는 STANDBY.
+- 월드 전환 오버레이: "WARPING TO STAR SYSTEM". 완료 문구 없이(컷신으로 이을 예정) 마지막 단계 글씨 그대로 100% 에서 0.6초 페이드 아웃(`AppFlow.FadeOutOverlay`, 클리어 카메라는 먼저 끔, `Busy` 는 페이드 끝까지 유지). 다시 켤 때는 즉시·불투명으로 되돌린다.
+- (사용자 "처음 로딩 30~70% 에서 화면이 멈춘다") 원인은 `PackAssets.PreloadCore` 의 재질·아이콘 단계 — 텍스처 png 를 파일 읽기 → 디코드 → CPU DXT 압축 → 밉맵까지 동기로, 2048² 9장을 포함해 약 60항목을 한 프레임에 돌았다(실측 3.3초 정지). 항목마다 `Task.Yield` 를 넣어 최대 정지 0.27초(2048² 한 장). 첫 로딩 시작에 0.5초 대기(`AppFlow.FirstLoadDelaySeconds`).
+- (사용자) 시작하기 아이템 → `coredawn:item/energy_cell`(스크립트 기본값 + Title.unity). 워프 끝은 게임으로 디졸브가 아니라 **검정으로 페이드 아웃**(상자 소멸 + 바탕 검정 0.6s) → 검정 0.3s(컷신 자리) → 검정 걷기 0.6s(컷신이 붙으면 컷신이 맡는다). `AppFlow.FadeOutOverlay`.
+- (사용자 "게임 처음 시작하면 들어갈 컷신, mp4") `CutscenePlayer`(Game/Managers): `StreamingAssets/cutscenes/intro.mp4` 를 VideoPlayer → RenderTexture → 오버레이의 `cutscene` 요소 배경으로. 새 게임만(`AppFlow.LoadWorld(scene, intro: true)`), 워프 끝 검정 구간에서 틀고 끝나면 다시 검정. 파일 없으면 로그만 남기고 건너뜀. 소리는 BGM 믹서 그룹(`SoundManager.BgmGroup`). 재생 중 timeScale 0. ESC 1초 홀드(패드 Start)로 스킵 — 왼쪽 아래 어두운 판에 "HOLD ESC TO SKIP" + 누른 만큼 차는 바. 실측: 영상 재생·타임스케일·복귀 OK, 스킵은 플레이어 입력 컨텍스트에서 ESC 를 주입해 바 100%→종료 확인(에디터 Game 뷰 포커스가 없으면 InputSystem 이 플레이어 상태를 안 갱신해 주입 테스트가 헛돌 수 있다).
+- (사용자 "튜토리얼 안 나오는데") `TutorialManager` 가 sceneLoaded(Single) 때만 스스로 생겼는데 AppFlow 가 World 를 Additive 로 열면서 그 훅이 안 불려 타이틀 경로에선 영영 안 생겼다. `TutorialManager.EnsureSpawned()` 를 AppFlow 가 기능 씬 요청 직후(세이브 복원 앞)에 부른다. 워프 오버레이·컷신 동안(`AppFlow.Busy`)은 스텝 시계를 돌리지 않는다.
+- 컷신 중 ESC 홀드의 첫 프레임이 InputManager Fallback(PauseMenuHotkey)까지 흘러 일시정지가 뒤에서 열렸다(실측) → `[Cutscene]` 오브젝트에 SystemModal 리시버(`CutsceneInputBlocker`)를 붙여 재생 중 모든 액션을 삼킨다. ESC 홀드 판정은 Keyboard 를 직접 읽으므로 영향 없음.

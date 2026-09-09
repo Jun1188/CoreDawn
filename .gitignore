@@ -129,3 +129,7 @@ claude.md
 CLAUDE.md
 AGENTS.md
 .claude/
+# 컷신 영상(StreamingAssets/cutscenes) — 대용량 mp4 는 저장소에 넣지 않는다(2026-09-09)
+/[Aa]ssets/StreamingAssets/cutscenes/*.mp4
+/[Aa]ssets/StreamingAssets/cutscenes/*.mp4.meta
+/[Aa]ssets/StreamingAssets/cutscenes.meta

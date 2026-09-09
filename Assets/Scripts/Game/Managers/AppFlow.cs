@@ -36,8 +36,11 @@ namespace CoreDawn.Managers
         /// <summary>월드 전환·초기화가 진행 중.</summary>
         public bool Busy { get; private set; }
         public bool Failed { get; private set; }
-        /// <summary>오버레이 머리글 — LOADING / WORLD GENERATING.</summary>
-        public string Phase { get; private set; } = "LOADING";
+        /// <summary>오버레이 머리글. 월드 전환은 "항성계 워프중" — 완료 문구 없이 페이드 아웃해 컷신으로 잇는다(2026-09-08 사용자).</summary>
+        public string Phase { get; private set; } = WarpPhase;
+        public const string WarpPhase = "WARPING TO STAR SYSTEM";
+        const float FadeOutSeconds = 0.6f, BlackHoldSeconds = 0.3f, FadeInSeconds = 0.6f;
+        const float FirstLoadDelaySeconds = 0.5f;
         /// <summary>지금 하는 일(파일 이름·단계) — 오버레이 문구.</summary>
         public string Current { get; private set; } = "INIT";
         public float Progress { get; private set; }
@@ -75,21 +78,25 @@ namespace CoreDawn.Managers
                 yield return WorldInitRoutine(scene, roots);
                 yield break;
             }
+            yield return new WaitForSecondsRealtime(FirstLoadDelaySeconds);   // 로딩 상자가 0% 로 잠깐 서 있다가 흐른다(2026-09-08 사용자)
             yield return EnsurePackRoutine();
             PackReady = !Failed;
         }
 
-        /// <summary>목표 게임 씬(경로 또는 이름)을 절차대로 연다. 새 게임·불러오기가 부른다.</summary>
-        public void LoadWorld(string scene)
+        /// <summary>목표 게임 씬(경로 또는 이름)을 절차대로 연다. 새 게임·불러오기가 부른다. <paramref name="intro"/>: 워프 끝 검정 구간에서 인트로 컷신(<see cref="CutscenePlayer.IntroPath"/>)을 튼다 — 새 게임만.</summary>
+        public void LoadWorld(string scene, bool intro = false)
         {
             if (Busy) { Debug.LogWarning("[AppFlow] 이미 전환 중입니다 — 무시합니다."); return; }
+            pendingIntro = intro;
             StartCoroutine(LoadWorldRoutine(scene));
         }
+
+        bool pendingIntro;
 
         IEnumerator LoadWorldRoutine(string scenePath)
         {
             Busy = true; Failed = false;
-            ShowOverlay("WORLD GENERATING");
+            ShowOverlay(WarpPhase);
             Report(0f, "RESET");
             SimRunner.Reset();
             SimHost.Reset();
@@ -158,7 +165,7 @@ namespace CoreDawn.Managers
         IEnumerator WorldInitRoutine(Scene scene, GameObject[] roots)
         {
             Busy = true;
-            ShowOverlay("WORLD GENERATING");
+            ShowOverlay(WarpPhase);
             if (!PackReady)
             {
                 yield return EnsurePackRoutine();
@@ -175,6 +182,7 @@ namespace CoreDawn.Managers
             bool activated = false;
             Action activate = () => { if (activated) return; activated = true; SetActive(roots, true); };
             if (!GameBootstrap.LoadFeatures(activate)) activate();   // 얹을 기능 씬이 없는 씬(테스트)은 바로 켠다
+            Tutorial.TutorialManager.EnsureSpawned();                // 튜토리얼도 여기서 — 세이브 복원(tutorial 모듈)보다 먼저 있어야 한다
             yield return null;               // 기능 씬 통합·Awake·조립 → 루트 켜짐 → 게임 씬·기능 씬 Start
             activate();                      // 안전망 — 통합 콜백이 오지 않았어도 켠다
             yield return null;               // Start 에서 만들어진 것들(코어 연결 등) 정착
@@ -185,10 +193,49 @@ namespace CoreDawn.Managers
                 if (SaveManager.Instance != null) SaveManager.Instance.RestorePending();
                 yield return null;
             }
-            Report(1f, "READY");
+            Report(1f, Current);   // 완료 문구 없음 — 마지막 단계 글씨 그대로 두고 페이드 아웃
             yield return null;
-            HideOverlay();
+            yield return FadeOutOverlay();
             Busy = false;
+        }
+
+        // 워프 끝 — 검정으로 페이드 아웃(로딩 상자가 사라지며 바탕이 검정으로), 검정에서 잠깐 멈춘 뒤 검정을 걷어 게임을 드러낸다.
+        // 게임 화면으로 바로 디졸브하지 않는다(2026-09-08 사용자 "페이드 아웃이 아니라 페이드 전환이잖아"). 검정 구간이 컷신을 끼울 자리 — 컷신이 붙으면 뒤의 페이드 인은 컷신이 맡는다.
+        IEnumerator FadeOutOverlay()
+        {
+            var root = overlay != null ? overlay.rootVisualElement : null;
+            if (root != null)
+            {
+                var screen = root.Q("load-screen");
+                var box = root.Q(className: "load-box");
+                var dur = new System.Collections.Generic.List<TimeValue> { new TimeValue(FadeOutSeconds, TimeUnit.Second) };
+                if (box != null) { box.style.transitionProperty = new System.Collections.Generic.List<StylePropertyName> { new StylePropertyName("opacity") }; box.style.transitionDuration = dur; box.style.opacity = 0f; }
+                if (screen != null) { screen.style.transitionProperty = new System.Collections.Generic.List<StylePropertyName> { new StylePropertyName("background-color") }; screen.style.transitionDuration = dur; screen.style.backgroundColor = Color.black; }
+                if (clearCam != null) clearCam.backgroundColor = Color.black;
+                root.pickingMode = PickingMode.Ignore;
+                yield return Wait(FadeOutSeconds + 0.1f);
+                yield return Wait(BlackHoldSeconds);
+
+                if (pendingIntro)   // 인트로 컷신 — 검정 위에서 틀고 끝나면 다시 검정(새 게임만). 파일이 없으면 건너뛴다.
+                {
+                    pendingIntro = false;
+                    yield return CutscenePlayer.Play(this, root.Q("cutscene"), CutscenePlayer.IntroPath);
+                    yield return Wait(BlackHoldSeconds);
+                }
+
+                if (clearCam != null) clearCam.enabled = false;   // 이제 게임 카메라가 밑에서 그린다
+                root.style.transitionProperty = new System.Collections.Generic.List<StylePropertyName> { new StylePropertyName("opacity") };
+                root.style.transitionDuration = new System.Collections.Generic.List<TimeValue> { new TimeValue(FadeInSeconds, TimeUnit.Second) };
+                root.style.opacity = 0f;
+                yield return Wait(FadeInSeconds + 0.1f);
+            }
+            HideOverlay();
+        }
+
+        static IEnumerator Wait(float seconds)
+        {
+            float until = Time.unscaledTime + seconds;
+            while (Time.unscaledTime < until) yield return null;
         }
 
         // ── 팩 ───────────────────────────────────────────────────
@@ -233,6 +280,14 @@ namespace CoreDawn.Managers
                 overlay.sortingOrder = 500;
             }
             overlay.enabled = true;
+            if (overlay.rootVisualElement != null)   // 페이드 아웃 뒤 다시 켤 때 즉시·불투명
+            {
+                var r = overlay.rootVisualElement;
+                var zero = new System.Collections.Generic.List<TimeValue> { new TimeValue(0f, TimeUnit.Second) };
+                r.style.transitionDuration = zero; r.style.opacity = 1f; r.pickingMode = PickingMode.Position;
+                var screen = r.Q("load-screen"); if (screen != null) { screen.style.transitionDuration = zero; screen.style.backgroundColor = StyleKeyword.Null; }
+                var box = r.Q(className: "load-box"); if (box != null) { box.style.transitionDuration = zero; box.style.opacity = 1f; }
+            }
             if (clearCam == null)
             {
                 clearCam = gameObject.AddComponent<Camera>();
@@ -243,6 +298,7 @@ namespace CoreDawn.Managers
                 clearCam.useOcclusionCulling = false;
                 clearCam.allowHDR = false; clearCam.allowMSAA = false;
             }
+            clearCam.backgroundColor = new Color(7f / 255f, 13f / 255f, 26f / 255f);   // 검정 페이드 뒤 되돌림
             clearCam.enabled = true;
             var root = overlay.rootVisualElement;
             if (root == null) return;

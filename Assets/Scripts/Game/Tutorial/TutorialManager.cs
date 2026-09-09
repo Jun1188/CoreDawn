@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using CoreDawn.Managers;
 using UnityEngine.SceneManagement;
 using CoreDawn.FPS;
 using CoreDawn.UI;
@@ -50,30 +51,16 @@ namespace CoreDawn.Tutorial
 
         // ─────────────────────────── 부팅 ───────────────────────────
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Bootstrap()
-        {
-            // 이 어트리뷰트는 플레이 세션에서 첫 씬 로드 직후 딱 한 번만 불린다. 타이틀에서
-            // 시작하면 그 시점엔 플레이어가 없어 그냥 지나가는데, 재시도 장치가 없으면
-            // 그 뒤 World로 넘어가도 튜토리얼이 영영 생기지 않는다 — 그래서 GameBootstrap과
-            // 같은 방식으로 씬 전환(Single 로드)마다 다시 검사한다.
-            // 이름 있는 메서드를 빼고 다시 거는 것도 같은 이유다 — 도메인 리로드를 끈 환경에서는
-            // static 구독이 플레이를 넘어 살아남는다.
-            SceneManager.sceneLoaded -= OnSceneLoadedTrySpawn;
-            SceneManager.sceneLoaded += OnSceneLoadedTrySpawn;
-            TrySpawn();
-        }
-
-        static void OnSceneLoadedTrySpawn(Scene scene, LoadSceneMode mode)
-        {
-            if (mode == LoadSceneMode.Single) TrySpawn();
-        }
-
-        static void TrySpawn()
+        /// <summary>
+        /// 게임 씬이 준비될 때 AppFlow 가 부른다(기능 씬 요청 직후, 세이브 복원 앞) — 새 게임·불러오기·World 직접 재생 모두 같은 길.
+        /// 예전엔 sceneLoaded(Single) 마다 스스로 검사했는데, AppFlow 가 World 를 Additive 로 열게 되면서(2026-09-07) 그 훅이 다시는 불리지 않아
+        /// 타이틀에서 시작하면 튜토리얼이 영영 안 생겼다(2026-09-09 사용자 "튜토리얼 안 나오는데"). 씬 전환의 주인이 부르는 편이 순서도 분명하다.
+        /// </summary>
+        public static void EnsureSpawned()
         {
             if (Instance != null) return;
 
-            // GameBootstrap과 같은 규칙 — 플레이어가 없는 씬(타이틀·순수 테스트)은 오염시키지 않는다
+            // GameBootstrap과 같은 규칙 — 플레이어가 없는 씬(순수 테스트)은 오염시키지 않는다
             if (FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include) == null) return;
 
             new GameObject("[TutorialManager]").AddComponent<TutorialManager>();
@@ -129,6 +116,7 @@ namespace CoreDawn.Tutorial
         void Update()
         {
             if (_progress == null || _progress.Skipped) return;
+            if (AppFlow.Instance != null && AppFlow.Instance.Busy) return;   // 워프 오버레이·컷신 뒤에서는 스텝 시계를 돌리지 않는다 — 게임이 보일 때 시작
 
             _world.UpdateFast(Time.deltaTime);
 
