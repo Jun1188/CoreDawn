@@ -107,6 +107,7 @@ CoreDawn/
  PR의 작업 흐름은 **`Feature / hotfix` -> `develop` -> `Master`** 입니다.
  
 `Master` Branch는 안정적으로 돌아가는 버전만을 다루는 안정화 브랜치입니다.
+
 `develop` Branch는 기여자가 완료한 Feature Branch의 작업과 compare, conflict를 해결한 뒤 Merge합니다.
 
 `Feature` Branch는 develop에서 분기하여 개발하고자 하는 기능을 개발합니다. Branch 작명은 `Feature-작업` 혹은 `Feature/작업`로 권장합니다.
