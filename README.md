@@ -100,6 +100,12 @@ CoreDawn/
 2. 변경 범위를 작게 유지하고 관련 씬·프리팹·스크립트를 함께 확인합니다.
 3. Unity가 생성한 `.meta` 파일을 누락하지 않습니다.
 4. 변경 내용과 테스트 방법을 적어 Pull Request를 생성합니다.
+5. PR의 작업 흐름은 "Feature / hotfix -> develop -> Master" 입니다.
+6. 'Master' Branch는 안정적으로 돌아가는 버전만을 다루는 안정화 브랜치입니다.
+7. 'develop' Branch는 기여자가 완료한 Feature Branch의 작업과 compare, conflict를 해결한 뒤 Merge합니다.
+8. 'Feature' Branch는 develop에서 분기하여 개발하고자 하는 기능을 개발합니다. Branch 작명은 "Feature-작업" 혹은 "Feature/작업"로 권장합니다.
+9. 'hotfix' Branch는 develop에서 발생한 버그를 해결하기 위해 분기합니다. Branch 작명은 "hotfix-작업" 혹은 "hotfix/작업"으로 권장합니다.
+10. 예시는 다음을 참고하세요. https://inpa.tistory.com/entry/GIT-%E2%9A%A1%EF%B8%8F-github-flow-git-flow-%F0%9F%93%88-%EB%B8%8C%EB%9E%9C%EC%B9%98-%EC%A0%84%EB%9E%B5#%EB%A6%B4%EB%A6%AC%EC%A6%88_%EB%B8%8C%EB%9E%9C%EC%B9%98release_branch
 
 ---
 
