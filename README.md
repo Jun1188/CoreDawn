@@ -102,7 +102,7 @@ CoreDawn/
 4. 변경 내용과 테스트 방법을 적어 Pull Request를 생성합니다.
 5. 기여 시에 아래에 PR 규칙을 준수하기를 권장합니다.
 
-# PR 규칙
+## PR 규칙
 
  PR의 작업 흐름은 **`Feature / hotfix` -> `develop` -> `Master`** 입니다.
  
